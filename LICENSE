@@ -1,0 +1,149 @@
+Creative Commons Attribution-NoDerivatives 4.0 International
+
+Copyright (c) 2024-2025 Sheel Morjaria
+
+=======================================================================
+
+This work is licensed under the Creative Commons Attribution-NoDerivatives 4.0 International License.
+
+You are free to:
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NoDerivatives — If you remix, transform, or build upon the material, you may not distribute the modified material.
+
+No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-nd/4.0/
+
+=======================================================================
+
+ATTRIBUTION NOTICE:
+
+This software is the "Animal Vocalization Analysis Framework"
+for cross-species communication research using the Universal Rosetta Stone
+methodology.
+
+Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+
+Citation:
+Morjaria, S. (2025). Animal Vocalization Analysis Framework: Universal
+Rosetta Stone Methodology for Cross-Species Communication Research.
+Creative Commons BY-ND 4.0.
+
+For more information about the research project, contact:
+Sheel Morjaria (sheelmorjaria@gmail.com)
+
+=======================================================================
+
+COMPONENT LICENSES:
+
+This framework includes the following components:
+
+1. Technical Architecture (Rust Execution Layer)
+   - Location: technical_architecture/
+   - License: CC BY-ND 4.0 International
+   - 415 tests passing
+   - 21 source modules
+
+2. Real-time Processing (Python Logic Layer)
+   - Location: realtime/
+   - License: CC BY-ND 4.0 International
+   - Cognitive intelligence and decision making
+
+3. Query Interface
+   - Location: query_interface/
+   - License: CC BY-ND 4.0 International
+   - High-performance vocalization queries
+
+4. Semiotic Engine
+   - Location: semiotics/
+   - License: CC BY-ND 4.0 International
+   - Cognitive analysis capabilities
+
+5. Synthesis Modules
+   - Location: synthesis/
+   - License: CC BY-ND 4.0 International
+   - Audio synthesis engines
+
+6. Data Models & Import
+   - Location: data_models.py, data_import/
+   - License: CC BY-ND 4.0 International
+   - Cross-species data structures
+
+All components are collectively licensed under CC BY-ND 4.0 International.
+
+=======================================================================
+
+THIRD-PARTY LICENSES:
+
+This software incorporates the following third-party components:
+
+Python Ecosystem:
+- NumPy: BSD License
+- SciPy: BSD License
+- Pandas: BSD License
+- Matplotlib: PSF License
+- scikit-learn: BSD License
+- PyTorch: BSD-style License
+
+Rust Ecosystem (in technical_architecture/):
+- Rust: Apache 2.0 / MIT
+- Tokio: MIT
+- Tract ONNX: MIT/Apache 2.0
+- ZeroMQ: LGPL-3.0
+- Serde: MIT/Apache 2.0
+- ndArray: BSD-style
+
+See requirements.txt and technical_architecture/Cargo.toml for complete
+dependency information with version numbers.
+
+=======================================================================
+
+SCIENTIFIC USAGE:
+
+This framework is intended for:
+
+1. Academic research in animal communication
+2. Cross-species vocalization analysis
+3. Bioacoustics research
+4. Cognitive modeling of animal intelligence
+5. Ethical animal behavior studies
+
+All research using this framework should comply with:
+- Institutional Animal Care and Use Committee (IACUC) guidelines
+- Local animal welfare regulations
+- Ethical standards for animal research
+
+=======================================================================
+
+COMMERCIAL USE:
+
+Under the CC BY-ND 4.0 International license:
+- Commercial use is permitted
+- Attribution must be given to the original author
+- No derivatives or modifications may be distributed
+- For commercial derivative works, contact the author for licensing
+
+For commercial licensing inquiries, contact:
+Sheel Morjaria (sheelmorjaria@gmail.com)
+
+=======================================================================
+
+DISCLAIMER:
+
+This software is provided "as is" for research purposes only. The authors
+make no warranties regarding the accuracy, completeness, or fitness for
+any particular purpose. Users are responsible for ensuring compliance
+with all applicable laws and regulations.
+
+Field deployment of this software requires:
+- IACUC protocol approval
+- Safety compliance testing
+- Ethical review board approval
+- Compliance with local animal welfare regulations
+
+=======================================================================

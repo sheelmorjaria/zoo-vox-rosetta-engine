@@ -1,0 +1,62 @@
+[package]
+name = "technical_architecture"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core dependencies
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+thiserror = "1.0"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"
+
+# PyO3 for Python integration
+pyo3 = { version = "0.21", features = ["extension-module", "auto-initialize"] }
+
+# Additional dependencies
+config = "0.13"
+clap = { version = "4.4", features = ["derive"] }
+
+# Optional dependencies
+reqwest = { version = "0.11", features = ["json"], optional = true }
+tokio-tungstenite = { version = "0.24", optional = true }
+memmap2 = { version = "0.9", optional = true }
+parking_lot = "0.12"
+
+# Monitoring and metrics
+prometheus = "0.13"
+tracing = "0.1"
+
+# Utilities
+dashmap = "5.5"
+itertools = "0.11"
+
+[lib]
+name = "technical_architecture"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+python-extension = ["pyo3/extension-module"]
+zero-copy = ["memmap2"]
+async-processing = ["tokio/full"]
+web-interface = ["reqwest"]
+real-time = ["tokio-tungstenite"]
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.12"
+tempfile = "3.8"
+criterion = "0.5"
+
+[[example]]
+name = "zero_copy_example"
+path = "examples/zero_copy_example.rs"

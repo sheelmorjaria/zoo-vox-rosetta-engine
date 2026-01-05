@@ -1,0 +1,20 @@
+[package]
+name = "reflex_arc"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "reflex_arc"
+path = "lib.rs"
+crate-type = ["lib"]
+
+[dependencies]
+cpal = "0.15"
+rustfft = "6.1"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "audio_benchmark"
+harness = false

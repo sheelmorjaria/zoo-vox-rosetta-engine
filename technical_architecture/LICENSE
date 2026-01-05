@@ -1,0 +1,69 @@
+Creative Commons Attribution-NoDerivatives 4.0 International
+
+Copyright (c) 2024-2025 Sheel Morjaria
+
+=======================================================================
+
+This work is licensed under the Creative Commons Attribution-NoDerivatives 4.0 International License.
+
+You are free to:
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NoDerivatives — If you remix, transform, or build upon the material, you may not distribute the modified material.
+
+No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-nd/4.0/
+
+=======================================================================
+
+ATTRIBUTION NOTICE:
+
+This software is part of the "Animal Vocalization Analysis Framework"
+for cross-species communication research using the Universal Rosetta Stone
+methodology.
+
+Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+
+Citation:
+Morjaria, S. (2025). Technical Architecture: Rust Execution Layer for
+Animal Vocalization Analysis Framework. Creative Commons BY-ND 4.0.
+
+For more information about the research project, contact:
+Sheel Morjaria (sheelmorjaria@gmail.com)
+
+=======================================================================
+
+THIRD-PARTY LICENSES:
+
+This software incorporates the following third-party components:
+
+1. Rust Programming Language
+   License: Apache 2.0 / MIT
+   Source: https://github.com/rust-lang/rust
+
+2. Tokio Async Runtime
+   License: MIT
+   Source: https://github.com/tokio-rs/tokio
+
+3. Tract ONNX Runtime
+   License: MIT/Apache 2.0
+   Source: https://github.com/snipsco/tract
+
+4. ZeroMQ (zmq)
+   License: LGPL-3.0
+   Source: https://github.com/zeromq/zmq
+
+5. Serde Serialization Framework
+   License: MIT/Apache 2.0
+   Source: https://github.com/serde-rs/serde
+
+6. NumPy (via PyO3 bindings)
+   License: BSD
+   Source: https://github.com/numpy/numpy
+
+See Cargo.lock for complete dependency tree with version information.

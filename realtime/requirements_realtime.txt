@@ -1,0 +1,124 @@
+# =============================================================================
+# Animal Vocalization Analysis Framework - Real-Time System Dependencies
+# =============================================================================
+# Required for real-time audio interaction and low-latency processing
+# =============================================================================
+
+# Core dependencies from main requirements
+numpy>=2.0.0
+scipy>=1.10.0
+pandas>=2.0.0
+librosa>=0.10.0
+soundfile>=0.12.0
+torch>=2.0.0
+torchaudio>=2.0.0
+torchcrepe>=0.0.23
+psutil>=5.9.0
+tqdm>=4.65.0
+
+# ================================
+# REAL-TIME AUDIO HARDWARE INTERFACE
+# ================================
+# These packages provide low-latency audio I/O for microphone input and speaker output
+
+# Primary audio interface (requires system PortAudio library)
+# Install system libraries first:
+#   Linux: sudo apt-get install portaudio19-dev
+#   macOS: brew install portaudio
+#   Windows: Download from https://www.portaudio.com/
+sounddevice>=0.5.0
+
+# Alternative audio interface (good fallback)
+pyaudio>=0.2.14
+
+# ================================
+# LOW-LATENCY AUDIO PROCESSING
+# ================================
+# Optimized for real-time performance
+
+# Real-time audio processing
+webrtcvad>=2.0.10     # Voice activity detection for noise filtering
+praat-parselmouth>=0.4.0  # Advanced audio analysis (optional)
+
+# ================================
+# THREADING AND CONCURRENCY
+# ================================
+# Essential for real-time operation
+
+threading>=3.8       # Built-in threading (Python standard library)
+queue>=3.8           # Thread-safe queues (Python standard library)
+multiprocessing>=3.8 # Process-based parallelism (Python standard library)
+concurrent-futures>=3.1.1  # Advanced concurrency patterns
+
+# ================================
+# SYSTEM PERFORMANCE MONITORING
+# ================================
+# Critical for real-time system optimization and debugging
+
+# Real-time performance monitoring
+memory-profiler>=0.60.0     # Memory usage monitoring
+timebudget>=0.6.0           # Performance profiling and timing
+
+# ================================
+# CONFIGURATION AND LOGGING
+# ================================
+# For real-time system configuration and debugging
+
+PyYAML>=6.0          # Configuration file management
+colorlog>=6.7.0      # Colored logging for real-time feedback
+
+# ================================
+# AUDIO BUFFER MANAGEMENT
+# ================================
+# Optimized buffer handling for low-latency audio
+
+circularbuffer>=1.0  # Circular buffer implementation for audio streams
+ringbuffer>=2.3.0    # Alternative circular buffer implementation
+
+# ================================
+# MATH AND SIGNAL PROCESSING
+# ================================
+# Fast signal processing for real-time analysis
+
+numba>=0.57.0       # JIT compilation for numerical loops
+scikit-learn>=1.3.0  # Real-time classification features
+
+# ================================
+# OPTIONAL: GPU ACCELERATION FOR REAL-TIME
+# ================================
+# Uncomment if using CUDA GPUs for ultra-low latency
+# torch[audio]==2.8.0+cu121  # CUDA 12.1 optimized for real-time
+# tensorflow[and-cuda]>=2.12.0  # Alternative GPU backend
+
+# ================================
+# OPTIONAL: DEVELOPMENT AND DEBUGGING
+# ================================
+# Uncomment for real-time system development and testing
+
+pytest-asyncio>=0.21.0      # Testing for async/await patterns
+pytest-benchmark>=4.0.0     # Performance benchmarking
+matplotlib>=3.7.0           # Real-time visualization (optional)
+seaborn>=0.12.0             # Enhanced plotting (optional)
+
+# ================================
+# INSTALLATION INSTRUCTIONS
+# ================================
+#
+# Step 1: Install system audio libraries
+#   Linux: sudo apt-get install portaudio19-dev libasound2-dev
+#   macOS: brew install portaudio
+#   Windows: Download and install PortAudio from https://www.portaudio.com/
+#
+# Step 2: Install Python dependencies
+#   pip install -r requirements_realtime.txt
+#
+# Step 3: Test audio interface
+#   python3 -c "import sounddevice as sd; print('Audio devices:', sd.query_devices())"
+#
+# Step 4: Test real-time functionality
+#   python3 realtime_interactive_system.py
+#
+# Note: Real-time systems require low-latency audio drivers.
+#       On Linux, consider using ALSA or JACK for better performance.
+#       On Windows, ASIO drivers recommended for professional audio.
+# =============================================================================

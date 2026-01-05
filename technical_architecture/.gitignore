@@ -1,0 +1,113 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo lock file (optional - uncomment if you don't want to commit it)
+# Cargo.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Emacs
+*~
+\#*\#
+./\#*\#
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.s[a-v][a-z][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+*~
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Project specific
+*.db
+*.sqlite
+*.sqlite3
+vocalization_database.json
+
+# Test data and temporary files
+test_data/
+temp/
+tmp/
+
+# Compiled binaries (except specific examples)
+# Keep examples in target/release/examples/
+*.exe
+*.out
+*.app
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive directories (already archived elsewhere)
+archive/
