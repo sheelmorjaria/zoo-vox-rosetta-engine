@@ -186,6 +186,127 @@ sentences = analyzer.discover_sentences(phrases, gaps)
 
 ---
 
+### STEP 1.5: Atomic Word Discovery Using Micro-Dynamics
+
+**Enhanced Method** - Discover smallest semantic units (atomic words) using multi-dimensional acoustic features beyond simple F0 binning.
+
+#### Traditional Approach vs. Micro-Dynamics
+
+| Approach | Features | Phrase Key Example | Limitation |
+|----------|----------|-------------------|------------|
+| **Traditional** | F0, Duration, Range | `F0_7400_DUR_50_RANGE_300` | Groups dissimilar sounds with same F0 |
+| **Micro-Dynamics** | 17 acoustic features | Multi-dimensional persona matching | Requires feature extraction |
+
+#### Micro-Dynamics Feature Categories
+
+**1. Grit Factors** (Timbre texture)
+- `harmonic_to_noise_ratio` - Harmonic purity vs noise
+- `spectral_flatness` - Noise-like vs tonal
+
+**2. Motion Factors** (Envelope dynamics)
+- `attack_time_ms` - Onset speed (fast = sharp, slow = gentle)
+- `decay_time_ms` - Release speed
+- `sustain_level` - Steady-state amplitude
+- `vibrato_rate_hz` - Pitch modulation frequency
+- `vibrato_depth` - Pitch modulation depth
+- `jitter` - Micro-perturbations (instability vs stability)
+
+**3. Fingerprint Factors** (Spectral shape)
+- `mfcc_1` through `mfcc_4` - Mel-frequency cepstral coefficients
+- `spectral_contrast` - Formant structure strength
+
+**4. Rhythm Factors** (Temporal patterns)
+- `median_ici_ms` - Inter-click interval
+- `onset_rate_hz` - Click/event rate
+- `ici_coefficient_of_variation` - Rhythm regularity
+
+#### Acoustic Personas for Semantic Discovery
+
+The framework defines **6 acoustic personas** that map acoustic features to semantic meaning:
+
+| Persona | Semantic Category | Key Features | Example Context |
+|---------|-----------------|--------------|-----------------|
+| **GRITTY** | Aggressive alerts | Low HNR, high flatness, fast attack | Threat, confrontation |
+| **PURE** | Contact/affiliation | High HNR, low flatness, slow attack | Food sharing, bonding |
+| **BOUNCY** | Courtship/play | High vibrato, low jitter, pulsed | Mating, social play |
+| **SHARP** | Alarm/startle | Very fast attack/decay, high contrast | Predator detection |
+| **SUSTAINED** | Territory/long-range | Slow attack/decay, high sustain | Territorial claims |
+| **TRANSIENT** | Rhythmic/mechanical | High onset rate, regular ICI | Mechanical sounds |
+
+#### Usage
+
+```python
+from analysis.rosetta_stone.acoustic_similarity_for_atomic_phrase_candidates import (
+    find_atomic_phrases_by_persona,
+    find_similar_phrases_multi_dimensional,
+    ACOUSTIC_PERSONAS
+)
+
+# Find "GRITTY" phrases (aggressive alerts)
+gritty_phrases = find_atomic_phrases_by_persona(
+    db=vocalization_database,
+    persona_name='gritty',
+    species='marmoset',
+    top_n=20,
+    min_score=0.4
+)
+
+# Each result: (phrase_key, features_dict, score)
+for phrase_key, features, score in gritty_phrases:
+    print(f"{phrase_key}: HNR={features['harmonic_to_noise_ratio']:.2f}, "
+          f"Attack={features['attack_time_ms']:.1f}ms")
+
+# Find acoustically similar phrases (beyond F0)
+similar_phrases = find_similar_phrases_multi_dimensional(
+    db=vocalization_database,
+    query_phrase_key='F0_7400_DUR_50_RANGE_300',
+    species='marmoset',
+    top_n=10
+)
+```
+
+#### Why Micro-Dynamics Matter
+
+**Example**: Two phrases with identical F0 (7400 Hz) but different meanings:
+
+| Phrase | F0 | Attack | HNR | Vibrato | Persona | Meaning |
+|--------|-----|--------|-----|---------|---------|---------|
+| A | 7400 Hz | 5 ms | 2.0 | 0 Hz | GRITTY | Alarm |
+| B | 7400 Hz | 50 ms | 25.0 | 8 Hz | PURE | Contact |
+
+**Traditional approach**: Groups A and B together (`F0_7400`) ❌
+**Micro-dynamics**: Separates A (GRITTY) from B (PURE) ✅
+
+#### Scientific Validation
+
+Persona-based discovery enables:
+1. **Fine-grained semantic categories** - Distinguish subtle behavioral contexts
+2. **Cross-F0 similarity search** - Find "acoustic siblings" with different pitch
+3. **Context-aware synthesis** - Generate context-appropriate vocalizations
+4. **Quantified semantic meaning** - Score-based matching instead of binary inclusion
+
+#### Command-Line Interface
+
+```bash
+# Find GRITTY phrases
+python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py \
+    --persona gritty --species marmoset --top-n 20
+
+# Find phrases similar to specific phrase
+python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py \
+    --query F0_7400_DUR_50_RANGE_300 --species marmoset
+
+# Analyze persona distribution
+python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py \
+    --analyze-distribution
+
+# Check feature coverage in database
+python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py \
+    --analyze-coverage
+```
+
+---
+
 ### STEP 2: Data Import (`data_import/`)
 
 Import the analyzed data into the unified database structure.
