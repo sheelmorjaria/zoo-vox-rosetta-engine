@@ -163,11 +163,18 @@ src/
 │   ├── ab_testing_controller.py
 │   └── provenance_tracer.py
 │
+├── system/                             # ✅ [NEW] Self-Healing System
+│   ├── state_persistor.py              # Checkpoint/recovery persistence
+│   ├── self_heal.py                    # Autonomous crash recovery
+│   └── __init__.py
+│
 ├── tests/                              # ✅ Active (canonical versions only)
 │   ├── test_acoustic_algebra.py       # [NEW] 33/33 tests passing ✅
 │   ├── test_vector_delta_synthesis.py # [NEW] 12/12 tests passing ✅
 │   ├── test_30d_metadata_synthesis.py # [NEW] 11/11 tests passing ✅ (30D metadata)
 │   ├── test_rust_island_hopping.py    # [NEW] Python-Rust integration tests ✅
+│   ├── test_state_persistor.py        # [NEW] 5/5 tests passing ✅ (Checkpoint system)
+│   ├── test_self_heal.py              # [NEW] 11/11 tests passing ✅ (Self-healing)
 │   ├── test_hybrid_persona_architecture.py # Hybrid persona tests
 │   ├── test_rosetta_stone_base.py
 │   ├── test_realtime_system_population.py
@@ -4254,7 +4261,67 @@ cargo test  # 408 tests passing
 
 ---
 
-### 3. Bio-Acoustic Turing Test (`realtime/`)
+### 3. Self-Healing System (`system/`) [NEW]
+
+**Autonomous Crash Recovery** - Enables long-duration field experiments with automatic recovery from Python process crashes.
+
+**Components:**
+
+**StatePersistor** (`state_persistor.py`) - Checkpoint system for saving system state
+- `save_contextual_agent()` - Save conversation context and history
+- `save_rust_cache()` - Save LRU cache keys for warm restart
+- `save_complete_state()` - Unified checkpoint of entire system
+- `load_checkpoint()` - Load state from JSON
+- `get_latest_checkpoint()` - Find most recent checkpoint
+
+**SelfHeal** (`self_heal.py`) - Autonomous crash recovery and rehydration
+- `check_health()` - Detect dead Python processes
+- `rehydrate_agent()` - Load agent state from checkpoint
+- `rehydrate_from_latest()` - Auto-load most recent checkpoint
+- `sync_rust_cache()` - Extract cache keys for warm restart
+- `heal()` - Complete workflow: detect → load checkpoint → restart
+
+**Usage:**
+```python
+from system import StatePersistor, SelfHeal, HealthStatus
+
+# Create checkpoint before potential crash
+persistor = StatePersistor(checkpoint_dir=Path("./checkpoints"))
+agent_state = {
+    "context": "FOOD",
+    "history": ["PheeA", "PheeB"],
+    "dialogue_state": {"turn": 3, "initiator": "human"}
+}
+persistor.save_contextual_agent(agent_state, Path("checkpoint.json"))
+
+# After crash, detect and heal
+healer = SelfHeal(checkpoint_dir=Path("./checkpoints"))
+status = healer.check_health(pid_of_python_process)
+
+if status == HealthStatus.DEAD:
+    # Automatically restart with recovered state
+    healer.heal(
+        pid=pid_of_python_process,
+        restart_command=["python3", "-m", "cognitive_agent"]
+    )
+```
+
+**Benefits for Long-Duration Field Experiments:**
+- **Autonomous Recovery**: No human intervention required for Python crashes
+- **State Preservation**: Conversation history and context restored
+- **Warm Cache Restart**: Rust LRU cache preloaded for minimal latency
+- **Deterministic Recovery**: Test-Driven Development ensures reliability
+- **16/16 Tests Passing**: Complete TDD coverage (Phase 1 + Phase 2)
+
+**Integration with Systemd:**
+- Python service `Restart=on-failure` handles automatic restarts
+- Self-healing loads checkpoint before processing new intents
+- Rust continues in Passthrough Mode during Python recovery
+- Peer-to-peer supervision ensures safety during recovery
+
+---
+
+### 4. Bio-Acoustic Turing Test (`realtime/`)
 
 **Live Animal Validation Framework** - Determines if animals can distinguish between natural and granular-synthesized vocalizations.
 
@@ -4337,6 +4404,46 @@ Two services managed by systemd:
 - Logic layer with cognitive intelligence
 - Connects to Rust and sends heartbeats (20ms interval)
 - Automatically restarted on crash (Let it crash philosophy)
+- **[NEW]** Self-healing with state recovery on restart
+
+### Self-Healing Integration [NEW]
+
+For long-duration field experiments, the system includes autonomous crash recovery:
+
+```python
+# Python Cognitive Agent startup script with self-healing
+from pathlib import Path
+from system import StatePersistor, SelfHeal
+
+# On startup, try to recover from previous crash
+checkpoint_dir = Path("./state")
+healer = SelfHeal(checkpoint_dir=checkpoint_dir)
+
+# Check for latest checkpoint and recover state
+latest_state = healer.rehydrate_from_latest()
+if latest_state:
+    # Restore conversation context and history
+    context = latest_state.get("context")
+    history = latest_state.get("history", [])
+    print(f"Recovered from checkpoint: context={context}, history_length={len(history)}")
+
+# Periodically save checkpoints during operation
+persistor = StatePersistor(checkpoint_dir=checkpoint_dir)
+def save_checkpoint_periodically():
+    agent_state = {
+        "context": current_context,
+        "history": conversation_history,
+        "dialogue_state": {"turn": turn_count, "initiator": last_initiator}
+    }
+    persistor.save_contextual_agent(agent_state, checkpoint_dir / "checkpoint.json")
+```
+
+**Self-Healing Benefits:**
+- **State Persistence**: Conversation context and history saved periodically
+- **Automatic Recovery**: On restart, loads latest checkpoint automatically
+- **Warm Restart**: Rust cache synchronized to minimize cold-start latency
+- **Transparent Recovery**: Animals experience minimal disruption
+- **16/16 Tests Passing**: TDD-proven reliability
 
 ### Installation
 

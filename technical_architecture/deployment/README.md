@@ -34,22 +34,42 @@ This directory contains the deployment configuration for the **Peer-to-Peer** ar
 ### Systemd Unit Files
 
 - **`rust-field-engine.service`** - Rust execution layer service
-- **`python-cognitive-agent.service`** - Python logic layer service
+- **`python-cognitive-agent.service`** - Python logic layer service (basic)
+- **`python-cognitive-agent-with-self-heal.service`** - Python service with self-healing [NEW]
 
 ### Python Scripts
 
 - **`python_heartbeat_client.py`** - Example heartbeat client for testing
+- **`cognitive_agent_main.py`** - Production cognitive agent with self-healing [NEW]
 
 ## Installation
 
-### 1. Copy Systemd Files
+### Option A: Basic Installation (without self-healing)
 
 ```bash
+# Copy systemd files
 sudo cp rust-field-engine.service /etc/systemd/system/
 sudo cp python-cognitive-agent.service /etc/systemd/system/
+
+# Adjust paths in service files to match your installation
 ```
 
-### 2. Adjust Paths
+### Option B: Production Installation (with self-healing) [RECOMMENDED]
+
+```bash
+# Copy systemd files
+sudo cp rust-field-engine.service /etc/systemd/system/
+sudo cp python-cognitive-agent-with-self-heal.service /etc/systemd/system/python-cognitive-agent.service
+
+# Copy production cognitive agent
+sudo mkdir -p /opt/cognitive
+sudo cp cognitive_agent_main.py /opt/cognitive/
+
+# Ensure checkpoint directory exists
+sudo mkdir -p /opt/cognitive/state
+```
+
+### Adjust Paths
 
 Edit the service files to match your installation:
 
@@ -58,19 +78,20 @@ Edit the service files to match your installation:
 ExecStart=/path/to/your/field_engine
 ```
 
-**`python-cognitive-agent.service`**:
+**`python-cognitive-agent.service`** (with self-healing):
 ```ini
-ExecStart=/usr/bin/python3 /path/to/your/cognitive_agent.py
-WorkingDirectory=/path/to/your/cognitive/directory
+ExecStart=/usr/bin/python3 /opt/cognitive/cognitive_agent_main.py
+WorkingDirectory=/opt/cognitive
+Environment="CHECKPOINT_DIR=/opt/cognitive/state"
 ```
 
-### 3. Reload Systemd
+### Reload Systemd
 
 ```bash
 sudo systemctl daemon-reload
 ```
 
-### 4. Enable Services
+### Enable Services
 
 ```bash
 sudo systemctl enable rust-field-engine.service
@@ -145,6 +166,111 @@ sudo systemctl kill -s SIGKILL python-cognitive-agent.service
 # Observe that Rust detects the disconnect and switches to Passthrough Mode
 # Systemd will automatically restart Python within 2 seconds
 # Rust will detect reconnection and switch back to Interactive Mode
+```
+
+## Self-Healing Integration [NEW]
+
+For **long-duration field experiments**, the system includes autonomous crash recovery that preserves state across restarts.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Python Crash → Systemd Restart → State Recovery → Continue    │
+│                                                                  │
+│  1. Python crashes (e.g., OOM, exception)                        │
+│  2. Rust detects heartbeat loss → Passthrough Mode (safe)        │
+│  3. Systemd restarts Python (Restart=always)                    │
+│  4. Python loads latest checkpoint → state restored              │
+│  5. Python reconnects → Interactive Mode resumed                 │
+│  6. Conversation continues with preserved context                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Installation with Self-Healing
+
+```bash
+# Use the self-healing service file instead
+sudo cp python-cognitive-agent-with-self-heal.service /etc/systemd/system/python-cognitive-agent.service
+
+# Copy the production cognitive agent
+sudo mkdir -p /opt/cognitive
+sudo cp cognitive_agent_main.py /opt/cognitive/
+
+# Ensure checkpoint directory exists
+sudo mkdir -p /opt/cognitive/state
+
+# Adjust paths in the service file if needed
+sudo nano /etc/systemd/system/python-cognitive-agent.service
+```
+
+### Service File Configuration
+
+The self-healing service includes additional environment variables:
+
+```ini
+[Service]
+Environment="RUST_HEARTBEAT_ENDPOINT=ipc:///tmp/cognitive_heartbeat.ipc"
+Environment="CHECKPOINT_DIR=/opt/cognitive/state"          # Checkpoint location
+Environment="CHECKPOINT_INTERVAL_SEC=60"                    # Save every 60 seconds
+```
+
+### Test Self-Healing Workflow
+
+```bash
+# In one terminal, monitor Python logs
+sudo journalctl -u python-cognitive-agent.service -f
+
+# Observe the startup sequence:
+# 1. "Attempting to recover state from checkpoint..."
+# 2. "No checkpoint found, starting with fresh state" (first run)
+# 3. "✓ Connected to Rust Field Engine"
+# 4. "Starting main loop..."
+
+# Kill the Python process to simulate crash
+sudo systemctl kill -s SIGKILL python-cognitive-agent.service
+
+# Observe the recovery sequence:
+# 1. Systemd restarts Python (within 2 seconds)
+# 2. "Attempting to recover state from checkpoint..."
+# 3. "✓ Recovered from checkpoint: context=FOOD, history_length=5, turn=3"
+# 4. "✓ Connected to Rust Field Engine"
+# 5. "Starting main loop..."
+```
+
+### Benefits for Field Experiments
+
+**Before Self-Healing:**
+- Python crashes → Cold start → Lost context → Confused animals
+- Manual intervention required to restore state
+- Data loss from interrupted conversations
+
+**After Self-Healing:**
+- Python crashes → Warm restart → State restored → Seamless continuation
+- No human intervention required
+- Full conversation history preserved
+- Animals experience minimal disruption
+- 16/16 TDD tests ensure reliability
+
+### Checkpoint Contents
+
+Each checkpoint saves:
+- **Context**: Current conversation context (e.g., "FOOD", "AGGRESSION")
+- **History**: Complete phrase exchange history
+- **Dialogue State**: Turn count, initiator, state variables
+
+Example checkpoint (`checkpoint_20250107_120000.json`):
+```json
+{
+  "component": "contextual_agent",
+  "context": "FOOD",
+  "history": ["PheeA", "PheeB", "ChirpC"],
+  "dialogue_state": {
+    "turn": 3,
+    "initiator": "marmoset"
+  },
+  "timestamp": "2025-01-07T12:00:00Z"
+}
 ```
 
 ## Operation Modes
