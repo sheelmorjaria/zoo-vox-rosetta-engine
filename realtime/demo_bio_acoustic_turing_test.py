@@ -18,20 +18,15 @@ This demo shows:
 """
 
 import json
-import numpy as np
 import sys
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from bio_acoustic_turing_test import (
-    BioAcousticTuringTest,
-    StimulusController,
-    ResponseRecorder,
-    ExperimentDesign,
-    StatisticalAnalyzer
-)
+from bio_acoustic_turing_test import BioAcousticTuringTest
 
 # Import granular synthesizer
 try:
@@ -118,7 +113,7 @@ def demo_concatenative_baseline():
     # Run 10 trials
     response_count = 0
     for i in range(10):
-        stimulus_id = f'natural_phee_{sample_rates[i % len(sample_rates)]}"
+        stimulus_id = f"natural_phee_{sample_rates[i % len(sample_rates)]}"
         result = turing_test.run_trial(stimulus_id)
 
         if result['has_response']:
@@ -132,7 +127,7 @@ def demo_concatenative_baseline():
     phase_results = results['concatenative_baseline']
 
     response_rate = np.mean(phase_results['responses'])
-    print(f"\n📊 Concatenative Baseline Results:")
+    print("\n📊 Concatenative Baseline Results:")
     print(f"   Total trials: {len(phase_results['trials'])}")
     print(f"   Response rate: {response_rate:.1%}")
     print(f"   Mean latency: {np.mean(phase_results['latencies_ms']):.1f}ms")
@@ -217,7 +212,7 @@ def demo_granular_synthesis(turing_test):
     phase_results = results['granular_synthesis']
 
     response_rate = np.mean(phase_results['responses'])
-    print(f"\n📊 Granular Synthesis Results:")
+    print("\n📊 Granular Synthesis Results:")
     print(f"   Total trials: {len(phase_results['trials'])}")
     print(f"   Response rate: {response_rate:.1%}")
     print(f"   Mean latency: {np.mean(phase_results['latencies_ms']):.1f}ms")
@@ -245,14 +240,14 @@ def demo_statistical_analysis(turing_test):
     print(f"   Conclusion: {hypothesis['conclusion']}")
     print(f"   Interpretation: {hypothesis['interpretation']}")
 
-    print(f"\n   Response Rates:")
+    print("\n   Response Rates:")
     print(f"   - Concatenative: {hypothesis['concatenative_response_rate']:.1%}")
     print(f"   - Granular: {hypothesis['granular_response_rate']:.1%}")
 
     if hypothesis.get('p_value'):
         print(f"\n   Statistical Test: {hypothesis.get('statistical_test', 'N/A')}")
         print(f"   P-value: {hypothesis['p_value']:.3f}")
-        print(f"   Alpha: 0.05")
+        print("   Alpha: 0.05")
         print(f"   Significant at p<0.05: {hypothesis['p_value'] < 0.05}")
 
     print("\n" + "=" * 80)

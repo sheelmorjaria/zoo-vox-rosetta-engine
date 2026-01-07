@@ -12,25 +12,24 @@ Classes:
 - MultiModalFuser: Audio-visual fusion engine
 """
 
-import numpy as np
-import time
-import threading
 import logging
-import pickle
 import os
-import json
-from typing import Dict, List, Tuple, Optional, Any, Union
-from dataclasses import dataclass, field
-from enum import Enum
+import pickle
+import threading
+import time
 from collections import defaultdict, deque
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import StandardScaler
-import cupy as cp
-from scipy.signal import stft, istft
-from sklearn.decomposition import PCA
-from sklearn.cluster import DBSCAN
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import cv2
 import mediapipe as mp
+import numpy as np
+from scipy.signal import istft, stft
+from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
 
 # Try to import librosa for advanced audio processing
 try:
@@ -558,7 +557,7 @@ class VisualFusion:
         # Get eye landmarks (approximate indices)
         left_eye = landmarks[33]  # Left eye corner
         right_eye = landmarks[263]  # Right eye corner
-        nose = landmarks[1]  # Nose tip
+        landmarks[1]  # Nose tip
 
         # Calculate eye openness (simplified)
         eye_distance = np.sqrt((left_eye.x - right_eye.x)**2 + (left_eye.y - right_eye.y)**2)
@@ -780,7 +779,7 @@ class SourceSeparator:
 
         # Classify frequency bins
         energy = np.abs(Zxx)
-        total_energy = np.sum(energy, axis=1)
+        np.sum(energy, axis=1)
 
         # Target: 4-8 kHz (typical for many animals)
         target_freq_idx = np.where((f >= 4000) & (f <= 8000))[0]
@@ -860,7 +859,7 @@ class SourceSeparator:
             'total_separations': len(self.separation_times)
         }
 
-  
+
     def separate_sources(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
         """
         Separate sources from mixed audio.
@@ -898,7 +897,7 @@ class SourceSeparator:
 
         # Classify frequency bins
         energy = np.abs(Zxx)
-        total_energy = np.sum(energy, axis=1)
+        np.sum(energy, axis=1)
 
         # Target: 4-8 kHz (typical for many animals)
         target_freq_idx = np.where((f >= 4000) & (f <= 8000))[0]
@@ -1430,7 +1429,7 @@ if __name__ == "__main__":
     result = system.process_audio_with_learning(test_audio, context, f0, response_positive)
 
     # Print results
-    print(f"\nEnhanced Cognitive Layer Results:")
+    print("\nEnhanced Cognitive Layer Results:")
     print(f"Processing time: {result['processing_time_ms']:.2f}ms")
     print(f"Enhanced audio length: {len(result['enhanced_audio'])} samples")
     print(f"Learning events: {result['learning_metrics']['learning_events']}")
@@ -1439,7 +1438,7 @@ if __name__ == "__main__":
     # Test source separation
     mixed_audio = test_audio + 0.3 * np.sin(2 * np.pi * 4000 * t)  # Add interferer
     separated = system.separate_sources(mixed_audio)
-    print(f"\nSource separation:")
+    print("\nSource separation:")
     print(f"Target length: {len(separated['target'])}")
     print(f"Separation quality: {system.source_separator.get_performance_metrics()['avg_quality_score']:.2f}")
 
@@ -1448,7 +1447,7 @@ if __name__ == "__main__":
         # Create a test frame
         test_frame = np.zeros((480, 640, 3), dtype=np.uint8)
         visual_result = system.process_visual_context(test_frame)
-        print(f"\nVisual processing:")
+        print("\nVisual processing:")
         print(f"Face detected: {visual_result['visual_state']['face_detected']}")
         print(f"Attention boost: {visual_result['attention_boost']:.3f}")
     except Exception as e:
@@ -1468,13 +1467,13 @@ if __name__ == "__main__":
         'confidence': 0.8
     }
     fusion_result = system.fuse_audio_visual(audio_features, visual_context)
-    print(f"\nAudio-visual fusion:")
+    print("\nAudio-visual fusion:")
     print(f"Fused confidence: {fusion_result['fused_confidence']:.2f}")
     print(f"Contact probability: {fusion_result['contact_probability']:.2f}")
 
     # Get performance report
     report = system.get_performance_report()
-    print(f"\nPerformance Report:")
+    print("\nPerformance Report:")
     print(f"Memory size: {report['learning_system']['memory_size']}")
     print(f"Separation quality: {report['source_separation']['avg_quality_score']:.2f}")
 

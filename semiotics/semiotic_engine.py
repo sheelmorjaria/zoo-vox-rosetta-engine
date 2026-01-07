@@ -6,17 +6,19 @@ simple vocalization detection to understand the cognitive dimensions of animal
 communication, including deception, emergence, and multi-sensory integration.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple, Union
-from enum import Enum
-import numpy as np
-from dataclasses import asdict
 import json
 import logging
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from data_models import (
-    Species, VocalizationModality, Phrase, AcousticFeatures,
-    SpeciesData, VocalizationDatabase
+    AcousticFeatures,
+    Phrase,
+    Species,
+    SpeciesData,
+    VocalizationDatabase,
+    VocalizationModality,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,7 +126,7 @@ class SemioticEngine:
 
     def _create_species_data_from_json(self, species: Species, species_data: Dict) -> SpeciesData:
         """Create SpeciesData object from JSON data"""
-        from data_models import SpeciesData, Phrase, Sentence, GrammarRule, PhraseContext
+        from data_models import Phrase, PhraseContext, SpeciesData
 
         species_data_obj = SpeciesData(species=species)
 

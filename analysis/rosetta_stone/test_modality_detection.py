@@ -16,9 +16,10 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # src/
@@ -26,10 +27,10 @@ sys.path.insert(0, str(Path(__file__).parent))  # rosetta_stone/
 
 # Try direct import first, then fallback
 try:
-    from universal_rosetta_stone import UniversalRosettaStone, Modality
+    from universal_rosetta_stone import Modality, UniversalRosettaStone
 except ImportError:
     try:
-        from analysis.rosetta_stone import UniversalRosettaStone, Modality
+        from analysis.rosetta_stone import Modality, UniversalRosettaStone
     except ImportError:
         # Last resort: import from current directory
         import importlib.util
@@ -284,7 +285,7 @@ def test_mixed_modality_detection():
     probs = analyzer.get_modality_probabilities(harmonic_only)
     print(f"Detected: {detected.name}")
     print(f"Probabilities: {probs}")
-    print(f"Features: ZCR low, spectral flatness low")
+    print("Features: ZCR low, spectral flatness low")
     print()
 
     # Test 2: Pure FM sweep (baseline)
@@ -295,7 +296,7 @@ def test_mixed_modality_detection():
     probs = analyzer.get_modality_probabilities(fm_only)
     print(f"Detected: {detected.name}")
     print(f"Probabilities: {probs}")
-    print(f"Features: ZCR high, frequency slope present")
+    print("Features: ZCR high, frequency slope present")
     print()
 
     # Test 3: Mixed - Harmonic dominant (70% harmonic, 30% FM)
@@ -306,7 +307,7 @@ def test_mixed_modality_detection():
     probs = analyzer.get_modality_probabilities(mixed_h_dominant)
     print(f"Detected: {detected.name}")
     print(f"Probabilities: {probs}")
-    print(f"Expected: HARMONIC (harmonic component dominates)")
+    print("Expected: HARMONIC (harmonic component dominates)")
     print()
 
     # Test 4: Mixed - FM dominant (30% harmonic, 70% FM)
@@ -317,7 +318,7 @@ def test_mixed_modality_detection():
     probs = analyzer.get_modality_probabilities(mixed_fm_dominant)
     print(f"Detected: {detected.name}")
     print(f"Probabilities: {probs}")
-    print(f"Expected: FM_SWEEP (FM component dominates)")
+    print("Expected: FM_SWEEP (FM component dominates)")
     print()
 
     # Test 5: Balanced mix (50% harmonic, 50% FM)
@@ -328,7 +329,7 @@ def test_mixed_modality_detection():
     probs = analyzer.get_modality_probabilities(balanced_mixed)
     print(f"Detected: {detected.name}")
     print(f"Probabilities: {probs}")
-    print(f"Note: Result depends on which features are more prominent")
+    print("Note: Result depends on which features are more prominent")
     print()
 
     print("=" * 80)
@@ -398,9 +399,9 @@ def test_phrase_level_modality():
     ])
 
     print("Mixed Recording Composition:")
-    print(f"  Segment 1: Harmonic (7 kHz, 50ms)")
-    print(f"  Segment 2: FM Sweep (20-40 kHz, 30ms)")
-    print(f"  Segment 3: Transient click (20ms)")
+    print("  Segment 1: Harmonic (7 kHz, 50ms)")
+    print("  Segment 2: FM Sweep (20-40 kHz, 30ms)")
+    print("  Segment 3: Transient click (20ms)")
     print(f"  Total duration: {len(mixed_recording) / sample_rate * 1000:.1f} ms")
     print()
 

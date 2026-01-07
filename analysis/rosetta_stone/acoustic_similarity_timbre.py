@@ -11,16 +11,17 @@ Question: Can timbre features distinguish phrases that have similar F0 but diffe
 """
 
 import pickle
-import numpy as np
 import sys
-from pathlib import Path
-from typing import List, Tuple, Dict
 import time
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import numpy as np
 
 sys.path.append('/home/sheel/birdsong_analysis')
 sys.path.append(str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 # Timbre feature names we just added
 TIMBRE_FEATURES = [
@@ -229,7 +230,7 @@ def analyze_timbre_clusters(phrase_timbres: Dict) -> Dict:
         print(f"{f:<25} {np.min(values):>12.1f} {np.max(values):>12.1f} {np.mean(values):>12.1f} {np.std(values):>12.1f}")
 
     # Compute pairwise distance distribution
-    print(f"\n📊 PAIRWISE TIMBRE DISTANCES:")
+    print("\n📊 PAIRWISE TIMBRE DISTANCES:")
 
     keys = list(phrase_timbres.keys())
     distances = []
@@ -293,7 +294,7 @@ def demo_similarity_search(phrase_timbres: Dict):
         similar = find_similar_by_timbre(query_key, phrase_timbres, top_n=5)
 
         if similar:
-            print(f"\n   Top 5 most similar phrases:")
+            print("\n   Top 5 most similar phrases:")
             for i, (other_key, distance) in enumerate(similar, 1):
                 other_timbre = phrase_timbres[other_key]
                 print(f"      {i}. {other_key}")
@@ -330,7 +331,7 @@ def main():
         return
 
     # Analyze timbre statistics
-    stats = analyze_timbre_clusters(phrase_timbres)
+    analyze_timbre_clusters(phrase_timbres)
 
     # Demo similarity search
     demo_similarity_search(phrase_timbres)
@@ -340,7 +341,7 @@ def main():
     print("=" * 80)
     print(f"\n✅ Analyzed {len(phrase_timbres)} phrases with timbre features")
     print(f"✅ Timbre features provide {len(TIMBRE_FEATURES)} additional dimensions")
-    print(f"✅ Can now match phrases by TIMBRE similarity, not just F0")
+    print("✅ Can now match phrases by TIMBRE similarity, not just F0")
 
     print("\n📚 SCIENTIFIC IMPACT:")
     print("   - Phrases with similar F0 but different timbre can now be distinguished")

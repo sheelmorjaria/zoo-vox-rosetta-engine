@@ -14,21 +14,19 @@ This module provides:
 """
 
 import asyncio
+import heapq
+import logging
 import threading
 import time
-import heapq
 import uuid
-import logging
-from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Dict, List, Any, Optional, Callable, Union, Tuple, Set
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-import numpy as np
-import psutil
-import weakref
-from collections import defaultdict, deque
+from enum import Enum
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+
+import psutil
 
 # NetworkX import with fallback
 try:
@@ -749,7 +747,7 @@ class TaskExecutor:
 
     def _execute_with_timeout(self, func: Callable, retry_count: int) -> Any:
         """Execute function with timeout."""
-        start_time = time.time()
+        time.time()
 
         while retry_count >= 0:
             try:

@@ -1,33 +1,28 @@
-/**
- * Master Controller Module
- * =========================
- *
- * This module implements the Deterministic Intent-Reality Mediator that
- * sits between the Python Logic Layer and the Rust Execution Layer.
- *
- * The Master Controller is responsible for:
- * - Translating abstract Python intents into physical Rust actions
- * - Enforcing thermal, safety, and hardware constraints
- * - Providing fault isolation between Python and Rust
- * - Maintaining deterministic timing and provenance
- *
- * Architecture:
- * - Python (Logic Layer) -> IntentToken -> Master Controller -> ExecutionReceipt -> Python
- * - Rust (Execution Layer) <- Constraint Check <- Master Controller <- Action
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Master Controller Module
+//! =========================
+//!
+//! This module implements the Deterministic Intent-Reality Mediator that
+//! sits between the Python Logic Layer and the Rust Execution Layer.
+//!
+//! The Master Controller is responsible for:
+//! - Translating abstract Python intents into physical Rust actions
+//! - Enforcing thermal, safety, and hardware constraints
+//! - Providing fault isolation between Python and Rust
+//! - Maintaining deterministic timing and provenance
+//!
+//! Architecture:
+//! - Python (Logic Layer) -> IntentToken -> Master Controller -> ExecutionReceipt -> Python
+//! - Rust (Execution Layer) <- Constraint Check <- Master Controller <- Action
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use std::pin::Pin;
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
 use log::{info, debug, warn, error};
-
-#[cfg(feature = "python-bindings")]
-use pyo3::types::PyTuple;
 
 // ============================================================================
 // Hardware Detection
@@ -71,7 +66,7 @@ pub fn detect_fpga() -> bool {
 
 use crate::ptp::PtpTimestamp;
 use crate::thermal::ThermalState;
-use crate::synthesis::{SynthesisMode, SynthesisResult};
+use crate::synthesis::SynthesisMode;
 
 // ============================================================================
 // Core Types
@@ -388,10 +383,6 @@ pub trait CognitiveProcessor: Send + Sync {
 
 #[cfg(feature = "python-bindings")]
 use pyo3::prelude::*;
-#[cfg(feature = "python-bindings")]
-use pyo3::types::PyDict;
-#[cfg(feature = "python-bindings")]
-use std::sync::Arc as StdArc;
 
 /// PyO3 wrapper for Python-based CognitiveProcessor implementation
 ///
@@ -415,7 +406,6 @@ impl PyCognitiveProcessor {
         Self { python_object }
     }
 
-    /// Call Python method and convert result
     // NOTE: This method is currently unused and has PyO3 compatibility issues.
     // Uncomment and fix when needed for Python method calling.
     /*
@@ -669,6 +659,7 @@ impl Default for AtomicParameters {
 /// This controller sits between the Python Logic Layer and the Rust Execution Layer,
 /// ensuring that cognitive intents are translated into physical actions while respecting
 /// thermal, safety, and hardware constraints.
+#[allow(dead_code)]
 pub struct UnifiedMasterController {
     /// Physical reality (Rust execution layer)
     tech_arch: Arc<tokio::sync::RwLock<TechnicalArchitect>>,
@@ -697,6 +688,7 @@ pub struct UnifiedMasterController {
 /// Re-export TechnicalArchitect at this level for convenience
 use crate::TechnicalArchitect;
 
+#[allow(dead_code)]
 impl UnifiedMasterController {
     /// Create a new Unified Master Controller
     pub async fn new(tech_arch: TechnicalArchitect) -> Result<Self> {
@@ -816,7 +808,7 @@ impl UnifiedMasterController {
         Ok(HealthStatus {
             thermal_state,
             temperature_c,
-            audio_safe: safety_stats.watchdog_expired == false,
+            audio_safe: !safety_stats.watchdog_expired,
             cpu_usage: 0.5, // TODO: Get from system
             memory_usage_bytes: 500_000_000, // TODO: Get from system
             fpga_available: detect_fpga(), // Detect FPGA availability
@@ -1423,7 +1415,7 @@ mod tests {
     /// Verify that parameter updates are atomic and thread-safe
     #[test]
     fn test_08_atomic_parameter_updates() {
-        use std::sync::atomic::{AtomicU32, Ordering};
+        
 
         let params = AtomicParameters::new();
 
@@ -1446,7 +1438,7 @@ mod tests {
 
         // Read should always return a valid value (0.0 to 1.0)
         let value = params.get_sensitivity();
-        assert!(value >= 0.0 && value <= 1.0);
+        assert!((0.0..=1.0).contains(&value));
 
         // Test gain atomicity
         params.set_gain(0.7);

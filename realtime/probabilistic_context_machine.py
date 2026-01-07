@@ -9,12 +9,13 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
+import collections
 import logging
-from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
-import collections
+from typing import Dict, List, Tuple
+
+import numpy as np
 
 # Try to import scipy for advanced signal processing
 try:

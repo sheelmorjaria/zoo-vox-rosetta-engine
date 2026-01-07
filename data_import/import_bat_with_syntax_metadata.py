@@ -12,15 +12,16 @@ metadata from individual audio files, including:
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
-import soundfile as sf
-from pathlib import Path
-from collections import defaultdict, Counter
-from typing import Dict, List, Tuple
+from collections import Counter, defaultdict
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -28,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
 ANNOTATIONS_PATH = '/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv'
@@ -90,7 +91,7 @@ def load_and_segment_audio(file_name: str) -> Tuple[str, Dict, str, List[Tuple]]
         # Return audio segments for export
         return (str(audio_path), syntax_metadata, file_name, segments)
 
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -99,8 +100,8 @@ def segment_into_phrases(audio: np.ndarray) -> List[Tuple[np.ndarray, Dict]]:
     segments = []
 
     # Energy-based segmentation
-    from scipy.signal import hilbert, find_peaks
     from scipy.ndimage import gaussian_filter1d
+    from scipy.signal import find_peaks, hilbert
 
     envelope = np.abs(hilbert(audio))
     smoothed = gaussian_filter1d(envelope, sigma=int(SAMPLE_RATE * 0.002))
@@ -405,7 +406,7 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"\n✅ Successfully processed {len(all_results)} vocalizations with syntax metadata")
 
     # Create export structure
-    print(f"\n📊 Creating database with syntax metadata...")
+    print("\n📊 Creating database with syntax metadata...")
 
     vocalizations = []
     phrase_segments = defaultdict(list)  # For audio export
@@ -515,10 +516,10 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     with open(OUTPUT_PATH, 'w') as f:
         json.dump(export_data, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     # Statistics
-    print(f"\n📊 STATISTICS:")
+    print("\n📊 STATISTICS:")
     print(f"   Total vocalizations: {len(vocalizations)}")
     print(f"   Total phrase types: {len(phrase_library)}")
 
@@ -533,7 +534,7 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
         if syntax.get('is_compositional'):
             compositional_count += 1
 
-    print(f"\n📊 SYNTAX STATISTICS:")
+    print("\n📊 SYNTAX STATISTICS:")
     print(f"   F0 contours: {dict(f0_contours)}")
     if len(vocalizations) > 0:
         print(f"   Compositional (3+ phrases): {compositional_count} ({compositional_count/len(vocalizations)*100:.1f}%)")

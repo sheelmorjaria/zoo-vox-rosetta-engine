@@ -26,27 +26,22 @@ Author: Animal Communication Analysis Framework
 Date: October 2025
 """
 
+import json
+import warnings
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import librosa
 import numpy as np
 import pandas as pd
-import librosa
-import tensorflow as tf
-from tensorflow import keras
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Union
-import json
 import soundfile as sf
-from collections import defaultdict, Counter
-from dataclasses import dataclass
-import warnings
+
 warnings.filterwarnings('ignore')
 
 # Import your existing frameworks
-from intracall_linguistic_analysis import (
-    MicroHarmonicExtractor,
-    IntraCallLinguisticAnalyzer,
-    IntraCallSyntaxAnalyzer,
-    IntraCallSemanticAnalyzer
-)
+from intracall_linguistic_analysis import IntraCallSyntaxAnalyzer, MicroHarmonicExtractor
 
 
 @dataclass
@@ -152,7 +147,6 @@ class EnhancedPhraseExtractor:
         """
         Extract 23-dimensional harmonic features matching your existing framework.
         """
-        features = []
 
         # Collect all harmonic data across phrase frames
         all_harmonics = defaultdict(list)
@@ -848,7 +842,7 @@ class FieldReadyPlaybackSystem:
         timing_df = pd.DataFrame(timing_info)
         timing_df.to_csv(timing_file, index=False)
 
-        print(f"Playback protocol saved:")
+        print("Playback protocol saved:")
         print(f"  Audio: {audio_file}")
         print(f"  Metadata: {protocol_file}")
         print(f"  Timing: {timing_file}")
@@ -1194,7 +1188,7 @@ class AdvancedPhraseSynthesizer:
 
         # Add natural calls if requested
         if include_natural:
-            print(f"\nAdding natural calls from dataset...")
+            print("\nAdding natural calls from dataset...")
             for context in contexts:
                 if context in self.context_calls:
                     natural_calls = self.context_calls[context][:2]  # Add 2 natural calls
@@ -1220,7 +1214,7 @@ class AdvancedPhraseSynthesizer:
             playback_audio, all_contexts, output_dir, protocol_name
         )
 
-        print(f"\n✓ Playback protocol ready!")
+        print("\n✓ Playback protocol ready!")
         print(f"  Duration: {len(playback_audio)/self.sr:.1f} seconds")
         print(f"  Output: {output_dir}")
 
@@ -1269,7 +1263,7 @@ def main():
         features = np.random.randn(23) * 0.1
         features[0] = 1000 + i * 50  # Varying formant frequencies
         template = PhraseTemplate(
-            phrase_type=f"H1_rising",
+            phrase_type="H1_rising",
             harmonic_features=features,
             duration_ms=90,
             amplitude_profile=np.ones(10)

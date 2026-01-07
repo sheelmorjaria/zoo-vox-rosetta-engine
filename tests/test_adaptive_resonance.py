@@ -4,24 +4,24 @@ Test suite for Adaptive Resonance enhancement
 TDD implementation for Phase IV feature
 """
 
-import unittest
 import sys
-import os
+import unittest
+
 sys.path.append('src')
 
 from realtime.adaptive_resonance import (
-    AdaptiveResonance,
-    ResonanceNetwork,
     AdaptiveFilter,
-    FeatureDetector,
-    ResonanceMatcher,
-    StabilityMonitor,
-    FastLearning,
-    NoiseRobustness,
+    AdaptiveResonance,
     ContextualModulation,
     DynamicAdaptation,
+    FastLearning,
+    FeatureDetector,
+    NoiseRobustness,
+    ResonanceMatcher,
+    ResonanceNetwork,
     ResonanceOptimizer,
-    ResonanceValidator
+    ResonanceValidator,
+    StabilityMonitor,
 )
 
 

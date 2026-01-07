@@ -8,11 +8,10 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional, Any
 from collections import defaultdict
-import math
-from enum import Enum
+from typing import Any, Dict, List
+
+import numpy as np
 
 
 class HarmonicGroup:

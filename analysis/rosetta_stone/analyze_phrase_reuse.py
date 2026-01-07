@@ -19,13 +19,14 @@ Method:
 """
 
 import json
-import numpy as np
 import sys
-import soundfile as sf
+from collections import Counter, defaultdict
 from pathlib import Path
-from collections import defaultdict, Counter
 from typing import Dict, List, Tuple
+
+import numpy as np
 import pandas as pd
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -33,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import UniversalRosettaStone, PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature, UniversalRosettaStone
 
 # Configuration
 ANNOTATIONS_PATH = '/home/sheel/birdsong_analysis/Annotations.tsv'
@@ -262,7 +263,7 @@ def print_analysis_summary(results: Dict):
     print("PHRASE REUSE ANALYSIS SUMMARY")
     print("=" * 80)
 
-    print(f"\n📊 OVERALL STATISTICS:")
+    print("\n📊 OVERALL STATISTICS:")
     print(f"   Vocalizations analyzed: {results['vocalizations_analyzed']}")
     print(f"   Total phrases found: {results['total_phrases_found']}")
     print(f"   Average phrases per vocalization: {results['total_phrases_found'] / results['vocalizations_analyzed']:.2f}")
@@ -271,7 +272,7 @@ def print_analysis_summary(results: Dict):
     print(f"   Total phrase reuse events: {results['phrase_reuse_count']}")
 
     # Phrase sequence length distribution
-    print(f"\n📊 PHRASE SEQUENCE LENGTH DISTRIBUTION:")
+    print("\n📊 PHRASE SEQUENCE LENGTH DISTRIBUTION:")
     seq_lengths = [s['num_phrases'] for s in results['phrase_sequences']]
     if seq_lengths:
         print(f"   Min: {min(seq_lengths)} phrases")
@@ -287,13 +288,13 @@ def print_analysis_summary(results: Dict):
             print(f"   {length} phrases: {count} ({pct:.1f}%)")
 
     # Top phrase co-occurrences
-    print(f"\n📊 TOP PHRASE CO-OCCURRENCES (adjacent pairs):")
+    print("\n📊 TOP PHRASE CO-OCCURRENCES (adjacent pairs):")
     top_pairs = results['phrase_cooccurrence'].most_common(10)
     for (phrase1, phrase2), count in top_pairs:
         print(f"   {phrase1} → {phrase2}: {count} occurrences")
 
     # Context-specific patterns
-    print(f"\n📊 CONTEXT-SPECIFIC PHRASE PATTERNS:")
+    print("\n📊 CONTEXT-SPECIFIC PHRASE PATTERNS:")
     for context, phrase_counter in list(results['context_phrase_patterns'].items())[:5]:
         print(f"\n   {context.upper()}:")
         for phrase, count in phrase_counter.most_common(5):
@@ -301,7 +302,7 @@ def print_analysis_summary(results: Dict):
             print(f"      {phrase}: {count} ({pct:.1f}%)")
 
     # Examples of multi-phrase vocalizations
-    print(f"\n📊 EXAMPLE MULTI-PHRASE VOCALIZATIONS:")
+    print("\n📊 EXAMPLE MULTI-PHRASE VOCALIZATIONS:")
     multi_phrase = [s for s in results['phrase_sequences'] if s['num_phrases'] > 1]
     for i, example in enumerate(multi_phrase[:5], 1):
         print(f"\n   Example {i} ({example['label']}):")
@@ -316,20 +317,20 @@ def print_analysis_summary(results: Dict):
     reuse_rate = results['vocalizations_with_reuse'] / results['vocalizations_analyzed'] if results['vocalizations_analyzed'] > 0 else 0
 
     if reuse_rate > 0.5:
-        print(f"\n✅ STRONG EVIDENCE OF COMPOSITIONALITY")
+        print("\n✅ STRONG EVIDENCE OF COMPOSITIONALITY")
         print(f"   - {reuse_rate*100:.1f}% of vocalizations show phrase reuse")
-        print(f"   - Suggests combinatorial syntax in marmoset communication")
-        print(f"   - Atomic phrases combined to create complex meanings")
+        print("   - Suggests combinatorial syntax in marmoset communication")
+        print("   - Atomic phrases combined to create complex meanings")
     elif reuse_rate > 0.1:
-        print(f"\n✅ MODERATE EVIDENCE OF COMPOSITIONALITY")
+        print("\n✅ MODERATE EVIDENCE OF COMPOSITIONALITY")
         print(f"   - {reuse_rate*100:.1f}% of vocalizations show phrase reuse")
-        print(f"   - Some combinatorial patterns detected")
-        print(f"   - May indicate emerging syntax in specific contexts")
+        print("   - Some combinatorial patterns detected")
+        print("   - May indicate emerging syntax in specific contexts")
     else:
-        print(f"\n⚠️  LIMITED EVIDENCE OF COMPOSITIONALITY")
+        print("\n⚠️  LIMITED EVIDENCE OF COMPOSITIONALITY")
         print(f"   - {reuse_rate*100:.1f}% of vocalizations show phrase reuse")
-        print(f"   - Most vocalizations are single phrases")
-        print(f"   - May indicate: isolated calls OR need better segmentation")
+        print("   - Most vocalizations are single phrases")
+        print("   - May indicate: isolated calls OR need better segmentation")
 
     print("\n" + "=" * 80)
 
@@ -377,7 +378,7 @@ def main():
     with open(output_path, 'w') as f:
         json.dump(saveable_results, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")

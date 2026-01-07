@@ -28,11 +28,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from train_asteroid_base import (
-    SpeciesSpecificConfig,
-    AnimalVocalizationDataset,
-    AsteroidTrainer
-)
+from train_asteroid_base import AnimalVocalizationDataset, AsteroidTrainer, SpeciesSpecificConfig
 
 
 def main():

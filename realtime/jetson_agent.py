@@ -9,14 +9,15 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
 import logging
-from typing import Dict, Any, Optional, Tuple
 import time
+from typing import Any, Dict, Optional, Tuple
 
-from .jetson_accelerated_core import JetsonAccelerator
-from .gpu_phase_vocoder import GPUPhaseVocoder
+import numpy as np
+
 from .context_agent import ProbabilisticContextualAgent
+from .gpu_phase_vocoder import GPUPhaseVocoder
+from .jetson_accelerated_core import JetsonAccelerator
 
 # Mock for testing if PhraseLibraryManager not available
 try:
@@ -96,7 +97,7 @@ class JetsonAgent:
                 return None, None
 
             # Step 2: Context detection using GPU
-            context_analysis = self._analyze_context_gpu(audio_chunk)
+            self._analyze_context_gpu(audio_chunk)
             detected_context = self.context_agent.should_respond()[1]
 
             # Step 3: Generate base response
@@ -158,7 +159,7 @@ class JetsonAgent:
                 self.accelerator.compute_stft_gpu(audio)
             )
 
-            zcr = self.accelerator.zero_crossing_rate_gpu(audio)
+            self.accelerator.zero_crossing_rate_gpu(audio)
             rms = self.accelerator.compute_rms_gpu(audio)
 
             # Simple context probabilities (would use neural network in production)

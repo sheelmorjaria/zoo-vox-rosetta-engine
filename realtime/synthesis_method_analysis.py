@@ -7,13 +7,16 @@ This script analyzes whether each synthesis method uses real audio segments
 or generates audio based on phrase signatures/fingerprints.
 """
 
-import numpy as np
 import sys
+
+import numpy as np
+
 sys.path.append('/home/sheel/birdsong_analysis')
 sys.path.append('/home/sheel/birdsong_analysis/src/realtime')
 
-from phrase_audio_library import PhraseAudioLibrary
 from advanced_synthesis_methods import SynthesisFactory
+from phrase_audio_library import PhraseAudioLibrary
+
 
 def analyze_synthesis_methods():
     """Analyze each synthesis method's audio source approach."""
@@ -31,7 +34,7 @@ def analyze_synthesis_methods():
         audio = np.sin(2 * np.pi * freq * np.linspace(0, 0.1, 2205))
         real_audio_segments[f'F0_{freq}_DUR_5_RANGE_0'] = audio
 
-        segment = library.create_phrase_segment(
+        library.create_phrase_segment(
             audio=audio,
             phrase_key=f'F0_{freq}_DUR_5_RANGE_0',
             context='neutral',

@@ -1,19 +1,17 @@
-/**
- * Provenance Logging Module
- * ==========================
- *
- * This module implements deterministic provenance logging for the
- * field deployment system. It tracks:
- *
- * - All audio processing decisions
- * - Model inference results
- * - Safety interventions
- * - System state changes
- * - Data lineage and audit trail
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Provenance Logging Module
+//! ==========================
+//!
+//! This module implements deterministic provenance logging for the
+//! field deployment system. It tracks:
+//!
+//! - All audio processing decisions
+//! - Model inference results
+//! - Safety interventions
+//! - System state changes
+//! - Data lineage and audit trail
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -529,7 +527,7 @@ mod tests {
         logger.start().await.unwrap();
 
         let ptp_ts = crate::ptp::PtpTimestamp::new(1000, 500_000_000);
-        let entry_id = logger.log_decision("test_decision", ptp_ts).await.unwrap();
+        let _entry_id = logger.log_decision("test_decision", ptp_ts).await.unwrap();
 
         let entries = logger.get_entries().await;
         assert_eq!(entries.len(), 1);

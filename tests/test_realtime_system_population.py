@@ -9,14 +9,14 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
 import json
-import pickle
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field
-from datetime import datetime
 import logging
+import pickle
+import unittest
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -356,7 +356,7 @@ class TestRealtimeSystemPopulation(unittest.TestCase):
             'species': 'marmoset',
             'total_vocalizations': 1000,
             'total_phrases_discovered': 200,
-            'unique_phrases': 50,
+            'unique_phrases': 1,  # 1 unique phrase in phrase_statistics
             'hierarchy_completeness': 0.7,
             'phrase_statistics': {
                 'F0_6300': {
@@ -458,13 +458,13 @@ if __name__ == "__main__":
                 output_dir = Path("realtime_system/populated")
                 populator.save_populated_system(output_dir)
 
-                print(f"\nPopulation Report:")
+                print("\nPopulation Report:")
                 print(f"  - {population_report['unique_phrases_populated']} phrases populated")
                 print(f"  - {population_report['hierarchy_completeness']:.1%} hierarchy completeness")
                 print(f"  - Quality validation: {'PASSED' if population_report['validation_passed'] else 'FAILED'}")
 
                 # Example phrases
-                print(f"\nExample populated phrases:")
+                print("\nExample populated phrases:")
                 for i, (key, phrase) in enumerate(list(populator.phrase_database.items())[:5]):
                     print(f"  {key}: {phrase['frequency']:.0f}Hz (count: {phrase['count']}, conf: {phrase['confidence']:.2f})")
             else:

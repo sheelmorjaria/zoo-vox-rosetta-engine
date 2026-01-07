@@ -19,23 +19,21 @@ Scientific Impact:
 """
 
 import json
-import numpy as np
 import sys
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
-from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
 from scipy.stats import chi2_contingency, fisher_exact
-import itertools
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import acoustic persona definitions
 from analysis.rosetta_stone.acoustic_similarity_for_atomic_phrase_candidates import (
     ACOUSTIC_PERSONAS,
-    extract_micro_dynamics_features,
     compute_persona_score,
-    find_atomic_phrases_by_persona
+    extract_micro_dynamics_features,
 )
 
 
@@ -312,7 +310,7 @@ def perform_fisher_exact_tests(
             if association.significant:
                 significant_count += 1
 
-        except Exception as e:
+        except Exception:
             # Fisher's exact test can fail on very large tables
             association.p_value = 1.0
             association.significant = False
@@ -380,7 +378,7 @@ def discover_persona_semantics(
         print(f"   Unique contexts: {persona_semantics[persona_name]['unique_contexts']}")
 
         if top_contexts:
-            print(f"\n   📊 TOP ENRICHED CONTEXTS:")
+            print("\n   📊 TOP ENRICHED CONTEXTS:")
             for i, assoc in enumerate(top_contexts, 1):
                 significance = "✅ SIGNIFICANT" if assoc.significant else ""
                 print(f"      {i}. {assoc.context_name}: {assoc.phrase_count} phrases "
@@ -388,7 +386,7 @@ def discover_persona_semantics(
                       f"[enrichment: {assoc.enrichment_score:+.2f}] {significance}")
 
         if top_residual_contexts:
-            print(f"\n   📊 STRONGEST ASSOCIATIONS (standardized residuals):")
+            print("\n   📊 STRONGEST ASSOCIATIONS (standardized residuals):")
             for ctx, residual in top_residual_contexts:
                 strength = "STRONG" if abs(residual) > 2 else "moderate" if abs(residual) > 1 else "weak"
                 direction = "POSITIVELY" if residual > 0 else "NEGATIVELY"
@@ -397,16 +395,16 @@ def discover_persona_semantics(
         # Generate semantic interpretation
         if significant_contexts:
             top_sig = significant_contexts[0]
-            print(f"\n   💡 SEMANTIC INTERPRETATION:")
+            print("\n   💡 SEMANTIC INTERPRETATION:")
             print(f"      '{persona_name}' phrases are significantly associated with '{top_sig.context_name}' contexts")
             print(f"      (p < 0.05, Bonferroni-corrected, {top_sig.phrase_count} phrases, {top_sig.observed_ratio*100:.1f}%)")
         elif top_contexts:
             top_ctx = top_contexts[0]
-            print(f"\n   💡 SEMANTIC INTERPRETATION:")
+            print("\n   💡 SEMANTIC INTERPRETATION:")
             print(f"      '{persona_name}' phrases are most enriched in '{top_ctx.context_name}' contexts")
             print(f"      ({top_ctx.phrase_count} phrases, {top_ctx.observed_ratio*100:.1f}%, enrichment: {top_ctx.enrichment_score:+.2f})")
         else:
-            print(f"\n   ⚠️  No clear context associations found")
+            print("\n   ⚠️  No clear context associations found")
 
     return persona_semantics
 
@@ -575,7 +573,7 @@ def main():
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)
 
     # Discover persona semantics
-    persona_semantics = discover_persona_semantics(
+    discover_persona_semantics(
         associations, residuals, args.min_occurrences
     )
 
@@ -588,11 +586,11 @@ def main():
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")
     print("=" * 80)
-    print(f"\n📚 SCIENTIFIC IMPACT:")
-    print(f"   - Discovered semantic meanings for acoustic personas")
-    print(f"   - Validated that acoustic structure carries behavioral meaning")
-    print(f"   - Established statistical significance of persona-context associations")
-    print(f"   - Enabled interpretation of 'atomic words' in animal communication")
+    print("\n📚 SCIENTIFIC IMPACT:")
+    print("   - Discovered semantic meanings for acoustic personas")
+    print("   - Validated that acoustic structure carries behavioral meaning")
+    print("   - Established statistical significance of persona-context associations")
+    print("   - Enabled interpretation of 'atomic words' in animal communication")
     print("\n" + "=" * 80)
 
 

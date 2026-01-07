@@ -6,13 +6,13 @@ Comprehensive analysis to confirm TRANSIENT vs FM_SWEEP modality classification.
 Samples representative files from the 10,000 available.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
-import pandas as pd
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -72,7 +72,7 @@ def analyze_bat_file(filepath, duration_sec=2):
             energy_dist[band_name] = band_energy / total_energy * 100
 
         # Click detection
-        from scipy.signal import hilbert, find_peaks
+        from scipy.signal import find_peaks, hilbert
         envelope = np.abs(hilbert(audio))
         click_threshold = np.mean(envelope) + 2 * np.std(envelope)
         peaks, _ = find_peaks(envelope, height=click_threshold, distance=int(0.005 * sr))
@@ -166,7 +166,7 @@ def main():
     print(f"\n📊 Files successfully analyzed: {len(results)}/{len(test_files)}")
 
     # Overall modality distribution
-    print(f"\n📊 OVERALL MODALITY DISTRIBUTION:")
+    print("\n📊 OVERALL MODALITY DISTRIBUTION:")
     modality_counts = {}
     for r in results:
         m = r['overall_modality']
@@ -178,7 +178,7 @@ def main():
         print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
     # Key features by modality
-    print(f"\n📊 FEATURES BY MODALITY:")
+    print("\n📊 FEATURES BY MODALITY:")
 
     transients = [r for r in results if r['overall_modality'] == 'TRANSIENT']
     fm_sweeps = [r for r in results if r['overall_modality'] == 'FM_SWEEP']
@@ -199,14 +199,14 @@ def main():
         print(f"    Click rate:         {np.mean([r['click_rate'] for r in fm_sweeps]):.1f} ± {np.std([r['click_rate'] for r in fm_sweeps]):.1f} clicks/sec")
 
     # Energy distribution
-    print(f"\n📊 ENERGY DISTRIBUTION (all files):")
+    print("\n📊 ENERGY DISTRIBUTION (all files):")
     all_bands = ["Low (0-5k)", "Mid (5-10k)", "High (10-15k)", "VHF (15-20k)"]
     for band in all_bands:
         energies = [r['energy_distribution'].get(band, 0) for r in results]
         print(f"  {band:15s}: {np.mean(energies):5.1f}% ± {np.std(energies):.1f}%")
 
     # Click rate analysis
-    print(f"\n📊 CLICK RATE ANALYSIS:")
+    print("\n📊 CLICK RATE ANALYSIS:")
     click_rates = [r['click_rate'] for r in results]
     print(f"  Mean:    {np.mean(click_rates):.1f} clicks/second")
     print(f"  Median:  {np.median(click_rates):.1f} clicks/second")
@@ -214,7 +214,7 @@ def main():
     print(f"  Std:     {np.std(click_rates):.1f} clicks/second")
 
     # Classification confidence
-    print(f"\n📊 CLASSIFICATION CONFIDENCE:")
+    print("\n📊 CLASSIFICATION CONFIDENCE:")
 
     high_confidence = 0
     low_confidence = 0
@@ -231,19 +231,19 @@ def main():
     print(f"  Low confidence (≤60%):  {low_confidence}/{len(results)} ({low_confidence/len(results)*100:.1f}%)")
 
     # Detailed feature thresholds
-    print(f"\n📊 MODALITY CLASSIFICATION THRESHOLDS:")
+    print("\n📊 MODALITY CLASSIFICATION THRESHOLDS:")
 
     if transients:
-        print(f"\n  TRANSIENT files show:")
-        transient_zcr = np.mean([r['zcr'] for r in transients])
-        transient_flatness = np.mean([r['spectral_flatness'] for r in transients])
-        transient_cv = np.mean([r['envelope_cv'] for r in transients])
+        print("\n  TRANSIENT files show:")
+        np.mean([r['zcr'] for r in transients])
+        np.mean([r['spectral_flatness'] for r in transients])
+        np.mean([r['envelope_cv'] for r in transients])
         print(f"    ZCR < 0.1:  {sum(1 for r in transients if r['zcr'] < 0.1)}/{len(transients)} ({sum(1 for r in transients if r['zcr'] < 0.1)/len(transients)*100:.1f}%)")
         print(f"    Flatness < 0.3: {sum(1 for r in transients if r['spectral_flatness'] < 0.3)}/{len(transients)} ({sum(1 for r in transients if r['spectral_flatness'] < 0.3)/len(transients)*100:.1f}%)")
         print(f"    CV < 0.5: {sum(1 for r in transients if r['envelope_cv'] < 0.5)}/{len(transients)} ({sum(1 for r in transients if r['envelope_cv'] < 0.5)/len(transients)*100:.1f}%)")
 
     if fm_sweeps:
-        print(f"\n  FM_SWEEP files show:")
+        print("\n  FM_SWEEP files show:")
         print(f"    ZCR > 0.1:  {sum(1 for r in fm_sweeps if r['zcr'] > 0.1)}/{len(fm_sweeps)} ({sum(1 for r in fm_sweeps if r['zcr'] > 0.1)/len(fm_sweeps)*100:.1f}%)")
         print(f"    Flatness < 0.6: {sum(1 for r in fm_sweeps if r['spectral_flatness'] < 0.6)}/{len(fm_sweeps)} ({sum(1 for r in fm_sweeps if r['spectral_flatness'] < 0.6)/len(fm_sweeps)*100:.1f}%)")
 
@@ -258,11 +258,11 @@ def main():
     print(f"\n✅ DOMINANT MODALITY: {dominant_modality} ({dominant_pct:.1f}%)")
 
     if dominant_modality == 'TRANSIENT':
-        print(f"\n  This confirms the dataset is primarily TRANSIENT (click-based).")
-        print(f"  High click rates and short ICIs indicate echolocation click trains.")
+        print("\n  This confirms the dataset is primarily TRANSIENT (click-based).")
+        print("  High click rates and short ICIs indicate echolocation click trains.")
     elif dominant_modality == 'FM_SWEEP':
-        print(f"\n  The dataset is primarily FM_SWEEP (frequency-modulated signals).")
-        print(f"  This indicates communication vocalizations rather than pure echolocation.")
+        print("\n  The dataset is primarily FM_SWEEP (frequency-modulated signals).")
+        print("  This indicates communication vocalizations rather than pure echolocation.")
 
     print(f"\n{'='*90}")
     print("✅ Re-analysis complete!")

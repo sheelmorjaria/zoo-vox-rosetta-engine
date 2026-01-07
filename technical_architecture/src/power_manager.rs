@@ -13,10 +13,10 @@ Features:
 - Throttle integration with synthesis and source separation
 */
 
-use anyhow::{Result, Context};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use crate::ptp::PtpTimestamp;
 
@@ -247,6 +247,7 @@ impl PowerManager {
     }
 
     /// Create for testing (mock mode)
+    #[allow(clippy::field_reassign_with_default)]
     pub fn for_testing() -> Self {
         let mut config = PowerManagerConfig::default();
         config.mock_mode = true;

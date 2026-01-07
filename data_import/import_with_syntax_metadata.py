@@ -20,15 +20,16 @@ Grammar Features Captured:
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
-import soundfile as sf
-from pathlib import Path
-from collections import defaultdict, Counter
-from typing import Dict, List, Tuple
+from collections import Counter, defaultdict
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -36,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
 ANNOTATIONS_PATH = '/home/sheel/birdsong_analysis/Annotations.tsv'
@@ -85,7 +86,7 @@ def load_and_segment_audio(args: Tuple[str, str]) -> Tuple[str, Dict, str]:
 
         return (audio_path, syntax_metadata, context_name)
 
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -94,8 +95,8 @@ def segment_into_phrases(audio: np.ndarray) -> List[Tuple[np.ndarray, Dict]]:
     segments = []
 
     # Energy-based segmentation
-    from scipy.signal import hilbert, find_peaks
     from scipy.ndimage import gaussian_filter1d
+    from scipy.signal import find_peaks, hilbert
 
     envelope = np.abs(hilbert(audio))
     smoothed = gaussian_filter1d(envelope, sigma=int(SAMPLE_RATE * 0.002))
@@ -261,7 +262,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
         df = df.sample(n=max_files, random_state=42)
 
     # Prepare file tasks
-    print(f"\n🔍 Preparing file list...")
+    print("\n🔍 Preparing file list...")
     file_tasks = []
 
     for _, row in df.iterrows():
@@ -298,7 +299,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"\n✅ Successfully processed {len(all_results)} vocalizations with syntax metadata")
 
     # Build phrase library with syntax data
-    print(f"\n📊 Building phrase library...")
+    print("\n📊 Building phrase library...")
 
     phrase_library = defaultdict(lambda: {
         'contexts': Counter(),
@@ -332,7 +333,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"✅ Created {len(phrase_library)} phrase types from {len(vocalizations)} vocalizations")
 
     # Create export structure
-    print(f"\n📊 Creating database with syntax metadata...")
+    print("\n📊 Creating database with syntax metadata...")
 
     species_data = {
         'species': 'marmoset',
@@ -389,7 +390,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
         }
 
     # Show statistics
-    print(f"\n📊 STATISTICS:")
+    print("\n📊 STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
     print(f"   Total vocalizations analyzed: {len(vocalizations)}")
 
@@ -411,7 +412,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
         if syntax.get('is_compositional'):
             compositional_count += 1
 
-    print(f"\n📊 SYNTAX STATISTICS:")
+    print("\n📊 SYNTAX STATISTICS:")
     print(f"   F0 contours: {dict(f0_contours)}")
     print(f"   Ascending: {ascending_count} ({ascending_count/len(vocalizations)*100:.1f}%)")
     print(f"   Descending: {descending_count} ({descending_count/len(vocalizations)*100:.1f}%)")
@@ -426,7 +427,7 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"\n💾 Saving to {OUTPUT_PATH}...")
     with open(OUTPUT_PATH, 'w') as f:
         json.dump(export_data, f, indent=2)
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     return species_data
 
@@ -437,10 +438,10 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("✅ IMPORT WITH SYNTAX METADATA COMPLETE!")
     print("=" * 80)
-    print(f"\n🎯 New metadata includes:")
-    print(f"   - phrase_sequence: Ordered phrase list within vocalizations")
-    print(f"   - f0_contour: ascending/descending/flat/complex patterns")
-    print(f"   - has_repetition: Whether phrases repeat")
-    print(f"   - transitions: Phrase-to-phrase transitions")
-    print(f"   - is_compositional: Evidence of combinatorial structure")
+    print("\n🎯 New metadata includes:")
+    print("   - phrase_sequence: Ordered phrase list within vocalizations")
+    print("   - f0_contour: ascending/descending/flat/complex patterns")
+    print("   - has_repetition: Whether phrases repeat")
+    print("   - transitions: Phrase-to-phrase transitions")
+    print("   - is_compositional: Evidence of combinatorial structure")
     print("=" * 80)

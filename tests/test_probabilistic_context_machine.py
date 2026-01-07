@@ -10,20 +10,20 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
-import numpy as np
 import sys
+import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+
+import numpy as np
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import implementations
 from src.realtime.probabilistic_context_machine import (
-    ProbabilisticContextMachine,
+    AudioFeatures,
     ContextState,
-    AudioFeatures
+    ProbabilisticContextMachine,
 )
 
 
@@ -234,7 +234,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
 
         # Assert
         # Should show some temporal consistency
-        contact_count = sum(1 for s in states if s == ContextState.CONTACT)
+        sum(1 for s in states if s == ContextState.CONTACT)
         # Since this is probabilistic, just ensure it's not all different states
         unique_states = len(set(states))
         self.assertLess(unique_states, 5, "Should show some temporal consistency")

@@ -3,16 +3,13 @@
 Unit tests for compositional_validation module using TDD methodology.
 """
 
-import pytest
-import numpy as np
-from typing import Dict, List, Any
-import sys
 import os
+import sys
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from compositional_validation import CompositionalValidator, ValidationRule, ValidationResult
+from compositional_validation import CompositionalValidator, ValidationResult, ValidationRule
 
 
 class TestCompositionalValidator:
@@ -129,7 +126,7 @@ class TestCompositionalValidator:
         """Test handling of empty grammar."""
         result = self.validator.validate_grammar_structure({})
 
-        assert result['is_valid'] == False
+        assert not result['is_valid']
         assert len(result['errors']) > 0
         assert 'Grammar is empty' in result['errors']
 
@@ -139,7 +136,7 @@ class TestCompositionalValidator:
 
         result = self.validator.validate_sequence(single_phrase, self.sample_grammar)
 
-        assert result['is_valid'] == True  # Single phrase is always valid
+        assert result['is_valid']  # Single phrase is always valid
         assert result['validation_details']['transitions_analyzed'] == 0
 
     def test_cycle_detection(self):
@@ -168,7 +165,7 @@ class TestCompositionalValidator:
         assert rule.name == 'test_rule'
         assert rule.description == 'Test validation rule'
         assert rule.severity == 'error'
-        assert rule.validator_func(['a', 'b']) == True
+        assert rule.validator_func(['a', 'b'])
 
     def test_validation_result_class(self):
         """Test ValidationResult class functionality."""
@@ -178,7 +175,7 @@ class TestCompositionalValidator:
             message='Validation passed'
         )
 
-        assert result.is_valid == True
+        assert result.is_valid
         assert result.confidence == 0.95
         assert result.message == 'Validation passed'
 
@@ -220,8 +217,8 @@ class TestCompositionalValidator:
         result1 = self.validator.validate_sequence([], self.sample_grammar)
         result2 = self.validator.validate_grammar_structure(None)
 
-        assert result1['is_valid'] == True  # Empty sequence is valid
-        assert result2['is_valid'] == False  # None grammar is invalid
+        assert result1['is_valid']  # Empty sequence is valid
+        assert not result2['is_valid']  # None grammar is invalid
 
     def test_comprehensive_validation_pipeline(self):
         """Test complete validation pipeline."""
@@ -245,8 +242,8 @@ class TestCompositionalValidator:
         report = self.validator.generate_validation_report(complex_sequence, complex_grammar)
 
         # Validate results
-        assert grammar_result['is_valid'] == True
-        assert sequence_result['is_valid'] == True
+        assert grammar_result['is_valid']
+        assert sequence_result['is_valid']
         assert 'summary' in report
         assert len(report['recommendations']) >= 0  # Could be 0 or more
 

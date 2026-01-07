@@ -21,12 +21,12 @@ Output:
 """
 
 import json
+import sys
+from pathlib import Path
+from typing import Dict, List
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from collections import defaultdict
-from typing import Dict, List
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -144,7 +144,7 @@ def analyze_micro_dynamics(features_list: List[Dict]) -> Dict:
         print(f"   IQR: [{stats['q25']:.3f}, {stats['q75']:.3f}]")
 
     # Context-specific analysis
-    print(f"\n📊 CONTEXT-SPECIFIC ANALYSIS:")
+    print("\n📊 CONTEXT-SPECIFIC ANALYSIS:")
 
     context_stats = {}
     for context in df['context'].unique():
@@ -313,17 +313,17 @@ def main():
     with open(OUTPUT_PATH, 'w') as f:
         json.dump(export_data, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     print("\n" + "=" * 80)
     print("✅ MICRO-DYNAMICS QUANTIFICATION COMPLETE!")
     print("=" * 80)
 
-    print(f"\n🎯 NEXT STEPS:")
-    print(f"   1. Update Rust synthesis.rs with DynamicMicroharmonicParams")
-    print(f"   2. Implement ADSR envelope generator")
-    print(f"   3. Add FM modulation for vibrato")
-    print(f"   4. Create t-SNE validation script")
+    print("\n🎯 NEXT STEPS:")
+    print("   1. Update Rust synthesis.rs with DynamicMicroharmonicParams")
+    print("   2. Implement ADSR envelope generator")
+    print("   3. Add FM modulation for vibrato")
+    print("   4. Create t-SNE validation script")
     print("=" * 80)
 
 

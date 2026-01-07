@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import soundfile as sf
-import numpy as np
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import numpy as np
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent))
 from universal_rosetta_stone import UniversalRosettaStone
@@ -24,6 +25,7 @@ print(f'RMS: {np.sqrt(np.mean(audio**2)):.6f}')
 
 # Frequency analysis
 from scipy.fft import fft, fftfreq
+
 fft_result = fft(audio)
 freqs = fftfreq(len(audio), 1/sr)
 magnitude = np.abs(fft_result)
@@ -39,7 +41,7 @@ bands = [
     (">15 kHz", 15000, sr//2)
 ]
 
-print(f"\n📊 Energy Distribution:")
+print("\n📊 Energy Distribution:")
 total = np.sum(pos_magnitude**2)
 for name, low, high in bands:
     mask = (pos_freqs >= low) & (pos_freqs < high)
@@ -47,7 +49,7 @@ for name, low, high in bands:
     print(f"  {name:20s}: {e:5.1f}%")
 
 # Try segmentation
-print(f"\n🔍 Segmentation:")
+print("\n🔍 Segmentation:")
 analyzer = UniversalRosettaStone(sample_rate=sr)
 
 for gap in [20, 50, 100, 200]:

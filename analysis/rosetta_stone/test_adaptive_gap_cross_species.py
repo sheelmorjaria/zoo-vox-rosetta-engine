@@ -6,12 +6,11 @@ Tests the adaptive gap enhancement across multiple species to verify
 it works correctly for different vocalization types.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -293,20 +292,20 @@ def main():
         if species in ['bat', 'sperm_whale']:
             # TRANSIENT species should show improvement
             if files_with_improvement == len(results):
-                print(f"  ✅ Excellent: All files show improvement")
+                print("  ✅ Excellent: All files show improvement")
             elif files_with_improvement > 0:
-                print(f"  ~ Partial: Some files show improvement")
+                print("  ~ Partial: Some files show improvement")
             else:
-                print(f"  ✗ Poor: No files show improvement")
+                print("  ✗ Poor: No files show improvement")
         elif species == 'marmoset':
             # HARMONIC species should work similarly with both methods
             diff = abs(total_phrases_adaptive - total_phrases_fixed)
             if diff == 0:
-                print(f"  ✅ Excellent: Same results (adaptive correctly not applied)")
+                print("  ✅ Excellent: Same results (adaptive correctly not applied)")
             elif diff < total_phrases_adaptive * 0.1:
-                print(f"  ✅ Good: Minimal difference")
+                print("  ✅ Good: Minimal difference")
             else:
-                print(f"  ~ Different results (may need tuning)")
+                print("  ~ Different results (may need tuning)")
 
     print("\n" + "="*70)
     print("✅ Cross-species test complete!")

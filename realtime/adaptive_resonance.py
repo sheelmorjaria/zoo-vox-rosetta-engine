@@ -6,12 +6,12 @@ Implements Adaptive Resonance Theory (ART) for stable, fast learning
 in real-time animal communication analysis.
 """
 
-import numpy as np
 import random
-from typing import Dict, List, Any, Tuple, Optional, Callable
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import time
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+
+import numpy as np
 
 
 @dataclass

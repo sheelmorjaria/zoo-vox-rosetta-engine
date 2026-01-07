@@ -6,16 +6,22 @@ into the unified data models for production system usage.
 """
 
 import json
-import os
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Any
 import logging
+import os
+from datetime import datetime
+from pathlib import Path
 
 from data_models import (
-    VocalizationDatabase, SpeciesData, Phrase, Sentence, GrammarRule,
-    AcousticFeatures, PhraseContext, PhraseOccurrence,
-    Species, VocalizationModality
+    AcousticFeatures,
+    GrammarRule,
+    Phrase,
+    PhraseContext,
+    PhraseOccurrence,
+    Sentence,
+    Species,
+    SpeciesData,
+    VocalizationDatabase,
+    VocalizationModality,
 )
 
 # Set up logging
@@ -278,7 +284,7 @@ class DataImporter:
 
         return species_data
 
-    
+
     def import_sentence_data(self, filepath: str, species: Species):
         """Import sentence clustering data"""
         logger.info(f"Importing sentence data from {filepath}")
@@ -366,7 +372,7 @@ class DataImporter:
             dolphin_data = self.import_dolphin_data(str(dolphin_file))
             self.db.add_species_data(dolphin_data)
 
-            
+
             # Import dolphin grammar
             grammar_file = base_path / "validation_output" / "dolphin_grammar.json"
             if grammar_file.exists():

@@ -7,22 +7,15 @@ Using Test-Driven Development methodology to implement:
 2. A/B Testing Controller with Blind Mode
 """
 
-import unittest
-import numpy as np
-import time
-import threading
-import sys
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
-import tempfile
-import os
 import json
-import struct
-import hashlib
-import hmac
+import os
 import shutil
-from enum import Enum
+import sys
+import tempfile
+import time
+import unittest
+
+import numpy as np
 
 # Import all enhancement modules
 sys.path.append('src')
@@ -47,7 +40,10 @@ class TestProvenanceTracer(unittest.TestCase):
 
         # Import the provenance tracer
         from scientific_validation.provenance_tracer import (
-            TraceEntry, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            SynthesisParams,
+            TraceEntry,
         )
 
         # 1. Create test trace entry
@@ -94,7 +90,10 @@ class TestProvenanceTracer(unittest.TestCase):
 
         try:
             from scientific_validation.provenance_tracer import (
-                ProvenanceTracer, ContextType, DecisionVector, SynthesisParams
+                ContextType,
+                DecisionVector,
+                ProvenanceTracer,
+                SynthesisParams,
             )
 
             # Test scenario: Log 1000 entries rapidly
@@ -157,7 +156,10 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_binary_entry_validation(self):
         """Test that binary entries can be validated for integrity"""
         from scientific_validation.provenance_tracer import (
-            TraceEntry, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            SynthesisParams,
+            TraceEntry,
         )
 
         # 1. Create binary entry with checksum
@@ -225,14 +227,17 @@ class TestProvenanceTracer(unittest.TestCase):
         # Flip the checksum itself
         checksum_corrupted = bytearray(valid_data)
         checksum_corrupted[59] ^= 0xFF
-        checksum_entry = TraceEntry.from_bytes(bytes(checksum_corrupted))
+        TraceEntry.from_bytes(bytes(checksum_corrupted))
         # This might still validate by chance, but it's much less likely
         # The important thing is that data corruption is detected
 
     def test_high_speed_logging_performance(self):
         """Test that logging can handle >10,000 entries/second"""
         from scientific_validation.provenance_tracer import (
-            ProvenanceTracer, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            ProvenanceTracer,
+            SynthesisParams,
         )
 
         # 1. Enable high-speed logging mode
@@ -286,7 +291,10 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_memory_efficient_storage(self):
         """Test that binary format is more efficient than JSON"""
         from scientific_validation.provenance_tracer import (
-            TraceEntry, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            SynthesisParams,
+            TraceEntry,
         )
 
         test_entries = 1000
@@ -364,7 +372,10 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_real_time_logging_latency(self):
         """Test that logging adds <1ms latency to audio processing"""
         from scientific_validation.provenance_tracer import (
-            ProvenanceTracer, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            ProvenanceTracer,
+            SynthesisParams,
         )
 
         # Create mock audio processing function
@@ -427,7 +438,10 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_large_file_handling(self):
         """Test that system can handle >1GB log files efficiently"""
         from scientific_validation.provenance_tracer import (
-            ProvenanceTracer, ContextType, DecisionVector, SynthesisParams
+            ContextType,
+            DecisionVector,
+            ProvenanceTracer,
+            SynthesisParams,
         )
 
         # Target file size: 100MB (for testing, since 1GB would take too long)
@@ -533,7 +547,6 @@ class TestABTestingController(unittest.TestCase):
 
     def test_random_mode_selection(self):
         """Test that mode selection is truly random and unbiased"""
-        test_iterations = 1000
 
         # Test to implement:
         # 1. Run A/B test for 1000 iterations
@@ -545,7 +558,6 @@ class TestABTestingController(unittest.TestCase):
 
     def test_encrypted_logging_prevents_blind_breaking(self):
         """Test that encrypted logs prevent researchers from breaking blind"""
-        test_message = "This should be encrypted and unreadable"
 
         # Test to implement:
         # 1. Log message in blind mode
@@ -557,7 +569,7 @@ class TestABTestingController(unittest.TestCase):
 
     def test_mode_a_real_time_interaction(self):
         """Test that Mode A works: Real-time interaction (Full loop)"""
-        test_audio = np.random.randn(1024).astype(np.float32)
+        np.random.randn(1024).astype(np.float32)
 
         # Test to implement:
         # 1. Set Mode A: Real-time interaction
@@ -569,10 +581,6 @@ class TestABTestingController(unittest.TestCase):
 
     def test_mode_b_playback_loop(self):
         """Test that Mode B works: Playback loop (Pre-computed sequence)"""
-        precomputed_sequence = [
-            {'phrase': 'F0_6000', 'duration': 100},
-            {'phrase': 'F0_8000', 'duration': 150},
-        ]
 
         # Test to implement:
         # 1. Set Mode B: Playback loop
@@ -584,7 +592,6 @@ class TestABTestingController(unittest.TestCase):
 
     def test_experimenter_blind_maintenance(self):
         """Test that experimenter remains blind throughout experiment"""
-        experiment_duration = 60  # seconds
 
         # Test to implement:
         # 1. Start long-running experiment
@@ -596,7 +603,6 @@ class TestABTestingController(unittest.TestCase):
 
     def test_statistical_analysis_compatibility(self):
         """Test that logged data supports proper statistical analysis"""
-        test_data_points = 100
 
         # Test to implement:
         # 1. Run A/B test with test_data_points
@@ -654,8 +660,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_concurrent_access_safety(self):
         """Test that multiple threads can safely access components"""
-        num_threads = 10
-        operations_per_thread = 100
 
         # Test to implement:
         # 1. Create multiple threads accessing provenance logger
@@ -702,7 +706,7 @@ if __name__ == '__main__':
 
     # Print summary
     print(f"\n{'='*50}")
-    print(f"Phase 4 Scientific Validation Test Results:")
+    print("Phase 4 Scientific Validation Test Results:")
     print(f"{'='*50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")

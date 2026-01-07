@@ -12,11 +12,12 @@ for Egyptian fruit bat vocalizations, investigating:
 """
 
 import json
-import numpy as np
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
-from collections import defaultdict, Counter
-from typing import Dict, List
+from typing import Dict
+
+import numpy as np
 from scipy.stats import entropy
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -76,7 +77,7 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
         if len(v) == 1
     }
 
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
     print(f"   Total phrases: {len(phrase_contexts)}")
     print(f"   Multi-context phrases: {len(multi_context_phrases)} "
           f"({len(multi_context_phrases) / len(phrase_contexts) * 100:.1f}%)")
@@ -97,7 +98,7 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
             'simpson_diversity': simpson_diversity
         }
 
-    print(f"\n📊 CONTEXT DIVERSITY:")
+    print("\n📊 CONTEXT DIVERSITY:")
     for ctx in sorted(context_diversity.keys()):
         stats = context_diversity[ctx]
         print(f"   {ctx}:")
@@ -106,7 +107,7 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
         print(f"      Simpson diversity: {stats['simpson_diversity']:.3f}")
 
     # Show examples of multi-context phrases
-    print(f"\n📊 MULTI-CONTEXT PHRASE EXAMPLES:")
+    print("\n📊 MULTI-CONTEXT PHRASE EXAMPLES:")
     for phrase_key, context_counter in list(multi_context_phrases.items())[:10]:
         total = sum(context_counter.values())
         contexts_str = ", ".join([f"{ctx} ({count})" for ctx, count in context_counter.most_common(5)])
@@ -138,12 +139,12 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
             else:
                 generalized_phrases.append((phrase_key, normalized_entropy, len(context_counter)))
 
-    print(f"\n📊 SPECIALIZATION vs GENERALIZATION:")
+    print("\n📊 SPECIALIZATION vs GENERALIZATION:")
     print(f"   Specialized phrases (single-context or biased): {len(specialized_phrases)}")
     print(f"   Generalized phrases (distributed across contexts): {len(generalized_phrases)}")
 
     if generalized_phrases:
-        print(f"\n   Most generalized phrases (highest entropy):")
+        print("\n   Most generalized phrases (highest entropy):")
         generalized_phrases.sort(key=lambda x: x[1], reverse=True)
         for phrase_key, ent, num_ctx in generalized_phrases[:15]:
             contexts_str = ", ".join(list(phrase_contexts[phrase_key].keys())[:5])
@@ -174,7 +175,7 @@ def analyze_context_overlap(phrases: Dict, context_results: Dict):
     context_phrases = context_results['context_phrases']
     contexts = sorted(context_phrases.keys())
 
-    print(f"\n📊 CONTEXT PAIR OVERLAP:")
+    print("\n📊 CONTEXT PAIR OVERLAP:")
     print(f"   Comparing {len(contexts)} contexts...")
 
     overlap_matrix = {}
@@ -210,7 +211,7 @@ def analyze_context_overlap(phrases: Dict, context_results: Dict):
                 print(f"      Jaccard index: {jaccard:.3f}")
                 print(f"      Overlap: {overlap_pct:.1f}% of smaller context")
 
-    print(f"\n📊 SIGNIFICANT OVERLAPS (>10%):")
+    print("\n📊 SIGNIFICANT OVERLAPS (>10%):")
     if significant_overlaps:
         significant_overlaps.sort(key=lambda x: x['overlap_pct'], reverse=True)
         for overlap in significant_overlaps[:20]:
@@ -235,7 +236,7 @@ def analyze_context_specific_phrases(phrases: Dict, context_results: Dict):
     phrase_contexts = context_results['phrase_contexts']
     contexts = sorted(set(ctx for phrase_ctx in phrase_contexts.values() for ctx in phrase_ctx.keys()))
 
-    print(f"\n📊 CONTEXT-ENRICHED PHRASES:")
+    print("\n📊 CONTEXT-ENRICHED PHRASES:")
 
     context_enriched = {}
 
@@ -277,7 +278,7 @@ def analyze_acoustic_features_by_context(phrases: Dict, context_results: Dict):
     print("ANALYZING ACOUSTIC FEATURES BY CONTEXT")
     print("=" * 80)
 
-    phrase_contexts = context_results['phrase_contexts']
+    context_results['phrase_contexts']
 
     # Group phrases by their primary context
     context_to_primary_phrases = defaultdict(list)
@@ -292,7 +293,7 @@ def analyze_acoustic_features_by_context(phrases: Dict, context_results: Dict):
     # Calculate mean acoustic features per context
     context_acoustic_profiles = {}
 
-    print(f"\n📊 ACOUSTIC PROFILES BY CONTEXT:")
+    print("\n📊 ACOUSTIC PROFILES BY CONTEXT:")
 
     for ctx, phrase_keys in sorted(context_to_primary_phrases.items()):
         if len(phrase_keys) < 5:
@@ -346,7 +347,7 @@ def analyze_compositionality_evidence(phrases: Dict, context_results: Dict):
     highly_flexible = [p for p in generalized_phrases if p[1] > 0.7]  # Entropy > 0.7
     moderately_flexible = [p for p in generalized_phrases if 0.3 <= p[1] <= 0.7]
 
-    print(f"\n📊 PHRASE FLEXIBILITY ANALYSIS:")
+    print("\n📊 PHRASE FLEXIBILITY ANALYSIS:")
     print(f"   Total phrases: {total_phrases}")
     print(f"   Highly flexible (entropy > 0.7): {len(highly_flexible)} "
           f"({len(highly_flexible)/total_phrases*100:.1f}%)")
@@ -357,7 +358,7 @@ def analyze_compositionality_evidence(phrases: Dict, context_results: Dict):
 
     # Analyze flexible phrases
     if highly_flexible:
-        print(f"\n📊 HIGHLY FLEXIBLE PHRASES (potential building blocks):")
+        print("\n📊 HIGHLY FLEXIBLE PHRASES (potential building blocks):")
         for phrase_key, ent, num_ctx in highly_flexible[:20]:
             print(f"      {phrase_key}:")
             print(f"         Entropy: {ent:.3f}, Contexts: {num_ctx}")
@@ -371,23 +372,23 @@ def analyze_compositionality_evidence(phrases: Dict, context_results: Dict):
     multi_context_pct = len(context_results['multi_context_phrases']) / total_phrases if total_phrases > 0 else 0
 
     if flexible_pct > 0.20:
-        print(f"\n✅ STRONG EVIDENCE OF COMPOSITIONAL SYSTEM")
+        print("\n✅ STRONG EVIDENCE OF COMPOSITIONAL SYSTEM")
         print(f"   - {flexible_pct*100:.1f}% of phrases are flexible (used across multiple contexts)")
         print(f"   - {multi_context_pct*100:.1f}% appear in multiple contexts")
-        print(f"   - Suggests combinatorial grammar: flexible phrases + context-specific modifiers")
-        print(f"   - Bat vocalizations may use combinatorial syntax for communication")
+        print("   - Suggests combinatorial grammar: flexible phrases + context-specific modifiers")
+        print("   - Bat vocalizations may use combinatorial syntax for communication")
     elif flexible_pct > 0.05:
-        print(f"\n✅ MODERATE EVIDENCE OF COMPOSITIONALITY")
+        print("\n✅ MODERATE EVIDENCE OF COMPOSITIONALITY")
         print(f"   - {flexible_pct*100:.1f}% of phrases are flexible")
         print(f"   - {multi_context_pct*100:.1f}% appear in multiple contexts")
-        print(f"   - Some combinatorial patterns detected")
-        print(f"   - May indicate emerging syntax or contextual flexibility")
+        print("   - Some combinatorial patterns detected")
+        print("   - May indicate emerging syntax or contextual flexibility")
     else:
-        print(f"\n⚠️  LIMITED EVIDENCE OF COMPOSITIONALITY")
+        print("\n⚠️  LIMITED EVIDENCE OF COMPOSITIONALITY")
         print(f"   - {flexible_pct*100:.1f}% of phrases are flexible")
         print(f"   - {multi_context_pct*100:.1f}% appear in multiple contexts")
-        print(f"   - Most phrases are context-specific")
-        print(f"   - Suggests: holistic calls OR limited combinatorial ability")
+        print("   - Most phrases are context-specific")
+        print("   - Suggests: holistic calls OR limited combinatorial ability")
 
     print("\n" + "=" * 80)
 
@@ -417,7 +418,7 @@ def main():
     overlap_results = analyze_context_overlap(phrases, context_results)
 
     # Identify context-specific phrases
-    enriched_results = analyze_context_specific_phrases(phrases, context_results)
+    analyze_context_specific_phrases(phrases, context_results)
 
     # Analyze acoustic features by context
     acoustic_results = analyze_acoustic_features_by_context(phrases, context_results)
@@ -447,13 +448,13 @@ def main():
     with open(OUTPUT_PATH, 'w') as f:
         json.dump(export_results, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")
     print("=" * 80)
 
-    print(f"\n📊 KEY FINDINGS:")
+    print("\n📊 KEY FINDINGS:")
     print(f"   - {len(context_results['multi_context_phrases'])}/{len(phrases)} phrases appear in multiple contexts")
     print(f"   - {compositionality_results['flexible_percentage']:.1f}% flexible phrases")
     print(f"   - {len(overlap_results['significant_overlaps'])} significant context overlaps")

@@ -4,7 +4,7 @@
 // waking the Python agent when target species are detected.
 
 use crate::ptp::PtpTimestamp;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use crossbeam::atomic::AtomicCell;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -197,6 +197,7 @@ impl WakeTrigger {
 
 /// FFT processor for frequency analysis
 struct FFTProcessor {
+    #[allow(dead_code)]
     fft_size: usize,
     sample_rate: usize,
 }
@@ -228,7 +229,7 @@ impl FFTProcessor {
         let magnitude_sq = sin_sum * sin_sum + cos_sum * cos_sum;
 
         // Normalize by number of samples
-        (magnitude_sq.sqrt() / audio.len() as f32)
+        magnitude_sq.sqrt() / audio.len() as f32
     }
 
     /// Find dominant frequency in audio
@@ -457,7 +458,7 @@ impl Default for WildlifeSentry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
+    
 
     fn create_test_signature(name: &str, freq_min: f32, freq_max: f32) -> SpeciesSignature {
         SpeciesSignature::new(
@@ -628,8 +629,10 @@ mod tests {
 
     #[test]
     fn test_multi_species_detection() {
-        let mut config = WildlifeSentryConfig::default();
-        config.target_species = vec!["marmoset".to_string(), "finch".to_string()];
+        let config = WildlifeSentryConfig {
+            target_species: vec!["marmoset".to_string(), "finch".to_string()],
+            ..Default::default()
+        };
         let sentry = WildlifeSentry::new(config);
 
         // Generate tone that overlaps both ranges

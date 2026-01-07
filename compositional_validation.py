@@ -8,13 +8,13 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional, Any, Callable
-from collections import defaultdict, Counter
-import math
 import logging
+import math
+from collections import Counter
 from dataclasses import dataclass
-from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

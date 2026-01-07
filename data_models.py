@@ -5,12 +5,11 @@ This module provides standardized data structures for importing and managing
 phrase, sentence, and grammar data across multiple species.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
-from enum import Enum
 import json
+from dataclasses import dataclass, field
 from datetime import datetime
-import numpy as np
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class Species(Enum):
@@ -35,40 +34,82 @@ class VocalizationModality(Enum):
 
 @dataclass
 class AcousticFeatures:
-    """Standard acoustic feature measurements"""
+    """
+    29-dimensional acoustic feature vector (expanded from 17D/20D)
+
+    NOTE: Named AcousticFeatures for backwards compatibility. Now contains 29 fields:
+    - 3 Fundamental features (F0, duration)
+    - 3 Grit factors (HNR, flatness, harmonicity)
+    - 7 Motion factors (attack, decay, sustain, vibrato, jitter, shimmer)
+    - 13 MFCC coefficients (expanded from 4) for formant/timbre analysis
+    - 1 Spectral contrast
+    - 1 Spectral flux
+    - 3 Rhythm factors (ICI, onset rate)
+
+    Total: 3 + 3 + 7 + 13 + 1 + 1 + 3 = 31 fields (including some legacy fields)
+    """
+    # === Fundamental (3 features) ===
     mean_f0_hz: float
-    std_f0_hz: float = 0.0
-    min_f0_hz: float = 0.0
-    max_f0_hz: float = 0.0
-    f0_range_hz: float = 0.0
-    duration_frames: int = 0
-    voiced_ratio: float = 0.0
-    f0_slope: float = 0.0
-    modulation_rate: float = 0.0
-    acoustic_variance: float = 0.0
-    mean_duration_ms: float = 0.0
-    # Timbre features (Category 1, Item 1: Spectral Centroid & Slope)
-    spectral_centroid_hz: float = 0.0
-    spectral_slope: float = 0.0
-    spectral_bandwidth_hz: float = 0.0
-    spectral_rolloff_hz: float = 0.0
-    # Micro-dynamics features for atomic phrase discovery
+    duration_ms: float
+    f0_range_hz: float
+
+    # === Grit Factors (3 features) ===
     harmonic_to_noise_ratio: float = 0.0
+    spectral_flatness: float = 0.0
+    harmonicity: float = 0.0  # NEW: Degree of periodicity vs noise
+
+    # === Motion Factors (7 features) ===
     attack_time_ms: float = 0.0
     decay_time_ms: float = 0.0
     sustain_level: float = 0.0
     vibrato_rate_hz: float = 0.0
     vibrato_depth: float = 0.0
     jitter: float = 0.0
+    shimmer: float = 0.0  # NEW: Amplitude instability
+
+    # === Fingerprint Factors (13 features) - Expanded from 4 ===
     mfcc_1: float = 0.0
     mfcc_2: float = 0.0
     mfcc_3: float = 0.0
     mfcc_4: float = 0.0
-    mfcc_delta_mean: float = 0.0
+    mfcc_5: float = 0.0  # NEW
+    mfcc_6: float = 0.0  # NEW
+    mfcc_7: float = 0.0  # NEW
+    mfcc_8: float = 0.0  # NEW
+    mfcc_9: float = 0.0  # NEW
+    mfcc_10: float = 0.0  # NEW
+    mfcc_11: float = 0.0  # NEW
+    mfcc_12: float = 0.0  # NEW
+    mfcc_13: float = 0.0  # NEW
     spectral_contrast: float = 0.0
+
+    # === Spectral Dynamics (1 feature) ===
+    spectral_flux: float = 0.0  # NEW: Rate of spectral change
+
+    # === Rhythm Factors (3 features) ===
     median_ici_ms: float = 0.0
     onset_rate_hz: float = 0.0
     ici_coefficient_of_variation: float = 0.0
+
+    # === Legacy features (for backward compatibility) ===
+    std_f0_hz: float = 0.0
+    min_f0_hz: float = 0.0
+    max_f0_hz: float = 0.0
+    duration_frames: int = 0
+    voiced_ratio: float = 0.0
+    f0_slope: float = 0.0
+    modulation_rate: float = 0.0
+    acoustic_variance: float = 0.0
+    mean_duration_ms: float = 0.0  # Alias for duration_ms
+    spectral_centroid_hz: float = 0.0
+    spectral_slope: float = 0.0
+    spectral_bandwidth_hz: float = 0.0
+    spectral_rolloff_hz: float = 0.0
+    mfcc_delta_mean: float = 0.0
+
+
+# Alias for test compatibility
+PhraseSignature = AcousticFeatures
 
 
 @dataclass
@@ -270,6 +311,7 @@ class VocalizationDatabase:
                         'spectral_rolloff_hz': phrase.acoustic_features.spectral_rolloff_hz,
                         # Micro-dynamics features
                         'harmonic_to_noise_ratio': phrase.acoustic_features.harmonic_to_noise_ratio,
+                        'spectral_flatness': phrase.acoustic_features.spectral_flatness,
                         'attack_time_ms': phrase.acoustic_features.attack_time_ms,
                         'decay_time_ms': phrase.acoustic_features.decay_time_ms,
                         'sustain_level': phrase.acoustic_features.sustain_level,
@@ -327,7 +369,7 @@ class VocalizationDatabase:
                 }
                 species_dict['grammar_rules'].append(rule_dict)
 
-            
+
             export_data['species_data'][species.value] = species_dict
 
         with open(filepath, 'w') as f:
@@ -366,6 +408,7 @@ class VocalizationDatabase:
                     spectral_rolloff_hz=phrase_data['acoustic_features'].get('spectral_rolloff_hz', 0.0),
                     # Micro-dynamics features
                     harmonic_to_noise_ratio=phrase_data['acoustic_features'].get('harmonic_to_noise_ratio', 0.0),
+                    spectral_flatness=phrase_data['acoustic_features'].get('spectral_flatness', 0.0),
                     attack_time_ms=phrase_data['acoustic_features'].get('attack_time_ms', 0.0),
                     decay_time_ms=phrase_data['acoustic_features'].get('decay_time_ms', 0.0),
                     sustain_level=phrase_data['acoustic_features'].get('sustain_level', 0.0),
@@ -431,7 +474,7 @@ class VocalizationDatabase:
                 )
                 species_data_obj.grammar_rules.append(rule)
 
-            
+
             db.add_species_data(species_data_obj)
 
         return db

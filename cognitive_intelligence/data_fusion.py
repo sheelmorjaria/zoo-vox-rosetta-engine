@@ -32,18 +32,17 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
 import logging
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple, Union
-from enum import Enum
 import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 # Import visual fusion components
 try:
-    from cognitive_intelligence.visual_fusion import (
-        VisualFeatures, VisualAttentionLevel
-    )
+    from cognitive_intelligence.visual_fusion import VisualAttentionLevel, VisualFeatures
 except ImportError:
     # Create mock classes if visual fusion not available
     class VisualAttentionLevel(Enum):

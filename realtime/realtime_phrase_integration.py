@@ -16,19 +16,20 @@ Author: Sheel Morjaria
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-import time
-import threading
-import queue
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor
 import logging
+import queue
+import threading
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+from enhanced_microharmonic_synthesizer import EnhancedMicroharmonicSynthesizer, SynthesisConfig
 
 # Import our frameworks
-from phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
-from enhanced_microharmonic_synthesizer import EnhancedMicroharmonicSynthesizer, SynthesisConfig
+from phrase_audio_library import PhraseAudioLibrary
+
 
 @dataclass
 class AudioChunk:
@@ -427,7 +428,7 @@ def demo_integration():
     # Create test phrases
     for i in range(5):
         test_audio = np.random.randn(4410)  # 0.2 seconds
-        segment = integrator.phrase_library.create_phrase_segment(
+        integrator.phrase_library.create_phrase_segment(
             audio=test_audio,
             phrase_key=f'test_phrase_{i}',
             context='alarm' if i % 2 == 0 else 'social',
@@ -466,14 +467,14 @@ def demo_integration():
             print(f"     Latency: {result.latency_ms:.1f}ms")
             print(f"     Success: {result.success}")
 
-    print(f"\\nPerformance Statistics:")
+    print("\\nPerformance Statistics:")
     print(f"  • Total chunks processed: {stats['chunks_processed']}")
     print(f"  • Average latency: {stats['avg_latency']:.1f}ms")
     print(f"  • Max latency: {stats['max_latency']:.1f}ms")
     print(f"  • Processing errors: {stats['processing_errors']}")
 
     # Test context-aware selection
-    print(f"\\nContext-Aware Selection Test:")
+    print("\\nContext-Aware Selection Test:")
     alarm_phrases = integrator.phrase_library.select_phrases_by_context(
         'alarm',
         min_quality=0.5,

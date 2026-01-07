@@ -13,15 +13,16 @@ Species tested:
 5. Zebra Finch (songbird harmonic)
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -42,7 +43,7 @@ def load_audio_file(filepath, target_sr=None):
 
         # Return with native sample rate (don't resample)
         return audio, sr
-    except Exception as e:
+    except Exception:
         return None, None
 
 

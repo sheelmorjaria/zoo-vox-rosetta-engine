@@ -285,7 +285,7 @@ impl CalibrationEngine {
                     let white = (rand::random::<f32>() * 2.0 - 1.0) * 0.1;
                     b0 = 0.99886 * b0 + white * 0.0555179;
                     b1 = 0.99332 * b1 + white * 0.0750759;
-                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b2 = 0.96900 * b2 + white * 0.153_852;
                     b3 = 0.86650 * b3 + white * 0.3104856;
                     b4 = 0.55000 * b4 + white * 0.5329522;
                     b5 = -0.7616 * b5 - white * 0.0168980;
@@ -339,7 +339,7 @@ impl CalibrationEngine {
     }
 
     /// Analyze frequency response using FFT
-    fn analyze_frequency_response(&self, audio: &[f32]) -> Vec<(f32, f32)> {
+    fn analyze_frequency_response(&self, _audio: &[f32]) -> Vec<(f32, f32)> {
         // In production, this would:
         // 1. Compute FFT of the audio
         // 2. Convert to magnitude in dB
@@ -371,7 +371,7 @@ impl CalibrationEngine {
     }
 
     /// Update gain compensation table
-    fn update_gain_table(&self, frequency_response: &[(f32, f32)], drift_db: f32) -> Result<Vec<GainAdjustment>> {
+    fn update_gain_table(&self, _frequency_response: &[(f32, f32)], drift_db: f32) -> Result<Vec<GainAdjustment>> {
         let mut gain_table = self.gain_table.lock().unwrap();
         let key = "main_output";
 
@@ -612,7 +612,7 @@ mod tests {
         // Should have a valid result
         assert_eq!(result.expected_gain_db, -20.0);
         assert!(result.loopback_gain_db < 0.0);
-        assert!(result.frequency_response.len() > 0);
+        assert!(!result.frequency_response.is_empty());
     }
 
     #[test]
@@ -655,7 +655,7 @@ mod tests {
         let engine = create_test_engine();
         let response = engine.verify_frequency_response().unwrap();
 
-        assert!(response.len() > 0);
+        assert!(!response.is_empty());
         for point in &response {
             assert!(point.frequency_hz > 0.0);
         }

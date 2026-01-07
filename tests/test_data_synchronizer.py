@@ -3,22 +3,25 @@
 Unit tests for data_synchronizer module using TDD methodology.
 """
 
-import pytest
 import asyncio
-import tempfile
-import json
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Dict, List, Any
 import sys
 import uuid
+from typing import Dict, List
+from unittest.mock import patch
+
+import pytest
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Import Rust modules (will be implemented)
 try:
-    from cognition.field_deployment.src.data_synchronizer import DataSynchronizer, SyncConfig, SyncEvent
+    from cognition.field_deployment.src.data_synchronizer import (
+        DataSynchronizer,
+        SyncConfig,
+        SyncEvent,
+    )
 except ImportError:
     # Create Python mocks for testing
     from dataclasses import dataclass
@@ -110,7 +113,7 @@ class TestDataSynchronizer:
     def test_sync_config_initialization(self):
         """Test SyncConfig initialization."""
         assert self.sync_config.sync_interval_secs == 30
-        assert self.sync_config.backup_enabled == True
+        assert self.sync_config.backup_enabled
         assert len(self.sync_config.remote_servers) == 2
         assert self.sync_config.remote_servers[0] == "backup-server-1.example.com"
 
@@ -120,7 +123,7 @@ class TestDataSynchronizer:
         synchronizer = DataSynchronizer(self.sync_config)
 
         assert synchronizer.config == self.sync_config
-        assert synchronizer.is_running == False
+        assert not synchronizer.is_running
         assert len(synchronizer.sync_events) == 0
 
     @pytest.mark.asyncio
@@ -130,11 +133,11 @@ class TestDataSynchronizer:
 
         # Test start
         await synchronizer.start()
-        assert synchronizer.is_running == True
+        assert synchronizer.is_running
 
         # Test stop
         await synchronizer.stop()
-        assert synchronizer.is_running == False
+        assert not synchronizer.is_running
 
     @pytest.mark.asyncio
     async def test_data_sync_success(self):
@@ -147,13 +150,13 @@ class TestDataSynchronizer:
         # Sync data
         result = await synchronizer.sync_data(self.sample_data)
 
-        assert result == True
+        assert result
         # Mock creates one event per remote server
         assert len(synchronizer.sync_events) == len(self.sync_config.remote_servers)
 
         # Check sync status
         status = await synchronizer.get_sync_status()
-        assert status['is_running'] == True
+        assert status['is_running']
         assert status['total_synced'] == len(self.sync_config.remote_servers)
 
     @pytest.mark.asyncio
@@ -174,7 +177,7 @@ class TestDataSynchronizer:
         result = await synchronizer.sync_data(self.sample_data)
 
         # Should succeed
-        assert result == True
+        assert result
         # One event per server
         assert len(synchronizer.sync_events) == 3
 
@@ -185,9 +188,9 @@ class TestDataSynchronizer:
 
         result = await synchronizer.sync_data(self.sample_data)
 
-        assert result == True
+        assert result
         # Backup is enabled in config
-        assert self.sync_config.backup_enabled == True
+        assert self.sync_config.backup_enabled
 
     @pytest.mark.asyncio
     async def test_sync_interval_scheduling(self):
@@ -218,7 +221,7 @@ class TestDataSynchronizer:
         result = await synchronizer.sync_data(self.sample_data)
 
         # Should handle error gracefully
-        assert result == False  # Sync failed
+        assert not result  # Sync failed
         assert len(synchronizer.sync_errors) > 0
 
     @pytest.mark.asyncio
@@ -235,7 +238,7 @@ class TestDataSynchronizer:
 
         result = await synchronizer.sync_data(large_data)
 
-        assert result == True
+        assert result
         # Should create sync events
         assert len(synchronizer.sync_events) > 0
 
@@ -270,7 +273,7 @@ class TestDataSynchronizer:
 
         # Initial status
         status = await synchronizer.get_sync_status()
-        assert status['is_running'] == False
+        assert not status['is_running']
         assert status['total_synced'] == 0
         assert status['last_sync'] is None
 
@@ -280,7 +283,7 @@ class TestDataSynchronizer:
 
         # Updated status
         status = await synchronizer.get_sync_status()
-        assert status['is_running'] == True
+        assert status['is_running']
         # Mock creates one event per server
         assert status['total_synced'] == len(self.sync_config.remote_servers)
 
@@ -318,7 +321,7 @@ class TestDataSynchronizer:
 
         # First sync should fail
         result = await synchronizer.sync_data(self.sample_data)
-        assert result == False
+        assert not result
 
         # Clear error state
         synchronizer._should_fail = False
@@ -326,7 +329,7 @@ class TestDataSynchronizer:
 
         # Second sync should succeed
         result = await synchronizer.sync_data(self.sample_data)
-        assert result == True
+        assert result
         assert len(synchronizer.sync_events) == len(self.sync_config.remote_servers)
 
     @pytest.mark.asyncio
@@ -345,5 +348,5 @@ class TestDataSynchronizer:
 
         # Verify cleanup
         status = await synchronizer.get_sync_status()
-        assert status['is_running'] == False
+        assert not status['is_running']
         # Resources should be properly released

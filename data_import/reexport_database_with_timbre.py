@@ -15,20 +15,25 @@ Total: 2,882 phrases
 """
 
 import json
-import sys
-import pickle
-import numpy as np
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Any
 import logging
+import pickle
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict
+
+import numpy as np
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from data_models import (
-    SpeciesData, Phrase, AcousticFeatures, PhraseContext,
-    Species, VocalizationModality
+    AcousticFeatures,
+    Phrase,
+    PhraseContext,
+    Species,
+    SpeciesData,
+    VocalizationModality,
 )
 
 # Import URS for feature extraction
@@ -279,7 +284,7 @@ def reexport_all_species_with_timbre(output_path: str):
 
     # Load old database for other species
     with open(old_db_path, 'r') as f:
-        old_db = json.load(f)
+        json.load(f)
 
     all_species_data = {
         'marmoset': marmoset_data
@@ -352,19 +357,19 @@ def reexport_all_species_with_timbre(output_path: str):
     with open(output_path, 'w') as f:
         json.dump(export_data, f, indent=2)
 
-    logger.info(f"✅ Saved!")
+    logger.info("✅ Saved!")
 
     # Print summary
     logger.info("\n" + "=" * 80)
     logger.info("SUMMARY")
     logger.info("=" * 80)
     logger.info(f"Total phrases exported: {marmoset_data.total_phrases}")
-    logger.info(f"Timbre features added: YES (4 new dimensions)")
-    logger.info(f"New features:")
-    logger.info(f"  - spectral_centroid_hz")
-    logger.info(f"  - spectral_slope")
-    logger.info(f"  - spectral_bandwidth_hz")
-    logger.info(f"  - spectral_rolloff_hz")
+    logger.info("Timbre features added: YES (4 new dimensions)")
+    logger.info("New features:")
+    logger.info("  - spectral_centroid_hz")
+    logger.info("  - spectral_slope")
+    logger.info("  - spectral_bandwidth_hz")
+    logger.info("  - spectral_rolloff_hz")
 
     # Sample some timbre values
     logger.info("\n📊 SAMPLE TIMBRE VALUES:")
@@ -390,7 +395,7 @@ def main():
     logger.info(f"✅ New database saved to: {output_path}")
     logger.info("\n🎯 Next steps:")
     logger.info("  1. Backup old database:")
-    logger.info(f"     mv /home/sheel/birdsong_analysis/src/vocalization_database.json /home/sheel/birdsong_analysis/src/vocalization_database_old.json")
+    logger.info("     mv /home/sheel/birdsong_analysis/src/vocalization_database.json /home/sheel/birdsong_analysis/src/vocalization_database_old.json")
     logger.info("  2. Replace with new database:")
     logger.info(f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json")
 

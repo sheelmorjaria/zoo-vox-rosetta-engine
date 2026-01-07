@@ -47,15 +47,16 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import pickle
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Any, Union
-from pathlib import Path
-from datetime import datetime
+import pickle
 from collections import defaultdict
-import numpy as np
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import librosa
+import numpy as np
 import soundfile as sf
 
 logger = logging.getLogger(__name__)
@@ -2124,7 +2125,7 @@ class VocalizationSynthesizer:
         )
 
         if not segments:
-            logger.warning(f"No segments found with microharmonic filters")
+            logger.warning("No segments found with microharmonic filters")
             return None
 
         # Calculate gap in samples
@@ -2234,7 +2235,7 @@ class VocalizationSynthesizer:
         )
 
         if not segments:
-            logger.warning(f"No segments found with microharmonic filters")
+            logger.warning("No segments found with microharmonic filters")
             return None
 
         # Calculate output size
@@ -2590,8 +2591,8 @@ def extract_microharmonic_signature_from_audio(
 
         # Try to import microharmonic encoder
         try:
-            from microharmonic_encoder_phase1 import MicroharmonicDatasetBuilder
             from intracall_linguistic_analysis import IntraCallLinguisticAnalyzer
+            from microharmonic_encoder_phase1 import MicroharmonicDatasetBuilder
         except ImportError:
             logger.debug("Microharmonic encoder not available, skipping signature extraction")
             return None

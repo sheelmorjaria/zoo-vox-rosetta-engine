@@ -37,6 +37,8 @@ sysinfo = "0.30"
 # Atomic operations
 crossbeam = "0.8"
 parking_lot = "0.12"
+# LRU Cache for audio buffer caching
+lru = "0.12"
 # ZeroMQ for inter-process communication
 zmq = "0.10"
 # Random number generation (for TDD testing)

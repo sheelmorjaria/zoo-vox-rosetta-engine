@@ -4,28 +4,32 @@ Comprehensive test suite for task management and scheduling system.
 Tests various scheduling algorithms, priority management, and resource allocation.
 """
 
-import pytest
-import sys
 import os
-import time
+import sys
 import threading
-import asyncio
-import numpy as np
-from unittest.mock import patch, Mock, MagicMock
+import time
 from datetime import datetime, timedelta
-import uuid
-import heapq
-from typing import Dict, List, Any, Optional, Callable, Union
-import psutil
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from realtime.task_management import (
-    TaskManager, TaskScheduler, TaskExecutor, Task,
-    Priority, TaskStatus, TaskType, SchedulingPolicy,
-    ResourcePool, ResourceMonitor, TaskQueue,
-    ExecutionResult, TaskDag, DependencyTracker
+    DependencyTracker,
+    Priority,
+    ResourcePool,
+    SchedulingPolicy,
+    Task,
+    TaskDag,
+    TaskExecutor,
+    TaskManager,
+    TaskQueue,
+    TaskScheduler,
+    TaskStatus,
+    TaskType,
 )
 
 
@@ -53,7 +57,7 @@ class TestTask:
     def test_task_dependencies(self):
         """Test task dependency management."""
         # Create dependent tasks
-        task_a = Task("task_a", TaskType.AUDIO_ANALYSIS, Priority.HIGH)
+        Task("task_a", TaskType.AUDIO_ANALYSIS, Priority.HIGH)
         task_b = Task("task_b", TaskType.FEATURE_EXTRACTION, Priority.MEDIUM)
         task_c = Task("task_c", TaskType.VISUAL_FUSION, Priority.HIGH)
 
@@ -705,7 +709,7 @@ class TestTaskManager:
             manager.submit_task(task)
 
         # Process with monitoring
-        results = manager.process_tasks()
+        manager.process_tasks()
 
         # Get resource stats
         stats = manager.get_resource_statistics()
@@ -724,7 +728,7 @@ class TestTaskManager:
         manager.submit_task(task)
 
         # Process tasks
-        results = manager.process_tasks()
+        manager.process_tasks()
 
         # Should have retry entries
         stats = manager.get_statistics()
@@ -751,7 +755,7 @@ class TestTaskManager:
             manager.submit_task(task)
 
         # Process with load balancing
-        results = manager.process_tasks()
+        manager.process_tasks()
 
         # Verify load balancing occurred
         final_loads = [executor.load for executor in executors]

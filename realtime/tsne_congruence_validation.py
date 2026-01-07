@@ -24,14 +24,15 @@ Output:
 """
 
 import json
-import numpy as np
-import matplotlib.pyplot as plt
+import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
-import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+import soundfile as sf
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -145,7 +146,7 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
 
     # Sample from phrase types
     phrase_keys = list(audio_index['phrases'].keys())
-    samples_per_phrase = max(1, num_samples // len(phrase_keys))
+    max(1, num_samples // len(phrase_keys))
 
     for phrase_key in phrase_keys[:num_samples]:
         phrase_data = audio_index['phrases'][phrase_key]
@@ -170,7 +171,7 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
                 features = extract_micro_dynamics_features(audio, sr)
                 features_list.append(features)
                 file_paths.append(str(file_path))
-            except Exception as e:
+            except Exception:
                 continue
 
         if len(features_list) >= num_samples:
@@ -186,7 +187,7 @@ def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> T
     Generate concatenative samples by loading 2-3 phrase segments and
     concatenating them (simulating sentence-level synthesis).
     """
-    print(f"Generating concatenative samples...")
+    print("Generating concatenative samples...")
 
     with open(audio_index_path, 'r') as f:
         audio_index = json.load(f)
@@ -243,7 +244,7 @@ def generate_dynamic_microharmonic_samples(
     Generate Dynamic Microharmonic samples using the Rust synthesizer
     with real micro-dynamics parameters from the database.
     """
-    print(f"Generating Dynamic Microharmonic samples (Rust synthesizer with real parameters)...")
+    print("Generating Dynamic Microharmonic samples (Rust synthesizer with real parameters)...")
 
     # Import Rust synthesizer
     if use_rust:
@@ -258,10 +259,10 @@ def generate_dynamic_microharmonic_samples(
             spec.loader.exec_module(module)
             DynamicMicroharmonicSynthesizer = module.DynamicMicroharmonicSynthesizer
             synthesizer = DynamicMicroharmonicSynthesizer(sample_rate=22050)
-            print(f"  ✅ Using Rust DynamicMicroharmonicSynthesizer")
+            print("  ✅ Using Rust DynamicMicroharmonicSynthesizer")
         except Exception as e:
             print(f"  ⚠️  Could not import Rust synthesizer: {e}")
-            print(f"  Falling back to Python synthesis")
+            print("  Falling back to Python synthesis")
             use_rust = False
 
     features_list = []
@@ -398,7 +399,7 @@ def run_tsne_validation(features_dict: Dict[str, np.ndarray]) -> Tuple[np.ndarra
 
 def plot_tsne_results(projections: np.ndarray, labels: np.ndarray, output_path: str):
     """Plot t-SNE results and save to file."""
-    print(f"\nPlotting t-SNE results...")
+    print("\nPlotting t-SNE results...")
 
     # Color mapping
     color_map = {
@@ -485,18 +486,18 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     congruence_score = 1.0 / (1.0 + natural_dynamic_dist / natural_spread)
     metrics['congruence_score'] = float(congruence_score)
 
-    print(f"\n  Centroid Distances:")
+    print("\n  Centroid Distances:")
     print(f"    Natural ↔ Concatenative: {natural_concat_dist:.3f}")
     print(f"    Natural ↔ Dynamic: {natural_dynamic_dist:.3f}")
     print(f"    Concatenative ↔ Dynamic: {concat_dynamic_dist:.3f}")
 
-    print(f"\n  Spread (within-group variance):")
+    print("\n  Spread (within-group variance):")
     print(f"    Natural: {natural_spread:.3f}")
     print(f"    Concatenative: {concat_spread:.3f}")
     print(f"    Dynamic: {dynamic_spread:.3f}")
 
     print(f"\n  Congruence Score: {congruence_score:.3f}")
-    print(f"    (1.0 = perfect congruence with natural, 0.0 = no congruence)")
+    print("    (1.0 = perfect congruence with natural, 0.0 = no congruence)")
 
     # Interpretation
     if congruence_score > 0.7:
@@ -546,17 +547,17 @@ def main():
     features_dict = {}
 
     # Natural samples
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     natural_features, _ = load_natural_samples(MARMOSET_AUDIO_INDEX, NUM_SAMPLES_PER_GROUP)
     features_dict['Natural'] = natural_features
 
     # Concatenative samples
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     concat_features, _ = generate_concatenative_samples(MARMOSET_AUDIO_INDEX, NUM_SAMPLES_PER_GROUP)
     features_dict['Concatenative'] = concat_features
 
     # Dynamic Microharmonic samples (with Rust synthesizer + real parameters)
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     dynamic_features, _ = generate_dynamic_microharmonic_samples(
         NUM_SAMPLES_PER_GROUP,
         micro_dynamics_db,
@@ -565,7 +566,7 @@ def main():
     features_dict['Dynamic_Microharmonic'] = dynamic_features
 
     # Run t-SNE
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     projections, labels = run_tsne_validation(features_dict)
 
     # Plot results
@@ -586,18 +587,18 @@ def main():
     print("✅ t-SNE VALIDATION COMPLETE!")
     print("=" * 80)
 
-    print(f"\n🎯 NEXT STEPS:")
+    print("\n🎯 NEXT STEPS:")
     if metrics['congruence_score'] < 0.5:
         print(f"   1. Congruence score is {metrics['congruence_score']:.3f} - needs improvement")
-        print(f"   2. Tune micro-dynamics parameters:")
-        print(f"      - Adjust attack/decay times")
-        print(f"      - Modify vibrato rate/depth")
-        print(f"      - Refine jitter amount")
-        print(f"   3. Re-run validation")
+        print("   2. Tune micro-dynamics parameters:")
+        print("      - Adjust attack/decay times")
+        print("      - Modify vibrato rate/depth")
+        print("      - Refine jitter amount")
+        print("   3. Re-run validation")
     else:
         print(f"   1. Congruence score is {metrics['congruence_score']:.3f} - good!")
-        print(f"   2. Proceed to Bio-Acoustic Turing Test")
-        print(f"   3. Test with live animals")
+        print("   2. Proceed to Bio-Acoustic Turing Test")
+        print("   3. Test with live animals")
 
     print("=" * 80)
 

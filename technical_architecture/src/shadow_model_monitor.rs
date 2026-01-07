@@ -4,7 +4,6 @@
 // by comparing active model against frozen baseline.
 
 use crate::ptp::PtpTimestamp;
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
@@ -87,10 +86,8 @@ impl AlertLevel {
             Self::Emergency
         } else if divergence >= 0.2 {
             Self::Critical
-        } else if divergence >= 0.1 {
-            Self::Warning
         } else {
-            Self::Warning // Minimum warning level
+            Self::Warning // Warning for everything below 0.2
         }
     }
 }
@@ -192,7 +189,7 @@ impl MockActiveModel {
 }
 
 impl InferenceModel for MockActiveModel {
-    fn predict(&self, input: &InputFeatures) -> ModelPrediction {
+    fn predict(&self, _input: &InputFeatures) -> ModelPrediction {
         // Simulate prediction with possible drift
         let base_label = "playback";
         let base_confidence = 0.85;
@@ -671,7 +668,7 @@ mod tests {
     fn test_compare_predictions_with_drift() {
         let active_model = Box::new(MockActiveModel::new("1.0.0").with_drift(0.8));
         let shadow_model = Box::new(MockShadowModel::new("1.0.0"));
-        let mut monitor = ShadowModelMonitor::with_defaults(active_model, shadow_model);
+        let monitor = ShadowModelMonitor::with_defaults(active_model, shadow_model);
 
         let features = InputFeatures::new(vec![1.0]);
         let comparison = monitor.compare_predictions(&features);

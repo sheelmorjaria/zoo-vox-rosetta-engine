@@ -168,10 +168,15 @@ pub struct WebDashboard {
 
 /// Client connection info
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct ClientConnection {
+    #[allow(dead_code)]
     id: String,
+    #[allow(dead_code)]
     connected_at: Instant,
+    #[allow(dead_code)]
     ip_address: String,
+    #[allow(dead_code)]
     subscriptions: Vec<String>,
     last_heartbeat: Instant,
 }

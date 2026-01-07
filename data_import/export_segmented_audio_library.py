@@ -26,12 +26,13 @@ Output:
 """
 
 import json
-import numpy as np
-import soundfile as sf
+import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
-from collections import defaultdict
-import sys
+
+import numpy as np
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone'))
@@ -251,14 +252,14 @@ def analyze_audio_library(audio_index: Dict):
         for segment in phrase_data['segments']:
             duration_sum += segment['duration_ms']
 
-    print(f"\n📊 LIBRARY STATISTICS:")
+    print("\n📊 LIBRARY STATISTICS:")
     print(f"   Unique phrase types: {len(phrase_counts)}")
     print(f"   Total segments: {total_segments}")
     print(f"   Total duration: {duration_sum / 1000:.1f} seconds")
     print(f"   Mean segment duration: {duration_sum / total_segments:.1f} ms")
 
     # Phrase count distribution
-    print(f"\n📊 PHRASE COUNT DISTRIBUTION:")
+    print("\n📊 PHRASE COUNT DISTRIBUTION:")
 
     count_distribution = defaultdict(int)
     for count in phrase_counts.values():
@@ -277,13 +278,13 @@ def analyze_audio_library(audio_index: Dict):
         print(f"   {category}: {count} phrase types")
 
     # Most common phrases
-    print(f"\n📊 MOST COMMON PHRASES:")
+    print("\n📊 MOST COMMON PHRASES:")
     sorted_phrases = sorted(phrase_counts.items(), key=lambda x: x[1], reverse=True)
     for phrase_key, count in sorted_phrases[:10]:
         print(f"   {phrase_key}: {count} occurrences")
 
     # Duration distribution
-    print(f"\n📊 DURATION DISTRIBUTION:")
+    print("\n📊 DURATION DISTRIBUTION:")
 
     all_durations = []
     for phrase_data in audio_index['phrases'].values():
@@ -299,7 +300,7 @@ def analyze_audio_library(audio_index: Dict):
     print(f"   Std: {np.std(all_durations):.1f} ms")
 
     # Context distribution
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
 
     context_counts = defaultdict(int)
     for phrase_data in audio_index['phrases'].values():
@@ -338,10 +339,10 @@ def main():
     print("=" * 80)
     print(f"\n📂 Audio library location: {OUTPUT_DIR}")
     print(f"📋 Audio index: {AUDIO_INDEX_PATH}")
-    print(f"\n🎯 Ready for concatenative synthesis!")
-    print(f"   • Load audio segments from library")
-    print(f"   • Use phrase_sequence from syntax metadata")
-    print(f"   • Concatenate with crossfades")
+    print("\n🎯 Ready for concatenative synthesis!")
+    print("   • Load audio segments from library")
+    print("   • Use phrase_sequence from syntax metadata")
+    print("   • Concatenate with crossfades")
     print("=" * 80)
 
 

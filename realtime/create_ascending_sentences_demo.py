@@ -11,13 +11,10 @@ License: CC BY-ND 4.0 International
 """
 
 import numpy as np
-import pickle
-import json
-from pathlib import Path
-from typing import Dict, List, Any, Tuple
 
 # Import our frameworks
-from phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
+from phrase_audio_library import PhraseAudioLibrary
+
 
 def generate_flat_tone_phrase_with_ascension(
     base_f0: float,
@@ -162,19 +159,19 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
                 total_segments += 1
                 print(f"     ✓ {phrase_key}: {f0}Hz - {phrase_meaning}")
 
-    print(f"\n2. Library Statistics:")
+    print("\n2. Library Statistics:")
     print(f"   Total phrase types: {len(library.get_all_phrase_keys())}")
     print(f"   Total segments: {library.total_segments}")
 
     # Context analysis
     context_stats = library.get_context_statistics()
     if 'context_statistics' in context_stats:
-        print(f"   Context distribution:")
+        print("   Context distribution:")
         for context, stats in context_stats['context_statistics'].items():
             print(f"     {context}: {stats['total_occurrences']} segments")
 
     # Frequency analysis
-    print(f"\n3. Frequency Range Analysis:")
+    print("\n3. Frequency Range Analysis:")
     phrase_keys = library.get_all_phrase_keys()
     f0_values = []
 
@@ -189,7 +186,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         print(f"   Mean F0: {np.mean(f0_values):.0f} Hz")
         print(f"   F0 standard deviation: {np.std(f0_values):.0f} Hz")
 
-    print(f"\n4. Sentence Structure Analysis:")
+    print("\n4. Sentence Structure Analysis:")
 
     # Analyze ascending patterns
     for sentence_name, phrase_sequence in all_sentences:

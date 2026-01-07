@@ -7,34 +7,30 @@ analysis and cognitive intelligence capabilities.
 """
 
 # Core data models
+# Import functionality
+from .data_import import DataImporter as VocalizationDataImporter
 from .data_models import (
-    Species,
-    VocalizationModality,
     AcousticFeatures,
+    GrammarRule,
     Phrase,
     PhraseContext,
     Sentence,
-    GrammarRule,
+    Species,
     SpeciesData,
-    VocalizationDatabase
+    VocalizationDatabase,
+    VocalizationModality,
 )
-
-# Import functionality
-from .data_import import DataImporter as VocalizationDataImporter
 
 # Query interface
-from .query_interface import (
-    VocalizationQueryInterface,
-    get_query_interface
-)
+from .query_interface import VocalizationQueryInterface, get_query_interface
 
 # Semiotic analysis
 from .semiotics import (
-    SemioticEngine,
-    SemioticState,
-    SemioticRelation,
+    SemioticAnalysisResult,
     SemioticContext,
-    SemioticAnalysisResult
+    SemioticEngine,
+    SemioticRelation,
+    SemioticState,
 )
 
 __version__ = "1.0.0"

@@ -13,21 +13,19 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import os
 import sys
-import torch
-import numpy as np
 from pathlib import Path
-from abc import ABC, abstractmethod
-import pytorch_lightning as pl
-from torch.utils.data import DataLoader, Dataset
+
+import numpy as np
+import torch
+from torch.utils.data import Dataset
 
 # Try to import Asteroid
 try:
+    import asteroid
     from asteroid import ConvTasNet
     from asteroid.losses import PITLossWrapper
     from asteroid.metrics import MetricsTracker
-    import asteroid
     print(f"Asteroid version: {asteroid.__version__}")
     ASTEROID_AVAILABLE = True
 except ImportError as e:

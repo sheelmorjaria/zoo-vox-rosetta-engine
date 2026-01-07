@@ -21,15 +21,16 @@ Output:
 """
 
 import json
-import numpy as np
-import matplotlib.pyplot as plt
+import random
+import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
-import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+import soundfile as sf
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-import soundfile as sf
-import random
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -173,7 +174,7 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
                 features = extract_micro_dynamics_features(audio, sr)
                 features_list.append(features)
                 file_paths.append(str(file_path))
-            except Exception as e:
+            except Exception:
                 continue
 
         if len(features_list) >= num_samples:
@@ -186,7 +187,7 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
 
 def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> Tuple[np.ndarray, List[str]]:
     """Generate concatenative samples by concatenating real audio segments."""
-    print(f"\nGenerating concatenative samples...")
+    print("\nGenerating concatenative samples...")
 
     with open(audio_index_path, 'r') as f:
         audio_index = json.load(f)
@@ -238,7 +239,7 @@ def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> T
 
 def generate_granular_samples(audio_index_path: str, num_samples: int) -> Tuple[np.ndarray, List[str]]:
     """Generate granular synthesis samples using Rust synthesizer."""
-    print(f"\nGenerating Granular Concatenative samples (with pitch/time manipulation)...")
+    print("\nGenerating Granular Concatenative samples (with pitch/time manipulation)...")
 
     with open(audio_index_path, 'r') as f:
         audio_index = json.load(f)
@@ -348,7 +349,7 @@ def run_tsne_validation(features_dict: Dict[str, np.ndarray]) -> Tuple[np.ndarra
 
 def plot_tsne_results(projections: np.ndarray, labels: np.ndarray, output_path: str):
     """Plot t-SNE results and save to file."""
-    print(f"\nPlotting t-SNE results...")
+    print("\nPlotting t-SNE results...")
 
     # Color mapping
     color_map = {
@@ -437,18 +438,18 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     granular_congruence = 1.0 / (1.0 + natural_granular_dist / natural_spread)
     metrics['granular_congruence_score'] = float(granular_congruence)
 
-    print(f"\n  Centroid Distances:")
+    print("\n  Centroid Distances:")
     print(f"    Natural ↔ Concatenative: {natural_concat_dist:.3f}")
     print(f"    Natural ↔ Granular:      {natural_granular_dist:.3f}")
     print(f"    Concatenative ↔ Granular: {concat_granular_dist:.3f}")
 
-    print(f"\n  Spread (within-group variance):")
+    print("\n  Spread (within-group variance):")
     print(f"    Natural:      {natural_spread:.3f}")
     print(f"    Concatenative: {concat_spread:.3f}")
     print(f"    Granular:     {granular_spread:.3f}")
 
     print(f"\n  Granular Congruence Score: {granular_congruence:.3f}")
-    print(f"    (1.0 = perfect congruence with natural, 0.0 = no congruence)")
+    print("    (1.0 = perfect congruence with natural, 0.0 = no congruence)")
 
     # Scientific interpretation
     print("\n  " + "=" * 60)
@@ -458,20 +459,20 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     if natural_granular_dist < 7.0:
         interpretation = "✅ EXCELLENT: Granular synthesis preserves formant structure"
         print(f"  ✅ Natural ↔ Granular distance ({natural_granular_dist:.3f}) < 7.0")
-        print(f"  ✅ Hypothesis CONFIRMED: Granular synthesis achieves high fidelity")
-        print(f"     by preserving spectral envelope (formants) from real audio.")
+        print("  ✅ Hypothesis CONFIRMED: Granular synthesis achieves high fidelity")
+        print("     by preserving spectral envelope (formants) from real audio.")
     elif natural_granular_dist < 15.0:
         interpretation = "⚠️  MODERATE: Granular synthesis shows partial congruence"
         print(f"  ⚠️  Natural ↔ Granular distance ({natural_granular_dist:.3f}) is moderate")
-        print(f"  ⚠️  Granular synthesis is better than additive but not ideal")
+        print("  ⚠️  Granular synthesis is better than additive but not ideal")
     else:
         interpretation = "❌ POOR: Granular synthesis does not preserve formants"
         print(f"  ❌ Natural ↔ Granular distance ({natural_granular_dist:.3f}) is too large")
-        print(f"  ❌ Hypothesis REJECTED: Granular synthesis failed to preserve formants")
+        print("  ❌ Hypothesis REJECTED: Granular synthesis failed to preserve formants")
 
     # Comparison with additive synthesis
-    print(f"\n  Comparison with Additive Synthesis (previous result):")
-    print(f"    Additive:     Natural ↔ Dynamic distance ≈ 27.0 (POOR)")
+    print("\n  Comparison with Additive Synthesis (previous result):")
+    print("    Additive:     Natural ↔ Dynamic distance ≈ 27.0 (POOR)")
     print(f"    Granular:     Natural ↔ Granular distance ≈ {natural_granular_dist:.1f} ({'GOOD' if natural_granular_dist < 7.0 else 'MODERATE'})")
     print(f"    Improvement:  {(27.0 - natural_granular_dist) / 27.0 * 100:.1f}% reduction in distance")
 
@@ -527,25 +528,25 @@ def main():
     print("✅ GRANULAR SYNTHESIS VALIDATION COMPLETE!")
     print("=" * 80)
 
-    print(f"\n📂 Output files:")
+    print("\n📂 Output files:")
     print(f"   - Plot: {plot_path}")
     print(f"   - Results: {results_path}")
 
     print("\n📊 Summary:")
     print(f"   Natural ↔ Concatenative distance: {metrics['centroid_distances']['natural_concatenative']:.3f}")
     print(f"   Natural ↔ Granular distance:      {metrics['centroid_distances']['natural_granular']:.3f}")
-    print(f"   Target: < 7.0")
+    print("   Target: < 7.0")
     print(f"   Result: {'✅ PASS' if metrics['centroid_distances']['natural_granular'] < 7.0 else '❌ FAIL'}")
 
     print("\n🎯 NEXT STEPS:")
     if metrics['centroid_distances']['natural_granular'] < 7.0:
-        print(f"   1. ✅ Granular synthesis validated!")
-        print(f"   2. Proceed to Bio-Acoustic Turing Test")
-        print(f"   3. Test granular vs natural vocalizations with live animals")
+        print("   1. ✅ Granular synthesis validated!")
+        print("   2. Proceed to Bio-Acoustic Turing Test")
+        print("   3. Test granular vs natural vocalizations with live animals")
     else:
-        print(f"   1. ⚠️  Granular synthesis needs tuning")
-        print(f"   2. Adjust grain size, window function")
-        print(f"   3. Consider using formant-preserving pitch shifting")
+        print("   1. ⚠️  Granular synthesis needs tuning")
+        print("   2. Adjust grain size, window function")
+        print("   3. Consider using formant-preserving pitch shifting")
 
     print("=" * 80)
 

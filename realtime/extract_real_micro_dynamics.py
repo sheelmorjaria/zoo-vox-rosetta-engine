@@ -21,12 +21,12 @@ Output:
 """
 
 import json
+import sys
+from pathlib import Path
+from typing import Dict
+
 import numpy as np
 import soundfile as sf
-from pathlib import Path
-from typing import Dict, List
-from collections import defaultdict
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -169,6 +169,65 @@ def extract_jitter(audio: np.ndarray, sr: int) -> float:
     return jitter
 
 
+def extract_13_mfcc(audio: np.ndarray, sr: int, n_mfcc: int = 13) -> np.ndarray:
+    """
+    Extract 13 MFCC coefficients for formant/timbre analysis.
+
+    This expands the acoustic vector space from 4 to 13 MFCCs,
+    enabling:
+    - Better formant discrimination (vowel quality)
+    - Improved timbre morphing (spectral envelope shaping)
+    - Enhanced nearest neighbor search in high-dimensional space
+
+    Args:
+        audio: Audio samples (numpy array)
+        sr: Sample rate in Hz
+        n_mfcc: Number of MFCC coefficients to extract (default 13)
+
+    Returns:
+        1D numpy array of shape (13,) containing time-averaged MFCCs.
+        - MFCC[0]: Energy coefficient (log-energy proxy)
+        - MFCC[1-4]: Broad spectral envelope (formants)
+        - MFCC[5-13]: Fine spectral structure (harmonics, timbre)
+
+    Note:
+        Returns time-averaged MFCCs (mean across frames), not frame-based.
+        This is suitable for phrase-level feature representation.
+    """
+    import warnings
+    import librosa
+
+    # Validate input
+    if len(audio) == 0:
+        return np.zeros(n_mfcc, dtype=np.float32)
+
+    try:
+        # Suppress librosa warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Extract MFCCs using librosa
+            # n_fft=2048 provides good frequency resolution
+            # hop_length=512 provides good time resolution
+            mfcc_frame_based = librosa.feature.mfcc(
+                y=audio.astype(np.float32),
+                sr=sr,
+                n_mfcc=n_mfcc,
+                n_fft=2048,
+                hop_length=512
+            )
+
+            # Average across time to get phrase-level features
+            # Result shape: (13,)
+            mfcc_time_averaged = np.mean(mfcc_frame_based, axis=1)
+
+            return mfcc_time_averaged.astype(np.float32)
+
+    except Exception as e:
+        # Fallback: return zeros on error
+        return np.zeros(n_mfcc, dtype=np.float32)
+
+
 def extract_micro_dynamics_from_file(file_path: str, phrase_key: str) -> Dict:
     """Extract all micro-dynamics from a single audio file."""
     try:
@@ -278,7 +337,7 @@ def process_audio_library(audio_index_path: str, species: str) -> Dict:
 def analyze_extracted_features(micro_dynamics_db: Dict):
     """Analyze the extracted micro-dynamics."""
     print(f"\n{'=' * 80}")
-    print(f"MICRO-DYNAMICS ANALYSIS")
+    print("MICRO-DYNAMICS ANALYSIS")
     print(f"{'=' * 80}")
 
     # Collect all feature values
@@ -348,7 +407,7 @@ def main():
 
     # Analyze combined
     print(f"\n{'=' * 80}")
-    print(f"COMBINED ANALYSIS")
+    print("COMBINED ANALYSIS")
     print(f"{'=' * 80}")
 
     combined_db = {**marmoset_db, **bat_db}

@@ -19,14 +19,14 @@ Methods:
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
-import soundfile as sf
+from collections import defaultdict
 from pathlib import Path
-from collections import defaultdict, Counter
-from typing import List, Dict, Tuple
-import re
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
 ANNOTATIONS_PATH = '/home/sheel/birdsong_analysis/Annotations.tsv'
@@ -301,7 +301,7 @@ def analyze_vocalizations_for_ascending_syntax(
             if (idx + 1) % 10 == 0:
                 print(f"  Processed {idx + 1}/{len(sample)} vocalizations...")
 
-        except Exception as e:
+        except Exception:
             continue
 
     return results
@@ -315,7 +315,7 @@ def print_ascending_syntax_summary(results: Dict):
 
     total = results['vocalizations_analyzed']
 
-    print(f"\n📊 OVERALL STATISTICS:")
+    print("\n📊 OVERALL STATISTICS:")
     print(f"   Vocalizations analyzed: {total}")
     print(f"   Multi-phrase vocalizations: {results['multi_phrase_vocalizations']} "
           f"({results['multi_phrase_vocalizations'] / total * 100:.1f}%)")
@@ -325,7 +325,7 @@ def print_ascending_syntax_summary(results: Dict):
           f"({results['flat_tone_ascending'] / total * 100:.1f}%)")
 
     # Context-specific patterns
-    print(f"\n📊 CONTEXT-SPECIFIC PATTERNS:")
+    print("\n📊 CONTEXT-SPECIFIC PATTERNS:")
     for context, stats in sorted(results['context_patterns'].items()):
         if stats['total'] > 0:
             print(f"\n   {context.upper()}:")
@@ -336,13 +336,13 @@ def print_ascending_syntax_summary(results: Dict):
                 print(f"      Flat-tone ascending: {stats['flat_ascending']}")
 
     # Examples
-    print(f"\n📊 EXAMPLES OF FLAT-TONE ASCENDING SYNTAX:")
+    print("\n📊 EXAMPLES OF FLAT-TONE ASCENDING SYNTAX:")
     for i, ex in enumerate(results['examples']['flat_tone_ascending'][:5], 1):
         print(f"\n   Example {i} ({ex['label']}): {ex['file']}")
         print(f"      Phrases: {ex['num_phrases']}")
         print(f"      F0 sequence: {[f'{f0:.0f}Hz' for f0 in ex['f0_sequence']]}")
         print(f"      Flat tones: {ex['flat_tone_count']}")
-        print(f"      Details:")
+        print("      Details:")
         for j, phrase in enumerate(ex['sequence']):
             flat_marker = " [FLAT]" if phrase['is_flat_tone'] else ""
             print(f"         {j+1}. F0={phrase['f0_mean']:.0f}Hz, Range={phrase['f0_range']:.0f}Hz{flat_marker}")
@@ -356,19 +356,19 @@ def print_ascending_syntax_summary(results: Dict):
     flat_ascending_rate = results['flat_tone_ascending'] / total if total > 0 else 0
 
     if flat_ascending_rate > 0.05:
-        print(f"\n✅ STRONG EVIDENCE OF FLAT-TONE ASCENDING SYNTAX")
+        print("\n✅ STRONG EVIDENCE OF FLAT-TONE ASCENDING SYNTAX")
         print(f"   - {flat_ascending_rate*100:.1f}% of vocalizations show flat-tone ascending patterns")
-        print(f"   - Suggests combinatorial syntax using low-modulation tones")
-        print(f"   - Ascending F0 sequences may convey directional or increasing urgency")
+        print("   - Suggests combinatorial syntax using low-modulation tones")
+        print("   - Ascending F0 sequences may convey directional or increasing urgency")
     elif ascending_rate > 0.05:
-        print(f"\n✅ MODERATE EVIDENCE OF ASCENDING SYNTAX")
+        print("\n✅ MODERATE EVIDENCE OF ASCENDING SYNTAX")
         print(f"   - {ascending_rate*100:.1f}% of vocalizations show ascending patterns")
-        print(f"   - Some evidence of sequential phrase organization")
+        print("   - Some evidence of sequential phrase organization")
     else:
-        print(f"\n⚠️  LIMITED ASCENDING SYNTAX DETECTED")
+        print("\n⚠️  LIMITED ASCENDING SYNTAX DETECTED")
         print(f"   - {ascending_rate*100:.1f}% ascending, {flat_ascending_rate*100:.1f}% flat-tone ascending")
-        print(f"   - Most vocalizations are single phrases or non-ascending")
-        print(f"   - May indicate: limited syntax OR need better segmentation")
+        print("   - Most vocalizations are single phrases or non-ascending")
+        print("   - May indicate: limited syntax OR need better segmentation")
 
     print("\n" + "=" * 80)
 
@@ -406,7 +406,7 @@ def main():
     with open(output_path, 'w') as f:
         json.dump(saveable_results, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")

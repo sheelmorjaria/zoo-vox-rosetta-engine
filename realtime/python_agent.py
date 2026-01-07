@@ -5,17 +5,16 @@ Implements the "soft real-time" layer with cognitive intelligence.
 """
 
 import asyncio
-import zmq
-import msgpack
-import numpy as np
 import logging
 import time
-from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, asdict
-from enum import Enum
-import json
-import threading
 from collections import deque
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import msgpack
+import numpy as np
+import zmq
 
 # Configure logging
 logging.basicConfig(

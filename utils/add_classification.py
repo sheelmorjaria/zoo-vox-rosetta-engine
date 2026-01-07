@@ -10,17 +10,18 @@ Last Updated: December 27, 2025
 
 """Add supervised classification capabilities to the framework."""
 
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 from data.io import FeatureIO
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
 
 def create_call_type_classifier():
     """Demonstrate how to add call type classification to the framework."""
@@ -113,7 +114,7 @@ def create_call_type_classifier():
     y = np.array(call_types)
 
     print(f"📊 Feature matrix shape: {X.shape}")
-    print(f"🏷️  Call type distribution:")
+    print("🏷️  Call type distribution:")
     unique, counts = np.unique(y, return_counts=True)
     for call_type, count in zip(unique, counts):
         print(f"   {call_type}: {count} samples")

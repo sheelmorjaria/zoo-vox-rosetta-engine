@@ -1,20 +1,18 @@
-/**
- * Thermal Management Module
- * =========================
- *
- * This module implements thermal monitoring and power governance for
- * field deployment in jungle environments. It prevents overheating
- * and optimizes power consumption for extended battery life.
- *
- * Features:
- * - CPU/GPU temperature monitoring
- * - Adaptive throttling based on thermal state
- * - Power-aware performance scaling
- * - Jetson-specific thermal zones support
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Thermal Management Module
+//! =========================
+//!
+//! This module implements thermal monitoring and power governance for
+//! field deployment in jungle environments. It prevents overheating
+//! and optimizes power consumption for extended battery life.
+//!
+//! Features:
+//! - CPU/GPU temperature monitoring
+//! - Adaptive throttling based on thermal state
+//! - Power-aware performance scaling
+//! - Jetson-specific thermal zones support
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use anyhow::{Result, Context};
 use log::{info, debug, warn};
@@ -138,12 +136,11 @@ impl ThermalGovernor {
         info!("Initializing Thermal Governor");
 
         // Validate thermal zone path if not using mock
-        if !config.use_mock_temp {
-            if !std::path::Path::new(&config.thermal_zone_path).exists() {
+        if !config.use_mock_temp
+            && !std::path::Path::new(&config.thermal_zone_path).exists() {
                 warn!("Thermal zone not found: {}, will use mock temperature",
                     config.thermal_zone_path);
             }
-        }
 
         Ok(Self {
             config,

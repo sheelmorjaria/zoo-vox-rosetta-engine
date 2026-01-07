@@ -5,16 +5,20 @@ This script demonstrates how to use the query interface for various
 search, analysis, and data retrieval operations.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+import time
 
 from data_models import Species, VocalizationModality
 from query_interface.vocalization_query_interface import (
-    get_query_interface, query_phrases_by_f0, query_phrases_by_duration,
-    get_phrase_similarities, get_database_statistics, VocalizationQueryInterface
+    get_phrase_similarities,
+    get_query_interface,
+    query_phrases_by_duration,
+    query_phrases_by_f0,
 )
-import time
 
 
 def demo_basic_queries():
@@ -201,7 +205,7 @@ def demo_performance_benchmarks():
 
     # Grammar network generation
     start_time = time.time()
-    grammar_network = interface.get_grammar_network()
+    interface.get_grammar_network()
     grammar_time = time.time() - start_time
     print(f"   Grammar network generation: {grammar_time:.4f} seconds")
 

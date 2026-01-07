@@ -10,16 +10,17 @@ Handles the unique characteristics of sperm whale clicks and codas:
 - Frequency range: 2-15 kHz with peak around 8-10 kHz
 """
 
-import numpy as np
-from scipy.signal import find_peaks, hilbert
-from scipy.fft import fft, fftfreq
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
-from pathlib import Path
 import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List
+
+import numpy as np
+from scipy.fft import fft, fftfreq
+from scipy.signal import find_peaks, hilbert
 
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 
 @dataclass
@@ -345,16 +346,16 @@ class SpermWhaleAnalyzer:
         print(f"SPERM WHALE ANALYSIS: {Path(analysis.filepath).name}")
         print("="*70)
 
-        print(f"\n📊 Recording Info:")
+        print("\n📊 Recording Info:")
         print(f"  Duration: {analysis.duration_sec:.1f}s")
         print(f"  Sample rate: {analysis.sample_rate} Hz")
         print(f"  Overall modality: {analysis.overall_modality}")
 
-        print(f"\n📊 Click Detection:")
+        print("\n📊 Click Detection:")
         print(f"  Total clicks: {analysis.total_clicks}")
         print(f"  Click rate: {analysis.clicks_per_second:.1f} clicks/second")
 
-        print(f"\n📊 Coda Analysis:")
+        print("\n📊 Coda Analysis:")
         print(f"  Total codas: {analysis.total_codas}")
         if analysis.total_codas > 0:
             print(f"  Clicks per coda: {analysis.clicks_per_coda_mean:.1f} ± {analysis.clicks_per_coda_std:.1f}")
@@ -372,14 +373,14 @@ class SpermWhaleAnalyzer:
             rhythm_scores = [c.rhythm_regularity for c in analysis.codas]
             print(f"  Mean rhythm regularity: {np.mean(rhythm_scores):.3f}")
 
-        print(f"\n📊 Energy Distribution:")
+        print("\n📊 Energy Distribution:")
         print(f"  0-2 kHz:    {analysis.energy_0_2khz:5.1f}%")
         print(f"  2-8 kHz:    {analysis.energy_2_8khz:5.1f}%  ⭐ Sperm whale range")
         print(f"  8-15 kHz:   {analysis.energy_8_15khz:5.1f}%")
         print(f"  >15 kHz:    {analysis.energy_above_15khz:5.1f}%")
 
         if analysis.coda_modalities:
-            print(f"\n📊 Coda Modality Distribution:")
+            print("\n📊 Coda Modality Distribution:")
             for modality, count in sorted(analysis.coda_modalities.items()):
                 percentage = count / analysis.total_codas * 100
                 print(f"  {modality:15s}: {count:2d} ({percentage:5.1f}%)")

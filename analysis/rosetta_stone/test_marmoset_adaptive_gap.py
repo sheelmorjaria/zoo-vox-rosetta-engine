@@ -6,13 +6,13 @@ Tests adaptive gap threshold on marmoset vocalizations.
 Uses a representative subset of the 871,045 available FLAC files.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -152,7 +152,7 @@ def main():
     print(f"\n📊 Files successfully analyzed: {len(results)}/{len(test_files)}")
 
     # Overall statistics
-    print(f"\n📊 MODALITY DISTRIBUTION:")
+    print("\n📊 MODALITY DISTRIBUTION:")
     modality_counts = {}
     for r in results:
         m = r['overall_modality']
@@ -162,14 +162,14 @@ def main():
         percentage = count / len(results) * 100
         print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%)")
 
-    print(f"\n📊 ADAPTIVE THRESHOLD STATISTICS:")
+    print("\n📊 ADAPTIVE THRESHOLD STATISTICS:")
     thresholds = [r['adaptive_threshold_ms'] for r in results]
     print(f"  Mean: {np.mean(thresholds):.2f} ms")
     print(f"  Median: {np.median(thresholds):.2f} ms")
     print(f"  Range: {np.min(thresholds):.2f} - {np.max(thresholds):.2f} ms")
     print(f"  Std: {np.std(thresholds):.2f} ms")
 
-    print(f"\n📊 PHRASE DETECTION:")
+    print("\n📊 PHRASE DETECTION:")
     total_phrases_adaptive = sum(r['phrases_adaptive'] for r in results)
     total_phrases_fixed = sum(r['phrases_fixed'] for r in results)
     files_with_phrases_adaptive = sum(1 for r in results if r['phrases_adaptive'] > 0)
@@ -187,7 +187,7 @@ def main():
     files_same = sum(1 for i in improvements if i == 0)
     total_improvement = sum(improvements)
 
-    print(f"\n📊 ADAPTIVE GAP EFFECT:")
+    print("\n📊 ADAPTIVE GAP EFFECT:")
     print(f"  Files with improvement: {files_with_improvement}/{len(results)} ({files_with_improvement/len(results)*100:.1f}%)")
     print(f"  Files with decrease: {files_with_decrease}/{len(results)} ({files_with_decrease/len(results)*100:.1f}%)")
     print(f"  Files unchanged: {files_same}/{len(results)} ({files_same/len(results)*100:.1f}%)")
@@ -206,7 +206,7 @@ def main():
             print(f"  Difference: {diff_pct:+.1f}%")
 
     # Modality distribution of detected phrases
-    print(f"\n📊 DETECTED PHRASE MODALITY:")
+    print("\n📊 DETECTED PHRASE MODALITY:")
     phrase_modality_counts = {}
     for r in results:
         for modality, count in r['modality_distribution'].items():

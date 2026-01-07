@@ -14,25 +14,31 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
-import tempfile
-import shutil
-import os
+import asyncio
 import json
+import os
 import pickle
-import numpy as np
-from datetime import datetime
-from pathlib import Path
+import shutil
 
 # Add parent directory to path
 import sys
+import tempfile
+import unittest
+from datetime import datetime
+
+import numpy as np
+
 sys.path.append('/mnt/c/Users/sheel/Desktop/src')
 
 # Import database modules
 try:
     from realtime.unified_database import (
-        UnifiedDatabaseManager, DatabaseConfig, SQLiteDatabase,
-        FileBasedCache, CloudSync, DatabaseBackup
+        CloudSync,
+        DatabaseBackup,
+        DatabaseConfig,
+        FileBasedCache,
+        SQLiteDatabase,
+        UnifiedDatabaseManager,
     )
     DATABASE_AVAILABLE = True
 except ImportError as e:
@@ -346,7 +352,7 @@ class TestDatabaseIntegration(unittest.TestCase):
             }
 
             # Create database manager
-            from realtime.unified_database import UnifiedDatabaseManager, DatabaseConfig
+            from realtime.unified_database import DatabaseConfig, UnifiedDatabaseManager
             db_config = DatabaseConfig(**config)
             db_manager = UnifiedDatabaseManager(db_config)
 

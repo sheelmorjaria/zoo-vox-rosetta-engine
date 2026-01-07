@@ -1,21 +1,19 @@
-/**
- * Peer-to-Peer Controller Module
- * ===============================
- *
- * This module implements the "Supervisor Tree" architecture where:
- * - Rust (Field System) and Python (Cognitive Agent) are independent processes
- * - Systemd/supervisord manages process lifecycle
- * - ZeroMQ handles heartbeat monitoring and control messages
- * - Rust fails open to safety (Passthrough Mode) when Python is unavailable
- *
- * Architecture:
- * - Rust binds to ZeroMQ SUB socket for heartbeats
- * - Python connects and sends heartbeats
- * - Rust detects presence/absence and switches modes accordingly
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Peer-to-Peer Controller Module
+//! ===============================
+//!
+//! This module implements the "Supervisor Tree" architecture where:
+//! - Rust (Field System) and Python (Cognitive Agent) are independent processes
+//! - Systemd/supervisord manages process lifecycle
+//! - ZeroMQ handles heartbeat monitoring and control messages
+//! - Rust fails open to safety (Passthrough Mode) when Python is unavailable
+//!
+//! Architecture:
+//! - Rust binds to ZeroMQ SUB socket for heartbeats
+//! - Python connects and sends heartbeats
+//! - Rust detects presence/absence and switches modes accordingly
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::time::{Duration, Instant};
 use anyhow::Result;
@@ -139,6 +137,7 @@ impl HeartbeatMessage {
 /// between Passthrough and Interactive modes based on heartbeat status.
 pub struct PeerController {
     /// ZeroMQ context
+    #[allow(dead_code)]
     ctx: zmq::Context,
 
     /// Heartbeat subscriber socket
@@ -228,7 +227,7 @@ impl PeerController {
     /// * `Result<OperationMode>` - Current operation mode
     pub fn tick(&mut self) -> Result<OperationMode> {
         // 1. Poll for heartbeat (non-blocking)
-        let has_heartbeat = self.poll_heartbeat()?;
+        let _has_heartbeat = self.poll_heartbeat()?;
 
         // 2. Check for timeout
         self.check_timeout();

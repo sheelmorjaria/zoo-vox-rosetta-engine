@@ -17,11 +17,11 @@ Prior Research Summary (from user's data):
   * LONG codas: 249 (61.6%) - 109.8 clicks/coda, rhythm 0.630
 """
 
-import soundfile as sf
 from pathlib import Path
+
 import numpy as np
+import soundfile as sf
 from scipy.signal import find_peaks, hilbert
-from scipy.fft import fft, fftfreq
 
 
 def detect_codas_with_rhythm(audio, sr):
@@ -223,18 +223,18 @@ def compare_with_prior_research(all_codas):
 
     avg_diff = (short_diff + medium_diff + long_diff) / 3
 
-    print(f"\n🔍 Semantic Distribution Match:")
+    print("\n🔍 Semantic Distribution Match:")
     if avg_diff < 10:
         print(f"  ✓ EXCELLENT: Average difference of {avg_diff:.1f}%")
-        print(f"    Current analysis closely matches prior research")
+        print("    Current analysis closely matches prior research")
     elif avg_diff < 20:
         print(f"  ~ MODERATE: Average difference of {avg_diff:.1f}%")
-        print(f"    Current analysis shows similar patterns but different proportions")
+        print("    Current analysis shows similar patterns but different proportions")
     else:
         print(f"  ✗ POOR: Average difference of {avg_diff:.1f}%")
-        print(f"    Current analysis shows different distribution")
+        print("    Current analysis shows different distribution")
 
-    print(f"\n🔍 Rhythm Regularity:")
+    print("\n🔍 Rhythm Regularity:")
     current_rhythm = np.mean(rhythm_scores)
     prior_rhythm = 0.691
     rhythm_diff = abs(current_rhythm - prior_rhythm)
@@ -246,15 +246,15 @@ def compare_with_prior_research(all_codas):
     else:
         print(f"  ✗ DIFFERENT: Current {current_rhythm:.3f} vs Prior {prior_rhythm}")
 
-    print(f"\n🔍 Click Distribution:")
+    print("\n🔍 Click Distribution:")
     if np.mean(coda_lengths) > 50:
-        print(f"  Current analysis detects LONGER codas on average")
-        print(f"  Possible reasons:")
-        print(f"    - Adaptive threshold may be too high")
-        print(f"    - Different dataset characteristics")
-        print(f"    - Click detection sensitivity differences")
+        print("  Current analysis detects LONGER codas on average")
+        print("  Possible reasons:")
+        print("    - Adaptive threshold may be too high")
+        print("    - Different dataset characteristics")
+        print("    - Click detection sensitivity differences")
     else:
-        print(f"  Current analysis detects SIMILAR/SHORTER codas")
+        print("  Current analysis detects SIMILAR/SHORTER codas")
 
     print("\n" + "=" * 80)
 

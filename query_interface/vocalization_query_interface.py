@@ -6,16 +6,20 @@ in real-time with various filtering, aggregation, and search capabilities.
 """
 
 import json
-import time
-from typing import Dict, List, Any, Optional, Union, Tuple
-from pathlib import Path
-from dataclasses import asdict
-import numpy as np
 import logging
+import time
+from dataclasses import asdict
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from data_models import (
-    VocalizationDatabase, Species, VocalizationModality,
-    Phrase, Sentence, GrammarRule, PhraseContext
+    GrammarRule,
+    Phrase,
+    PhraseContext,
+    Sentence,
+    Species,
+    VocalizationDatabase,
+    VocalizationModality,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +59,7 @@ class VocalizationQueryInterface:
 
     def _create_species_data_from_json(self, species: Species, species_data: Dict) -> Any:
         """Create SpeciesData object from JSON data"""
-        from data_models import SpeciesData, Phrase, Sentence, GrammarRule
+        from data_models import GrammarRule, Phrase, SpeciesData
 
         species_data_obj = SpeciesData(species=species)
 
@@ -113,7 +117,7 @@ class VocalizationQueryInterface:
             )
             species_data_obj.grammar_rules.append(rule)
 
-        
+
         return species_data_obj
 
     def _create_acoustic_features_from_json(self, features_data: Dict) -> Any:
@@ -418,6 +422,380 @@ class VocalizationQueryInterface:
         self._load_database()
         self._build_indexes()
         logger.info("Database refreshed successfully")
+
+    # ========================================================================
+    # 17D Metadata Queries
+    # ========================================================================
+
+    def search_by_hnr(self, min_hnr: float, max_hnr: float,
+                      species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Search phrases by harmonic-to-noise ratio (Grit Factor)
+
+        Args:
+            min_hnr: Minimum HNR in dB (e.g., 20.0 for tonal, 2.0 for gritty)
+            max_hnr: Maximum HNR in dB
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching HNR range
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                hnr = phrase.acoustic_features.harmonic_to_noise_ratio
+                if min_hnr <= hnr <= max_hnr:
+                    results.append((phrase_key, phrase))
+
+        results.sort(key=lambda x: x[1].acoustic_features.harmonic_to_noise_ratio, reverse=True)
+        return results
+
+    def search_by_spectral_flatness(self, min_flatness: float, max_flatness: float,
+                                    species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Search phrases by spectral flatness (Grit Factor)
+
+        Args:
+            min_flatness: Minimum flatness (0=tonal, 1=noise-like)
+            max_flatness: Maximum flatness
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching flatness range
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                flatness = phrase.acoustic_features.spectral_flatness
+                if min_flatness <= flatness <= max_flatness:
+                    results.append((phrase_key, phrase))
+
+        results.sort(key=lambda x: x[1].acoustic_features.spectral_flatness)
+        return results
+
+    def search_by_attack_time(self, min_attack: float, max_attack: float,
+                              species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Search phrases by attack time (Motion Factor)
+
+        Args:
+            min_attack: Minimum attack time in ms (fast=sharp, slow=gentle)
+            max_attack: Maximum attack time in ms
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching attack time range
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                attack = phrase.acoustic_features.attack_time_ms
+                if min_attack <= attack <= max_attack:
+                    results.append((phrase_key, phrase))
+
+        results.sort(key=lambda x: x[1].acoustic_features.attack_time_ms)
+        return results
+
+    def search_by_jitter(self, min_jitter: float, max_jitter: float,
+                         species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Search phrases by jitter (Motion Factor - stability/roughness)
+
+        Args:
+            min_jitter: Minimum jitter (0=stable, 1=unstable)
+            max_jitter: Maximum jitter
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching jitter range
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                jitter = phrase.acoustic_features.jitter
+                if min_jitter <= jitter <= max_jitter:
+                    results.append((phrase_key, phrase))
+
+        results.sort(key=lambda x: x[1].acoustic_features.jitter)
+        return results
+
+    def search_by_onset_rate(self, min_rate: float, max_rate: float,
+                             species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Search phrases by onset rate (Rhythm Factor - pulsed vs continuous)
+
+        Args:
+            min_rate: Minimum onset rate in Hz (0=continuous, >10=pulsed)
+            max_rate: Maximum onset rate in Hz
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching onset rate range
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                rate = phrase.acoustic_features.onset_rate_hz
+                if min_rate <= rate <= max_rate:
+                    results.append((phrase_key, phrase))
+
+        results.sort(key=lambda x: x[1].acoustic_features.onset_rate_hz, reverse=True)
+        return results
+
+    # ========================================================================
+    # Acoustic Persona Queries
+    # ========================================================================
+
+    def get_pure_persona_phrases(self, species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Get phrases matching PURE persona (tonal, clean, smooth)
+
+        Characteristics: HNR > 20dB, flatness < 0.1, attack > 20ms, jitter < 0.05
+
+        Args:
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching PURE persona
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                af = phrase.acoustic_features
+                if (af.harmonic_to_noise_ratio > 20.0 and
+                    af.spectral_flatness < 0.1 and
+                    af.attack_time_ms > 20.0 and
+                    af.jitter < 0.05):
+                    results.append((phrase_key, phrase))
+
+        # Sort by HNR (most tonal first)
+        results.sort(key=lambda x: x[1].acoustic_features.harmonic_to_noise_ratio, reverse=True)
+        return results
+
+    def get_gritty_persona_phrases(self, species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Get phrases matching GRITTY persona (noisy, rough, sharp)
+
+        Characteristics: HNR < 5dB, flatness > 0.6, attack < 5ms, jitter > 0.1
+
+        Args:
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching GRITTY persona
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                af = phrase.acoustic_features
+                if (af.harmonic_to_noise_ratio < 5.0 and
+                    af.spectral_flatness > 0.6 and
+                    af.attack_time_ms < 5.0 and
+                    af.jitter > 0.1):
+                    results.append((phrase_key, phrase))
+
+        # Sort by grittiness (lowest HNR, highest flatness first)
+        results.sort(key=lambda x: (
+            x[1].acoustic_features.harmonic_to_noise_ratio,
+            -x[1].acoustic_features.spectral_flatness
+        ))
+        return results
+
+    def get_rhythmic_persona_phrases(self, species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Get phrases matching RHYTHMIC persona (pulsed, regular temporal patterns)
+
+        Characteristics: onset rate > 15Hz, ICI CV < 0.3 (regular)
+
+        Args:
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching RHYTHMIC persona
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                af = phrase.acoustic_features
+                if (af.onset_rate_hz > 15.0 and
+                    af.ici_coefficient_of_variation < 0.3 and
+                    af.ici_coefficient_of_variation > 0):
+                    results.append((phrase_key, phrase))
+
+        # Sort by onset rate (most rhythmic first)
+        results.sort(key=lambda x: x[1].acoustic_features.onset_rate_hz, reverse=True)
+        return results
+
+    def get_harmonic_persona_phrases(self, species: Optional[Species] = None) -> List[Tuple[str, Phrase]]:
+        """Get phrases matching HARMONIC persona (continuous tones, no pulses)
+
+        Characteristics: onset rate = 0, median ICI = 0
+
+        Args:
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, Phrase) tuples matching HARMONIC persona
+        """
+        results = []
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for phrase_key, phrase in data.phrase_library.items():
+                af = phrase.acoustic_features
+                if af.onset_rate_hz == 0 and af.median_ici_ms == 0:
+                    results.append((phrase_key, phrase))
+
+        # Sort by HNR (most harmonic first)
+        results.sort(key=lambda x: x[1].acoustic_features.harmonic_to_noise_ratio, reverse=True)
+        return results
+
+    # ========================================================================
+    # 17D Nearest Neighbor Search
+    # ========================================================================
+
+    def find_nearest_neighbors_17d(self, phrase_key: str, k: int = 5,
+                                   species: Optional[Species] = None) -> List[Tuple[float, str, Phrase]]:
+        """Find k nearest neighbors in 17D metadata space
+
+        Uses Euclidean distance over all 17 micro-dynamics features:
+        - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
+        - Grit Factors (2): harmonic_to_noise_ratio, spectral_flatness
+        - Motion Factors (6): attack_time_ms, decay_time_ms, sustain_level,
+                            vibrato_rate_hz, vibrato_depth, jitter
+        - Fingerprint Factors (5): mfcc_1-4, spectral_contrast
+        - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
+
+        Args:
+            phrase_key: Target phrase key
+            k: Number of neighbors to return
+            species: Optional species filter
+
+        Returns:
+            List of (distance, phrase_key, Phrase) tuples sorted by distance
+        """
+        # Get target phrase
+        target_species, target_phrase = self.get_phrase_by_key(phrase_key)
+        if not target_phrase:
+            return []
+
+        # Extract 17D feature vector
+        def extract_17d(phrase: Phrase) -> List[float]:
+            af = phrase.acoustic_features
+            return [
+                af.mean_f0_hz,
+                af.mean_duration_ms,
+                af.f0_range_hz,
+                af.harmonic_to_noise_ratio,
+                af.spectral_flatness,
+                af.attack_time_ms,
+                af.decay_time_ms,
+                af.sustain_level,
+                af.vibrato_rate_hz,
+                af.vibrato_depth,
+                af.jitter,
+                af.mfcc_1,
+                af.mfcc_2,
+                af.mfcc_3,
+                af.mfcc_4,
+                af.spectral_contrast,
+                af.median_ici_ms,
+                af.onset_rate_hz,
+                af.ici_coefficient_of_variation,
+            ]
+
+        target_vector = extract_17d(target_phrase)
+
+        # Calculate distances to all phrases
+        from math import sqrt
+        distances = []
+
+        for sp, data in self.db.species_data.items():
+            if species and sp != species:
+                continue
+
+            for pk, phrase in data.phrase_library.items():
+                if pk == phrase_key:
+                    continue  # Skip self
+
+                vector = extract_17d(phrase)
+                # Euclidean distance
+                distance = sqrt(sum((t - v) ** 2 for t, v in zip(target_vector, vector)))
+                distances.append((distance, pk, phrase))
+
+        # Sort by distance and return top k
+        distances.sort(key=lambda x: x[0])
+        return distances[:k]
+
+    # ========================================================================
+    # 17D Delta Calculation
+    # ========================================================================
+
+    def calculate_17d_delta(self, from_phrase_key: str, to_phrase_key: str) -> Dict[str, float]:
+        """Calculate 17D delta (difference) between two phrases
+
+        Returns the transformation needed to go from from_phrase to to_phrase
+        in the 17D micro-dynamics feature space.
+
+        Args:
+            from_phrase_key: Source phrase key
+            to_phrase_key: Target phrase key
+
+        Returns:
+            Dictionary with 17 delta values (to - from)
+        """
+        _, from_phrase = self.get_phrase_by_key(from_phrase_key)
+        _, to_phrase = self.get_phrase_by_key(to_phrase_key)
+
+        if not from_phrase or not to_phrase:
+            raise ValueError(f"Phrase not found: {from_phrase_key} or {to_phrase_key}")
+
+        from_af = from_phrase.acoustic_features
+        to_af = to_phrase.acoustic_features
+
+        return {
+            # Fundamental deltas
+            'delta_mean_f0_hz': to_af.mean_f0_hz - from_af.mean_f0_hz,
+            'delta_duration_ms': to_af.mean_duration_ms - from_af.mean_duration_ms,
+            'delta_f0_range_hz': to_af.f0_range_hz - from_af.f0_range_hz,
+            # Grit Factor deltas
+            'delta_harmonic_to_noise_ratio': to_af.harmonic_to_noise_ratio - from_af.harmonic_to_noise_ratio,
+            'delta_spectral_flatness': to_af.spectral_flatness - from_af.spectral_flatness,
+            # Motion Factor deltas
+            'delta_attack_time_ms': to_af.attack_time_ms - from_af.attack_time_ms,
+            'delta_decay_time_ms': to_af.decay_time_ms - from_af.decay_time_ms,
+            'delta_sustain_level': to_af.sustain_level - from_af.sustain_level,
+            'delta_vibrato_rate_hz': to_af.vibrato_rate_hz - from_af.vibrato_rate_hz,
+            'delta_vibrato_depth': to_af.vibrato_depth - from_af.vibrato_depth,
+            'delta_jitter': to_af.jitter - from_af.jitter,
+            # Fingerprint Factor deltas
+            'delta_mfcc_1': to_af.mfcc_1 - from_af.mfcc_1,
+            'delta_mfcc_2': to_af.mfcc_2 - from_af.mfcc_2,
+            'delta_mfcc_3': to_af.mfcc_3 - from_af.mfcc_3,
+            'delta_mfcc_4': to_af.mfcc_4 - from_af.mfcc_4,
+            'delta_spectral_contrast': to_af.spectral_contrast - from_af.spectral_contrast,
+            # Rhythm Factor deltas
+            'delta_median_ici_ms': to_af.median_ici_ms - from_af.median_ici_ms,
+            'delta_onset_rate_hz': to_af.onset_rate_hz - from_af.onset_rate_hz,
+            'delta_ici_coefficient_of_variation': to_af.ici_coefficient_of_variation - from_af.ici_coefficient_of_variation,
+        }
 
     def get_database_info(self) -> Dict[str, Any]:
         """Get database information and statistics"""

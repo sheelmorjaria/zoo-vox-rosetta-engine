@@ -5,16 +5,19 @@ This script demonstrates how to use the semiotic analysis system to understand
 the cognitive dimensions of animal communication.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from data_models import Species, Phrase, PhraseContext, VocalizationModality
+from data_models import Phrase, PhraseContext, Species, VocalizationModality
 from semiotics.semiotic_engine import (
-    SemioticEngine, SemioticState, SemioticRelation,
-    SemioticContext, AcousticFeatures
+    AcousticFeatures,
+    SemioticContext,
+    SemioticEngine,
+    SemioticRelation,
+    SemioticState,
 )
-import numpy as np
 
 
 def demo_deceptive_semiotics():

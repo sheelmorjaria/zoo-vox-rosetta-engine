@@ -8,23 +8,13 @@ Using Test-Driven Development methodology to implement:
 3. GIL handling strategy with safe fallback
 """
 
-import unittest
-import numpy as np
-import time
-import threading
-import multiprocessing as mp
-import sys
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
-import tempfile
 import os
-import json
-import mmap
-import struct
 import shutil
-from enum import Enum
-import ctypes
+import sys
+import tempfile
+import unittest
+
+import numpy as np
 
 # Import all enhancement modules
 sys.path.append('src/realtime')
@@ -45,8 +35,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_shared_memory_ring_buffer_creation(self):
         """Test that shared memory ring buffer can be created"""
-        buffer_size = 1024 * 1024  # 1MB buffer
-        feature_size = 64  # 64 features per frame
 
         # Test to implement:
         # 1. Create SharedMemoryRingBuffer instance
@@ -58,8 +46,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_lock_free_writing(self):
         """Test that Rust can write to shared memory without blocking"""
-        import time
-        num_writes = 1000
 
         # Test to implement:
         # 1. Start Python reader thread
@@ -72,7 +58,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_command_queue_initialization(self):
         """Test that command queue can be initialized with proper capacity"""
-        queue_capacity = 100  # Maximum pending commands
 
         # Test to implement:
         # 1. Create CommandQueue instance
@@ -91,13 +76,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
         # target_duration_ms: u32
         # sequence_id: u64
 
-        test_command = {
-            'mode': 'Granular',
-            'context_id': 1,
-            'aggression_level': 0.5,
-            'target_duration_ms': 1000,
-            'sequence_id': 123456789,
-        }
 
         # Test to implement:
         # 1. Serialize command to binary format
@@ -109,9 +87,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_producer_consumer_pattern(self):
         """Test that producer-consumer pattern works without deadlocks"""
-        num_producers = 2
-        num_consumers = 3
-        operations_per_thread = 100
 
         # Test to implement:
         # 1. Create multiple producers and consumers
@@ -123,7 +98,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_memory_mapped_io_performance(self):
         """Test that memory-mapped I/O achieves <1ms latency"""
-        import time
 
         # Test scenario: Write and read features rapidly
 
@@ -137,8 +111,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
 
     def test_buffer_overflow_protection(self):
         """Test that buffer overflow is prevented gracefully"""
-        buffer_capacity = 1000
-        overflow_attempts = 100
 
         # Test to implement:
         # 1. Fill buffer to capacity
@@ -161,7 +133,7 @@ class TestZeroCopyFeaturePassing(unittest.TestCase):
     def test_numpy_frombuffer_shared_memory(self):
         """Test that numpy can view shared memory via frombuffer"""
         # Create test feature data
-        feature_data = np.random.randn(self.feature_size).astype(np.float32)
+        np.random.randn(self.feature_size).astype(np.float32)
 
         # Test to implement:
         # 1. Create shared memory region
@@ -173,11 +145,10 @@ class TestZeroCopyFeaturePassing(unittest.TestCase):
 
     def test_zero_copy_array_transfer(self):
         """Test that feature arrays can be transferred without copying"""
-        import time
         array_sizes = [64, 256, 1024]  # Different feature dimensions
 
         for size in array_sizes:
-            feature_array = np.random.randn(size).astype(np.float32)
+            np.random.randn(size).astype(np.float32)
 
             # Test to implement:
             # 1. Time copy-based transfer (baseline)
@@ -213,8 +184,6 @@ class TestZeroCopyFeaturePassing(unittest.TestCase):
 
     def test_concurrent_zero_copy_access(self):
         """Test that multiple threads can access zero-copy data concurrently"""
-        num_threads = 4
-        reads_per_thread = 1000
 
         # Test to implement:
         # 1. Create shared memory with feature data
@@ -238,8 +207,6 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_gil_aware_design(self):
         """Test that system is designed to handle GIL pauses gracefully"""
-        import time
-        simulation_duration = 5  # seconds
 
         # Test to implement:
         # 1. Start audio processing thread
@@ -270,8 +237,6 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_polling_based_communication(self):
         """Test that Rust engine polls for commands without blocking"""
-        import time
-        poll_interval_ms = 1
 
         # Test to implement:
         # 1. Start Rust engine with polling
@@ -283,7 +248,6 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_non_blocking_python_interface(self):
         """Test that Python interface never blocks Rust audio thread"""
-        import time
 
         # Test to implement:
         # 1. Measure audio thread latency without Python calls
@@ -295,7 +259,6 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_timeout_mechanism(self):
         """Test that timeout mechanism prevents infinite waits"""
-        timeout_ms = 100
 
         # Test to implement:
         # 1. Set command processing timeout
@@ -320,11 +283,6 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_resource_usage_monitoring(self):
         """Test that resource usage is monitored and acted upon"""
-        monitor_thresholds = {
-            'cpu_usage': 80.0,  # %
-            'memory_usage': 90.0,  # %
-            'latency': 50.0,  # ms
-        }
 
         # Test to implement:
         # 1. Monitor system resources continuously
@@ -349,9 +307,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_end_to_end_performance_benchmark(self):
         """Test complete architecture performance: <100ms end-to-end"""
-        import time
-        test_duration = 10  # seconds
-        target_latency_ms = 100
 
         # Test to implement:
         # 1. Start complete system with all components
@@ -385,8 +340,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_memory_usage_scaling(self):
         """Test that memory usage scales linearly with load"""
-        import psutil
-        import time
 
         # Test to implement:
         # 1. Measure memory at different load levels
@@ -438,7 +391,7 @@ if __name__ == '__main__':
 
     # Print summary
     print(f"\n{'='*50}")
-    print(f"Technical Architecture Test Results:")
+    print("Technical Architecture Test Results:")
     print(f"{'='*50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")

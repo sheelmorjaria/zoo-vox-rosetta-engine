@@ -10,13 +10,12 @@ Tests are written FIRST (Red phase), then implementation follows (Green phase).
 Run with: pytest test_bio_acoustic_turing_test.py -v
 """
 
-import pytest
-import numpy as np
+import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List
-import json
-import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -97,7 +96,7 @@ def test_response_recorder_creation():
     recorder = ResponseRecorder(sample_rate=22050)
 
     assert recorder.sample_rate == 22050
-    assert recorder.is_recording() == False
+    assert not recorder.is_recording()
 
 
 def test_response_recorder_record_response():
@@ -113,7 +112,7 @@ def test_response_recorder_record_response():
 
     response = recorder.get_response()
 
-    assert response['has_response'] == True
+    assert response['has_response']
     assert response['duration_ms'] > 0
     assert len(response['audio']) > 0
 
@@ -313,7 +312,7 @@ def test_statistical_analyzer_turing_test_result():
 
     result = analyzer.evaluate_turing_test(results_pass)
 
-    assert result['passed'] == True
+    assert result['passed']
     assert result['interpretation'] == 'Animals cannot distinguish between natural and granular'
 
     # Test 2: Distinguishable (FAIL)
@@ -325,7 +324,7 @@ def test_statistical_analyzer_turing_test_result():
 
     result = analyzer.evaluate_turing_test(results_fail)
 
-    assert result['passed'] == False
+    assert not result['passed']
     assert result['interpretation'] == 'Animals can distinguish between natural and granular'
 
 

@@ -11,12 +11,10 @@ License: CC BY-ND 4.0 International
 """
 
 import numpy as np
-import json
-from pathlib import Path
-from typing import Dict, List, Any, Tuple
 
 # Import our frameworks
 from phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
+
 
 def create_ascending_sentence_demo() -> PhraseAudioLibrary:
     """
@@ -285,13 +283,13 @@ def demonstrate_linguistic_structure(library: PhraseAudioLibrary):
 
             # Linguistic interpretation
             if context == 'alarm':
-                print(f"     Linguistic pattern: Threat escalation (frequency = urgency)")
+                print("     Linguistic pattern: Threat escalation (frequency = urgency)")
             elif context == 'food':
-                print(f"     Linguistic pattern: Foraging sequence (frequency = motivation)")
+                print("     Linguistic pattern: Foraging sequence (frequency = motivation)")
             elif context == 'social':
-                print(f"     Linguistic pattern: Bonding escalation (frequency = intimacy)")
+                print("     Linguistic pattern: Bonding escalation (frequency = intimacy)")
             elif context == 'neutral':
-                print(f"     Linguistic pattern: Information processing (frequency = complexity)")
+                print("     Linguistic pattern: Information processing (frequency = complexity)")
 
 def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
     """Demonstrate how phrases can be combined to form complex sentences."""
@@ -300,7 +298,7 @@ def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
     print("=" * 80)
 
     # Show how context-aware selection works for sentence formation
-    print(f"\n3. Context-Aware Phrase Selection:")
+    print("\n3. Context-Aware Phrase Selection:")
 
     # Demonstrate sentence formation by selecting phrases from each context
     sentence_examples = [
@@ -334,14 +332,14 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
     print("=" * 80)
 
     # Basic statistics
-    print(f"\n4. Library Statistics:")
+    print("\n4. Library Statistics:")
     print(f"   Total phrase types: {len(library.get_all_phrase_keys())}")
     print(f"   Total audio segments: {library.total_segments}")
 
     # Context statistics
     context_stats = library.get_context_statistics()
     if 'context_statistics' in context_stats:
-        print(f"\n   Context distribution:")
+        print("\n   Context distribution:")
         total_context_segments = 0
         for context, stats in context_stats['context_statistics'].items():
             count = stats['total_occurrences']
@@ -350,7 +348,7 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
 
     # Phrase occurrence statistics
     phrase_stats = library.get_phrase_occurrence_statistics()
-    print(f"\n   Phrase occurrence distribution:")
+    print("\n   Phrase occurrence distribution:")
     print(f"   Unique phrases: {len(phrase_stats)}")
     print(f"   Mean occurrences per phrase: {np.mean(list(phrase_stats.values())):.1f}")
     print(f"   Most frequent phrase: {max(phrase_stats, key=phrase_stats.get)} ({phrase_stats[max(phrase_stats, key=phrase_stats.get)]} occurrences)")
@@ -363,7 +361,7 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
             quality_scores.append(segments.quality_score)
 
     if quality_scores:
-        print(f"\n   Quality analysis:")
+        print("\n   Quality analysis:")
         print(f"   Mean quality: {np.mean(quality_scores):.3f}")
         print(f"   Quality range: {np.min(quality_scores):.3f} - {np.max(quality_scores):.3f}")
 

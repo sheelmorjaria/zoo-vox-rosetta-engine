@@ -12,14 +12,15 @@ Performs deep analysis of a specific marmoset Phee call to understand:
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import Modality, UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -72,7 +73,7 @@ def analyze_acoustic_features(audio, sr):
     duration = len(audio) / sr
     rms = np.sqrt(np.mean(audio**2))
 
-    print(f"\n📊 Basic Properties:")
+    print("\n📊 Basic Properties:")
     print(f"  Sample rate: {sr} Hz")
     print(f"  Duration: {duration*1000:.1f} ms")
     print(f"  Samples: {len(audio)}")
@@ -80,7 +81,6 @@ def analyze_acoustic_features(audio, sr):
     print(f"  Peak amplitude: {np.max(np.abs(audio)):.6f}")
 
     # Frequency analysis
-    from scipy.signal import spectrogram
     from scipy.fft import fft, fftfreq
 
     # FFT for frequency content
@@ -96,7 +96,7 @@ def analyze_acoustic_features(audio, sr):
     dom_freq_idx = np.argmax(pos_magnitude)
     dom_freq = pos_freqs[dom_freq_idx]
 
-    print(f"\n📊 Frequency Content:")
+    print("\n📊 Frequency Content:")
     print(f"  Dominant frequency: {dom_freq:.0f} Hz")
     print(f"  Frequency range: 0 - {sr/2:.0f} Hz (Nyquist)")
 
@@ -109,7 +109,7 @@ def analyze_acoustic_features(audio, sr):
         ("Ultrasonic (>20 kHz)", 20000, sr//2)
     ]
 
-    print(f"\n📊 Energy Distribution:")
+    print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
         band_energy = np.sum(pos_magnitude[mask]**2)
@@ -152,7 +152,7 @@ def analyze_phrase_structure(audio, sr):
         min_phrase_duration_ms=5
     )
 
-    print(f"\n📊 Segmentation Results:")
+    print("\n📊 Segmentation Results:")
     print(f"  Total phrases detected: {len(phrases)}")
 
     if len(phrases) == 0:
@@ -160,7 +160,7 @@ def analyze_phrase_structure(audio, sr):
         return []
 
     # Analyze each phrase in detail
-    print(f"\n📋 Detailed Phrase Analysis:")
+    print("\n📋 Detailed Phrase Analysis:")
 
     phrase_details = []
 
@@ -179,7 +179,7 @@ def analyze_phrase_structure(audio, sr):
 
         # Get features
         features = phrase.features
-        print(f"    Features:")
+        print("    Features:")
 
         for key, value in features.items():
             if isinstance(value, float):
@@ -222,18 +222,18 @@ def compare_with_synthetic():
     modality = analyzer.detect_modality(synthetic)
     probabilities = analyzer.get_modality_probabilities(synthetic)
 
-    print(f"\n📊 Synthetic Marmoset Call (7 kHz harmonic):")
+    print("\n📊 Synthetic Marmoset Call (7 kHz harmonic):")
     print(f"  Modality: {modality.name}")
     print(f"  Probabilities: {probabilities}")
 
-    print(f"\n📊 Comparison:")
-    print(f"  Expected: HARMONIC (marmosets use flat tones)")
+    print("\n📊 Comparison:")
+    print("  Expected: HARMONIC (marmosets use flat tones)")
     print(f"  Detected: {modality.name}")
 
     if modality == Modality.HARMONIC:
-        print(f"  ✓ Correct!")
+        print("  ✓ Correct!")
     else:
-        print(f"  ⚠️  Unexpected - check F0 range thresholds")
+        print("  ⚠️  Unexpected - check F0 range thresholds")
 
 
 def generate_spectrogram(audio, sr, output_path):
@@ -283,7 +283,7 @@ def main():
         return
 
     # 1. Acoustic feature analysis
-    features = analyze_acoustic_features(audio, sr)
+    analyze_acoustic_features(audio, sr)
 
     # 2. Phrase structure analysis
     phrase_details = analyze_phrase_structure(audio, sr)
@@ -317,21 +317,21 @@ def main():
             bar = '█' * int(percentage / 10)
             print(f"  {modality:15s}: {count} ({percentage:.0f}%) {bar}")
 
-        print(f"\n🔬 Key Findings:")
+        print("\n🔬 Key Findings:")
         print(f"  • Phee call contains {len(phrase_details)} distinct phrase segments")
-        print(f"  • Mixed modality detected (HARMONIC + FM_SWEEP)")
+        print("  • Mixed modality detected (HARMONIC + FM_SWEEP)")
 
         # Check for HARMONIC presence
         harmonic_count = modality_counts.get('HARMONIC', 0)
         if harmonic_count > 0:
-            print(f"  ✓ HARMONIC components detected (expected for marmosets)")
+            print("  ✓ HARMONIC components detected (expected for marmosets)")
         else:
-            print(f"  ⚠️  No HARMONIC components detected")
+            print("  ⚠️  No HARMONIC components detected")
 
-        print(f"\n💡 Interpretation:")
-        print(f"  Marmoset Phee calls show frequency modulation, which may explain")
-        print(f"  the FM_SWEEP classification. This is scientifically valid as")
-        print(f"  marmoset calls are not pure flat tones but have some modulation.")
+        print("\n💡 Interpretation:")
+        print("  Marmoset Phee calls show frequency modulation, which may explain")
+        print("  the FM_SWEEP classification. This is scientifically valid as")
+        print("  marmoset calls are not pure flat tones but have some modulation.")
 
     print(f"\n{'='*70}")
     print("✅ Analysis complete!")

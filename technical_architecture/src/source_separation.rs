@@ -1,17 +1,15 @@
-/**
- * Source Separation Module - Conv-TasNet via ONNX/Tract
- * =======================================================
- *
- * This module implements real-time audio source separation using
- * Conv-TasNet (Convolutional Time-domain Audio Separation Network)
- * through ONNX models running on Tract inference engine.
- *
- * This provides the critical <100ms latency budget for jungle audio
- * processing, separating animal vocalizations from background noise.
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Source Separation Module - Conv-TasNet via ONNX/Tract
+//! =======================================================
+//!
+//! This module implements real-time audio source separation using
+//! Conv-TasNet (Convolutional Time-domain Audio Separation Network)
+//! through ONNX models running on Tract inference engine.
+//!
+//! This provides the critical <100ms latency budget for jungle audio
+//! processing, separating animal vocalizations from background noise.
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::path::Path;
 use std::sync::Arc;
@@ -50,6 +48,7 @@ impl Default for SeparatorConfig {
 ///
 /// This struct loads the trained Conv-TasNet model (exported from Asteroid/PyTorch)
 /// and performs real-time source separation with minimal latency.
+#[allow(dead_code)]
 pub struct ConvTasNetSeparator {
     /// ONNX model for inference (using opaque type to avoid complex tract bounds)
     model: Arc<parking_lot::Mutex<ModelWrapper>>,
@@ -67,6 +66,7 @@ struct ModelWrapper {
     _private: (),
 }
 
+#[allow(dead_code)]
 impl ConvTasNetSeparator {
     /// Create a new Conv-TasNet separator
     pub async fn new(config: SeparatorConfig) -> Result<Self> {
@@ -260,7 +260,8 @@ mod tests {
     async fn test_separator_creation() {
         let config = SeparatorConfig::default();
         let separator = ConvTasNetSeparator::new(config).await.unwrap();
-        assert!(!separator.is_ready() || true); // May or may not have model
+        // Separator created successfully (model may or may not be loaded)
+        drop(separator);
     }
 
     #[tokio::test]

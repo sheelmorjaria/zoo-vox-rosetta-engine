@@ -4,14 +4,15 @@ Quick Sperm Whale Check
 Analyzes first 10 seconds of each file
 """
 
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -106,7 +107,7 @@ def main():
     signal_files = list(signal_dir.glob("*.wav"))
 
     print(f"\n📁 Found {len(signal_files)} signal files")
-    print(f"🎲 Testing first 10 files (10 seconds each)...\n")
+    print("🎲 Testing first 10 files (10 seconds each)...\n")
 
     results = []
     for filepath in signal_files[:10]:
@@ -132,7 +133,7 @@ def main():
     print(f"Files without segmentation: {len(without_phrases)}/{len(results)}")
 
     # Energy averages
-    print(f"\n📊 Average Energy Distribution:")
+    print("\n📊 Average Energy Distribution:")
     avg_energy = {}
     for band in ["0-2 kHz", "2-8 kHz (SW clicks)", "8-15 kHz", ">15 kHz"]:
         avg_energy[band] = np.mean([r['energy'].get(band, 0) for r in results])
@@ -142,7 +143,7 @@ def main():
 
     # Modality summary
     if with_phrases:
-        print(f"\n📊 Modality Distribution (segmented files):")
+        print("\n📊 Modality Distribution (segmented files):")
         all_counts = {}
         for r in with_phrases:
             for m, c in r['modality_counts'].items():
@@ -152,7 +153,7 @@ def main():
             print(f"  {m:15s}: {c}")
 
     if without_phrases:
-        print(f"\n📊 Full-file Modality (no segmentation):")
+        print("\n📊 Full-file Modality (no segmentation):")
         counts = {}
         for r in without_phrases:
             m = r['modality']
@@ -161,7 +162,7 @@ def main():
         for m, c in sorted(counts.items()):
             print(f"  {m:15s}: {c}")
 
-    print(f"\n✅ Check complete!")
+    print("\n✅ Check complete!")
 
 
 if __name__ == "__main__":

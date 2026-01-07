@@ -9,20 +9,14 @@ Using Test-Driven Development methodology to implement:
 4. GIL-aware thread synchronization
 """
 
-import unittest
-import numpy as np
-import time
-import threading
 import multiprocessing as mp
-import sys
 import os
-import mmap
-import struct
-import json
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
-from enum import Enum
+import sys
+import threading
+import time
+import unittest
+
+import numpy as np
 
 # Import all enhancement modules
 sys.path.append('src')
@@ -128,7 +122,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
 
     def test_interprocess_communication(self):
         """Test communication between parent and child processes"""
-        from realtime.shared_memory_ipc import SharedMemoryManager, CommandQueue
+        from realtime.shared_memory_ipc import CommandQueue, SharedMemoryManager
 
         def worker_process(sm_name, q_name):
             """Worker process that reads from shared memory and responds via queue"""

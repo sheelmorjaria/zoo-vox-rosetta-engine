@@ -9,15 +9,16 @@ Investigates sperm whale vocalizations (clicks/codas) to understand:
 4. Species-specific parameters for optimal detection
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -88,7 +89,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
         ("Ultrasonic (>30 kHz)", 30000, sr//2)
     ]
 
-    print(f"\n📊 Energy Distribution:")
+    print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
         band_energy = np.sum(pos_magnitude[mask]**2)
@@ -104,11 +105,10 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
 
     # Set threshold based on RMS
     threshold = np.mean(envelope) + 2 * np.std(envelope)
-    peaks = []
     from scipy.signal import find_peaks
     peak_indices, _ = find_peaks(envelope, height=threshold, distance=int(0.01*sr))
 
-    print(f"\n🔍 Click Detection:")
+    print("\n🔍 Click Detection:")
     print(f"  Detected {len(peak_indices)} potential clicks")
 
     if len(peak_indices) > 0:
@@ -120,7 +120,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
             print(f"  Max interval: {np.max(intervals):.1f} ms")
 
     # Test phrase segmentation
-    print(f"\n🔍 Testing phrase segmentation:")
+    print("\n🔍 Testing phrase segmentation:")
 
     analyzer = UniversalRosettaStone(sample_rate=sr)
 
@@ -137,7 +137,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
                 results[key] = len(phrases)
                 if len(phrases) > 0:
                     print(f"  gap={min_gap:3d}ms, dur={min_dur:2d}ms: {len(phrases):2d} phrases ✓")
-            except Exception as e:
+            except Exception:
                 pass
 
     # Find best parameter combination
@@ -177,7 +177,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
                 })
 
             # Print modality distribution
-            print(f"\n  Modality Distribution:")
+            print("\n  Modality Distribution:")
             for modality, count in sorted(modality_counts.items()):
                 percentage = count / len(phrases) * 100
                 bar = '█' * int(percentage / 10)
@@ -197,7 +197,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
             }
 
     # If no segmentation, analyze whole file
-    print(f"\n🔍 Analyzing entire file as single unit:")
+    print("\n🔍 Analyzing entire file as single unit:")
     try:
         modality = analyzer.detect_modality(audio)
         probabilities = analyzer.get_modality_probabilities(audio)
@@ -242,7 +242,7 @@ def main():
     noise_dir = base_dir / "Noise_parts"
 
     if not signal_dir.exists() or not noise_dir.exists():
-        print(f"❌ Signal_parts or Noise_parts directory not found")
+        print("❌ Signal_parts or Noise_parts directory not found")
         return
 
     # Get signal and noise files
@@ -321,7 +321,7 @@ def main():
 
         # Full-file modality for non-segmented
         if without_phrases:
-            print(f"\n  Full-file Modality (no segmentation):")
+            print("\n  Full-file Modality (no segmentation):")
             modality_counts = {}
             for result in without_phrases:
                 m = result['full_file_modality']
@@ -344,16 +344,16 @@ def main():
                 m = list(result['modality_counts'].keys())[0]  # Primary modality
             modality_counts[m] = modality_counts.get(m, 0) + 1
 
-        print(f"  Modality Distribution:")
+        print("  Modality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(all_results['noise']) * 100
             bar = '█' * int(percentage / 10)
             print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}")
 
-    print(f"\n💡 Key Findings:")
-    print(f"  - Sample rate: 156.25 kHz (ultrasonic)")
-    print(f"  - Sperm whale clicks: 1-15 kHz range")
-    print(f"  - Expected: TRANSIENT (clicks) or RHYTHMIC (codas)")
+    print("\n💡 Key Findings:")
+    print("  - Sample rate: 156.25 kHz (ultrasonic)")
+    print("  - Sperm whale clicks: 1-15 kHz range")
+    print("  - Expected: TRANSIENT (clicks) or RHYTHMIC (codas)")
 
     print(f"\n{'='*70}")
     print("✅ Investigation complete!")

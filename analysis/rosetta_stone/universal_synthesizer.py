@@ -9,10 +9,11 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional, Any
-from collections import Counter
 import logging
+from collections import Counter
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 try:
     # Try relative import first
@@ -23,12 +24,13 @@ except ImportError:
         from analysis.rosetta_stone.universal_rosetta_stone import Modality, PhraseSignature
     except ImportError:
         # Fallback for running as script
-        import sys
         import os
+        import sys
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from universal_rosetta_stone import Modality, PhraseSignature
 
 import warnings
+
 warnings.filterwarnings('ignore')
 
 
@@ -206,8 +208,8 @@ class UniversalSynthesizer:
             # Synthesize FM sweep with discovered parameters
             start_freq = phrase_signature.features.get('start_freq', 4000)
             end_freq = phrase_signature.features.get('end_freq', 6000)
-            mean_freq = phrase_signature.features.get('mean_freq', 5000)
-            freq_slope = phrase_signature.features.get('freq_slope', 2000)
+            phrase_signature.features.get('mean_freq', 5000)
+            phrase_signature.features.get('freq_slope', 2000)
 
             # Linear sweep
             instantaneous_freq = start_freq + (end_freq - start_freq) * t / (duration_samples / sample_rate)
@@ -220,7 +222,7 @@ class UniversalSynthesizer:
         elif phrase_signature.modality == Modality.TRANSIENT:
             # Synthesize transient/click
             centroid = phrase_signature.features.get('spectral_centroid', 5000)
-            kurtosis = phrase_signature.features.get('kurtosis', 3.0)
+            phrase_signature.features.get('kurtosis', 3.0)
 
             # Create damped sinusoid
             decay = np.exp(-t * 5)  # Exponential decay

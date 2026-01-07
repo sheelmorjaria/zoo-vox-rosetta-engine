@@ -13,13 +13,16 @@ Author: Sheel Morjaria
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
 import sys
+
+import numpy as np
+
 sys.path.append('/home/sheel/birdsong_analysis')
 sys.path.append('/home/sheel/birdsong_analysis/src/realtime')
 
-from phrase_audio_library import PhraseAudioLibrary
 from advanced_synthesis_methods import SynthesisFactory
+from phrase_audio_library import PhraseAudioLibrary
+
 
 def create_demo_library():
     """Create a demonstration library with various phrase types."""
@@ -46,7 +49,7 @@ def create_demo_library():
         envelope = np.exp(-t * 10)
         audio *= envelope
 
-        segment = library.create_phrase_segment(
+        library.create_phrase_segment(
             audio=audio,
             phrase_key=f'F0_{freq}_DUR_5_RANGE_0',
             context=context,

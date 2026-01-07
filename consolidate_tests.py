@@ -3,10 +3,10 @@
 Script to consolidate all test files into a single tests directory
 """
 
-import shutil
 import os
+import shutil
 from pathlib import Path
-import sys
+
 
 def consolidate_test_files():
     # Source directories containing test files

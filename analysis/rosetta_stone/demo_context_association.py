@@ -20,22 +20,20 @@ This demonstrates the SCIENTIFIC METHOD for discovering semantic meaning:
 4. Validation → Test predictive power
 """
 
-import json
-import numpy as np
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from analysis.rosetta_stone.associate_personas_with_context import (
-    load_vocalization_database,
+    ACOUSTIC_PERSONAS,
     build_persona_context_matrix,
-    chi_square_test_of_independence,
-    perform_fisher_exact_tests,
-    discover_persona_semantics,
     calculate_cramers_v,
-    ACOUSTIC_PERSONAS
+    chi_square_test_of_independence,
+    discover_persona_semantics,
+    load_vocalization_database,
+    perform_fisher_exact_tests,
 )
 
 
@@ -95,7 +93,6 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
 
         if best_persona and best_persona in context_mappings:
             # Assign random context from persona's context set
-            import random
             contexts_list = context_mappings[best_persona]
 
             # Create weighted distribution (first context is most common)
@@ -133,7 +130,7 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
     for phrase_key, phrase_data in phrases.items():
         if phrase_data.get('contexts'):
             contexts = phrase_data['contexts']
-            total = sum(c['count'] for c in contexts)
+            sum(c['count'] for c in contexts)
             ctx_str = ", ".join([f"{c['context_name']} ({c['count']})" for c in contexts[:3]])
             print(f"  {phrase_key}: {ctx_str}")
             sample_count += 1
@@ -225,7 +222,7 @@ def main():
     )
 
     # Calculate effect size
-    cramers_v = calculate_cramers_v(chi2_stat, matrix)
+    calculate_cramers_v(chi2_stat, matrix)
 
     # Perform Fisher's exact tests
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)

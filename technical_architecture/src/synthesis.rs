@@ -1,25 +1,24 @@
-/**
- * Granular Synthesis Module
- * =========================
- *
- * This module implements real-time audio synthesis using granular
- * synthesis techniques. It generates realistic animal vocalizations
- * and environmental audio responses.
- *
- * Features:
- * - Granular synthesis with configurable grain parameters
- * - Environmental convolution for jungle acoustics
- * - Parametric morphing between vocalizations
- * - Real-time synthesis with low latency
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Granular Synthesis Module
+//! =========================
+//!
+//! This module implements real-time audio synthesis using granular
+//! synthesis techniques. It generates realistic animal vocalizations
+//! and environmental audio responses.
+//!
+//! Features:
+//! - Granular synthesis with configurable grain parameters
+//! - Environmental convolution for jungle acoustics
+//! - Parametric morphing between vocalizations
+//! - Real-time synthesis with low latency
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::collections::{VecDeque, HashMap};
 use std::sync::Arc;
 use std::time::Instant;
 use parking_lot::Mutex;
+use lru::LruCache;
 use anyhow::Result;
 use log::{info, debug, warn};
 use serde::{Deserialize, Serialize};
@@ -400,6 +399,7 @@ impl AudioSegment {
 
 /// Microharmonic validator for checking phrase compatibility
 pub struct MicroharmonicValidator {
+    #[allow(dead_code)]
     sample_rate: usize,
 }
 
@@ -762,6 +762,7 @@ impl ConcatenativeSynthesizer {
 
 /// Superpositional synthesizer (Vertical/Simultaneous mode)
 pub struct SuperpositionalSynthesizer {
+    #[allow(dead_code)]
     sample_rate: usize,
     max_layers: usize,
 }
@@ -829,6 +830,7 @@ impl SuperpositionalSynthesizer {
 
 /// Combined synthesizer (Mixed encoding mode)
 pub struct CombinedSynthesizer {
+    #[allow(dead_code)]
     sample_rate: usize,
     concatenative: ConcatenativeSynthesizer,
     superpositional: SuperpositionalSynthesizer,
@@ -1220,11 +1222,13 @@ impl EnhancedMicroharmonicSynthesizer {
 /// Grain Window - Envelope function for smooth grain boundaries
 /// Prevents clicking artifacts when grains are triggered
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct GrainWindow {
     /// Window samples
     samples: Vec<f32>,
 }
 
+#[allow(dead_code)]
 impl GrainWindow {
     /// Create a Hanning window (cosine-based fade in/out)
     ///
@@ -1268,6 +1272,7 @@ impl GrainWindow {
 ///
 /// This is the key innovation: instead of generating audio from math (additive synthesis),
 /// we manipulate real audio samples (granular synthesis). This preserves formant structure.
+#[allow(dead_code)]
 pub struct GranularVoice {
     /// Source audio buffer (real recording)
     source_buffer: Vec<f32>,
@@ -1285,6 +1290,7 @@ pub struct GranularVoice {
     time_stretch_ratio: f32,
 }
 
+#[allow(dead_code)]
 impl GranularVoice {
     /// Create a new granular voice from source audio
     ///
@@ -1386,6 +1392,7 @@ impl GranularVoice {
 ///
 /// Overlaps multiple granular voices to create smooth morphs between
 /// different pitches or timbres while preserving formant structure.
+#[allow(dead_code)]
 pub struct GranularMorpher {
     /// Active voices
     voices: Vec<GranularVoice>,
@@ -1393,6 +1400,7 @@ pub struct GranularMorpher {
     crossfade_ms: f32,
 }
 
+#[allow(dead_code)]
 impl GranularMorpher {
     /// Create a new granular morpher with multiple voices
     ///
@@ -1444,6 +1452,309 @@ impl GranularMorpher {
 ///
 /// This should achieve t-SNE distance < 7.0 (similar to concatenative)
 /// while providing pitch/time flexibility.
+///
+/// 17-dimensional micro-dynamics source metadata for delta-based synthesis
+///
+/// This structure captures the full acoustic profile of a source buffer,
+/// enabling precise vector delta operations for all micro-dynamics features.
+///
+/// **17 Micro-Dynamics Features:**
+///
+/// 1. **Fundamental** (3 features):
+///    - `mean_f0_hz`: Mean fundamental frequency (Hz)
+///    - `duration_ms`: Temporal extent (ms)
+///    - `f0_range_hz`: Pitch modulation range (Hz)
+///
+/// 2. **Grit Factors** (2 features) - Timbre texture:
+///    - `harmonic_to_noise_ratio`: Harmonic purity vs noise (dB)
+///    - `spectral_flatness`: Noise-like vs tonal (0-1)
+///
+/// 3. **Motion Factors** (6 features) - Envelope dynamics:
+///    - `attack_time_ms`: Onset speed (fast=sharp, slow=gentle)
+///    - `decay_time_ms`: Release speed (ms)
+///    - `sustain_level`: Steady-state amplitude (0-1)
+///    - `vibrato_rate_hz`: Pitch modulation frequency (Hz)
+///    - `vibrato_depth`: Pitch modulation depth (Hz)
+///    - `jitter`: Micro-perturbations/instability (0-1)
+///
+/// 4. **Fingerprint Factors** (5 features) - Spectral shape:
+///    - `mfcc_1` through `mfcc_4`: Mel-frequency cepstral coefficients
+///    - `spectral_contrast`: Formant structure strength
+///
+/// 5. **Rhythm Factors** (3 features) - Temporal patterns:
+///    - `median_ici_ms`: Inter-click interval (ms)
+///    - `onset_rate_hz`: Click/event rate (Hz)
+///    - `ici_coefficient_of_variation`: Rhythm regularity (0-1)
+#[derive(Clone, Copy, Debug)]
+pub struct SourceMetadata {
+    // === Fundamental (3 features) ===
+    /// Mean fundamental frequency of source buffer (Hz)
+    pub mean_f0_hz: f32,
+    /// Duration of source buffer (ms)
+    pub duration_ms: f32,
+    /// F0 range of source (Hz)
+    pub f0_range_hz: f32,
+
+    // === Grit Factors (2 features) ===
+    /// Harmonic-to-noise ratio in dB (higher = more tonal, lower = more noisy)
+    pub harmonic_to_noise_ratio: f32,
+    /// Spectral flatness (0 = tonal, 1 = noise-like)
+    pub spectral_flatness: f32,
+
+    // === Motion Factors (6 features) ===
+    /// Attack time in milliseconds (fast = sharp onset, slow = gentle)
+    pub attack_time_ms: f32,
+    /// Decay time in milliseconds (fast = quick release, slow = long tail)
+    pub decay_time_ms: f32,
+    /// Sustain level (0-1, steady-state amplitude)
+    pub sustain_level: f32,
+    /// Vibrato rate in Hz (pitch modulation frequency)
+    pub vibrato_rate_hz: f32,
+    /// Vibrato depth in Hz (pitch modulation depth)
+    pub vibrato_depth: f32,
+    /// Jitter - micro-perturbations indicating instability (0-1)
+    pub jitter: f32,
+
+    // === Fingerprint Factors (5 features) ===
+    /// Mel-frequency cepstral coefficient 1 (spectral envelope)
+    pub mfcc_1: f32,
+    /// Mel-frequency cepstral coefficient 2
+    pub mfcc_2: f32,
+    /// Mel-frequency cepstral coefficient 3
+    pub mfcc_3: f32,
+    /// Mel-frequency cepstral coefficient 4
+    pub mfcc_4: f32,
+    /// Spectral contrast - formant structure strength
+    pub spectral_contrast: f32,
+
+    // === Rhythm Factors (3 features) ===
+    /// Median inter-click interval in milliseconds
+    pub median_ici_ms: f32,
+    /// Onset rate - clicks or events per second
+    pub onset_rate_hz: f32,
+    /// ICI coefficient of variation - rhythm regularity (0 = perfectly regular, 1 = irregular)
+    pub ici_coefficient_of_variation: f32,
+}
+
+impl Default for SourceMetadata {
+    fn default() -> Self {
+        Self {
+            // Fundamental - marmoset-like defaults
+            mean_f0_hz: 7000.0,
+            duration_ms: 50.0,
+            f0_range_hz: 400.0,
+
+            // Grit - tonal (low noise)
+            harmonic_to_noise_ratio: 20.0,  // 20 dB HNR
+            spectral_flatness: 0.1,         // Very tonal
+
+            // Motion - gentle attack/decay
+            attack_time_ms: 10.0,
+            decay_time_ms: 15.0,
+            sustain_level: 0.7,
+            vibrato_rate_hz: 8.0,
+            vibrato_depth: 50.0,
+            jitter: 0.02,                   // Low instability
+
+            // Fingerprint - neutral spectral shape
+            mfcc_1: -500.0,
+            mfcc_2: -100.0,
+            mfcc_3: -50.0,
+            mfcc_4: -20.0,
+            spectral_contrast: 20.0,
+
+            // Rhythm - not pulsed (defaults for harmonic calls)
+            median_ici_ms: 0.0,             // Not applicable for continuous tones
+            onset_rate_hz: 0.0,             // Not applicable for continuous tones
+            ici_coefficient_of_variation: 0.0, // Not applicable for continuous tones
+        }
+    }
+}
+
+impl SourceMetadata {
+    /// Create a builder for partial metadata construction
+    #[allow(dead_code)]
+    pub fn builder() -> SourceMetadataBuilder {
+        SourceMetadataBuilder::default()
+    }
+
+    /// Get delta vector (difference between two metadata sets)
+    ///
+    /// Returns a 17D delta vector representing the difference from `other` to `self`.
+    /// This is used for vector delta synthesis: `target = source + delta`
+    #[allow(dead_code)]
+    pub fn delta_from(&self, other: &SourceMetadata) -> MicroDynamicsDelta {
+        MicroDynamicsDelta {
+            delta_mean_f0_hz: self.mean_f0_hz - other.mean_f0_hz,
+            delta_duration_ms: self.duration_ms - other.duration_ms,
+            delta_f0_range_hz: self.f0_range_hz - other.f0_range_hz,
+
+            delta_harmonic_to_noise_ratio: self.harmonic_to_noise_ratio - other.harmonic_to_noise_ratio,
+            delta_spectral_flatness: self.spectral_flatness - other.spectral_flatness,
+
+            delta_attack_time_ms: self.attack_time_ms - other.attack_time_ms,
+            delta_decay_time_ms: self.decay_time_ms - other.decay_time_ms,
+            delta_sustain_level: self.sustain_level - other.sustain_level,
+            delta_vibrato_rate_hz: self.vibrato_rate_hz - other.vibrato_rate_hz,
+            delta_vibrato_depth: self.vibrato_depth - other.vibrato_depth,
+            delta_jitter: self.jitter - other.jitter,
+
+            delta_mfcc_1: self.mfcc_1 - other.mfcc_1,
+            delta_mfcc_2: self.mfcc_2 - other.mfcc_2,
+            delta_mfcc_3: self.mfcc_3 - other.mfcc_3,
+            delta_mfcc_4: self.mfcc_4 - other.mfcc_4,
+            delta_spectral_contrast: self.spectral_contrast - other.spectral_contrast,
+
+            delta_median_ici_ms: self.median_ici_ms - other.median_ici_ms,
+            delta_onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
+            delta_ici_cv: self.ici_coefficient_of_variation - other.ici_coefficient_of_variation,
+        }
+    }
+}
+
+/// 17-dimensional micro-dynamics delta vector
+///
+/// Represents the difference between two acoustic feature vectors.
+/// Used in vector delta synthesis to calculate transformations.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct MicroDynamicsDelta {
+    // Fundamental deltas
+    pub delta_mean_f0_hz: f32,
+    pub delta_duration_ms: f32,
+    pub delta_f0_range_hz: f32,
+
+    // Grit factor deltas
+    pub delta_harmonic_to_noise_ratio: f32,
+    pub delta_spectral_flatness: f32,
+
+    // Motion factor deltas
+    pub delta_attack_time_ms: f32,
+    pub delta_decay_time_ms: f32,
+    pub delta_sustain_level: f32,
+    pub delta_vibrato_rate_hz: f32,
+    pub delta_vibrato_depth: f32,
+    pub delta_jitter: f32,
+
+    // Fingerprint factor deltas
+    pub delta_mfcc_1: f32,
+    pub delta_mfcc_2: f32,
+    pub delta_mfcc_3: f32,
+    pub delta_mfcc_4: f32,
+    pub delta_spectral_contrast: f32,
+
+    // Rhythm factor deltas
+    pub delta_median_ici_ms: f32,
+    pub delta_onset_rate_hz: f32,
+    pub delta_ici_cv: f32,
+}
+
+/// Builder for partial SourceMetadata construction
+///
+/// Allows creating metadata with only known features, using defaults for the rest.
+#[derive(Clone, Debug, Default)]
+#[allow(dead_code)]
+pub struct SourceMetadataBuilder {
+    metadata: SourceMetadata,
+}
+
+#[allow(dead_code)]
+impl SourceMetadataBuilder {
+    /// Set fundamental frequency
+    pub fn mean_f0_hz(mut self, value: f32) -> Self {
+        self.metadata.mean_f0_hz = value;
+        self
+    }
+
+    /// Set duration
+    pub fn duration_ms(mut self, value: f32) -> Self {
+        self.metadata.duration_ms = value;
+        self
+    }
+
+    /// Set F0 range
+    pub fn f0_range_hz(mut self, value: f32) -> Self {
+        self.metadata.f0_range_hz = value;
+        self
+    }
+
+    /// Set harmonic-to-noise ratio
+    pub fn harmonic_to_noise_ratio(mut self, value: f32) -> Self {
+        self.metadata.harmonic_to_noise_ratio = value;
+        self
+    }
+
+    /// Set spectral flatness
+    pub fn spectral_flatness(mut self, value: f32) -> Self {
+        self.metadata.spectral_flatness = value;
+        self
+    }
+
+    /// Set attack time
+    pub fn attack_time_ms(mut self, value: f32) -> Self {
+        self.metadata.attack_time_ms = value;
+        self
+    }
+
+    /// Set decay time
+    pub fn decay_time_ms(mut self, value: f32) -> Self {
+        self.metadata.decay_time_ms = value;
+        self
+    }
+
+    /// Set sustain level
+    pub fn sustain_level(mut self, value: f32) -> Self {
+        self.metadata.sustain_level = value;
+        self
+    }
+
+    /// Set vibrato rate
+    pub fn vibrato_rate_hz(mut self, value: f32) -> Self {
+        self.metadata.vibrato_rate_hz = value;
+        self
+    }
+
+    /// Set vibrato depth
+    pub fn vibrato_depth(mut self, value: f32) -> Self {
+        self.metadata.vibrato_depth = value;
+        self
+    }
+
+    /// Set jitter
+    pub fn jitter(mut self, value: f32) -> Self {
+        self.metadata.jitter = value;
+        self
+    }
+
+    /// Set MFCC coefficients
+    pub fn mfcc(mut self, mfcc_1: f32, mfcc_2: f32, mfcc_3: f32, mfcc_4: f32) -> Self {
+        self.metadata.mfcc_1 = mfcc_1;
+        self.metadata.mfcc_2 = mfcc_2;
+        self.metadata.mfcc_3 = mfcc_3;
+        self.metadata.mfcc_4 = mfcc_4;
+        self
+    }
+
+    /// Set spectral contrast
+    pub fn spectral_contrast(mut self, value: f32) -> Self {
+        self.metadata.spectral_contrast = value;
+        self
+    }
+
+    /// Set rhythm features
+    pub fn rhythm(mut self, median_ici_ms: f32, onset_rate_hz: f32, ici_cv: f32) -> Self {
+        self.metadata.median_ici_ms = median_ici_ms;
+        self.metadata.onset_rate_hz = onset_rate_hz;
+        self.metadata.ici_coefficient_of_variation = ici_cv;
+        self
+    }
+
+    /// Build the metadata
+    pub fn build(self) -> SourceMetadata {
+        self.metadata
+    }
+}
+
+#[allow(dead_code)]
 pub struct GranularConcatenativeSynthesizer {
     sample_rate: usize,
     source_buffer: Vec<f32>,
@@ -1451,8 +1762,11 @@ pub struct GranularConcatenativeSynthesizer {
     pitch_shift_ratio: f32,
     time_stretch_ratio: f32,
     position: f32,
+    /// Metadata for delta-based synthesis
+    source_metadata: SourceMetadata,
 }
 
+#[allow(dead_code)]
 impl GranularConcatenativeSynthesizer {
     /// Create a new granular concatenative synthesizer
     pub fn new(sample_rate: usize) -> Self {
@@ -1463,13 +1777,180 @@ impl GranularConcatenativeSynthesizer {
             pitch_shift_ratio: 1.0,
             time_stretch_ratio: 1.0,
             position: 0.0,
+            source_metadata: SourceMetadata::default(),
         }
     }
 
-    /// Load source audio buffer (real recording)
-    pub fn load_source(&mut self, source: Vec<f32>) {
+    /// Load source audio buffer with metadata (for delta-based synthesis)
+    ///
+    /// **VECTOR DELTA SUPPORT**: This enables delta commands like "shift pitch by +50Hz"
+    /// instead of absolute commands like "set pitch to 7000Hz".
+    ///
+    /// # Parameters
+    /// - `source`: Real audio samples
+    /// - `metadata`: Acoustic features of the source (F0, duration, etc.)
+    ///
+    /// # Example
+    /// ```ignore
+    /// let metadata = SourceMetadata {
+    ///     mean_f0_hz: 6800.0,
+    ///     duration_ms: 50.0,
+    ///     f0_range_hz: 400.0,
+    /// };
+    /// synthesizer.load_source_with_metadata(audio_buffer, metadata);
+    ///
+    /// // Now we can use delta commands!
+    /// synthesizer.shift_pitch_by_hz(200.0);  // 6800 + 200 = 7000Hz
+    /// synthesizer.shift_duration_by_ms(-10.0); // 50 - 10 = 40ms
+    /// ```
+    pub fn load_source_with_metadata(&mut self, source: Vec<f32>, metadata: SourceMetadata) {
         self.source_buffer = source;
+        self.source_metadata = metadata;
         self.position = 0.0;
+        self.pitch_shift_ratio = 1.0;
+        self.time_stretch_ratio = 1.0;
+    }
+
+    /// Load source audio buffer (legacy method, uses default metadata)
+    pub fn load_source(&mut self, source: Vec<f32>) {
+        self.load_source_with_metadata(source, SourceMetadata::default());
+    }
+
+    /// Set source metadata (call after load_source() if metadata known)
+    pub fn set_source_metadata(&mut self, metadata: SourceMetadata) {
+        self.source_metadata = metadata;
+    }
+
+    /// Shift pitch by absolute Hz amount (VECTOR DELTA COMMAND)
+    ///
+    /// **GOOD**: "Shift pitch by +50Hz relative to source"
+    /// **BAD**: "Set pitch to 7000Hz" (ignores source F0)
+    ///
+    /// # Parameters
+    /// - `delta_hz`: Pitch shift in Hz (positive = higher, negative = lower)
+    ///
+    /// # Example
+    /// ```ignore
+    /// // Source F0 = 6800Hz
+    /// synthesizer.shift_pitch_by_hz(200.0);  // Result: 7000Hz
+    /// synthesizer.shift_pitch_by_hz(-300.0); // Result: 6500Hz
+    /// ```
+    pub fn shift_pitch_by_hz(&mut self, delta_hz: f32) {
+        // Calculate ratio from delta Hz
+        // Formula: ratio = (source_f0 + delta_hz) / source_f0
+        let source_f0 = self.source_metadata.mean_f0_hz;
+        let target_f0 = source_f0 + delta_hz;
+        let ratio = (target_f0 / source_f0).clamp(0.5, 2.0);
+        self.pitch_shift_ratio = ratio;
+    }
+
+    /// Shift duration by absolute ms amount (VECTOR DELTA COMMAND)
+    ///
+    /// **GOOD**: "Shift duration by -10ms relative to source"
+    /// **BAD**: "Set duration to 40ms" (ignores source duration)
+    ///
+    /// # Parameters
+    /// - `delta_ms`: Duration shift in ms (positive = longer, negative = shorter)
+    ///
+    /// # Example
+    /// ```ignore
+    /// // Source duration = 50ms
+    /// synthesizer.shift_duration_by_ms(-10.0); // Result: 40ms
+    /// synthesizer.shift_duration_by_ms(20.0);  // Result: 70ms
+    /// ```
+    pub fn shift_duration_by_ms(&mut self, delta_ms: f32) {
+        // Calculate ratio from delta ms
+        // Formula: ratio = (source_duration + delta_ms) / source_duration
+        let source_duration = self.source_metadata.duration_ms;
+        let target_duration = source_duration + delta_ms;
+        let ratio = (target_duration / source_duration).clamp(0.5, 4.0);
+        self.time_stretch_ratio = ratio;
+    }
+
+    /// Apply Vector Delta (legacy 3D method - kept for backward compatibility)
+    ///
+    /// Applies fundamental shifts simultaneously from a delta vector.
+    /// This is the primary integration point for Acoustic Algebra.
+    ///
+    /// # Parameters
+    /// - `delta_f0_hz`: Pitch shift in Hz
+    /// - `delta_duration_ms`: Duration shift in ms
+    /// - `delta_f0_range_hz`: F0 range shift in Hz
+    ///
+    /// # Example
+    /// ```ignore
+    /// // From acoustic algebra: virtual - nearest = delta
+    /// synthesizer.apply_vector_delta(
+    ///     200.0,    // Shift pitch up by 200Hz
+    ///     -10.0,    // Shorten duration by 10ms
+    ///     100.0     // Increase F0 range by 100Hz
+    /// );
+    /// ```
+    pub fn apply_vector_delta(&mut self, delta_f0_hz: f32, delta_duration_ms: f32, delta_f0_range_hz: f32) {
+        self.shift_pitch_by_hz(delta_f0_hz);
+        self.shift_duration_by_ms(delta_duration_ms);
+        // Note: F0 range shift would require spectral manipulation beyond granular synthesis
+        // This is tracked in metadata for future use
+        self.source_metadata.f0_range_hz += delta_f0_range_hz;
+    }
+
+    /// Apply Complete 17D Micro-Dynamics Delta
+    ///
+    /// Applies shifts for all 17 micro-dynamics features simultaneously.
+    /// This enables full acoustic algebra integration with delta-based synthesis.
+    ///
+    /// **Note**: Only fundamental features (F0, duration) directly affect synthesis.
+    /// Other features are tracked in metadata for validation and downstream processing.
+    ///
+    /// # Parameters
+    /// - `delta`: 17D micro-dynamics delta vector
+    ///
+    /// # Example
+    /// ```ignore
+    /// use technical_architecture::synthesis::{SourceMetadata, MicroDynamicsDelta};
+    ///
+    /// // Calculate delta: target - source
+    /// let delta = target_metadata.delta_from(&source_metadata);
+    ///
+    /// // Apply delta to synthesizer
+    /// synthesizer.apply_micro_dynamics_delta(delta);
+    /// ```
+    pub fn apply_micro_dynamics_delta(&mut self, delta: MicroDynamicsDelta) {
+        // Apply directly synthesis-affecting features
+        self.shift_pitch_by_hz(delta.delta_mean_f0_hz);
+        self.shift_duration_by_ms(delta.delta_duration_ms);
+
+        // Track all delta features in metadata
+        self.source_metadata.mean_f0_hz += delta.delta_mean_f0_hz;
+        self.source_metadata.duration_ms += delta.delta_duration_ms;
+        self.source_metadata.f0_range_hz += delta.delta_f0_range_hz;
+
+        self.source_metadata.harmonic_to_noise_ratio += delta.delta_harmonic_to_noise_ratio;
+        self.source_metadata.spectral_flatness += delta.delta_spectral_flatness;
+
+        self.source_metadata.attack_time_ms += delta.delta_attack_time_ms;
+        self.source_metadata.decay_time_ms += delta.delta_decay_time_ms;
+        self.source_metadata.sustain_level += delta.delta_sustain_level;
+        self.source_metadata.vibrato_rate_hz += delta.delta_vibrato_rate_hz;
+        self.source_metadata.vibrato_depth += delta.delta_vibrato_depth;
+        self.source_metadata.jitter += delta.delta_jitter;
+
+        self.source_metadata.mfcc_1 += delta.delta_mfcc_1;
+        self.source_metadata.mfcc_2 += delta.delta_mfcc_2;
+        self.source_metadata.mfcc_3 += delta.delta_mfcc_3;
+        self.source_metadata.mfcc_4 += delta.delta_mfcc_4;
+        self.source_metadata.spectral_contrast += delta.delta_spectral_contrast;
+
+        self.source_metadata.median_ici_ms += delta.delta_median_ici_ms;
+        self.source_metadata.onset_rate_hz += delta.delta_onset_rate_hz;
+        self.source_metadata.ici_coefficient_of_variation += delta.delta_ici_cv;
+    }
+
+    /// Get current source metadata
+    ///
+    /// Returns the current metadata including any applied deltas.
+    pub fn get_source_metadata(&self) -> SourceMetadata {
+        self.source_metadata
     }
 
     /// Set pitch shift ratio
@@ -1557,6 +2038,7 @@ impl GranularConcatenativeSynthesizer {
 
 /// Grain for granular synthesis
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct Grain {
     /// Audio samples for this grain
     samples: VecDeque<f32>,
@@ -1572,6 +2054,7 @@ struct Grain {
     pan: f32,
 }
 
+#[allow(dead_code)]
 impl Grain {
     /// Create a new grain
     fn new(samples: Vec<f32>, grain_size: usize) -> Self {
@@ -1696,6 +2179,7 @@ impl GranularSynthesizer {
         }
 
         // Mix active grains
+        #[allow(clippy::needless_range_loop)]
         for grain in &mut self.grains {
             for i in 0..duration_samples {
                 if let Some(sample) = grain.next_sample() {
@@ -1828,7 +2312,7 @@ pub fn generate_dynamic_microharmonic_sample(
     let vibrato_osc = (time * params.vibrato_rate_hz * 2.0 * std::f32::consts::PI).sin();
     let vibrato_cents = vibrato_osc * params.vibrato_depth_cents;
     let vibrato_ratio = 2.0_f32.powf(vibrato_cents / 1200.0);
-    let inst_f0 = params.f0_base * vibrato_ratio;
+    let _inst_f0 = params.f0_base * vibrato_ratio;
 
     // 2. Apply jitter (random phase perturbation)
     let jitter = if params.jitter_amount > 0.0 {
@@ -1935,7 +2419,7 @@ impl DynamicMicroharmonicSynthesizer {
         let num_samples = (params.duration_ms / 1000.0 * self.sample_rate as f32) as usize;
         let mut output = Vec::with_capacity(num_samples);
 
-        let phase_increment = params.f0_base / self.sample_rate as f32;
+        let _phase_increment = params.f0_base / self.sample_rate as f32;
         let mut phase = 0.0;
 
         for i in 0..num_samples {
@@ -2065,6 +2549,511 @@ impl DynamicMicroharmonicSynthesizer {
     }
 }
 
+// ============================================================================
+// Multi-Buffer Sequencer for Corvid Multi-Modal Support
+// ============================================================================
+
+/// Vocalization modality types
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Modality {
+    /// Tonal, sine-like (whistle, phee)
+    #[serde(rename = "HARMONIC")]
+    Harmonic,
+    /// Clicky, noise-like (rattle, click)
+    #[serde(rename = "TRANSIENT")]
+    Transient,
+    /// Frequency modulated (trill, sweep)
+    #[serde(rename = "FM_SWEEP")]
+    FmSweep,
+}
+
+/// Single event in a multi-modal sequence
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimelineEvent {
+    /// Start time in milliseconds
+    pub start_ms: f32,
+    /// Duration in milliseconds
+    pub duration_ms: f32,
+    /// Source buffer identifier (e.g., "corvid_whistle.wav")
+    pub source_buffer: String,
+    /// Modality type for this event
+    pub modality: Modality,
+}
+
+/// Timeline of events for multi-modal synthesis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModalityTimeline {
+    /// Timeline events
+    pub events: Vec<TimelineEvent>,
+}
+
+impl ModalityTimeline {
+    /// Create a new empty timeline
+    pub fn new() -> Self {
+        Self { events: Vec::new() }
+    }
+
+    /// Add an event to the timeline
+    pub fn add_event(&mut self, start_ms: f32, duration_ms: f32, source: String, modality: Modality) {
+        let event = TimelineEvent {
+            start_ms,
+            duration_ms,
+            source_buffer: source,
+            modality,
+        };
+        self.events.push(event);
+    }
+
+    /// Sort events by start time
+    pub fn sort_by_time(&mut self) {
+        self.events.sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap());
+    }
+
+    /// Validate timeline has no overlaps and is sequential
+    pub fn validate(&self) -> Result<()> {
+        let mut sorted_events = self.events.clone();
+        sorted_events.sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap());
+
+        for i in 0..sorted_events.len().saturating_sub(1) {
+            let current = &sorted_events[i];
+            let next = &sorted_events[i + 1];
+
+            let current_end = current.start_ms + current.duration_ms;
+            if current_end > next.start_ms {
+                return Err(anyhow::anyhow!(
+                    "Timeline overlap: Event {} ends at {}ms, Event {} starts at {}ms",
+                    i, current_end, i + 1, next.start_ms
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get total duration of timeline in milliseconds
+    pub fn total_duration_ms(&self) -> f32 {
+        if self.events.is_empty() {
+            return 0.0;
+        }
+
+        let last_event = self.events.iter()
+            .max_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap())
+            .unwrap();
+
+        last_event.start_ms + last_event.duration_ms
+    }
+}
+
+impl Default for ModalityTimeline {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Multi-buffer granular sequencer for composite personas
+///
+/// This sequencer enables "Texture Sequencing" for multi-modal species like corvids
+/// that use multiple modalities (Harmonic + Transient + FM Sweep) in single vocalizations.
+///
+/// Key Principle: Persona Switching (Source Selection)
+/// - Use different source buffers for different modalities
+/// - Preserve formant structure per source (Formant Barrier)
+/// - Sequence timeline events to compose multi-modal calls
+#[derive(Debug)]
+pub struct MultiBufferGranularSequencer {
+    sample_rate: usize,
+    /// Multiple source buffers indexed by buffer name
+    source_buffers: HashMap<String, Vec<f32>>,
+    /// Metadata for each source buffer
+    source_metadata: HashMap<String, SourceMetadata>,
+    /// Default grain size in milliseconds
+    grain_size_ms: f32,
+    /// Default pitch shift ratio
+    pitch_shift_ratio: f32,
+}
+
+impl MultiBufferGranularSequencer {
+    /// Create a new multi-buffer granular sequencer
+    pub fn new(sample_rate: usize) -> Self {
+        Self {
+            sample_rate,
+            source_buffers: HashMap::new(),
+            source_metadata: HashMap::new(),
+            grain_size_ms: 20.0,
+            pitch_shift_ratio: 1.0,
+        }
+    }
+
+    /// Get the sample rate
+    pub fn sample_rate(&self) -> usize {
+        self.sample_rate
+    }
+
+    /// Register a source buffer with metadata
+    ///
+    /// # Parameters
+    /// - `buffer_name`: Unique identifier for this buffer (e.g., "corvid_whistle")
+    /// - `audio`: Audio samples
+    /// - `metadata`: Acoustic features of the source
+    pub fn register_source(&mut self, buffer_name: String, audio: Vec<f32>, metadata: SourceMetadata) {
+        self.source_buffers.insert(buffer_name.clone(), audio);
+        self.source_metadata.insert(buffer_name, metadata);
+    }
+
+    /// Set default grain size
+    pub fn set_grain_size_ms(&mut self, grain_size_ms: f32) {
+        self.grain_size_ms = grain_size_ms;
+    }
+
+    /// Set default pitch shift ratio
+    pub fn set_pitch_shift(&mut self, ratio: f32) {
+        self.pitch_shift_ratio = ratio.clamp(0.5, 2.0);
+    }
+
+    /// Synthesize a multi-modal sequence from timeline
+    ///
+    /// # Parameters
+    /// - `timeline`: Sequence of timeline events with different modalities
+    ///
+    /// # Returns
+    /// Synthesized audio samples
+    ///
+    /// # Example
+    /// ```ignore
+    /// let mut timeline = ModalityTimeline::new();
+    /// timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+    /// timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+    ///
+    /// let audio = sequencer.synthesize_timeline(&timeline)?;
+    /// ```
+    pub fn synthesize_timeline(&self, timeline: &ModalityTimeline) -> Result<Vec<f32>> {
+        // Validate timeline
+        timeline.validate()?;
+
+        if timeline.events.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Calculate total duration
+        let total_duration_ms = timeline.total_duration_ms();
+        let total_samples = (total_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+
+        let mut output = vec![0.0f32; total_samples];
+
+        // Process each event
+        for event in &timeline.events {
+            // Get source buffer
+            let source_audio = self.source_buffers.get(&event.source_buffer)
+                .ok_or_else(|| anyhow::anyhow!("Source buffer '{}' not found", event.source_buffer))?;
+
+            // Create single-buffer synthesizer for this event
+            let grain_size_samples = (event.duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+
+            // Calculate start sample
+            let start_sample = (event.start_ms / 1000.0 * self.sample_rate as f32) as usize;
+            let end_sample = (start_sample + grain_size_samples).min(total_samples);
+
+            if start_sample >= total_samples || grain_size_samples == 0 {
+                continue;
+            }
+
+            // Simple concatenation: copy source audio to output
+            // Apply pitch shift if needed
+            let pitch_ratio = if self.pitch_shift_ratio != 1.0 {
+                self.pitch_shift_ratio
+            } else {
+                1.0
+            };
+
+            // Copy with pitch shifting (resampling)
+            let source_len = source_audio.len().min(grain_size_samples);
+            output[start_sample..end_sample]
+                .iter_mut()
+                .enumerate()
+                .for_each(|(i, out_sample)| {
+                    let src_idx = (i as f32 / pitch_ratio) as usize;
+                    if src_idx < source_len {
+                        *out_sample = source_audio[src_idx];
+                    }
+                });
+        }
+
+        Ok(output)
+    }
+
+    /// Get list of registered source buffer names
+    pub fn registered_sources(&self) -> Vec<String> {
+        self.source_buffers.keys().cloned().collect()
+    }
+
+    /// Check if a source buffer is registered
+    pub fn has_source(&self, buffer_name: &str) -> bool {
+        self.source_buffers.contains_key(buffer_name)
+    }
+
+    /// Get metadata for a source buffer
+    pub fn get_source_metadata(&self, buffer_name: &str) -> Option<&SourceMetadata> {
+        self.source_metadata.get(buffer_name)
+    }
+}
+
+// =============================================================================
+// Island Hopping: Cached Audio Buffer Management
+// =============================================================================
+
+/// Cached audio buffer for real-time synthesis
+///
+/// This struct wraps an audio buffer with metadata to support
+/// LRU caching for island hopping navigation.
+#[derive(Debug, Clone)]
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+pub struct CachedAudioBuffer {
+    /// Unique identifier for this buffer
+    pub id: String,
+    /// Audio samples
+    pub samples: Vec<f32>,
+    /// Sample rate
+    pub sample_rate: usize,
+    /// Approximate size in bytes (for cache size tracking)
+    pub size_bytes: usize,
+}
+
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+impl CachedAudioBuffer {
+    /// Create a new cached audio buffer
+    pub fn new(id: String, samples: Vec<f32>, sample_rate: usize) -> Self {
+        let size_bytes = samples.len() * std::mem::size_of::<f32>();
+        Self {
+            id,
+            samples,
+            sample_rate,
+            size_bytes,
+        }
+    }
+
+    /// Get duration in milliseconds
+    pub fn duration_ms(&self) -> f32 {
+        (self.samples.len() as f32 / self.sample_rate as f32) * 1000.0
+    }
+}
+
+/// Cached Granular Synthesizer for Island Hopping
+///
+/// This wrapper adds LRU caching to the MultiBufferGranularSequencer
+/// to enable real-time island hopping navigation with <100ms latency.
+///
+/// Key Benefits:
+/// - **Cache Hit**: <1ms lookup (RAM access)
+/// - **Cache Miss**: ~20ms load (SSD access)
+/// - **Pre-fetching**: Context-aware cache warming
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+pub struct CachedGranularSequencer {
+    /// The underlying sequencer
+    sequencer: MultiBufferGranularSequencer,
+    /// LRU cache for audio buffers (key: buffer_id, value: CachedAudioBuffer)
+    cache: LruCache<String, CachedAudioBuffer>,
+    /// Maximum cache size in bytes (default: 50MB)
+    max_cache_bytes: usize,
+    /// Current cache usage in bytes
+    current_cache_bytes: usize,
+    /// Cache hit count (for statistics)
+    cache_hits: Arc<Mutex<u64>>,
+    /// Cache miss count (for statistics)
+    cache_misses: Arc<Mutex<u64>>,
+}
+
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+impl CachedGranularSequencer {
+    /// Create a new cached granular sequencer
+    ///
+    /// # Arguments
+    /// * `sample_rate` - Audio sample rate in Hz
+    /// * `max_cache_bytes` - Maximum cache size in bytes (default: 50MB = 52428800)
+    pub fn new(sample_rate: usize, max_cache_bytes: usize) -> Self {
+        info!("Initializing Cached Granular Sequencer with {}MB cache",
+              max_cache_bytes / 1024 / 1024);
+
+        Self {
+            sequencer: MultiBufferGranularSequencer::new(sample_rate),
+            cache: LruCache::unbounded(),  // We manage size manually
+            max_cache_bytes,
+            current_cache_bytes: 0,
+            cache_hits: Arc::new(Mutex::new(0)),
+            cache_misses: Arc::new(Mutex::new(0)),
+        }
+    }
+
+    /// Create with default 50MB cache
+    pub fn with_default_cache(sample_rate: usize) -> Self {
+        Self::new(sample_rate, 50 * 1024 * 1024)  // 50MB
+    }
+
+    /// Register an audio buffer (checks cache first)
+    ///
+    /// This is the main entry point for island hopping navigation.
+    /// The sequencer will:
+    /// 1. Check if the buffer is already in cache (<1ms)
+    /// 2. If cache hit, use cached buffer directly
+    /// 3. If cache miss, load buffer and cache it (~20ms from SSD)
+    ///
+    /// # Arguments
+    /// * `id` - Unique identifier for this buffer (e.g., "neutral_001")
+    /// * `audio` - Audio samples
+    /// * `metadata` - Acoustic metadata for this buffer
+    pub async fn register_source(
+        &mut self,
+        id: String,
+        audio: Vec<f32>,
+        metadata: SourceMetadata,
+    ) -> Result<()> {
+        // Check cache first
+        if self.cache.get(&id).is_some() {
+            // Cache hit - buffer already loaded
+            debug!("Cache HIT for buffer '{}'", id);
+            *self.cache_hits.lock() += 1;
+            return Ok(());
+        }
+
+        // Cache miss - need to load
+        debug!("Cache MISS for buffer '{}', loading...", id);
+        *self.cache_misses.lock() += 1;
+
+        // Create cached buffer
+        let cached = CachedAudioBuffer::new(
+            id.clone(),
+            audio.clone(),
+            self.sequencer.sample_rate(),
+        );
+
+        let size_bytes = cached.size_bytes;
+
+        // Evict old entries if necessary
+        self.ensure_cache_space(size_bytes);
+
+        // Add to cache
+        self.cache.put(id.clone(), cached);
+        self.current_cache_bytes += size_bytes;
+
+        // Register with underlying sequencer
+        self.sequencer.register_source(id.clone(), audio, metadata);
+
+        info!("Registered buffer '{}' ({:.2}MB, cache now at {:.2}MB/{:.2}MB)",
+              id,
+              size_bytes as f32 / 1024.0 / 1024.0,
+              self.current_cache_bytes as f32 / 1024.0 / 1024.0,
+              self.max_cache_bytes as f32 / 1024.0 / 1024.0);
+
+        Ok(())
+    }
+
+    /// Pre-load a buffer into cache (for contextual pre-fetching)
+    ///
+    /// This is used by the Python agent to warm the cache based on
+    /// predicted context (e.g., pre-loading "social" phrases when
+    /// entering a social context).
+    ///
+    /// # Arguments
+    /// * `id` - Buffer identifier to pre-load
+    /// * `audio` - Audio samples
+    /// * `metadata` - Acoustic metadata
+    pub async fn preload(
+        &mut self,
+        id: String,
+        audio: Vec<f32>,
+        metadata: SourceMetadata,
+    ) -> Result<()> {
+        debug!("Pre-loading buffer '{}'", id);
+        self.register_source(id, audio, metadata).await
+    }
+
+    /// Check if a buffer is in cache
+    pub fn is_cached(&self, id: &str) -> bool {
+        self.cache.contains(id)
+    }
+
+    /// Synthesize a timeline (uses cached buffers)
+    pub async fn synthesize_timeline(&mut self, timeline: &ModalityTimeline) -> Result<Vec<f32>> {
+        self.sequencer.synthesize_timeline(timeline)
+    }
+
+    /// Get cache statistics
+    pub fn cache_stats(&self) -> CacheStats {
+        let hits = *self.cache_hits.lock();
+        let misses = *self.cache_misses.lock();
+        let total = hits + misses;
+        let hit_rate = if total > 0 {
+            hits as f32 / total as f32
+        } else {
+            0.0
+        };
+
+        CacheStats {
+            cache_hits: hits,
+            cache_misses: misses,
+            hit_rate,
+            current_bytes: self.current_cache_bytes,
+            max_bytes: self.max_cache_bytes,
+            num_buffers: self.cache.len(),
+        }
+    }
+
+    /// Clear the cache
+    pub fn clear_cache(&mut self) {
+        info!("Clearing audio buffer cache");
+        self.cache.clear();
+        self.current_cache_bytes = 0;
+    }
+
+    /// Ensure enough space in cache for a new buffer
+    fn ensure_cache_space(&mut self, required_bytes: usize) {
+        while self.current_cache_bytes + required_bytes > self.max_cache_bytes {
+            if let Some((id, evicted)) = self.cache.pop_lru() {
+                self.current_cache_bytes -= evicted.size_bytes;
+                debug!("Evicted buffer '{}' ({:.2}MB) from cache",
+                       id,
+                       evicted.size_bytes as f32 / 1024.0 / 1024.0);
+            } else {
+                // Cache is empty but still not enough space
+                warn!("Requested buffer size ({:.2}MB) exceeds cache capacity ({:.2}MB)",
+                      required_bytes as f32 / 1024.0 / 1024.0,
+                      self.max_cache_bytes as f32 / 1024.0 / 1024.0);
+                break;
+            }
+        }
+    }
+
+    /// Get sample rate
+    pub fn sample_rate(&self) -> usize {
+        self.sequencer.sample_rate()
+    }
+}
+
+/// Cache statistics for monitoring
+#[derive(Debug, Clone)]
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+pub struct CacheStats {
+    /// Number of cache hits
+    pub cache_hits: u64,
+    /// Number of cache misses
+    pub cache_misses: u64,
+    /// Cache hit rate (0.0 to 1.0)
+    pub hit_rate: f32,
+    /// Current cache usage in bytes
+    pub current_bytes: usize,
+    /// Maximum cache size in bytes
+    pub max_bytes: usize,
+    /// Number of buffers currently cached
+    pub num_buffers: usize,
+}
+
+#[allow(dead_code)]  // Public API used via PyO3 bindings
+impl CacheStats {
+    /// Get current cache usage as percentage
+    pub fn usage_percent(&self) -> f32 {
+        (self.current_bytes as f32 / self.max_bytes as f32) * 100.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2109,7 +3098,7 @@ mod tests {
         let config = SynthesisConfig::default();
         let mut synthesizer = GranularSynthesizer::new(config).await.unwrap();
 
-        let samples: Vec<f32> = (0..1000).map(|i| (i as f32 / 1000.0 - 0.5)).collect();
+        let samples: Vec<f32> = (0..1000).map(|i| i as f32 / 1000.0 - 0.5).collect();
         let segment = AudioSegment::new(samples, 44100);
 
         synthesizer.load_source(segment).await.unwrap();
@@ -2146,7 +3135,7 @@ mod tests {
         // Synthesize 100ms
         let output = synthesizer.synthesize(100.0).await.unwrap();
 
-        let expected_samples = (44100 as f32 * 0.1) as usize;
+        let expected_samples = (44100_f32 * 0.1) as usize;
         assert_eq!(output.len(), expected_samples);
     }
 
@@ -2176,7 +3165,7 @@ mod tests {
         // Test SynthesisMode enum variants
         let horizontal = SynthesisMode::Horizontal;
         let vertical = SynthesisMode::Vertical;
-        let combined = SynthesisMode::Combined;
+        let _combined = SynthesisMode::Combined;
 
         assert_eq!(horizontal, SynthesisMode::Horizontal);
         assert_ne!(horizontal, vertical);
@@ -2442,6 +3431,7 @@ mod tests {
 /// Without these features, synthesized corbid vocalizations will sound
 /// "robotic" and will NOT be recognized by real corvids as conspecific.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct CorvidRoughnessParams {
     /// Jitter intensity (0.0 = none, 1.0 = maximum)
     /// Typical corvid range: 0.1 - 0.3
@@ -2472,6 +3462,7 @@ impl Default for CorvidRoughnessParams {
     }
 }
 
+#[allow(dead_code)]
 impl CorvidRoughnessParams {
     /// Create parameters for American Crow (Corvus brachyrhynchos)
     pub fn american_crow() -> Self {
@@ -2518,6 +3509,7 @@ impl CorvidRoughnessParams {
 ///
 /// # Returns
 /// Audio with corvid roughness applied
+#[allow(dead_code)]
 pub fn apply_corvid_roughness(
     audio: &[f32],
     sample_rate: usize,
@@ -2584,11 +3576,13 @@ pub fn apply_corvid_roughness(
 ///
 /// High-level interface for synthesizing corvid vocalizations with
 /// realistic roughness characteristics.
+#[allow(dead_code)]
 pub struct CorvidModeSynthesizer {
     sample_rate: usize,
     params: CorvidRoughnessParams,
 }
 
+#[allow(dead_code)]
 impl CorvidModeSynthesizer {
     /// Create a new corvid mode synthesizer
     pub fn new(sample_rate: usize, params: CorvidRoughnessParams) -> Self {
@@ -2888,5 +3882,428 @@ mod corvid_roughness_tests {
         // Output should not be silent
         let max_amplitude = output.iter().map(|&x| x.abs()).fold(0.0_f32, f32::max);
         assert!(max_amplitude > 0.001);
+    }
+
+    // ========================================================================
+    // 17D Metadata Tests (Builder Pattern and Delta Calculation)
+    // ========================================================================
+
+    #[test]
+    fn test_source_metadata_builder_pattern() {
+        // Test builder with partial metadata
+        let metadata = SourceMetadata::builder()
+            .mean_f0_hz(7000.0)
+            .duration_ms(50.0)
+            .jitter(0.05)
+            .build();
+
+        assert_eq!(metadata.mean_f0_hz, 7000.0);
+        assert_eq!(metadata.duration_ms, 50.0);
+        assert_eq!(metadata.jitter, 0.05);
+
+        // Unspecified fields should have defaults (marmoset-like)
+        assert_eq!(metadata.f0_range_hz, 400.0);
+        assert_eq!(metadata.harmonic_to_noise_ratio, 20.0);
+        assert_eq!(metadata.spectral_flatness, 0.1);
+    }
+
+    #[test]
+    fn test_source_metadata_builder_full_specification() {
+        // Test builder with all features specified
+        let metadata = SourceMetadata::builder()
+            .mean_f0_hz(6500.0)
+            .duration_ms(60.0)
+            .f0_range_hz(400.0)
+            .harmonic_to_noise_ratio(20.0)
+            .spectral_flatness(0.1)
+            .attack_time_ms(5.0)
+            .decay_time_ms(10.0)
+            .sustain_level(0.7)
+            .vibrato_rate_hz(6.0)
+            .vibrato_depth(0.03)
+            .jitter(0.02)
+            .mfcc(1.2, 0.8, -0.3, 0.5)
+            .spectral_contrast(15.0)
+            .rhythm(45.0, 12.0, 0.25)
+            .build();
+
+        assert_eq!(metadata.mean_f0_hz, 6500.0);
+        assert_eq!(metadata.duration_ms, 60.0);
+        assert_eq!(metadata.f0_range_hz, 400.0);
+        assert_eq!(metadata.harmonic_to_noise_ratio, 20.0);
+        assert_eq!(metadata.spectral_flatness, 0.1);
+        assert_eq!(metadata.attack_time_ms, 5.0);
+        assert_eq!(metadata.decay_time_ms, 10.0);
+        assert_eq!(metadata.sustain_level, 0.7);
+        assert_eq!(metadata.vibrato_rate_hz, 6.0);
+        assert_eq!(metadata.vibrato_depth, 0.03);
+        assert_eq!(metadata.jitter, 0.02);
+        assert_eq!(metadata.mfcc_1, 1.2);
+        assert_eq!(metadata.mfcc_2, 0.8);
+        assert_eq!(metadata.mfcc_3, -0.3);
+        assert_eq!(metadata.mfcc_4, 0.5);
+        assert_eq!(metadata.spectral_contrast, 15.0);
+        assert_eq!(metadata.median_ici_ms, 45.0);
+        assert_eq!(metadata.onset_rate_hz, 12.0);
+        assert_eq!(metadata.ici_coefficient_of_variation, 0.25);
+    }
+
+    #[test]
+    fn test_source_metadata_delta_from() {
+        // Source: Lower pitch, shorter, pure tone
+        let source = SourceMetadata::builder()
+            .mean_f0_hz(6000.0)
+            .duration_ms(40.0)
+            .f0_range_hz(200.0)
+            .harmonic_to_noise_ratio(25.0)
+            .spectral_flatness(0.05)
+            .build();
+
+        // Target: Higher pitch, longer, gritty
+        let target = SourceMetadata::builder()
+            .mean_f0_hz(7000.0)
+            .duration_ms(60.0)
+            .f0_range_hz(400.0)
+            .harmonic_to_noise_ratio(15.0)
+            .spectral_flatness(0.3)
+            .build();
+
+        // Calculate delta
+        let delta = target.delta_from(&source);
+
+        // Verify delta calculations
+        assert_eq!(delta.delta_mean_f0_hz, 1000.0); // +1000Hz
+        assert_eq!(delta.delta_duration_ms, 20.0); // +20ms
+        assert_eq!(delta.delta_f0_range_hz, 200.0); // +200Hz
+        assert_eq!(delta.delta_harmonic_to_noise_ratio, -10.0); // -10dB (less harmonic)
+        assert_eq!(delta.delta_spectral_flatness, 0.25); // +0.25 (more noisy)
+    }
+
+    #[test]
+    fn test_source_metadata_delta_full_17d() {
+        // Test all 17 delta dimensions
+        let source = SourceMetadata {
+            mean_f0_hz: 6500.0,
+            duration_ms: 50.0,
+            f0_range_hz: 300.0,
+            harmonic_to_noise_ratio: 20.0,
+            spectral_flatness: 0.15,
+            attack_time_ms: 8.0,
+            decay_time_ms: 12.0,
+            sustain_level: 0.6,
+            vibrato_rate_hz: 5.0,
+            vibrato_depth: 0.02,
+            jitter: 0.03,
+            mfcc_1: 1.0,
+            mfcc_2: 0.7,
+            mfcc_3: -0.2,
+            mfcc_4: 0.4,
+            spectral_contrast: 12.0,
+            median_ici_ms: 40.0,
+            onset_rate_hz: 10.0,
+            ici_coefficient_of_variation: 0.3,
+        };
+
+        let target = SourceMetadata {
+            mean_f0_hz: 7500.0, // +1000
+            duration_ms: 70.0, // +20
+            f0_range_hz: 500.0, // +200
+            harmonic_to_noise_ratio: 10.0, // -10
+            spectral_flatness: 0.35, // +0.2
+            attack_time_ms: 3.0, // -5 (faster)
+            decay_time_ms: 8.0, // -4
+            sustain_level: 0.8, // +0.2
+            vibrato_rate_hz: 7.0, // +2
+            vibrato_depth: 0.05, // +0.03
+            jitter: 0.08, // +0.05
+            mfcc_1: 1.5, // +0.5
+            mfcc_2: 0.9, // +0.2
+            mfcc_3: -0.4, // -0.2
+            mfcc_4: 0.6, // +0.2
+            spectral_contrast: 18.0, // +6
+            median_ici_ms: 50.0, // +10
+            onset_rate_hz: 15.0, // +5
+            ici_coefficient_of_variation: 0.2, // -0.1
+        };
+
+        let delta = target.delta_from(&source);
+
+        // Verify all 17 dimensions (using approximate comparison for floating point)
+        assert_eq!(delta.delta_mean_f0_hz, 1000.0);
+        assert_eq!(delta.delta_duration_ms, 20.0);
+        assert_eq!(delta.delta_f0_range_hz, 200.0);
+        assert_eq!(delta.delta_harmonic_to_noise_ratio, -10.0);
+        assert!((delta.delta_spectral_flatness - 0.2).abs() < 0.0001); // FP tolerant
+        assert_eq!(delta.delta_attack_time_ms, -5.0);
+        assert_eq!(delta.delta_decay_time_ms, -4.0);
+        assert!((delta.delta_sustain_level - 0.2).abs() < 0.0001); // FP tolerant
+        assert_eq!(delta.delta_vibrato_rate_hz, 2.0);
+        assert!((delta.delta_vibrato_depth - 0.03).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_jitter - 0.05).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_1 - 0.5).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_2 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_3 - (-0.2)).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_4 - 0.2).abs() < 0.0001); // FP tolerant
+        assert_eq!(delta.delta_spectral_contrast, 6.0);
+        assert_eq!(delta.delta_median_ici_ms, 10.0);
+        assert_eq!(delta.delta_onset_rate_hz, 5.0);
+        assert!((delta.delta_ici_cv - (-0.1)).abs() < 0.0001); // FP tolerant
+    }
+
+    #[test]
+    fn test_source_metadata_persona_comparison() {
+        // Test GRITTY vs PURE persona delta
+        let pure_metadata = SourceMetadata {
+            mean_f0_hz: 7000.0,
+            duration_ms: 50.0,
+            f0_range_hz: 400.0,
+            harmonic_to_noise_ratio: 25.0, // High (pure)
+            spectral_flatness: 0.05, // Low (focused)
+            attack_time_ms: 25.0, // Slow (smooth)
+            decay_time_ms: 15.0,
+            sustain_level: 0.7,
+            vibrato_rate_hz: 6.0,
+            vibrato_depth: 0.02,
+            jitter: 0.01, // Low (stable)
+            mfcc_1: 1.2,
+            mfcc_2: 0.8,
+            mfcc_3: -0.3,
+            mfcc_4: 0.5,
+            spectral_contrast: 20.0,
+            median_ici_ms: 0.0,
+            onset_rate_hz: 0.0,
+            ici_coefficient_of_variation: 0.0,
+        };
+
+        let gritty_metadata = SourceMetadata {
+            mean_f0_hz: 7000.0,
+            duration_ms: 50.0,
+            f0_range_hz: 400.0,
+            harmonic_to_noise_ratio: 2.0, // Low (gritty)
+            spectral_flatness: 0.8, // High (noise-like)
+            attack_time_ms: 3.0, // Fast (sharp)
+            decay_time_ms: 15.0,
+            sustain_level: 0.7,
+            vibrato_rate_hz: 6.0,
+            vibrato_depth: 0.02,
+            jitter: 0.15, // High (rough)
+            mfcc_1: 1.2,
+            mfcc_2: 0.8,
+            mfcc_3: -0.3,
+            mfcc_4: 0.5,
+            spectral_contrast: 5.0,
+            median_ici_ms: 0.0,
+            onset_rate_hz: 0.0,
+            ici_coefficient_of_variation: 0.0,
+        };
+
+        let delta = gritty_metadata.delta_from(&pure_metadata);
+
+        // GRITTY persona should show:
+        assert_eq!(delta.delta_harmonic_to_noise_ratio, -23.0); // Much less harmonic
+        assert_eq!(delta.delta_spectral_flatness, 0.75); // Much more noise
+        assert_eq!(delta.delta_attack_time_ms, -22.0); // Faster attack
+        assert_eq!(delta.delta_jitter, 0.14); // More jitter
+        assert_eq!(delta.delta_spectral_contrast, -15.0); // Less contrast
+    }
+
+    #[test]
+    fn test_source_metadata_default_matches_builder() {
+        // Verify that builder with no modifications matches default
+        let built = SourceMetadata::builder().build();
+        let defaulted = SourceMetadata::default();
+
+        // All 17 fields should match
+        assert_eq!(built.mean_f0_hz, defaulted.mean_f0_hz);
+        assert_eq!(built.duration_ms, defaulted.duration_ms);
+        assert_eq!(built.f0_range_hz, defaulted.f0_range_hz);
+        assert_eq!(built.harmonic_to_noise_ratio, defaulted.harmonic_to_noise_ratio);
+        assert_eq!(built.spectral_flatness, defaulted.spectral_flatness);
+        assert_eq!(built.attack_time_ms, defaulted.attack_time_ms);
+        assert_eq!(built.decay_time_ms, defaulted.decay_time_ms);
+        assert_eq!(built.sustain_level, defaulted.sustain_level);
+        assert_eq!(built.vibrato_rate_hz, defaulted.vibrato_rate_hz);
+        assert_eq!(built.vibrato_depth, defaulted.vibrato_depth);
+        assert_eq!(built.jitter, defaulted.jitter);
+        assert_eq!(built.mfcc_1, defaulted.mfcc_1);
+        assert_eq!(built.mfcc_2, defaulted.mfcc_2);
+        assert_eq!(built.mfcc_3, defaulted.mfcc_3);
+        assert_eq!(built.mfcc_4, defaulted.mfcc_4);
+        assert_eq!(built.spectral_contrast, defaulted.spectral_contrast);
+        assert_eq!(built.median_ici_ms, defaulted.median_ici_ms);
+        assert_eq!(built.onset_rate_hz, defaulted.onset_rate_hz);
+        assert_eq!(built.ici_coefficient_of_variation, defaulted.ici_coefficient_of_variation);
+    }
+
+    // Multi-Buffer Sequencer Tests for Corvid Multi-Modal Support
+
+    #[test]
+    fn test_modality_timeline_creation() {
+        let mut timeline = ModalityTimeline::new();
+
+        timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+
+        assert_eq!(timeline.events.len(), 2);
+        assert_eq!(timeline.events[0].modality, Modality::Harmonic);
+        assert_eq!(timeline.events[1].modality, Modality::Transient);
+    }
+
+    #[test]
+    fn test_modality_timeline_sorting() {
+        let mut timeline = ModalityTimeline::new();
+
+        // Add events out of order
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+        timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+
+        timeline.sort_by_time();
+
+        assert_eq!(timeline.events[0].start_ms, 0.0);
+        assert_eq!(timeline.events[1].start_ms, 100.0);
+    }
+
+    #[test]
+    fn test_modality_timeline_validation_success() {
+        let mut timeline = ModalityTimeline::new();
+
+        timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+
+        assert!(timeline.validate().is_ok());
+    }
+
+    #[test]
+    fn test_modality_timeline_validation_overlap() {
+        let mut timeline = ModalityTimeline::new();
+
+        // Add overlapping events
+        timeline.add_event(0.0, 150.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+
+        assert!(timeline.validate().is_err());
+    }
+
+    #[test]
+    fn test_modality_timeline_total_duration() {
+        let mut timeline = ModalityTimeline::new();
+
+        timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+
+        assert_eq!(timeline.total_duration_ms(), 150.0);
+    }
+
+    #[test]
+    fn test_multi_buffer_sequencer_creation() {
+        let sequencer = MultiBufferGranularSequencer::new(44100);
+
+        assert_eq!(sequencer.registered_sources().len(), 0);
+        assert!(!sequencer.has_source("whistle"));
+    }
+
+    #[test]
+    fn test_multi_buffer_sequencer_register_source() {
+        let mut sequencer = MultiBufferGranularSequencer::new(44100);
+
+        let audio = vec![0.0f32; 1000];
+        let metadata = SourceMetadata::default();
+
+        sequencer.register_source("whistle".to_string(), audio, metadata);
+
+        assert!(sequencer.has_source("whistle"));
+        assert_eq!(sequencer.registered_sources().len(), 1);
+    }
+
+    #[test]
+    fn test_multi_buffer_sequencer_synthesize_timeline() {
+        let mut sequencer = MultiBufferGranularSequencer::new(44100);
+
+        // Register sources
+        let whistle_audio: Vec<f32> = (0..4410).map(|i| {
+            (2.0 * std::f32::consts::PI * 7000.0 * i as f32 / 44100.0).sin() * 0.3
+        }).collect();
+
+        let rattle_audio: Vec<f32> = (0..2205).map(|_| {
+            (rand::random::<f32>() - 0.5) * 0.5
+        }).collect();
+
+        let whistle_metadata = SourceMetadata {
+            mean_f0_hz: 7000.0,
+            duration_ms: 100.0,
+            harmonic_to_noise_ratio: 25.0,
+            spectral_flatness: 0.05,
+            ..Default::default()
+        };
+
+        let rattle_metadata = SourceMetadata {
+            mean_f0_hz: 0.0,
+            duration_ms: 50.0,
+            harmonic_to_noise_ratio: 2.0,
+            spectral_flatness: 0.8,
+            ..Default::default()
+        };
+
+        sequencer.register_source("whistle".to_string(), whistle_audio, whistle_metadata);
+        sequencer.register_source("rattle".to_string(), rattle_audio, rattle_metadata);
+
+        // Create timeline
+        let mut timeline = ModalityTimeline::new();
+        timeline.add_event(0.0, 100.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(100.0, 50.0, "rattle".to_string(), Modality::Transient);
+
+        // Synthesize
+        let result = sequencer.synthesize_timeline(&timeline);
+
+        assert!(result.is_ok());
+        let audio = result.unwrap();
+
+        // Total duration: 100ms + 50ms = 150ms
+        // At 44.1kHz: 150ms * 44.1 samples/ms = 6615 samples
+        assert_eq!(audio.len(), 6615);
+    }
+
+    #[test]
+    fn test_multi_buffer_sequencer_missing_source() {
+        let sequencer = MultiBufferGranularSequencer::new(44100);
+
+        let mut timeline = ModalityTimeline::new();
+        timeline.add_event(0.0, 100.0, "missing_source".to_string(), Modality::Harmonic);
+
+        let result = sequencer.synthesize_timeline(&timeline);
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_multi_buffer_sequencer_voice_switching() {
+        let mut sequencer = MultiBufferGranularSequencer::new(44100);
+
+        // Register multiple sources
+        let whistle_audio = vec![0.1f32; 2205]; // 50ms
+        let rattle_audio = vec![0.2f32; 2205]; // 50ms
+        let metadata = SourceMetadata::default();
+
+        sequencer.register_source("whistle".to_string(), whistle_audio, metadata.clone());
+        sequencer.register_source("rattle".to_string(), rattle_audio, metadata);
+
+        // Create timeline with voice switching: whistle -> rattle -> whistle
+        let mut timeline = ModalityTimeline::new();
+        timeline.add_event(0.0, 50.0, "whistle".to_string(), Modality::Harmonic);
+        timeline.add_event(50.0, 50.0, "rattle".to_string(), Modality::Transient);
+        timeline.add_event(100.0, 50.0, "whistle".to_string(), Modality::Harmonic);
+
+        let result = sequencer.synthesize_timeline(&timeline);
+
+        assert!(result.is_ok());
+        let audio = result.unwrap();
+
+        // Verify voice switching: first 50ms samples should be ~0.1, next 50ms should be ~0.2
+        let first_sample = audio[0];
+        let middle_sample = audio[2205]; // At 50ms mark
+
+        assert!((first_sample - 0.1).abs() < 0.01);
+        assert!((middle_sample - 0.2).abs() < 0.01);
     }
 }

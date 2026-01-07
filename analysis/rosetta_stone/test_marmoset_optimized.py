@@ -9,15 +9,16 @@ Adjusts parameters for better marmoset vocalization detection:
 - Larger gap threshold for longer calls
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -173,24 +174,24 @@ def main():
         print(f"\nFiles successfully analyzed: {successful_files}/{num_files_to_test} ({successful_files/num_files_to_test*100:.1f}%)")
         print(f"Total phrases analyzed: {len(all_results)}")
 
-        print(f"\nModality Distribution:")
+        print("\nModality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(all_results) * 100
             bar = '█' * int(percentage / 5)
             print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
         if f0_values:
-            print(f"\n📊 F0 Statistics:")
+            print("\n📊 F0 Statistics:")
             print(f"  Min F0: {min(f0_values):.0f} Hz")
             print(f"  Max F0: {max(f0_values):.0f} Hz")
             print(f"  Mean F0: {np.mean(f0_values):.0f} Hz")
-            print(f"  Expected range: 5000-12000 Hz")
+            print("  Expected range: 5000-12000 Hz")
 
             # Check if in expected range
             in_range = sum(1 for f in f0_values if 5000 <= f <= 12000)
             print(f"  In expected range: {in_range}/{len(f0_values)} ({in_range/len(f0_values)*100:.1f}%)")
 
-        print(f"\n✅ Test completed!")
+        print("\n✅ Test completed!")
     else:
         print("\n⚠️  No results obtained.")
 

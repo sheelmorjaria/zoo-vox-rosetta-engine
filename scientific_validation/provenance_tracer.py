@@ -37,23 +37,18 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-import time
-import threading
-import logging
-import os
-import struct
-import hashlib
-import hmac
+import fcntl
+import gc
 import json
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any, Tuple, Union
+import logging
+import struct
+import threading
+import time
+from collections import deque
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import mmap
-import fcntl
-from collections import deque
-import gc
+from typing import Any, Dict, List, Optional
 
 # Try to import FlatBuffers
 try:
@@ -228,7 +223,7 @@ class FlatBuffersSerializer:
 
     def _serialize_flatbuffers(self, entry: TraceEntry) -> bytes:
         """Serialize using FlatBuffers"""
-        builder = Builder(64)  # Fixed size buffer
+        Builder(64)  # Fixed size buffer
 
         # Create FlatBuffers table
         # [timestamp:long, context_type:int, decision_vector:int,

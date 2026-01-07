@@ -3,8 +3,7 @@
 Setup script for Technical Architecture Python package
 """
 
-from setuptools import setup, find_packages
-import os
+from setuptools import find_packages, setup
 
 # Read README file
 with open("README.md", "r", encoding="utf-8") as fh:

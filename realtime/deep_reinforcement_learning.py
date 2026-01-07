@@ -3,16 +3,14 @@ Deep Reinforcement Learning Enhancement
 Phase IV Feature Implementation
 """
 
-import numpy as np
-import random
 import pickle
-import os
-from dataclasses import dataclass
-from typing import Dict, List, Any, Optional, Callable, Tuple
-from enum import Enum
+import random
 import time
-import threading
-from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import numpy as np
 
 
 # Enums
@@ -206,12 +204,12 @@ class ExplorationStrategy:
                 return policy_action()
 
         elif self.strategy == ExplorationStrategy.BOLTZMANN:
-            temperature = self.params.get('temperature', 1.0)
+            self.params.get('temperature', 1.0)
             # In a real implementation, this would use softmax with temperature
             return policy_action()
 
         elif self.strategy == ExplorationStrategy.UCB:
-            c = self.params.get('c', 1.0)
+            self.params.get('c', 1.0)
             # In a real implementation, this would use UCB formula
             return policy_action()
 
@@ -430,7 +428,7 @@ class A2CAgent(ReinforcementLearner):
 
     def _calculate_losses(self) -> Tuple[float, float, float]:
         """Calculate A2C losses"""
-        batch = self.experience_replay.sample_batch(32)
+        self.experience_replay.sample_batch(32)
 
         policy_loss = np.random.uniform(0.1, 1.0)
         value_loss = np.random.uniform(0.1, 1.0)
@@ -635,8 +633,8 @@ class MetaLearner:
         for step in range(num_adaptation_steps):
             for data in new_task_data:
                 # Mock adaptation step
-                action = adapted_policy.select_action(data)
-                loss = np.random.uniform(0.1, 1.0)
+                adapted_policy.select_action(data)
+                np.random.uniform(0.1, 1.0)
 
         return adapted_policy
 
@@ -891,7 +889,7 @@ class DeepReinforcementLearning:
         """Pretrain on source task for transfer learning"""
         for data in source_data:
             action = self.learner.act(data, explore=True)
-            loss = self.learner.learn(data, action, 0.5, data, False)
+            self.learner.learn(data, action, 0.5, data, False)
 
     def transfer_to_target_task(self, target_data: List[Dict[str, Any]]) -> Dict[str, float]:
         """Transfer learning to target task"""

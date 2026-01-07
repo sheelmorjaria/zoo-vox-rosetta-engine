@@ -9,9 +9,10 @@ which previously showed identical statistics.
 Category 1, Item 1: Spectral Centroid & Slope (The "Timbre" Fix)
 """
 
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
 from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -112,7 +113,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
 
     # Comparison statistics
     print(f"\n{'='*90}")
-    print(f"TIMBRE FEATURE STATISTICS")
+    print("TIMBRE FEATURE STATISTICS")
     print(f"{'='*90}\n")
 
     timbre_features = [
@@ -158,8 +159,8 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
             print(f"  - {feature}: p = {p_value:.4f}")
         print(f"\n✅ TIMBRE FEATURES CAN DISTINGUISH {species1_name.upper()} FROM {species2_name.upper()}")
     else:
-        print(f"\n⚠️  No timbre features significantly different")
-        print(f"⚠️  TIMBRE FEATURES CANNOT DISTINGUISH THESE SPECIES")
+        print("\n⚠️  No timbre features significantly different")
+        print("⚠️  TIMBRE FEATURES CANNOT DISTINGUISH THESE SPECIES")
 
     # Effect size (Cohen's d for most significant feature)
     if significant_features:
@@ -181,7 +182,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
             print("  Effect size: Very large")
 
     # Modality distribution comparison
-    print(f"\n📊 MODALITY DISTRIBUTION:")
+    print("\n📊 MODALITY DISTRIBUTION:")
 
     modality_counts1 = {}
     for r in results1:

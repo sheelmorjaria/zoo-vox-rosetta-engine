@@ -16,24 +16,27 @@ Classes:
 - EnhancedRealTimeSystem: Main enhanced system orchestrator
 """
 
-import numpy as np
-import time
-import threading
-from typing import Dict, List, Tuple, Optional, Any, Union
-from dataclasses import dataclass
-from collections import deque
 import logging
-from pathlib import Path
-import json
-import psutil
+import time
+from collections import deque
+from dataclasses import dataclass
+from typing import Any, Dict
+
+import numpy as np
+
+from .cognitive_layer import CognitiveLayer
+from .data_logging import ProvenanceLogger
+from .hardware_optimization import (
+    FPGAOffloader,
+    PowerEfficiencyManager,
+    ResourceMonitor,
+    ThermalManager,
+)
 
 # Import all enhanced components
 from .latency_pipeline import DynamicBlockProcessor
-from .cognitive_layer import CognitiveLayer
-from .synthesis_enhancements import GranularSynthesisEngine, EmotionalMorpher
 from .safety_manager import EnhancedSafetyManager
-from .data_logging import ProvenanceLogger, DecisionRecord
-from .hardware_optimization import FPGAOffloader, ThermalManager, PowerEfficiencyManager, ResourceMonitor
+from .synthesis_enhancements import EmotionalMorpher, GranularSynthesisEngine
 
 
 @dataclass
@@ -161,10 +164,10 @@ class EnhancedRealTimeSystem:
             raise RuntimeError("System not initialized")
 
         start_time = time.perf_counter()
-        processing_start = time.perf_counter()
+        time.perf_counter()
 
         # Extract features early for logging
-        features = self._extract_audio_features(audio_data)
+        self._extract_audio_features(audio_data)
 
         try:
             # Step 1: Latency pipeline processing

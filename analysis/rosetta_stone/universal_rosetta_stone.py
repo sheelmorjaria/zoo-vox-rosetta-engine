@@ -13,15 +13,29 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
+import logging
+import warnings
+from collections import Counter, defaultdict
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 from scipy import signal
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import MinMaxScaler
-from collections import defaultdict, Counter
-from enum import Enum
-import logging
-from typing import List, Dict, Tuple, Optional, Any
-import warnings
+
+# Import acoustic persona definitions for hybrid architecture
+try:
+    from analysis.rosetta_stone.acoustic_similarity_for_atomic_phrase_candidates import (
+        ACOUSTIC_PERSONAS,
+        compute_persona_score,
+    )
+    HAS_PERSONA_SUPPORT = True
+except ImportError:
+    HAS_PERSONA_SUPPORT = False
+    ACOUSTIC_PERSONAS = {}
+    def compute_persona_score(*args, **kwargs):
+        return 0.0
 
 # Try to import advanced segmentation libraries
 try:
@@ -154,7 +168,7 @@ class PhraseSignature:
         zcr = np.mean(np.abs(np.diff(np.sign(self.data))))
 
         # Kurtosis (peakiness) - manual calculation
-        n = len(self.data)
+        len(self.data)
         mean = np.mean(self.data)
         std = np.std(self.data)
         if std > 0:
@@ -359,7 +373,7 @@ class PhraseSignature:
             # Use librosa if available, otherwise manual computation
             n_mfcc = 13
             n_fft = min(2048, len(self.data))
-            hop_length = n_fft // 4
+            n_fft // 4
 
             # Power spectrum
             power_spectrum = spectrum[:n_fft//2 + 1] ** 2
@@ -700,13 +714,11 @@ class Sentence:
             for phrase in phrases:
                 # Find most similar phrase in current group
                 max_similarity = 0.0
-                best_match = None
 
                 for existing_phrase in validated_group:
                     similarity = self.microharmonic_similarity(phrase, existing_phrase, similarity_threshold)
                     if similarity > max_similarity:
                         max_similarity = similarity
-                        best_match = existing_phrase
 
                 # Add to group if sufficiently similar
                 if max_similarity >= similarity_threshold or not validated_group:
@@ -1464,6 +1476,243 @@ class UniversalRosettaStone:
         self.logger.info(f"Built vocabulary with {len(self.vocabulary)} unique phrases")
         return vocabulary_clusters
 
+    def compute_cluster_persona_score(
+        self,
+        phrases: List[PhraseSignature],
+        persona_name: str
+    ) -> float:
+        """
+        Compute the average persona match score for a cluster of phrases.
+
+        Tier 2 of hybrid architecture: Post-hoc persona mapping for semantic interpretability.
+
+        Args:
+            phrases: List of phrases in the cluster
+            persona_name: Name of the acoustic persona ('gritty', 'pure', etc.)
+
+        Returns:
+            Average persona score between 0.0 (no match) and 1.0 (perfect match)
+        """
+        if not HAS_PERSONA_SUPPORT:
+            self.logger.warning("Persona support not available")
+            return 0.0
+
+        if persona_name not in ACOUSTIC_PERSONAS:
+            self.logger.warning(f"Unknown persona: {persona_name}")
+            return 0.0
+
+        if not phrases:
+            return 0.0
+
+        persona = ACOUSTIC_PERSONAS[persona_name]
+        scores = []
+
+        for phrase in phrases:
+            # Convert phrase features to persona-compatible format
+            features = dict(phrase.features)
+            score = compute_persona_score(features, persona)
+            if score > 0:
+                scores.append(score)
+
+        if not scores:
+            return 0.0
+
+        return np.mean(scores)
+
+    def build_vocabulary_with_personas(
+        self,
+        phrases: List[PhraseSignature],
+        eps: float = 0.3,
+        min_samples: int = 2,
+        enable_persona_mapping: bool = True
+    ) -> Dict[int, Dict[str, Any]]:
+        """
+        Build vocabulary using hybrid architecture: DBSCAN + persona mapping.
+
+        Tier 1: Unsupervised DBSCAN clustering (data-driven discovery)
+        Tier 2: Acoustic persona mapping (semantic interpretation)
+        Tier 3: Contextual validation (deferred to external validation)
+
+        Args:
+            phrases: List of phrase signatures
+            eps: DBSCAN epsilon parameter
+            min_samples: Minimum phrases to form a cluster
+            enable_persona_mapping: Whether to enable Tier 2 persona mapping
+
+        Returns:
+            Dictionary mapping cluster IDs to cluster metadata:
+            {
+                cluster_id: {
+                    'phrases': [phrase1, phrase2, ...],
+                    'dominant_persona': 'pure' | 'gritty' | ... | 'unclassified',
+                    'persona_scores': {'gritty': 0.2, 'pure': 0.8, ...},
+                    'cluster_size': int,
+                    'mean_features': {...}
+                }
+            }
+        """
+        if not HAS_PERSONA_SUPPORT:
+            self.logger.warning("Persona support not available, using basic clustering")
+            enable_persona_mapping = False
+
+        # Tier 1: Unsupervised DBSCAN clustering
+        vocabulary_clusters = self.build_vocabulary(phrases, eps, min_samples)
+
+        # Transform into hybrid format
+        hybrid_clusters = {}
+
+        for cluster_label, cluster_data in vocabulary_clusters.items():
+            # Extract phrases from cluster_data
+            phrase_list = [item[1] for item in cluster_data]
+
+            cluster_id = cluster_label
+            cluster_size = len(phrase_list)
+
+            # Compute mean features for the cluster
+            feature_names = list(phrase_list[0].features.keys()) if phrase_list else []
+            mean_features = {}
+            for fname in feature_names:
+                values = [p.features.get(fname, 0) for p in phrase_list]
+                mean_features[fname] = np.mean(values) if values else 0
+
+            # Tier 2: Acoustic persona mapping (post-hoc)
+            persona_scores = {}
+            dominant_persona = 'unclassified'
+            dominant_score = 0.0
+
+            if enable_persona_mapping and HAS_PERSONA_SUPPORT:
+                for persona_name in ACOUSTIC_PERSONAS.keys():
+                    score = self.compute_cluster_persona_score(phrase_list, persona_name)
+                    persona_scores[persona_name] = score
+
+                    if score > dominant_score:
+                        dominant_score = score
+                        dominant_persona = persona_name
+
+                # Only assign persona if score exceeds threshold
+                # Lower threshold (0.15) for limited feature sets
+                if dominant_score < 0.15:
+                    dominant_persona = 'unclassified'
+
+            hybrid_clusters[cluster_id] = {
+                'phrases': phrase_list,
+                'dominant_persona': dominant_persona,
+                'persona_scores': persona_scores,
+                'cluster_size': cluster_size,
+                'mean_features': mean_features
+            }
+
+        self.logger.info(
+            f"Built hybrid vocabulary with {len(hybrid_clusters)} clusters "
+            f"(persona mapping: {'enabled' if enable_persona_mapping else 'disabled'})"
+        )
+
+        return hybrid_clusters
+
+    def find_phrases_by_persona(
+        self,
+        clusters: Dict[int, Dict[str, Any]],
+        persona_name: str,
+        min_score: float = 0.3
+    ) -> List[Tuple[int, List[PhraseSignature], float]]:
+        """
+        Find vocabulary clusters matching a specific acoustic persona.
+
+        Enables semantic phrase search: "Find all aggressive alert phrases" -> persona='gritty'
+
+        Args:
+            clusters: Hybrid vocabulary from build_vocabulary_with_personas()
+            persona_name: Acoustic persona to search for
+            min_score: Minimum persona score threshold
+
+        Returns:
+            List of (cluster_id, phrases, score) tuples matching the persona
+        """
+        if not HAS_PERSONA_SUPPORT:
+            self.logger.warning("Persona support not available")
+            return []
+
+        matches = []
+
+        for cluster_id, cluster_data in clusters.items():
+            cluster_data.get('dominant_persona', 'unclassified')
+            persona_scores = cluster_data.get('persona_scores', {})
+
+            # Check if cluster matches the requested persona
+            score = persona_scores.get(persona_name, 0.0)
+
+            if score >= min_score:
+                phrases = cluster_data['phrases']
+                matches.append((cluster_id, phrases, score))
+
+        # Sort by score (descending)
+        matches.sort(key=lambda x: x[2], reverse=True)
+
+        self.logger.info(
+            f"Found {len(matches)} clusters matching persona '{persona_name}' "
+            f"(min_score: {min_score})"
+        )
+
+        return matches
+
+    def get_persona_summary(
+        self,
+        clusters: Dict[int, Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Generate a summary of persona distribution across the vocabulary.
+
+        Useful for understanding the semantic composition of a species' vocalizations.
+
+        Args:
+            clusters: Hybrid vocabulary from build_vocabulary_with_personas()
+
+        Returns:
+            Dictionary summarizing each persona:
+            {
+                'pure': {'cluster_count': 5, 'total_phrases': 42, 'avg_score': 0.75},
+                'gritty': {'cluster_count': 3, 'total_phrases': 18, 'avg_score': 0.62},
+                ...
+            }
+        """
+        if not HAS_PERSONA_SUPPORT:
+            return {}
+
+        summary = {}
+
+        # Initialize summary for all personas
+        for persona_name in ACOUSTIC_PERSONAS.keys():
+            summary[persona_name] = {
+                'cluster_count': 0,
+                'total_phrases': 0,
+                'scores': []
+            }
+        summary['unclassified'] = {'cluster_count': 0, 'total_phrases': 0, 'scores': []}
+
+        # Aggregate cluster data
+        for cluster_data in clusters.values():
+            dominant = cluster_data.get('dominant_persona', 'unclassified')
+            cluster_size = cluster_data.get('cluster_size', 0)
+            persona_scores = cluster_data.get('persona_scores', {})
+
+            if dominant in summary:
+                summary[dominant]['cluster_count'] += 1
+                summary[dominant]['total_phrases'] += cluster_size
+
+                # Track scores for averaging
+                if dominant in persona_scores:
+                    summary[dominant]['scores'].append(persona_scores[dominant])
+
+        # Compute average scores
+        for persona_name, data in summary.items():
+            if data['scores']:
+                data['avg_score'] = np.mean(data['scores'])
+            else:
+                data['avg_score'] = 0.0
+            del data['scores']  # Remove raw scores from output
+
+        return summary
+
     def discover_grammar(self, audio: np.ndarray,
                         min_gap_ms: float = 50.0,
                         min_phrase_duration_ms: float = 20.0) -> Tuple[Dict[int, PhraseSignature], Counter]:
@@ -1652,7 +1901,7 @@ class UniversalRosettaStone:
                         current_phrase_start = i
                         current_phrase_f0s = [current_f0]
 
-            except Exception as e:
+            except Exception:
                 # If PYIN fails, skip this window
                 continue
 
@@ -2130,14 +2379,14 @@ class UniversalRosettaStone:
             # Discover atomic units using species-specific binning
             if species_type and species_type in species_config:
                 config = species_config[species_type]
-                atomic_units = sentence.discover_atomic_units(
+                sentence.discover_atomic_units(
                     f0_bin_size=config['f0_bin'],
                     duration_bin_size=config['duration_bin'],
                     range_bin_size=config['range_bin']
                 )
             else:
                 # Default configuration
-                atomic_units = sentence.discover_atomic_units()
+                sentence.discover_atomic_units()
 
             # Validate atomic units using microharmonic similarity
             validated_units = sentence.validate_atomic_units()

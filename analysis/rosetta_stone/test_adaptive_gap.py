@@ -5,12 +5,13 @@ Test Adaptive Gap Threshold Enhancement
 Tests the new adaptive gap threshold feature for TRANSIENT/RHYTHMIC modalities.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -158,9 +159,9 @@ def test_real_sperm_whale_audio():
 
     # Show improvement
     if len(phrases_adaptive) > 0:
-        print(f"\n  ✅ Adaptive gap detection working!")
+        print("\n  ✅ Adaptive gap detection working!")
     else:
-        print(f"\n  ⚠️  No phrases detected - may need parameter adjustment")
+        print("\n  ⚠️  No phrases detected - may need parameter adjustment")
 
     print("="*70)
 

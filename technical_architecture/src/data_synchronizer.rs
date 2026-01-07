@@ -5,12 +5,11 @@
 
 use crate::ptp::PtpTimestamp;
 use anyhow::{Context, Result};
-use crossbeam::queue::SegQueue;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
-use std::fs::{self, File, OpenOptions};
-use std::io::{BufReader, BufWriter, Read, Write};
-use std::path::{Path, PathBuf};
+use std::fs::{self, File};
+use std::io::BufWriter;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
@@ -117,7 +116,7 @@ impl QueuedEntry {
     }
 
     /// Compress the entry data
-    pub fn compress(&mut self, level: u32) -> Result<()> {
+    pub fn compress(&mut self, _level: u32) -> Result<()> {
         if self.compressed_data.is_some() {
             return Ok(()); // Already compressed
         }
@@ -361,7 +360,7 @@ impl DataSynchronizer {
 
         let mut queue = self.queue.lock().unwrap();
         let mut synced_bytes = 0u64;
-        let mut synced_count = 0usize;
+        let _synced_count = 0usize;
 
         // Sort by priority (highest first)
         let mut entries: Vec<_> = queue.drain(..).collect();
@@ -381,13 +380,13 @@ impl DataSynchronizer {
             // Simulate sync success
             current_bytes += entry.size_bytes;
             synced_bytes += entry.size_bytes as u64;
-            synced_count += 1;
+            // _synced_count would be incremented here, but not used
         }
 
         // Update statistics
         *self.last_sync.lock().unwrap() = Some(Instant::now());
         *self.total_bytes_synced.lock().unwrap() += synced_bytes;
-        *self.bandwidth_used.lock().unwrap() = (synced_bytes as f32 / 1024.0);
+        *self.bandwidth_used.lock().unwrap() = synced_bytes as f32 / 1024.0;
 
         // Persist remaining queue
         drop(queue);

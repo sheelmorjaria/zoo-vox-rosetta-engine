@@ -16,17 +16,18 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import sys
 import os
+import sys
+
+import numpy as np
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
-from universal_synthesizer import UniversalSynthesizer
 import time
+
+from universal_rosetta_stone import Modality, UniversalRosettaStone
+from universal_synthesizer import UniversalSynthesizer
 
 
 def generate_unknown_species_audio():
@@ -126,7 +127,7 @@ def display_analysis_results(analyzer, vocabulary, grammar):
             print(f"    RMS Energy: {phrase_sig.features['rms']:.3f}")
 
     # Grammar rules
-    print(f"\nDiscovered Grammar Rules:")
+    print("\nDiscovered Grammar Rules:")
     if grammar:
         # Sort by frequency
         sorted_rules = sorted(grammar.items(), key=lambda x: x[1], reverse=True)
@@ -137,7 +138,7 @@ def display_analysis_results(analyzer, vocabulary, grammar):
 
     # Statistics
     stats = analyzer.get_phrase_statistics()
-    print(f"\nSystem Statistics:")
+    print("\nSystem Statistics:")
     print(f"  Total Phrases: {stats['total_phrases']}")
 
     if stats['modality_distribution']:
@@ -273,7 +274,7 @@ def main():
 
     # Show synthesizer statistics
     synth_stats = synthesizer.get_statistics()
-    print(f"\nSynthesizer Statistics:")
+    print("\nSynthesizer Statistics:")
     print(f"  Vocabulary size: {synth_stats['vocabulary_size']}")
     print(f"  Grammar rules: {synth_stats['grammar_rules']}")
 

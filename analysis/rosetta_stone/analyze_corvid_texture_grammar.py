@@ -17,12 +17,13 @@ This is a NOVEL concept in bioacoustics - no prior research has analyzed
 modality transition patterns in animal vocalizations.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -137,7 +138,7 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
 
     # Aggregate statistics
     print(f"\n{'='*90}")
-    print(f"AGGREGATE STATISTICS")
+    print("AGGREGATE STATISTICS")
     print(f"{'='*90}")
 
     total_phrases = sum(r['num_phrases'] for r in valid_results)
@@ -147,7 +148,7 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
 
     # Aggregate transition matrix
     print(f"\n{'='*90}")
-    print(f"AGGREGATE TRANSITION PROBABILITY MATRIX")
+    print("AGGREGATE TRANSITION PROBABILITY MATRIX")
     print(f"{'='*90}")
 
     # Aggregate all transition counts
@@ -174,7 +175,7 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
 
     # Aggregate sequence statistics
     print(f"\n{'='*90}")
-    print(f"AGGREGATE SEQUENCE STATISTICS")
+    print("AGGREGATE SEQUENCE STATISTICS")
     print(f"{'='*90}")
 
     avg_run_length = np.mean([r['texture_grammar']['sequence_stats']['avg_run_length']
@@ -193,7 +194,7 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
 
     # Most common sequences across all files
     print(f"\n{'='*90}")
-    print(f"MOST COMMON MODALITY SEQUENCES")
+    print("MOST COMMON MODALITY SEQUENCES")
     print(f"{'='*90}\n")
 
     all_sequences = []
@@ -269,8 +270,8 @@ def main():
         print("OVERALL SUMMARY")
         print("=" * 90)
 
-        print(f"\n✅ Texture Grammar Analysis Complete for American Crow")
-        print(f"\nKey Findings:")
+        print("\n✅ Texture Grammar Analysis Complete for American Crow")
+        print("\nKey Findings:")
         print(f"  - {american_crow_results['total_phrases']} total phrases analyzed")
         print(f"  - {american_crow_results['avg_run_length']:.2f} average phrases per modality run")
         print(f"  - {american_crow_results['avg_alternation_rate']:.3f} alternation rate")
@@ -278,18 +279,18 @@ def main():
         print(f"  - {american_crow_results['avg_normalized_entropy']:.3f} normalized entropy")
 
         # Interpretation
-        print(f"\nInterpretation:")
+        print("\nInterpretation:")
         if american_crow_results['avg_normalized_entropy'] > 0.7:
-            print(f"  ✅ HIGH diversity - Corvids frequently switch between modalities")
-            print(f"     This indicates complex 'Texture Syntax' with mixed acoustic textures")
+            print("  ✅ HIGH diversity - Corvids frequently switch between modalities")
+            print("     This indicates complex 'Texture Syntax' with mixed acoustic textures")
         elif american_crow_results['avg_normalized_entropy'] > 0.4:
-            print(f"  ⚠️  MODERATE diversity - Some modality switching observed")
+            print("  ⚠️  MODERATE diversity - Some modality switching observed")
         else:
-            print(f"  ⚠️  LOW diversity - Corvids tend to stay in same modality")
+            print("  ⚠️  LOW diversity - Corvids tend to stay in same modality")
 
-        print(f"\nScientific Impact:")
-        print(f"  📚 This is the FIRST analysis of modality transition patterns in")
-        print(f"     animal vocalizations - a publishable novel concept!")
+        print("\nScientific Impact:")
+        print("  📚 This is the FIRST analysis of modality transition patterns in")
+        print("     animal vocalizations - a publishable novel concept!")
 
     print("\n" + "=" * 90)
     print("✅ Texture Grammar Analysis Complete!")

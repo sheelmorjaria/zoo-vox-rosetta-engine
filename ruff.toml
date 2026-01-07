@@ -1,0 +1,20 @@
+# Ruff configuration for animal vocalization analysis project
+
+# Target Python 3.9+
+target-version = "py39"
+
+# Line length
+line-length = 100
+
+[lint]
+# Ignore E402 (module level import not at top of file) - these are intentional
+# for sys.path manipulation to enable local imports
+ignore = ["E402"]
+
+# Enable additional rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+]

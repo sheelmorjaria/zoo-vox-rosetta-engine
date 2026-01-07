@@ -7,11 +7,11 @@ innovation tracking, and directed communication analysis.
 """
 
 from .semiotic_engine import (
-    SemioticEngine,
-    SemioticState,
-    SemioticRelation,
+    SemioticAnalysisResult,
     SemioticContext,
-    SemioticAnalysisResult
+    SemioticEngine,
+    SemioticRelation,
+    SemioticState,
 )
 
 __all__ = [

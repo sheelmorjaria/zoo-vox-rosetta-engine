@@ -4,29 +4,30 @@ Test suite for Deep Reinforcement Learning enhancement
 TDD implementation for Phase IV feature
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
+
 sys.path.append('src')
 
 from realtime.deep_reinforcement_learning import (
+    A2CAgent,
+    CurriculumScheduler,
     DeepReinforcementLearning,
-    ReinforcementLearner,
+    DQNAgent,
+    EnsembleLearner,
     EnvironmentModel,
-    PolicyNetwork,
     ExperienceReplay,
     ExplorationStrategy,
-    RewardFunction,
-    DQNAgent,
-    PPOAgent,
-    A2CAgent,
-    SACAgent,
     HERAgent,
-    MultiAgentLearner,
     MetaLearner,
+    MultiAgentLearner,
+    PolicyNetwork,
+    PPOAgent,
+    ReinforcementLearner,
+    RewardFunction,
+    SACAgent,
     SafetyChecker,
-    CurriculumScheduler,
-    EnsembleLearner
 )
 
 

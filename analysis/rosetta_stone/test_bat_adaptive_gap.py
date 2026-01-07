@@ -6,13 +6,13 @@ Tests adaptive gap threshold on Egyptian fruit bat dataset.
 Uses a representative subset of the 91,080 available files.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -61,7 +61,7 @@ def test_bat_file(filepath, duration_sec=2):
 
         # Calculate click rate
         envelope = np.abs(audio)
-        from scipy.signal import hilbert, find_peaks
+        from scipy.signal import find_peaks, hilbert
         analytic = hilbert(audio)
         envelope = np.abs(analytic)
         threshold = np.mean(envelope) + 2 * np.std(envelope)
@@ -151,7 +151,7 @@ def main():
     print(f"\n📊 Files successfully analyzed: {len(results)}/{len(test_files)}")
 
     # Overall statistics
-    print(f"\n📊 MODALITY DISTRIBUTION:")
+    print("\n📊 MODALITY DISTRIBUTION:")
     modality_counts = {}
     for r in results:
         m = r['overall_modality']
@@ -161,20 +161,20 @@ def main():
         percentage = count / len(results) * 100
         print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%)")
 
-    print(f"\n📊 CLICK RATE STATISTICS:")
+    print("\n📊 CLICK RATE STATISTICS:")
     click_rates = [r['click_rate'] for r in results]
     print(f"  Mean: {np.mean(click_rates):.1f} clicks/second")
     print(f"  Median: {np.median(click_rates):.1f} clicks/second")
     print(f"  Range: {np.min(click_rates):.1f} - {np.max(click_rates):.1f} clicks/second")
 
-    print(f"\n📊 ADAPTIVE THRESHOLD STATISTICS:")
+    print("\n📊 ADAPTIVE THRESHOLD STATISTICS:")
     thresholds = [r['adaptive_threshold_ms'] for r in results]
     print(f"  Mean: {np.mean(thresholds):.2f} ms")
     print(f"  Median: {np.median(thresholds):.2f} ms")
     print(f"  Range: {np.min(thresholds):.2f} - {np.max(thresholds):.2f} ms")
     print(f"  Std: {np.std(thresholds):.2f} ms")
 
-    print(f"\n📊 PHRASE DETECTION:")
+    print("\n📊 PHRASE DETECTION:")
     total_phrases_adaptive = sum(r['phrases_adaptive'] for r in results)
     total_phrases_fixed = sum(r['phrases_fixed'] for r in results)
     files_with_phrases_adaptive = sum(1 for r in results if r['phrases_adaptive'] > 0)
@@ -190,7 +190,7 @@ def main():
     files_with_improvement = sum(1 for i in improvements if i > 0)
     total_improvement = sum(improvements)
 
-    print(f"\n📊 IMPROVEMENT:")
+    print("\n📊 IMPROVEMENT:")
     print(f"  Files with improvement: {files_with_improvement}/{len(results)} ({files_with_improvement/len(results)*100:.1f}%)")
     print(f"  Total additional phrases: +{total_improvement}")
 
@@ -199,7 +199,7 @@ def main():
         print(f"  Average improvement per file: +{avg_improvement:.1f} phrases")
 
     # Modality distribution of detected phrases
-    print(f"\n📊 DETECTED PHRASE MODALITY:")
+    print("\n📊 DETECTED PHRASE MODALITY:")
     phrase_modality_counts = {}
     for r in results:
         for modality, count in r['modality_distribution'].items():

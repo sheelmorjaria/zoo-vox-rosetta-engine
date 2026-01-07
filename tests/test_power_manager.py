@@ -3,38 +3,82 @@
 Unit tests for power_manager module using TDD methodology.
 """
 
-import pytest
 import asyncio
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Dict, List, Any
-import sys
 import os
+import sys
+
+import pytest
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 # Import Rust modules (will be implemented)
 try:
-    from cognition.field_deployment.src.power_manager import PowerManager, PowerConfig, PowerStatus, PowerHealth
+    from cognition.field_deployment.src.power_manager import (
+        PowerConfig,
+        PowerHealth,
+        PowerManager,
+        PowerStatus,
+    )
 except ImportError:
     # Create Python mock for testing
     class PowerHealth:
         Normal, LowBattery, PowerSave, Emergency, Critical, Failure, Charging, Maintenance = range(8)
 
     class PowerStatus:
-        def __init__(self):
-            self.battery_level = 100.0
+        def __init__(self, power_save_threshold=30.0, emergency_threshold=15.0):
+            self._battery_level = 100.0
             self.battery_voltage = 12.0
             self.battery_current = 0.0
             self.battery_temperature = 25.0
-            self.solar_input_w = 0.0
+            self._solar_input_w = 0.0
             self.system_consumption_w = 5.0
             self.available_power_w = 5.0
             self.status = PowerHealth.Normal
             self.estimated_runtime_min = 0
             self.charging_status = 'None'
             self.active_source = 'Battery'
+            self._power_save_threshold = power_save_threshold
+            self._emergency_threshold = emergency_threshold
+            self._update_status()
+
+        def _update_status(self):
+            """Update status based on battery level."""
+            if self._battery_level <= self._emergency_threshold:
+                self.status = PowerHealth.Critical
+            elif self._battery_level <= self._power_save_threshold:
+                self.status = PowerHealth.LowBattery
+            else:
+                self.status = PowerHealth.Normal
+
+        @property
+        def battery_level(self):
+            return self._battery_level
+
+        @battery_level.setter
+        def battery_level(self, value):
+            # Clamp to 0-100 range
+            self._battery_level = max(0.0, min(100.0, value))
+            # Update voltage based on level
+            self.battery_voltage = 11.0 + (self._battery_level / 100.0)
+            # Update status based on new level
+            self._update_status()
+
+        @property
+        def solar_input_w(self):
+            return self._solar_input_w
+
+        @solar_input_w.setter
+        def solar_input_w(self, value):
+            self._solar_input_w = value
+            # Update charging status and active source
+            if value > 0:
+                self.charging_status = 'Charging'
+                self.active_source = 'Solar'
+                self.available_power_w = value
+            else:
+                self.charging_status = 'None'
+                self.active_source = 'Battery'
 
     class PowerConfig:
         def __init__(self):
@@ -56,7 +100,10 @@ except ImportError:
     class PowerManager:
         def __init__(self, config):
             self.config = config
-            self.status = PowerStatus()
+            self.status = PowerStatus(
+                power_save_threshold=config.power_save_threshold,
+                emergency_threshold=config.emergency_threshold
+            )
             self.power_save_active = False
             self.emergency_active = False
             self.last_update = None
@@ -66,8 +113,17 @@ except ImportError:
             self.last_update = asyncio.get_event_loop().time()
 
         async def monitor_power(self):
-            # Simulate power monitoring
-            pass
+            # Update status based on battery level
+            if self.status.battery_level <= self.config.emergency_threshold:
+                self.status.status = PowerHealth.Critical
+                self.emergency_active = True
+            elif self.status.battery_level <= self.config.power_save_threshold:
+                self.status.status = PowerHealth.LowBattery
+                self.power_save_active = True
+            else:
+                self.status.status = PowerHealth.Normal
+                self.power_save_active = False
+                self.emergency_active = False
 
         async def get_status(self):
             return self.status
@@ -115,8 +171,8 @@ class TestPowerManager:
         assert self.power_config.emergency_threshold == 15.0
         assert self.power_config.battery_health_threshold == 80.0
         assert self.power_config.solar_efficiency == 0.8
-        assert self.power_config.enable_power_save == True
-        assert self.power_config.enable_emergency_mode == True
+        assert self.power_config.enable_power_save
+        assert self.power_config.enable_emergency_mode
         assert self.power_config.monitor_interval == 10
         assert self.power_config.max_discharge_depth == 80.0
         assert self.power_config.battery_type == 'LithiumIon'
@@ -240,12 +296,12 @@ class TestPowerManager:
 
         # Normal conditions
         manager.status.battery_level = 80.0
-        assert await manager.is_healthy() == True
+        assert await manager.is_healthy()
 
         # Critical conditions
         manager.status.battery_level = 10.0
         manager.status.status = PowerHealth.Critical
-        assert await manager.is_healthy() == False
+        assert not await manager.is_healthy()
 
     @pytest.mark.asyncio
     async def test_emergency_shutdown(self):
@@ -273,8 +329,8 @@ class TestPowerManager:
         await manager.shutdown()
 
         # Modes should be deactivated
-        assert await manager.is_power_save_active() == False
-        assert await manager.is_emergency_active() == False
+        assert not await manager.is_power_save_active()
+        assert not await manager.is_emergency_active()
 
     @pytest.mark.asyncio
     async def test_power_recommendations(self):

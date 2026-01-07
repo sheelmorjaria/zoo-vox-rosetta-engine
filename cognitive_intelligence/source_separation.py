@@ -34,19 +34,17 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
+import logging
+import tempfile
+import threading
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple, Any, Union
-from dataclasses import dataclass
-import time
-import threading
-import logging
-import os
-import tempfile
-import json
-from pathlib import Path
 
 # Try to import ONNX for model export
 try:

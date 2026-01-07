@@ -133,6 +133,10 @@ technical_architecture/target/
 **/*.rs.bk
 *.pdb
 
+# Python/Maturin build artifacts (for technical_architecture/)
+technical_architecture/wheels/
+*.whl
+
 # Cargo lock file (optional - uncomment if you don't want to commit it)
 # technical_architecture/Cargo.lock
 
@@ -188,6 +192,9 @@ temp/
 tmp/
 *.cache
 
+# Test recordings (from Rust tests)
+technical_architecture/test_recordings/
+
 # Logs
 *.log
 logs/
@@ -206,12 +213,13 @@ archive/
 .claude/
 
 # Models (large binary files)
-models/*.onnx
-models/*.pt
-models/*.pth
-models/*.h5
-models/*.pkl
-models/*.joblib
+models/**/*.onnx
+models/**/*.pt
+models/**/*.pth
+models/**/*.ckpt
+models/**/*.h5
+models/**/*.pkl
+models/**/*.joblib
 
 # Local configuration
 local_config.py

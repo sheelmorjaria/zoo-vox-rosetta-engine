@@ -17,17 +17,18 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import cv2
-import numpy as np
-import time
-import threading
-import queue
 import logging
-from typing import Dict, List, Optional, Any, Tuple, Union
+import queue
+import threading
+import time
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import deque
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import Mock
+
+import cv2
+import numpy as np
 
 # Optional MediaPipe import
 try:
@@ -36,8 +37,7 @@ try:
     try:
         from mediapipe import tasks
         from mediapipe.tasks import python
-        from mediapipe.tasks.python import vision
-        from mediapipe.tasks.python import holistics
+        from mediapipe.tasks.python import holistics, vision
         MEDIAPIPE_VERSION_NEW = True
     except ImportError:
         # Fallback to older solutions
@@ -66,8 +66,6 @@ except ImportError:
     mp_face_mesh = Mock()
     mp_pose = Mock()
     mp_holistic = Mock()
-import multiprocessing as mp_multi
-from concurrent.futures import ThreadPoolExecutor
 
 # Create MediaPipe mock implementations that work for testing
 class MockHandsClass:
@@ -475,7 +473,7 @@ class MediaPipeTracker:
         right_eye_bottom = landmarks[374] # Right eye bottom
 
         nose_tip = landmarks[1]          # Nose tip
-        nose_bridge = landmarks[2]        # Nose bridge
+        landmarks[2]        # Nose bridge
 
         # Calculate eye aspect ratios for gaze detection
         left_eye_width = abs(left_eye_outer.x - left_eye_inner.x)
@@ -483,8 +481,8 @@ class MediaPipeTracker:
         right_eye_width = abs(right_eye_outer.x - right_eye_inner.x)
         right_eye_height = abs(right_eye_top.y - right_eye_bottom.y)
 
-        left_ear = left_eye_height / (left_eye_width + 1e-6)
-        right_ear = right_eye_height / (right_eye_width + 1e-6)
+        left_eye_height / (left_eye_width + 1e-6)
+        right_eye_height / (right_eye_width + 1e-6)
 
         # Calculate pupil positions (approximation using eye corners)
         left_pupil_x = (left_eye_inner.x + left_eye_outer.x) / 2
@@ -531,7 +529,7 @@ class MediaPipeTracker:
         right_ear_landmark = landmarks[454]  # Right ear
 
         # Calculate horizontal and vertical alignment
-        horizontal_alignment = abs(left_ear_landmark.x - right_ear_landmark.x)
+        abs(left_ear_landmark.x - right_ear_landmark.x)
         vertical_alignment = abs(left_ear_landmark.y - right_ear_landmark.y)
 
         # Calculate head rotation using chin and forehead points
@@ -833,7 +831,7 @@ class LightTrackFallback:
                     flow_magnitudes.append(flow_magnitude)
 
                 avg_flow = np.mean(flow_magnitudes)
-                max_flow = np.max(flow_magnitudes)
+                np.max(flow_magnitudes)
 
                 # Convert to normalized intensity
                 intensity = min(avg_flow / 50.0, 1.0)  # Normalize by typical max

@@ -10,9 +10,10 @@ Author: Sheel Morjaria
 License: CC BY-ND 4.0 International
 """
 
-import sys
 import importlib
-from typing import Dict, List, Tuple
+import sys
+from typing import Dict, Tuple
+
 
 def test_package_import(package_name: str, min_version: str = None) -> Tuple[bool, str]:
     """Test if a package can be imported optionally with version check."""

@@ -24,24 +24,25 @@ Expected Discoveries:
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
-from collections import defaultdict
+
+import numpy as np
+import pandas as pd
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from analysis.rosetta_stone.associate_personas_with_context import (
-    chi_square_test_of_independence,
-    perform_fisher_exact_tests,
-    discover_persona_semantics,
-    calculate_cramers_v,
-    visualize_persona_context_heatmap,
     ACOUSTIC_PERSONAS,
+    calculate_cramers_v,
+    chi_square_test_of_independence,
+    compute_persona_score,
+    discover_persona_semantics,
     extract_micro_dynamics_features,
-    compute_persona_score
+    perform_fisher_exact_tests,
+    visualize_persona_context_heatmap,
 )
 
 
@@ -103,8 +104,8 @@ def map_annotations_to_phrases(
         af = phrase_data['acoustic_features']
 
         duration = af.get('mean_duration_ms', 0) / 1000  # Convert to seconds
-        f0_mean = af.get('mean_f0_hz', 0)
-        f0_range = af.get('f0_range_hz', 0)
+        af.get('mean_f0_hz', 0)
+        af.get('f0_range_hz', 0)
 
         # Parse phrase key components
         # Format: F0_X_DUR_Y_RANGE_Z
@@ -253,7 +254,7 @@ def main():
     annotations = load_annotations_tsv(args.annotations)
 
     # Show label distribution
-    label_distribution = get_label_distribution(annotations)
+    get_label_distribution(annotations)
 
     # Load database
     if not Path(args.db).exists():
@@ -263,7 +264,7 @@ def main():
     with open(args.db, 'r') as f:
         db = json.load(f)
 
-    print(f"\n✅ Loaded vocalization database")
+    print("\n✅ Loaded vocalization database")
 
     # Map annotations to phrases
     phrase_labels = map_annotations_to_phrases(annotations, None, db, args.species)
@@ -293,7 +294,7 @@ def main():
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)
 
     # Discover persona semantics
-    persona_semantics = discover_persona_semantics(
+    discover_persona_semantics(
         associations, residuals, min_occurrences=5
     )
 
@@ -307,7 +308,7 @@ def main():
     print("✅ ANALYSIS COMPLETE!")
     print("=" * 80)
 
-    print(f"\n📊 SUMMARY:")
+    print("\n📊 SUMMARY:")
     print(f"   - Analyzed {len(annotations)} annotated vocalizations")
     print(f"   - Mapped to {len(phrase_labels)} phrase types")
     print(f"   - Tested {len(persona_names)} acoustic personas")
@@ -315,14 +316,14 @@ def main():
     print(f"   - Chi-square: {chi2_stat:.2f}, p-value: {p_value:.4e}")
     print(f"   - Effect size (Cramer's V): {cramers_v:.3f}")
 
-    print(f"\n📚 SCIENTIFIC IMPACT:")
+    print("\n📚 SCIENTIFIC IMPACT:")
     if p_value < 0.05:
-        print(f"   - ✅ STATISTICALLY SIGNIFICANT associations found")
-        print(f"   - Acoustic personas carry behavioral meaning")
-        print(f"   - Enables interpretation of 'atomic words' in communication")
+        print("   - ✅ STATISTICALLY SIGNIFICANT associations found")
+        print("   - Acoustic personas carry behavioral meaning")
+        print("   - Enables interpretation of 'atomic words' in communication")
     else:
-        print(f"   - No significant associations found")
-        print(f"   - May need more data or different persona definitions")
+        print("   - No significant associations found")
+        print("   - May need more data or different persona definitions")
 
     print("\n" + "=" * 80)
 

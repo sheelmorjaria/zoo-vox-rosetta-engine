@@ -6,12 +6,13 @@ Compares phrase detection with and without adaptive gap threshold
 across multiple sperm whale files.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -93,7 +94,7 @@ def main():
 
         print(f"\n{result['filename'][:25]:25s} (10s)")
         print(f"  Adaptive threshold: {result['adaptive_threshold_ms']:6.2f} ms")
-        print(f"  Phrases detected:")
+        print("  Phrases detected:")
         print(f"    Adaptive (max 50ms): {result['phrases_adaptive']:3d}")
         print(f"    Fixed 50ms:          {result['phrases_fixed_50']:3d}  (improvement: {result['improvement_50']:+3d})")
         print(f"    Fixed 100ms:         {result['phrases_fixed_100']:3d}  (improvement: {result['improvement_100']:+3d})")
@@ -115,7 +116,7 @@ def main():
     print(f"  Fixed 50ms gap:          {total_phrases_fixed_50:3d}")
     print(f"  Fixed 100ms gap:         {total_phrases_fixed_100:3d}")
 
-    print(f"\nFiles with improvement:")
+    print("\nFiles with improvement:")
     print(f"  vs Fixed 50ms:  {files_with_improvement_50}/{len(results)} ({files_with_improvement_50/len(results)*100:.1f}%)")
     print(f"  vs Fixed 100ms: {files_with_improvement_100}/{len(results)} ({files_with_improvement_100/len(results)*100:.1f}%)")
 
@@ -123,13 +124,13 @@ def main():
         improvement_pct_50 = ((total_phrases_adaptive - total_phrases_fixed_50) / max(total_phrases_fixed_50, 1)) * 100
         improvement_pct_100 = ((total_phrases_adaptive - total_phrases_fixed_100) / max(total_phrases_fixed_100, 1)) * 100
 
-        print(f"\nOverall improvement:")
+        print("\nOverall improvement:")
         print(f"  vs Fixed 50ms:  {improvement_pct_50:+.1f}%")
         print(f"  vs Fixed 100ms: {improvement_pct_100:+.1f}%")
 
     # Adaptive threshold statistics
     thresholds = [r['adaptive_threshold_ms'] for r in results]
-    print(f"\nAdaptive threshold statistics:")
+    print("\nAdaptive threshold statistics:")
     print(f"  Mean: {np.mean(thresholds):.2f} ms")
     print(f"  Median: {np.median(thresholds):.2f} ms")
     print(f"  Min: {np.min(thresholds):.2f} ms")

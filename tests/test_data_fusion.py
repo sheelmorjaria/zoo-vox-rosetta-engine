@@ -4,16 +4,8 @@ Test Suite for Data Fusion Implementation
 Testing Visual + Vocalization fusion with attention boosting
 """
 
-import unittest
-import numpy as np
-import time
 import sys
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
-import tempfile
-import os
-import json
+import unittest
 
 # Import data fusion module
 sys.path.append('src')
@@ -59,7 +51,10 @@ class TestDataFusion(unittest.TestCase):
     def test_visual_attention_calculation(self):
         """Test that visual attention scores are calculated correctly"""
         from cognitive_intelligence.data_fusion import (
-            VisualAttentionCalculator, VisualFeatures, VisualAttentionLevel, FusionConfig
+            FusionConfig,
+            VisualAttentionCalculator,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create calculator
@@ -102,7 +97,11 @@ class TestDataFusion(unittest.TestCase):
     def test_attention_boost_logic(self):
         """Test that Visual_Attention + Vocalization boosts Response_Probability by 20%"""
         from cognitive_intelligence.data_fusion import (
-            ResponseBoostLogic, AudioFeatures, FusionConfig, VisualFeatures, VisualAttentionLevel
+            AudioFeatures,
+            FusionConfig,
+            ResponseBoostLogic,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create boost logic with explicit config
@@ -201,7 +200,10 @@ class TestDataFusion(unittest.TestCase):
     def test_visual_audio_fusion(self):
         """Test that visual and audio features are fused correctly"""
         from cognitive_intelligence.data_fusion import (
-            DataFusionSystem, VisualFeatures, VisualAttentionLevel, FusionConfig
+            DataFusionSystem,
+            FusionConfig,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create fusion system
@@ -237,7 +239,10 @@ class TestDataFusion(unittest.TestCase):
     def test_species_specific_fusion_logic(self):
         """Test that species-specific fusion logic is applied"""
         from cognitive_intelligence.data_fusion import (
-            DataFusionSystem, VisualFeatures, VisualAttentionLevel, FusionConfig
+            DataFusionSystem,
+            FusionConfig,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create fusion system
@@ -266,7 +271,10 @@ class TestDataFusion(unittest.TestCase):
     def test_contact_call_attention_boost(self):
         """Test that contact calls with high attention get 20% boost"""
         from cognitive_intelligence.data_fusion import (
-            DataFusionSystem, VisualFeatures, VisualAttentionLevel, FusionConfig
+            DataFusionSystem,
+            FusionConfig,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create fusion system
@@ -299,7 +307,10 @@ class TestDataFusion(unittest.TestCase):
     def test_no_boost_for_alarm_calls(self):
         """Test that alarm calls never get attention boost regardless of attention"""
         from cognitive_intelligence.data_fusion import (
-            DataFusionSystem, VisualFeatures, VisualAttentionLevel, FusionConfig
+            DataFusionSystem,
+            FusionConfig,
+            VisualAttentionLevel,
+            VisualFeatures,
         )
 
         # 1. Create fusion system
@@ -430,7 +441,7 @@ if __name__ == '__main__':
 
     # Print summary
     print(f"\n{'='*50}")
-    print(f"Data Fusion Test Results:")
+    print("Data Fusion Test Results:")
     print(f"{'='*50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")

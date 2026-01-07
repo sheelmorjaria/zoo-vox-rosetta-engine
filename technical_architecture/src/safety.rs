@@ -1,18 +1,16 @@
-/**
- * Safety Monitor Module
- * ====================
- *
- * This module implements safety monitoring and protection for the
- * field deployment system. It includes:
- *
- * - Watchdog timer for hang detection
- * - Performance budget monitoring
- * - Emergency shutdown triggers
- * - Safety violation logging and reporting
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Safety Monitor Module
+//! ====================
+//!
+//! This module implements safety monitoring and protection for the
+//! field deployment system. It includes:
+//!
+//! - Watchdog timer for hang detection
+//! - Performance budget monitoring
+//! - Emergency shutdown triggers
+//! - Safety violation logging and reporting
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::time::{Duration, Instant};
 use anyhow::Result;

@@ -9,15 +9,16 @@ Deep investigation of bat vocalization detection to understand:
 4. Optimal parameters for bat vocalizations
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -77,7 +78,7 @@ def analyze_single_file(filepath, params):
         ("Ultrasonic (>100 kHz)", 100000, sr//2)
     ]
 
-    print(f"\n📊 Energy Distribution:")
+    print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
         band_energy = np.sum(pos_magnitude[mask]**2)
@@ -88,7 +89,7 @@ def analyze_single_file(filepath, params):
             print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     # Test multiple parameter combinations
-    print(f"\n🔍 Testing phrase segmentation with different parameters:")
+    print("\n🔍 Testing phrase segmentation with different parameters:")
 
     analyzer = UniversalRosettaStone(sample_rate=sr)
 
@@ -115,7 +116,7 @@ def analyze_single_file(filepath, params):
     max_phrases = best_params[1]
 
     if max_phrases == 0:
-        print(f"\n⚠️  No phrases detected with any parameter combination")
+        print("\n⚠️  No phrases detected with any parameter combination")
         return None
 
     print(f"\n✓ Best parameters: gap={best_gap}ms, dur={best_dur}ms ({max_phrases} phrases)")
@@ -128,7 +129,7 @@ def analyze_single_file(filepath, params):
     )
 
     # Analyze modality for first 20 phrases
-    print(f"\n📊 Modality Analysis (first 20 phrases):")
+    print("\n📊 Modality Analysis (first 20 phrases):")
     modality_counts = {}
     details = []
 
@@ -155,7 +156,7 @@ def analyze_single_file(filepath, params):
         print(f"    {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
     # Print detailed analysis for first 10 phrases
-    print(f"\n  Detailed Analysis (first 10 phrases):")
+    print("\n  Detailed Analysis (first 10 phrases):")
     for d in details[:10]:
         print(f"\n    Phrase {d['index']+1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
         print(f"      Probabilities: {d['probabilities']}")
@@ -217,7 +218,7 @@ def main():
                 all_modality_counts[modality] = all_modality_counts.get(modality, 0) + count
 
         print(f"\nTotal phrases across all files: {total_phrases}")
-        print(f"\nAggregated Modality Distribution:")
+        print("\nAggregated Modality Distribution:")
         for modality, count in sorted(all_modality_counts.items()):
             percentage = count / total_phrases * 100
             bar = '█' * int(percentage / 10)
@@ -229,7 +230,7 @@ def main():
             print(f"  {modality:15s}: {count:4d} ({percentage:5.1f}%) {bar}{expected}")
 
         # Parameter analysis
-        print(f"\n📊 Most Common Parameters:")
+        print("\n📊 Most Common Parameters:")
         param_counts = {}
         for result in all_results:
             key = f"gap={result['best_params']['gap']}, dur={result['best_params']['dur']}"
@@ -238,25 +239,25 @@ def main():
         for params, count in sorted(param_counts.items(), key=lambda x: x[1], reverse=True):
             print(f"  {params}: {count} files")
 
-        print(f"\n💡 Key Findings:")
+        print("\n💡 Key Findings:")
         if 'FM_SWEEP' in all_modality_counts:
             fm_pct = all_modality_counts['FM_SWEEP'] / total_phrases * 100
             print(f"  ✓ FM_SWEEP detected: {fm_pct:.1f}% of phrases")
         else:
-            print(f"  ⚠️  No FM_SWEEP detected - all TRANSIENT")
+            print("  ⚠️  No FM_SWEEP detected - all TRANSIENT")
 
         if 'HARMONIC' in all_modality_counts:
             harm_pct = all_modality_counts['HARMONIC'] / total_phrases * 100
             print(f"  ✓ HARMONIC (social calls) detected: {harm_pct:.1f}% of phrases")
 
-        print(f"\n🔬 Interpretation:")
+        print("\n🔬 Interpretation:")
         if 'FM_SWEEP' not in all_modality_counts:
-            print(f"  Predominance of TRANSIENT suggests these may be:")
-            print(f"  - Echolocation clicks/pulses")
-            print(f"  - Very short FM sweeps that fall below detection threshold")
-            print(f"  - High-frequency content (>100 kHz) that's hard to analyze")
+            print("  Predominance of TRANSIENT suggests these may be:")
+            print("  - Echolocation clicks/pulses")
+            print("  - Very short FM sweeps that fall below detection threshold")
+            print("  - High-frequency content (>100 kHz) that's hard to analyze")
         else:
-            print(f"  Mixed modalities detected, consistent with bat communication:")
+            print("  Mixed modalities detected, consistent with bat communication:")
 
     print(f"\n{'='*70}")
     print("✅ Investigation complete!")

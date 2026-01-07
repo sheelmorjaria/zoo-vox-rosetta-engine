@@ -10,12 +10,13 @@ Comprehensive analysis of corvid vocalizations from Xenocanto:
 Total: 308 MP3 recordings from the Xenocanto database.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -87,7 +88,7 @@ def analyze_corvid_file(filepath, duration_sec=5):
                 min_phrase_duration_ms=20.0,
                 use_adaptive_gap=True
             )
-        except Exception as e:
+        except Exception:
             phrases = []
 
         # Get modality distribution of phrases
@@ -164,7 +165,7 @@ def print_species_summary(species_name, results):
         print(f"⚠️  No successful results for {species_name}")
         return
 
-    print(f"\n📊 OVERALL MODALITY DISTRIBUTION:")
+    print("\n📊 OVERALL MODALITY DISTRIBUTION:")
     modality_counts = {}
     for r in results:
         m = r['overall_modality']
@@ -179,13 +180,13 @@ def print_species_summary(species_name, results):
     total_phrases = sum(r['num_phrases'] for r in results)
     files_with_phrases = sum(1 for r in results if r['num_phrases'] > 0)
 
-    print(f"\n📊 PHRASE DETECTION:")
+    print("\n📊 PHRASE DETECTION:")
     print(f"  Total phrases: {total_phrases}")
     print(f"  Files with phrases: {files_with_phrases}/{len(results)} ({files_with_phrases/len(results)*100:.1f}%)")
     print(f"  Mean phrases per file: {total_phrases/len(results):.2f}")
 
     if files_with_phrases > 0:
-        print(f"\n📊 DETECTED PHRASE MODALITY:")
+        print("\n📊 DETECTED PHRASE MODALITY:")
         phrase_modality_counts = {}
         for r in results:
             for modality, count in r['phrase_modalities'].items():
@@ -197,14 +198,14 @@ def print_species_summary(species_name, results):
             print(f"    {modality:15s}: {count:4d} ({percentage:5.1f}%)")
 
     # Frequency characteristics
-    print(f"\n📊 FREQUENCY CHARACTERISTICS:")
+    print("\n📊 FREQUENCY CHARACTERISTICS:")
     dom_freqs = [r['dominant_freq_hz'] for r in results if r.get('dominant_freq_hz', 0) > 0]
     if dom_freqs:
         print(f"  Dominant frequency: {np.mean(dom_freqs)/1000:.2f} ± {np.std(dom_freqs)/1000:.2f} kHz")
         print(f"  Range: {np.min(dom_freqs)/1000:.2f} - {np.max(dom_freqs)/1000:.2f} kHz")
 
     # Energy distribution
-    print(f"\n📊 ENERGY DISTRIBUTION:")
+    print("\n📊 ENERGY DISTRIBUTION:")
     all_bands = ["Low (0-1k)", "Low-Mid (1-2k)", "Mid (2-4k)", "Mid-High (4-6k)", "High (6-8k)", "VHF (>8k)"]
     for band in all_bands:
         energies = [r['energy_distribution'].get(band, 0) for r in results]
@@ -262,7 +263,7 @@ def main():
     print(f"\n📊 Total files analyzed: {total_files}")
 
     # Cross-species modality comparison
-    print(f"\n📊 MODALITY DISTRIBUTION BY SPECIES:")
+    print("\n📊 MODALITY DISTRIBUTION BY SPECIES:")
     print(f"{'Species':<20} {'HARMONIC':>12} {'FM_SWEEP':>12} {'TRANSIENT':>12} {'RHYTHMIC':>12}")
     print("-" * 80)
 

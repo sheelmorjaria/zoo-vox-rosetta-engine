@@ -5,7 +5,7 @@
 
 use crate::ptp::PtpTimestamp;
 use anyhow::{Context, Result};
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Datelike, Timelike};
+use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
@@ -369,7 +369,7 @@ impl IacucComplianceEngine {
             let violation = PolicyViolation {
                 timestamp: PtpTimestamp::from(chrono::Utc::now()),
                 violation_type: ViolationType::OutsideAllowedHours,
-                description: format!("Current time is outside allowed hours"),
+                description: "Current time is outside allowed hours".to_string(),
                 attempted_action: format!("{:?}", intent.intent_type),
                 species: intent.species.clone(),
             };
@@ -485,7 +485,7 @@ impl IacucComplianceEngine {
                         "Daily playback limit reached: {} events",
                         playback_count
                     ),
-                    attempted_action: format!("Playback event"),
+                    attempted_action: "Playback event".to_string(),
                     species: intent.species.clone(),
                 };
                 self.log_violation(violation);
@@ -584,6 +584,7 @@ impl IacucComplianceEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::NaiveTime;
 
     fn create_test_protocol() -> IacucProtocol {
         IacucProtocol {

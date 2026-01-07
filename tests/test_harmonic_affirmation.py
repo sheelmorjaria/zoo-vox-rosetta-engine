@@ -3,11 +3,8 @@
 Unit tests for harmonic_affirmation module using TDD methodology.
 """
 
-import pytest
-import numpy as np
-from typing import Dict, List
-import sys
 import os
+import sys
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

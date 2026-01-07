@@ -4,21 +4,17 @@ Test Suite for Visual Fusion Implementation
 Testing MediaPipe integration and visual-audio fusion capabilities
 """
 
-import unittest
-import numpy as np
-import time
-import threading
 import sys
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
-import tempfile
-import os
-import json
+import time
+import unittest
+from unittest.mock import Mock, patch
+
+import numpy as np
 
 # Import visual fusion module
 sys.path.append('src')
 import cognitive_intelligence.visual_fusion as visual_fusion
+
 
 class TestVisualFusion(unittest.TestCase):
     """Test Suite for Visual Fusion Implementation"""
@@ -30,9 +26,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_visual_fusion_system_creation(self):
         """Test that Visual Fusion System can be created"""
-        from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig, VisualFeatures, VisualAttentionLevel
-        )
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create configuration
         config = VisualFusionConfig(
@@ -57,9 +51,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_mediapipe_tracker_creation(self):
         """Test that MediaPipe tracker can be initialized"""
-        from cognitive_intelligence.visual_fusion import (
-            MediaPipeTracker, VisualFusionConfig, VisualFeatures
-        )
+        from cognitive_intelligence.visual_fusion import MediaPipeTracker, VisualFusionConfig
 
         # 1. Create configuration
         config = VisualFusionConfig(
@@ -80,9 +72,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_lighttrack_fallback_initialization(self):
         """Test that LightTrack fallback can be initialized"""
-        from cognitive_intelligence.visual_fusion import (
-            LightTrackFallback, VisualFusionConfig, VisualFeatures
-        )
+        from cognitive_intelligence.visual_fusion import LightTrackFallback, VisualFusionConfig
 
         # 1. Create configuration with LightTrack enabled
         config = VisualFusionConfig(
@@ -102,7 +92,9 @@ class TestVisualFusion(unittest.TestCase):
     def test_frame_processing_without_camera(self):
         """Test frame processing without actual camera input"""
         from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig, VisualFeatures
+            VisualFeatures,
+            VisualFusionConfig,
+            VisualFusionSystem,
         )
 
         # 1. Create configuration
@@ -141,10 +133,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_separate_thread_processing(self):
         """Test that visual processing runs on separate thread without blocking"""
-        from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig
-        )
-        import time
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create configuration with separate thread
         config = VisualFusionConfig(
@@ -176,9 +165,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_frame_queue_overflow_protection(self):
         """Test that frame queue overflow is handled gracefully"""
-        from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig
-        )
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create configuration with small queue
         config = VisualFusionConfig(
@@ -206,7 +193,10 @@ class TestVisualFusion(unittest.TestCase):
     def test_visual_attention_calculation(self):
         """Test that visual attention is calculated correctly"""
         from cognitive_intelligence.visual_fusion import (
-            MediaPipeTracker, VisualFusionConfig, VisualAttentionLevel, VisualFeatures
+            MediaPipeTracker,
+            VisualAttentionLevel,
+            VisualFeatures,
+            VisualFusionConfig,
         )
 
         # 1. Create tracker
@@ -214,10 +204,10 @@ class TestVisualFusion(unittest.TestCase):
             camera_resolution=self.test_resolution,
             fps=self.test_fps
         )
-        tracker = MediaPipeTracker(config)
+        MediaPipeTracker(config)
 
         # 2. Test attention levels
-        test_features = [
+        [
             # Create features with different attention levels
             VisualFeatures(gaze_direction="towards_camera", movement_intensity=0.9, hand_gestures=["open_hand"]),
             VisualFeatures(gaze_direction="away", movement_intensity=0.1, hand_gestures=[]),
@@ -233,9 +223,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_gaze_estimation_accuracy(self):
         """Test that gaze estimation works with different head poses"""
-        from cognitive_intelligence.visual_fusion import (
-            MediaPipeTracker, VisualFusionConfig
-        )
+        from cognitive_intelligence.visual_fusion import MediaPipeTracker, VisualFusionConfig
 
         # 1. Create tracker
         config = VisualFusionConfig(camera_resolution=self.test_resolution)
@@ -255,9 +243,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_hand_gesture_recognition(self):
         """Test that hand gestures are recognized correctly"""
-        from cognitive_intelligence.visual_fusion import (
-            MediaPipeTracker, VisualFusionConfig
-        )
+        from cognitive_intelligence.visual_fusion import MediaPipeTracker, VisualFusionConfig
 
         # 1. Create tracker
         config = VisualFusionConfig(camera_resolution=self.test_resolution)
@@ -279,7 +265,10 @@ class TestVisualFusion(unittest.TestCase):
     def test_visual_audio_fusion(self):
         """Test that visual and audio features are fused correctly"""
         from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig, VisualFeatures, VisualAttentionLevel
+            VisualAttentionLevel,
+            VisualFeatures,
+            VisualFusionConfig,
+            VisualFusionSystem,
         )
 
         # 1. Create fusion system
@@ -317,7 +306,10 @@ class TestVisualFusion(unittest.TestCase):
     def test_attention_score_calculation(self):
         """Test that visual attention scores are calculated correctly"""
         from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig, VisualFeatures, VisualAttentionLevel
+            VisualAttentionLevel,
+            VisualFeatures,
+            VisualFusionConfig,
+            VisualFusionSystem,
         )
 
         # 1. Create fusion system
@@ -368,9 +360,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_performance_monitoring(self):
         """Test that performance statistics are tracked correctly"""
-        from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig
-        )
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create fusion system
         config = VisualFusionConfig()
@@ -393,9 +383,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_error_handling(self):
         """Test that errors are handled gracefully"""
-        from cognitive_intelligence.visual_fusion import (
-            VisualFusionSystem, VisualFusionConfig
-        )
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create fusion system
         config = VisualFusionConfig()
@@ -414,7 +402,7 @@ class TestVisualFusion(unittest.TestCase):
 
     def test_camera_initialization(self):
         """Test camera initialization parameters"""
-        from cognitive_intelligence.visual_fusion import VisualFusionSystem, VisualFusionConfig
+        from cognitive_intelligence.visual_fusion import VisualFusionConfig, VisualFusionSystem
 
         # 1. Create configuration
         config = VisualFusionConfig(
@@ -468,7 +456,7 @@ if __name__ == '__main__':
 
     # Print summary
     print(f"\n{'='*50}")
-    print(f"Visual Fusion Test Results:")
+    print("Visual Fusion Test Results:")
     print(f"{'='*50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")

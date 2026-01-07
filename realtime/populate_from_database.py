@@ -10,11 +10,11 @@ Author: Sheel Morjaria
 License: CC BY-ND 4.0 International
 """
 
-import pickle
-import numpy as np
-from pathlib import Path
-import sys
 import logging
+import pickle
+import sys
+
+import numpy as np
 
 # Add parent directory to path
 sys.path.append('/home/sheel/birdsong_analysis')
@@ -144,7 +144,7 @@ def populate_library_from_database(
             logger.warning(f"Error processing {phrase_key}: {e}")
             continue
 
-    print(f"\n📊 Population Summary:")
+    print("\n📊 Population Summary:")
     print(f"   Total phrases in database: {len(phrase_segments)}")
     print(f"   Phrases added to library: {phrases_added}")
     print(f"   Library total segments: {library.total_segments}")
@@ -152,7 +152,7 @@ def populate_library_from_database(
     # Context distribution
     context_stats = library.get_context_statistics()
     if 'context_statistics' in context_stats:
-        print(f"\n   Context distribution:")
+        print("\n   Context distribution:")
         for context, stats in context_stats['context_statistics'].items():
             print(f"     {context}: {stats['total_occurrences']} segments")
 
@@ -189,7 +189,7 @@ def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
     print("=" * 80)
 
     # Context-aware selection
-    print(f"\nContext-aware phrase selection:")
+    print("\nContext-aware phrase selection:")
     for context in ['alarm', 'food', 'social', 'neutral', 'contact']:
         selected = library.select_phrases_by_context(context, min_quality=0.5)
         if selected:
@@ -198,12 +198,12 @@ def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
             print(f"     F0 range: {getattr(selected[0], 'mean_f0_hz', 0):.0f} - {getattr(selected[-1], 'mean_f0_hz', 0):.0f} Hz")
 
     # Synthesis preparation
-    print(f"\nSynthesis capabilities:")
+    print("\nSynthesis capabilities:")
     print(f"   Total phrase types available: {len(library.get_all_phrase_keys())}")
     print(f"   Total audio segments: {library.total_segments}")
-    print(f"   Ready for horizontal (concatenative) synthesis")
-    print(f"   Ready for vertical (superpositional) synthesis")
-    print(f"   Ready for combined synthesis methods")
+    print("   Ready for horizontal (concatenative) synthesis")
+    print("   Ready for vertical (superpositional) synthesis")
+    print("   Ready for combined synthesis methods")
 
 def main():
     """Main function."""
@@ -216,11 +216,11 @@ def main():
     # Demonstrate functionality
     demonstrate_realtime_functionality(library)
 
-    print(f"\n🎯 Next steps:")
-    print(f"   1. Use library in real-time interaction systems")
-    print(f"   2. Implement context-aware synthesis strategies")
-    print(f"   3. Add more phrases from database for full coverage")
-    print(f"   4. Integrate with hardware acceleration if needed")
+    print("\n🎯 Next steps:")
+    print("   1. Use library in real-time interaction systems")
+    print("   2. Implement context-aware synthesis strategies")
+    print("   3. Add more phrases from database for full coverage")
+    print("   4. Integrate with hardware acceleration if needed")
 
 if __name__ == "__main__":
     main()

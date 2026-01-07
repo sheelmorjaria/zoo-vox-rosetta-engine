@@ -4,7 +4,6 @@ Cleanup script to move remaining important files from technical_architecture
 """
 
 import shutil
-import os
 from pathlib import Path
 
 # Important files to keep/move
@@ -51,7 +50,7 @@ test_files_to_move = [
 
 def move_files():
     technical_arch_path = Path('/mnt/c/Users/sheel/Desktop/src/technical_architecture')
-    realtime_path = Path('/mnt/c/Users/sheel/Desktop/src/realtime')
+    Path('/mnt/c/Users/sheel/Desktop/src/realtime')
     tests_path = Path('/mnt/c/Users/sheel/Desktop/src/tests')
 
     # Move important files

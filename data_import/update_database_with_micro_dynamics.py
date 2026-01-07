@@ -15,11 +15,11 @@ Features: 16 new acoustic dimensions for discovering smallest units of meaning
 
 import json
 import pickle
-import numpy as np
 import re
-from pathlib import Path
-from datetime import datetime
 import sys
+from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # All micro-dynamics features
 MICRO_DYNAMICS_FEATURES = [
@@ -83,10 +83,10 @@ print(f"\nLoading existing database from {db_path}...")
 with open(db_path, 'r') as f:
     db = json.load(f)
 
-print(f"✅ Loaded database")
+print("✅ Loaded database")
 
 # Extract micro-dynamics features from phrase segments
-print(f"\nExtracting micro-dynamics features...")
+print("\nExtracting micro-dynamics features...")
 
 micro_dynamics_map = {}  # phrase_key -> features
 
@@ -157,7 +157,7 @@ def convert_numpy_types(obj):
         return obj
 
 # Update database with micro-dynamics features
-print(f"\nUpdating database...")
+print("\nUpdating database...")
 
 marmoset_phrases = db['species_data']['marmoset']['phrases']
 updated_count = 0
@@ -206,10 +206,10 @@ db = convert_numpy_types(db)
 with open(output_path, 'w') as f:
     json.dump(db, f, indent=2)
 
-print(f"✅ Saved!")
+print("✅ Saved!")
 
 # Sample micro-dynamics values
-print(f"\n📊 SAMPLE MICRO-DYNAMICS VALUES:")
+print("\n📊 SAMPLE MICRO-DYNAMICS VALUES:")
 
 sample_count = 0
 for phrase_key, phrase_data in marmoset_phrases.items():
@@ -229,21 +229,21 @@ for phrase_key, phrase_data in marmoset_phrases.items():
 print("\n" + "=" * 80)
 print("✅ DATABASE UPDATE COMPLETE!")
 print("=" * 80)
-print(f"\n📊 SUMMARY:")
+print("\n📊 SUMMARY:")
 print(f"  Total phrases: {updated_count}")
 print(f"  Phrases with micro-dynamics: {updated_count - not_found_count}")
 print(f"  Phrases without micro-dynamics: {not_found_count}")
 print(f"\n🎯 Features added: {len(MICRO_DYNAMICS_FEATURES)} new dimensions")
-print(f"  Grit Factors: HNR, Spectral Flatness")
-print(f"  Motion Factors: Attack/Decay, Sustain, Vibrato, Jitter")
-print(f"  Fingerprint Factors: MFCCs (1-4), Delta, Spectral Contrast")
-print(f"  Rhythm Factors: ICI, Onset Rate, ICI CV")
-print(f"\n🎯 Next steps:")
-print(f"  1. Backup old database:")
-print(f"     mv /home/sheel/birdsong_analysis/src/vocalization_database.json \\")
-print(f"        /home/sheel/birdsong_analysis/src/vocalization_database_before_micro_dynamics.json")
-print(f"  2. Replace with new database:")
+print("  Grit Factors: HNR, Spectral Flatness")
+print("  Motion Factors: Attack/Decay, Sustain, Vibrato, Jitter")
+print("  Fingerprint Factors: MFCCs (1-4), Delta, Spectral Contrast")
+print("  Rhythm Factors: ICI, Onset Rate, ICI CV")
+print("\n🎯 Next steps:")
+print("  1. Backup old database:")
+print("     mv /home/sheel/birdsong_analysis/src/vocalization_database.json \\")
+print("        /home/sheel/birdsong_analysis/src/vocalization_database_before_micro_dynamics.json")
+print("  2. Replace with new database:")
 print(f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json")
-print(f"  3. Test atomic phrase discovery:")
-print(f"     python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py --demo")
+print("  3. Test atomic phrase discovery:")
+print("     python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py --demo")
 print("=" * 80)

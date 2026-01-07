@@ -4,14 +4,15 @@ Deep analysis of a single Egyptian fruit bat file
 to understand signal structure
 """
 
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -44,7 +45,7 @@ def main():
     if len(audio.shape) > 1:
         audio = np.mean(audio, axis=1)
 
-    print(f"\n📊 Basic Info:")
+    print("\n📊 Basic Info:")
     print(f"  Sample rate: {sr} Hz")
     print(f"  Duration: {len(audio)/sr*1000:.0f} ms")
     print(f"  RMS: {np.sqrt(np.mean(audio**2)):.6f}")
@@ -54,7 +55,7 @@ def main():
     sample_length = int(0.5 * sr)  # First 500 ms
     audio_sample = audio[:sample_length]
 
-    print(f"\n🔍 First 500ms analysis:")
+    print("\n🔍 First 500ms analysis:")
 
     # Find peaks (clicks)
     envelope = np.abs(audio_sample)
@@ -68,7 +69,7 @@ def main():
 
     # Analyze each peak/click
     if len(peaks) > 0:
-        print(f"\n  First 10 clicks:")
+        print("\n  First 10 clicks:")
         for i, peak in enumerate(peaks[:10]):
             # Extract window around peak
             win_size = int(0.005 * sr)  # 5ms window
@@ -95,7 +96,7 @@ def main():
             print(f"    Click {i+1}: {len(click)/sr*1000:.1f}ms, DomFreq: {abs(dom_freq)/1000:.1f}kHz, ZCR: {zcr:.3f}")
 
     # Try segmentation with aggressive parameters
-    print(f"\n🔍 Phrase segmentation (gap=2ms, dur=1ms):")
+    print("\n🔍 Phrase segmentation (gap=2ms, dur=1ms):")
     analyzer = UniversalRosettaStone(sample_rate=sr)
 
     try:
@@ -107,7 +108,7 @@ def main():
         print(f"  Detected {len(phrases)} phrases")
 
         if len(phrases) > 0:
-            print(f"\n  First 10 phrase modalities:")
+            print("\n  First 10 phrase modalities:")
             for i, phrase in enumerate(phrases[:10]):
                 modality = analyzer.detect_modality(phrase.data)
                 probs = analyzer.get_modality_probabilities(phrase.data)
@@ -115,12 +116,12 @@ def main():
     except Exception as e:
         print(f"  Error: {e}")
 
-    print(f"\n💡 Interpretation:")
-    print(f"  - Many short peaks detected: These are echolocation CLICKS")
-    print(f"  - Clicks are classified as TRANSIENT (correct!)")
-    print(f"  - No sustained FM sweeps in this recording")
-    print(f"  - Egyptian fruit bats use both clicks and FM sweeps")
-    print(f"  - This dataset appears to be primarily click-based echolocation")
+    print("\n💡 Interpretation:")
+    print("  - Many short peaks detected: These are echolocation CLICKS")
+    print("  - Clicks are classified as TRANSIENT (correct!)")
+    print("  - No sustained FM sweeps in this recording")
+    print("  - Egyptian fruit bats use both clicks and FM sweeps")
+    print("  - This dataset appears to be primarily click-based echolocation")
 
 
 if __name__ == "__main__":

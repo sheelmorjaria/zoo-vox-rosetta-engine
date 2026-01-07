@@ -9,15 +9,16 @@ Deep investigation of dolphin whistle detection to understand:
 4. Whistle characteristics and modality classification
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -83,7 +84,7 @@ def analyze_single_whistle(filepath, params):
         ("Ultrasonic (>40 kHz)", 40000, sr//2)
     ]
 
-    print(f"\n📊 Energy Distribution:")
+    print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
         band_energy = np.sum(pos_magnitude[mask]**2)
@@ -94,7 +95,7 @@ def analyze_single_whistle(filepath, params):
             print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     # Test multiple parameter combinations
-    print(f"\n🔍 Testing phrase segmentation:")
+    print("\n🔍 Testing phrase segmentation:")
 
     analyzer = UniversalRosettaStone(sample_rate=sr)
 
@@ -121,9 +122,9 @@ def analyze_single_whistle(filepath, params):
     max_phrases = best_params[1]
 
     if max_phrases == 0:
-        print(f"\n⚠️  No phrases detected")
+        print("\n⚠️  No phrases detected")
         # Try treating the whole file as one phrase
-        print(f"\n🔍 Analyzing entire file as single phrase:")
+        print("\n🔍 Analyzing entire file as single phrase:")
         try:
             modality = analyzer.detect_modality(audio)
             probabilities = analyzer.get_modality_probabilities(audio)
@@ -172,7 +173,7 @@ def analyze_single_whistle(filepath, params):
         })
 
     # Print modality distribution
-    print(f"\n  Modality Distribution:")
+    print("\n  Modality Distribution:")
     for modality, count in sorted(modality_counts.items()):
         percentage = count / len(phrases) * 100
         bar = '█' * int(percentage / 10)
@@ -182,7 +183,7 @@ def analyze_single_whistle(filepath, params):
         print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}{expected}")
 
     # Print detailed analysis for first 10 phrases
-    print(f"\n  Detailed Analysis (first 10 phrases):")
+    print("\n  Detailed Analysis (first 10 phrases):")
     for d in details[:10]:
         print(f"\n    Phrase {d['index']+1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
         print(f"      Probabilities: {d['probabilities']}")
@@ -256,7 +257,7 @@ def main():
                 all_modality_counts[modality] = all_modality_counts.get(modality, 0) + 1
 
         print(f"\nTotal phrases across segmented files: {total_phrases}")
-        print(f"\nAggregated Modality Distribution (by phrase count):")
+        print("\nAggregated Modality Distribution (by phrase count):")
         for modality, count in sorted(all_modality_counts.items()):
             percentage = count / total_phrases * 100
             bar = '█' * int(percentage / 10)
@@ -275,13 +276,13 @@ def main():
             m = result['full_file_modality']
             modality_counts[m] = modality_counts.get(m, 0) + 1
 
-        print(f"\n  Full-file Modality Distribution:")
+        print("\n  Full-file Modality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(full_file_analyses) * 100
             bar = '█' * int(percentage / 10)
             print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}")
 
-    print(f"\n💡 Key Findings:")
+    print("\n💡 Key Findings:")
     total_analyzed = len(all_results) + len(full_file_analyses)
     print(f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({total_analyzed/len(test_files)*100:.1f}%)")
 
@@ -293,13 +294,13 @@ def main():
         if harmonic_count > 0:
             print(f"  - HARMONIC detected in {harmonic_count}/{total_analyzed} files ✓")
 
-    print(f"\n🔬 Interpretation:")
+    print("\n🔬 Interpretation:")
     if len(all_results) > 0:
-        print(f"  - Dolphin whistles successfully segmented and classified")
-        print(f"  - Whistles are primarily HARMONIC with possible FM components")
+        print("  - Dolphin whistles successfully segmented and classified")
+        print("  - Whistles are primarily HARMONIC with possible FM components")
     elif len(full_file_analyses) > 0:
-        print(f"  - Whistles detected but not segmented (single continuous signal)")
-        print(f"  - Analyzed as complete file rather than phrases")
+        print("  - Whistles detected but not segmented (single continuous signal)")
+        print("  - Analyzed as complete file rather than phrases")
 
     print(f"\n{'='*70}")
     print("✅ Investigation complete!")

@@ -1,13 +1,11 @@
-/**
- * Peer-to-Peer Performance Benchmarking Module
- * ===============================================
- *
- * This module provides comprehensive performance testing for the peer-to-peer
- * architecture including throughput, latency, and resource usage metrics.
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! Peer-to-Peer Performance Benchmarking Module
+//! ===============================================
+//!
+//! This module provides comprehensive performance testing for the peer-to-peer
+//! architecture including throughput, latency, and resource usage metrics.
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::time::{Duration, Instant};
 use std::thread;
@@ -34,6 +32,12 @@ pub struct PerformanceMetrics {
     pub throughput_ops_per_sec: f64,
     /// Memory allocated (in bytes, approximate)
     pub memory_allocated_bytes: u64,
+}
+
+impl Default for PerformanceMetrics {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PerformanceMetrics {
@@ -297,7 +301,7 @@ pub fn benchmark_concurrent_processing(
 
     let start = Instant::now();
 
-    for sender_id in 0..num_senders {
+    for _sender_id in 0..num_senders {
         let controller_clone = controller.clone();
         let count_clone = heartbeat_count.clone();
 

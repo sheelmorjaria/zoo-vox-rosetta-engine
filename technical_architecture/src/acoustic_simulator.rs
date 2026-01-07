@@ -12,9 +12,8 @@ Features:
 - Deterministic test fixtures for reproducible tests
 */
 
-use anyhow::{Result, Context};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use rand::Rng;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
@@ -345,7 +344,7 @@ impl AcousticSimulator {
             // Pink filter
             b[0] = 0.99886 * b[0] + 0.0555179 * white;
             b[1] = 0.99332 * b[1] + 0.0750759 * white;
-            b[2] = 0.96900 * b[2] + 0.1538520 * white;
+            b[2] = 0.96900 * b[2] + 0.153_852 * white;
             b[3] = 0.86650 * b[3] + 0.3104856 * white;
             b[4] = 0.55000 * b[4] + 0.5329522 * white;
             b[5] = -0.7616 * b[5] - 0.0168980 * white;
@@ -380,8 +379,8 @@ impl AcousticSimulator {
         let mut white = vec![0f32; samples];
         let mut rng = StdRng::seed_from_u64(self.rng_seed);
 
-        for i in 0..samples {
-            white[i] = rng.gen::<f32>() * 2.0 - 1.0;
+        for sample in white.iter_mut() {
+            *sample = rng.gen::<f32>() * 2.0 - 1.0;
         }
 
         // High-pass filter to emphasize high frequencies
@@ -397,7 +396,7 @@ impl AcousticSimulator {
     }
 
     /// Apply amplitude envelope to noise
-    fn apply_amplitude_envelope(&self, noise: &mut [f32], temporal: &TemporalCharacteristics, duration_samples: usize) {
+    fn apply_amplitude_envelope(&self, noise: &mut [f32], temporal: &TemporalCharacteristics, _duration_samples: usize) {
         let attack_samples = (temporal.attack_ms * self.sample_rate as f32 / 1000.0) as usize;
         let sustain_samples = (temporal.sustain_ms * self.sample_rate as f32 / 1000.0) as usize;
         let decay_samples = (temporal.decay_ms * self.sample_rate as f32 / 1000.0) as usize;
@@ -551,7 +550,7 @@ impl AcousticSimulator {
         environment: &AcousticEnvironment,
         snr_db: f32,
     ) -> Result<NoiseMixture> {
-        let simulated = self.simulate_environment(target, environment)?;
+        let _simulated = self.simulate_environment(target, environment)?;
 
         // Generate additional noise layers
         let mut noise_layers = Vec::new();
@@ -664,7 +663,7 @@ mod tests {
 
         assert_eq!(noise.len(), 1000);
         // Check that noise is in valid range [-1, 1]
-        assert!(noise.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(noise.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -674,7 +673,7 @@ mod tests {
         let noise = sim.generate_noise(&profile, 1000);
 
         assert_eq!(noise.len(), 1000);
-        assert!(noise.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(noise.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -684,7 +683,7 @@ mod tests {
         let noise = sim.generate_noise(&profile, 1000);
 
         assert_eq!(noise.len(), 1000);
-        assert!(noise.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(noise.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -694,7 +693,7 @@ mod tests {
         let noise = sim.generate_noise(&profile, 1000);
 
         assert_eq!(noise.len(), 1000);
-        assert!(noise.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(noise.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -703,7 +702,7 @@ mod tests {
         let noise = sim.generate_rain_noise(10.0, 1000);
 
         assert_eq!(noise.len(), 1000);
-        assert!(noise.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(noise.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -725,7 +724,7 @@ mod tests {
         let thunder = sim.generate_thunder(1000);
 
         assert_eq!(thunder.len(), 1000);
-        assert!(thunder.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(thunder.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -734,7 +733,7 @@ mod tests {
         let wind = sim.generate_wind_noise(5.0, 1000);
 
         assert_eq!(wind.len(), 1000);
-        assert!(wind.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(wind.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -755,7 +754,7 @@ mod tests {
         let insects = sim.generate_insect_chorus(0.5, 1000);
 
         assert_eq!(insects.len(), 1000);
-        assert!(insects.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(insects.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -764,7 +763,7 @@ mod tests {
         let birds = sim.generate_bird_chorus(0.5, 1000);
 
         assert_eq!(birds.len(), 1000);
-        assert!(birds.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(birds.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -792,7 +791,7 @@ mod tests {
         // Target signal should be more prominent
         let target_power: f32 = target.iter().map(|x| x * x).sum::<f32>();
         let mixture_power: f32 = mixture.iter().map(|x| x * x).sum::<f32>();
-        let noise_power: f32 = noise.iter().map(|x| x * x).sum::<f32>();
+        let _noise_power: f32 = noise.iter().map(|x| x * x).sum::<f32>();
 
         assert!(mixture_power > target_power * 0.8); // Close to target power
     }
@@ -808,7 +807,7 @@ mod tests {
 
         let target_power: f32 = target.iter().map(|x| x * x).sum::<f32>();
         let mixture_power: f32 = mixture.iter().map(|x| x * x).sum::<f32>();
-        let noise_power: f32 = noise.iter().map(|x| x * x).sum::<f32>();
+        let _noise_power: f32 = noise.iter().map(|x| x * x).sum::<f32>();
 
         // Should be closer to noise power
         assert!(mixture_power > target_power * 1.5);
@@ -833,7 +832,7 @@ mod tests {
         let mixture = sim.mix_with_snr(&target, &noise, 0.0).unwrap();
 
         // Should not clip beyond [-1, 1]
-        assert!(mixture.iter().all(|&x| x >= -1.0 && x <= 1.0));
+        assert!(mixture.iter().all(|&x| (-1.0..=1.0).contains(&x)));
     }
 
     #[test]

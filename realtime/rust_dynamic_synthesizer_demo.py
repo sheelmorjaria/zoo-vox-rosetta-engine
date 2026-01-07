@@ -17,11 +17,11 @@ Requirements:
     - PyO3 installed in Python environment
 """
 
-import sys
 import json
-import numpy as np
-import soundfile as sf
+import sys
 from pathlib import Path
+
+import soundfile as sf
 
 # Import Rust synthesizer via PyO3
 try:

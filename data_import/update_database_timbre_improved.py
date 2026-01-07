@@ -11,11 +11,9 @@ This script:
 
 import json
 import pickle
-import numpy as np
 import re
-from pathlib import Path
-from datetime import datetime
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -53,10 +51,10 @@ print(f"\nLoading existing database from {db_path}...")
 with open(db_path, 'r') as f:
     db = json.load(f)
 
-print(f"✅ Loaded database")
+print("✅ Loaded database")
 
 # Extract timbre features from phrase segments
-print(f"\nExtracting timbre features...")
+print("\nExtracting timbre features...")
 
 timbre_map = {}  # phrase_key -> timbre features
 
@@ -109,7 +107,7 @@ def find_matching_phrase_key(target_key, available_keys):
     return matches[0] if matches else None
 
 # Update database with timbre features
-print(f"\nUpdating database...")
+print("\nUpdating database...")
 
 marmoset_phrases = db['species_data']['marmoset']['phrases']
 updated_count = 0
@@ -150,10 +148,10 @@ print(f"\nSaving to {output_path}...")
 with open(output_path, 'w') as f:
     json.dump(db, f, indent=2)
 
-print(f"✅ Saved!")
+print("✅ Saved!")
 
 # Sample timbre values
-print(f"\n📊 SAMPLE TIMBRE VALUES:")
+print("\n📊 SAMPLE TIMBRE VALUES:")
 
 sample_count = 0
 for phrase_key, phrase_data in marmoset_phrases.items():
@@ -171,14 +169,14 @@ for phrase_key, phrase_data in marmoset_phrases.items():
 print("\n" + "=" * 80)
 print("✅ DATABASE UPDATE COMPLETE!")
 print("=" * 80)
-print(f"\n📊 SUMMARY:")
+print("\n📊 SUMMARY:")
 print(f"  Total phrases: {updated_count}")
 print(f"  Phrases with timbre: {updated_count - not_found_count}")
 print(f"  Phrases without timbre: {not_found_count}")
-print(f"\n🎯 Next steps:")
-print(f"  1. Backup old database:")
-print(f"     mv /home/sheel/birdsong_analysis/src/vocalization_database.json \\")
-print(f"        /home/sheel/birdsong_analysis/src/vocalization_database_old.json")
-print(f"  2. Replace with new database:")
+print("\n🎯 Next steps:")
+print("  1. Backup old database:")
+print("     mv /home/sheel/birdsong_analysis/src/vocalization_database.json \\")
+print("        /home/sheel/birdsong_analysis/src/vocalization_database_old.json")
+print("  2. Replace with new database:")
 print(f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json")
 print("=" * 80)

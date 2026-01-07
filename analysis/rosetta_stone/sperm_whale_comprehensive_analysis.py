@@ -5,9 +5,10 @@ Comprehensive Sperm Whale Dataset Analysis
 Uses adaptive coda detection based on inter-click interval distribution.
 """
 
-import soundfile as sf
 from pathlib import Path
+
 import numpy as np
+import soundfile as sf
 from scipy.signal import find_peaks, hilbert
 
 
@@ -100,17 +101,17 @@ def main():
     files_with_codas = [r for r in all_results if r['num_codas'] > 0]
     files_without_codas = [r for r in all_results if r['num_codas'] == 0]
 
-    print(f"\n📁 File Coverage:")
+    print("\n📁 File Coverage:")
     print(f"  Total files analyzed: {len(all_results)}")
     print(f"  Files with codas: {len(files_with_codas)} ({len(files_with_codas)/len(all_results)*100:.1f}%)")
     print(f"  Files without codas: {len(files_without_codas)} ({len(files_without_codas)/len(all_results)*100:.1f}%)")
 
-    print(f"\n📊 Click Statistics:")
+    print("\n📊 Click Statistics:")
     print(f"  Total clicks: {total_clicks:,}")
     print(f"  Total duration: {total_duration:.0f}s ({total_duration/60:.1f} minutes)")
     print(f"  Average click rate: {total_clicks/total_duration:.1f} clicks/second")
 
-    print(f"\n📊 Coda Statistics:")
+    print("\n📊 Coda Statistics:")
     print(f"  Total codas detected: {total_codas}")
     print(f"  Codas per file: {total_codas/len(all_results):.1f} ± {np.std([r['num_codas'] for r in all_results]):.1f}")
 
@@ -132,7 +133,7 @@ def main():
         medium_codas = sum(1 for s in all_coda_sizes if 10 <= s < 50)
         long_codas = sum(1 for s in all_coda_sizes if s >= 50)
 
-        print(f"\n  Coda Length Distribution:")
+        print("\n  Coda Length Distribution:")
         print(f"    SHORT (<10 clicks): {short_codas} ({short_codas/len(all_coda_sizes)*100:.1f}%)")
         print(f"    MEDIUM (10-49): {medium_codas} ({medium_codas/len(all_coda_sizes)*100:.1f}%)")
         print(f"    LONG (50+): {long_codas} ({long_codas/len(all_coda_sizes)*100:.1f}%)")

@@ -716,7 +716,7 @@ mod tests {
         let json = serde_json::to_string(&capabilities).unwrap();
         let deserialized: NodeCapabilities = serde_json::from_str(&json).unwrap();
 
-        assert_eq!(deserialized.can_be_grandmaster, true);
+        assert!(deserialized.can_be_grandmaster);
         assert_eq!(deserialized.max_sample_rate, 48000);
     }
 

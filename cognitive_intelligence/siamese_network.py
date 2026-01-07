@@ -16,16 +16,17 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
+import logging
+import time
+from collections import deque
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass
-import time
-import threading
-from collections import deque
-import logging
+
 
 @dataclass
 class SiameseConfig:

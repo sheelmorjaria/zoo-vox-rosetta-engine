@@ -20,39 +20,23 @@ Date: November 2025
 
 __version__ = "1.0.0"
 
+import logging
+import pickle
+import threading
+import time
+import uuid
+import warnings
+from collections import defaultdict, deque
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
+
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.distributions import Categorical
-import librosa
-import soundfile as sf
-import time
-import threading
-import queue
-import logging
-import json
-import csv
-import warnings
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union, Callable
-from pathlib import Path
-from collections import deque, defaultdict
-import pickle
-import uuid
-from datetime import datetime, timezone, timedelta
-from scipy import stats
-from scipy.signal import find_peaks, correlate
-from scipy.spatial.distance import euclidean, cosine
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.ensemble import RandomForestClassifier, IsolationForest
-from sklearn.cluster import DBSCAN
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.model_selection import cross_val_score
-import networkx as nx
-from enum import Enum
+from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 
@@ -987,7 +971,7 @@ class AdaptiveContextSwitcher:
             self._execute_context_switch(new_context, 1.0, reason)
             logger.info(f"Forced context switch to {new_context.value}: {reason}")
         else:
-            logger.warning(f"Cannot force context switch - cooldown active")
+            logger.warning("Cannot force context switch - cooldown active")
 
     def get_current_context(self) -> ContextState:
         """Get current context state"""
@@ -1087,7 +1071,7 @@ def main():
 
     # Initialize adaptive context switcher
     switcher = AdaptiveContextSwitcher(config)
-    print(f"✓ Adaptive context switcher initialized")
+    print("✓ Adaptive context switcher initialized")
     print(f"  Algorithm: {config.switching_algorithm}")
     print(f"  Processing frequency: {config.processing_frequency} Hz")
 
@@ -1131,7 +1115,7 @@ def main():
 
         # Context effectiveness breakdown
         if stats["context_effectiveness"]:
-            print(f"\n📈 Context Effectiveness Breakdown:")
+            print("\n📈 Context Effectiveness Breakdown:")
             for context, effectiveness_stats in stats["context_effectiveness"].items():
                 print(f"  {context}:")
                 print(f"    Mean effectiveness: {effectiveness_stats['mean']:.3f}")
@@ -1140,14 +1124,14 @@ def main():
 
         # Transition analysis
         if stats["transition_analysis"]["most_common_transitions"]:
-            print(f"\n🔀 Most Common Transitions:")
+            print("\n🔀 Most Common Transitions:")
             for transition in stats["transition_analysis"]["most_common_transitions"][:5]:
                 print(f"  {transition['from']} → {transition['to']}: "
                       f"{transition['count']} times (p={transition['probability']:.3f})")
 
         # Context stability
         if stats["transition_analysis"]["context_stability"]:
-            print(f"\n⚖️  Context Stability:")
+            print("\n⚖️  Context Stability:")
             for context, stability in stats["transition_analysis"]["context_stability"].items():
                 print(f"  {context}: {stability:.3f} (probability of staying in same context)")
 

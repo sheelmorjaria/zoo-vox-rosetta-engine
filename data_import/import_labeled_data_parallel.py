@@ -13,17 +13,16 @@ Speed improvements:
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
-import soundfile as sf
-from pathlib import Path
-from collections import defaultdict, Counter
-from typing import Dict, List, Tuple
+from collections import Counter, defaultdict
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
-import functools
-import re
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
+import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -31,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
 SAMPLE_RATE = 22050
@@ -74,7 +73,7 @@ def load_and_extract_audio(args: Tuple[str, str]) -> Tuple[str, Dict, str]:
 
         return (audio_path, sig.features, context_name)
 
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -111,7 +110,7 @@ def import_marmoset_data(
         df = df.sample(n=max_files, random_state=42)
 
     # Prepare file paths
-    print(f"\n🔍 Preparing file list...")
+    print("\n🔍 Preparing file list...")
     file_tasks = []
 
     for _, row in df.iterrows():
@@ -149,7 +148,7 @@ def import_marmoset_data(
     print(f"\n✅ Successfully processed {len(all_results)} files")
 
     # Group into phrases
-    print(f"\n📊 Grouping into phrases...")
+    print("\n📊 Grouping into phrases...")
 
     phrase_library = defaultdict(lambda: {
         'contexts': Counter(),
@@ -214,7 +213,7 @@ def import_marmoset_data(
         }
 
     # Show statistics
-    print(f"\n📊 STATISTICS:")
+    print("\n📊 STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
     print(f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}")
 
@@ -224,7 +223,7 @@ def import_marmoset_data(
         for ctx in phrase['contexts']:
             all_contexts[ctx['context_name']] += ctx['count']
 
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
     for ctx, count in all_contexts.most_common():
         pct = (count / sum(all_contexts.values())) * 100
         print(f"   {ctx:<20} {count:>8} ({pct:>5.1f}%)")
@@ -238,7 +237,7 @@ def import_marmoset_data(
     print(f"\n💾 Saving to {output_path}...")
     with open(output_path, 'w') as f:
         json.dump(export_data, f, indent=2)
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     return species_data
 
@@ -266,7 +265,7 @@ def import_bat_data(
     print(f"\n📊 Columns: {df.columns.tolist()}")
 
     # Show context distribution
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
     context_counts = df['Context'].value_counts()
     for ctx, count in context_counts.head(10).items():
         pct = (count / len(df)) * 100
@@ -278,7 +277,7 @@ def import_bat_data(
         df = df.sample(n=max_files, random_state=42)
 
     # Prepare file paths
-    print(f"\n🔍 Preparing file list...")
+    print("\n🔍 Preparing file list...")
     file_tasks = []
 
     for _, row in df.iterrows():
@@ -307,7 +306,7 @@ def import_bat_data(
     print(f"\n✅ Successfully processed {len(all_results)} files")
 
     # Group into phrases (for FM sweep modality)
-    print(f"\n📊 Grouping into phrases...")
+    print("\n📊 Grouping into phrases...")
 
     phrase_library = defaultdict(lambda: {
         'contexts': Counter(),
@@ -364,7 +363,7 @@ def import_bat_data(
         }
 
     # Show statistics
-    print(f"\n📊 STATISTICS:")
+    print("\n📊 STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
 
     # Context distribution
@@ -373,7 +372,7 @@ def import_bat_data(
         for ctx in phrase['contexts']:
             all_contexts[ctx['context_name']] += ctx['count']
 
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
     for ctx, count in all_contexts.most_common():
         pct = (count / sum(all_contexts.values())) * 100
         print(f"   {ctx:<20} {count:>8} ({pct:>5.1f}%)")
@@ -387,7 +386,7 @@ def import_bat_data(
     print(f"\n💾 Saving to {output_path}...")
     with open(output_path, 'w') as f:
         json.dump(export_data, f, indent=2)
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     return species_data
 

@@ -8,16 +8,17 @@ capabilities of the Universal Rosetta Stone.
 Data source: ~/birdsong_analysis/data/egyptian_fruit_bat_10k/audio/
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # src/
 sys.path.insert(0, str(Path(__file__).parent))  # rosetta_stone/
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -169,18 +170,18 @@ def main():
             modality_counts[modality] = modality_counts.get(modality, 0) + 1
 
         print(f"\nTotal phrases analyzed: {len(all_results)}")
-        print(f"\nModality Distribution:")
+        print("\nModality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(all_results) * 100
             bar = '█' * int(percentage / 5)
             print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
         # Expected modality for Egyptian fruit bats
-        print(f"\n📊 Expected for Egyptian Fruit Bats:")
-        print(f"  Primary: FM_SWEEP (for echolocation/navigation)")
-        print(f"  Secondary: HARMONIC, TRANSIENT (for social communication)")
+        print("\n📊 Expected for Egyptian Fruit Bats:")
+        print("  Primary: FM_SWEEP (for echolocation/navigation)")
+        print("  Secondary: HARMONIC, TRANSIENT (for social communication)")
 
-        print(f"\n✅ Test completed successfully!")
+        print("\n✅ Test completed successfully!")
     else:
         print("\n⚠️  No results obtained. Check audio files and dependencies.")
 

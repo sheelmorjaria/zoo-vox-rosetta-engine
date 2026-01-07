@@ -28,16 +28,16 @@ Author: Animal Communication Analysis Framework
 Date: October 2025
 """
 
+import warnings
+from typing import Dict, List, Tuple
+
 import numpy as np
 import pandas as pd
-from scipy import signal
-from scipy.fft import fft, fftfreq, fft2
-from scipy.signal import hilbert, butter, sosfilt, find_peaks
-from scipy.stats import entropy
-from sklearn.neighbors import KernelDensity
+from scipy.fft import fft, fftfreq
+from scipy.signal import butter, hilbert, sosfilt
 from sklearn.linear_model import LinearRegression
-from typing import Dict, List, Tuple, Optional
-import warnings
+from sklearn.neighbors import KernelDensity
+
 warnings.filterwarnings('ignore')
 
 
@@ -594,7 +594,6 @@ class DynamicHarmonicTrajectoryAnalyzer:
         model.fit(X, y)
 
         A = model.coef_  # Transition matrix
-        b = model.intercept_
 
         # Eigenanalysis
         eigenvalues, eigenvectors = np.linalg.eig(A)

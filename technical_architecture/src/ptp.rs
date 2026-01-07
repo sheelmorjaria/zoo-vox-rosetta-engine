@@ -1,18 +1,16 @@
-/**
- * IEEE 1588 PTP (Precision Time Protocol) Module
- * ===============================================
- *
- * This module implements IEEE 1588 Precision Time Protocol for
- * nanosecond-accurate timestamping. This is critical for:
- *
- * - Provenance logging with deterministic timing
- * - Multi-sensor data synchronization
- * - Real-time audio processing coordination
- * - Temporal alignment of cross-modal data
- *
- * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
- * License: CC BY-ND 4.0 International
- */
+//! IEEE 1588 PTP (Precision Time Protocol) Module
+//! ===============================================
+//!
+//! This module implements IEEE 1588 Precision Time Protocol for
+//! nanosecond-accurate timestamping. This is critical for:
+//!
+//! - Provenance logging with deterministic timing
+//! - Multi-sensor data synchronization
+//! - Real-time audio processing coordination
+//! - Temporal alignment of cross-modal data
+//!
+//! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
+//! License: CC BY-ND 4.0 International
 
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -101,7 +99,7 @@ impl PtpTimestamp {
 
     /// Add a duration to the timestamp
     pub fn saturating_add(&self, duration: std::time::Duration) -> Self {
-        let total_nanos = self.as_nanos() + duration.as_nanos() as u128;
+        let total_nanos = self.as_nanos() + duration.as_nanos();
         Self {
             seconds: (total_nanos / 1_000_000_000) as u64,
             nanos: (total_nanos % 1_000_000_000) as u32,
@@ -143,7 +141,7 @@ impl From<chrono::DateTime<chrono::Utc>> for PtpTimestamp {
 impl From<PtpTimestamp> for chrono::DateTime<chrono::Utc> {
     fn from(ts: PtpTimestamp) -> Self {
         chrono::DateTime::from_timestamp(ts.seconds as i64, ts.nanos)
-            .unwrap_or_else(|| chrono::Utc::now())
+            .unwrap_or_else(chrono::Utc::now)
     }
 }
 
@@ -225,7 +223,7 @@ impl PtpClock {
         self.running.store(true, std::sync::atomic::Ordering::SeqCst);
 
         // Start background sync task
-        let status_lock = self.status.clone();
+        let _status_lock = self.status.clone();
         let offset_lock = self.offset_ns.clone();
         let running = self.running.clone();
         let sync_interval = 2_f64.powi(self.config.sync_interval_log2 as i32);
@@ -355,7 +353,7 @@ mod tests {
         let ts = PtpTimestamp::new(1000, 500_000_000);
 
         // To nanos
-        assert_eq!(ts.as_nanos(), 1000_500_000_000);
+        assert_eq!(ts.as_nanos(), 1_000_500_000_000);
 
         // To seconds
         assert_eq!(ts.as_seconds_f64(), 1000.5);

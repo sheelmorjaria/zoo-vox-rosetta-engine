@@ -10,13 +10,14 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import time
 import json
-import zmq
 import os
 import signal
 import sys
+import time
 from typing import Optional
+
+import zmq
 
 # Configuration
 HEARTBEAT_ENDPOINT = os.environ.get(
@@ -59,7 +60,7 @@ class HeartbeatClient:
         # Connect to the Rust heartbeat endpoint
         self.socket.connect(self.endpoint)
 
-        print(f"✓ Connected to Rust Field Engine")
+        print("✓ Connected to Rust Field Engine")
         print(f"  PID: {self.pid}")
         print(f"  Endpoint: {self.endpoint}")
 
@@ -108,7 +109,7 @@ class HeartbeatClient:
         It handles graceful shutdown on SIGINT and SIGTERM.
         """
         self.running = True
-        interval_sec = HEARTBEAT_INTERVAL_MS / 1000.0
+        HEARTBEAT_INTERVAL_MS / 1000.0
 
         # Setup signal handlers for graceful shutdown
         def signal_handler(signum, frame):

@@ -22,14 +22,13 @@ Author: Sheel Morjaria + Claude Code
 License: CC BY-ND 4.0 International
 """
 
-import json
-import numpy as np
-import soundfile as sf
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-from scipy import stats
 import random
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import numpy as np
+from scipy import stats
 
 
 class StimulusController:

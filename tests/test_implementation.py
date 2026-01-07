@@ -3,13 +3,21 @@
 Simple test script for Universal Rosetta Stone implementation
 """
 
-import sys
 import os
-sys.path.insert(0, 'src')
+import sys
+from pathlib import Path
+
+# Add src directory to path using absolute path
+# This file is in tests/, so we need to go up one level to reach src/
+test_dir = Path(__file__).parent
+src_dir = test_dir.parent
+sys.path.insert(0, str(src_dir))
 
 import numpy as np
-from analysis.rosetta_stone.universal_rosetta_stone import UniversalRosettaStone, Modality
+
+from analysis.rosetta_stone.universal_rosetta_stone import Modality, UniversalRosettaStone
 from analysis.rosetta_stone.universal_synthesizer import UniversalSynthesizer
+
 
 def test_basic_functionality():
     """Test basic functionality of the Universal Rosetta Stone."""
@@ -23,8 +31,8 @@ def test_basic_functionality():
     # Create test signals
     t = np.linspace(0, 0.1, 4800)  # 100ms at 48kHz
 
-    # Harmonic signal
-    harmonic = np.sin(2 * np.pi * 6000 * t)
+    # Harmonic signal (4kHz for clear ZCR margin - ZCR = 4kHz*2/48kHz = 0.167)
+    harmonic = np.sin(2 * np.pi * 4000 * t)
     modality_harmonic = analyzer.detect_modality(harmonic)
     print(f"   Harmonic detected as: {modality_harmonic.name}")
     # Allow either HARMONIC or FM_SWEEP for robust testing
@@ -52,7 +60,7 @@ def test_basic_functionality():
     # Create similar phrases
     similar_phrases = []
     for i in range(3):
-        freq = 6000 + i * 500  # Small frequency variations
+        freq = 4000 + i * 200  # Small frequency variations around 4kHz
         audio = np.sin(2 * np.pi * freq * t)
         similar_phrases.append(analyzer.segment_phrases(audio)[0])
 
@@ -92,8 +100,6 @@ def test_basic_functionality():
     print("  ✓ Novel sequence synthesis")
     print("  ✓ Cross-modal analysis support")
 
-    return analyzer, synthesizer
-
 def demonstrate_unknown_species_analysis():
     """Demonstrate analysis of unknown species."""
     print("\n🌐 Unknown Species Analysis Demo")
@@ -110,11 +116,11 @@ def demonstrate_unknown_species_analysis():
     # Mixed modality sequence
     phrases = []
 
-    # Harmonic phrase
-    phrases.append(np.sin(2 * np.pi * 5000 * t))
+    # Harmonic phrase (4kHz for clear ZCR margin)
+    phrases.append(np.sin(2 * np.pi * 4000 * t))
 
     # FM sweep phrase
-    fm_freq = 3000 + 3000 * t / duration
+    fm_freq = 2000 + 2000 * t / duration  # 2kHz to 4kHz sweep
     phrases.append(np.sin(2 * np.pi * np.cumsum(fm_freq) / sample_rate))
 
     # Transient phrase
@@ -136,7 +142,7 @@ def demonstrate_unknown_species_analysis():
     print("Analyzing unknown species vocalizations...")
     vocabulary, grammar = analyzer.discover_grammar(audio)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Discovered {len(vocabulary)} unique phrases")
     print(f"  Discovered {len(grammar)} syntactic rules")
 
@@ -156,7 +162,7 @@ def demonstrate_unknown_species_analysis():
 
 if __name__ == "__main__":
     try:
-        analyzer, synthesizer = test_basic_functionality()
+        test_basic_functionality()
         demonstrate_unknown_species_analysis()
         print("\n✅ Universal Rosetta Stone implementation complete!")
     except Exception as e:

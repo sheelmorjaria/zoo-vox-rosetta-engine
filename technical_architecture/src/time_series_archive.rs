@@ -5,7 +5,7 @@
 
 use crate::ptp::PtpTimestamp;
 use anyhow::Result;
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -228,8 +228,11 @@ impl Default for TimeSeriesConfig {
 pub struct TimeSeriesArchiver {
     config: TimeSeriesConfig,
     batch: Arc<Mutex<TimeSeriesBatch>>,
+    #[allow(dead_code)]
     retention_policies: Vec<RetentionPolicy>,
+    #[allow(dead_code)]
     storage_quota: StorageQuota,
+    #[allow(dead_code)]
     parquet_export_enabled: bool,
 }
 
@@ -247,6 +250,7 @@ impl TimeSeriesArchiver {
     }
 
     /// Create a new archiver with default configuration
+    #[allow(clippy::field_reassign_with_default)]
     pub fn with_default_url(url: impl Into<String>) -> Self {
         let mut config = TimeSeriesConfig::default();
         config.influxdb_url = url.into();
@@ -326,8 +330,8 @@ impl TimeSeriesArchiver {
     pub fn export_to_parquet(
         &self,
         measurement: &str,
-        start: NaiveDateTime,
-        end: NaiveDateTime,
+        _start: NaiveDateTime,
+        _end: NaiveDateTime,
         output_path: &Path,
     ) -> Result<usize> {
         // In production, this would:
@@ -425,6 +429,7 @@ impl StorageStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
 
     fn create_test_point() -> TimeSeriesPoint {
         TimeSeriesPoint::new("temperature", 25.5)

@@ -27,16 +27,15 @@ Behavioral Contexts (Call Types):
 """
 
 import json
-import pandas as pd
-import numpy as np
 import sys
-import pickle
-from pathlib import Path
-from collections import defaultdict, Counter
-from typing import Dict, List, Tuple
+from collections import Counter, defaultdict
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, Tuple
+
+import numpy as np
+import pandas as pd
 import soundfile as sf
-import re
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -44,7 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
 sys.path.insert(0, urs_path)
 
-from universal_rosetta_stone import PhraseSignature, Modality
+from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
 ANNOTATIONS_PATH = '/home/sheel/birdsong_analysis/Annotations.tsv'
@@ -311,7 +310,7 @@ def import_labeled_vocalizations(
         }
 
     # Print statistics
-    print(f"\n📊 DATABASE STATISTICS:")
+    print("\n📊 DATABASE STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
     print(f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}")
 
@@ -321,7 +320,7 @@ def import_labeled_vocalizations(
         for ctx in phrase['contexts']:
             all_contexts[ctx['context_name']] += ctx['count']
 
-    print(f"\n📊 CONTEXT DISTRIBUTION:")
+    print("\n📊 CONTEXT DISTRIBUTION:")
     for ctx, count in all_contexts.most_common():
         percentage = (count / sum(all_contexts.values())) * 100
         print(f"   {ctx:<20} {count:>8} ({percentage:>5.1f}%)")
@@ -359,18 +358,18 @@ def main():
     with open(OUTPUT_PATH, 'w') as f:
         json.dump(export_data, f, indent=2)
 
-    print(f"✅ Saved!")
+    print("✅ Saved!")
 
     print("\n" + "=" * 80)
     print("✅ IMPORT COMPLETE!")
     print("=" * 80)
 
-    print(f"\n🎯 Next steps:")
-    print(f"   1. Run persona-context association analysis:")
-    print(f"      python analysis/rosetta_stone/real_context_association.py \\")
+    print("\n🎯 Next steps:")
+    print("   1. Run persona-context association analysis:")
+    print("      python analysis/rosetta_stone/real_context_association.py \\")
     print(f"         --db {OUTPUT_PATH}")
-    print(f"   2. Discover semantic meanings of acoustic personas")
-    print(f"   3. Validate with statistical tests")
+    print("   2. Discover semantic meanings of acoustic personas")
+    print("   3. Validate with statistical tests")
 
     print("\n" + "=" * 80)
 

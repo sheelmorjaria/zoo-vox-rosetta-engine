@@ -11,16 +11,13 @@ This module provides robust error handling strategies including:
 """
 
 import logging
-import time
 import threading
-import psutil
-from enum import Enum
-from typing import Dict, List, Optional, Any, Callable, Union
-from dataclasses import dataclass, field
+import time
 from contextlib import contextmanager
-import asyncio
-import numpy as np
+from dataclasses import dataclass, field
+from enum import Enum
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -345,7 +342,7 @@ class ErrorHandler:
             if self.fallback_registry.has_fallback(component_name, operation):
                 fallback_func = self.fallback_registry.get_fallback(component_name, operation)
                 try:
-                    result = fallback_func(**context.error_details)
+                    fallback_func(**context.error_details)
                     context.fallback_attempted = True
                     logger.info(f"Successfully used fallback for {component_name}.{operation}")
                     return True
@@ -431,7 +428,7 @@ class ErrorHandler:
     @contextmanager
     def error_context(self, component_name: str, operation: str, error_type: ErrorType = None):
         """Context manager for error handling."""
-        context = self.context_manager.create_context(
+        self.context_manager.create_context(
             component_name, operation, error_type or ErrorType.VALIDATION_ERROR
         )
 

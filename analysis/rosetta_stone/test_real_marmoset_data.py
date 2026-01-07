@@ -8,16 +8,17 @@ capabilities of the Universal Rosetta Stone.
 Data source: ~/birdsong_analysis/data/Vocalizations/ (871,045 FLAC files)
 """
 
-import numpy as np
+import random
 import sys
 from pathlib import Path
-import random
+
+import numpy as np
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # src/
 sys.path.insert(0, str(Path(__file__).parent))  # rosetta_stone/
 
-from universal_rosetta_stone import UniversalRosettaStone, Modality
+from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
@@ -172,19 +173,19 @@ def main():
 
         print(f"\nFiles successfully analyzed: {successful_files}/{num_files_to_test}")
         print(f"Total phrases analyzed: {len(all_results)}")
-        print(f"\nModality Distribution:")
+        print("\nModality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(all_results) * 100
             bar = '█' * int(percentage / 5)
             print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
         # Expected modality for marmosets
-        print(f"\n📊 Expected for Marmosets:")
-        print(f"  Primary: HARMONIC (flat tones, stable pitch)")
-        print(f"  F0 Range: 5-12 kHz")
-        print(f"  Examples: Contact calls, Food calls, Social vocalizations")
+        print("\n📊 Expected for Marmosets:")
+        print("  Primary: HARMONIC (flat tones, stable pitch)")
+        print("  F0 Range: 5-12 kHz")
+        print("  Examples: Contact calls, Food calls, Social vocalizations")
 
-        print(f"\n✅ Test completed successfully!")
+        print("\n✅ Test completed successfully!")
     else:
         print("\n⚠️  No results obtained. Check audio files and dependencies.")
 

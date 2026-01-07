@@ -14,7 +14,7 @@ Features:
 - Environmental override logic
 */
 
-use anyhow::{Result, Context};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use crate::ptp::PtpTimestamp;
@@ -220,6 +220,7 @@ impl SolarForecast {
     }
 
     /// Create default forecast (when actual data unavailable)
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         Self {
             date: chrono::Utc::now().format("%Y-%m-%d").to_string(),
@@ -293,6 +294,7 @@ impl EnvironmentalMonitor {
     }
 
     /// Create for testing (mock mode)
+    #[allow(clippy::field_reassign_with_default)]
     pub fn for_testing() -> Self {
         let mut config = EnvironmentalMonitorConfig::default();
         config.mock_mode = true;
@@ -300,6 +302,7 @@ impl EnvironmentalMonitor {
     }
 
     /// Poll sensors and update conditions
+    #[allow(clippy::field_reassign_with_default)]
     pub fn poll_sensors(&mut self) -> Result<EnvironmentalConditions> {
         if self.config.mock_mode {
             // In mock mode, return default conditions with current timestamp
@@ -361,8 +364,7 @@ impl EnvironmentalMonitor {
         }
     }
 
-    /// Set conditions (for testing)
-    #[cfg(test)]
+    /// Set conditions (for testing and Python bindings)
     pub fn set_conditions(&mut self, conditions: EnvironmentalConditions) {
         self.current_conditions = conditions;
     }

@@ -21,13 +21,10 @@ Acoustic Personas:
 """
 
 import json
-import numpy as np
 import sys
-from pathlib import Path
-from typing import List, Tuple, Dict, Optional, Set
 from dataclasses import dataclass
-from scipy.spatial.distance import cdist
-import re
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
@@ -392,7 +389,7 @@ def find_similar_phrases_multi_dimensional(
     query_features = extract_micro_dynamics_features(query_data, species)
 
     print(f"\n🔍 Finding phrases similar to {query_phrase_key}...")
-    print(f"   Query features:")
+    print("   Query features:")
     for f, v in query_features.items():
         if v > 0:
             print(f"      {f}: {v:.2f}")
@@ -628,7 +625,7 @@ def main():
         print(f"\n✅ Found {len(candidates)} phrases matching '{args.persona}' persona:")
         for i, (phrase_key, features, score) in enumerate(candidates, 1):
             print(f"\n{i}. {phrase_key} (score: {score:.3f})")
-            print(f"   Features:")
+            print("   Features:")
             for f, v in features.items():
                 if v > 0:
                     print(f"      {f}: {v:.3f}")
