@@ -1822,6 +1822,7 @@ impl SourceMetadataBuilder {
     }
 
     /// Set MFCC coefficients (all 13)
+    #[allow(clippy::too_many_arguments)]
     pub fn mfcc(
         mut self,
         mfcc_1: f32,
