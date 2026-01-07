@@ -253,8 +253,15 @@ class TestVisualFusion(unittest.TestCase):
         mock_hand_landmarks = Mock()
         mock_hand_landmarks.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
 
+        # Mock multi_handedness with proper structure
+        mock_classification = Mock()
+        mock_classification.label = "Left"
+        mock_handedness = Mock()
+        mock_handedness.classification = [mock_classification]
+
         mock_results = Mock()
         mock_results.multi_hand_landmarks = [mock_hand_landmarks]
+        mock_results.multi_handedness = [mock_handedness]
 
         # Test gesture extraction
         gestures = tracker._extract_hand_gestures(mock_results)

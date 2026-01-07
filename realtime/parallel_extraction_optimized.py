@@ -49,8 +49,7 @@ import librosa
 
 @dataclass
 class PhraseCandidate:
-    """Lightweight phrase candidate"""
-    audio_segment: np.ndarray
+    """Lightweight phrase candidate - audio_segment NOT stored (memory optimization)"""
     start_sample: int
     end_sample: int
     features_29d: Dict[str, float]
@@ -220,7 +219,6 @@ def extract_phrase_candidates_fast(
             )
 
             candidate = PhraseCandidate(
-                audio_segment=segment,
                 start_sample=start,
                 end_sample=end,
                 features_29d=features,
@@ -408,11 +406,11 @@ def extract_optimized(
     audio_dir: Path,
     annotations_file: Path,
     output_dir: Path,
-    num_workers: int = 16,
+    num_workers: int = 4,
     dbscan_eps: float = 0.5,
     dbscan_min_samples: int = 5,
     max_files: Optional[int] = None,
-    batch_size: int = 1000,
+    batch_size: int = 100,
     resume: bool = True
 ) -> ExtractionResult:
     """
@@ -568,10 +566,9 @@ def extract_optimized(
     # Convert back to objects
     def candidate_dict_to_obj(c_dict):
         return PhraseCandidate(
-            audio_segment=np.array([]),
             start_sample=c_dict['start_sample'],
             end_sample=c_dict['end_sample'],
-            features_29d=c_dict['features_29d'],
+            features_29d=c_dict['feature_29d'] if 'feature_29d' in c_dict else c_dict['features_29d'],
             source_sentence_id=c_dict['source_sentence_id'],
             window_id=c_dict['window_id'],
             context=c_dict['context']
@@ -686,9 +683,9 @@ if __name__ == "__main__":
     parser.add_argument("--audio-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio")
     parser.add_argument("--annotations", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv")
     parser.add_argument("--output-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized")
-    parser.add_argument("--workers", type=int, default=16)
+    parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--max-files", type=int, default=None)
-    parser.add_argument("--batch-size", type=int, default=1000)
+    parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--eps", type=float, default=0.5)
     parser.add_argument("--min-samples", type=int, default=5)
     parser.add_argument("--no-resume", action="store_true")
