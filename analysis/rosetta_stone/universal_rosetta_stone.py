@@ -314,7 +314,7 @@ class PhraseSignature:
 
             # HNR as ratio
             harmonic_to_noise_ratio = peak_height / noise_floor if noise_floor > 0 else 0
-        except:
+        except Exception:
             harmonic_to_noise_ratio = 0
 
         # ===== CATEGORY 2: TEMPORAL DYNAMICS (MOTION FACTORS) =====
@@ -405,7 +405,7 @@ class PhraseSignature:
                 vibrato_rate_hz = 0
                 vibrato_depth = 0
                 jitter = 0
-        except:
+        except Exception:
             vibrato_rate_hz = 0
             vibrato_depth = 0
             jitter = 0
@@ -456,7 +456,7 @@ class PhraseSignature:
             mfcc_delta = np.diff(mfccs[:5], axis=0) if len(mfccs) >= 5 else np.zeros(4)
             mfcc_delta_mean = np.mean(np.abs(mfcc_delta)) if len(mfcc_delta) > 0 else 0
 
-        except:
+        except Exception:
             mfcc_1 = 0
             mfcc_2 = 0
             mfcc_3 = 0
@@ -482,7 +482,7 @@ class PhraseSignature:
                     spectral_contrast.append(contrast)
 
             spectral_contrast_mean = np.mean(spectral_contrast) if spectral_contrast else 0
-        except:
+        except Exception:
             spectral_contrast_mean = 0
 
         # ===== CATEGORY 4: RHYTHM FACTORS =====
@@ -508,7 +508,7 @@ class PhraseSignature:
                 median_ici_ms = 0
                 onset_rate_hz = 0
                 ici_cv = 0
-        except:
+        except Exception:
             median_ici_ms = 0
             onset_rate_hz = 0
             ici_cv = 0
@@ -2260,7 +2260,7 @@ class UniversalRosettaStone:
                         communities = nx.community.greedy_modularity_communities(undirected_G)
                         metrics["num_communities"] = len(communities)
                         metrics["modularity"] = nx.community.modularity(undirected_G, communities)
-                    except:
+                    except Exception:
                         metrics["num_communities"] = 0
                         metrics["modularity"] = 0
 

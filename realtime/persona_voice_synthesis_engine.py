@@ -37,7 +37,7 @@ from .persona_router import PersonaRouter, RoutingDecision
 
 # Try to import Rust granular synthesizer
 try:
-    from technical_architecture.synthesis import (
+    from technical_architecture.synthesis import (  # noqa: F401
         GranularConcatenativeSynthesizer as RustGranularSynthesizer,
     )
 

@@ -539,7 +539,7 @@ def cluster_phrases_dbscan(
         # Compute representative features (median)
         member_features = X_normalized[member_indices]
         representative_features_normalized = np.median(member_features, axis=0)
-        representative_features = representative_features_normalized * X_std + X_mean
+        _ = representative_features_normalized * X_std + X_mean  # Unscaled representative features
 
         features_dict = {
             name: representative_features_normalized[i] for i, name in enumerate(feature_names)

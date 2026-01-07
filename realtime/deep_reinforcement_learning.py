@@ -14,13 +14,6 @@ import numpy as np
 
 
 # Enums
-class ExplorationStrategy(Enum):
-    EPSILON_GREEDY = "epsilon_greedy"
-    BOLTZMANN = "boltzmann"
-    UCB = "ucb"
-    NOISY = "noisy"
-
-
 class Algorithm(Enum):
     DQN = "dqn"
     PPO = "ppo"

@@ -90,7 +90,7 @@ def analyze_marmoset_optimized(audio_file_path):
         try:
             phrases = analyzer.segment_phrases(audio, min_gap_ms=50, min_phrase_duration_ms=3)
             print(f"Found {len(phrases)} phrases")
-        except:
+        except Exception:
             return None
 
     if len(phrases) == 0:

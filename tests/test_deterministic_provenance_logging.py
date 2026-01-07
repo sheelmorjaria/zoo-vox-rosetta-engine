@@ -26,7 +26,7 @@ import unittest
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 # Import the provenance logging module
 sys.path.append("src")

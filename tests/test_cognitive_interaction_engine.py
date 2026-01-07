@@ -309,7 +309,7 @@ class TestNearestNeighborLookup(unittest.TestCase):
             species="marmoset",
         )
 
-        phrase_b = AudioPhrase(
+        _ = AudioPhrase(  # Unused: test placeholder phrase
             key="aggressive",
             features=Vector17D(
                 mean_f0_hz=9000.0,
@@ -450,7 +450,7 @@ class TestDeltaClamping(unittest.TestCase):
 
         # Act
         with self.assertLogs(engine.logger, level="WARNING") as log:
-            result = engine.generate_response(intent="aggression", intensity=0.8)
+            _ = engine.generate_response(intent="aggression", intensity=0.8)
 
         # Assert
         # Should log warning about clamping
@@ -545,7 +545,7 @@ class TestDeltaConversion(unittest.TestCase):
         )
 
         # Act
-        result = engine.generate_response(intent="aggression", intensity=0.5)
+        _ = engine.generate_response(intent="aggression", intensity=0.5)
 
         # Assert
         self.assertTrue(mock_synthesizer.set_warp_delta.called)

@@ -36,14 +36,14 @@ try:
 
     # Import MediaPipe tasks (newer version)
     try:
-        from mediapipe import tasks
-        from mediapipe.tasks import python
-        from mediapipe.tasks.python import holistics, vision
+        from mediapipe import tasks  # noqa: F401
+        from mediapipe.tasks import python  # noqa: F401
+        from mediapipe.tasks.python import holistics, vision  # noqa: F401
 
         MEDIAPIPE_VERSION_NEW = True
     except ImportError:
         # Fallback to older solutions
-        from mediapipe import solutions
+        from mediapipe import solutions  # noqa: F401
 
         mp_drawing = mp.solutions.drawing_utils
         mp_drawing_styles = mp.solutions.drawing_styles
@@ -188,13 +188,13 @@ if MEDIAPIPE_AVAILABLE:
             mp_face_mesh = mp.solutions.face_mesh
             mp_pose = mp.solutions.pose
             mp_holistic = mp.solutions.holistic
-        except:
+        except Exception:
             # Fall back to mocks
-            mp_drawing = MockMediaPipeDrawingUtils()
-            mp_drawing_styles = MockMediaPipeDrawingStyles()
-            mp_hands = MockMediaPipeHands()
-            mp_face_mesh = MockMediaPipeFaceMesh()
-            mp_pose = MockMediaPipePose()
+            mp_drawing = Mock()
+            mp_drawing_styles = Mock()
+            mp_hands = Mock()
+            mp_face_mesh = Mock()
+            mp_pose = Mock()
             mp_holistic = Mock()
 else:
     # Mock the components when MediaPipe is not available

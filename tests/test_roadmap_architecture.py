@@ -366,7 +366,7 @@ def cleanup_shared_memory(name):
             shm_name = f"/{name}"
             if os.path.exists(shm_name):
                 os.unlink(shm_name)
-    except:
+    except Exception:
         pass
 
 

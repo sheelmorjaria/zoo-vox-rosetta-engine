@@ -17,17 +17,18 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
-import numpy as np
-import pandas as pd
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
 import json
+
+# Multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 # Audio processing
 import librosa
+import numpy as np
+import pandas as pd
 
 # Change point detection
 import ruptures as rpt
@@ -35,10 +36,7 @@ import ruptures as rpt
 # Clustering
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-
-# Multiprocessing
-import multiprocessing as mp
-
+from tqdm import tqdm
 
 # =============================================================================
 # Data Models
@@ -339,7 +337,7 @@ def segment_sentences_pelt(
 
         return change_points
 
-    except Exception as e:
+    except Exception:
         # Fallback: return single sentence
         return [0, n_samples]
 
@@ -758,7 +756,7 @@ def extract_phrases_sentences_grammar_parallel(
     # Filter to only those with context (user requirement)
     # All have context 0-12, so no filtering needed
     print(f"  Loaded {len(annotations)} vocalizations")
-    print(f"  All have context labels")
+    print("  All have context labels")
 
     # Limit files if specified
     if max_files:
@@ -945,7 +943,7 @@ def extract_phrases_sentences_grammar_parallel(
     print("=" * 80)
     print(f"Processing time: {elapsed:.1f} seconds ({elapsed / 60:.1f} minutes)")
     print(f"Throughput: {len(all_results) / elapsed:.1f} vocalizations/second")
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Sentences: {len(sentences)}")
     print(f"  Phrase candidates: {len(all_candidates)}")
     print(f"  Atomic phrases: {len(atomic_phrases)}")

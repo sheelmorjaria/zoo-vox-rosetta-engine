@@ -23,7 +23,7 @@ try:
     import asteroid
     from asteroid import ConvTasNet
     from asteroid.losses import PITLossWrapper
-    from asteroid.metrics import MetricsTracker
+    from asteroid.metrics import MetricsTracker  # noqa: F401
 
     print(f"Asteroid version: {asteroid.__version__}")
     ASTEROID_AVAILABLE = True

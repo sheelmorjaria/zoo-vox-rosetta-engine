@@ -199,6 +199,7 @@ def extract_13_mfcc(audio: np.ndarray, sr: int, n_mfcc: int = 13) -> np.ndarray:
         This is suitable for phrase-level feature representation.
     """
     import warnings
+
     import librosa
 
     # Validate input
@@ -223,7 +224,7 @@ def extract_13_mfcc(audio: np.ndarray, sr: int, n_mfcc: int = 13) -> np.ndarray:
 
             return mfcc_time_averaged.astype(np.float32)
 
-    except Exception as e:
+    except Exception:
         # Fallback: return zeros on error
         return np.zeros(n_mfcc, dtype=np.float32)
 
@@ -266,14 +267,14 @@ def extract_micro_dynamics_from_file(file_path: str, phrase_key: str) -> Dict:
             if len(parts) > 1:
                 try:
                     f0_mean = float(parts[1])
-                except:
+                except Exception:
                     pass
         elif phrase_key.startswith("FM_"):
             parts = phrase_key.split("_")
             if len(parts) > 1:
                 try:
                     f0_mean = float(parts[1]) * 1000  # Convert kHz to Hz
-                except:
+                except Exception:
                     pass
 
         return {

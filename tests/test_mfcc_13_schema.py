@@ -14,12 +14,9 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
 import json
-import numpy as np
+import unittest
 from dataclasses import asdict
-from typing import Dict, Any
-
 
 # =============================================================================
 # Test 2.1: PhraseSignature MFCC Expansion
@@ -107,7 +104,7 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
             f"PhraseSignature should have 45 fields (29 core + 16 legacy), got {field_count}",
         )
 
-        print(f"✓ PhraseSignature MFCC expansion test passed")
+        print("✓ PhraseSignature MFCC expansion test passed")
         print(f"  Total fields: {field_count} (29D vector)")
         mfcc_1_4 = (
             f"  MFCCs 1-4: {signature.mfcc_1}, {signature.mfcc_2}, "
@@ -173,9 +170,9 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
         self.assertEqual(signature.mfcc_12, 0.0)  # NEW (default)
         self.assertEqual(signature.mfcc_13, 0.0)  # NEW (default)
 
-        print(f"✓ Backward compatibility test passed")
-        print(f"  Old code (4 MFCCs) works correctly")
-        print(f"  New MFCCs (5-13) default to 0.0")
+        print("✓ Backward compatibility test passed")
+        print("  Old code (4 MFCCs) works correctly")
+        print("  New MFCCs (5-13) default to 0.0")
 
 
 # =============================================================================
@@ -259,7 +256,7 @@ class TestJSONSerialization13D(unittest.TestCase):
         self.assertAlmostEqual(restored.mfcc_12, original.mfcc_12, places=5)  # NEW
         self.assertAlmostEqual(restored.mfcc_13, original.mfcc_13, places=5)  # NEW
 
-        print(f"✓ JSON serialization 13D test passed")
+        print("✓ JSON serialization 13D test passed")
         print(
             f"  Original MFCCs 5-9: {original.mfcc_5:.2f}, {original.mfcc_6:.2f}, "
             f"{original.mfcc_7:.2f}, {original.mfcc_8:.2f}, {original.mfcc_9:.2f}"
@@ -268,7 +265,7 @@ class TestJSONSerialization13D(unittest.TestCase):
             f"  Original MFCCs 10-13: {original.mfcc_10:.2f}, {original.mfcc_11:.2f}, "
             f"{original.mfcc_12:.2f}, {original.mfcc_13:.2f}"
         )
-        print(f"  Restored MFCCs match: All within 1e-5")
+        print("  Restored MFCCs match: All within 1e-5")
 
     def test_json_backward_compatibility_4mfcc(self):
         """
@@ -326,9 +323,9 @@ class TestJSONSerialization13D(unittest.TestCase):
         self.assertEqual(restored.mfcc_5, 0.0)  # Defaulted
         self.assertEqual(restored.mfcc_13, 0.0)  # Defaulted
 
-        print(f"✓ Backward compatibility test passed")
-        print(f"  Old JSON (4 MFCCs) deserializes correctly")
-        print(f"  New MFCCs (5-13) default to 0.0")
+        print("✓ Backward compatibility test passed")
+        print("  Old JSON (4 MFCCs) deserializes correctly")
+        print("  New MFCCs (5-13) default to 0.0")
 
 
 # =============================================================================

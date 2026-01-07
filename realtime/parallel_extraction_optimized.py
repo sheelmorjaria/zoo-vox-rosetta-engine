@@ -18,37 +18,34 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
-import numpy as np
-import pandas as pd
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
 import json
 import pickle
-import time
-from datetime import datetime
-import soundfile as sf  # Faster than librosa
 
 # Import optimized feature extraction
 import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+import soundfile as sf  # Faster than librosa
+from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Import librosa only for feature extraction
+import librosa
 from parallel_unified_extraction import (
-    Sentence,
-    AtomicPhrase,
-    GrammarRule,
     ExtractionResult,
+    Sentence,
     cluster_phrases_dbscan,
     detect_compositionality,
     extract_grammar_rules,
 )
-
-# Import librosa only for feature extraction
-import librosa
-
 
 # =============================================================================
 # Data Models
@@ -497,11 +494,11 @@ def extract_optimized(
     print("=" * 80)
     print("OPTIMIZED PARALLEL EXTRACTION PIPELINE")
     print("=" * 80)
-    print(f"Optimizations:")
-    print(f"  - Skip PELT (each file is already a sentence)")
-    print(f"  - Pre-compute MFCCs once, then segment")
-    print(f"  - 3 window sizes (vs 7)")
-    print(f"  - soundfile loading (vs librosa)")
+    print("Optimizations:")
+    print("  - Skip PELT (each file is already a sentence)")
+    print("  - Pre-compute MFCCs once, then segment")
+    print("  - 3 window sizes (vs 7)")
+    print("  - soundfile loading (vs librosa)")
     print(f"Audio directory: {audio_dir}")
     print(f"Workers: {num_workers}")
     print(f"Batch size: {batch_size}")
@@ -748,7 +745,7 @@ def extract_optimized(
     print("=" * 80)
     print(f"Processing time: {elapsed:.1f}s ({elapsed / 60:.1f}min)")
     print(f"Throughput: {len(all_sentences) / elapsed:.1f} files/sec")
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Sentences: {len(all_sentences)}")
     print(f"  Candidates: {len(all_candidates):,}")
     print(f"  Atomic phrases: {len(atomic_phrases)}")

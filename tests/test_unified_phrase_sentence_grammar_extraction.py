@@ -586,7 +586,7 @@ class TestCompositionalityTesting(unittest.TestCase):
         """
         # Arrange - 3 sentences with shared phrase
         sentences = []
-        shared_phrase_features = {"mean_f0_hz": 7000.0, "duration_ms": 100.0}
+        _ = {"mean_f0_hz": 7000.0, "duration_ms": 100.0}  # Shared phrase features placeholder
 
         for i in range(3):
             # Sentence has the shared phrase

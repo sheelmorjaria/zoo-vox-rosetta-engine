@@ -14,50 +14,39 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
-import numpy as np
-import pandas as pd
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
 import json
 import pickle
-import time
-from datetime import datetime
-import hashlib
-
-# Audio processing
-import librosa
-
-# Change point detection
-import ruptures as rpt
-
-# Clustering
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
 
 # Import feature extraction and other functions from the base module
 import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+# Audio processing
+import librosa
+import numpy as np
+import pandas as pd
+
+# Change point detection
+# Clustering
+from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from parallel_unified_extraction import (
-    Sentence,
-    PhraseCandidate,
-    AtomicPhrase,
-    GrammarRule,
     ExtractionResult,
-    extract_29d_features,
-    segment_sentences_pelt,
-    extract_phrase_candidates,
+    PhraseCandidate,
+    Sentence,
     cluster_phrases_dbscan,
     detect_compositionality,
     extract_grammar_rules,
-    _calculate_intra_cluster_similarity,
-    _calculate_inter_cluster_similarity,
+    extract_phrase_candidates,
+    segment_sentences_pelt,
 )
-
 
 # =============================================================================
 # Checkpoint Manager
@@ -310,7 +299,6 @@ def extract_with_checkpointing(
     Returns:
         ExtractionResult with all extracted data
     """
-    import time
 
     start_time = time.time()
 
@@ -590,7 +578,7 @@ def extract_with_checkpointing(
     metadata_file = output_dir / "metadata_final.json"
     with open(metadata_file, "w") as f:
         json.dump(metadata, f, indent=2)
-    print(f"  Saved metadata")
+    print("  Saved metadata")
 
     # ========================================================================
     # Final Summary
@@ -600,7 +588,7 @@ def extract_with_checkpointing(
     print("=" * 80)
     print(f"Processing time: {elapsed:.1f} seconds ({elapsed / 60:.1f} minutes)")
     print(f"Throughput: {len(all_sentences) / elapsed:.1f} vocalizations/second")
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Sentences: {len(all_sentences)}")
     print(f"  Phrase candidates: {len(all_candidates):,}")
     print(f"  Atomic phrases: {len(atomic_phrases)}")

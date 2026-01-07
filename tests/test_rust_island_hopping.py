@@ -616,8 +616,8 @@ class TestIntegration:
 
         # Calculate delta
         anchor = nearest.features
-        delta_f0 = virtual_target.get_mean_f0_hz() - anchor.get_mean_f0_hz()
-        delta_dur = virtual_target.get_duration_ms() - anchor.get_duration_ms()
+        _ = virtual_target.get_mean_f0_hz() - anchor.get_mean_f0_hz()  # delta_f0
+        _ = virtual_target.get_duration_ms() - anchor.get_duration_ms()  # delta_dur
 
         # Interpolate (Bridge Builder - SAFE)
         interpolated = engine.interpolate(anchor, virtual_target, 0.5)

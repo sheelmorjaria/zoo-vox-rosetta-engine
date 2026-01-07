@@ -79,7 +79,7 @@ def test_audio_interface() -> Dict[str, bool]:
                     if latency and float(latency) < 0.1:  # < 100ms
                         results["low_latency"] = True
                         print(f"✓ Low-latency audio available: {latency}s latency")
-            except:
+            except Exception:
                 pass
 
     except ImportError:

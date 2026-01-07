@@ -83,7 +83,7 @@ def move_files():
         ).iterdir():
             shutil.rmtree(technical_arch_path / "tests")
             print("Removed empty tests directory")
-    except:
+    except Exception:
         pass
 
     # Check if technical_architecture directory is empty

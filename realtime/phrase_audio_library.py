@@ -2583,7 +2583,7 @@ def extract_microharmonic_signature_from_audio(
 
         # Try to import microharmonic encoder
         try:
-            from intracall_linguistic_analysis import IntraCallLinguisticAnalyzer
+            from intracall_linguistic_analysis import IntraCallLinguisticAnalyzer  # noqa: F401
             from microharmonic_encoder_phase1 import MicroharmonicDatasetBuilder
         except ImportError:
             logger.debug("Microharmonic encoder not available, skipping signature extraction")

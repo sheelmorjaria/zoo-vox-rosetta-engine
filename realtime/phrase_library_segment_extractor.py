@@ -19,16 +19,16 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import pickle
 import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+import pickle
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
 
 import numpy as np
+import pandas as pd
 import soundfile as sf
 from tqdm import tqdm
-import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ class PhraseLibrarySegmentExtractor:
                     segment_audio = np.clip(segment_audio, -1.0, 1.0)
 
             # Create output filename
-            occurrence_id = segment.get("occurrence_id", f"{segment_idx}")
+            _ = segment.get("occurrence_id", f"{segment_idx}")
             safe_phrase_key = phrase_key.replace("/", "_").replace("\\", "_")
             output_filename = f"{safe_phrase_key}_{segment_idx:03d}.wav"
             output_path = output_dir / output_filename

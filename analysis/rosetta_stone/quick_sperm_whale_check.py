@@ -67,7 +67,7 @@ def quick_check(filepath, max_duration_sec=10):
 
     try:
         phrases = analyzer.segment_phrases(audio, min_gap_ms=50, min_phrase_duration_ms=10)
-    except:
+    except Exception:
         phrases = []
 
     if len(phrases) > 0:

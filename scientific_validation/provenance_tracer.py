@@ -52,7 +52,7 @@ from typing import Any, Dict, List, Optional
 
 # Try to import FlatBuffers
 try:
-    import flatbuffers
+    import flatbuffers  # noqa: F401
     from flatbuffers import Builder
 
     FLATBUFFERS_AVAILABLE = True

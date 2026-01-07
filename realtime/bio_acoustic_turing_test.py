@@ -380,7 +380,7 @@ class StatisticalAnalyzer:
             contingency = np.array([[concat_yes, concat_no], [granular_yes, granular_no]])
             chi2, p_value, _, _ = stats.chi2_contingency(contingency)
             test_used = "chi_square"
-        except:
+        except Exception:
             # Fallback to simple comparison if test fails
             p_value = None
             test_used = "descriptive_only"

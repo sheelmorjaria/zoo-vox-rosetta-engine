@@ -252,7 +252,7 @@ class FewShotLearner:
         self.adaptation_count += 1
         self.success_history.append(response_positive)
 
-        logger.info(
+        self.logger.info(
             f"Learning experience added: {context.value}, "
             f"F0: {f0:.1f}Hz, Response: {'positive' if response_positive else 'negative'}"
         )
@@ -301,7 +301,7 @@ class FewShotLearner:
         adaptation_result = self._generate_adaptation(similar_experiences)
 
         self.learning_events = self.adaptation_count
-        logger.info(f"Adaptation successful: {adaptation_result}")
+        self.logger.info(f"Adaptation successful: {adaptation_result}")
 
         return adaptation_result
 
@@ -375,12 +375,12 @@ class FewShotLearner:
         with open(filepath, "wb") as f:
             pickle.dump(state, f)
 
-        logger.info(f"Learning state saved to {filepath}")
+        self.logger.info(f"Learning state saved to {filepath}")
 
     def load_learning_state(self, filepath: str):
         """Load learning state from file"""
         if not os.path.exists(filepath):
-            logger.warning(f"Learning state file not found: {filepath}")
+            self.logger.warning(f"Learning state file not found: {filepath}")
             return
 
         try:
@@ -393,9 +393,9 @@ class FewShotLearner:
             if "adaptation_count" in state:
                 self.adaptation_count = state["adaptation_count"]
 
-            logger.info(f"Learning state loaded from {filepath}")
+            self.logger.info(f"Learning state loaded from {filepath}")
         except Exception as e:
-            logger.error(f"Failed to load learning state: {e}")
+            self.logger.error(f"Failed to load learning state: {e}")
 
 
 class OnlineLearner(FewShotLearner):
@@ -581,7 +581,7 @@ class VisualFusion:
             self.attention_history.append(self.visual_state.attention)
 
         except Exception as e:
-            logger.error(f"Error processing visual frame: {e}")
+            self.logger.error(f"Error processing visual frame: {e}")
             self.visual_state.attention = VisualAttention.NONE
             self.visual_state.face_detected = False
 
@@ -707,45 +707,12 @@ class SourceSeparator:
             try:
                 # Placeholder for Conv-TasNet loading
                 # In practice, this would load a pre-trained PyTorch/TensorFlow model
-                logger.info("Conv-TasNet model placeholder loaded")
+                self.logger.info("Conv-TasNet model placeholder loaded")
                 self.is_loaded = True
             except Exception as e:
-                logger.error(f"Failed to load source separation model: {e}")
+                self.logger.error(f"Failed to load source separation model: {e}")
         else:
-            logger.warning(f"Unsupported model type: {self.config.model_type}")
-
-    def separate_sources(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
-        """
-        Separate sources from mixed audio.
-
-        Args:
-            mixed_audio: Mixed audio signal
-
-        Returns:
-            Dictionary of separated sources
-        """
-        start_time = time.time()
-
-        if not self.is_loaded:
-            # Use enhanced frequency-based separation
-            result = self._enhanced_frequency_based_separation(mixed_audio)
-        else:
-            # Use loaded model
-            result = self._model_separation(mixed_audio, self.sample_rate)
-
-        processing_time = (time.time() - start_time) * 1000
-
-        # Track performance
-        self.separation_times.append(processing_time)
-
-        # Calculate quality score (simplified)
-        if "target" in result and "noise" in result:
-            quality = self._calculate_separation_quality(
-                result["target"], result["noise"], mixed_audio
-            )
-            self.quality_scores.append(quality)
-
-        return result
+            self.logger.warning(f"Unsupported model type: {self.config.model_type}")
 
     def _enhanced_frequency_based_separation(
         self, mixed_audio: np.ndarray
@@ -804,7 +771,7 @@ class SourceSeparator:
             }
 
         except Exception as e:
-            logger.error(f"Librosa separation failed: {e}")
+            self.logger.error(f"Librosa separation failed: {e}")
             # Fall back to scipy
             return self._frequency_based_separation(mixed_audio)
 

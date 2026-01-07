@@ -201,13 +201,6 @@ class TestPowerManager:
         assert manager.status.active_source == "Battery"
 
     @pytest.mark.asyncio
-    async def test_power_manager_initialization(self):
-        """Test PowerManager initialization."""
-        manager = PowerManager(self.power_config)
-
-        assert manager.config == self.power_config
-
-    @pytest.mark.asyncio
     async def test_power_monitoring(self):
         """Test power monitoring functionality."""
         manager = PowerManager(self.power_config)

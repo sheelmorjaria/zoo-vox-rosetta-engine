@@ -41,20 +41,20 @@ try:
         EnvironmentalConditions,
         # Environmental monitoring
         EnvironmentalMonitor,
-        EnvironmentalMonitorConfig,
+        EnvironmentalMonitorConfig,  # noqa: F401
         GranularConcatenativeSynthesizer,
         # Safety-critical components
         OperationMode,
         PeerController,
         PeerControllerConfig,
         RainIntensity,
-        RecordingStatistics,
-        SessionViability,
-        TechnicalArchitect,
+        RecordingStatistics,  # noqa: F401
+        SessionViability,  # noqa: F401
+        TechnicalArchitect,  # noqa: F401
         TemperatureClassification,
         # Thermal state
         ThermalState,
-        VisualMetadata,
+        VisualMetadata,  # noqa: F401
         VisualRecorder,
         VisualRecorderConfig,
     )
@@ -236,7 +236,7 @@ class TestVisualRecorderIntegration(unittest.TestCase):
                     # Read operations (thread-safe)
                     state = recorder.get_state()
                     session_id = recorder.get_session_id()
-                    stats = recorder.get_statistics()
+                    _ = recorder.get_statistics()  # Verify thread-safe stats access
                     successful_operations.append((worker_id, i, state, session_id))
                     time.sleep(0.001)
             except Exception as e:

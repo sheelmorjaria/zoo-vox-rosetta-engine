@@ -70,7 +70,7 @@ def analyze_vocalization(filepath, species_name, params=None):
 
     try:
         phrases = analyzer.segment_phrases(audio, **default_params)
-    except:
+    except Exception:
         phrases = []
 
     if len(phrases) == 0:

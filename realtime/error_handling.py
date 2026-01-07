@@ -469,7 +469,8 @@ class ErrorHandler:
             raise
         finally:
             # Clean up context if successful
-            if not hasattr(error, "__traceback__") or error.__traceback__ is None:
+            error_occurred = "error" in locals()
+            if not error_occurred:
                 circuit_breaker = self.circuit_breakers.get(component_name)
                 if circuit_breaker:
                     circuit_breaker.record_success()

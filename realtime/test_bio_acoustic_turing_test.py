@@ -22,6 +22,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modules to test (will fail initially, as we write tests first)
 # Implementation comes later
+from realtime.bio_acoustic_turing_test import (
+    BioAcousticTuringTest,
+    ExperimentDesign,
+    ResponseRecorder,
+    StatisticalAnalyzer,
+    StimulusController,
+)
 
 # ============================================================================
 # Test 1: StimulusController - Playback Management

@@ -28,14 +28,14 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 import psutil
 
+logger = logging.getLogger(__name__)
+
 # NetworkX import with fallback
 try:
     import networkx as nx
 except ImportError:
     nx = None
     logger.warning("NetworkX not available, DAG functionality will be limited")
-
-logger = logging.getLogger(__name__)
 
 
 class TaskStatus(Enum):
@@ -829,7 +829,6 @@ class TaskExecutor:
 
     def _execute_with_timeout(self, func: Callable, retry_count: int) -> Any:
         """Execute function with timeout."""
-        import signal
 
         def timeout_handler(signum, frame):
             raise TimeoutError(f"Task execution timed out after {self.timeout} seconds")

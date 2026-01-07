@@ -330,7 +330,7 @@ class CrossHarmonicModulationAnalyzer:
                 envelope = np.abs(analytic_signal)
 
                 envelopes[h] = envelope
-            except:
+            except Exception:
                 continue
 
         if len(envelopes) < 2:

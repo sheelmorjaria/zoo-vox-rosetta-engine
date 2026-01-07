@@ -151,7 +151,7 @@ class FeatureExtractor:
             voiced_f0 = f0[voiced_flag]
             if len(voiced_f0) > 0:
                 features[0] = np.median(voiced_f0)
-        except:
+        except Exception:
             features[0] = 0.0
 
         # Duration

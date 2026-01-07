@@ -223,7 +223,7 @@ def generate_concatenative_samples(
                         audio, sr = sf.read(str(file_path))
                         concatenated_audio.append(audio)
                         total_duration += len(audio)
-                    except:
+                    except Exception:
                         continue
 
         if concatenated_audio:

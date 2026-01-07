@@ -517,7 +517,7 @@ Scientific Impact:
     print("PHASE 3: COMPUTE SEMANTIC GRADIENTS (ACOUSTIC ALGEBRA)")
     print("=" * 80)
 
-    contextual_map = pipeline.compute_semantic_gradients(library)
+    _ = pipeline.compute_semantic_gradients(library)  # Contextual map computed
 
     # ========================================================================
     # Phase 4: Threshold Test
@@ -527,7 +527,7 @@ Scientific Impact:
     print("PHASE 4: THRESHOLD TEST")
     print("=" * 80)
 
-    results = run_threshold_test(pipeline, library, output_dir, context="aggression")
+    _ = run_threshold_test(pipeline, library, output_dir, context="aggression")
 
     # ========================================================================
     # Phase 5: Gradient Synthesis Demo

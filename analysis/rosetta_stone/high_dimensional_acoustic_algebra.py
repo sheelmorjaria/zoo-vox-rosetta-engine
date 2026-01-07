@@ -13,7 +13,8 @@ Key Innovation:
 30D Feature Vector:
 - Fundamental (3): mean_f0_hz, f0_range_hz, duration_ms
 - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
-- Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level, vibrato_rate_hz, vibrato_depth, jitter, shimmer
+- Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+  vibrato_rate_hz, vibrato_depth, jitter, shimmer
 - Fingerprint Factors (13 MFCCs): mfcc_1 through mfcc_13
 - Spectral Dynamics (1): spectral_flux
 - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation

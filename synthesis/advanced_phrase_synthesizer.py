@@ -1078,7 +1078,7 @@ class AdvancedPhraseSynthesizer:
 
         # Compare bigrams and trigrams
         bigrams1, bigrams2 = set(ngrams(seq1, 2)), set(ngrams(seq2, 2))
-        trigrams1, trigrams2 = set(ngrams(seq1, 3)), set(ngrams(seq3, 3))
+        trigrams1, trigrams2 = set(ngrams(seq1, 3)), set(ngrams(seq2, 3))
 
         # Jaccard similarity
         bigram_sim = (

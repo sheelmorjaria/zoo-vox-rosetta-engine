@@ -115,7 +115,7 @@ def segment_audio_into_phrases(audio: np.ndarray) -> List[Tuple[np.ndarray, Dict
             features["onset_ms"] = onset / SAMPLE_RATE * 1000
             features["offset_ms"] = offset / SAMPLE_RATE * 1000
             segments.append((segment, features))
-        except:
+        except Exception:
             continue
 
     return segments

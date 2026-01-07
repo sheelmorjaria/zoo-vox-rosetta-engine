@@ -75,7 +75,7 @@ def analyze_synthesis_methods():
                     samples = (
                         len(result.get("audio", [])) if result and result.get("success") else 0
                     )
-                except:
+                except Exception:
                     # Try different approach
                     result = synthesizer.synthesize(phrase_keys)
                     samples = len(result) if result is not None else 0

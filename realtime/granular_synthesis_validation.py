@@ -225,7 +225,7 @@ def generate_concatenative_samples(
                             audio = np.mean(audio, axis=1)
 
                         concatenated_audio.append(audio)
-                    except:
+                    except Exception:
                         continue
 
         if concatenated_audio:
