@@ -8,8 +8,8 @@ analysis and cognitive intelligence capabilities.
 
 # Core data models
 # Import functionality
-from .data_import import DataImporter as VocalizationDataImporter
-from .data_models import (
+from data_import import DataImporter as VocalizationDataImporter
+from data_models import (
     AcousticFeatures,
     GrammarRule,
     Phrase,
@@ -22,10 +22,10 @@ from .data_models import (
 )
 
 # Query interface
-from .query_interface import VocalizationQueryInterface, get_query_interface
+from query_interface import VocalizationQueryInterface, get_query_interface
 
 # Semiotic analysis
-from .semiotics import (
+from semiotics import (
     SemioticAnalysisResult,
     SemioticContext,
     SemioticEngine,
