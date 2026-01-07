@@ -38,7 +38,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('src/**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
@@ -48,24 +48,22 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          src/technical_architecture/target
-        key: ${{ runner.os }}-cargo-python-${{ matrix.python-version }}-${{ hashFiles('src/technical_architecture/Cargo.lock') }}
+          technical_architecture/target
+        key: ${{ runner.os }}-cargo-python-${{ matrix.python-version }}-${{ hashFiles('technical_architecture/Cargo.lock') }}
 
     - name: Install dependencies
-      working-directory: src
       run: |
         python -m pip install --upgrade pip
         pip install maturin[patchelf]
         pip install -e .
 
     - name: Build Rust technical architecture (Python bindings)
-      working-directory: src/technical_architecture
       run: |
+        cd technical_architecture
         maturin build --release --features python-bindings
         pip install target/wheels/technical_architecture*.whl
 
     - name: Run Python tests
-      working-directory: src
       run: |
         python -m pytest tests/ -v --tb=short --ignore=tests/test_rust_island_hopping.py --ignore=tests/test_rust_python_integration.py --ignore=tests/test_17d_metadata_synthesis.py --ignore=tests/test_vector_delta_synthesis.py --ignore=tests/test_interpolation_extrapolation.py --ignore=tests/test_granular_synthesis_limitations.py --ignore=tests/test_island_hopping_navigation.py --ignore=tests/test_shared_memory_ipc.py --ignore=tests/archive_experimental/ --ignore=tests/test_visual_fusion.py
 
@@ -74,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/technical_architecture
+        working-directory: ./technical_architecture
     strategy:
       matrix:
         rust:
@@ -100,8 +98,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          src/technical_architecture/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('src/technical_architecture/Cargo.lock') }}
+          technical_architecture/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('technical_architecture/Cargo.lock') }}
 
     - name: Build Rust
       run: cargo build --verbose
@@ -120,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/technical_architecture
+        working-directory: ./technical_architecture
 
     steps:
     - name: Checkout code
@@ -159,17 +157,14 @@ jobs:
         pip install ruff flake8
 
     - name: Check formatting with ruff
-      working-directory: src
       run: |
         ruff format --check . --exclude archive/
 
     - name: Lint with ruff
-      working-directory: src
       run: |
         ruff check . --exclude archive/
 
     - name: Lint with flake8
-      working-directory: src
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=archive/
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=archive/
@@ -195,20 +190,18 @@ jobs:
         override: true
 
     - name: Install Python dependencies
-      working-directory: src
       run: |
         python -m pip install --upgrade pip
         pip install maturin[patchelf]
         pip install pytest numpy pandas
 
     - name: Build Rust library (maturin)
-      working-directory: src/technical_architecture
       run: |
+        cd technical_architecture
         maturin build --release --features python-bindings
         pip install target/wheels/technical_architecture*.whl
 
     - name: Run integration tests
-      working-directory: src
       run: |
         python -m pytest tests/test_rust_python_integration.py -v
 
