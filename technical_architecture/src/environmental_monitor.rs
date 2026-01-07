@@ -14,19 +14,19 @@ Features:
 - Environmental override logic
 */
 
+use crate::ptp::PtpTimestamp;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
-use crate::ptp::PtpTimestamp;
 
 /// Rain intensity classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RainIntensity {
-    None,       // 0 mm/h
-    Light,      // < 2.5 mm/h
-    Moderate,   // 2.5 - 10 mm/h
-    Heavy,      // 10 - 50 mm/h
-    Storm,      // > 50 mm/h
+    None,     // 0 mm/h
+    Light,    // < 2.5 mm/h
+    Moderate, // 2.5 - 10 mm/h
+    Heavy,    // 10 - 50 mm/h
+    Storm,    // > 50 mm/h
 }
 
 impl RainIntensity {
@@ -54,11 +54,11 @@ impl RainIntensity {
 /// Temperature classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TemperatureClassification {
-    Freezing,  // < 0°C
-    Cold,      // 0 - 10°C
-    Mild,      // 10 - 25°C
-    Hot,       // 25 - 35°C
-    Extreme,   // > 35°C
+    Freezing, // < 0°C
+    Cold,     // 0 - 10°C
+    Mild,     // 10 - 25°C
+    Hot,      // 25 - 35°C
+    Extreme,  // > 35°C
 }
 
 impl TemperatureClassification {
@@ -86,11 +86,11 @@ impl TemperatureClassification {
 /// Light level classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LightLevel {
-    Dark,    // < 1 lux
-    Dawn,    // 1 - 10 lux
-    Day,     // 10 - 10000 lux
-    Dusk,    // 10000 - 100000 lux
-    Night,   // > 100000 lux (actually moonlight, but low)
+    Dark,  // < 1 lux
+    Dawn,  // 1 - 10 lux
+    Day,   // 10 - 10000 lux
+    Dusk,  // 10000 - 100000 lux
+    Night, // > 100000 lux (actually moonlight, but low)
 }
 
 impl LightLevel {
@@ -135,7 +135,7 @@ impl Default for EnvironmentalConditions {
     fn default() -> Self {
         Self {
             timestamp: PtpTimestamp::new(0, 0),
-            temperature_celsius: 22.0,  // Clearly in "Mild" range (10-25°C)
+            temperature_celsius: 22.0, // Clearly in "Mild" range (10-25°C)
             humidity_percent: 60.0,
             light_lux: 500.0,
             rain_intensity_mm_h: 0.0,
@@ -174,7 +174,10 @@ impl EnvironmentalConditions {
 
         // Check for marginal conditions
         if matches!(rain, RainIntensity::Moderate)
-            || matches!(temp, TemperatureClassification::Cold | TemperatureClassification::Hot)
+            || matches!(
+                temp,
+                TemperatureClassification::Cold | TemperatureClassification::Hot
+            )
         {
             return SessionViability::Marginal;
         }
@@ -186,7 +189,7 @@ impl EnvironmentalConditions {
 /// Solar forecast for optimal interaction windows
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SolarForecast {
-    pub date: String,  // ISO 8601 date
+    pub date: String, // ISO 8601 date
     pub sunrise_hour: u8,
     pub sunset_hour: u8,
     pub peak_solar_hours: Vec<(u8, u8)>, // (start_hour, end_hour)
@@ -208,8 +211,8 @@ impl SolarForecast {
 
         // If no peak windows, use daytime
         if windows.is_empty() {
-            let day_start = self.sunrise_hour.max(8);  // After 8 AM
-            let day_end = self.sunset_hour.min(17);    // Before 5 PM
+            let day_start = self.sunrise_hour.max(8); // After 8 AM
+            let day_end = self.sunset_hour.min(17); // Before 5 PM
 
             if day_end > day_start && (day_end - day_start) as f32 >= min_duration_hours {
                 windows.push((day_start, day_end));
@@ -250,13 +253,13 @@ pub struct EnvironmentalMonitorConfig {
     pub sensor_timeout_ms: u64,
     pub enable_rain_detection: bool,
     pub enable_solar_forecast: bool,
-    pub mock_mode: bool,  // For testing without real sensors
+    pub mock_mode: bool, // For testing without real sensors
 }
 
 impl Default for EnvironmentalMonitorConfig {
     fn default() -> Self {
         Self {
-            poll_interval_ms: 5000,  // Poll every 5 seconds
+            poll_interval_ms: 5000, // Poll every 5 seconds
             sensor_timeout_ms: 1000,
             enable_rain_detection: true,
             enable_solar_forecast: true,
@@ -358,9 +361,7 @@ impl EnvironmentalMonitor {
     pub fn should_poll(&self) -> bool {
         match self.last_poll {
             None => true,
-            Some(last) => {
-                last.elapsed() >= Duration::from_millis(self.config.poll_interval_ms)
-            }
+            Some(last) => last.elapsed() >= Duration::from_millis(self.config.poll_interval_ms),
         }
     }
 
@@ -377,7 +378,7 @@ mod tests {
     fn create_test_conditions() -> EnvironmentalConditions {
         EnvironmentalConditions {
             timestamp: PtpTimestamp::new(0, 0),
-            temperature_celsius: 22.0,  // Clearly in "Mild" range (10-25°C)
+            temperature_celsius: 22.0, // Clearly in "Mild" range (10-25°C)
             humidity_percent: 60.0,
             light_lux: 500.0,
             rain_intensity_mm_h: 0.0,
@@ -692,7 +693,10 @@ mod tests {
     #[test]
     fn test_conditions_temperature_classification() {
         let conditions = create_test_conditions();
-        assert_eq!(conditions.temperature_classification(), TemperatureClassification::Mild);
+        assert_eq!(
+            conditions.temperature_classification(),
+            TemperatureClassification::Mild
+        );
     }
 
     #[test]
@@ -712,7 +716,10 @@ mod tests {
     fn test_conditions_hot_classification() {
         let mut conditions = create_test_conditions();
         conditions.temperature_celsius = 30.0;
-        assert_eq!(conditions.temperature_classification(), TemperatureClassification::Hot);
+        assert_eq!(
+            conditions.temperature_classification(),
+            TemperatureClassification::Hot
+        );
     }
 
     #[test]
@@ -726,9 +733,9 @@ mod tests {
     #[test]
     fn test_multiple_adverse_conditions() {
         let mut conditions = create_test_conditions();
-        conditions.rain_intensity_mm_h = 5.0;  // Moderate
-        conditions.temperature_celsius = 30.0;  // Hot
-        // Should be marginal, not infeasible
+        conditions.rain_intensity_mm_h = 5.0; // Moderate
+        conditions.temperature_celsius = 30.0; // Hot
+                                               // Should be marginal, not infeasible
         assert_eq!(conditions.assess_viability(), SessionViability::Marginal);
     }
 

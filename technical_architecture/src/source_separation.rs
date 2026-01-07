@@ -11,11 +11,11 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
+use anyhow::{anyhow, Result};
+use log::{debug, info, warn};
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;
-use anyhow::{Result, anyhow};
-use log::{info, debug, warn};
-use serde::{Serialize, Deserialize};
 
 /// Configuration for the Conv-TasNet separator
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,7 +74,10 @@ impl ConvTasNetSeparator {
 
         // Verify model file exists
         if !Path::new(&config.model_path).exists() {
-            warn!("Model file not found: {}. Using placeholder implementation.", config.model_path);
+            warn!(
+                "Model file not found: {}. Using placeholder implementation.",
+                config.model_path
+            );
             // Don't fail - allow placeholder for development
             return Ok(Self {
                 model: Arc::new(parking_lot::Mutex::new(ModelWrapper { _private: () })),
@@ -143,11 +146,13 @@ impl ConvTasNetSeparator {
         *self.inference_count.lock() += 1;
         *self.total_inference_time_us.lock() += elapsed;
 
-        let avg_time_us = *self.total_inference_time_us.lock() as f64
-            / *self.inference_count.lock() as f64;
+        let avg_time_us =
+            *self.total_inference_time_us.lock() as f64 / *self.inference_count.lock() as f64;
 
-        debug!("Separation completed in {}μs (avg: {}μs)",
-            elapsed, avg_time_us as u64);
+        debug!(
+            "Separation completed in {}μs (avg: {}μs)",
+            elapsed, avg_time_us as u64
+        );
 
         Ok(result)
     }

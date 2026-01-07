@@ -18,10 +18,10 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
 use log::warn;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // ============================================================================
 // 17D Vector Math Operations (Priority 1: Critical)
@@ -192,23 +192,23 @@ impl Vector17D {
     /// Get normalization ranges for each dimension
     fn normalization_ranges() -> [f32; 17] {
         [
-            2000.0,    // mean_f0_hz: 0-2000 Hz typical range
-            50.0,      // duration_ms: 0-50 ms typical range
-            500.0,     // f0_range_hz: 0-500 Hz
-            30.0,      // harmonic_to_noise_ratio: 0-30 dB
-            1.0,       // spectral_flatness: 0-1
-            20.0,      // attack_time_ms: 0-20 ms
-            50.0,      // decay_time_ms: 0-50 ms
-            1.0,       // sustain_level: 0-1
-            20.0,      // vibrato_rate_hz: 0-20 Hz
-            0.1,       // vibrato_depth: 0-0.1
-            0.05,      // jitter: 0-0.05
-            20.0,      // mfcc_1: -20 to 0
-            20.0,      // mfcc_2: -20 to 0
-            20.0,      // mfcc_3: -20 to 0
-            20.0,      // mfcc_4: -20 to 0
-            40.0,      // spectral_contrast: 0-40
-            200.0,     // median_ici_ms: 0-200 ms
+            2000.0, // mean_f0_hz: 0-2000 Hz typical range
+            50.0,   // duration_ms: 0-50 ms typical range
+            500.0,  // f0_range_hz: 0-500 Hz
+            30.0,   // harmonic_to_noise_ratio: 0-30 dB
+            1.0,    // spectral_flatness: 0-1
+            20.0,   // attack_time_ms: 0-20 ms
+            50.0,   // decay_time_ms: 0-50 ms
+            1.0,    // sustain_level: 0-1
+            20.0,   // vibrato_rate_hz: 0-20 Hz
+            0.1,    // vibrato_depth: 0-0.1
+            0.05,   // jitter: 0-0.05
+            20.0,   // mfcc_1: -20 to 0
+            20.0,   // mfcc_2: -20 to 0
+            20.0,   // mfcc_3: -20 to 0
+            20.0,   // mfcc_4: -20 to 0
+            40.0,   // spectral_contrast: 0-40
+            200.0,  // median_ici_ms: 0-200 ms
         ]
     }
 
@@ -253,7 +253,8 @@ impl Vector17D {
             f0_range_hz: self.f0_range_hz * (1.0 - alpha) + other.f0_range_hz * alpha,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio * (1.0 - alpha)
                 + other.harmonic_to_noise_ratio * alpha,
-            spectral_flatness: self.spectral_flatness * (1.0 - alpha) + other.spectral_flatness * alpha,
+            spectral_flatness: self.spectral_flatness * (1.0 - alpha)
+                + other.spectral_flatness * alpha,
             attack_time_ms: self.attack_time_ms * (1.0 - alpha) + other.attack_time_ms * alpha,
             decay_time_ms: self.decay_time_ms * (1.0 - alpha) + other.decay_time_ms * alpha,
             sustain_level: self.sustain_level * (1.0 - alpha) + other.sustain_level * alpha,
@@ -264,7 +265,8 @@ impl Vector17D {
             mfcc_2: self.mfcc_2 * (1.0 - alpha) + other.mfcc_2 * alpha,
             mfcc_3: self.mfcc_3 * (1.0 - alpha) + other.mfcc_3 * alpha,
             mfcc_4: self.mfcc_4 * (1.0 - alpha) + other.mfcc_4 * alpha,
-            spectral_contrast: self.spectral_contrast * (1.0 - alpha) + other.spectral_contrast * alpha,
+            spectral_contrast: self.spectral_contrast * (1.0 - alpha)
+                + other.spectral_contrast * alpha,
             median_ici_ms: self.median_ici_ms * (1.0 - alpha) + other.median_ici_ms * alpha,
             onset_rate_hz: self.onset_rate_hz * (1.0 - alpha) + other.onset_rate_hz * alpha,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation * (1.0 - alpha)
@@ -280,11 +282,7 @@ impl Vector17D {
     /// - 1.0 = move to origin + direction
     /// - 2.0 = move twice as far in direction
     pub fn extrapolate(&self, direction: &VectorDelta, factor: f32) -> Vector17D {
-        assert!(
-            factor >= 0.0,
-            "Factor must be >= 0, got {}",
-            factor
-        );
+        assert!(factor >= 0.0, "Factor must be >= 0, got {}", factor);
 
         Vector17D {
             mean_f0_hz: self.mean_f0_hz + direction.delta_mean_f0_hz * factor,
@@ -332,7 +330,8 @@ impl Vector17D {
             spectral_contrast: self.spectral_contrast + other.spectral_contrast,
             median_ici_ms: self.median_ici_ms + other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + other.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation + other.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation
+                + other.ici_coefficient_of_variation,
         }
     }
 
@@ -357,7 +356,8 @@ impl Vector17D {
             spectral_contrast: self.spectral_contrast - other.spectral_contrast,
             median_ici_ms: self.median_ici_ms - other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation - other.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation
+                - other.ici_coefficient_of_variation,
         }
     }
 
@@ -434,7 +434,8 @@ impl std::ops::Add<Vector17D> for Vector17D {
             spectral_contrast: self.spectral_contrast + rhs.spectral_contrast,
             median_ici_ms: self.median_ici_ms + rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + rhs.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation + rhs.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation
+                + rhs.ici_coefficient_of_variation,
         }
     }
 }
@@ -462,7 +463,8 @@ impl std::ops::Sub<Vector17D> for Vector17D {
             spectral_contrast: self.spectral_contrast - rhs.spectral_contrast,
             median_ici_ms: self.median_ici_ms - rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - rhs.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation - rhs.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation
+                - rhs.ici_coefficient_of_variation,
         }
     }
 }
@@ -544,7 +546,8 @@ impl VectorDelta {
             delta_mean_f0_hz: target.mean_f0_hz - source.mean_f0_hz,
             delta_duration_ms: target.duration_ms - source.duration_ms,
             delta_f0_range_hz: target.f0_range_hz - source.f0_range_hz,
-            delta_harmonic_to_noise_ratio: target.harmonic_to_noise_ratio - source.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio: target.harmonic_to_noise_ratio
+                - source.harmonic_to_noise_ratio,
             delta_spectral_flatness: target.spectral_flatness - source.spectral_flatness,
             delta_attack_time_ms: target.attack_time_ms - source.attack_time_ms,
             delta_decay_time_ms: target.decay_time_ms - source.decay_time_ms,
@@ -610,9 +613,7 @@ pub struct SafetyClamp {
 impl SafetyClamp {
     /// Create a new safety clamp with default 20% max warp
     pub fn new() -> Self {
-        Self {
-            max_safe_warp: 0.2,
-        }
+        Self { max_safe_warp: 0.2 }
     }
 
     /// Create with custom max warp distance
@@ -728,10 +729,7 @@ impl PhraseDatabase {
         self.islands.insert(key.clone(), island);
 
         // Add to species index
-        self.species_index
-            .entry(species)
-            .or_default()
-            .push(key);
+        self.species_index.entry(species).or_default().push(key);
     }
 
     /// Find the nearest island to a target vector
@@ -819,11 +817,7 @@ impl PhraseDatabase {
     pub fn get_species_islands(&self, species: &str) -> Vec<&AudioIsland> {
         self.species_index
             .get(species)
-            .map(|keys| {
-                keys.iter()
-                    .filter_map(|k| self.islands.get(k))
-                    .collect()
-            })
+            .map(|keys| keys.iter().filter_map(|k| self.islands.get(k)).collect())
             .unwrap_or_default()
     }
 }
@@ -917,7 +911,8 @@ impl TimelineExecutor {
         let end_sample = (start_sample + duration_samples).min(output.len());
 
         // Apply crossfade in
-        let crossfade_in_samples = (event.crossfade_in_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let crossfade_in_samples =
+            (event.crossfade_in_ms / 1000.0 * self.sample_rate as f32) as usize;
         let crossfade_out_samples =
             (event.crossfade_out_ms / 1000.0 * self.sample_rate as f32) as usize;
 
@@ -1001,7 +996,8 @@ pub fn apply_delta_to_granular(
     };
 
     // Map spectral_flatness to roughness (higher flatness = more roughness)
-    let roughness_amount = (base_params.roughness_amount + delta.delta_spectral_flatness).clamp(0.0, 1.0);
+    let roughness_amount =
+        (base_params.roughness_amount + delta.delta_spectral_flatness).clamp(0.0, 1.0);
 
     // Map jitter to grain size variation (not directly modifying grain_size_ms here,
     // but this could be used for granular jitter effects)
@@ -1051,7 +1047,12 @@ impl NavigationEngine {
     }
 
     /// Extrapolate from origin in direction (Ocean Explorer - RISKY)
-    pub fn extrapolate(&self, origin: &Vector17D, direction: &VectorDelta, factor: f32) -> Vector17D {
+    pub fn extrapolate(
+        &self,
+        origin: &Vector17D,
+        direction: &VectorDelta,
+        factor: f32,
+    ) -> Vector17D {
         origin.extrapolate(direction, factor)
     }
 
@@ -1133,8 +1134,8 @@ mod tests {
     #[test]
     fn test_vector17d_new() {
         let v = Vector17D::new(
-            8000.0, 60.0, 500.0, 25.0, 0.4, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02,
-            -12.0, -6.0, -3.0, -1.5, 25.0, 180.0, 10.0, 0.4,
+            8000.0, 60.0, 500.0, 25.0, 0.4, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02, -12.0, -6.0, -3.0,
+            -1.5, 25.0, 180.0, 10.0, 0.4,
         );
         assert_approx_eq(v.mean_f0_hz, 8000.0, 1e-5);
         assert_approx_eq(v.duration_ms, 60.0, 1e-5);

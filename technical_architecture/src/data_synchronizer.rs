@@ -76,8 +76,8 @@ impl PartialOrd for SyncPriority {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogEntry {
     pub timestamp: PtpTimestamp,
-    pub level: String,       // "INFO", "WARNING", "ERROR", "CRITICAL"
-    pub category: String,    // "safety", "performance", "detection", etc.
+    pub level: String,    // "INFO", "WARNING", "ERROR", "CRITICAL"
+    pub category: String, // "safety", "performance", "detection", etc.
     pub message: String,
     pub data: Option<serde_json::Value>,
 }
@@ -121,8 +121,7 @@ impl QueuedEntry {
             return Ok(()); // Already compressed
         }
 
-        let serialized = bincode::serialize(&self.entry)
-            .context("Failed to serialize entry")?;
+        let serialized = bincode::serialize(&self.entry).context("Failed to serialize entry")?;
 
         // Simple compression using miniz-oxide (if available)
         // For now, just store as-is (placeholder for real compression)
@@ -135,8 +134,8 @@ impl QueuedEntry {
     /// Decompress the entry data
     pub fn decompress(&self) -> Result<LogEntry> {
         if let Some(ref data) = self.compressed_data {
-            let entry: LogEntry = bincode::deserialize(data)
-                .context("Failed to deserialize entry")?;
+            let entry: LogEntry =
+                bincode::deserialize(data).context("Failed to deserialize entry")?;
             Ok(entry)
         } else {
             Ok(self.entry.clone())
@@ -218,7 +217,8 @@ impl DataSynchronizer {
     /// Create a new data synchronizer
     pub fn new(config: SyncConfig) -> Result<Self> {
         // Create storage backends
-        let storage_backends: Vec<StorageBackend> = config.storage_paths
+        let storage_backends: Vec<StorageBackend> = config
+            .storage_paths
             .iter()
             .enumerate()
             .map(|(i, path)| {
@@ -278,11 +278,19 @@ impl DataSynchronizer {
                     Ok(file) => {
                         let writer = BufWriter::new(file);
                         if let Err(e) = bincode::serialize_into(writer, &entries) {
-                            eprintln!("Failed to serialize queue to {}: {}", queue_path.display(), e);
+                            eprintln!(
+                                "Failed to serialize queue to {}: {}",
+                                queue_path.display(),
+                                e
+                            );
                         }
                     }
                     Err(e) => {
-                        eprintln!("Failed to create queue file {}: {}", queue_path.display(), e);
+                        eprintln!(
+                            "Failed to create queue file {}: {}",
+                            queue_path.display(),
+                            e
+                        );
                     }
                 }
             }
@@ -303,7 +311,8 @@ impl DataSynchronizer {
         // Check queue size limit
         if queue.len() >= self.config.max_queue_size {
             // Remove oldest entry with same or lower priority
-            if let Some(pos) = queue.iter()
+            if let Some(pos) = queue
+                .iter()
                 .rposition(|e| e.priority <= queued_entry.priority)
             {
                 queue.remove(pos);
@@ -325,7 +334,10 @@ impl DataSynchronizer {
     pub fn sync_status(&self) -> SyncStatus {
         let queue = self.queue.lock().unwrap();
         let queue_size = queue.len();
-        let pending_upload = queue.iter().filter(|e| e.retry_count < self.config.max_retry_count).count();
+        let pending_upload = queue
+            .iter()
+            .filter(|e| e.retry_count < self.config.max_retry_count)
+            .count();
         let total_bytes_queued = queue.iter().map(|e| e.size_bytes).sum();
 
         let last_sync = *self.last_sync.lock().unwrap();
@@ -487,12 +499,11 @@ mod tests {
     fn test_queue_entry() {
         cleanup_test_dir("/tmp/test_queue_entry");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_queue_entry".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_queue_entry".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         let entry = create_test_entry("INFO", "Test message");
         sync.queue_entry(entry, SyncPriority::Normal).unwrap();
@@ -504,16 +515,18 @@ mod tests {
     fn test_queue_multiple_entries() {
         cleanup_test_dir("/tmp/test_queue_multi");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_queue_multi".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_queue_multi".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::High).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Low).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::High)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Low)
+            .unwrap();
 
         assert_eq!(sync.queue_size(), 3);
     }
@@ -522,23 +535,26 @@ mod tests {
     fn test_queue_size_limit() {
         cleanup_test_dir("/tmp/test_queue_limit");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                max_queue_size: 3,
-                storage_paths: vec!["/tmp/test_queue_limit".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            max_queue_size: 3,
+            storage_paths: vec!["/tmp/test_queue_limit".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "low1"), SyncPriority::Low).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "low2"), SyncPriority::Low).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "low3"), SyncPriority::Low).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "low1"), SyncPriority::Low)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "low2"), SyncPriority::Low)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "low3"), SyncPriority::Low)
+            .unwrap();
 
         // Queue is full
         assert_eq!(sync.queue_size(), 3);
 
         // Add high priority entry - should evict a low priority one
-        sync.queue_entry(create_test_entry("INFO", "high1"), SyncPriority::High).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "high1"), SyncPriority::High)
+            .unwrap();
 
         // Still size 3, but one low priority was evicted
         assert_eq!(sync.queue_size(), 3);
@@ -563,15 +579,16 @@ mod tests {
     fn test_sync_status() {
         cleanup_test_dir("/tmp/test_sync_status");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_sync_status".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_sync_status".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("ERROR", "msg2"), SyncPriority::Critical).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("ERROR", "msg2"), SyncPriority::Critical)
+            .unwrap();
 
         let status = sync.sync_status();
 
@@ -584,13 +601,12 @@ mod tests {
     fn test_should_sync() {
         cleanup_test_dir("/tmp/test_should_sync");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                sync_interval_ms: 100,
-                storage_paths: vec!["/tmp/test_should_sync".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            sync_interval_ms: 100,
+            storage_paths: vec!["/tmp/test_should_sync".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         // Should sync initially
         assert!(sync.should_sync());
@@ -606,16 +622,17 @@ mod tests {
     fn test_sync_processes_entries() {
         cleanup_test_dir("/tmp/test_sync_process");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                sync_interval_ms: 0, // Always allow sync
-                storage_paths: vec!["/tmp/test_sync_process".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            sync_interval_ms: 0, // Always allow sync
+            storage_paths: vec!["/tmp/test_sync_process".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("ERROR", "msg2"), SyncPriority::Critical).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("ERROR", "msg2"), SyncPriority::Critical)
+            .unwrap();
 
         let before_size = sync.queue_size();
         let status = sync.sync().unwrap();
@@ -630,21 +647,21 @@ mod tests {
     fn test_bandwidth_throttling() {
         cleanup_test_dir("/tmp/test_bandwidth");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                sync_interval_ms: 0,
-                max_bandwidth_kbps: 1.0, // Very low limit
-                storage_paths: vec!["/tmp/test_bandwidth".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            sync_interval_ms: 0,
+            max_bandwidth_kbps: 1.0, // Very low limit
+            storage_paths: vec!["/tmp/test_bandwidth".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         // Add many entries
         for i in 0..10 {
             sync.queue_entry(
                 create_test_entry("INFO", &format!("msg{}", i)),
-                SyncPriority::Normal
-            ).unwrap();
+                SyncPriority::Normal,
+            )
+            .unwrap();
         }
 
         let before_size = sync.queue_size();
@@ -660,42 +677,52 @@ mod tests {
     fn test_prioritize_critical() {
         cleanup_test_dir("/tmp/test_priority");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                sync_interval_ms: 0,
-                max_bandwidth_kbps: 0.5, // Very low limit - only sync one entry
-                storage_paths: vec!["/tmp/test_priority".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            sync_interval_ms: 0,
+            max_bandwidth_kbps: 0.5, // Very low limit - only sync one entry
+            storage_paths: vec!["/tmp/test_priority".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         // Add entries with different priorities
-        sync.queue_entry(create_test_entry("INFO", "low"), SyncPriority::Low).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "critical"), SyncPriority::Critical).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "normal"), SyncPriority::Normal).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "low"), SyncPriority::Low)
+            .unwrap();
+        sync.queue_entry(
+            create_test_entry("INFO", "critical"),
+            SyncPriority::Critical,
+        )
+        .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "normal"), SyncPriority::Normal)
+            .unwrap();
 
         sync.sync().unwrap();
 
         // Critical should be synced first, so it should be gone
         assert_eq!(sync.count_by_priority(SyncPriority::Critical), 0);
         // Low and Normal should remain (bandwidth limit)
-        assert!(sync.count_by_priority(SyncPriority::Low) + sync.count_by_priority(SyncPriority::Normal) > 0);
+        assert!(
+            sync.count_by_priority(SyncPriority::Low)
+                + sync.count_by_priority(SyncPriority::Normal)
+                > 0
+        );
     }
 
     #[test]
     fn test_offline_queue() {
         cleanup_test_dir("/tmp/test_offline");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_offline".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_offline".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         // Queue entries while "offline"
-        sync.queue_entry(create_test_entry("INFO", "offline1"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "offline2"), SyncPriority::High).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "offline1"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "offline2"), SyncPriority::High)
+            .unwrap();
 
         assert_eq!(sync.queue_size(), 2);
 
@@ -710,22 +737,24 @@ mod tests {
     fn test_resume_sync() {
         cleanup_test_dir("/tmp/test_resume");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_resume".to_string()],
-                sync_interval_ms: 0, // Always allow sync
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_resume".to_string()],
+            sync_interval_ms: 0, // Always allow sync
+            ..Default::default()
+        })
+        .unwrap();
 
         // Initial sync
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal)
+            .unwrap();
         sync.sync().unwrap();
         assert_eq!(sync.queue_size(), 0);
 
         // Add more entries
-        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::High).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Normal).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::High)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Normal)
+            .unwrap();
 
         // Resume sync
         sync.sync().unwrap();
@@ -750,7 +779,8 @@ mod tests {
 
     #[test]
     fn test_storage_backend_refresh() {
-        let mut backend = StorageBackend::new(StorageType::USBDrive, "/nonexistent/path".to_string());
+        let mut backend =
+            StorageBackend::new(StorageType::USBDrive, "/nonexistent/path".to_string());
 
         assert!(!backend.is_mounted);
         assert_eq!(backend.available_bytes, 0);
@@ -765,7 +795,7 @@ mod tests {
     fn test_compress_entry() {
         let entry = QueuedEntry::new(
             create_test_entry("INFO", "Test message"),
-            SyncPriority::Normal
+            SyncPriority::Normal,
         );
 
         assert!(entry.compressed_data.is_none());
@@ -794,17 +824,20 @@ mod tests {
     fn test_count_by_priority() {
         cleanup_test_dir("/tmp/test_count");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_count".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_count".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Critical).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::Critical).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg4"), SyncPriority::Low).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Critical)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::Critical)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg3"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg4"), SyncPriority::Low)
+            .unwrap();
 
         assert_eq!(sync.count_by_priority(SyncPriority::Critical), 2);
         assert_eq!(sync.count_by_priority(SyncPriority::Normal), 1);
@@ -816,15 +849,16 @@ mod tests {
     fn test_clear_queue() {
         cleanup_test_dir("/tmp/test_clear");
 
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec!["/tmp/test_clear".to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec!["/tmp/test_clear".to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
-        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal).unwrap();
-        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::Normal).unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg1"), SyncPriority::Normal)
+            .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "msg2"), SyncPriority::Normal)
+            .unwrap();
 
         assert_eq!(sync.queue_size(), 2);
 
@@ -841,25 +875,28 @@ mod tests {
         cleanup_test_dir(path);
 
         {
-            let sync = DataSynchronizer::new(
-                SyncConfig {
-                    storage_paths: vec![path.to_string()],
-                    ..Default::default()
-                }
-            ).unwrap();
+            let sync = DataSynchronizer::new(SyncConfig {
+                storage_paths: vec![path.to_string()],
+                ..Default::default()
+            })
+            .unwrap();
 
-            sync.queue_entry(create_test_entry("INFO", "persistent1"), SyncPriority::Normal).unwrap();
-            sync.queue_entry(create_test_entry("INFO", "persistent2"), SyncPriority::High).unwrap();
+            sync.queue_entry(
+                create_test_entry("INFO", "persistent1"),
+                SyncPriority::Normal,
+            )
+            .unwrap();
+            sync.queue_entry(create_test_entry("INFO", "persistent2"), SyncPriority::High)
+                .unwrap();
         }
 
         // Create new synchronizer - persistence is disabled in tests
         // so queue should be empty
-        let sync = DataSynchronizer::new(
-            SyncConfig {
-                storage_paths: vec![path.to_string()],
-                ..Default::default()
-            }
-        ).unwrap();
+        let sync = DataSynchronizer::new(SyncConfig {
+            storage_paths: vec![path.to_string()],
+            ..Default::default()
+        })
+        .unwrap();
 
         // Queue should be empty (persistence disabled in tests)
         assert_eq!(sync.queue_size(), 0);

@@ -159,7 +159,7 @@ impl VisualMetadata {
         &mut self,
         timestamp_ns: u64,
         annotation_type: &str,
-        data: serde_json::Value
+        data: serde_json::Value,
     ) {
         self.context_annotations.push(ContextAnnotation {
             timestamp_ns,
@@ -169,7 +169,8 @@ impl VisualMetadata {
     }
 
     pub fn calculate_duration_seconds(&self) -> Option<f64> {
-        self.end_time_ns.map(|end| (end - self.start_time_ns) as f64 / 1_000_000_000.0)
+        self.end_time_ns
+            .map(|end| (end - self.start_time_ns) as f64 / 1_000_000_000.0)
     }
 
     /// Synchronize timestamp to frame index
@@ -352,7 +353,10 @@ impl VisualRecorder {
         // Check state transition
         let current_state = self.state();
         if !current_state.can_transition_to(&RecordingState::Starting) {
-            return Err(anyhow::anyhow!("Cannot start from {:?} state", current_state));
+            return Err(anyhow::anyhow!(
+                "Cannot start from {:?} state",
+                current_state
+            ));
         }
 
         // Transition to Starting
@@ -395,7 +399,10 @@ impl VisualRecorder {
         let current_state = self.state();
 
         if !current_state.can_transition_to(&RecordingState::Stopping) {
-            return Err(anyhow::anyhow!("Cannot stop from {:?} state", current_state));
+            return Err(anyhow::anyhow!(
+                "Cannot stop from {:?} state",
+                current_state
+            ));
         }
 
         // Transition to Stopping
@@ -478,12 +485,10 @@ impl VisualRecorder {
     fn _save_metadata(&self, metadata: &VisualMetadata) -> Result<()> {
         let metadata_path = self.resolve_metadata_path(&metadata.session_id);
 
-        let file = File::create(&metadata_path)
-            .context("Failed to create metadata file")?;
+        let file = File::create(&metadata_path).context("Failed to create metadata file")?;
 
         let writer = BufWriter::new(file);
-        serde_json::to_writer_pretty(writer, metadata)
-            .context("Failed to serialize metadata")?;
+        serde_json::to_writer_pretty(writer, metadata).context("Failed to serialize metadata")?;
 
         Ok(())
     }
@@ -503,12 +508,7 @@ mod visual_recording_tests {
 
     #[test]
     fn test_create_visual_metadata() {
-        let metadata = VisualMetadata::new(
-            "test_session_001".to_string(),
-            0,
-            (1280, 720),
-            30.0,
-        );
+        let metadata = VisualMetadata::new("test_session_001".to_string(), 0, (1280, 720), 30.0);
 
         assert_eq!(metadata.session_id, "test_session_001");
         assert_eq!(metadata.camera_id, 0);
@@ -520,12 +520,7 @@ mod visual_recording_tests {
 
     #[test]
     fn test_metadata_add_audio_sync_event() {
-        let mut metadata = VisualMetadata::new(
-            "test_session".to_string(),
-            0,
-            (640, 480),
-            30.0,
-        );
+        let mut metadata = VisualMetadata::new("test_session".to_string(), 0, (640, 480), 30.0);
 
         let event = AudioSyncEvent {
             timestamp_ns: 1_000_000_000,
@@ -539,36 +534,32 @@ mod visual_recording_tests {
         metadata.add_audio_sync_event(event);
 
         assert_eq!(metadata.audio_sync_events.len(), 1);
-        assert_eq!(metadata.audio_sync_events[0].phrase_key, Some("phrase_001".to_string()));
+        assert_eq!(
+            metadata.audio_sync_events[0].phrase_key,
+            Some("phrase_001".to_string())
+        );
     }
 
     #[test]
     fn test_metadata_add_context_annotation() {
-        let mut metadata = VisualMetadata::new(
-            "test_session".to_string(),
-            0,
-            (640, 480),
-            30.0,
-        );
+        let mut metadata = VisualMetadata::new("test_session".to_string(), 0, (640, 480), 30.0);
 
         metadata.add_context_annotation(
             1_500_000_000,
             "environment",
-            serde_json::json!({"temperature_c": 28.0, "location": "cage_A"})
+            serde_json::json!({"temperature_c": 28.0, "location": "cage_A"}),
         );
 
         assert_eq!(metadata.context_annotations.len(), 1);
-        assert_eq!(metadata.context_annotations[0].annotation_type, "environment");
+        assert_eq!(
+            metadata.context_annotations[0].annotation_type,
+            "environment"
+        );
     }
 
     #[test]
     fn test_metadata_calculate_duration() {
-        let mut metadata = VisualMetadata::new(
-            "test_session".to_string(),
-            0,
-            (640, 480),
-            30.0,
-        );
+        let mut metadata = VisualMetadata::new("test_session".to_string(), 0, (640, 480), 30.0);
 
         metadata.start_time_ns = 1_000_000_000;
         metadata.end_time_ns = Some(11_000_000_000); // 10 seconds later
@@ -849,12 +840,7 @@ mod visual_recording_tests {
 
     #[test]
     fn test_metadata_serialization() {
-        let mut metadata = VisualMetadata::new(
-            "test_session".to_string(),
-            0,
-            (1280, 720),
-            30.0,
-        );
+        let mut metadata = VisualMetadata::new("test_session".to_string(), 0, (1280, 720), 30.0);
 
         metadata.add_audio_sync_event(AudioSyncEvent {
             timestamp_ns: 1_000_000_000,

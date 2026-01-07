@@ -26,7 +26,7 @@ pub enum SignalType {
 pub struct CalibrationTone {
     pub signal_type: SignalType,
     pub duration_ms: u32,
-    pub frequency_range: (f32, f32),  // For sine sweep (Hz, Hz)
+    pub frequency_range: (f32, f32), // For sine sweep (Hz, Hz)
     pub amplitude_db: f32,
 }
 
@@ -44,7 +44,7 @@ impl Default for CalibrationTone {
 /// Gain adjustment for frequency band
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GainAdjustment {
-    pub frequency_band: (f32, f32),  // (Hz_min, Hz_max)
+    pub frequency_band: (f32, f32), // (Hz_min, Hz_max)
     pub compensation_db: f32,
 }
 
@@ -65,7 +65,7 @@ pub struct CalibrationResult {
     pub expected_gain_db: f32,
     pub drift_db: f32,
     pub passed: bool,
-    pub frequency_response: Vec<(f32, f32)>,  // (Hz, dB)
+    pub frequency_response: Vec<(f32, f32)>, // (Hz, dB)
     pub noise_floor_db: f32,
     pub adjustments: Vec<GainAdjustment>,
 }
@@ -85,7 +85,12 @@ impl CalibrationResult {
         }
     }
 
-    pub fn failed(timestamp: PtpTimestamp, loopback_gain_db: f32, expected_gain_db: f32, drift_db: f32) -> Self {
+    pub fn failed(
+        timestamp: PtpTimestamp,
+        loopback_gain_db: f32,
+        expected_gain_db: f32,
+        drift_db: f32,
+    ) -> Self {
         Self {
             timestamp,
             loopback_gain_db,
@@ -103,8 +108,8 @@ impl CalibrationResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CalibrationHealthStatus {
     Healthy,
-    Degraded,  // Outside acceptable limits but functional
-    Failed,    // Calibration failed, system unsafe
+    Degraded, // Outside acceptable limits but functional
+    Failed,   // Calibration failed, system unsafe
 }
 
 impl CalibrationHealthStatus {
@@ -120,10 +125,10 @@ impl CalibrationHealthStatus {
 /// Calibration configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CalibrationConfig {
-    pub schedule_cron: String,  // e.g., "0 3 * * *" (daily 3AM)
+    pub schedule_cron: String, // e.g., "0 3 * * *" (daily 3AM)
     pub calibration_tone: CalibrationTone,
-    pub acceptable_drift_db: f32,  // Max acceptable drift (e.g., 1.5dB)
-    pub output_gain: f32,          // Internal gain setting
+    pub acceptable_drift_db: f32, // Max acceptable drift (e.g., 1.5dB)
+    pub output_gain: f32,         // Internal gain setting
 }
 
 impl Default for CalibrationConfig {
@@ -202,15 +207,19 @@ impl CalibrationEngine {
 
         // Step 5: Calculate gain drift per frequency band
         log::debug!("Calibration: Calculating gain drift");
-        let (loopback_gain_db, expected_gain_db, drift_db) = self.calculate_gain_drift(&frequency_response);
+        let (loopback_gain_db, expected_gain_db, drift_db) =
+            self.calculate_gain_drift(&frequency_response);
 
         // Step 6: Determine if calibration passed
         let passed = drift_db.abs() <= self.config.acceptable_drift_db;
 
         // Step 7: Update gain compensation table if needed
         let adjustments = if !passed {
-            log::warn!("Calibration: Drift {}dB exceeds threshold {}dB, adjusting gain table",
-                drift_db, self.config.acceptable_drift_db);
+            log::warn!(
+                "Calibration: Drift {}dB exceeds threshold {}dB, adjusting gain table",
+                drift_db,
+                self.config.acceptable_drift_db
+            );
             self.update_gain_table(&frequency_response, drift_db)?
         } else {
             Vec::new()
@@ -266,7 +275,8 @@ impl CalibrationEngine {
     /// Generate calibration tone audio
     fn generate_calibration_tone(&self) -> Result<Vec<f32>> {
         let sample_rate = 48000;
-        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0 * sample_rate as f64) as usize;
+        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0
+            * sample_rate as f64) as usize;
 
         let mut audio = Vec::with_capacity(duration_samples);
 
@@ -306,8 +316,12 @@ impl CalibrationEngine {
                 for i in 0..duration_samples {
                     let t = i as f32 / sample_rate as f32;
                     // Logarithmic sweep
-                    let phase = 2.0 * std::f32::consts::PI * f_start * duration_sec *
-                        ((f_end / f_start).powf(t / duration_sec) - 1.0) / (f_end / f_start).ln();
+                    let phase = 2.0
+                        * std::f32::consts::PI
+                        * f_start
+                        * duration_sec
+                        * ((f_end / f_start).powf(t / duration_sec) - 1.0)
+                        / (f_end / f_start).ln();
                     audio.push((phase.sin()) * 0.1);
                 }
             }
@@ -325,7 +339,8 @@ impl CalibrationEngine {
 
         // For now, return simulated audio with expected gain
         let sample_rate = 48000;
-        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0 * sample_rate as f64) as usize;
+        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0
+            * sample_rate as f64) as usize;
 
         let mut captured = Vec::with_capacity(duration_samples);
         for i in 0..duration_samples {
@@ -349,7 +364,7 @@ impl CalibrationEngine {
         vec![
             (100.0, -2.0),
             (500.0, -1.5),
-            (1000.0, -0.5),  // Slight drift here
+            (1000.0, -0.5), // Slight drift here
             (2000.0, -1.0),
             (5000.0, -2.5),
             (10000.0, -4.0),
@@ -363,7 +378,7 @@ impl CalibrationEngine {
         let expected_gain_db = self.config.calibration_tone.amplitude_db;
 
         // Simulate a loopback gain that's very close to expected (within acceptable drift)
-        let loopback_gain_db = expected_gain_db + 0.5;  // +0.5dB drift (within 1.5dB threshold)
+        let loopback_gain_db = expected_gain_db + 0.5; // +0.5dB drift (within 1.5dB threshold)
 
         let drift_db = loopback_gain_db - expected_gain_db;
 
@@ -371,7 +386,11 @@ impl CalibrationEngine {
     }
 
     /// Update gain compensation table
-    fn update_gain_table(&self, _frequency_response: &[(f32, f32)], drift_db: f32) -> Result<Vec<GainAdjustment>> {
+    fn update_gain_table(
+        &self,
+        _frequency_response: &[(f32, f32)],
+        drift_db: f32,
+    ) -> Result<Vec<GainAdjustment>> {
         let mut gain_table = self.gain_table.lock().unwrap();
         let key = "main_output";
 
@@ -433,10 +452,10 @@ impl CalibrationEngine {
     /// Check speaker impedance
     pub fn check_speaker_impedance(&self) -> Result<SpeakerImpedance> {
         // In production, this would measure actual impedance
-        let measured_ohms = 7.8_f32;  // Typical 8-ohm speaker
+        let measured_ohms = 7.8_f32; // Typical 8-ohm speaker
         let expected_ohms = 8.0_f32;
         let deviation_percent = ((measured_ohms - expected_ohms) / expected_ohms * 100.0_f32).abs();
-        let passed = deviation_percent < 20.0;  // 20% tolerance
+        let passed = deviation_percent < 20.0; // 20% tolerance
 
         Ok(SpeakerImpedance {
             measured_ohms,
@@ -463,7 +482,7 @@ impl CalibrationEngine {
             .map(|(freq, mag)| FrequencyResponsePoint {
                 frequency_hz: freq,
                 magnitude_db: mag,
-                phase_degrees: 0.0,  // Phase not measured in simplified version
+                phase_degrees: 0.0, // Phase not measured in simplified version
             })
             .collect())
     }
@@ -647,7 +666,7 @@ mod tests {
         let engine = create_test_engine();
         let noise_floor = engine.measure_system_noise_floor().unwrap();
 
-        assert!(noise_floor < -80.0);  // Should be reasonably quiet
+        assert!(noise_floor < -80.0); // Should be reasonably quiet
     }
 
     #[test]
@@ -690,6 +709,6 @@ mod tests {
         // After calibration, might have adjustment
         engine.run_calibration().unwrap();
         let limit = engine.get_adjusted_spl_limit(100.0);
-        assert!(limit <= 100.0);  // Should be reduced or equal
+        assert!(limit <= 100.0); // Should be reduced or equal
     }
 }

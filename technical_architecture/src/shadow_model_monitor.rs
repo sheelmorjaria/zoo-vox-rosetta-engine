@@ -45,7 +45,7 @@ impl InputFeatures {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DriftSample {
     pub timestamp: PtpTimestamp,
-    pub divergence_ratio: f32,  // 0.0 to 1.0
+    pub divergence_ratio: f32, // 0.0 to 1.0
     pub sample_count: usize,
     pub category_drift: HashMap<String, f32>,
 }
@@ -103,7 +103,12 @@ pub struct DriftAlert {
 }
 
 impl DriftAlert {
-    pub fn new(timestamp: PtpTimestamp, alert_level: AlertLevel, current_divergence: f32, threshold: f32) -> Self {
+    pub fn new(
+        timestamp: PtpTimestamp,
+        alert_level: AlertLevel,
+        current_divergence: f32,
+        threshold: f32,
+    ) -> Self {
         let recommendations = match alert_level {
             AlertLevel::Warning => vec![
                 "Monitor drift trend closely".to_string(),
@@ -135,8 +140,8 @@ impl DriftAlert {
 /// Shadow model configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShadowModelConfig {
-    pub divergence_threshold: f32,  // e.g., 0.2 (20%)
-    pub window_size: usize,         // Samples for averaging
+    pub divergence_threshold: f32, // e.g., 0.2 (20%)
+    pub window_size: usize,        // Samples for averaging
     pub alert_enabled: bool,
     pub auto_freeze_enabled: bool,
     pub rollback_enabled: bool,
@@ -170,7 +175,7 @@ pub trait InferenceModel: Send + Sync {
 pub struct MockActiveModel {
     pub id: String,
     pub version: String,
-    pub drift_factor: f32,  // Simulates drift (0.0 = no drift, 1.0 = complete divergence)
+    pub drift_factor: f32, // Simulates drift (0.0 = no drift, 1.0 = complete divergence)
 }
 
 impl MockActiveModel {
@@ -196,7 +201,10 @@ impl InferenceModel for MockActiveModel {
 
         let (label, confidence) = if self.drift_factor > 0.5 {
             // High drift - different prediction
-            ("recording".to_string(), base_confidence * (1.0 - self.drift_factor))
+            (
+                "recording".to_string(),
+                base_confidence * (1.0 - self.drift_factor),
+            )
         } else {
             (base_label.to_string(), base_confidence)
         };
@@ -329,17 +337,23 @@ impl ShadowModelMonitor {
         }
 
         // Calculate confidence-based divergence
-        let confidence_divergence = (active.confidence - shadow.confidence).abs() / active.confidence.max(shadow.confidence);
+        let confidence_divergence = (active.confidence - shadow.confidence).abs()
+            / active.confidence.max(shadow.confidence);
 
         // Calculate score distribution divergence (simplified KL-divergence approximation)
-        let score_divergence = self.calculate_score_divergence(&active.raw_scores, &shadow.raw_scores);
+        let score_divergence =
+            self.calculate_score_divergence(&active.raw_scores, &shadow.raw_scores);
 
         // Average of both metrics
         (confidence_divergence + score_divergence) / 2.0
     }
 
     /// Calculate score distribution divergence
-    fn calculate_score_divergence(&self, active_scores: &HashMap<String, f32>, shadow_scores: &HashMap<String, f32>) -> f32 {
+    fn calculate_score_divergence(
+        &self,
+        active_scores: &HashMap<String, f32>,
+        shadow_scores: &HashMap<String, f32>,
+    ) -> f32 {
         let mut total_divergence = 0.0;
         let mut count = 0;
 
@@ -421,7 +435,7 @@ impl ShadowModelMonitor {
         }
 
         let avg_divergence = self.calculate_average_divergence();
-        avg_divergence >= self.config.divergence_threshold * 1.5  // Freeze at 1.5x threshold
+        avg_divergence >= self.config.divergence_threshold * 1.5 // Freeze at 1.5x threshold
     }
 
     /// Freeze the active model (prevent further use)
@@ -458,12 +472,18 @@ impl ShadowModelMonitor {
 
     /// Get active model info
     pub fn active_model_info(&self) -> (String, String) {
-        (self.active_model.model_id().to_string(), self.active_model.model_version().to_string())
+        (
+            self.active_model.model_id().to_string(),
+            self.active_model.model_version().to_string(),
+        )
     }
 
     /// Get shadow model info
     pub fn shadow_model_info(&self) -> (String, String) {
-        (self.shadow_model.model_id().to_string(), self.shadow_model.model_version().to_string())
+        (
+            self.shadow_model.model_id().to_string(),
+            self.shadow_model.model_version().to_string(),
+        )
     }
 
     /// Check if rollback should be triggered
@@ -473,7 +493,7 @@ impl ShadowModelMonitor {
         }
 
         let avg_divergence = self.calculate_average_divergence();
-        avg_divergence >= self.config.divergence_threshold * 2.0  // Rollback at 2x threshold
+        avg_divergence >= self.config.divergence_threshold * 2.0 // Rollback at 2x threshold
     }
 
     /// Generate drift visualization data
@@ -539,8 +559,7 @@ mod tests {
 
     #[test]
     fn test_input_features_with_metadata() {
-        let features = InputFeatures::new(vec![1.0, 2.0])
-            .with_metadata("source", "test");
+        let features = InputFeatures::new(vec![1.0, 2.0]).with_metadata("source", "test");
 
         assert_eq!(features.metadata.get("source"), Some(&"test".to_string()));
     }
@@ -597,7 +616,10 @@ mod tests {
         let alert = DriftAlert::new(timestamp, AlertLevel::Emergency, 0.5, 0.2);
 
         assert_eq!(alert.alert_level, AlertLevel::Emergency);
-        assert!(alert.recommendations.iter().any(|r| r.contains("EMERGENCY")));
+        assert!(alert
+            .recommendations
+            .iter()
+            .any(|r| r.contains("EMERGENCY")));
     }
 
     // ============================================================================
@@ -715,7 +737,7 @@ mod tests {
         monitor.add_drift_sample(DriftSample::new(timestamp, 0.3, 100));
 
         let avg = monitor.calculate_average_divergence();
-        assert!((avg - 0.2).abs() < 0.001);  // Should be ~0.2
+        assert!((avg - 0.2).abs() < 0.001); // Should be ~0.2
     }
 
     #[test]

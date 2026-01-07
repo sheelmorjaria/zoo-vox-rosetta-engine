@@ -15,10 +15,10 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use std::time::{Duration, Instant};
 use anyhow::Result;
-use log::{info, warn, error};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 // ============================================================================
 // Operation Modes
@@ -182,7 +182,10 @@ impl PeerController {
     /// # }
     /// ```
     pub fn new(config: PeerControllerConfig) -> Result<Self> {
-        info!("Initializing Peer Controller with endpoint: {}", config.heartbeat_endpoint);
+        info!(
+            "Initializing Peer Controller with endpoint: {}",
+            config.heartbeat_endpoint
+        );
 
         let ctx = zmq::Context::new();
         let sock = ctx.socket(zmq::SUB)?;
@@ -242,18 +245,16 @@ impl PeerController {
     fn poll_heartbeat(&mut self) -> Result<bool> {
         // Try to receive with timeout of 0 (non-blocking)
         match self.heartbeat_sock.recv_bytes(zmq::DONTWAIT) {
-            Ok(bytes) => {
-                match HeartbeatMessage::from_bytes(&bytes) {
-                    Ok(heartbeat) => {
-                        self.handle_heartbeat(heartbeat);
-                        Ok(true)
-                    }
-                    Err(e) => {
-                        warn!("Received invalid heartbeat: {}", e);
-                        Ok(false)
-                    }
+            Ok(bytes) => match HeartbeatMessage::from_bytes(&bytes) {
+                Ok(heartbeat) => {
+                    self.handle_heartbeat(heartbeat);
+                    Ok(true)
                 }
-            }
+                Err(e) => {
+                    warn!("Received invalid heartbeat: {}", e);
+                    Ok(false)
+                }
+            },
             Err(zmq::Error::EAGAIN) => {
                 // No message available (expected for non-blocking)
                 Ok(false)
@@ -273,21 +274,30 @@ impl PeerController {
 
         // Check for sequence jump (detect missed heartbeats)
         if self.last_sequence > 0 && heartbeat.sequence > self.last_sequence + 1 {
-            warn!("Missed {} heartbeats", heartbeat.sequence - self.last_sequence - 1);
+            warn!(
+                "Missed {} heartbeats",
+                heartbeat.sequence - self.last_sequence - 1
+            );
         }
 
         self.last_sequence = heartbeat.sequence;
         self.last_heartbeat = Some(now);
 
         if !self.python_alive {
-            info!("⚡ Cognitive Agent (Python) RECONNECTED - PID: {}", heartbeat.pid);
+            info!(
+                "⚡ Cognitive Agent (Python) RECONNECTED - PID: {}",
+                heartbeat.pid
+            );
             self.python_alive = true;
             self.audio_mute = AudioMuteState::Active;
             info!("Switching to Interactive Mode");
         }
 
         if self.config.verbose_logging {
-            info!("Heartbeat received: seq={}, pid={}", heartbeat.sequence, heartbeat.pid);
+            info!(
+                "Heartbeat received: seq={}, pid={}",
+                heartbeat.sequence, heartbeat.pid
+            );
         }
     }
 

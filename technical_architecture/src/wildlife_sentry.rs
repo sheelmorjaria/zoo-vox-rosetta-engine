@@ -26,8 +26,12 @@ pub struct WildlifeSentryConfig {
 impl Default for WildlifeSentryConfig {
     fn default() -> Self {
         Self {
-            target_species: vec!["marmoset".to_string(), "dolphin".to_string(), "bat".to_string()],
-            detection_threshold: 0.001,  // Lower threshold for reliable test detection
+            target_species: vec![
+                "marmoset".to_string(),
+                "dolphin".to_string(),
+                "bat".to_string(),
+            ],
+            detection_threshold: 0.001, // Lower threshold for reliable test detection
             debounce_ms: 500,
             sample_rate: 48000,
             fft_size: 2048,
@@ -61,7 +65,8 @@ impl SpeciesSignature {
         let spectral_pattern = (0..pattern_size)
             .map(|i| {
                 let freq_norm = i as f32 / pattern_size as f32;
-                let freq = frequency_range_hz.0 + freq_norm * (frequency_range_hz.1 - frequency_range_hz.0);
+                let freq = frequency_range_hz.0
+                    + freq_norm * (frequency_range_hz.1 - frequency_range_hz.0);
                 (-freq / 10000.0).exp() // Decay with frequency
             })
             .collect();
@@ -143,9 +148,9 @@ impl TriggerUrgency {
             > 1;
 
         // Check for alarm-like patterns (high frequency, high amplitude)
-        let has_alarm_pattern = detections.iter().any(|d| {
-            d.dominant_frequency_hz > 5000.0 && d.confidence > 0.7 && d.snr_db > 15.0
-        });
+        let has_alarm_pattern = detections
+            .iter()
+            .any(|d| d.dominant_frequency_hz > 5000.0 && d.confidence > 0.7 && d.snr_db > 15.0);
 
         match (has_high_confidence, multiple_species, has_alarm_pattern) {
             (true, _, true) => Self::Critical,
@@ -204,7 +209,10 @@ struct FFTProcessor {
 
 impl FFTProcessor {
     fn new(fft_size: usize, sample_rate: usize) -> Self {
-        Self { fft_size, sample_rate }
+        Self {
+            fft_size,
+            sample_rate,
+        }
     }
 
     /// Estimate power at a specific frequency using correlation
@@ -233,7 +241,12 @@ impl FFTProcessor {
     }
 
     /// Find dominant frequency in audio
-    fn find_dominant_frequency(&self, audio: &[f32], min_hz: f32, max_hz: f32) -> Option<(f32, f32)> {
+    fn find_dominant_frequency(
+        &self,
+        audio: &[f32],
+        min_hz: f32,
+        max_hz: f32,
+    ) -> Option<(f32, f32)> {
         if audio.is_empty() {
             return None;
         }
@@ -355,7 +368,8 @@ impl WildlifeSentry {
 
     /// Add a species signature to the database
     pub fn add_species_signature(&mut self, signature: SpeciesSignature) {
-        self.species_database.insert(signature.name.clone(), signature);
+        self.species_database
+            .insert(signature.name.clone(), signature);
     }
 
     /// Get the species database
@@ -433,7 +447,9 @@ impl WildlifeSentry {
     /// Check if should trigger wake
     pub fn should_trigger(&self, detections: &[DetectionEvent]) -> bool {
         // Trigger if any detection exceeds confidence threshold
-        detections.iter().any(|d| d.confidence >= self.config.min_confidence)
+        detections
+            .iter()
+            .any(|d| d.confidence >= self.config.min_confidence)
     }
 
     /// Get detection statistics
@@ -458,15 +474,9 @@ impl Default for WildlifeSentry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     fn create_test_signature(name: &str, freq_min: f32, freq_max: f32) -> SpeciesSignature {
-        SpeciesSignature::new(
-            name.to_string(),
-            (freq_min, freq_max),
-            (50.0, 300.0),
-            10.0,
-        )
+        SpeciesSignature::new(name.to_string(), (freq_min, freq_max), (50.0, 300.0), 10.0)
     }
 
     fn generate_test_tone(freq_hz: f32, duration_ms: f32, sample_rate: usize) -> Vec<f32> {
@@ -481,10 +491,12 @@ mod tests {
 
     fn generate_test_noise(num_samples: usize) -> Vec<f32> {
         // Generate low-frequency noise (below all target species ranges)
-        (0..num_samples).map(|i| {
-            let t = i as f32 / 48000.0;
-            (50.0 * 2.0 * std::f32::consts::PI * t).sin() * 0.1  // 50 Hz hum, low amplitude
-        }).collect()
+        (0..num_samples)
+            .map(|i| {
+                let t = i as f32 / 48000.0;
+                (50.0 * 2.0 * std::f32::consts::PI * t).sin() * 0.1 // 50 Hz hum, low amplitude
+            })
+            .collect()
     }
 
     #[test]
@@ -727,9 +739,15 @@ mod tests {
     #[test]
     fn test_suggested_response_duration() {
         assert_eq!(TriggerUrgency::Low.suggested_response_duration_ms(), 500);
-        assert_eq!(TriggerUrgency::Medium.suggested_response_duration_ms(), 1000);
+        assert_eq!(
+            TriggerUrgency::Medium.suggested_response_duration_ms(),
+            1000
+        );
         assert_eq!(TriggerUrgency::High.suggested_response_duration_ms(), 2000);
-        assert_eq!(TriggerUrgency::Critical.suggested_response_duration_ms(), 3000);
+        assert_eq!(
+            TriggerUrgency::Critical.suggested_response_duration_ms(),
+            3000
+        );
     }
 
     #[test]

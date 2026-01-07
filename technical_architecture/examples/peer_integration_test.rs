@@ -3,9 +3,9 @@
 //! This example demonstrates the peer controller heartbeat monitoring system.
 //! Run this example, then in another terminal run the Python heartbeat client.
 
-use std::time::Duration;
-use technical_architecture::{PeerController, PeerControllerConfig, OperationMode};
 use anyhow::Result;
+use std::time::Duration;
+use technical_architecture::{OperationMode, PeerController, PeerControllerConfig};
 
 #[tokio::main]
 async fn main() -> Result<()> {

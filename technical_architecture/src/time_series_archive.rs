@@ -20,10 +20,10 @@ use std::time::Duration;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeSeriesPoint {
     pub timestamp: PtpTimestamp,
-    pub measurement: String,  // e.g., "temperature", "SPL", "F0"
+    pub measurement: String, // e.g., "temperature", "SPL", "F0"
     pub value: f64,
-    pub tags: HashMap<String, String>,  // e.g., {"channel": "audio_L"}
-    pub fields: HashMap<String, f64>,   // Additional fields
+    pub tags: HashMap<String, String>, // e.g., {"channel": "audio_L"}
+    pub fields: HashMap<String, f64>,  // Additional fields
 }
 
 impl TimeSeriesPoint {
@@ -104,7 +104,7 @@ pub enum ParquetCompression {
 /// Parquet export configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParquetExportConfig {
-    pub export_schedule_cron: String,  // e.g., "0 2 * * *" (daily 2AM)
+    pub export_schedule_cron: String, // e.g., "0 2 * * *" (daily 2AM)
     pub compression: ParquetCompression,
     pub row_group_size: usize,
     pub output_directory: PathBuf,
@@ -135,7 +135,7 @@ impl RetentionPolicy {
     pub fn raw_data() -> Self {
         Self {
             name: "raw".to_string(),
-            duration_days: 7,  // Keep 7 days of raw data
+            duration_days: 7, // Keep 7 days of raw data
             shard_duration_days: 1,
             default_resolution: Duration::from_secs(1),
             replica_count: 1,
@@ -145,7 +145,7 @@ impl RetentionPolicy {
     pub fn downsampled_1min() -> Self {
         Self {
             name: "downsampled_1m".to_string(),
-            duration_days: 90,  // Keep 90 days of 1min data
+            duration_days: 90, // Keep 90 days of 1min data
             shard_duration_days: 7,
             default_resolution: Duration::from_secs(60),
             replica_count: 1,
@@ -155,7 +155,7 @@ impl RetentionPolicy {
     pub fn downsampled_1hour() -> Self {
         Self {
             name: "downsampled_1h".to_string(),
-            duration_days: 365,  // Keep 1 year of 1hour data
+            duration_days: 365, // Keep 1 year of 1hour data
             shard_duration_days: 30,
             default_resolution: Duration::from_secs(3600),
             replica_count: 1,
@@ -167,7 +167,7 @@ impl RetentionPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageQuota {
     pub max_bytes: u64,
-    pub warning_threshold_percent: u8,  // Warn at X% full
+    pub warning_threshold_percent: u8, // Warn at X% full
     pub enforce_hard_limit: bool,
 }
 
@@ -568,10 +568,10 @@ mod tests {
             enforce_hard_limit: true,
         };
 
-        assert!(!quota.is_warning_level(500));  // 50%
-        assert!(!quota.is_warning_level(799));  // 79.9%
-        assert!(quota.is_warning_level(800));   // 80%
-        assert!(quota.is_warning_level(900));   // 90%
+        assert!(!quota.is_warning_level(500)); // 50%
+        assert!(!quota.is_warning_level(799)); // 79.9%
+        assert!(quota.is_warning_level(800)); // 80%
+        assert!(quota.is_warning_level(900)); // 90%
     }
 
     // ============================================================================

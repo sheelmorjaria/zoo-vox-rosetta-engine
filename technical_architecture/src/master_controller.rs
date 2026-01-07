@@ -17,12 +17,12 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
+use anyhow::Result;
+use log::{debug, error, info, warn};
+use serde::{Deserialize, Serialize};
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Instant;
-use std::pin::Pin;
-use serde::{Deserialize, Serialize};
-use anyhow::Result;
-use log::{info, debug, warn, error};
 
 // ============================================================================
 // Hardware Detection
@@ -36,7 +36,7 @@ use log::{info, debug, warn, error};
 /// - Custom FPGA: /dev/fpga*
 pub fn detect_fpga() -> bool {
     let common_paths = [
-        "/dev/xclmgmt0",   // Xilinx Alveo
+        "/dev/xclmgmt0",    // Xilinx Alveo
         "/dev/intel-fpga0", // Intel FPGA
         "/dev/fpga0",       // Generic FPGA
         "/sys/class/fpga",  // FPGA class device
@@ -50,11 +50,12 @@ pub fn detect_fpga() -> bool {
     }
 
     // Check for FPGA kernel modules
-    if let Ok(output) = std::process::Command::new("lsmod")
-        .output()
-    {
+    if let Ok(output) = std::process::Command::new("lsmod").output() {
         let modules = String::from_utf8_lossy(&output.stdout);
-        if modules.contains("xclmgmt") || modules.contains("intel_fpga") || modules.contains("ofpga") {
+        if modules.contains("xclmgmt")
+            || modules.contains("intel_fpga")
+            || modules.contains("ofpga")
+        {
             info!("FPGA kernel module detected");
             return true;
         }
@@ -65,8 +66,8 @@ pub fn detect_fpga() -> bool {
 }
 
 use crate::ptp::PtpTimestamp;
-use crate::thermal::ThermalState;
 use crate::synthesis::SynthesisMode;
+use crate::thermal::ThermalState;
 
 // ============================================================================
 // Core Types
@@ -348,7 +349,7 @@ pub struct WatchdogConfig {
 impl Default for WatchdogConfig {
     fn default() -> Self {
         Self {
-            python_timeout_ms: 150,  // 150ms
+            python_timeout_ms: 150, // 150ms
             health_check_interval_ms: 50,
             auto_restart_python: true,
             max_restart_attempts: 3,
@@ -368,13 +369,21 @@ impl Default for WatchdogConfig {
 /// 3. Process execution receipts for learning
 pub trait CognitiveProcessor: Send + Sync {
     /// Update Python's view of system health
-    fn update_health_context(&self, health: &HealthStatus) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>;
+    fn update_health_context(
+        &self,
+        health: &HealthStatus,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>;
 
     /// Request next decision from Python
-    fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>>;
+    fn decide_next_move(
+        &self,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>>;
 
     /// Provide feedback for reinforcement learning
-    fn process_feedback(&self, receipt: &ExecutionReceipt) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>;
+    fn process_feedback(
+        &self,
+        receipt: &ExecutionReceipt,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>;
 }
 
 // ============================================================================
@@ -444,7 +453,10 @@ impl PyCognitiveProcessor {
 
 #[cfg(feature = "python-bindings")]
 impl CognitiveProcessor for PyCognitiveProcessor {
-    fn update_health_context(&self, health: &HealthStatus) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
+    fn update_health_context(
+        &self,
+        health: &HealthStatus,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
         let health_json = self.health_to_json(health);
         let py_obj = self.python_object.clone();
 
@@ -455,11 +467,14 @@ impl CognitiveProcessor for PyCognitiveProcessor {
                 let method = obj.getattr("update_health_context")?;
                 let _ = method.call1((health_json,))?;
                 Ok::<(), PyErr>(())
-            }).map_err(|e| anyhow::anyhow!("Python error in update_health_context: {}", e))
+            })
+            .map_err(|e| anyhow::anyhow!("Python error in update_health_context: {}", e))
         })
     }
 
-    fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
+    fn decide_next_move(
+        &self,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
         let py_obj = self.python_object.clone();
 
         Box::pin(async move {
@@ -469,13 +484,20 @@ impl CognitiveProcessor for PyCognitiveProcessor {
                 let method = obj.getattr("decide_next_move")?;
                 let result = method.call0()?;
                 result.extract::<String>()
-            }).map_err(|e| anyhow::anyhow!("Python error in decide_next_move: {}", e))?;
+            })
+            .map_err(|e| anyhow::anyhow!("Python error in decide_next_move: {}", e))?;
 
-            Self { python_object: py_obj.clone() }.intent_from_json(&intent_json)
+            Self {
+                python_object: py_obj.clone(),
+            }
+            .intent_from_json(&intent_json)
         })
     }
 
-    fn process_feedback(&self, receipt: &ExecutionReceipt) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
+    fn process_feedback(
+        &self,
+        receipt: &ExecutionReceipt,
+    ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
         let receipt_json = self.receipt_to_json(receipt);
         let py_obj = self.python_object.clone();
 
@@ -486,7 +508,8 @@ impl CognitiveProcessor for PyCognitiveProcessor {
                 let method = obj.getattr("process_feedback")?;
                 let _ = method.call1((receipt_json,))?;
                 Ok::<(), PyErr>(())
-            }).map_err(|e| anyhow::anyhow!("Python error in process_feedback: {}", e))
+            })
+            .map_err(|e| anyhow::anyhow!("Python error in process_feedback: {}", e))
         })
     }
 }
@@ -541,7 +564,10 @@ impl SharedMemoryRingBuffer {
 
     /// Write audio data to the next available slot
     pub fn write(&mut self, data: &[f32]) -> Result<()> {
-        let slot = self.write_position.fetch_add(1, std::sync::atomic::Ordering::AcqRel) % self.config.num_slots;
+        let slot = self
+            .write_position
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel)
+            % self.config.num_slots;
 
         if data.len() > self.buffers[slot].len() {
             return Err(anyhow::anyhow!("Data too large for buffer slot"));
@@ -553,15 +579,20 @@ impl SharedMemoryRingBuffer {
 
     /// Get read-only view of the latest slot for Python
     pub fn read_latest(&self) -> Option<&[f32]> {
-        let write_slot = self.write_position.load(std::sync::atomic::Ordering::Acquire);
-        let read_slot = self.read_position.load(std::sync::atomic::Ordering::Acquire);
+        let write_slot = self
+            .write_position
+            .load(std::sync::atomic::Ordering::Acquire);
+        let read_slot = self
+            .read_position
+            .load(std::sync::atomic::Ordering::Acquire);
 
         if read_slot == write_slot {
-            return None;  // No new data
+            return None; // No new data
         }
 
         let slot = read_slot % self.config.num_slots;
-        self.read_position.store(read_slot + 1, std::sync::atomic::Ordering::Release);
+        self.read_position
+            .store(read_slot + 1, std::sync::atomic::Ordering::Release);
 
         Some(&self.buffers[slot])
     }
@@ -607,19 +638,25 @@ impl AtomicParameters {
         Self {
             sensitivity_threshold: Arc::new(std::sync::atomic::AtomicU32::new(f32::to_bits(0.5))),
             output_gain: Arc::new(std::sync::atomic::AtomicU32::new(f32::to_bits(0.8))),
-            max_processing_time_ms: Arc::new(std::sync::atomic::AtomicU64::new(f64::to_bits(100.0))),
+            max_processing_time_ms: Arc::new(std::sync::atomic::AtomicU64::new(f64::to_bits(
+                100.0,
+            ))),
         }
     }
 
     /// Get sensitivity threshold (atomic read)
     pub fn get_sensitivity(&self) -> f32 {
-        f32::from_bits(self.sensitivity_threshold.load(std::sync::atomic::Ordering::Relaxed))
+        f32::from_bits(
+            self.sensitivity_threshold
+                .load(std::sync::atomic::Ordering::Relaxed),
+        )
     }
 
     /// Set sensitivity threshold (atomic write)
     pub fn set_sensitivity(&self, value: f32) {
         let clamped = value.clamp(0.0, 1.0);
-        self.sensitivity_threshold.store(f32::to_bits(clamped), std::sync::atomic::Ordering::Relaxed);
+        self.sensitivity_threshold
+            .store(f32::to_bits(clamped), std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Get output gain (atomic read)
@@ -630,17 +667,22 @@ impl AtomicParameters {
     /// Set output gain (atomic write)
     pub fn set_gain(&self, value: f32) {
         let clamped = value.clamp(0.0, 1.0);
-        self.output_gain.store(f32::to_bits(clamped), std::sync::atomic::Ordering::Relaxed);
+        self.output_gain
+            .store(f32::to_bits(clamped), std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Get max processing time (atomic read)
     pub fn get_max_processing_time(&self) -> f64 {
-        f64::from_bits(self.max_processing_time_ms.load(std::sync::atomic::Ordering::Relaxed))
+        f64::from_bits(
+            self.max_processing_time_ms
+                .load(std::sync::atomic::Ordering::Relaxed),
+        )
     }
 
     /// Set max processing time (atomic write)
     pub fn set_max_processing_time(&self, value: f64) {
-        self.max_processing_time_ms.store(f64::to_bits(value), std::sync::atomic::Ordering::Relaxed);
+        self.max_processing_time_ms
+            .store(f64::to_bits(value), std::sync::atomic::Ordering::Relaxed);
     }
 }
 
@@ -694,9 +736,9 @@ impl UnifiedMasterController {
     pub async fn new(tech_arch: TechnicalArchitect) -> Result<Self> {
         info!("Initializing Unified Master Controller");
 
-        let audio_buffer = Arc::new(tokio::sync::Mutex::new(
-            SharedMemoryRingBuffer::new(SharedMemoryConfig::default())
-        ));
+        let audio_buffer = Arc::new(tokio::sync::Mutex::new(SharedMemoryRingBuffer::new(
+            SharedMemoryConfig::default(),
+        )));
 
         Ok(Self {
             tech_arch: Arc::new(tokio::sync::RwLock::new(tech_arch)),
@@ -709,7 +751,7 @@ impl UnifiedMasterController {
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
-                    .as_millis() as u64
+                    .as_millis() as u64,
             )),
             python_process: None,
             python_command: None,
@@ -734,14 +776,16 @@ impl UnifiedMasterController {
     /// Start the controller
     pub async fn start(&self) -> Result<()> {
         info!("Starting Unified Master Controller");
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     /// Stop the controller
     pub async fn stop(&self) -> Result<()> {
         info!("Stopping Unified Master Controller");
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
@@ -774,7 +818,9 @@ impl UnifiedMasterController {
         self.update_python_heartbeat();
 
         // 6. Validate Intent against Reality (The Gatekeeper)
-        let result = self.validate_and_execute_intent(&intent, &health_status).await?;
+        let result = self
+            .validate_and_execute_intent(&intent, &health_status)
+            .await?;
 
         // 7. Return Receipt to Python for Learning
         if let Some(ref cog_proc) = self.cog_proc {
@@ -809,9 +855,9 @@ impl UnifiedMasterController {
             thermal_state,
             temperature_c,
             audio_safe: !safety_stats.watchdog_expired,
-            cpu_usage: 0.5, // TODO: Get from system
+            cpu_usage: 0.5,                  // TODO: Get from system
             memory_usage_bytes: 500_000_000, // TODO: Get from system
-            fpga_available: detect_fpga(), // Detect FPGA availability
+            fpga_available: detect_fpga(),   // Detect FPGA availability
             last_heartbeat: tech.get_ptp_timestamp().await?,
         })
     }
@@ -823,14 +869,18 @@ impl UnifiedMasterController {
             .unwrap()
             .as_millis() as u64;
 
-        let last_heartbeat = self.last_python_heartbeat.load(std::sync::atomic::Ordering::Relaxed);
+        let last_heartbeat = self
+            .last_python_heartbeat
+            .load(std::sync::atomic::Ordering::Relaxed);
         let elapsed = now.saturating_sub(last_heartbeat);
 
         if elapsed > self.watchdog_config.python_timeout_ms {
             warn!("Python watchdog timeout: {}ms", elapsed);
 
             if self.watchdog_config.auto_restart_python {
-                let attempts = self.restart_attempts.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let attempts = self
+                    .restart_attempts
+                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
                 if attempts < self.watchdog_config.max_restart_attempts {
                     error!("Restarting Python process (attempt {})", attempts + 1);
@@ -859,7 +909,9 @@ impl UnifiedMasterController {
             // 2. Or use a named pipe/socket to trigger restart
             // 3. For now, just log the intent
 
-            info!("Python restart requested. External process manager should handle actual restart.");
+            info!(
+                "Python restart requested. External process manager should handle actual restart."
+            );
         } else {
             warn!("Python restart requested but no command configured.");
         }
@@ -870,7 +922,7 @@ impl UnifiedMasterController {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64,
-            std::sync::atomic::Ordering::SeqCst
+            std::sync::atomic::Ordering::SeqCst,
         );
 
         // Log with PTP timestamp
@@ -903,7 +955,12 @@ impl UnifiedMasterController {
         let completion_timestamp = self.tech_arch.read().await.get_ptp_timestamp().await?;
 
         match &intent.action {
-            Action::Synthesize { phrase_keys, mode, complexity, priority } => {
+            Action::Synthesize {
+                phrase_keys,
+                mode,
+                complexity,
+                priority,
+            } => {
                 // Check constraints
                 if !health.can_accept_intents() {
                     return Ok(ExecutionReceipt::Rejected {
@@ -923,7 +980,9 @@ impl UnifiedMasterController {
                 }
 
                 // High complexity requires more headroom
-                if matches!(complexity, SynthesisComplexity::High) && !health.can_handle_high_complexity() {
+                if matches!(complexity, SynthesisComplexity::High)
+                    && !health.can_handle_high_complexity()
+                {
                     return Ok(ExecutionReceipt::Rejected {
                         session_id: intent.session_id.clone(),
                         action: intent.action.clone(),
@@ -1045,7 +1104,7 @@ impl UnifiedMasterController {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64,
-            std::sync::atomic::Ordering::SeqCst
+            std::sync::atomic::Ordering::SeqCst,
         );
     }
 
@@ -1118,7 +1177,8 @@ mod tests {
 
         /// Set panic flag
         fn set_panic(&self, value: bool) {
-            self.should_panic.store(value, std::sync::atomic::Ordering::SeqCst);
+            self.should_panic
+                .store(value, std::sync::atomic::Ordering::SeqCst);
         }
 
         /// Get current health context
@@ -1128,7 +1188,10 @@ mod tests {
     }
 
     impl CognitiveProcessor for MockCognitiveProcessor {
-        fn update_health_context(&self, health: &HealthStatus) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
+        fn update_health_context(
+            &self,
+            health: &HealthStatus,
+        ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
             let health = health.clone();
             let ctx = self.health_context.clone();
             Box::pin(async move {
@@ -1137,7 +1200,9 @@ mod tests {
             })
         }
 
-        fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
+        fn decide_next_move(
+            &self,
+        ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
             let intents = self.pending_intents.clone();
             let panic = self.should_panic.load(std::sync::atomic::Ordering::SeqCst);
             let delay_ms = self.response_delay_ms;
@@ -1166,13 +1231,16 @@ mod tests {
                             mode: SynthesisMode::Horizontal,
                             complexity: SynthesisComplexity::Low,
                             priority: IntentPriority::Low,
-                        }
+                        },
                     ))
                 }
             })
         }
 
-        fn process_feedback(&self, receipt: &ExecutionReceipt) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
+        fn process_feedback(
+            &self,
+            receipt: &ExecutionReceipt,
+        ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>> {
             let receipt = receipt.clone();
             let receipts = self.received_receipts.clone();
             Box::pin(async move {
@@ -1197,12 +1265,9 @@ mod tests {
             priority: IntentPriority::Critical,
         };
 
-        let token = IntentToken::new(
-            "test_session_serialization".to_string(),
-            action
-        )
-        .with_max_latency(50.0)
-        .with_chain_hash("causal_chain_123".to_string());
+        let token = IntentToken::new("test_session_serialization".to_string(), action)
+            .with_max_latency(50.0)
+            .with_chain_hash("causal_chain_123".to_string());
 
         // Serialize to JSON
         let json = serde_json::to_string(&token).expect("Failed to serialize");
@@ -1214,7 +1279,10 @@ mod tests {
         let deserialized: IntentToken = serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(deserialized.session_id, "test_session_serialization");
         assert_eq!(deserialized.max_latency_ms, 50.0);
-        assert_eq!(deserialized.chain_hash, Some("causal_chain_123".to_string()));
+        assert_eq!(
+            deserialized.chain_hash,
+            Some("causal_chain_123".to_string())
+        );
     }
 
     /// Test 2: Receipt Feedback Loop
@@ -1243,13 +1311,17 @@ mod tests {
         };
 
         // Process feedback
-        mock.process_feedback(&receipt).await.expect("Failed to process feedback");
+        mock.process_feedback(&receipt)
+            .await
+            .expect("Failed to process feedback");
 
         // Verify receipt was received
         let receipts = mock.get_receipts().await;
         assert_eq!(receipts.len(), 1);
         match &receipts[0] {
-            ExecutionReceipt::Success { synthesis_result, .. } => {
+            ExecutionReceipt::Success {
+                synthesis_result, ..
+            } => {
                 assert!(synthesis_result.is_some());
                 let result = synthesis_result.as_ref().unwrap();
                 assert_eq!(result.mode, SynthesisMode::Horizontal);
@@ -1284,7 +1356,10 @@ mod tests {
             max_temp_c: 85.0,
         };
         match rejection {
-            RejectionReason::ThermalLimit { current_temp_c, max_temp_c } => {
+            RejectionReason::ThermalLimit {
+                current_temp_c,
+                max_temp_c,
+            } => {
                 assert!(current_temp_c > max_temp_c);
             }
             _ => panic!("Expected ThermalLimit"),
@@ -1299,7 +1374,7 @@ mod tests {
         let health = HealthStatus {
             thermal_state: ThermalState::Normal,
             temperature_c: 65.0,
-            audio_safe: false,  // Safety violation
+            audio_safe: false, // Safety violation
             cpu_usage: 0.5,
             memory_usage_bytes: 500_000_000,
             fpga_available: true,
@@ -1326,7 +1401,7 @@ mod tests {
     #[tokio::test]
     async fn test_05_python_panic_isolation() {
         let mock = MockCognitiveProcessor::new();
-        mock.set_panic(true);  // Simulate Python panic
+        mock.set_panic(true); // Simulate Python panic
 
         // Try to get next move - should get error
         let result = mock.decide_next_move().await;
@@ -1356,8 +1431,9 @@ mod tests {
                 mode: SynthesisMode::Horizontal,
                 complexity: SynthesisComplexity::Low,
                 priority: IntentPriority::Normal,
-            }
-        )).await;
+            },
+        ))
+        .await;
 
         mock.push_intent(IntentToken::new(
             "session2".to_string(),
@@ -1366,8 +1442,9 @@ mod tests {
                 mode: SynthesisMode::Horizontal,
                 complexity: SynthesisComplexity::Low,
                 priority: IntentPriority::Normal,
-            }
-        )).await;
+            },
+        ))
+        .await;
 
         // Process both intents
         let intent1 = mock.decide_next_move().await.unwrap();
@@ -1415,8 +1492,6 @@ mod tests {
     /// Verify that parameter updates are atomic and thread-safe
     #[test]
     fn test_08_atomic_parameter_updates() {
-        
-
         let params = AtomicParameters::new();
 
         // Concurrent writes from multiple threads
@@ -1460,7 +1535,7 @@ mod tests {
                 mode: SynthesisMode::Horizontal,
                 complexity: SynthesisComplexity::Medium,
                 priority: IntentPriority::Normal,
-            }
+            },
         )
         .with_chain_hash("chain_step_1".to_string());
 
@@ -1490,11 +1565,14 @@ mod tests {
                 mode: SynthesisMode::Horizontal,
                 complexity: SynthesisComplexity::Medium,
                 priority: IntentPriority::Normal,
-            }
+            },
         )
         .with_chain_hash(format!("{}->step_2", intent.chain_hash.unwrap()));
 
-        assert_eq!(next_intent.chain_hash, Some("chain_step_1->step_2".to_string()));
+        assert_eq!(
+            next_intent.chain_hash,
+            Some("chain_step_1->step_2".to_string())
+        );
     }
 
     /// Test 10: PTP Clock Consistency
@@ -1509,8 +1587,12 @@ mod tests {
         let ts3 = PtpTimestamp::now();
 
         // Verify monotonicity
-        assert!(ts2.seconds > ts1.seconds || (ts2.seconds == ts1.seconds && ts2.nanos >= ts1.nanos));
-        assert!(ts3.seconds > ts2.seconds || (ts3.seconds == ts2.seconds && ts3.nanos >= ts2.nanos));
+        assert!(
+            ts2.seconds > ts1.seconds || (ts2.seconds == ts1.seconds && ts2.nanos >= ts1.nanos)
+        );
+        assert!(
+            ts3.seconds > ts2.seconds || (ts3.seconds == ts2.seconds && ts3.nanos >= ts2.nanos)
+        );
 
         // Verify nanosecond precision
         assert!(ts1.nanos < 1_000_000_000);
@@ -1519,7 +1601,8 @@ mod tests {
 
         // Serialize/deserialize to verify consistency
         let json = serde_json::to_string(&ts1).expect("Failed to serialize");
-        let deserialized: PtpTimestamp = serde_json::from_str(&json).expect("Failed to deserialize");
+        let deserialized: PtpTimestamp =
+            serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(ts1.seconds, deserialized.seconds);
         assert_eq!(ts1.nanos, deserialized.nanos);
     }

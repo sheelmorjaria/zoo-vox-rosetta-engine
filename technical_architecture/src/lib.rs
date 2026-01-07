@@ -27,171 +27,176 @@
 // This is a known false positive from the PyO3 macro and can be safely suppressed.
 #![cfg_attr(feature = "python-bindings", allow(non_local_definitions))]
 
-use std::sync::Arc;
-use std::collections::HashMap;
-use tokio::sync::RwLock;
-use parking_lot::Mutex;
 use anyhow::Result;
-use log::{info, warn, error};
+use log::{error, info, warn};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 // Re-export public types
+pub use safety::{SafetyConfig, SafetyMonitor, SafetyStats, SafetyViolation, WatchdogTimer};
 pub use source_separation::{ConvTasNetSeparator, SeparatorConfig};
-pub use thermal::{ThermalGovernor, ThermalState, TemperatureReading, ThermalStats};
-pub use safety::{SafetyMonitor, SafetyConfig, SafetyViolation, WatchdogTimer, SafetyStats};
 pub use synthesis::{
-    GranularSynthesizer, SynthesisConfig, AudioSegment, AudioFeatures,
-    SynthesisMode, PhraseSegment, MicroharmonicConstraints, SynthesisResult,
-    ValidationResult, SafetyCheck, SpeciesParameters,
-    MicroharmonicValidator, RealTimeSafetyMonitor, CrossSpeciesAdapter,
-    ConcatenativeSynthesizer, SuperpositionalSynthesizer, CombinedSynthesizer,
-    EnhancedMicroharmonicSynthesizer, SynthesisPerformanceStats,
-    // Dynamic Microharmonic (NEW)
-    DynamicMicroharmonicParams, DynamicMicroharmonicSynthesizer,
     generate_dynamic_microharmonic_sample,
+    AudioFeatures,
+    AudioSegment,
+    CombinedSynthesizer,
+    ConcatenativeSynthesizer,
+    CrossSpeciesAdapter,
+    // Dynamic Microharmonic (NEW)
+    DynamicMicroharmonicParams,
+    DynamicMicroharmonicSynthesizer,
+    EnhancedMicroharmonicSynthesizer,
+    GranularSynthesizer,
+    MicroharmonicConstraints,
+    MicroharmonicValidator,
     // Multi-Buffer Sequencer for Corvid Multi-Modal Support (NEW)
-    Modality, TimelineEvent, ModalityTimeline, MultiBufferGranularSequencer,
+    Modality,
+    ModalityTimeline,
+    MultiBufferGranularSequencer,
+    PhraseSegment,
+    RealTimeSafetyMonitor,
+    SafetyCheck,
+    SpeciesParameters,
+    SuperpositionalSynthesizer,
+    SynthesisConfig,
+    SynthesisMode,
+    SynthesisPerformanceStats,
+    SynthesisResult,
+    TimelineEvent,
+    ValidationResult,
 };
+pub use thermal::{TemperatureReading, ThermalGovernor, ThermalState, ThermalStats};
 
 // Island Hopping Navigation (NEW)
 pub use island_hopping::{
-    Vector17D, VectorDelta, NavigationWaypoint, NavigationMode,
-    SafetyClamp, AudioIsland, PhraseDatabase, TimelineExecutor,
-    GranularParams, apply_delta_to_granular, NavigationEngine,
+    apply_delta_to_granular, AudioIsland, GranularParams, NavigationEngine, NavigationMode,
+    NavigationWaypoint, PhraseDatabase, SafetyClamp, TimelineExecutor, Vector17D, VectorDelta,
 };
 
-pub use ptp::{PtpClock, PtpTimestamp};
 pub use logging::ProvenanceLogger;
 pub use master_controller::{
-    IntentToken, ExecutionReceipt, Action, HealthStatus,
-    IntentPriority, SynthesisComplexity, RejectionReason,
-    SessionProfile, CognitiveProcessor, WatchdogConfig,
-    SharedMemoryConfig, SharedMemoryRingBuffer, AtomicParameters,
-    detect_fpga,
+    detect_fpga, Action, AtomicParameters, CognitiveProcessor, ExecutionReceipt, HealthStatus,
+    IntentPriority, IntentToken, RejectionReason, SessionProfile, SharedMemoryConfig,
+    SharedMemoryRingBuffer, SynthesisComplexity, WatchdogConfig,
 };
+pub use ptp::{PtpClock, PtpTimestamp};
 
 #[cfg(feature = "python-bindings")]
 pub use master_controller::PyCognitiveProcessor;
 
 // Peer controller exports
 pub use peer_controller::{
-    PeerController, PeerControllerConfig, OperationMode, AudioMuteState,
-    HeartbeatMessage,
+    AudioMuteState, HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig,
 };
 
 // Acoustic simulator exports (for TDD testing)
 pub use acoustic_simulator::{
-    AcousticSimulator, NoiseProfile, SpectralColor, TemporalCharacteristics,
-    AcousticEnvironment, EnvironmentType, NoiseMixture,
+    AcousticEnvironment, AcousticSimulator, EnvironmentType, NoiseMixture, NoiseProfile,
+    SpectralColor, TemporalCharacteristics,
 };
 
 // Environmental monitor exports
 pub use environmental_monitor::{
-    EnvironmentalMonitor, EnvironmentalMonitorConfig, EnvironmentalConditions,
-    RainIntensity, TemperatureClassification, LightLevel, SessionViability,
-    SolarForecast, SensorReading,
+    EnvironmentalConditions, EnvironmentalMonitor, EnvironmentalMonitorConfig, LightLevel,
+    RainIntensity, SensorReading, SessionViability, SolarForecast, TemperatureClassification,
 };
 
 // Power manager exports
 pub use power_manager::{
-    PowerManager, PowerManagerConfig, BatteryState, PowerMode,
-    PowerBudget, SolarPrediction, ThrottleState,
+    BatteryState, PowerBudget, PowerManager, PowerManagerConfig, PowerMode, SolarPrediction,
+    ThrottleState,
 };
 
 // Wildlife sentry exports
 pub use wildlife_sentry::{
-    WildlifeSentry, WildlifeSentryConfig, SpeciesSignature,
-    DetectionEvent, WakeTrigger, TriggerUrgency,
+    DetectionEvent, SpeciesSignature, TriggerUrgency, WakeTrigger, WildlifeSentry,
+    WildlifeSentryConfig,
 };
 
 // Data synchronizer exports
 pub use data_synchronizer::{
-    DataSynchronizer, SyncConfig, LogEntry, QueuedEntry, SyncPriority,
-    SyncStatus, StorageBackend, StorageType,
+    DataSynchronizer, LogEntry, QueuedEntry, StorageBackend, StorageType, SyncConfig, SyncPriority,
+    SyncStatus,
 };
 
 // Visual recording exports (for context verification in post-processing)
 pub use visual_recording::{
-    VisualRecorder, VisualRecorderConfig, VisualMetadata, RecordingStatistics,
-    RecordingState, AudioSyncEvent, AudioEventType, ContextAnnotation,
-    FrameQueue,
+    AudioEventType, AudioSyncEvent, ContextAnnotation, FrameQueue, RecordingState,
+    RecordingStatistics, VisualMetadata, VisualRecorder, VisualRecorderConfig,
 };
 
 // IACUC compliance exports
 pub use iacuc_compliance::{
-    IacucComplianceEngine, IacucProtocol, ComplianceState,
-    ComplianceCheck, IacucIntent, IacucIntentType, TimeWindow, Weekday,
-    SpeciesLimit, DailyLimits, EmergencyContact, PolicyViolation,
-    ViolationType,
+    ComplianceCheck, ComplianceState, DailyLimits, EmergencyContact, IacucComplianceEngine,
+    IacucIntent, IacucIntentType, IacucProtocol, PolicyViolation, SpeciesLimit, TimeWindow,
+    ViolationType, Weekday,
 };
 
 // Time-series archive exports
 pub use time_series_archive::{
-    TimeSeriesArchiver, TimeSeriesConfig, TimeSeriesPoint, TimeSeriesBatch,
-    ParquetExportConfig, ParquetCompression, RetentionPolicy, StorageQuota,
-    StorageStats,
+    ParquetCompression, ParquetExportConfig, RetentionPolicy, StorageQuota, StorageStats,
+    TimeSeriesArchiver, TimeSeriesBatch, TimeSeriesConfig, TimeSeriesPoint,
 };
 
 // Auto-calibration exports
 pub use auto_calibration::{
-    CalibrationEngine, CalibrationConfig, CalibrationTone, CalibrationResult,
-    GainAdjustment, CalibrationHealthStatus, SignalType, SpeakerImpedance,
-    FrequencyResponsePoint,
+    CalibrationConfig, CalibrationEngine, CalibrationHealthStatus, CalibrationResult,
+    CalibrationTone, FrequencyResponsePoint, GainAdjustment, SignalType, SpeakerImpedance,
 };
 
 // Shadow model monitor exports
 pub use shadow_model_monitor::{
-    ShadowModelMonitor, ShadowModelConfig, InputFeatures, ModelPrediction,
-    DriftSample, ModelComparison, DriftAlert, AlertLevel,
-    InferenceModel, MockActiveModel, MockShadowModel,
+    AlertLevel, DriftAlert, DriftSample, InferenceModel, InputFeatures, MockActiveModel,
+    MockShadowModel, ModelComparison, ModelPrediction, ShadowModelConfig, ShadowModelMonitor,
 };
 
 // Web dashboard exports
 pub use web_dashboard::{
-    WebDashboard, DashboardConfig, DashboardState, DashboardOperationMode,
-    IacucStatus, CalibrationDashboardStatus, WsMessage, DashboardCommand,
-    AuthToken, CommandAuditLog, CommandResult, GaugeValue,
+    AuthToken, CalibrationDashboardStatus, CommandAuditLog, CommandResult, DashboardCommand,
+    DashboardConfig, DashboardOperationMode, DashboardState, GaugeValue, IacucStatus, WebDashboard,
+    WsMessage,
 };
 
 // Multi-node coordination exports
 pub use multi_node_coordination::{
-    MultiNodeCoordinator, ClusterConfig, NodeInfo, NodeCapabilities,
-    TdmaSlot, TdmaSchedule, FusedDetectionData, LocationEstimate,
-    ElectionResult, NodeId, ClusterId, ClockClass, ClockAccuracy,
+    ClockAccuracy, ClockClass, ClusterConfig, ClusterId, ElectionResult, FusedDetectionData,
+    LocationEstimate, MultiNodeCoordinator, NodeCapabilities, NodeId, NodeInfo, TdmaSchedule,
+    TdmaSlot,
 };
 
 // Performance testing exports
 pub use peer_controller_performance::{
-    PerformanceMetrics, PeerControllerSimulator,
-    benchmark_serialization_throughput, benchmark_message_processing,
-    benchmark_timeout_detection, benchmark_mode_switching,
-    benchmark_concurrent_processing, benchmark_memory_allocation,
-    run_all_benchmarks, format_metrics,
+    benchmark_concurrent_processing, benchmark_memory_allocation, benchmark_message_processing,
+    benchmark_mode_switching, benchmark_serialization_throughput, benchmark_timeout_detection,
+    format_metrics, run_all_benchmarks, PeerControllerSimulator, PerformanceMetrics,
 };
 
 // Import modules
-mod source_separation;
-mod thermal;
-mod safety;
-pub mod synthesis;  // Make public for integration tests
-mod ptp;
+mod acoustic_simulator;
+mod auto_calibration;
+mod data_synchronizer;
+mod environmental_monitor;
+mod iacuc_compliance;
+pub mod island_hopping; // Make public for integration tests
 mod logging;
 mod master_controller;
-pub mod island_hopping;  // Make public for integration tests
-mod peer_controller;
-mod acoustic_simulator;
-mod environmental_monitor;
-mod power_manager;
-mod wildlife_sentry;
-mod data_synchronizer;
-mod visual_recording;
-mod iacuc_compliance;
-mod time_series_archive;
-mod auto_calibration;
-mod shadow_model_monitor;
-mod web_dashboard;
 mod multi_node_coordination;
+mod peer_controller;
 pub mod peer_controller_performance;
+mod power_manager;
+mod ptp;
+mod safety;
+mod shadow_model_monitor;
+mod source_separation;
+pub mod synthesis; // Make public for integration tests
+mod thermal;
+mod time_series_archive;
+mod visual_recording;
+mod web_dashboard;
+mod wildlife_sentry;
 
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,33 +297,25 @@ impl TechnicalArchitect {
 
         // Initialize separator
         let separator = Arc::new(RwLock::new(
-            ConvTasNetSeparator::new(config.separator.clone()).await?
+            ConvTasNetSeparator::new(config.separator.clone()).await?,
         ));
 
         // Initialize thermal governor
-        let thermal = Arc::new(
-            ThermalGovernor::new(config.thermal.clone()).await?
-        );
+        let thermal = Arc::new(ThermalGovernor::new(config.thermal.clone()).await?);
 
         // Initialize safety monitor
-        let safety = Arc::new(
-            SafetyMonitor::new(config.safety.clone()).await?
-        );
+        let safety = Arc::new(SafetyMonitor::new(config.safety.clone()).await?);
 
         // Initialize synthesizer
         let synthesizer = Arc::new(RwLock::new(
-            GranularSynthesizer::new(config.synthesis.clone()).await?
+            GranularSynthesizer::new(config.synthesis.clone()).await?,
         ));
 
         // Initialize PTP clock
-        let ptp_clock = Arc::new(
-            PtpClock::new(config.ptp.clone()).await?
-        );
+        let ptp_clock = Arc::new(PtpClock::new(config.ptp.clone()).await?);
 
         // Initialize logger
-        let logger = Arc::new(
-            ProvenanceLogger::new(config.logging.clone()).await?
-        );
+        let logger = Arc::new(ProvenanceLogger::new(config.logging.clone()).await?);
 
         let start_time = chrono::Utc::now();
 
@@ -420,7 +417,10 @@ impl TechnicalArchitect {
         state.thermal_state = thermal_state;
 
         // If throttling, return simplified processing
-        if matches!(thermal_state, ThermalState::Critical | ThermalState::Throttling) {
+        if matches!(
+            thermal_state,
+            ThermalState::Critical | ThermalState::Throttling
+        ) {
             warn!("Thermal throttling active, simplifying processing");
             self.stats.lock().thermal_throttle_count += 1;
             return Ok(audio); // Return raw audio
@@ -428,7 +428,10 @@ impl TechnicalArchitect {
 
         // Log provenance
         let timestamp = self.ptp_clock.get_timestamp().await?;
-        let _ = self.logger.log_decision("process_audio_frame", timestamp).await;
+        let _ = self
+            .logger
+            .log_decision("process_audio_frame", timestamp)
+            .await;
 
         // Run source separation
         let clean_audio = {
@@ -454,8 +457,10 @@ impl TechnicalArchitect {
 
         // Check latency budget
         if elapsed > self.config.target_latency_ms {
-            warn!("Latency budget exceeded: {:.2}ms > {:.2}ms",
-                elapsed, self.config.target_latency_ms);
+            warn!(
+                "Latency budget exceeded: {:.2}ms > {:.2}ms",
+                elapsed, self.config.target_latency_ms
+            );
         }
 
         Ok(clean_audio)
@@ -550,7 +555,9 @@ impl TechnicalArchitect {
         }
 
         // Log the emergency mute event with provenance
-        self.logger.log_emergency_event("emergency_mute", timestamp).await?;
+        self.logger
+            .log_emergency_event("emergency_mute", timestamp)
+            .await?;
 
         error!("Emergency mute completed at PTP timestamp: {:?}", timestamp);
         Ok(())
@@ -588,7 +595,9 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer.synthesize_horizontal(&phrase_keys, constraints).await
+        synthesizer
+            .synthesize_horizontal(&phrase_keys, constraints)
+            .await
     }
 
     /// Synthesize in vertical mode (simultaneous layering)
@@ -600,7 +609,9 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer.synthesize_vertical(&phrase_keys, constraints).await
+        synthesizer
+            .synthesize_vertical(&phrase_keys, constraints)
+            .await
     }
 
     /// Synthesize in combined mode (mixed encoding)
@@ -612,7 +623,9 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer.synthesize_combined(&synthesis_plan, constraints).await
+        synthesizer
+            .synthesize_combined(&synthesis_plan, constraints)
+            .await
     }
 }
 
@@ -705,8 +718,10 @@ impl PyDynamicMicroharmonicSynthesizer {
         phrase_params_json: String,
         crossfade_ms: f32,
     ) -> PyResult<Vec<f32>> {
-        let phrase_params: Vec<synthesis::DynamicMicroharmonicParams> = serde_json::from_str(&phrase_params_json)
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid parameters JSON: {}", e)))?;
+        let phrase_params: Vec<synthesis::DynamicMicroharmonicParams> =
+            serde_json::from_str(&phrase_params_json).map_err(|e| {
+                pyo3::exceptions::PyValueError::new_err(format!("Invalid parameters JSON: {}", e))
+            })?;
 
         Ok(self.inner.synthesize_sequence(&phrase_params, crossfade_ms))
     }
@@ -725,10 +740,13 @@ impl PyDynamicMicroharmonicSynthesizer {
         duration_ms: f32,
         variability: f32,
     ) -> PyResult<String> {
-        let params = self.inner.generate_random_params(f0_base, duration_ms, variability);
+        let params = self
+            .inner
+            .generate_random_params(f0_base, duration_ms, variability);
 
-        serde_json::to_string(&params)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
+        serde_json::to_string(&params).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
+        })
     }
 
     /// Get default parameters for marmoset vocalizations
@@ -741,8 +759,9 @@ impl PyDynamicMicroharmonicSynthesizer {
     fn marmoset_default(&self, f0_base: f32, duration_ms: f32) -> PyResult<String> {
         let params = synthesis::DynamicMicroharmonicParams::marmoset_default(f0_base, duration_ms);
 
-        serde_json::to_string(&params)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
+        serde_json::to_string(&params).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
+        })
     }
 
     /// Get default parameters for bat vocalizations
@@ -755,8 +774,9 @@ impl PyDynamicMicroharmonicSynthesizer {
     fn bat_default(&self, f0_base: f32, duration_ms: f32) -> PyResult<String> {
         let params = synthesis::DynamicMicroharmonicParams::bat_default(f0_base, duration_ms);
 
-        serde_json::to_string(&params)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
+        serde_json::to_string(&params).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
+        })
     }
 }
 
@@ -868,66 +888,142 @@ impl PySourceMetadata {
     }
 
     // === Fundamental Getters/Setters ===
-    fn get_mean_f0_hz(&self) -> f32 { self.mean_f0_hz }
-    fn set_mean_f0_hz(&mut self, value: f32) { self.mean_f0_hz = value; }
+    fn get_mean_f0_hz(&self) -> f32 {
+        self.mean_f0_hz
+    }
+    fn set_mean_f0_hz(&mut self, value: f32) {
+        self.mean_f0_hz = value;
+    }
 
-    fn get_duration_ms(&self) -> f32 { self.duration_ms }
-    fn set_duration_ms(&mut self, value: f32) { self.duration_ms = value; }
+    fn get_duration_ms(&self) -> f32 {
+        self.duration_ms
+    }
+    fn set_duration_ms(&mut self, value: f32) {
+        self.duration_ms = value;
+    }
 
-    fn get_f0_range_hz(&self) -> f32 { self.f0_range_hz }
-    fn set_f0_range_hz(&mut self, value: f32) { self.f0_range_hz = value; }
+    fn get_f0_range_hz(&self) -> f32 {
+        self.f0_range_hz
+    }
+    fn set_f0_range_hz(&mut self, value: f32) {
+        self.f0_range_hz = value;
+    }
 
     // === Grit Factor Getters/Setters ===
-    fn get_harmonic_to_noise_ratio(&self) -> f32 { self.harmonic_to_noise_ratio }
-    fn set_harmonic_to_noise_ratio(&mut self, value: f32) { self.harmonic_to_noise_ratio = value; }
+    fn get_harmonic_to_noise_ratio(&self) -> f32 {
+        self.harmonic_to_noise_ratio
+    }
+    fn set_harmonic_to_noise_ratio(&mut self, value: f32) {
+        self.harmonic_to_noise_ratio = value;
+    }
 
-    fn get_spectral_flatness(&self) -> f32 { self.spectral_flatness }
-    fn set_spectral_flatness(&mut self, value: f32) { self.spectral_flatness = value; }
+    fn get_spectral_flatness(&self) -> f32 {
+        self.spectral_flatness
+    }
+    fn set_spectral_flatness(&mut self, value: f32) {
+        self.spectral_flatness = value;
+    }
 
     // === Motion Factor Getters/Setters ===
-    fn get_attack_time_ms(&self) -> f32 { self.attack_time_ms }
-    fn set_attack_time_ms(&mut self, value: f32) { self.attack_time_ms = value; }
+    fn get_attack_time_ms(&self) -> f32 {
+        self.attack_time_ms
+    }
+    fn set_attack_time_ms(&mut self, value: f32) {
+        self.attack_time_ms = value;
+    }
 
-    fn get_decay_time_ms(&self) -> f32 { self.decay_time_ms }
-    fn set_decay_time_ms(&mut self, value: f32) { self.decay_time_ms = value; }
+    fn get_decay_time_ms(&self) -> f32 {
+        self.decay_time_ms
+    }
+    fn set_decay_time_ms(&mut self, value: f32) {
+        self.decay_time_ms = value;
+    }
 
-    fn get_sustain_level(&self) -> f32 { self.sustain_level }
-    fn set_sustain_level(&mut self, value: f32) { self.sustain_level = value; }
+    fn get_sustain_level(&self) -> f32 {
+        self.sustain_level
+    }
+    fn set_sustain_level(&mut self, value: f32) {
+        self.sustain_level = value;
+    }
 
-    fn get_vibrato_rate_hz(&self) -> f32 { self.vibrato_rate_hz }
-    fn set_vibrato_rate_hz(&mut self, value: f32) { self.vibrato_rate_hz = value; }
+    fn get_vibrato_rate_hz(&self) -> f32 {
+        self.vibrato_rate_hz
+    }
+    fn set_vibrato_rate_hz(&mut self, value: f32) {
+        self.vibrato_rate_hz = value;
+    }
 
-    fn get_vibrato_depth(&self) -> f32 { self.vibrato_depth }
-    fn set_vibrato_depth(&mut self, value: f32) { self.vibrato_depth = value; }
+    fn get_vibrato_depth(&self) -> f32 {
+        self.vibrato_depth
+    }
+    fn set_vibrato_depth(&mut self, value: f32) {
+        self.vibrato_depth = value;
+    }
 
-    fn get_jitter(&self) -> f32 { self.jitter }
-    fn set_jitter(&mut self, value: f32) { self.jitter = value; }
+    fn get_jitter(&self) -> f32 {
+        self.jitter
+    }
+    fn set_jitter(&mut self, value: f32) {
+        self.jitter = value;
+    }
 
     // === Fingerprint Factor Getters/Setters ===
-    fn get_mfcc_1(&self) -> f32 { self.mfcc_1 }
-    fn set_mfcc_1(&mut self, value: f32) { self.mfcc_1 = value; }
+    fn get_mfcc_1(&self) -> f32 {
+        self.mfcc_1
+    }
+    fn set_mfcc_1(&mut self, value: f32) {
+        self.mfcc_1 = value;
+    }
 
-    fn get_mfcc_2(&self) -> f32 { self.mfcc_2 }
-    fn set_mfcc_2(&mut self, value: f32) { self.mfcc_2 = value; }
+    fn get_mfcc_2(&self) -> f32 {
+        self.mfcc_2
+    }
+    fn set_mfcc_2(&mut self, value: f32) {
+        self.mfcc_2 = value;
+    }
 
-    fn get_mfcc_3(&self) -> f32 { self.mfcc_3 }
-    fn set_mfcc_3(&mut self, value: f32) { self.mfcc_3 = value; }
+    fn get_mfcc_3(&self) -> f32 {
+        self.mfcc_3
+    }
+    fn set_mfcc_3(&mut self, value: f32) {
+        self.mfcc_3 = value;
+    }
 
-    fn get_mfcc_4(&self) -> f32 { self.mfcc_4 }
-    fn set_mfcc_4(&mut self, value: f32) { self.mfcc_4 = value; }
+    fn get_mfcc_4(&self) -> f32 {
+        self.mfcc_4
+    }
+    fn set_mfcc_4(&mut self, value: f32) {
+        self.mfcc_4 = value;
+    }
 
-    fn get_spectral_contrast(&self) -> f32 { self.spectral_contrast }
-    fn set_spectral_contrast(&mut self, value: f32) { self.spectral_contrast = value; }
+    fn get_spectral_contrast(&self) -> f32 {
+        self.spectral_contrast
+    }
+    fn set_spectral_contrast(&mut self, value: f32) {
+        self.spectral_contrast = value;
+    }
 
     // === Rhythm Factor Getters/Setters ===
-    fn get_median_ici_ms(&self) -> f32 { self.median_ici_ms }
-    fn set_median_ici_ms(&mut self, value: f32) { self.median_ici_ms = value; }
+    fn get_median_ici_ms(&self) -> f32 {
+        self.median_ici_ms
+    }
+    fn set_median_ici_ms(&mut self, value: f32) {
+        self.median_ici_ms = value;
+    }
 
-    fn get_onset_rate_hz(&self) -> f32 { self.onset_rate_hz }
-    fn set_onset_rate_hz(&mut self, value: f32) { self.onset_rate_hz = value; }
+    fn get_onset_rate_hz(&self) -> f32 {
+        self.onset_rate_hz
+    }
+    fn set_onset_rate_hz(&mut self, value: f32) {
+        self.onset_rate_hz = value;
+    }
 
-    fn get_ici_coefficient_of_variation(&self) -> f32 { self.ici_coefficient_of_variation }
-    fn set_ici_coefficient_of_variation(&mut self, value: f32) { self.ici_coefficient_of_variation = value; }
+    fn get_ici_coefficient_of_variation(&self) -> f32 {
+        self.ici_coefficient_of_variation
+    }
+    fn set_ici_coefficient_of_variation(&mut self, value: f32) {
+        self.ici_coefficient_of_variation = value;
+    }
 
     fn __repr__(&self) -> String {
         format!(
@@ -1277,8 +1373,14 @@ impl PyGranularConcatenativeSynthesizer {
     /// # 6. Synthesize
     /// output = synthesizer.synthesize(duration_ms=virtual.duration_ms)
     /// ```
-    fn apply_vector_delta(&mut self, delta_f0_hz: f32, delta_duration_ms: f32, delta_f0_range_hz: f32) {
-        self.inner.apply_vector_delta(delta_f0_hz, delta_duration_ms, delta_f0_range_hz);
+    fn apply_vector_delta(
+        &mut self,
+        delta_f0_hz: f32,
+        delta_duration_ms: f32,
+        delta_f0_range_hz: f32,
+    ) {
+        self.inner
+            .apply_vector_delta(delta_f0_hz, delta_duration_ms, delta_f0_range_hz);
     }
 
     /// Set pitch shift ratio
@@ -1333,15 +1435,16 @@ impl PyGranularConcatenativeSynthesizer {
         let path = Path::new(&file_path);
 
         if !path.exists() {
-            return Err(pyo3::exceptions::PyFileNotFoundError::new_err(
-                format!("Audio file not found: {}", file_path)
-            ));
+            return Err(pyo3::exceptions::PyFileNotFoundError::new_err(format!(
+                "Audio file not found: {}",
+                file_path
+            )));
         }
 
         // For now, return error - we'll need to add proper audio file loading
         // This is a placeholder for the actual implementation
         Err(pyo3::exceptions::PyNotImplementedError::new_err(
-            "synthesize_from_file not yet implemented - use load_source() with pre-loaded audio"
+            "synthesize_from_file not yet implemented - use load_source() with pre-loaded audio",
         ))
     }
 }
@@ -1353,38 +1456,45 @@ impl PyTechnicalArchitect {
     /// Create a new Technical Architect from Python
     #[new]
     fn new(config_json: String) -> PyResult<Self> {
-        let config: TechArchConfig = serde_json::from_str(&config_json)
-            .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid config: {}", e)))?;
+        let config: TechArchConfig = serde_json::from_str(&config_json).map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Invalid config: {}", e))
+        })?;
 
         // Use tokio runtime
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
+        let rt = tokio::runtime::Runtime::new().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
+        })?;
 
-        let inner = rt.block_on(async {
-            TechnicalArchitect::new(config).await
-        }).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to initialize: {}", e)))?;
+        let inner = rt
+            .block_on(async { TechnicalArchitect::new(config).await })
+            .map_err(|e| {
+                pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to initialize: {}", e))
+            })?;
 
-        Ok(Self { inner: Arc::new(inner) })
+        Ok(Self {
+            inner: Arc::new(inner),
+        })
     }
 
     /// Process an audio frame from Python
     fn process_audio_frame(&self, audio: Vec<f32>) -> PyResult<Vec<f32>> {
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
+        let rt = tokio::runtime::Runtime::new().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
+        })?;
 
-        rt.block_on(async {
-            self.inner.process_audio_frame(audio).await
-        }).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Processing failed: {}", e)))
+        rt.block_on(async { self.inner.process_audio_frame(audio).await })
+            .map_err(|e| {
+                pyo3::exceptions::PyRuntimeError::new_err(format!("Processing failed: {}", e))
+            })
     }
 
     /// Get thermal state as string
     fn get_thermal_state(&self) -> PyResult<String> {
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
+        let rt = tokio::runtime::Runtime::new().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
+        })?;
 
-        let state = rt.block_on(async {
-            self.inner.get_thermal_state().await
-        });
+        let state = rt.block_on(async { self.inner.get_thermal_state().await });
 
         Ok(format!("{:?}", state))
     }
@@ -1392,8 +1502,9 @@ impl PyTechnicalArchitect {
     /// Get statistics as JSON string
     fn get_stats(&self) -> PyResult<String> {
         let stats = self.inner.stats.lock();
-        serde_json::to_string(&*stats)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize: {}", e)))
+        serde_json::to_string(&*stats).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize: {}", e))
+        })
     }
 }
 
@@ -1560,7 +1671,8 @@ impl PyPeerControllerConfig {
         verbose_logging: bool,
     ) -> Self {
         Self {
-            heartbeat_endpoint: heartbeat_endpoint.unwrap_or_else(|| "ipc:///tmp/cognitive_heartbeat.ipc".to_string()),
+            heartbeat_endpoint: heartbeat_endpoint
+                .unwrap_or_else(|| "ipc:///tmp/cognitive_heartbeat.ipc".to_string()),
             heartbeat_timeout_ms,
             poll_interval_ms,
             verbose_logging,
@@ -1606,16 +1718,25 @@ impl PyPeerController {
     fn new(config: PyPeerControllerConfig) -> PyResult<Self> {
         let rust_config: peer_controller::PeerControllerConfig = config.into();
         peer_controller::PeerController::new(rust_config)
-            .map(|controller| Self { inner: std::sync::Mutex::new(controller) })
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create PeerController: {}", e)))
+            .map(|controller| Self {
+                inner: std::sync::Mutex::new(controller),
+            })
+            .map_err(|e| {
+                pyo3::exceptions::PyRuntimeError::new_err(format!(
+                    "Failed to create PeerController: {}",
+                    e
+                ))
+            })
     }
 
     /// Tick the controller (check for heartbeat and update mode)
     /// Returns the current operation mode
     fn tick(&self) -> PyResult<PyOperationMode> {
-        let mut controller = self.inner.lock()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
-        controller.tick()
+        let mut controller = self.inner.lock().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
+        })?;
+        controller
+            .tick()
             .map(|mode| PyOperationMode { inner: mode })
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e)))
     }
@@ -1634,25 +1755,31 @@ impl PyPeerController {
 
     /// Check if currently in Interactive mode
     fn is_interactive(&self) -> PyResult<bool> {
-        let mut controller = self.inner.lock()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
-        let mode = controller.tick()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e)))?;
+        let mut controller = self.inner.lock().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
+        })?;
+        let mode = controller.tick().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e))
+        })?;
         Ok(matches!(mode, peer_controller::OperationMode::Interactive))
     }
 
     /// Check if currently in Passthrough mode
     fn is_passthrough(&self) -> PyResult<bool> {
-        let mut controller = self.inner.lock()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
-        let mode = controller.tick()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e)))?;
+        let mut controller = self.inner.lock().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
+        })?;
+        let mode = controller.tick().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e))
+        })?;
         Ok(matches!(mode, peer_controller::OperationMode::Passthrough))
     }
 
     fn __repr__(&self) -> String {
         let mut controller = self.inner.lock().unwrap();
-        let mode = controller.tick().unwrap_or(peer_controller::OperationMode::Passthrough);
+        let mode = controller
+            .tick()
+            .unwrap_or(peer_controller::OperationMode::Passthrough);
         format!("PeerController(mode={:?})", mode)
     }
 }
@@ -1660,7 +1787,6 @@ impl PyPeerController {
 // ============================================================================
 // Environmental Monitor Python Bindings
 // ============================================================================
-
 
 /// Python wrapper for SessionViability
 #[cfg(feature = "python-bindings")]
@@ -1675,17 +1801,23 @@ pub struct PySessionViability {
 impl PySessionViability {
     #[staticmethod]
     fn viable() -> Self {
-        Self { inner: environmental_monitor::SessionViability::Viable }
+        Self {
+            inner: environmental_monitor::SessionViability::Viable,
+        }
     }
 
     #[staticmethod]
     fn marginal() -> Self {
-        Self { inner: environmental_monitor::SessionViability::Marginal }
+        Self {
+            inner: environmental_monitor::SessionViability::Marginal,
+        }
     }
 
     #[staticmethod]
     fn infeasible() -> Self {
-        Self { inner: environmental_monitor::SessionViability::Infeasible }
+        Self {
+            inner: environmental_monitor::SessionViability::Infeasible,
+        }
     }
 
     fn __repr__(&self) -> String {
@@ -1718,32 +1850,44 @@ pub struct PyRainIntensity {
 impl PyRainIntensity {
     #[staticmethod]
     fn none() -> Self {
-        Self { inner: environmental_monitor::RainIntensity::None }
+        Self {
+            inner: environmental_monitor::RainIntensity::None,
+        }
     }
 
     #[staticmethod]
     fn light() -> Self {
-        Self { inner: environmental_monitor::RainIntensity::Light }
+        Self {
+            inner: environmental_monitor::RainIntensity::Light,
+        }
     }
 
     #[staticmethod]
     fn moderate() -> Self {
-        Self { inner: environmental_monitor::RainIntensity::Moderate }
+        Self {
+            inner: environmental_monitor::RainIntensity::Moderate,
+        }
     }
 
     #[staticmethod]
     fn heavy() -> Self {
-        Self { inner: environmental_monitor::RainIntensity::Heavy }
+        Self {
+            inner: environmental_monitor::RainIntensity::Heavy,
+        }
     }
 
     #[staticmethod]
     fn storm() -> Self {
-        Self { inner: environmental_monitor::RainIntensity::Storm }
+        Self {
+            inner: environmental_monitor::RainIntensity::Storm,
+        }
     }
 
     #[staticmethod]
     fn from_mm_h(mm_h: f32) -> Self {
-        Self { inner: environmental_monitor::RainIntensity::from_mm_h(mm_h) }
+        Self {
+            inner: environmental_monitor::RainIntensity::from_mm_h(mm_h),
+        }
     }
 
     fn forces_passthrough(&self) -> bool {
@@ -1782,32 +1926,44 @@ pub struct PyTemperatureClassification {
 impl PyTemperatureClassification {
     #[staticmethod]
     fn freezing() -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::Freezing }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::Freezing,
+        }
     }
 
     #[staticmethod]
     fn cold() -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::Cold }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::Cold,
+        }
     }
 
     #[staticmethod]
     fn mild() -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::Mild }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::Mild,
+        }
     }
 
     #[staticmethod]
     fn hot() -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::Hot }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::Hot,
+        }
     }
 
     #[staticmethod]
     fn extreme() -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::Extreme }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::Extreme,
+        }
     }
 
     #[staticmethod]
     fn from_celsius(celsius: f32) -> Self {
-        Self { inner: environmental_monitor::TemperatureClassification::from_celsius(celsius) }
+        Self {
+            inner: environmental_monitor::TemperatureClassification::from_celsius(celsius),
+        }
     }
 
     fn forces_passthrough(&self) -> bool {
@@ -1898,7 +2054,9 @@ impl PyEnvironmentalConditions {
 
     fn temperature_classification(&self) -> PyTemperatureClassification {
         PyTemperatureClassification {
-            inner: environmental_monitor::TemperatureClassification::from_celsius(self.temperature_celsius),
+            inner: environmental_monitor::TemperatureClassification::from_celsius(
+                self.temperature_celsius,
+            ),
         }
     }
 
@@ -1920,8 +2078,10 @@ impl PyEnvironmentalConditions {
     }
 
     fn __repr__(&self) -> String {
-        format!("EnvironmentalConditions(temp={}°C, rain={}mm/h, light={}lux)",
-                self.temperature_celsius, self.rain_intensity_mm_h, self.light_lux)
+        format!(
+            "EnvironmentalConditions(temp={}°C, rain={}mm/h, light={}lux)",
+            self.temperature_celsius, self.rain_intensity_mm_h, self.light_lux
+        )
     }
 }
 
@@ -1984,8 +2144,10 @@ impl PyEnvironmentalMonitorConfig {
     }
 
     fn __repr__(&self) -> String {
-        format!("EnvironmentalMonitorConfig(poll={}ms, mock={})",
-                self.poll_interval_ms, self.mock_mode)
+        format!(
+            "EnvironmentalMonitorConfig(poll={}ms, mock={})",
+            self.poll_interval_ms, self.mock_mode
+        )
     }
 }
 
@@ -2003,14 +2165,18 @@ impl PyEnvironmentalMonitor {
     fn new(config: PyEnvironmentalMonitorConfig) -> Self {
         let rust_config: environmental_monitor::EnvironmentalMonitorConfig = config.into();
         Self {
-            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::new(rust_config)),
+            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::new(
+                rust_config,
+            )),
         }
     }
 
     #[staticmethod]
     fn with_defaults() -> Self {
         Self {
-            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::with_defaults()),
+            inner: std::sync::Mutex::new(
+                environmental_monitor::EnvironmentalMonitor::with_defaults(),
+            ),
         }
     }
 
@@ -2022,9 +2188,11 @@ impl PyEnvironmentalMonitor {
     }
 
     fn poll_sensors(&self) -> PyResult<PyEnvironmentalConditions> {
-        let mut monitor = self.inner.lock()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
-        monitor.poll_sensors()
+        let mut monitor = self.inner.lock().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
+        })?;
+        monitor
+            .poll_sensors()
             .map(PyEnvironmentalConditions::from)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Poll failed: {}", e)))
     }
@@ -2047,8 +2215,9 @@ impl PyEnvironmentalMonitor {
     }
 
     fn set_conditions(&self, conditions: PyEnvironmentalConditions) -> PyResult<()> {
-        let mut monitor = self.inner.lock()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
+        let mut monitor = self.inner.lock().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
+        })?;
         // Convert Python conditions to Rust conditions
         let rust_conditions = environmental_monitor::EnvironmentalConditions {
             timestamp: ptp::PtpTimestamp::new(0, 0),
@@ -2067,15 +2236,16 @@ impl PyEnvironmentalMonitor {
     fn __repr__(&self) -> String {
         let monitor = self.inner.lock().unwrap();
         let conditions = monitor.current_conditions();
-        format!("EnvironmentalMonitor(temp={}°C, rain={}mm/h)",
-                conditions.temperature_celsius, conditions.rain_intensity_mm_h)
+        format!(
+            "EnvironmentalMonitor(temp={}°C, rain={}mm/h)",
+            conditions.temperature_celsius, conditions.rain_intensity_mm_h
+        )
     }
 }
 
 // ============================================================================
 // Thermal State Python Bindings
 // ============================================================================
-
 
 /// Python wrapper for ThermalState
 #[cfg(feature = "python-bindings")]
@@ -2090,22 +2260,30 @@ pub struct PyThermalState {
 impl PyThermalState {
     #[staticmethod]
     fn normal() -> Self {
-        Self { inner: thermal::ThermalState::Normal }
+        Self {
+            inner: thermal::ThermalState::Normal,
+        }
     }
 
     #[staticmethod]
     fn warning() -> Self {
-        Self { inner: thermal::ThermalState::Warning }
+        Self {
+            inner: thermal::ThermalState::Warning,
+        }
     }
 
     #[staticmethod]
     fn throttling() -> Self {
-        Self { inner: thermal::ThermalState::Throttling }
+        Self {
+            inner: thermal::ThermalState::Throttling,
+        }
     }
 
     #[staticmethod]
     fn critical() -> Self {
-        Self { inner: thermal::ThermalState::Critical }
+        Self {
+            inner: thermal::ThermalState::Critical,
+        }
     }
 
     fn requires_throttling(&self) -> bool {
@@ -2264,7 +2442,11 @@ impl PyRecordingStatistics {
     fn __repr__(&self) -> String {
         format!(
             "RecordingStatistics(state={}, frames={}, dropped={}, session={:?}, duration={:.2}s)",
-            self.state, self.frames_recorded, self.dropped_frames, self.current_session_id, self.duration_seconds
+            self.state,
+            self.frames_recorded,
+            self.dropped_frames,
+            self.current_session_id,
+            self.duration_seconds
         )
     }
 }
@@ -2390,7 +2572,9 @@ impl PyVisualRecorder {
     fn new(config: PyVisualRecorderConfig) -> Self {
         let rust_config: visual_recording::VisualRecorderConfig = config.into();
         Self {
-            inner: Arc::new(parking_lot::Mutex::new(visual_recording::VisualRecorder::new(rust_config))),
+            inner: Arc::new(parking_lot::Mutex::new(
+                visual_recording::VisualRecorder::new(rust_config),
+            )),
         }
     }
 
@@ -2401,22 +2585,26 @@ impl PyVisualRecorder {
             config.recording_dir = dir;
         }
         Self {
-            inner: Arc::new(parking_lot::Mutex::new(visual_recording::VisualRecorder::new(config))),
+            inner: Arc::new(parking_lot::Mutex::new(
+                visual_recording::VisualRecorder::new(config),
+            )),
         }
     }
 
     /// Start a new recording session
     fn start_session(&self, session_id: String) -> PyResult<String> {
         let mut recorder = self.inner.lock();
-        recorder.start_session(&session_id)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to start session: {}", e)))
+        recorder.start_session(&session_id).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to start session: {}", e))
+        })
     }
 
     /// Stop current recording session
     fn stop_session(&self) -> PyResult<PyVisualMetadata> {
         let mut recorder = self.inner.lock();
-        let metadata = recorder.stop_session()
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to stop session: {}", e)))?;
+        let metadata = recorder.stop_session().map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to stop session: {}", e))
+        })?;
         Ok(metadata.into())
     }
 
@@ -2599,25 +2787,63 @@ impl PyVector17D {
     }
 
     // Getters for all 17 dimensions
-    fn get_mean_f0_hz(&self) -> f32 { self.inner.mean_f0_hz }
-    fn get_duration_ms(&self) -> f32 { self.inner.duration_ms }
-    fn get_f0_range_hz(&self) -> f32 { self.inner.f0_range_hz }
-    fn get_harmonic_to_noise_ratio(&self) -> f32 { self.inner.harmonic_to_noise_ratio }
-    fn get_spectral_flatness(&self) -> f32 { self.inner.spectral_flatness }
-    fn get_attack_time_ms(&self) -> f32 { self.inner.attack_time_ms }
-    fn get_decay_time_ms(&self) -> f32 { self.inner.decay_time_ms }
-    fn get_sustain_level(&self) -> f32 { self.inner.sustain_level }
-    fn get_vibrato_rate_hz(&self) -> f32 { self.inner.vibrato_rate_hz }
-    fn get_vibrato_depth(&self) -> f32 { self.inner.vibrato_depth }
-    fn get_jitter(&self) -> f32 { self.inner.jitter }
-    fn get_mfcc_1(&self) -> f32 { self.inner.mfcc_1 }
-    fn get_mfcc_2(&self) -> f32 { self.inner.mfcc_2 }
-    fn get_mfcc_3(&self) -> f32 { self.inner.mfcc_3 }
-    fn get_mfcc_4(&self) -> f32 { self.inner.mfcc_4 }
-    fn get_spectral_contrast(&self) -> f32 { self.inner.spectral_contrast }
-    fn get_median_ici_ms(&self) -> f32 { self.inner.median_ici_ms }
-    fn get_onset_rate_hz(&self) -> f32 { self.inner.onset_rate_hz }
-    fn get_ici_coefficient_of_variation(&self) -> f32 { self.inner.ici_coefficient_of_variation }
+    fn get_mean_f0_hz(&self) -> f32 {
+        self.inner.mean_f0_hz
+    }
+    fn get_duration_ms(&self) -> f32 {
+        self.inner.duration_ms
+    }
+    fn get_f0_range_hz(&self) -> f32 {
+        self.inner.f0_range_hz
+    }
+    fn get_harmonic_to_noise_ratio(&self) -> f32 {
+        self.inner.harmonic_to_noise_ratio
+    }
+    fn get_spectral_flatness(&self) -> f32 {
+        self.inner.spectral_flatness
+    }
+    fn get_attack_time_ms(&self) -> f32 {
+        self.inner.attack_time_ms
+    }
+    fn get_decay_time_ms(&self) -> f32 {
+        self.inner.decay_time_ms
+    }
+    fn get_sustain_level(&self) -> f32 {
+        self.inner.sustain_level
+    }
+    fn get_vibrato_rate_hz(&self) -> f32 {
+        self.inner.vibrato_rate_hz
+    }
+    fn get_vibrato_depth(&self) -> f32 {
+        self.inner.vibrato_depth
+    }
+    fn get_jitter(&self) -> f32 {
+        self.inner.jitter
+    }
+    fn get_mfcc_1(&self) -> f32 {
+        self.inner.mfcc_1
+    }
+    fn get_mfcc_2(&self) -> f32 {
+        self.inner.mfcc_2
+    }
+    fn get_mfcc_3(&self) -> f32 {
+        self.inner.mfcc_3
+    }
+    fn get_mfcc_4(&self) -> f32 {
+        self.inner.mfcc_4
+    }
+    fn get_spectral_contrast(&self) -> f32 {
+        self.inner.spectral_contrast
+    }
+    fn get_median_ici_ms(&self) -> f32 {
+        self.inner.median_ici_ms
+    }
+    fn get_onset_rate_hz(&self) -> f32 {
+        self.inner.onset_rate_hz
+    }
+    fn get_ici_coefficient_of_variation(&self) -> f32 {
+        self.inner.ici_coefficient_of_variation
+    }
 
     fn __repr__(&self) -> String {
         format!(
@@ -2670,7 +2896,9 @@ impl PyNavigationEngine {
         anchor: &PyVector17D,
         anchor_island: Option<String>,
     ) -> PyResult<PyNavigationWaypoint> {
-        let waypoint = self.inner.clamp_to_safe_distance(&target.inner, &anchor.inner, anchor_island);
+        let waypoint =
+            self.inner
+                .clamp_to_safe_distance(&target.inner, &anchor.inner, anchor_island);
         Ok(PyNavigationWaypoint { inner: waypoint })
     }
 
@@ -2691,7 +2919,9 @@ impl PyNavigationEngine {
         if let Some(island) = self.inner.find_nearest_island(&target.inner) {
             Ok(Some(PyAudioIsland {
                 key: island.key.clone(),
-                features: PyVector17D { inner: island.features },
+                features: PyVector17D {
+                    inner: island.features,
+                },
                 species: island.species.clone(),
             }))
         } else {
@@ -2727,7 +2957,9 @@ impl PyNavigationWaypoint {
         match self.inner.mode {
             island_hopping::NavigationMode::Interpolation => "Interpolation".to_string(),
             island_hopping::NavigationMode::Extrapolation => "Extrapolation".to_string(),
-            island_hopping::NavigationMode::ExtrapolationClamped => "ExtrapolationClamped".to_string(),
+            island_hopping::NavigationMode::ExtrapolationClamped => {
+                "ExtrapolationClamped".to_string()
+            }
         }
     }
 
@@ -2771,15 +3003,17 @@ pub struct PyAudioIsland {
 impl PyAudioIsland {
     #[new]
     fn new(key: String, features: PyVector17D, species: String) -> Self {
-        Self { key, features, species }
+        Self {
+            key,
+            features,
+            species,
+        }
     }
 
     fn __repr__(&self) -> String {
         format!(
             "AudioIsland(key={}, species={}, F0={}Hz)",
-            self.key,
-            self.species,
-            self.features.inner.mean_f0_hz as i32
+            self.key, self.species, self.features.inner.mean_f0_hz as i32
         )
     }
 }
@@ -2790,9 +3024,9 @@ fn technical_architecture(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTechnicalArchitect>()?;
     m.add_class::<PyDynamicMicroharmonicSynthesizer>()?;
     m.add_class::<PyGranularConcatenativeSynthesizer>()?;
-    m.add_class::<PySourceMetadata>()?;  // For 17D delta-based synthesis
-    m.add_class::<PySourceMetadataBuilder>()?;  // For building partial metadata
-    // Safety-critical components
+    m.add_class::<PySourceMetadata>()?; // For 17D delta-based synthesis
+    m.add_class::<PySourceMetadataBuilder>()?; // For building partial metadata
+                                               // Safety-critical components
     m.add_class::<PyOperationMode>()?;
     m.add_class::<PyPeerController>()?;
     m.add_class::<PyPeerControllerConfig>()?;
@@ -2828,4 +3062,3 @@ impl TechArchConfig {
             .map_err(|e| anyhow::anyhow!("Failed to parse TechArchConfig from JSON: {}", e))
     }
 }
-

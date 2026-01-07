@@ -13,13 +13,13 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
+use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
+use log::{debug, info};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
-use anyhow::{Result, Context};
-use log::{info, debug};
-use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex as TokioMutex;
-use chrono::{DateTime, Utc};
 
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,7 +50,7 @@ impl Default for LoggingConfig {
     fn default() -> Self {
         Self {
             log_file_path: PathBuf::from("logs/provenance.log"),
-            max_file_size: 100_000_000,  // 100MB
+            max_file_size: 100_000_000, // 100MB
             num_backups: 5,
             async_logging: true,
             log_level: "info".to_string(),
@@ -125,8 +125,7 @@ impl LogEntry {
 
     /// Convert to JSON string
     pub fn to_json(&self) -> Result<String> {
-        serde_json::to_string_pretty(self)
-            .context("Failed to serialize log entry to JSON")
+        serde_json::to_string_pretty(self).context("Failed to serialize log entry to JSON")
     }
 }
 
@@ -149,7 +148,8 @@ impl ProvenanceLogger {
 
         // Create log directory if it doesn't exist
         if let Some(parent) = config.log_file_path.parent() {
-            tokio::fs::create_dir_all(parent).await
+            tokio::fs::create_dir_all(parent)
+                .await
                 .context("Failed to create log directory")?;
         }
 
@@ -171,13 +171,18 @@ impl ProvenanceLogger {
     /// Stop logging
     pub async fn stop(&self) -> Result<()> {
         info!("Stopping Provenance Logger");
-        self.active.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.active
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         self.flush().await?;
         Ok(())
     }
 
     /// Log a decision with PTP timestamp
-    pub async fn log_decision(&self, decision: &str, ptp_ts: crate::ptp::PtpTimestamp) -> Result<String> {
+    pub async fn log_decision(
+        &self,
+        decision: &str,
+        ptp_ts: crate::ptp::PtpTimestamp,
+    ) -> Result<String> {
         let entry = LogEntry::new("decision", "technical_arch", decision)
             .with_ptp_timestamp(ptp_ts.as_nanos())
             .with_data(serde_json::json!({
@@ -190,15 +195,19 @@ impl ProvenanceLogger {
     }
 
     /// Log a generic event
-    pub async fn log_event(&self, component: &str, event_type: &str, message: &str) -> Result<String> {
+    pub async fn log_event(
+        &self,
+        component: &str,
+        event_type: &str,
+        message: &str,
+    ) -> Result<String> {
         let entry = LogEntry::new(event_type, component, message);
         self.log_entry(entry).await
     }
 
     /// Log a safety event
     pub async fn log_safety(&self, event: &str, severity: &str) -> Result<String> {
-        let entry = LogEntry::new("safety", "safety_monitor", event)
-            .with_severity(severity);
+        let entry = LogEntry::new("safety", "safety_monitor", event).with_severity(severity);
         self.log_entry(entry).await
     }
 
@@ -206,7 +215,11 @@ impl ProvenanceLogger {
     ///
     /// This is for safety-critical events that require immediate attention
     /// and must be logged for provenance and audit purposes.
-    pub async fn log_emergency_event(&self, event: &str, ptp_ts: crate::ptp::PtpTimestamp) -> Result<String> {
+    pub async fn log_emergency_event(
+        &self,
+        event: &str,
+        ptp_ts: crate::ptp::PtpTimestamp,
+    ) -> Result<String> {
         let entry = LogEntry::new("emergency", "technical_arch", event)
             .with_severity("CRITICAL")
             .with_ptp_timestamp(ptp_ts.as_nanos())
@@ -226,8 +239,8 @@ impl ProvenanceLogger {
 
     /// Log a processing event
     pub async fn log_processing(&self, operation: &str, duration_ms: f64) -> Result<String> {
-        let entry = LogEntry::new("processing", "technical_arch", operation)
-            .with_data(serde_json::json!({
+        let entry =
+            LogEntry::new("processing", "technical_arch", operation).with_data(serde_json::json!({
                 "operation": operation,
                 "duration_ms": duration_ms,
             }));
@@ -236,8 +249,8 @@ impl ProvenanceLogger {
 
     /// Log a thermal event
     pub async fn log_thermal(&self, state: &str, temp_c: f32) -> Result<String> {
-        let entry = LogEntry::new("thermal", "thermal_governor", state)
-            .with_data(serde_json::json!({
+        let entry =
+            LogEntry::new("thermal", "thermal_governor", state).with_data(serde_json::json!({
                 "state": state,
                 "temp_c": temp_c,
             }));
@@ -301,19 +314,27 @@ impl ProvenanceLogger {
 
         // Remove oldest backup if we have too many
         for i in (1..=self.config.num_backups).rev() {
-            let backup_path = self.config.log_file_path.with_extension(format!("log.{}", i));
+            let backup_path = self
+                .config
+                .log_file_path
+                .with_extension(format!("log.{}", i));
             if i == self.config.num_backups {
                 tokio::fs::remove_file(backup_path).await.ok();
             } else {
                 // Rename backups (move up one number)
-                let next_backup = self.config.log_file_path.with_extension(format!("log.{}", i + 1));
+                let next_backup = self
+                    .config
+                    .log_file_path
+                    .with_extension(format!("log.{}", i + 1));
                 tokio::fs::rename(&backup_path, &next_backup).await.ok();
             }
         }
 
         // Rename current log to .1
         let backup_1 = self.config.log_file_path.with_extension("log.1");
-        tokio::fs::rename(&self.config.log_file_path, &backup_1).await.ok();
+        tokio::fs::rename(&self.config.log_file_path, &backup_1)
+            .await
+            .ok();
 
         // Reset file size
         *self.file_size.lock().await = 0;
@@ -349,7 +370,8 @@ impl ProvenanceLogger {
     /// Get entries by type
     pub async fn get_entries_by_type(&self, entry_type: &str) -> Vec<LogEntry> {
         let entries = self.entries.lock().await;
-        entries.iter()
+        entries
+            .iter()
             .filter(|e| e.entry_type == entry_type)
             .cloned()
             .collect()
@@ -358,7 +380,8 @@ impl ProvenanceLogger {
     /// Get entries by component
     pub async fn get_entries_by_component(&self, component: &str) -> Vec<LogEntry> {
         let entries = self.entries.lock().await;
-        entries.iter()
+        entries
+            .iter()
             .filter(|e| e.component == component)
             .cloned()
             .collect()
@@ -367,7 +390,8 @@ impl ProvenanceLogger {
     /// Get entries by severity
     pub async fn get_entries_by_severity(&self, severity: &str) -> Vec<LogEntry> {
         let entries = self.entries.lock().await;
-        entries.iter()
+        entries
+            .iter()
             .filter(|e| e.severity == severity)
             .cloned()
             .collect()
@@ -421,10 +445,11 @@ impl ProvenanceLogger {
     /// Export logs to JSON file
     pub async fn export(&self, path: &PathBuf) -> Result<()> {
         let entries = self.entries.lock().await;
-        let json = serde_json::to_string_pretty(&*entries)
-            .context("Failed to serialize log entries")?;
+        let json =
+            serde_json::to_string_pretty(&*entries).context("Failed to serialize log entries")?;
 
-        tokio::fs::write(path, json).await
+        tokio::fs::write(path, json)
+            .await
             .context("Failed to write export file")?;
 
         info!("Exported {} log entries to {:?}", entries.len(), path);
@@ -498,7 +523,10 @@ mod tests {
         let logger = ProvenanceLogger::new(config).await.unwrap();
         logger.start().await.unwrap();
 
-        let entry_id = logger.log_event("test_component", "test_event", "test message").await.unwrap();
+        let entry_id = logger
+            .log_event("test_component", "test_event", "test message")
+            .await
+            .unwrap();
         assert!(!entry_id.is_empty());
 
         let entries = logger.get_entries().await;

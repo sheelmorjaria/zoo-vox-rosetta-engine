@@ -59,7 +59,7 @@ pub enum ElectionResult {
 pub struct TdmaSlot {
     pub node_id: NodeId,
     pub slot_index: u32,
-    pub start_time_us: u64,  // Microseconds from epoch
+    pub start_time_us: u64, // Microseconds from epoch
     pub duration_us: u64,
     pub guard_time_us: u64,
 }
@@ -79,7 +79,7 @@ pub struct NodeInfo {
     pub cluster_id: ClusterId,
     pub clock_class: ClockClass,
     pub clock_accuracy: ClockAccuracy,
-    pub priority: u8,  // 1-255, lower is higher priority
+    pub priority: u8, // 1-255, lower is higher priority
     pub last_seen: PtpTimestamp,
     pub capabilities: NodeCapabilities,
 }
@@ -108,9 +108,9 @@ pub struct FusedDetectionData {
 /// Location estimate from multi-node triangulation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocationEstimate {
-    pub x: f32,  // meters
-    pub y: f32,  // meters
-    pub z: f32,  // meters
+    pub x: f32, // meters
+    pub y: f32, // meters
+    pub z: f32, // meters
     pub confidence: f32,
 }
 
@@ -259,7 +259,9 @@ impl MultiNodeCoordinator {
     /// Generate TDMA schedule (only grandmaster should do this)
     pub async fn generate_tdma_schedule(&self) -> Result<TdmaSchedule> {
         if !self.is_grandmaster().await {
-            return Err(anyhow::anyhow!("Only grandmaster can generate TDMA schedule"));
+            return Err(anyhow::anyhow!(
+                "Only grandmaster can generate TDMA schedule"
+            ));
         }
 
         let nodes = self.nodes.lock().await;
@@ -274,7 +276,8 @@ impl MultiNodeCoordinator {
         };
 
         let mut slots = Vec::new();
-        let mut current_time: u64 = (PtpTimestamp::from(chrono::Utc::now()).as_nanos() / 1000) as u64;
+        let mut current_time: u64 =
+            (PtpTimestamp::from(chrono::Utc::now()).as_nanos() / 1000) as u64;
 
         for (index, node) in node_list.iter().enumerate() {
             slots.push(TdmaSlot {
@@ -305,7 +308,10 @@ impl MultiNodeCoordinator {
     /// Get TDMA slot for this node
     pub async fn get_my_tdma_slot(&self) -> Option<TdmaSlot> {
         let schedule = self.get_tdma_schedule().await?;
-        schedule.slots.into_iter().find(|slot| slot.node_id == self.node_id)
+        schedule
+            .slots
+            .into_iter()
+            .find(|slot| slot.node_id == self.node_id)
     }
 
     /// Fuse detection data from multiple nodes
@@ -329,11 +335,14 @@ impl MultiNodeCoordinator {
         }
 
         // Simple confidence fusion (weighted average)
-        let avg_confidence: f32 = all_confidences.iter().sum::<f32>() / all_confidences.len() as f32;
+        let avg_confidence: f32 =
+            all_confidences.iter().sum::<f32>() / all_confidences.len() as f32;
 
         // Location fusion (simple average)
         let location_estimate = if primary_data.location_estimate.is_some()
-            || additional_data.iter().any(|d| d.location_estimate.is_some())
+            || additional_data
+                .iter()
+                .any(|d| d.location_estimate.is_some())
         {
             let mut locations = Vec::new();
             if let Some(ref loc) = primary_data.location_estimate {
@@ -476,20 +485,29 @@ mod tests {
     async fn test_remove_node() {
         let coordinator = create_test_coordinator("node1");
 
-        coordinator.update_node(create_test_node_info("node2", 10)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 10))
+            .await
+            .unwrap();
         assert_eq!(coordinator.node_count().await, 1);
 
         assert!(coordinator.remove_node("node2").await);
         assert_eq!(coordinator.node_count().await, 0);
-        assert!(!coordinator.remove_node("node2").await);  // Already removed
+        assert!(!coordinator.remove_node("node2").await); // Already removed
     }
 
     #[tokio::test]
     async fn test_get_nodes() {
         let coordinator = create_test_coordinator("node1");
 
-        coordinator.update_node(create_test_node_info("node2", 10)).await.unwrap();
-        coordinator.update_node(create_test_node_info("node3", 20)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 10))
+            .await
+            .unwrap();
+        coordinator
+            .update_node(create_test_node_info("node3", 20))
+            .await
+            .unwrap();
 
         let nodes = coordinator.get_nodes().await;
         assert_eq!(nodes.len(), 2);
@@ -517,9 +535,12 @@ mod tests {
         let coordinator = create_test_coordinator("node1");
 
         // Add node with lower priority (higher number = lower priority)
-        coordinator.update_node(create_test_node_info("node2", 20)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 20))
+            .await
+            .unwrap();
 
-        let my_info = create_test_node_info("node1", 10);  // Higher priority
+        let my_info = create_test_node_info("node1", 10); // Higher priority
         let result = coordinator.elect_grandmaster(my_info).await;
         assert_eq!(result, ElectionResult::ElectedGrandmaster);
         assert!(coordinator.is_grandmaster().await);
@@ -530,9 +551,12 @@ mod tests {
         let coordinator = create_test_coordinator("node1");
 
         // Add node with higher priority (lower number)
-        coordinator.update_node(create_test_node_info("node2", 5)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 5))
+            .await
+            .unwrap();
 
-        let my_info = create_test_node_info("node1", 10);  // Lower priority
+        let my_info = create_test_node_info("node1", 10); // Lower priority
         let result = coordinator.elect_grandmaster(my_info).await;
         assert_eq!(result, ElectionResult::NotElected);
         assert!(!coordinator.is_grandmaster().await);
@@ -544,7 +568,7 @@ mod tests {
 
         // Create node with better clock class
         let mut better_node = create_test_node_info("node2", 10);
-        better_node.clock_class = ClockClass::ClockClass6;  // Better than 248
+        better_node.clock_class = ClockClass::ClockClass6; // Better than 248
 
         coordinator.update_node(better_node).await.unwrap();
 
@@ -562,16 +586,27 @@ mod tests {
         let coordinator = create_test_coordinator("node1");
 
         // Set self as grandmaster
-        coordinator.update_node(create_test_node_info("node1", 10)).await.unwrap();
-        coordinator.update_node(create_test_node_info("node2", 20)).await.unwrap();
-        coordinator.update_node(create_test_node_info("node3", 30)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node1", 10))
+            .await
+            .unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 20))
+            .await
+            .unwrap();
+        coordinator
+            .update_node(create_test_node_info("node3", 30))
+            .await
+            .unwrap();
 
-        let result = coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
+        let result = coordinator
+            .elect_grandmaster(create_test_node_info("node1", 10))
+            .await;
         assert_eq!(result, ElectionResult::ElectedGrandmaster);
 
         let schedule = coordinator.generate_tdma_schedule().await.unwrap();
         assert_eq!(schedule.slots.len(), 3);
-        assert_eq!(schedule.frame_duration_us, 100000);  // 100ms
+        assert_eq!(schedule.frame_duration_us, 100000); // 100ms
 
         // Check that each node has a slot
         assert!(schedule.slots.iter().any(|s| s.node_id == "node1"));
@@ -592,10 +627,18 @@ mod tests {
     async fn test_get_my_tdma_slot() {
         let coordinator = create_test_coordinator("node1");
 
-        coordinator.update_node(create_test_node_info("node1", 10)).await.unwrap();
-        coordinator.update_node(create_test_node_info("node2", 20)).await.unwrap();
+        coordinator
+            .update_node(create_test_node_info("node1", 10))
+            .await
+            .unwrap();
+        coordinator
+            .update_node(create_test_node_info("node2", 20))
+            .await
+            .unwrap();
 
-        coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
+        coordinator
+            .elect_grandmaster(create_test_node_info("node1", 10))
+            .await;
         coordinator.generate_tdma_schedule().await.unwrap();
 
         let my_slot = coordinator.get_my_tdma_slot().await;
@@ -662,10 +705,12 @@ mod tests {
             metadata: HashMap::new(),
         };
 
-        let result = coordinator.fuse_detection_data(primary, vec![secondary]).unwrap();
-        assert!((result.confidence - 0.8).abs() < 0.001);  // (0.9 + 0.7) / 2
+        let result = coordinator
+            .fuse_detection_data(primary, vec![secondary])
+            .unwrap();
+        assert!((result.confidence - 0.8).abs() < 0.001); // (0.9 + 0.7) / 2
         assert_eq!(result.contributing_nodes.len(), 2);
-        assert!((result.location_estimate.unwrap().x - 1.5).abs() < 0.001);  // (1.0 + 2.0) / 2
+        assert!((result.location_estimate.unwrap().x - 1.5).abs() < 0.001); // (1.0 + 2.0) / 2
     }
 
     // ============================================================================
@@ -691,12 +736,14 @@ mod tests {
     async fn test_reset_election_timer() {
         let coordinator = create_test_coordinator("node1");
 
-        coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
+        coordinator
+            .elect_grandmaster(create_test_node_info("node1", 10))
+            .await;
         let count = coordinator.election_count().await;
 
         coordinator.reset_election_timer().await;
         assert!(!coordinator.should_re_elect().await);
-        assert_eq!(coordinator.election_count().await, count);  // Unchanged
+        assert_eq!(coordinator.election_count().await, count); // Unchanged
     }
 
     // ============================================================================

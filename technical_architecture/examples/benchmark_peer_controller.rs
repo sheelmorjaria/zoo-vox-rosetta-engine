@@ -11,15 +11,11 @@
  * Author: Sheel Morjaria (sheelmorjaria@gmail.com)
  * License: CC BY-ND 4.0 International
  */
-
 use std::time::Duration;
 use technical_architecture::peer_controller_performance::{
-    run_all_benchmarks, format_metrics,
-    benchmark_serialization_throughput,
-    benchmark_message_processing,
-    benchmark_timeout_detection,
-    benchmark_mode_switching,
-    benchmark_concurrent_processing,
+    benchmark_concurrent_processing, benchmark_message_processing, benchmark_mode_switching,
+    benchmark_serialization_throughput, benchmark_timeout_detection, format_metrics,
+    run_all_benchmarks,
 };
 
 fn main() {
@@ -49,9 +45,11 @@ fn main() {
     let total_operations: u64 = results.iter().map(|(_, m)| m.operations).sum();
     println!("Total Operations: {}", total_operations);
 
-    let avg_throughput: f64 = results.iter()
+    let avg_throughput: f64 = results
+        .iter()
         .map(|(_, m)| m.throughput_ops_per_sec)
-        .sum::<f64>() / results.len() as f64;
+        .sum::<f64>()
+        / results.len() as f64;
     println!("Average Throughput: {:.2} ops/sec", avg_throughput);
 
     println!();
@@ -80,7 +78,10 @@ fn main() {
 
     println!("  Operations: {}", stress_metrics.operations);
     println!("  Total Time: {:.2}s", elapsed.as_secs_f64());
-    println!("  Throughput: {:.2} ops/sec", stress_metrics.throughput_ops_per_sec);
+    println!(
+        "  Throughput: {:.2} ops/sec",
+        stress_metrics.throughput_ops_per_sec
+    );
     println!("  Avg Latency: {:.2} μs", stress_metrics.avg_latency_us);
     println!();
 

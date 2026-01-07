@@ -7,10 +7,10 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use std::time::{Duration, Instant};
-use std::thread;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -55,7 +55,8 @@ impl PerformanceMetrics {
 
     pub fn calculate_throughput(&mut self) {
         if self.total_duration_us > 0 {
-            self.throughput_ops_per_sec = (self.operations as f64 * 1_000_000.0) / self.total_duration_us as f64;
+            self.throughput_ops_per_sec =
+                (self.operations as f64 * 1_000_000.0) / self.total_duration_us as f64;
         }
     }
 
@@ -371,12 +372,17 @@ pub fn benchmark_memory_allocation(iterations: u64) -> PerformanceMetrics {
 /// Run all benchmarks and return a summary
 pub fn run_all_benchmarks() -> Vec<(&'static str, PerformanceMetrics)> {
     vec![
-        ("Serialization Throughput", benchmark_serialization_throughput(10_000)),
+        (
+            "Serialization Throughput",
+            benchmark_serialization_throughput(10_000),
+        ),
         ("Message Processing", benchmark_message_processing(10_000)),
         ("Timeout Detection", benchmark_timeout_detection()),
         ("Mode Switching", benchmark_mode_switching(100)),
-        ("Concurrent Processing (4 threads, 1000 msgs)",
-         benchmark_concurrent_processing(4, 1000)),
+        (
+            "Concurrent Processing (4 threads, 1000 msgs)",
+            benchmark_concurrent_processing(4, 1000),
+        ),
         ("Memory Allocation", benchmark_memory_allocation(10_000)),
     ]
 }
@@ -416,8 +422,14 @@ mod tests {
         let metrics = benchmark_serialization_throughput(1_000);
 
         assert_eq!(metrics.operations, 1_000);
-        assert!(metrics.avg_latency_us < 100.0, "Avg latency should be < 100μs");
-        assert!(metrics.throughput_ops_per_sec > 10_000.0, "Should process > 10k ops/sec");
+        assert!(
+            metrics.avg_latency_us < 100.0,
+            "Avg latency should be < 100μs"
+        );
+        assert!(
+            metrics.throughput_ops_per_sec > 10_000.0,
+            "Should process > 10k ops/sec"
+        );
     }
 
     #[test]
@@ -425,8 +437,14 @@ mod tests {
         let metrics = benchmark_message_processing(1_000);
 
         assert_eq!(metrics.operations, 1_000);
-        assert!(metrics.avg_latency_us < 10.0, "Message processing should be < 10μs");
-        assert!(metrics.throughput_ops_per_sec > 100_000.0, "Should process > 100k msgs/sec");
+        assert!(
+            metrics.avg_latency_us < 10.0,
+            "Message processing should be < 10μs"
+        );
+        assert!(
+            metrics.throughput_ops_per_sec > 100_000.0,
+            "Should process > 100k msgs/sec"
+        );
     }
 
     #[test]
@@ -435,7 +453,10 @@ mod tests {
 
         assert_eq!(metrics.operations, 10);
         // Timeout detection should be near-instantaneous (just checking elapsed time)
-        assert!(metrics.avg_latency_us < 100.0, "Timeout detection should be < 100μs");
+        assert!(
+            metrics.avg_latency_us < 100.0,
+            "Timeout detection should be < 100μs"
+        );
     }
 
     #[test]
@@ -444,7 +465,10 @@ mod tests {
 
         assert_eq!(metrics.operations, 10);
         // Mode switching should be fast (just setting a flag)
-        assert!(metrics.avg_latency_us < 1000.0, "Mode switching should be < 1ms");
+        assert!(
+            metrics.avg_latency_us < 1000.0,
+            "Mode switching should be < 1ms"
+        );
     }
 
     #[test]
@@ -453,7 +477,10 @@ mod tests {
 
         assert_eq!(metrics.operations, 400);
         // Concurrent processing should handle 4 threads without issues
-        assert!(metrics.throughput_ops_per_sec > 1000.0, "Concurrent processing > 1k ops/sec");
+        assert!(
+            metrics.throughput_ops_per_sec > 1000.0,
+            "Concurrent processing > 1k ops/sec"
+        );
     }
 
     #[test]
@@ -462,7 +489,10 @@ mod tests {
 
         assert_eq!(metrics.operations, 1_000);
         // Should allocate memory efficiently (no leaks)
-        assert!(metrics.memory_allocated_bytes > 0, "Should have allocated memory");
+        assert!(
+            metrics.memory_allocated_bytes > 0,
+            "Should have allocated memory"
+        );
     }
 
     #[test]

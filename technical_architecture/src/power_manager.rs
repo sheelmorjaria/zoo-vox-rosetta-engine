@@ -13,21 +13,21 @@ Features:
 - Throttle integration with synthesis and source separation
 */
 
+use crate::ptp::PtpTimestamp;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
-use crate::ptp::PtpTimestamp;
 
 /// Battery state information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BatteryState {
-    pub percentage: f32,           // 0.0 - 100.0
-    pub voltage_v: f32,            // Typically 11.0V - 14.4V for LiFePO4
-    pub current_a: f32,            // Positive = charging, Negative = discharging
+    pub percentage: f32, // 0.0 - 100.0
+    pub voltage_v: f32,  // Typically 11.0V - 14.4V for LiFePO4
+    pub current_a: f32,  // Positive = charging, Negative = discharging
     pub cycle_count: u32,
-    pub health_percent: f32,       // Estimated health (0-100)
+    pub health_percent: f32, // Estimated health (0-100)
     pub temperature_celsius: f32,
     pub timestamp: PtpTimestamp,
 }
@@ -120,11 +120,11 @@ impl PowerMode {
 /// Power budget information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PowerBudget {
-    pub available_wh: f32,         // Watt-hours available
-    pub predicted_solar_wh: f32,   // Predicted solar gain (next hour)
-    pub base_consumption_w: f32,   // Base system consumption
+    pub available_wh: f32,       // Watt-hours available
+    pub predicted_solar_wh: f32, // Predicted solar gain (next hour)
+    pub base_consumption_w: f32, // Base system consumption
     pub synthesis_consumption_w: f32,
-    pub fpga_consumption_w: f32,    // FPGA consumption
+    pub fpga_consumption_w: f32,       // FPGA consumption
     pub separation_consumption_w: f32, // Source separation consumption
     pub estimated_runtime_hours: f32,
 }
@@ -150,7 +150,7 @@ pub struct SolarPrediction {
     pub timestamp: PtpTimestamp,
     pub next_hour_gain_wh: f32,
     pub next_day_gain_wh: f32,
-    pub confidence: f32,           // 0.0 - 1.0
+    pub confidence: f32, // 0.0 - 1.0
     pub cloud_cover_percent: f32,
 }
 
@@ -190,10 +190,10 @@ pub enum ThrottleState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PowerManagerConfig {
     pub poll_interval_ms: u64,
-    pub battery_capacity_wh: f32,    // Total battery capacity in Wh
-    pub base_consumption_w: f32,      // Base system consumption
-    pub synthesis_consumption_w: f32, // Synthesis module consumption
-    pub fpga_consumption_w: f32,      // FPGA module consumption
+    pub battery_capacity_wh: f32,      // Total battery capacity in Wh
+    pub base_consumption_w: f32,       // Base system consumption
+    pub synthesis_consumption_w: f32,  // Synthesis module consumption
+    pub fpga_consumption_w: f32,       // FPGA module consumption
     pub separation_consumption_w: f32, // Source separation consumption
     pub mock_mode: bool,
 }
@@ -201,11 +201,11 @@ pub struct PowerManagerConfig {
 impl Default for PowerManagerConfig {
     fn default() -> Self {
         Self {
-            poll_interval_ms: 10000,  // Poll every 10 seconds
-            battery_capacity_wh: 200.0, // 200Wh battery
-            base_consumption_w: 5.0,    // 5W base consumption
-            synthesis_consumption_w: 15.0, // 15W for synthesis
-            fpga_consumption_w: 10.0,    // 10W for FPGA
+            poll_interval_ms: 10000,        // Poll every 10 seconds
+            battery_capacity_wh: 200.0,     // 200Wh battery
+            base_consumption_w: 5.0,        // 5W base consumption
+            synthesis_consumption_w: 15.0,  // 15W for synthesis
+            fpga_consumption_w: 10.0,       // 10W for FPGA
             separation_consumption_w: 20.0, // 20W for source separation
             mock_mode: false,
         }
@@ -236,7 +236,9 @@ impl PowerManager {
             solar_prediction: None,
             last_poll: None,
             fpga_enabled: Arc::new(AtomicBool::new(initial_mode.fpga_enabled())),
-            source_separation_enabled: Arc::new(AtomicBool::new(initial_mode.source_separation_enabled())),
+            source_separation_enabled: Arc::new(AtomicBool::new(
+                initial_mode.source_separation_enabled(),
+            )),
             synthesis_enabled: Arc::new(AtomicBool::new(initial_mode.full_synthesis_enabled())),
         }
     }
@@ -286,15 +288,14 @@ impl PowerManager {
 
     /// Update throttle state based on power mode
     fn update_throttle_state(&self) {
-        self.fpga_enabled.store(self.power_mode.fpga_enabled(), Ordering::Relaxed);
+        self.fpga_enabled
+            .store(self.power_mode.fpga_enabled(), Ordering::Relaxed);
         self.source_separation_enabled.store(
             self.power_mode.source_separation_enabled(),
-            Ordering::Relaxed
+            Ordering::Relaxed,
         );
-        self.synthesis_enabled.store(
-            self.power_mode.full_synthesis_enabled(),
-            Ordering::Relaxed
-        );
+        self.synthesis_enabled
+            .store(self.power_mode.full_synthesis_enabled(), Ordering::Relaxed);
     }
 
     /// Get current battery state
@@ -312,20 +313,25 @@ impl PowerManager {
         let available_wh = self.battery_state.effective_capacity_percent() / 100.0
             * self.config.battery_capacity_wh;
 
-        let solar_gain = self.solar_prediction.as_ref()
+        let solar_gain = self
+            .solar_prediction
+            .as_ref()
             .map(|p| p.next_hour_gain_wh)
             .unwrap_or(0.0);
 
         let total_consumption = match self.power_mode {
-            PowerMode::Normal => self.config.base_consumption_w
-                + self.config.synthesis_consumption_w
-                + self.config.fpga_consumption_w
-                + self.config.separation_consumption_w,
-            PowerMode::Medium => self.config.base_consumption_w
-                + self.config.synthesis_consumption_w
-                + self.config.separation_consumption_w,
-            PowerMode::Low => self.config.base_consumption_w
-                + self.config.synthesis_consumption_w,
+            PowerMode::Normal => {
+                self.config.base_consumption_w
+                    + self.config.synthesis_consumption_w
+                    + self.config.fpga_consumption_w
+                    + self.config.separation_consumption_w
+            }
+            PowerMode::Medium => {
+                self.config.base_consumption_w
+                    + self.config.synthesis_consumption_w
+                    + self.config.separation_consumption_w
+            }
+            PowerMode::Low => self.config.base_consumption_w + self.config.synthesis_consumption_w,
             PowerMode::Critical => self.config.base_consumption_w,
         };
 
@@ -404,9 +410,7 @@ impl PowerManager {
     pub fn should_poll(&self) -> bool {
         match self.last_poll {
             None => true,
-            Some(last) => {
-                last.elapsed() >= Duration::from_millis(self.config.poll_interval_ms)
-            }
+            Some(last) => last.elapsed() >= Duration::from_millis(self.config.poll_interval_ms),
         }
     }
 
@@ -419,7 +423,9 @@ impl PowerManager {
 
         // Low mode defers unless good solar gain expected
         if matches!(self.power_mode, PowerMode::Low) {
-            let solar_good = self.solar_prediction.as_ref()
+            let solar_good = self
+                .solar_prediction
+                .as_ref()
                 .map(|p| p.is_good())
                 .unwrap_or(false);
 
@@ -658,7 +664,7 @@ mod tests {
     #[test]
     fn test_manager_battery_state_update() {
         let mut manager = PowerManager::for_testing();
-        let state = create_test_battery_state(40.0);  // Changed from 60% to 40%
+        let state = create_test_battery_state(40.0); // Changed from 60% to 40%
         manager.set_battery_state(state);
 
         assert_eq!(manager.power_mode(), PowerMode::Low);
@@ -804,7 +810,7 @@ mod tests {
     #[test]
     fn test_manager_enable_flags() {
         let mut manager = PowerManager::for_testing();
-        manager.set_battery_state(create_test_battery_state(40.0));  // Changed to Low mode
+        manager.set_battery_state(create_test_battery_state(40.0)); // Changed to Low mode
 
         let fpga_flag = manager.fpga_enabled_flag();
         let sep_flag = manager.source_separation_enabled_flag();

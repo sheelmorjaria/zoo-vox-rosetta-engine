@@ -12,11 +12,11 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
+use anyhow::Result;
+use log::{debug, info};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use anyhow::Result;
-use log::{info, debug};
-use serde::{Deserialize, Serialize};
 
 /// PTP configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,7 +44,7 @@ impl Default for PtpConfig {
     fn default() -> Self {
         Self {
             domain: 0,
-            sync_interval_log2: 0,  // 1 second
+            sync_interval_log2: 0, // 1 second
             hw_timestamping: true,
             interface: "eth0".to_string(),
             grandmaster_ip: None,
@@ -212,7 +212,10 @@ impl PtpClock {
 
         if self.config.grandmaster_ip.is_some() {
             // Slave mode - would start PTP daemon here
-            info!("PTP slave mode, grandmaster: {:?}", self.config.grandmaster_ip);
+            info!(
+                "PTP slave mode, grandmaster: {:?}",
+                self.config.grandmaster_ip
+            );
             *self.status.write().await = PtpStatus::Initializing;
         } else {
             // Grandmaster mode
@@ -220,7 +223,8 @@ impl PtpClock {
             *self.status.write().await = PtpStatus::Locked;
         }
 
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(true, std::sync::atomic::Ordering::SeqCst);
 
         // Start background sync task
         let _status_lock = self.status.clone();
@@ -229,9 +233,8 @@ impl PtpClock {
         let sync_interval = 2_f64.powi(self.config.sync_interval_log2 as i32);
 
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs_f64(sync_interval)
-            );
+            let mut interval =
+                tokio::time::interval(tokio::time::Duration::from_secs_f64(sync_interval));
 
             while running.load(std::sync::atomic::Ordering::SeqCst) {
                 interval.tick().await;
@@ -253,7 +256,8 @@ impl PtpClock {
     /// Stop PTP clock
     pub async fn stop(&self) -> Result<()> {
         info!("Stopping PTP clock");
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         *self.status.write().await = PtpStatus::Faulty;
         Ok(())
     }

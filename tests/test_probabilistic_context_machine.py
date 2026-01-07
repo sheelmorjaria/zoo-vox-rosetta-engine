@@ -20,7 +20,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import implementations
-from src.realtime.probabilistic_context_machine import (
+from realtime.probabilistic_context_machine import (
     AudioFeatures,
     ContextState,
     ProbabilisticContextMachine,

@@ -14,16 +14,13 @@
 // License: CC BY-ND 4.0 International
 //
 
-use technical_architecture::synthesis::{
-    CachedGranularSequencer, SourceMetadataBuilder,
-};
-use technical_architecture::island_hopping::{
-    Vector17D, VectorDelta, apply_delta_to_granular, GranularParams,
-};
-use std::time::{Duration, Instant};
 use std::sync::Arc;
 use std::thread;
-
+use std::time::{Duration, Instant};
+use technical_architecture::island_hopping::{
+    apply_delta_to_granular, GranularParams, Vector17D, VectorDelta,
+};
+use technical_architecture::synthesis::{CachedGranularSequencer, SourceMetadataBuilder};
 
 // =============================================================================
 // Test 2.1: Island Hopping (Cache Miss)
@@ -49,21 +46,26 @@ async fn test_island_hopping_cache_miss() {
 
     // Act
     let start = Instant::now();
-    let result = sequencer.register_source(
-        "neutral_001".to_string(),
-        audio.clone(),
-        metadata,
-    ).await;
+    let result = sequencer
+        .register_source("neutral_001".to_string(), audio.clone(), metadata)
+        .await;
     let duration = start.elapsed();
 
     // Assert
     assert!(result.is_ok(), "Failed to register source");
 
     // Should take <50ms (simulated SSD load)
-    assert!(duration < Duration::from_millis(50), "Loading took too long: {:?}", duration);
+    assert!(
+        duration < Duration::from_millis(50),
+        "Loading took too long: {:?}",
+        duration
+    );
 
     // Verify source is in cache
-    assert!(sequencer.is_cached("neutral_001"), "Source should be cached");
+    assert!(
+        sequencer.is_cached("neutral_001"),
+        "Source should be cached"
+    );
 
     // Verify cache stats
     let stats = sequencer.cache_stats();
@@ -72,7 +74,6 @@ async fn test_island_hopping_cache_miss() {
 
     println!("✓ Cache miss test passed in {:?}", duration);
 }
-
 
 // =============================================================================
 // Test 2.2: Island Revisiting (Cache Hit)
@@ -94,24 +95,27 @@ async fn test_island_revisiting_cache_hit() {
         .build();
 
     // First load (cache miss)
-    sequencer.register_source("neutral_001".to_string(), audio.clone(), metadata.clone())
+    sequencer
+        .register_source("neutral_001".to_string(), audio.clone(), metadata.clone())
         .await
         .expect("First load should succeed");
 
     // Act - Second load (should be cache hit)
     let start = Instant::now();
-    let result = sequencer.register_source(
-        "neutral_001".to_string(),
-        audio,
-        metadata,
-    ).await;
+    let result = sequencer
+        .register_source("neutral_001".to_string(), audio, metadata)
+        .await;
     let duration = start.elapsed();
 
     // Assert
     assert!(result.is_ok(), "Second load should succeed");
 
     // Should be <5ms (cache hit)
-    assert!(duration < Duration::from_millis(5), "Cache hit took too long: {:?}", duration);
+    assert!(
+        duration < Duration::from_millis(5),
+        "Cache hit took too long: {:?}",
+        duration
+    );
 
     // Verify cache stats
     let stats = sequencer.cache_stats();
@@ -120,7 +124,6 @@ async fn test_island_revisiting_cache_hit() {
 
     println!("✓ Cache hit test passed in {:?}", duration);
 }
-
 
 // =============================================================================
 // Test 2.3: Concurrency Safety (Multi-Threaded)
@@ -134,7 +137,7 @@ async fn test_concurrent_island_hopping() {
     // Expected: All loads succeed, no data races, cache is consistent
     // Arrange
     let sequencer = Arc::new(tokio::sync::Mutex::new(
-        CachedGranularSequencer::with_default_cache(48000)
+        CachedGranularSequencer::with_default_cache(48000),
     ));
 
     let mut handles = vec![];
@@ -154,17 +157,20 @@ async fn test_concurrent_island_hopping() {
                     .build();
 
                 // Load source
-                let result = sequencer_clone.lock().await.register_source(
-                    source_id,
-                    audio,
-                    metadata,
-                ).await;
+                let result = sequencer_clone
+                    .lock()
+                    .await
+                    .register_source(source_id, audio, metadata)
+                    .await;
 
                 // Verify
                 assert!(result.is_ok(), "Thread {} failed to load source", thread_id);
 
                 // Check cache
-                let is_cached = sequencer_clone.lock().await.is_cached(&format!("source_{}", thread_id));
+                let is_cached = sequencer_clone
+                    .lock()
+                    .await
+                    .is_cached(&format!("source_{}", thread_id));
                 assert!(is_cached, "Thread {} source should be cached", thread_id);
 
                 println!("✓ Thread {} completed successfully", thread_id);
@@ -181,12 +187,14 @@ async fn test_concurrent_island_hopping() {
 
     // Assert - Verify final cache state
     let stats = sequencer.lock().await.cache_stats();
-    assert_eq!(stats.cache_misses, 4, "Should have 4 cache misses (one per thread)");
+    assert_eq!(
+        stats.cache_misses, 4,
+        "Should have 4 cache misses (one per thread)"
+    );
     assert_eq!(stats.cache_hits, 0, "Should have 0 cache hits");
 
     println!("✓ Concurrency test passed - all 4 threads succeeded");
 }
-
 
 // =============================================================================
 // Test 2.4: Seamless Morphing (Crossfade Verification)
@@ -231,11 +239,11 @@ async fn test_seamless_morphing_crossfade() {
 
     // Delta for morphing to aggressive (increase pitch, roughness)
     let delta = VectorDelta {
-        delta_mean_f0_hz: 350.0,      // +5% pitch
-        delta_duration_ms: 0.0,       // Same duration
+        delta_mean_f0_hz: 350.0, // +5% pitch
+        delta_duration_ms: 0.0,  // Same duration
         delta_f0_range_hz: 0.0,
         delta_harmonic_to_noise_ratio: 0.0,
-        delta_spectral_flatness: 0.1,  // Increase roughness
+        delta_spectral_flatness: 0.1, // Increase roughness
         delta_attack_time_ms: 0.0,
         delta_decay_time_ms: 0.0,
         delta_sustain_level: 0.0,
@@ -257,27 +265,38 @@ async fn test_seamless_morphing_crossfade() {
 
     // Assert
     // Pitch should increase by ~5%
-    assert!((morphed_params.pitch_shift_ratio - 1.05).abs() < 0.01,
-            "Pitch shift should be ~1.05, got {}", morphed_params.pitch_shift_ratio);
+    assert!(
+        (morphed_params.pitch_shift_ratio - 1.05).abs() < 0.01,
+        "Pitch shift should be ~1.05, got {}",
+        morphed_params.pitch_shift_ratio
+    );
 
     // Roughness should increase
-    assert!((morphed_params.roughness_amount - 0.4).abs() < 0.01,
-            "Roughness should be ~0.4, got {}", morphed_params.roughness_amount);
+    assert!(
+        (morphed_params.roughness_amount - 0.4).abs() < 0.01,
+        "Roughness should be ~0.4, got {}",
+        morphed_params.roughness_amount
+    );
 
     // Duration should stay the same
-    assert!((morphed_params.duration_scale - 1.0).abs() < 0.01,
-            "Duration scale should be ~1.0, got {}", morphed_params.duration_scale);
+    assert!(
+        (morphed_params.duration_scale - 1.0).abs() < 0.01,
+        "Duration scale should be ~1.0, got {}",
+        morphed_params.duration_scale
+    );
 
     // Grain size should stay the same
-    assert!((morphed_params.grain_size_ms - 20.0).abs() < 0.01,
-            "Grain size should be ~20.0, got {}", morphed_params.grain_size_ms);
+    assert!(
+        (morphed_params.grain_size_ms - 20.0).abs() < 0.01,
+        "Grain size should be ~20.0, got {}",
+        morphed_params.grain_size_ms
+    );
 
     println!("✓ Seamless morphing test passed");
     println!("  Pitch shift: {:.2}x", morphed_params.pitch_shift_ratio);
     println!("  Roughness: {:.2}", morphed_params.roughness_amount);
     println!("  Duration scale: {:.2}x", morphed_params.duration_scale);
 }
-
 
 // =============================================================================
 // Additional: LRU Cache Eviction
@@ -300,33 +319,53 @@ async fn test_lru_cache_eviction() {
         .build();
 
     // Load 3 sources (fills cache)
-    sequencer.register_source("source_1".to_string(), large_audio.clone(), metadata.clone())
+    sequencer
+        .register_source(
+            "source_1".to_string(),
+            large_audio.clone(),
+            metadata.clone(),
+        )
         .await
         .expect("Load 1 should succeed");
-    sequencer.register_source("source_2".to_string(), large_audio.clone(), metadata.clone())
+    sequencer
+        .register_source(
+            "source_2".to_string(),
+            large_audio.clone(),
+            metadata.clone(),
+        )
         .await
         .expect("Load 2 should succeed");
-    sequencer.register_source("source_3".to_string(), large_audio, metadata.clone())
+    sequencer
+        .register_source("source_3".to_string(), large_audio, metadata.clone())
         .await
         .expect("Load 3 should succeed");
 
     // Act - Load 4th source (should trigger eviction)
     let small_audio: Vec<f32> = (0..4800).map(|i| (i as f32 * 0.001).sin()).collect();
-    let result = sequencer.register_source("source_4".to_string(), small_audio, metadata)
+    let result = sequencer
+        .register_source("source_4".to_string(), small_audio, metadata)
         .await;
 
     // Assert
     assert!(result.is_ok(), "Load 4 should succeed");
 
     // LRU (source_1) should be evicted
-    assert!(!sequencer.is_cached("source_1"), "source_1 should be evicted");
-    assert!(sequencer.is_cached("source_2"), "source_2 should still be cached");
-    assert!(sequencer.is_cached("source_3"), "source_3 should still be cached");
+    assert!(
+        !sequencer.is_cached("source_1"),
+        "source_1 should be evicted"
+    );
+    assert!(
+        sequencer.is_cached("source_2"),
+        "source_2 should still be cached"
+    );
+    assert!(
+        sequencer.is_cached("source_3"),
+        "source_3 should still be cached"
+    );
     assert!(sequencer.is_cached("source_4"), "source_4 should be cached");
 
     println!("✓ LRU eviction test passed");
 }
-
 
 // =============================================================================
 // Integration: End-to-End Island Hopping Workflow
@@ -355,7 +394,8 @@ async fn test_end_to_end_island_hopping_workflow() {
     let start = Instant::now();
 
     // Step 1: Load neutral source (cache miss, ~20ms)
-    sequencer.register_source("neutral".to_string(), audio.clone(), metadata.clone())
+    sequencer
+        .register_source("neutral".to_string(), audio.clone(), metadata.clone())
         .await
         .expect("Load neutral should succeed");
 
@@ -383,8 +423,8 @@ async fn test_end_to_end_island_hopping_workflow() {
     };
 
     let delta = VectorDelta {
-        delta_mean_f0_hz: 700.0,     // +10% pitch
-        delta_duration_ms: -20.0,    // -20% duration
+        delta_mean_f0_hz: 700.0,  // +10% pitch
+        delta_duration_ms: -20.0, // -20% duration
         delta_f0_range_hz: 100.0,
         delta_harmonic_to_noise_ratio: 5.0,
         delta_spectral_flatness: 0.2,
@@ -414,15 +454,19 @@ async fn test_end_to_end_island_hopping_workflow() {
     let morphed = apply_delta_to_granular(&delta, &base_params, &source_metadata);
 
     // Step 3: Load neutral again (cache hit, <1ms)
-    sequencer.register_source("neutral".to_string(), audio, metadata)
+    sequencer
+        .register_source("neutral".to_string(), audio, metadata)
         .await
         .expect("Re-load neutral should succeed");
 
     let total_duration = start.elapsed();
 
     // Assert
-    assert!(total_duration < Duration::from_millis(100),
-            "Workflow took too long: {:?}", total_duration);
+    assert!(
+        total_duration < Duration::from_millis(100),
+        "Workflow took too long: {:?}",
+        total_duration
+    );
 
     // Verify morph parameters
     assert!((morphed.pitch_shift_ratio - 1.1).abs() < 0.01);

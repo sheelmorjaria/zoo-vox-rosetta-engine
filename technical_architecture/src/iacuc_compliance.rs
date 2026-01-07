@@ -5,7 +5,7 @@
 
 use crate::ptp::PtpTimestamp;
 use anyhow::{Context, Result};
-use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike};
+use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
@@ -47,14 +47,18 @@ impl Weekday {
 /// Time window for allowed interactions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeWindow {
-    pub start_hour: u8,     // 0-23
-    pub end_hour: u8,       // 0-23
+    pub start_hour: u8, // 0-23
+    pub end_hour: u8,   // 0-23
     pub days: Vec<Weekday>,
 }
 
 impl TimeWindow {
     pub fn new(start_hour: u8, end_hour: u8, days: Vec<Weekday>) -> Self {
-        Self { start_hour, end_hour, days }
+        Self {
+            start_hour,
+            end_hour,
+            days,
+        }
     }
 
     /// Check if current time is within this window
@@ -100,7 +104,7 @@ pub struct EmergencyContact {
     pub name: String,
     pub email: String,
     pub phone: String,
-    pub priority: u8,  // 1-10, 1 = highest
+    pub priority: u8, // 1-10, 1 = highest
 }
 
 /// IACUC Protocol - loaded from protocol.json
@@ -110,8 +114,8 @@ pub struct IacucProtocol {
     pub version: String,
     pub effective_date: NaiveDate,
     pub expiry_date: Option<NaiveDate>,
-    pub max_spl_db: f32,                    // Max sound pressure level
-    pub allowed_hours: Vec<TimeWindow>,     // When interaction allowed
+    pub max_spl_db: f32,                // Max sound pressure level
+    pub allowed_hours: Vec<TimeWindow>, // When interaction allowed
     pub species_limits: HashMap<String, SpeciesLimit>,
     pub daily_limits: DailyLimits,
     pub emergency_contacts: Vec<EmergencyContact>,
@@ -122,8 +126,8 @@ impl IacucProtocol {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path).context("Failed to open protocol file")?;
         let reader = BufReader::new(file);
-        let protocol: IacucProtocol = serde_json::from_reader(reader)
-            .context("Failed to parse protocol JSON")?;
+        let protocol: IacucProtocol =
+            serde_json::from_reader(reader).context("Failed to parse protocol JSON")?;
 
         // Validate protocol
         protocol.validate()?;
@@ -177,8 +181,7 @@ impl IacucProtocol {
     pub fn is_within_allowed_hours(&self) -> bool {
         let now = chrono::Utc::now().naive_utc();
 
-        self.allowed_hours.iter()
-            .any(|window| window.contains(now))
+        self.allowed_hours.iter().any(|window| window.contains(now))
     }
 
     /// Get species limit if exists
@@ -274,7 +277,10 @@ impl ComplianceState {
 
     /// Record an interaction
     pub fn record_interaction(&mut self, species: &str, duration_seconds: u32) {
-        *self.species_interaction_counts.entry(species.to_string()).or_insert(0) += 1;
+        *self
+            .species_interaction_counts
+            .entry(species.to_string())
+            .or_insert(0) += 1;
         self.today_interaction_seconds += duration_seconds;
         self.today_playback_count += 1;
         self.last_interaction_time = Some(PtpTimestamp::from(chrono::Utc::now()));
@@ -323,10 +329,7 @@ pub struct IacucComplianceEngine {
 
 impl IacucComplianceEngine {
     /// Create new compliance engine from protocol file
-    pub fn from_protocol_file<P: AsRef<Path>>(
-        protocol_path: P,
-        audit_log_path: P,
-    ) -> Result<Self> {
+    pub fn from_protocol_file<P: AsRef<Path>>(protocol_path: P, audit_log_path: P) -> Result<Self> {
         let protocol = IacucProtocol::from_file(&protocol_path)?;
 
         let state = ComplianceState::new(protocol.protocol_id.clone());
@@ -469,7 +472,10 @@ impl IacucComplianceEngine {
                         "Daily interaction limit would be exceeded: {} + {} > {} seconds",
                         today_seconds, intent.duration_seconds, max_seconds
                     ),
-                    attempted_action: format!("Interaction for {} seconds", intent.duration_seconds),
+                    attempted_action: format!(
+                        "Interaction for {} seconds",
+                        intent.duration_seconds
+                    ),
                     species: intent.species.clone(),
                 };
                 self.log_violation(violation);
@@ -481,10 +487,7 @@ impl IacucComplianceEngine {
                 let violation = PolicyViolation {
                     timestamp: PtpTimestamp::from(chrono::Utc::now()),
                     violation_type: ViolationType::DailyLimitExceeded,
-                    description: format!(
-                        "Daily playback limit reached: {} events",
-                        playback_count
-                    ),
+                    description: format!("Daily playback limit reached: {} events", playback_count),
                     attempted_action: "Playback event".to_string(),
                     species: intent.species.clone(),
                 };
@@ -568,7 +571,9 @@ impl IacucComplianceEngine {
 
         if let Some(last_interaction) = state.last_interaction_time {
             let last_chrono: chrono::DateTime<chrono::Utc> = last_interaction.into();
-            let elapsed = chrono::Utc::now().signed_duration_since(last_chrono).num_seconds() as u32;
+            let elapsed = chrono::Utc::now()
+                .signed_duration_since(last_chrono)
+                .num_seconds() as u32;
 
             elapsed < self.protocol.daily_limits.cooling_period_seconds
         } else {
@@ -594,25 +599,35 @@ mod tests {
             expiry_date: None,
             max_spl_db: 100.0,
             // Allow all days/hours for testing (other specific violations are tested separately)
-            allowed_hours: vec![
-                TimeWindow::new(0, 23, vec![
-                    Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday,
-                    Weekday::Thursday, Weekday::Friday, Weekday::Saturday, Weekday::Sunday,
-                ]),
-            ],
+            allowed_hours: vec![TimeWindow::new(
+                0,
+                23,
+                vec![
+                    Weekday::Monday,
+                    Weekday::Tuesday,
+                    Weekday::Wednesday,
+                    Weekday::Thursday,
+                    Weekday::Friday,
+                    Weekday::Saturday,
+                    Weekday::Sunday,
+                ],
+            )],
             species_limits: {
                 let mut map = HashMap::new();
-                map.insert("marmoset".to_string(), SpeciesLimit {
-                    max_interactions_per_day: 100,  // Higher for daily limit tests
-                    min_interval_minutes: 5,
-                    prohibited_behaviors: vec!["aggressive".to_string()],
-                });
+                map.insert(
+                    "marmoset".to_string(),
+                    SpeciesLimit {
+                        max_interactions_per_day: 100, // Higher for daily limit tests
+                        min_interval_minutes: 5,
+                        prohibited_behaviors: vec!["aggressive".to_string()],
+                    },
+                );
                 map
             },
             daily_limits: DailyLimits {
-                max_interaction_seconds: 3600,  // 1 hour
+                max_interaction_seconds: 3600, // 1 hour
                 max_playback_events: 50,
-                cooling_period_seconds: 300,    // 5 minutes
+                cooling_period_seconds: 300, // 5 minutes
             },
             emergency_contacts: vec![],
         }
@@ -853,7 +868,10 @@ mod tests {
         let mut intent = create_test_intent();
         intent.spl_db = 80.0; // Exceeds max of 70
 
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::MaxSplExceeded));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::MaxSplExceeded)
+        );
     }
 
     #[test]
@@ -873,7 +891,10 @@ mod tests {
         };
 
         let intent = create_test_intent();
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::SpeciesLimitExceeded));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::SpeciesLimitExceeded)
+        );
     }
 
     #[test]
@@ -888,7 +909,10 @@ mod tests {
         let mut intent = create_test_intent();
         intent.behavior = Some("aggressive".to_string());
 
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::ProhibitedBehavior));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::ProhibitedBehavior)
+        );
     }
 
     #[test]
@@ -903,7 +927,10 @@ mod tests {
         let mut intent = create_test_intent();
         intent.species = Some("elephant".to_string()); // Not in protocol
 
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::SpeciesNotAllowed));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::SpeciesNotAllowed)
+        );
     }
 
     #[test]
@@ -923,7 +950,10 @@ mod tests {
         };
 
         let intent = create_test_intent();
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::DailyLimitExceeded));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::DailyLimitExceeded)
+        );
     }
 
     #[test]
@@ -943,7 +973,10 @@ mod tests {
         };
 
         let intent = create_test_intent();
-        assert_eq!(engine.check_compliance(&intent), ComplianceCheck::Denied(ViolationType::DailyLimitExceeded));
+        assert_eq!(
+            engine.check_compliance(&intent),
+            ComplianceCheck::Denied(ViolationType::DailyLimitExceeded)
+        );
     }
 
     #[test]

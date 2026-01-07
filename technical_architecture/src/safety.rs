@@ -12,10 +12,10 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use std::time::{Duration, Instant};
 use anyhow::Result;
-use log::{info, debug, warn, error};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 /// Safety configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,10 +42,10 @@ pub struct SafetyConfig {
 impl Default for SafetyConfig {
     fn default() -> Self {
         Self {
-            watchdog_timeout_ms: 5000,  // 5 seconds
-            max_frame_time_ms: 100.0,   // 100ms budget
+            watchdog_timeout_ms: 5000, // 5 seconds
+            max_frame_time_ms: 100.0,  // 100ms budget
             max_consecutive_errors: 10,
-            memory_threshold_bytes: 2_000_000_000,  // 2GB
+            memory_threshold_bytes: 2_000_000_000, // 2GB
             auto_emergency_shutdown: true,
             check_interval_ms: 100,
         }
@@ -146,13 +146,15 @@ impl WatchdogTimer {
 
     /// Enable the watchdog
     pub fn enable(&self) {
-        self.enabled.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.enabled
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         self.feed();
     }
 
     /// Disable the watchdog
     pub fn disable(&self) {
-        self.enabled.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.enabled
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Get time since last feed
@@ -204,7 +206,8 @@ impl SafetyMonitor {
     /// Start safety monitoring
     pub async fn start_monitoring(&self) -> Result<()> {
         info!("Starting safety monitoring");
-        self.monitoring_active.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.monitoring_active
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         self.watchdog.enable();
         Ok(())
     }
@@ -212,7 +215,8 @@ impl SafetyMonitor {
     /// Stop safety monitoring
     pub async fn stop_monitoring(&self) -> Result<()> {
         info!("Stopping safety monitoring");
-        self.monitoring_active.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.monitoring_active
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         self.watchdog.disable();
         Ok(())
     }
@@ -224,7 +228,10 @@ impl SafetyMonitor {
         // Check watchdog
         if self.watchdog.is_expired() {
             let violation = SafetyViolation::critical("WATCHDOG_EXPIRED");
-            warn!("Watchdog expired: {:?}", self.watchdog.time_since_last_feed());
+            warn!(
+                "Watchdog expired: {:?}",
+                self.watchdog.time_since_last_feed()
+            );
             violations.push(violation);
         }
 
@@ -269,7 +276,10 @@ impl SafetyMonitor {
 
     /// Monitor safety state (called periodically)
     pub async fn monitor(&self) -> Result<()> {
-        if !self.monitoring_active.load(std::sync::atomic::Ordering::SeqCst) {
+        if !self
+            .monitoring_active
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
             return Ok(());
         }
 
@@ -303,7 +313,10 @@ impl SafetyMonitor {
 
     /// Trigger emergency shutdown
     pub async fn trigger_shutdown(&self, violation: SafetyViolation) -> Result<()> {
-        error!("EMERGENCY SHUTDOWN triggered by: {:?}", violation.violation_type);
+        error!(
+            "EMERGENCY SHUTDOWN triggered by: {:?}",
+            violation.violation_type
+        );
 
         // In a real implementation, this would:
         // 1. Stop all processing
@@ -311,7 +324,8 @@ impl SafetyMonitor {
         // 3. Signal shutdown to main system
         // 4. Possibly power down hardware
 
-        self.monitoring_active.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.monitoring_active
+            .store(false, std::sync::atomic::Ordering::SeqCst);
 
         Ok(())
     }
@@ -338,7 +352,10 @@ impl SafetyMonitor {
     /// Report an error
     pub async fn report_error(&self) {
         *self.consecutive_errors.write().await += 1;
-        warn!("Error reported, consecutive errors: {}", *self.consecutive_errors.read().await);
+        warn!(
+            "Error reported, consecutive errors: {}",
+            *self.consecutive_errors.read().await
+        );
     }
 
     /// Get current memory usage (mock implementation)
@@ -354,7 +371,9 @@ impl SafetyMonitor {
         let violations = self.violations.read().await.clone();
         let consecutive_errors = *self.consecutive_errors.read().await;
         let last_frame_time = *self.last_frame_time.read().await;
-        let monitoring_active = self.monitoring_active.load(std::sync::atomic::Ordering::SeqCst);
+        let monitoring_active = self
+            .monitoring_active
+            .load(std::sync::atomic::Ordering::SeqCst);
 
         SafetyStats {
             uptime_seconds: uptime,
@@ -448,7 +467,10 @@ mod tests {
         let check = monitor.check_safety().await.unwrap();
 
         assert!(!check.is_safe);
-        assert!(check.violations.iter().any(|v| v.violation_type == "FRAME_TIME_EXCEEDED"));
+        assert!(check
+            .violations
+            .iter()
+            .any(|v| v.violation_type == "FRAME_TIME_EXCEEDED"));
     }
 
     #[tokio::test]
@@ -490,6 +512,9 @@ mod tests {
 
         let check = monitor.check_safety().await.unwrap();
         assert!(!check.is_safe);
-        assert!(check.violations.iter().any(|v| v.violation_type == "WATCHDOG_EXPIRED"));
+        assert!(check
+            .violations
+            .iter()
+            .any(|v| v.violation_type == "WATCHDOG_EXPIRED"));
     }
 }

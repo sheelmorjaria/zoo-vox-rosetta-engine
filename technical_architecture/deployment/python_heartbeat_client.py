@@ -20,10 +20,7 @@ from typing import Optional
 import zmq
 
 # Configuration
-HEARTBEAT_ENDPOINT = os.environ.get(
-    "RUST_HEARTBEAT_ENDPOINT",
-    "ipc:///tmp/cognitive_heartbeat.ipc"
-)
+HEARTBEAT_ENDPOINT = os.environ.get("RUST_HEARTBEAT_ENDPOINT", "ipc:///tmp/cognitive_heartbeat.ipc")
 HEARTBEAT_INTERVAL_MS = 20  # Send heartbeat every 20ms
 
 
@@ -55,7 +52,7 @@ class HeartbeatClient:
 
         # Set socket options for reliability
         self.socket.setsockopt(zmq.LINGER, 1000)  # 1 second linger
-        self.socket.setsockopt(zmq.SNDHWM, 10)    # Send high water mark
+        self.socket.setsockopt(zmq.SNDHWM, 10)  # Send high water mark
 
         # Connect to the Rust heartbeat endpoint
         self.socket.connect(self.endpoint)
@@ -83,11 +80,11 @@ class HeartbeatClient:
             "timestamp": int(time.time() * 1000),  # milliseconds since epoch
             "sequence": self.sequence,
             "pid": self.pid,
-            "state": "active"
+            "state": "active",
         }
 
         # Serialize to JSON
-        message = json.dumps(heartbeat).encode('utf-8')
+        message = json.dumps(heartbeat).encode("utf-8")
 
         # Send heartbeat
         try:
