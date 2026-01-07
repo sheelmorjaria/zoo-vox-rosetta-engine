@@ -196,11 +196,10 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         print(f"\n   {sentence_name}:")
         f0_sequence = [f0 for f0, _, _ in phrase_sequence]
         print(f"     Frequency sequence: {' → '.join(f'{f0}Hz' for f0 in f0_sequence)}")
-        print(
-            f"     Ascending steps: {
-                [f0_sequence[i + 1] - f0_sequence[i] for i in range(len(f0_sequence) - 1)]
-            }Hz"
-        )
+        ascending_steps = [
+            f0_sequence[i + 1] - f0_sequence[i] for i in range(len(f0_sequence) - 1)
+        ]
+        print(f"     Ascending steps: {ascending_steps}Hz")
 
     # Save the library
     output_path = "marmoset_ascending_sentences_library.pkl"

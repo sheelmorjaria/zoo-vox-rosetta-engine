@@ -2436,9 +2436,8 @@ class VocalizationSynthesizer:
 
             if similarity is None:
                 logger.warning(
-                    f"No microharmonic data for phrases {phrase_sequence[i]} and {
-                        phrase_sequence[i + 1]
-                    }"
+                    f"No microharmonic data for phrases {phrase_sequence[i]} "
+                    f"and {phrase_sequence[i + 1]}"
                 )
                 return None
 

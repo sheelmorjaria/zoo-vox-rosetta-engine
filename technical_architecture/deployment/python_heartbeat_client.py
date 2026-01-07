@@ -20,7 +20,9 @@ from typing import Optional
 import zmq
 
 # Configuration
-HEARTBEAT_ENDPOINT = os.environ.get("RUST_HEARTBEAT_ENDPOINT", "ipc:///tmp/cognitive_heartbeat.ipc")
+HEARTBEAT_ENDPOINT = os.environ.get(
+    "RUST_HEARTBEAT_ENDPOINT", "ipc:///tmp/cognitive_heartbeat.ipc"
+)
 HEARTBEAT_INTERVAL_MS = 20  # Send heartbeat every 20ms
 
 
