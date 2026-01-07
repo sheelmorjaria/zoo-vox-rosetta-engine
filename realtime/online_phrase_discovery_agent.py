@@ -45,11 +45,13 @@ logger = logging.getLogger(__name__)
 # Enums and Data Structures
 # ============================================================================
 
+
 class PhraseState(Enum):
     """Phrase lifecycle states."""
+
     CANDIDATE = "CANDIDATE"  # Unknown, waiting for validation
-    ACTIVE = "ACTIVE"        # Validated, available for synthesis
-    ARCHIVED = "ARCHIVED"    # Old, rarely used
+    ACTIVE = "ACTIVE"  # Validated, available for synthesis
+    ARCHIVED = "ARCHIVED"  # Old, rarely used
 
 
 @dataclass
@@ -57,6 +59,7 @@ class PhraseCandidate:
     """
     A phrase candidate being tracked for validation.
     """
+
     id: str
     source_file: str
     feature_vector: np.ndarray  # 17-dimensional feature vector
@@ -76,21 +79,22 @@ class PhraseCandidate:
     def to_dict(self) -> Dict:
         """Serialize to dictionary."""
         return {
-            'id': self.id,
-            'source_file': self.source_file,
-            'feature_vector': self.feature_vector.tolist(),
-            'count': self.count,
-            'first_seen': self.first_seen,
-            'last_seen': self.last_seen,
-            'state': self.state.value,
-            'context': self.context,
-            'quality_score': self.quality_score
+            "id": self.id,
+            "source_file": self.source_file,
+            "feature_vector": self.feature_vector.tolist(),
+            "count": self.count,
+            "first_seen": self.first_seen,
+            "last_seen": self.last_seen,
+            "state": self.state.value,
+            "context": self.context,
+            "quality_score": self.quality_score,
         }
 
 
 @dataclass
 class DiscoveryConfig:
     """Configuration for online phrase discovery."""
+
     # KNN Thresholds
     known_phrase_threshold: float = 2.0  # Z-score distance < 2.0 = known
     unknown_phrase_threshold: float = 2.0  # Z-score distance >= 2.0 = unknown
@@ -117,6 +121,7 @@ class DiscoveryConfig:
 # Feature Extractor (17-dimensional)
 # ============================================================================
 
+
 class FeatureExtractor:
     """
     Extract 17-dimensional feature vectors from audio.
@@ -127,11 +132,7 @@ class FeatureExtractor:
     def __init__(self, sample_rate: int = 22050):
         self.sample_rate = sample_rate
 
-    def extract(
-        self,
-        audio: np.ndarray,
-        sr: Optional[int] = None
-    ) -> np.ndarray:
+    def extract(self, audio: np.ndarray, sr: Optional[int] = None) -> np.ndarray:
         """
         Extract 17-dimensional feature vector.
 
@@ -143,12 +144,10 @@ class FeatureExtractor:
 
         # F0 (fundamental frequency)
         import librosa
+
         try:
             f0, voiced_flag, voiced_probs = librosa.pyin(
-                audio,
-                fmin=librosa.note_to_hz('C2'),
-                fmax=librosa.note_to_hz('C7'),
-                sr=sr
+                audio, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7"), sr=sr
             )
             # Use median of voiced frames
             voiced_f0 = f0[voiced_flag]
@@ -163,7 +162,7 @@ class FeatureExtractor:
         # Attack/decay (proxy with ZCR)
         zcr = librosa.feature.zero_crossing_rate(audio)[0]
         features[2] = np.mean(zcr) * 10  # attack_ms proxy
-        features[3] = np.std(zcr) * 50   # decay_ms proxy
+        features[3] = np.std(zcr) * 50  # decay_ms proxy
 
         # F0 range (local std)
         if len(voiced_f0) > 1:
@@ -203,6 +202,7 @@ class FeatureExtractor:
 # KNN Phrase Search
 # ============================================================================
 
+
 class KNNPhraseSearch:
     """
     Fast KNN search for phrase matching.
@@ -214,7 +214,7 @@ class KNNPhraseSearch:
         self,
         phrase_library_path: Optional[str] = None,
         feature_mean: Optional[np.ndarray] = None,
-        feature_std: Optional[np.ndarray] = None
+        feature_std: Optional[np.ndarray] = None,
     ):
         """
         Initialize KNN search with phrase library.
@@ -233,33 +233,35 @@ class KNNPhraseSearch:
 
     def load_library(self, path: str):
         """Load phrase library from .pkl file."""
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             library = pickle.load(f)
 
         # Extract feature vectors from phrase segments
-        for phrase_key, segments in library['phrase_segments'].items():
+        for phrase_key, segments in library["phrase_segments"].items():
             # Use first segment as canonical representation
             if segments:
                 seg = segments[0]
-                vector = np.array([
-                    seg['mean_f0_hz'],
-                    seg['mean_duration_ms'],
-                    0.0,  # attack_ms (not stored)
-                    0.0,  # decay_ms (not stored)
-                    seg['mean_range_hz'],  # f0_range_hz
-                    0.0,  # vibrato_rate
-                    0.0,  # vibrato_depth
-                    0.0,  # jitter
-                    0.0,  # shimmer
-                    seg.get('snr_db', 0.0),  # harmonicity_hnr
-                    0.0,  # spectral_flatness
-                    0.0,  # spectral_centroid
-                    0.0,  # spectral_rolloff
-                    0.0,  # bandwidth
-                    -8.0,  # slope
-                    0.0,  # rms_db
-                    1.0   # peak_amplitude
-                ])
+                vector = np.array(
+                    [
+                        seg["mean_f0_hz"],
+                        seg["mean_duration_ms"],
+                        0.0,  # attack_ms (not stored)
+                        0.0,  # decay_ms (not stored)
+                        seg["mean_range_hz"],  # f0_range_hz
+                        0.0,  # vibrato_rate
+                        0.0,  # vibrato_depth
+                        0.0,  # jitter
+                        0.0,  # shimmer
+                        seg.get("snr_db", 0.0),  # harmonicity_hnr
+                        0.0,  # spectral_flatness
+                        0.0,  # spectral_centroid
+                        0.0,  # spectral_rolloff
+                        0.0,  # bandwidth
+                        -8.0,  # slope
+                        0.0,  # rms_db
+                        1.0,  # peak_amplitude
+                    ]
+                )
                 self.phrases[phrase_key] = vector
 
         # Compute normalization statistics if not provided
@@ -272,10 +274,7 @@ class KNNPhraseSearch:
         logger.info(f"KNN Search loaded {len(self.phrases)} phrases")
 
     def search(
-        self,
-        query_vector: np.ndarray,
-        k: int = 1,
-        normalize: bool = True
+        self, query_vector: np.ndarray, k: int = 1, normalize: bool = True
     ) -> Tuple[Optional[str], float]:
         """
         Find nearest phrase.
@@ -289,7 +288,7 @@ class KNNPhraseSearch:
             Tuple of (phrase_key, distance)
         """
         if not self.phrases:
-            return None, float('inf')
+            return None, float("inf")
 
         # Normalize query
         if normalize and self.feature_mean is not None:
@@ -305,7 +304,7 @@ class KNNPhraseSearch:
             matrix_norm = np.stack(list(self.phrases.values()))
 
         # Compute distances
-        distances = cdist([query_norm], matrix_norm, metric='euclidean')[0]
+        distances = cdist([query_norm], matrix_norm, metric="euclidean")[0]
 
         # Get nearest
         nearest_idx = np.argmin(distances)
@@ -318,6 +317,7 @@ class KNNPhraseSearch:
 # ============================================================================
 # Rust Bridge for Async Hot Swapping
 # ============================================================================
+
 
 class RustSynthesizerBridge:
     """
@@ -333,10 +333,7 @@ class RustSynthesizerBridge:
         self._rust_lock = threading.Lock()
 
     async def load_source_async(
-        self,
-        phrase_id: str,
-        file_path: str,
-        audio_buffer: Optional[np.ndarray] = None
+        self, phrase_id: str, file_path: str, audio_buffer: Optional[np.ndarray] = None
     ) -> bool:
         """
         Asynchronously load phrase into Rust engine.
@@ -383,6 +380,7 @@ class RustSynthesizerBridge:
 # Online Phrase Discovery Agent
 # ============================================================================
 
+
 class OnlinePhraseDiscoveryAgent:
     """
     Real-time phrase discovery for field deployment.
@@ -395,11 +393,7 @@ class OnlinePhraseDiscoveryAgent:
     - Smart babble prevention
     """
 
-    def __init__(
-        self,
-        phrase_library_path: str,
-        config: Optional[DiscoveryConfig] = None
-    ):
+    def __init__(self, phrase_library_path: str, config: Optional[DiscoveryConfig] = None):
         """
         Initialize online discovery agent.
 
@@ -412,7 +406,9 @@ class OnlinePhraseDiscoveryAgent:
         # Initialize components
         self.feature_extractor = FeatureExtractor(sample_rate=22050)
         self.knn_search = KNNPhraseSearch(phrase_library_path)
-        self.rust_bridge = RustSynthesizerBridge(self.config) if self.config.enable_rust_bridge else None
+        self.rust_bridge = (
+            RustSynthesizerBridge(self.config) if self.config.enable_rust_bridge else None
+        )
 
         # Phrase tracking
         self.candidates: Dict[str, PhraseCandidate] = {}  # Temp phrase storage
@@ -438,10 +434,7 @@ class OnlinePhraseDiscoveryAgent:
         logger.info(f"  Validation: {self.config.confidence_threshold} repetitions")
 
     def process_live_audio(
-        self,
-        audio_buffer: np.ndarray,
-        sr: int,
-        context: Optional[str] = None
+        self, audio_buffer: np.ndarray, sr: int, context: Optional[str] = None
     ) -> str:
         """
         Process live audio buffer and detect phrase.
@@ -460,11 +453,7 @@ class OnlinePhraseDiscoveryAgent:
         vector = self.feature_extractor.extract(audio_buffer, sr)
 
         # KNN search
-        best_match, distance = self.knn_search.search(
-            vector,
-            k=1,
-            normalize=True
-        )
+        best_match, distance = self.knn_search.search(vector, k=1, normalize=True)
 
         # Classify
         if distance < self.config.known_phrase_threshold:
@@ -482,7 +471,7 @@ class OnlinePhraseDiscoveryAgent:
         sr: int,
         vector: np.ndarray,
         context: Optional[str],
-        distance: float
+        distance: float,
     ) -> str:
         """
         Handle unknown phrase detection (Cold Storage).
@@ -516,7 +505,7 @@ class OnlinePhraseDiscoveryAgent:
             sample_rate=sr,
             context=context,
             state=PhraseState.CANDIDATE,
-            quality_score=max(0.0, 1.0 - distance / 5.0)  # Higher distance = lower quality
+            quality_score=max(0.0, 1.0 - distance / 5.0),  # Higher distance = lower quality
         )
 
         self.candidates[temp_id] = candidate
@@ -623,9 +612,7 @@ class OnlinePhraseDiscoveryAgent:
             # In production, this runs in background thread
             asyncio.create_task(
                 self.rust_bridge.load_source_async(
-                    final_id,
-                    candidate.source_file,
-                    candidate.audio_buffer
+                    final_id, candidate.source_file, candidate.audio_buffer
                 )
             )
 
@@ -676,9 +663,7 @@ class OnlinePhraseDiscoveryAgent:
         logger.info("Background monitor stopped")
 
     def get_synthesis_candidates(
-        self,
-        intent: str,
-        max_candidates: int = 10
+        self, intent: str, max_candidates: int = 10
     ) -> List[PhraseCandidate]:
         """
         Get candidates for synthesis with babble prevention.
@@ -707,6 +692,7 @@ class OnlinePhraseDiscoveryAgent:
 
         # Shuffle and return
         import random
+
         random.shuffle(all_phrases)
 
         # Select by weighted lottery
@@ -725,20 +711,20 @@ class OnlinePhraseDiscoveryAgent:
             output_path: Output file path
         """
         session_data = {
-            'timestamp': datetime.now().isoformat(),
-            'statistics': {
-                'total_processed': self.total_processed,
-                'known_detected': self.known_detected,
-                'unknown_detected': self.unknown_detected,
-                'promotions': self.promotions,
-                'active_count': len(self.active_phrases),
-                'candidate_count': len(self.candidates)
+            "timestamp": datetime.now().isoformat(),
+            "statistics": {
+                "total_processed": self.total_processed,
+                "known_detected": self.known_detected,
+                "unknown_detected": self.unknown_detected,
+                "promotions": self.promotions,
+                "active_count": len(self.active_phrases),
+                "candidate_count": len(self.candidates),
             },
-            'active_phrases': {k: v.to_dict() for k, v in self.active_phrases.items()},
-            'candidates': {k: v.to_dict() for k, v in self.candidates.items()}
+            "active_phrases": {k: v.to_dict() for k, v in self.active_phrases.items()},
+            "candidates": {k: v.to_dict() for k, v in self.candidates.items()},
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(session_data, f, indent=2)
 
         logger.info(f"Session saved to {output_path}")
@@ -746,14 +732,14 @@ class OnlinePhraseDiscoveryAgent:
     def get_statistics(self) -> Dict:
         """Get discovery statistics."""
         return {
-            'total_processed': self.total_processed,
-            'known_detected': self.known_detected,
-            'unknown_detected': self.unknown_detected,
-            'promotions': self.promotions,
-            'active_phrases': len(self.active_phrases),
-            'candidates': len(self.candidates),
-            'detection_rate': self.known_detected / max(self.total_processed, 1),
-            'discovery_rate': self.promotions / max(self.unknown_detected, 1)
+            "total_processed": self.total_processed,
+            "known_detected": self.known_detected,
+            "unknown_detected": self.unknown_detected,
+            "promotions": self.promotions,
+            "active_phrases": len(self.active_phrases),
+            "candidates": len(self.candidates),
+            "detection_rate": self.known_detected / max(self.total_processed, 1),
+            "discovery_rate": self.promotions / max(self.unknown_detected, 1),
         }
 
 
@@ -764,38 +750,21 @@ class OnlinePhraseDiscoveryAgent:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Online Phrase Discovery Agent"
+    parser = argparse.ArgumentParser(description="Online Phrase Discovery Agent")
+    parser.add_argument("library_path", type=str, help="Path to .pkl phrase library")
+    parser.add_argument("--audio", type=str, help="Path to test audio file")
+    parser.add_argument(
+        "--threshold", type=float, default=2.0, help="KNN distance threshold for unknown detection"
     )
     parser.add_argument(
-        "library_path",
-        type=str,
-        help="Path to .pkl phrase library"
-    )
-    parser.add_argument(
-        "--audio",
-        type=str,
-        help="Path to test audio file"
-    )
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=2.0,
-        help="KNN distance threshold for unknown detection"
-    )
-    parser.add_argument(
-        "--confidence",
-        type=int,
-        default=3,
-        help="Repetitions needed for promotion"
+        "--confidence", type=int, default=3, help="Repetitions needed for promotion"
     )
 
     args = parser.parse_args()
 
     # Create config
     config = DiscoveryConfig(
-        known_phrase_threshold=args.threshold,
-        confidence_threshold=args.confidence
+        known_phrase_threshold=args.threshold, confidence_threshold=args.confidence
     )
 
     # Create agent
@@ -807,6 +776,7 @@ if __name__ == "__main__":
     if args.audio:
         # Process test audio
         import librosa
+
         audio, sr = librosa.load(args.audio, sr=22050)
 
         print(f"\nProcessing {args.audio}...")
@@ -815,15 +785,16 @@ if __name__ == "__main__":
         # Simulate streaming (chunk into 100ms segments)
         chunk_size = int(0.1 * sr)
         for i in range(0, len(audio), chunk_size):
-            chunk = audio[i:i+chunk_size]
+            chunk = audio[i : i + chunk_size]
             if len(chunk) < chunk_size:
                 break
 
             result = agent.process_live_audio(chunk, sr)
-            print(f"  Chunk {i//chunk_size}: {result}")
+            print(f"  Chunk {i // chunk_size}: {result}")
 
         # Wait for monitor to process
         import time
+
         time.sleep(2)
 
         # Show statistics

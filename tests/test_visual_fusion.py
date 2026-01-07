@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 # Import visual fusion module
-sys.path.append('src')
+sys.path.append("src")
 import cognitive_intelligence.visual_fusion as visual_fusion
 
 
@@ -33,7 +33,7 @@ class TestVisualFusion(unittest.TestCase):
             camera_resolution=self.test_resolution,
             fps=self.test_fps,
             use_mediapipe=True,
-            separate_thread=False  # Run in main thread for testing
+            separate_thread=False,  # Run in main thread for testing
         )
 
         # 2. Create VisualFusionSystem instance
@@ -55,9 +55,7 @@ class TestVisualFusion(unittest.TestCase):
 
         # 1. Create configuration
         config = VisualFusionConfig(
-            camera_resolution=self.test_resolution,
-            fps=self.test_fps,
-            use_mediapipe=True
+            camera_resolution=self.test_resolution, fps=self.test_fps, use_mediapipe=True
         )
 
         # 2. Create MediaPipeTracker instance
@@ -79,7 +77,7 @@ class TestVisualFusion(unittest.TestCase):
             camera_resolution=self.test_resolution,
             fps=self.test_fps,
             use_mediapipe=False,  # Force fallback
-            use_lighttrack_fallback=True
+            use_lighttrack_fallback=True,
         )
 
         # 2. Create LightTrackFallback instance
@@ -102,7 +100,7 @@ class TestVisualFusion(unittest.TestCase):
             camera_resolution=self.test_resolution,
             fps=self.test_fps,
             use_mediapipe=True,
-            separate_thread=False
+            separate_thread=False,
         )
 
         # 2. Create fusion system
@@ -112,10 +110,11 @@ class TestVisualFusion(unittest.TestCase):
         test_frame = np.zeros((self.test_resolution[1], self.test_resolution[0], 3), dtype=np.uint8)
 
         # 4. Test frame processing (this will use mock MediaPipe)
-        with patch('cognitive_intelligence.visual_fusion.mp_hands.Hands') as mock_hands, \
-             patch('cognitive_intelligence.visual_fusion.mp_face_mesh.FaceMesh') as mock_face, \
-             patch('cognitive_intelligence.visual_fusion.mp_pose.Pose') as mock_pose:
-
+        with (
+            patch("cognitive_intelligence.visual_fusion.mp_hands.Hands") as mock_hands,
+            patch("cognitive_intelligence.visual_fusion.mp_face_mesh.FaceMesh") as mock_face,
+            patch("cognitive_intelligence.visual_fusion.mp_pose.Pose") as mock_pose,
+        ):
             # Mock the processors
             mock_hands.return_value.process.return_value.multi_hand_landmarks = None
             mock_face.return_value.process.return_value.multi_face_landmarks = None
@@ -140,7 +139,7 @@ class TestVisualFusion(unittest.TestCase):
             camera_resolution=self.test_resolution,
             fps=self.test_fps,
             use_mediapipe=True,
-            separate_thread=True
+            separate_thread=True,
         )
 
         # 2. Create fusion system
@@ -173,7 +172,7 @@ class TestVisualFusion(unittest.TestCase):
             fps=self.test_fps,
             use_mediapipe=True,
             separate_thread=False,
-            max_queue_size=5
+            max_queue_size=5,
         )
 
         # 2. Create fusion system
@@ -200,19 +199,22 @@ class TestVisualFusion(unittest.TestCase):
         )
 
         # 1. Create tracker
-        config = VisualFusionConfig(
-            camera_resolution=self.test_resolution,
-            fps=self.test_fps
-        )
+        config = VisualFusionConfig(camera_resolution=self.test_resolution, fps=self.test_fps)
         MediaPipeTracker(config)
 
         # 2. Test attention levels
         [
             # Create features with different attention levels
-            VisualFeatures(gaze_direction="towards_camera", movement_intensity=0.9, hand_gestures=["open_hand"]),
+            VisualFeatures(
+                gaze_direction="towards_camera", movement_intensity=0.9, hand_gestures=["open_hand"]
+            ),
             VisualFeatures(gaze_direction="away", movement_intensity=0.1, hand_gestures=[]),
             VisualFeatures(gaze_direction="left", movement_intensity=0.5, hand_gestures=["point"]),
-            VisualFeatures(gaze_direction="towards_camera", movement_intensity=0.1, hand_gestures=["open_hand", "peace"])
+            VisualFeatures(
+                gaze_direction="towards_camera",
+                movement_intensity=0.1,
+                hand_gestures=["open_hand", "peace"],
+            ),
         ]
 
         # Test the attention level calculation directly
@@ -284,17 +286,17 @@ class TestVisualFusion(unittest.TestCase):
 
         # 2. Test audio features
         audio_features = {
-            'rms': 0.1,
-            'f0': 6000.0,
-            'context': 'contact_call',
-            'response_probability': 0.6
+            "rms": 0.1,
+            "f0": 6000.0,
+            "context": "contact_call",
+            "response_probability": 0.6,
         }
 
         # 3. Test visual features with high attention
         visual_features = VisualFeatures(
             attention_level=VisualAttentionLevel.HIGH,
-            gaze_direction='towards_camera',
-            movement_intensity=0.7
+            gaze_direction="towards_camera",
+            movement_intensity=0.7,
         )
 
         # 4. Fuse features
@@ -302,13 +304,13 @@ class TestVisualFusion(unittest.TestCase):
 
         # 5. Verify fusion result
         self.assertIsInstance(fused_result, dict)
-        self.assertIn('response_probability', fused_result)
-        self.assertIn('visual_context', fused_result)
+        self.assertIn("response_probability", fused_result)
+        self.assertIn("visual_context", fused_result)
 
         # Verify visual context is stored correctly
-        visual_context = fused_result['visual_context']
-        self.assertEqual(visual_context['attention_level'], 'High')
-        self.assertEqual(visual_context['gaze_direction'], 'towards_camera')
+        visual_context = fused_result["visual_context"]
+        self.assertEqual(visual_context["attention_level"], "High")
+        self.assertEqual(visual_context["gaze_direction"], "towards_camera")
 
     def test_attention_score_calculation(self):
         """Test that visual attention scores are calculated correctly"""
@@ -328,27 +330,27 @@ class TestVisualFusion(unittest.TestCase):
             # Low attention
             VisualFeatures(
                 attention_level=VisualAttentionLevel.LOW,
-                gaze_direction='away',
+                gaze_direction="away",
                 movement_intensity=0.0,
                 hand_gestures=[],
-                confidence=0.8
+                confidence=0.8,
             ),
             # High attention
             VisualFeatures(
                 attention_level=VisualAttentionLevel.HIGH,
-                gaze_direction='towards_camera',
+                gaze_direction="towards_camera",
                 movement_intensity=0.5,
-                hand_gestures=['open_hand'],
-                confidence=0.9
+                hand_gestures=["open_hand"],
+                confidence=0.9,
             ),
             # Very high attention
             VisualFeatures(
                 attention_level=VisualAttentionLevel.VERY_HIGH,
-                gaze_direction='towards_camera',
+                gaze_direction="towards_camera",
                 movement_intensity=0.9,
-                hand_gestures=['open_hand', 'peace'],
-                confidence=0.95
-            )
+                hand_gestures=["open_hand", "peace"],
+                confidence=0.95,
+            ),
         ]
 
         for features in test_scenarios:
@@ -378,15 +380,15 @@ class TestVisualFusion(unittest.TestCase):
 
         # 3. Verify stats structure
         self.assertIsInstance(initial_stats, dict)
-        self.assertIn('running', initial_stats)
-        self.assertIn('frame_drops', initial_stats)
-        self.assertIn('queue_size', initial_stats)
-        self.assertIn('avg_processing_time', initial_stats)
+        self.assertIn("running", initial_stats)
+        self.assertIn("frame_drops", initial_stats)
+        self.assertIn("queue_size", initial_stats)
+        self.assertIn("avg_processing_time", initial_stats)
 
         # 4. Verify initial values
-        self.assertFalse(initial_stats['running'])
-        self.assertEqual(initial_stats['frame_drops'], 0)
-        self.assertEqual(initial_stats['queue_size'], 0)
+        self.assertFalse(initial_stats["running"])
+        self.assertEqual(initial_stats["frame_drops"], 0)
+        self.assertEqual(initial_stats["queue_size"], 0)
 
     def test_error_handling(self):
         """Test that errors are handled gracefully"""
@@ -413,10 +415,7 @@ class TestVisualFusion(unittest.TestCase):
 
         # 1. Create configuration
         config = VisualFusionConfig(
-            camera_resolution=(1280, 720),
-            fps=60,
-            use_mediapipe=True,
-            separate_thread=False
+            camera_resolution=(1280, 720), fps=60, use_mediapipe=True, separate_thread=False
         )
 
         # 2. Create fusion system
@@ -432,26 +431,26 @@ class TestVisualFusion(unittest.TestCase):
         self.assertEqual(high_res_fusion.config.camera_resolution, (1920, 1080))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create test suite with all test cases
     suite = unittest.TestSuite()
 
     # Add all test methods
     test_methods = [
-        'test_visual_fusion_system_creation',
-        'test_mediapipe_tracker_creation',
-        'test_lighttrack_fallback_initialization',
-        'test_frame_processing_without_camera',
-        'test_separate_thread_processing',
-        'test_frame_queue_overflow_protection',
-        'test_visual_attention_calculation',
-        'test_gaze_estimation_accuracy',
-        'test_hand_gesture_recognition',
-        'test_visual_audio_fusion',
-        'test_attention_score_calculation',
-        'test_performance_monitoring',
-        'test_error_handling',
-        'test_camera_initialization'
+        "test_visual_fusion_system_creation",
+        "test_mediapipe_tracker_creation",
+        "test_lighttrack_fallback_initialization",
+        "test_frame_processing_without_camera",
+        "test_separate_thread_processing",
+        "test_frame_queue_overflow_protection",
+        "test_visual_attention_calculation",
+        "test_gaze_estimation_accuracy",
+        "test_hand_gesture_recognition",
+        "test_visual_audio_fusion",
+        "test_attention_score_calculation",
+        "test_performance_monitoring",
+        "test_error_handling",
+        "test_camera_initialization",
     ]
 
     for method in test_methods:
@@ -462,24 +461,26 @@ if __name__ == '__main__':
     result = runner.run(suite)
 
     # Print summary
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print("Visual Fusion Test Results:")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%")
+    print(
+        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    )
 
     if result.failures:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("FAILURES:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.failures:
             print(f"- {test}: {traceback}")
 
     if result.errors:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("ERRORS:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.errors:
             print(f"- {test}: {traceback}")

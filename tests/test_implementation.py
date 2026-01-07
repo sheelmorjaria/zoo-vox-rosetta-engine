@@ -87,7 +87,7 @@ def test_basic_functionality():
     assert len(sequence) == 3
 
     synthesized_audio = synthesizer.synthesize_audio(sequence)
-    print(f"   Synthesized {len(synthesized_audio)/48000:.2f}s of audio")
+    print(f"   Synthesized {len(synthesized_audio) / 48000:.2f}s of audio")
     assert len(synthesized_audio) > 0
     print("   ✓ Synthesis works")
 
@@ -99,6 +99,7 @@ def test_basic_functionality():
     print("  ✓ Grammar discovery from sequences")
     print("  ✓ Novel sequence synthesis")
     print("  ✓ Cross-modal analysis support")
+
 
 def demonstrate_unknown_species_analysis():
     """Demonstrate analysis of unknown species."""
@@ -125,7 +126,7 @@ def demonstrate_unknown_species_analysis():
 
     # Transient phrase
     transient = np.zeros(len(t))
-    transient[len(transient)//2-20:len(transient)//2+20] = 1.0
+    transient[len(transient) // 2 - 20 : len(transient) // 2 + 20] = 1.0
     phrases.append(transient)
 
     # Combine with gaps
@@ -158,7 +159,8 @@ def demonstrate_unknown_species_analysis():
         sequence = synthesizer.generate_sequence(num_phrases=4)
         synthesized = synthesizer.synthesize_audio(sequence)
         print(f"\n  Synthesized response: {sequence}")
-        print(f"  Audio duration: {len(synthesized)/sample_rate:.2f}s")
+        print(f"  Audio duration: {len(synthesized) / sample_rate:.2f}s")
+
 
 if __name__ == "__main__":
     try:
@@ -168,4 +170,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()

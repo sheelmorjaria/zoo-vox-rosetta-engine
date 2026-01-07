@@ -17,8 +17,8 @@ import sys
 
 import numpy as np
 
-sys.path.append('/home/sheel/birdsong_analysis')
-sys.path.append('/home/sheel/birdsong_analysis/src/realtime')
+sys.path.append("/home/sheel/birdsong_analysis")
+sys.path.append("/home/sheel/birdsong_analysis/src/realtime")
 
 from advanced_synthesis_methods import SynthesisFactory
 from phrase_audio_library import PhraseAudioLibrary
@@ -26,11 +26,11 @@ from phrase_audio_library import PhraseAudioLibrary
 
 def create_demo_library():
     """Create a demonstration library with various phrase types."""
-    library = PhraseAudioLibrary(species='marmoset', sr=22050)
+    library = PhraseAudioLibrary(species="marmoset", sr=22050)
 
     # Create different types of phrases for demonstration
     frequencies = [4000, 5000, 6000, 7000, 8000]
-    contexts = ['contact', 'neutral', 'food', 'social', 'alarm']
+    contexts = ["contact", "neutral", "food", "social", "alarm"]
 
     for i, (freq, context) in enumerate(zip(frequencies, contexts)):
         # Create harmonic-rich audio
@@ -51,14 +51,15 @@ def create_demo_library():
 
         library.create_phrase_segment(
             audio=audio,
-            phrase_key=f'F0_{freq}_DUR_5_RANGE_0',
+            phrase_key=f"F0_{freq}_DUR_5_RANGE_0",
             context=context,
-            individual_id='demo_individual',
+            individual_id="demo_individual",
             quality_score=0.9,
-            source_file='demo'
+            source_file="demo",
         )
 
     return library
+
 
 def demo_all_synthesis_methods():
     """Demonstrate all four synthesis methods."""
@@ -71,7 +72,7 @@ def demo_all_synthesis_methods():
     print(f"✅ Created demo library with {len(library.get_all_phrase_keys())} phrases")
 
     # Test all synthesis methods
-    methods = ['concatenative', 'superpositional', 'combined', 'microharmonic']
+    methods = ["concatenative", "superpositional", "combined", "microharmonic"]
 
     print("\n" + "─" * 80)
     print("TESTING ALL SYNTHESIS METHODS")
@@ -89,22 +90,17 @@ def demo_all_synthesis_methods():
 
         try:
             # Create synthesizer
-            synthesizer = SynthesisFactory.create_synthesizer(
-                method,
-                library,
-                sample_rate=22050
-            )
+            synthesizer = SynthesisFactory.create_synthesizer(method, library, sample_rate=22050)
             print(f"✅ Synthesizer created: {type(synthesizer).__name__}")
 
             # Test synthesis
-            if method == 'microharmonic':
+            if method == "microharmonic":
                 # For microharmonic, use the specific method
                 try:
                     from advanced_synthesis_methods import ContextState
+
                     result = synthesizer.synthesize_microharmonic_phrases(
-                        phrase_keys,
-                        ContextState.NEUTRAL,
-                        temporal_alignment=True
+                        phrase_keys, ContextState.NEUTRAL, temporal_alignment=True
                     )
                     samples = len(result) if result is not None else 0
                     print(f"✅ Synthesis successful: {samples} samples")
@@ -117,10 +113,12 @@ def demo_all_synthesis_methods():
                 try:
                     config = synthesizer.config_class(
                         phrase_sequence=phrase_keys,
-                        encoding_mode='horizontal' if method == 'concatenative' else 'vertical'
+                        encoding_mode="horizontal" if method == "concatenative" else "vertical",
                     )
                     result = synthesizer.synthesize(config)
-                    samples = len(result.get('audio', [])) if result and result.get('success') else 0
+                    samples = (
+                        len(result.get("audio", [])) if result and result.get("success") else 0
+                    )
                     print(f"✅ Synthesis successful: {samples} samples")
                     results[method] = samples
                 except Exception as e:
@@ -160,6 +158,7 @@ def demo_all_synthesis_methods():
     print("=" * 80)
 
     return results
+
 
 if __name__ == "__main__":
     demo_all_synthesis_methods()

@@ -21,17 +21,17 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configuration
-DATABASE_PATH = '/home/sheel/birdsong_analysis/src/vocalization_database_with_contexts.json'
+DATABASE_PATH = "/home/sheel/birdsong_analysis/src/vocalization_database_with_contexts.json"
 
 
 def load_database(db_path: str) -> Dict:
     """Load phrase database."""
     print(f"Loading database from {db_path}...")
 
-    with open(db_path, 'r') as f:
+    with open(db_path, "r") as f:
         db = json.load(f)
 
-    phrases = db['species_data']['marmoset']['phrases']
+    phrases = db["species_data"]["marmoset"]["phrases"]
 
     print(f"✅ Loaded {len(phrases)} phrase types")
 
@@ -50,35 +50,36 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
     phrase_total_occurrences = {}  # phrase_key -> total count
 
     for phrase_key, phrase_data in phrases.items():
-        contexts = phrase_data.get('contexts', [])
-        total_occurrences = phrase_data.get('total_occurrences', 0)
+        contexts = phrase_data.get("contexts", [])
+        total_occurrences = phrase_data.get("total_occurrences", 0)
 
         phrase_contexts[phrase_key] = Counter()
         phrase_total_occurrences[phrase_key] = total_occurrences
 
         for ctx in contexts:
-            ctx_name = ctx['context_name']
-            count = ctx['count']
+            ctx_name = ctx["context_name"]
+            count = ctx["count"]
 
             phrase_contexts[phrase_key][ctx_name] = count
             context_phrases[ctx_name][phrase_key] += count
 
     # Find phrases that appear in multiple contexts
-    multi_context_phrases = {
-        k: v for k, v in phrase_contexts.items()
-        if len(v) > 1
-    }
+    multi_context_phrases = {k: v for k, v in phrase_contexts.items() if len(v) > 1}
 
     print("\n📊 MULTI-CONTEXT PHRASES (phrase reuse across contexts):")
     print(f"   Total phrases: {len(phrase_contexts)}")
-    print(f"   Multi-context phrases: {len(multi_context_phrases)} "
-          f"({len(multi_context_phrases) / len(phrase_contexts) * 100:.1f}%)")
+    print(
+        f"   Multi-context phrases: {len(multi_context_phrases)} "
+        f"({len(multi_context_phrases) / len(phrase_contexts) * 100:.1f}%)"
+    )
 
     # Show examples
     print("\n   Examples of phrases appearing in multiple contexts:")
     for phrase_key, context_counter in list(multi_context_phrases.items())[:10]:
         total = sum(context_counter.values())
-        contexts_str = ", ".join([f"{ctx} ({count})" for ctx, count in context_counter.most_common()])
+        contexts_str = ", ".join(
+            [f"{ctx} ({count})" for ctx, count in context_counter.most_common()]
+        )
         print(f"      {phrase_key}: {contexts_str} (total: {total})")
 
     # Analyze context overlap
@@ -87,7 +88,7 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
     contexts = list(context_phrases.keys())
 
     for i, ctx1 in enumerate(contexts):
-        for ctx2 in contexts[i+1:]:
+        for ctx2 in contexts[i + 1 :]:
             # Find shared phrases
             phrases1 = set(context_phrases[ctx1].keys())
             phrases2 = set(context_phrases[ctx2].keys())
@@ -96,7 +97,9 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
 
             if len(shared) > 0:
                 overlap_pct = len(shared) / min(len(phrases1), len(phrases2)) * 100
-                print(f"   {ctx1} ↔ {ctx2}: {len(shared)} shared phrases ({overlap_pct:.1f}% overlap)")
+                print(
+                    f"   {ctx1} ↔ {ctx2}: {len(shared)} shared phrases ({overlap_pct:.1f}% overlap)"
+                )
 
     # Analyze phrase specialization vs generalization
     specialized_phrases = []  # Phrases primarily in one context
@@ -134,11 +137,11 @@ def analyze_phrase_context_patterns(phrases: Dict) -> Dict:
             print(f"      {phrase_key}: entropy={entropy:.3f}, contexts=[{contexts_str}]")
 
     return {
-        'phrase_contexts': phrase_contexts,
-        'context_phrases': dict(context_phrases),
-        'multi_context_phrases': multi_context_phrases,
-        'specialized_count': len(specialized_phrases),
-        'generalized_count': len(generalized_phrases)
+        "phrase_contexts": phrase_contexts,
+        "context_phrases": dict(context_phrases),
+        "multi_context_phrases": multi_context_phrases,
+        "specialized_count": len(specialized_phrases),
+        "generalized_count": len(generalized_phrases),
     }
 
 
@@ -152,10 +155,10 @@ def analyze_acoustic_similarity_across_contexts(phrases: Dict):
     context_phrases = defaultdict(dict)  # context -> {phrase_key: features}
 
     for phrase_key, phrase_data in phrases.items():
-        af = phrase_data['acoustic_features']
+        af = phrase_data["acoustic_features"]
 
-        for ctx in phrase_data.get('contexts', []):
-            ctx_name = ctx['context_name']
+        for ctx in phrase_data.get("contexts", []):
+            ctx_name = ctx["context_name"]
             context_phrases[ctx_name][phrase_key] = af
 
     # For each pair of contexts, find acoustically similar phrases
@@ -167,32 +170,34 @@ def analyze_acoustic_similarity_across_contexts(phrases: Dict):
     similar_cross_context = []
 
     for i, ctx1 in enumerate(contexts):
-        for ctx2 in contexts[i+1:]:
+        for ctx2 in contexts[i + 1 :]:
             phrases1 = context_phrases[ctx1]
             phrases2 = context_phrases[ctx2]
 
             # Find similar phrases (similar F0 and duration)
             for phrase_key1, af1 in list(phrases1.items())[:20]:  # Sample 20 per context
-                f0_1 = af1.get('mean_f0_hz', 0)
-                dur_1 = af1.get('mean_duration_ms', 0)
+                f0_1 = af1.get("mean_f0_hz", 0)
+                dur_1 = af1.get("mean_duration_ms", 0)
 
                 for phrase_key2, af2 in phrases2.items():
-                    f0_2 = af2.get('mean_f0_hz', 0)
-                    dur_2 = af2.get('mean_duration_ms', 0)
+                    f0_2 = af2.get("mean_f0_hz", 0)
+                    dur_2 = af2.get("mean_duration_ms", 0)
 
                     # Check similarity
                     f0_diff = abs(f0_1 - f0_2)
                     dur_diff = abs(dur_1 - dur_2)
 
                     if f0_diff < 200 and dur_diff < 100:  # Within 200Hz F0, 100ms duration
-                        similar_cross_context.append({
-                            'context1': ctx1,
-                            'phrase1': phrase_key1,
-                            'context2': ctx2,
-                            'phrase2': phrase_key2,
-                            'f0_diff': f0_diff,
-                            'dur_diff': dur_diff
-                        })
+                        similar_cross_context.append(
+                            {
+                                "context1": ctx1,
+                                "phrase1": phrase_key1,
+                                "context2": ctx2,
+                                "phrase2": phrase_key2,
+                                "f0_diff": f0_diff,
+                                "dur_diff": dur_diff,
+                            }
+                        )
 
     print(f"   Found {len(similar_cross_context)} similar phrase pairs across contexts")
 
@@ -221,21 +226,21 @@ def analyze_compositionality_evidence(phrases: Dict):
     # Build context association matrix
     contexts = set()
     for phrase_data in phrases.values():
-        for ctx in phrase_data.get('contexts', []):
-            contexts.add(ctx['context_name'])
+        for ctx in phrase_data.get("contexts", []):
+            contexts.add(ctx["context_name"])
 
     contexts = sorted(list(contexts))
 
     phrase_context_matrix = {}  # phrase_key -> {context: proportion}
 
     for phrase_key, phrase_data in phrases.items():
-        total = sum(ctx['count'] for ctx in phrase_data.get('contexts', []))
+        total = sum(ctx["count"] for ctx in phrase_data.get("contexts", []))
 
         if total > 0:
             phrase_context_matrix[phrase_key] = {}
-            for ctx in phrase_data.get('contexts', []):
-                ctx_name = ctx['context_name']
-                count = ctx['count']
+            for ctx in phrase_data.get("contexts", []):
+                ctx_name = ctx["context_name"]
+                count = ctx["count"]
                 phrase_context_matrix[phrase_key][ctx_name] = count / total
 
     # Find context-specific phrases (enriched in one context)
@@ -252,7 +257,7 @@ def analyze_compositionality_evidence(phrases: Dict):
         if enriched:
             print(f"\n   {ctx.upper()}: {len(enriched)} context-specific phrases")
             for phrase_key, proportion in enriched[:5]:
-                print(f"      {phrase_key}: {proportion*100:.1f}% in {ctx}")
+                print(f"      {phrase_key}: {proportion * 100:.1f}% in {ctx}")
 
     # Find "flexible" phrases (evenly distributed across contexts)
     print("\n📊 FLEXIBLE PHRASES (potential building blocks):")
@@ -323,18 +328,18 @@ def main():
     analyze_compositionality_evidence(phrases)
 
     # Save results
-    output_path = '/home/sheel/birdsong_analysis/src/phrase_reuse_analysis.json'
+    output_path = "/home/sheel/birdsong_analysis/src/phrase_reuse_analysis.json"
     print(f"\n💾 Saving results to {output_path}...")
 
     results = {
-        'total_phrases': len(phrases),
-        'multi_context_count': len(context_results['multi_context_phrases']),
-        'specialized_count': context_results['specialized_count'],
-        'generalized_count': context_results['generalized_count'],
-        'similar_cross_context_pairs': len(similarity_results)
+        "total_phrases": len(phrases),
+        "multi_context_count": len(context_results["multi_context_phrases"]),
+        "specialized_count": context_results["specialized_count"],
+        "generalized_count": context_results["generalized_count"],
+        "similar_cross_context_pairs": len(similarity_results),
     }
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
 
     print("✅ Saved!")

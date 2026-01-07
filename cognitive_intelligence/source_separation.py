@@ -50,6 +50,7 @@ import torch.nn.functional as F
 try:
     import onnx
     import onnxruntime as ort
+
     ONNX_AVAILABLE = True
 except ImportError:
     ONNX_AVAILABLE = False
@@ -59,10 +60,11 @@ except ImportError:
 @dataclass
 class SeparationConfig:
     """Configuration for Source Separation System"""
+
     # Conv-TasNet parameters
     N: int = 256  # Feature dimension (smaller for testing)
     B: int = 128  # Number of channels (smaller for testing)
-    H: int = 8    # Number of convolutional layers (smaller for testing)
+    H: int = 8  # Number of convolutional layers (smaller for testing)
     sc_block_size: int = 4  # Spatial conv block size
     stride: int = 512  # Stride for convolution (larger for compatibility)
 
@@ -73,7 +75,7 @@ class SeparationConfig:
 
     # Separation parameters
     num_sources: int = 2  # Number of sources to separate
-    mask_type: str = 'netmask'  # netmask or softmax
+    mask_type: str = "netmask"  # netmask or softmax
 
     # Performance parameters
     target_latency_ms: float = 10.0  # Target latency per chunk
@@ -136,11 +138,11 @@ class SeparationNetwork(nn.Module):
             config.N * config.num_sources,
             config.sc_block_size,
             padding=config.sc_block_size // 2,
-            groups=1  # Standard convolution for now
+            groups=1,  # Standard convolution for now
         )
 
         # Mask generation
-        if config.mask_type == 'netmask':
+        if config.mask_type == "netmask":
             self.mask_net = nn.Conv1d(config.N, config.N * config.num_sources, 1)
         else:  # softmax
             self.mask_net = nn.Conv1d(config.N, config.N * config.num_sources, 1)
@@ -153,16 +155,16 @@ class SeparationNetwork(nn.Module):
         mixture_encoded = self.encoder(mixture)  # (batch, N, T')
 
         # Generate masks for each source
-        if self.config.mask_type == 'netmask':
+        if self.config.mask_type == "netmask":
             # Netmask: separate mask for each source
             masks = self.mask_net(mixture_encoded)  # (batch, N*num_sources, T')
-            masks = masks.view(batch_size, self.config.num_sources,
-                             self.config.N, -1)  # (batch, num_sources, N, T')
+            masks = masks.view(
+                batch_size, self.config.num_sources, self.config.N, -1
+            )  # (batch, num_sources, N, T')
         else:
             # Softmax: all masks together, then softmax
             masks = self.mask_net(mixture_encoded)  # (batch, N*num_sources, T')
-            masks = masks.view(batch_size, self.config.num_sources,
-                             self.config.N, -1)
+            masks = masks.view(batch_size, self.config.num_sources, self.config.N, -1)
             # Apply softmax across sources
             masks = F.softmax(masks, dim=1)  # (batch, num_sources, N, T')
 
@@ -180,9 +182,7 @@ class SeparationNetwork(nn.Module):
         # Input needs to be (batch*num_sources, N*num_sources, T') for separation_net
         input_for_separation = masked_sources.permute(0, 2, 1, 3).contiguous()
         input_for_separation = input_for_separation.view(
-            batch_size * self.config.num_sources,
-            self.config.N,
-            -1
+            batch_size * self.config.num_sources, self.config.N, -1
         )  # (batch*num_sources, N, T') - this is the issue!
 
         # Fix: need to handle this differently for groups=1 convolution
@@ -235,7 +235,7 @@ class ConvTasNetWrapper:
         """Setup ONNX model for Rust integration"""
         if not self.config.onnx_path:
             # Create temporary ONNX file
-            self.config.onnx_path = tempfile.mktemp(suffix='.onnx')
+            self.config.onnx_path = tempfile.mktemp(suffix=".onnx")
 
         # Export model to ONNX
         dummy_input = torch.randn(1, 1, self.config.sample_rate)
@@ -243,12 +243,9 @@ class ConvTasNetWrapper:
             self.model,
             dummy_input,
             self.config.onnx_path,
-            input_names=['input'],
-            output_names=['output'],
-            dynamic_axes={
-                'input': {2: 'time'},
-                'output': {2: 'time'}
-            }
+            input_names=["input"],
+            output_names=["output"],
+            dynamic_axes={"input": {2: "time"}, "output": {2: "time"}},
         )
 
         # Verify ONNX model
@@ -301,7 +298,9 @@ class ConvTasNetWrapper:
 
         # Check latency
         if processing_time * 1000 > self.config.target_latency_ms:
-            self.logger.warning(f"Latency target exceeded: {processing_time*1000:.1f}ms > {self.config.target_latency_ms}ms")
+            self.logger.warning(
+                f"Latency target exceeded: {processing_time * 1000:.1f}ms > {self.config.target_latency_ms}ms"
+            )
 
         return sources_np
 
@@ -313,12 +312,12 @@ class ConvTasNetWrapper:
         reference = reference[:min_len]
 
         # Compute SDR
-        signal_power = np.sum(reference ** 2)
+        signal_power = np.sum(reference**2)
         noise = estimated - reference
-        noise_power = np.sum(noise ** 2)
+        noise_power = np.sum(noise**2)
 
         if noise_power == 0:
-            return float('inf')
+            return float("inf")
 
         sdr = 10 * np.log10(signal_power / noise_power)
         return sdr
@@ -329,32 +328,31 @@ class ConvTasNetWrapper:
             return {}
 
         return {
-            'avg_processing_time': np.mean(self.processing_times),
-            'max_processing_time': np.max(self.processing_times),
-            'min_processing_time': np.min(self.processing_times),
-            'avg_latency_ms': np.mean(self.latencies),
-            'max_latency_ms': np.max(self.latencies),
-            'target_latency_met': np.mean(self.latencies) <= self.config.target_latency_ms,
-            'total_samples_processed': len(self.processing_times),
-            'onnx_enabled': self.onnx_session is not None
+            "avg_processing_time": np.mean(self.processing_times),
+            "max_processing_time": np.max(self.processing_times),
+            "min_processing_time": np.min(self.processing_times),
+            "avg_latency_ms": np.mean(self.latencies),
+            "max_latency_ms": np.max(self.latencies),
+            "target_latency_met": np.mean(self.latencies) <= self.config.target_latency_ms,
+            "total_samples_processed": len(self.processing_times),
+            "onnx_enabled": self.onnx_session is not None,
         }
 
     def save_model(self, path: str):
         """Save model state"""
         import pickle
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'model_state_dict': self.model.state_dict(),
-                'config': self.config
-            }, f)
+
+        with open(path, "wb") as f:
+            pickle.dump({"model_state_dict": self.model.state_dict(), "config": self.config}, f)
         self.logger.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """Load model state"""
         import pickle
-        with open(path, 'rb') as f:
+
+        with open(path, "rb") as f:
             checkpoint = pickle.load(f)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.load_state_dict(checkpoint["model_state_dict"])
         self.logger.info(f"Model loaded from {path}")
 
 
@@ -388,7 +386,7 @@ class ChunkProcessor:
         hop_size = self.chunk_size - self.overlap
 
         for i in range(0, min(len(audio_stream), self.buffer_size) - self.chunk_size + 1, hop_size):
-            chunk = audio_stream[i:i + self.chunk_size]
+            chunk = audio_stream[i : i + self.chunk_size]
 
             # Separate chunk
             separated_chunk = self.separation_wrapper.separate_real_time(chunk)
@@ -396,7 +394,7 @@ class ChunkProcessor:
             # Apply overlap-add
             for src in range(self.config.num_sources):
                 # Add to output
-                output[src, i:i + self.chunk_size] += separated_chunk[src, :]
+                output[src, i : i + self.chunk_size] += separated_chunk[src, :]
 
         return output
 
@@ -464,6 +462,6 @@ def create_test_source_separation_system() -> SourceSeparationSystem:
         B=128,
         H=8,
         num_sources=2,
-        enable_rust_integration=False  # Disable for testing without ONNX
+        enable_rust_integration=False,  # Disable for testing without ONNX
     )
     return SourceSeparationSystem(config)

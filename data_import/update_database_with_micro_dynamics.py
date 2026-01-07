@@ -24,7 +24,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Add URS path
-urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
+urs_path = str(Path(__file__).parent.parent / "analysis" / "rosetta_stone")
 sys.path.insert(0, urs_path)
 
 from universal_rosetta_stone import Modality, PhraseSignature
@@ -32,29 +32,26 @@ from universal_rosetta_stone import Modality, PhraseSignature
 # All micro-dynamics features
 MICRO_DYNAMICS_FEATURES = [
     # Grit factors
-    'harmonic_to_noise_ratio',
-    'spectral_flatness',
-
+    "harmonic_to_noise_ratio",
+    "spectral_flatness",
     # Motion factors
-    'attack_time_ms',
-    'decay_time_ms',
-    'sustain_level',
-    'vibrato_rate_hz',
-    'vibrato_depth',
-    'jitter',
-
+    "attack_time_ms",
+    "decay_time_ms",
+    "sustain_level",
+    "vibrato_rate_hz",
+    "vibrato_depth",
+    "jitter",
     # Fingerprint factors
-    'mfcc_1',
-    'mfcc_2',
-    'mfcc_3',
-    'mfcc_4',
-    'mfcc_delta_mean',
-    'spectral_contrast',
-
+    "mfcc_1",
+    "mfcc_2",
+    "mfcc_3",
+    "mfcc_4",
+    "mfcc_delta_mean",
+    "spectral_contrast",
     # Rhythm factors
-    'median_ici_ms',
-    'onset_rate_hz',
-    'ici_coefficient_of_variation',
+    "median_ici_ms",
+    "onset_rate_hz",
+    "ici_coefficient_of_variation",
 ]
 
 print("=" * 80)
@@ -62,7 +59,7 @@ print("UPDATING VOCALIZATION_DATABASE.JSON WITH MICRO-DYNAMICS FEATURES")
 print("=" * 80)
 
 # Load phrase segments
-pickle_path = '/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl'
+pickle_path = "/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl"
 print(f"\nLoading phrase segments from {pickle_path}...")
 
 if not Path(pickle_path).exists():
@@ -70,17 +67,17 @@ if not Path(pickle_path).exists():
     print("   Micro-dynamics features will be set to 0 for all phrases")
     phrase_segments = {}
 else:
-    with open(pickle_path, 'rb') as f:
+    with open(pickle_path, "rb") as f:
         phrase_segments = pickle.load(f)
 
     print(f"✅ Loaded {len(phrase_segments)} phrase types")
     print(f"Total audio segments: {sum(len(segs) for segs in phrase_segments.values()):,}")
 
 # Load existing database
-db_path = '/home/sheel/birdsong_analysis/src/vocalization_database.json'
+db_path = "/home/sheel/birdsong_analysis/src/vocalization_database.json"
 print(f"\nLoading existing database from {db_path}...")
 
-with open(db_path, 'r') as f:
+with open(db_path, "r") as f:
     db = json.load(f)
 
 print("✅ Loaded database")
@@ -117,17 +114,18 @@ if phrase_segments:
             continue
 
         if (i + 1) % 100 == 0:
-            print(f"  Processed {i+1}/{len(phrase_segments)} phrase types...")
+            print(f"  Processed {i + 1}/{len(phrase_segments)} phrase types...")
 
     print(f"\n✅ Extracted micro-dynamics for {len(micro_dynamics_map)} phrases")
 else:
     print("⚠️  No phrase segments available - all features will be set to 0")
 
+
 # Function to find matching phrase key (flexible matching)
 def find_matching_phrase_key(target_key, available_keys):
     """Find matching phrase key, ignoring duration differences."""
     # Extract F0 and RANGE from target
-    match = re.match(r'F0_(\d+)_DUR_\d+_RANGE_(\d+)', target_key)
+    match = re.match(r"F0_(\d+)_DUR_\d+_RANGE_(\d+)", target_key)
     if not match:
         return None
 
@@ -135,7 +133,7 @@ def find_matching_phrase_key(target_key, available_keys):
     range_val = match.group(2)
 
     # Look for keys with same F0 and RANGE
-    pattern = re.compile(f'F0_{f0}_DUR_\\d+_RANGE_{range_val}')
+    pattern = re.compile(f"F0_{f0}_DUR_\\d+_RANGE_{range_val}")
     matches = [k for k in available_keys if pattern.match(k)]
 
     return matches[0] if matches else None
@@ -156,19 +154,20 @@ def convert_numpy_types(obj):
     else:
         return obj
 
+
 # Update database with micro-dynamics features
 print("\nUpdating database...")
 
-marmoset_phrases = db['species_data']['marmoset']['phrases']
+marmoset_phrases = db["species_data"]["marmoset"]["phrases"]
 updated_count = 0
 not_found_count = 0
 
 for phrase_key, phrase_data in marmoset_phrases.items():
     # Initialize acoustic_features dict if needed
-    if 'acoustic_features' not in phrase_data:
-        phrase_data['acoustic_features'] = {}
+    if "acoustic_features" not in phrase_data:
+        phrase_data["acoustic_features"] = {}
 
-    af = phrase_data['acoustic_features']
+    af = phrase_data["acoustic_features"]
 
     # Try direct match first
     if phrase_key in micro_dynamics_map:
@@ -197,13 +196,13 @@ print(f"\n✅ Updated {updated_count} phrases")
 print(f"⚠️  {not_found_count} phrases had no micro-dynamics data (set to 0)")
 
 # Save updated database
-output_path = '/home/sheel/birdsong_analysis/src/vocalization_database_with_micro_dynamics.json'
+output_path = "/home/sheel/birdsong_analysis/src/vocalization_database_with_micro_dynamics.json"
 print(f"\nSaving to {output_path}...")
 
 # Convert all numpy types to Python native types
 db = convert_numpy_types(db)
 
-with open(output_path, 'w') as f:
+with open(output_path, "w") as f:
     json.dump(db, f, indent=2)
 
 print("✅ Saved!")
@@ -213,8 +212,8 @@ print("\n📊 SAMPLE MICRO-DYNAMICS VALUES:")
 
 sample_count = 0
 for phrase_key, phrase_data in marmoset_phrases.items():
-    af = phrase_data['acoustic_features']
-    if af.get('harmonic_to_noise_ratio', 0) > 0:  # Only show non-zero features
+    af = phrase_data["acoustic_features"]
+    if af.get("harmonic_to_noise_ratio", 0) > 0:  # Only show non-zero features
         print(f"  {phrase_key}:")
         print(f"    HNR: {af.get('harmonic_to_noise_ratio', 0):.2f}")
         print(f"    Attack: {af.get('attack_time_ms', 0):.1f}ms")
@@ -245,5 +244,7 @@ print("        /home/sheel/birdsong_analysis/src/vocalization_database_before_mi
 print("  2. Replace with new database:")
 print(f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json")
 print("  3. Test atomic phrase discovery:")
-print("     python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py --demo")
+print(
+    "     python analysis/rosetta_stone/acoustic_similarity_for_atomic_phrase_candidates.py --demo"
+)
 print("=" * 80)

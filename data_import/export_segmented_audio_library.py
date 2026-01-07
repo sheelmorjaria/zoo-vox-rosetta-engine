@@ -35,12 +35,12 @@ import numpy as np
 import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "analysis" / "rosetta_stone"))
 
 # Configuration
-SYNTAX_DATABASE_PATH = '/home/sheel/birdsong_analysis/src/vocalization_database_with_syntax.json'
-OUTPUT_DIR = '/home/sheel/birdsong_analysis/src/audio_library'
-AUDIO_INDEX_PATH = '/home/sheel/birdsong_analysis/src/audio_library/audio_index.json'
+SYNTAX_DATABASE_PATH = "/home/sheel/birdsong_analysis/src/vocalization_database_with_syntax.json"
+OUTPUT_DIR = "/home/sheel/birdsong_analysis/src/audio_library"
+AUDIO_INDEX_PATH = "/home/sheel/birdsong_analysis/src/audio_library/audio_index.json"
 SAMPLE_RATE = 22050
 EXPORT_LIMIT = None  # Set to limit number of vocalizations processed (None = all)
 
@@ -49,10 +49,10 @@ def load_syntax_database(db_path: str) -> Dict:
     """Load the syntax-enhanced database."""
     print(f"Loading syntax database from {db_path}...")
 
-    with open(db_path, 'r') as f:
+    with open(db_path, "r") as f:
         db = json.load(f)
 
-    vocalizations = db['species_data']['marmoset']['vocalizations']
+    vocalizations = db["species_data"]["marmoset"]["vocalizations"]
 
     print(f"✅ Loaded {len(vocalizations)} vocalizations with syntax metadata")
 
@@ -60,10 +60,7 @@ def load_syntax_database(db_path: str) -> Dict:
 
 
 def extract_segment_from_file(
-    file_path: str,
-    onset_ms: float,
-    offset_ms: float,
-    target_sr: int = SAMPLE_RATE
+    file_path: str, onset_ms: float, offset_ms: float, target_sr: int = SAMPLE_RATE
 ) -> np.ndarray:
     """
     Extract audio segment from file based on timing.
@@ -88,6 +85,7 @@ def extract_segment_from_file(
         # Resample if needed
         if sr != target_sr:
             from scipy import signal
+
             num_samples = int(len(audio) * target_sr / sr)
             audio = signal.resample(audio, num_samples)
 
@@ -106,9 +104,7 @@ def extract_segment_from_file(
 
 
 def export_segmented_audio_library(
-    vocalizations: List[Dict],
-    output_dir: str,
-    export_limit: int = None
+    vocalizations: List[Dict], output_dir: str, export_limit: int = None
 ) -> Dict:
     """
     Export segmented audio library from syntax database.
@@ -142,36 +138,37 @@ def export_segmented_audio_library(
 
     print(f"\n🔍 Processing {total_vocalizations} vocalizations...")
 
-    for i, vocalization in enumerate(vocalizations[:export_limit] if export_limit else vocalizations):
+    for i, vocalization in enumerate(
+        vocalizations[:export_limit] if export_limit else vocalizations
+    ):
         if (i + 1) % 100 == 0:
             print(f"  Processed {i + 1}/{total_vocalizations}...")
 
-        file_path = vocalization['file_path']
-        context = vocalization['context']
-        syntax_metadata = vocalization['syntax_metadata']
+        file_path = vocalization["file_path"]
+        context = vocalization["context"]
+        syntax_metadata = vocalization["syntax_metadata"]
 
         # Extract each segment
-        for j, segment in enumerate(syntax_metadata.get('segment_details', [])):
+        for j, segment in enumerate(syntax_metadata.get("segment_details", [])):
             # Extract audio segment
             segment_audio = extract_segment_from_file(
-                file_path,
-                segment['onset_ms'],
-                segment['offset_ms'],
-                SAMPLE_RATE
+                file_path, segment["onset_ms"], segment["offset_ms"], SAMPLE_RATE
             )
 
             if segment_audio is not None and len(segment_audio) > 0:
-                phrase_key = segment['phrase_key']
+                phrase_key = segment["phrase_key"]
 
-                phrase_segments[phrase_key].append({
-                    'audio': segment_audio,
-                    'vocalization_id': vocalization['vocalization_id'],
-                    'context': context,
-                    'onset_ms': segment['onset_ms'],
-                    'offset_ms': segment['offset_ms'],
-                    'duration_ms': segment['duration_ms'],
-                    'f0_mean': segment['f0_mean']
-                })
+                phrase_segments[phrase_key].append(
+                    {
+                        "audio": segment_audio,
+                        "vocalization_id": vocalization["vocalization_id"],
+                        "context": context,
+                        "onset_ms": segment["onset_ms"],
+                        "offset_ms": segment["offset_ms"],
+                        "duration_ms": segment["duration_ms"],
+                        "f0_mean": segment["f0_mean"],
+                    }
+                )
 
     print(f"\n✅ Extracted {sum(len(segments) for segments in phrase_segments.values())} segments")
     print(f"   Unique phrase types: {len(phrase_segments)}")
@@ -180,7 +177,7 @@ def export_segmented_audio_library(
     print(f"\n💾 Exporting audio files to {output_dir}...")
 
     audio_index = {}
-    species_dir = output_path / 'marmoset'
+    species_dir = output_path / "marmoset"
     species_dir.mkdir(exist_ok=True)
 
     for phrase_key, segments in phrase_segments.items():
@@ -193,38 +190,44 @@ def export_segmented_audio_library(
 
         for k, segment_data in enumerate(segments):
             # Generate filename
-            filename = f"{k+1:04d}.wav"
+            filename = f"{k + 1:04d}.wav"
             file_path = phrase_dir / filename
 
             # Save audio
-            sf.write(str(file_path), segment_data['audio'], SAMPLE_RATE)
+            sf.write(str(file_path), segment_data["audio"], SAMPLE_RATE)
 
             # Add to index
-            phrase_index.append({
-                'filename': filename,
-                'relative_path': f'marmoset/{phrase_key}/{filename}',
-                'vocalization_id': segment_data['vocalization_id'],
-                'context': segment_data['context'],
-                'duration_ms': segment_data['duration_ms'],
-                'f0_mean': segment_data['f0_mean'],
-                'num_samples': len(segment_data['audio'])
-            })
+            phrase_index.append(
+                {
+                    "filename": filename,
+                    "relative_path": f"marmoset/{phrase_key}/{filename}",
+                    "vocalization_id": segment_data["vocalization_id"],
+                    "context": segment_data["context"],
+                    "duration_ms": segment_data["duration_ms"],
+                    "f0_mean": segment_data["f0_mean"],
+                    "num_samples": len(segment_data["audio"]),
+                }
+            )
 
         audio_index[phrase_key] = {
-            'phrase_key': phrase_key,
-            'total_occurrences': len(phrase_index),
-            'segments': phrase_index
+            "phrase_key": phrase_key,
+            "total_occurrences": len(phrase_index),
+            "segments": phrase_index,
         }
 
     # Save audio index
-    with open(AUDIO_INDEX_PATH, 'w') as f:
-        json.dump({
-            'export_date': str(Path(__file__).stat().st_mtime),
-            'sample_rate': SAMPLE_RATE,
-            'total_phrases': len(audio_index),
-            'total_segments': sum(index['total_occurrences'] for index in audio_index.values()),
-            'phrases': audio_index
-        }, f, indent=2)
+    with open(AUDIO_INDEX_PATH, "w") as f:
+        json.dump(
+            {
+                "export_date": str(Path(__file__).stat().st_mtime),
+                "sample_rate": SAMPLE_RATE,
+                "total_phrases": len(audio_index),
+                "total_segments": sum(index["total_occurrences"] for index in audio_index.values()),
+                "phrases": audio_index,
+            },
+            f,
+            indent=2,
+        )
 
     print(f"✅ Exported {len(audio_index)} phrase types")
     print(f"   Total segments: {sum(index['total_occurrences'] for index in audio_index.values())}")
@@ -244,13 +247,13 @@ def analyze_audio_library(audio_index: Dict):
     total_segments = 0
     duration_sum = 0
 
-    for phrase_key, phrase_data in audio_index['phrases'].items():
-        count = phrase_data['total_occurrences']
+    for phrase_key, phrase_data in audio_index["phrases"].items():
+        count = phrase_data["total_occurrences"]
         phrase_counts[phrase_key] = count
         total_segments += count
 
-        for segment in phrase_data['segments']:
-            duration_sum += segment['duration_ms']
+        for segment in phrase_data["segments"]:
+            duration_sum += segment["duration_ms"]
 
     print("\n📊 LIBRARY STATISTICS:")
     print(f"   Unique phrase types: {len(phrase_counts)}")
@@ -264,15 +267,15 @@ def analyze_audio_library(audio_index: Dict):
     count_distribution = defaultdict(int)
     for count in phrase_counts.values():
         if count == 1:
-            count_distribution['1 occurrence'] += 1
+            count_distribution["1 occurrence"] += 1
         elif count <= 5:
-            count_distribution['2-5 occurrences'] += 1
+            count_distribution["2-5 occurrences"] += 1
         elif count <= 10:
-            count_distribution['6-10 occurrences'] += 1
+            count_distribution["6-10 occurrences"] += 1
         elif count <= 20:
-            count_distribution['11-20 occurrences'] += 1
+            count_distribution["11-20 occurrences"] += 1
         else:
-            count_distribution['20+ occurrences'] += 1
+            count_distribution["20+ occurrences"] += 1
 
     for category, count in sorted(count_distribution.items()):
         print(f"   {category}: {count} phrase types")
@@ -287,9 +290,9 @@ def analyze_audio_library(audio_index: Dict):
     print("\n📊 DURATION DISTRIBUTION:")
 
     all_durations = []
-    for phrase_data in audio_index['phrases'].values():
-        for segment in phrase_data['segments']:
-            all_durations.append(segment['duration_ms'])
+    for phrase_data in audio_index["phrases"].values():
+        for segment in phrase_data["segments"]:
+            all_durations.append(segment["duration_ms"])
 
     all_durations = np.array(all_durations)
 
@@ -303,9 +306,9 @@ def analyze_audio_library(audio_index: Dict):
     print("\n📊 CONTEXT DISTRIBUTION:")
 
     context_counts = defaultdict(int)
-    for phrase_data in audio_index['phrases'].values():
-        for segment in phrase_data['segments']:
-            context_counts[segment['context']] += 1
+    for phrase_data in audio_index["phrases"].values():
+        for segment in phrase_data["segments"]:
+            context_counts[segment["context"]] += 1
 
     for context, count in sorted(context_counts.items(), key=lambda x: x[1], reverse=True):
         print(f"   {context}: {count} segments")
@@ -323,16 +326,10 @@ def main():
     vocalizations = load_syntax_database(SYNTAX_DATABASE_PATH)
 
     # Export segmented audio
-    audio_index = export_segmented_audio_library(
-        vocalizations,
-        OUTPUT_DIR,
-        EXPORT_LIMIT
-    )
+    audio_index = export_segmented_audio_library(vocalizations, OUTPUT_DIR, EXPORT_LIMIT)
 
     # Analyze library
-    analyze_audio_library({
-        'phrases': audio_index
-    })
+    analyze_audio_library({"phrases": audio_index})
 
     print("\n" + "=" * 80)
     print("✅ EXPORT COMPLETE!")

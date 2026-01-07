@@ -25,16 +25,17 @@ from .jetson_accelerated_core import JetsonAccelerator
 try:
     from .gpu_phrase_integration import AtomicWord, GPUPhraseSegment
     from .probabilistic_context_machine import ContextState
+
     CONTEXT_AVAILABLE = True
 except ImportError:
     # Create stubs
     class ContextState(Enum):
-        SILENCE = 'silence'
-        CONTACT = 'contact'
-        ALARM = 'alarm'
-        FOOD = 'food'
-        NEUTRAL = 'neutral'
-        UNCERTAIN = 'uncertain'
+        SILENCE = "silence"
+        CONTACT = "contact"
+        ALARM = "alarm"
+        FOOD = "food"
+        NEUTRAL = "neutral"
+        UNCERTAIN = "uncertain"
 
     @dataclass
     class GPUPhraseSegment:
@@ -62,22 +63,24 @@ logger = logging.getLogger(__name__)
 
 class BehavioralDimension(Enum):
     """Behavioral semantic dimensions for synthesis control"""
-    AGGRESSION = 'aggression'
-    FEEDING = 'feeding'
-    CONTACT = 'contact'
-    NEUTRAL = 'neutral'
-    PLAYFUL = 'playful'
-    THREATENING = 'threatening'
-    SUBMISSIVE = 'submissive'
+
+    AGGRESSION = "aggression"
+    FEEDING = "feeding"
+    CONTACT = "contact"
+    NEUTRAL = "neutral"
+    PLAYFUL = "playful"
+    THREATENING = "threatening"
+    SUBMISSIVE = "submissive"
 
 
 @dataclass
 class SynthesisParams:
     """Parameters for context-aware synthesis"""
+
     base_f0: float = 6000.0
     base_duration: float = 0.1
     amplitude: float = 0.3
-    encoding_type: str = 'horizontal'
+    encoding_type: str = "horizontal"
     behavioral_dim: BehavioralDimension = BehavioralDimension.NEUTRAL
     modulation_depth: float = 0.1
     vibrato_rate: float = 5.0
@@ -106,68 +109,68 @@ class ContextAwareSynthesizer:
         # Behavioral parameter mappings
         self.behavioral_mappings = {
             BehavioralDimension.AGGRESSION: {
-                'f0_range': (7000, 9000),
-                'duration_range': (0.05, 0.15),
-                'amplitude_range': (0.4, 0.8),
-                'encoding_preference': ['combination', 'horizontal'],
-                'modulation_depth': 0.2,
-                'noise_floor': 0.05
+                "f0_range": (7000, 9000),
+                "duration_range": (0.05, 0.15),
+                "amplitude_range": (0.4, 0.8),
+                "encoding_preference": ["combination", "horizontal"],
+                "modulation_depth": 0.2,
+                "noise_floor": 0.05,
             },
             BehavioralDimension.FEEDING: {
-                'f0_range': (5000, 6500),
-                'duration_range': (0.1, 0.3),
-                'amplitude_range': (0.3, 0.5),
-                'encoding_preference': ['vertical', 'combination'],
-                'modulation_depth': 0.1,
-                'noise_floor': 0.02
+                "f0_range": (5000, 6500),
+                "duration_range": (0.1, 0.3),
+                "amplitude_range": (0.3, 0.5),
+                "encoding_preference": ["vertical", "combination"],
+                "modulation_depth": 0.1,
+                "noise_floor": 0.02,
             },
             BehavioralDimension.CONTACT: {
-                'f0_range': (4000, 6000),
-                'duration_range': (0.1, 0.2),
-                'amplitude_range': (0.2, 0.4),
-                'encoding_preference': ['horizontal'],
-                'modulation_depth': 0.05,
-                'noise_floor': 0.01
+                "f0_range": (4000, 6000),
+                "duration_range": (0.1, 0.2),
+                "amplitude_range": (0.2, 0.4),
+                "encoding_preference": ["horizontal"],
+                "modulation_depth": 0.05,
+                "noise_floor": 0.01,
             },
             BehavioralDimension.NEUTRAL: {
-                'f0_range': (5500, 6500),
-                'duration_range': (0.1, 0.15),
-                'amplitude_range': (0.25, 0.35),
-                'encoding_preference': ['horizontal', 'vertical'],
-                'modulation_depth': 0.08,
-                'noise_floor': 0.02
+                "f0_range": (5500, 6500),
+                "duration_range": (0.1, 0.15),
+                "amplitude_range": (0.25, 0.35),
+                "encoding_preference": ["horizontal", "vertical"],
+                "modulation_depth": 0.08,
+                "noise_floor": 0.02,
             },
             BehavioralDimension.PLAYFUL: {
-                'f0_range': (6000, 8000),
-                'duration_range': (0.08, 0.2),
-                'amplitude_range': (0.3, 0.6),
-                'encoding_preference': ['combination', 'horizontal'],
-                'modulation_depth': 0.15,
-                'noise_floor': 0.03
+                "f0_range": (6000, 8000),
+                "duration_range": (0.08, 0.2),
+                "amplitude_range": (0.3, 0.6),
+                "encoding_preference": ["combination", "horizontal"],
+                "modulation_depth": 0.15,
+                "noise_floor": 0.03,
             },
             BehavioralDimension.THREATENING: {
-                'f0_range': (7500, 10000),
-                'duration_range': (0.03, 0.1),
-                'amplitude_range': (0.5, 0.9),
-                'encoding_preference': ['combination'],
-                'modulation_depth': 0.3,
-                'noise_floor': 0.1
+                "f0_range": (7500, 10000),
+                "duration_range": (0.03, 0.1),
+                "amplitude_range": (0.5, 0.9),
+                "encoding_preference": ["combination"],
+                "modulation_depth": 0.3,
+                "noise_floor": 0.1,
             },
             BehavioralDimension.SUBMISSIVE: {
-                'f0_range': (3500, 5000),
-                'duration_range': (0.15, 0.3),
-                'amplitude_range': (0.1, 0.3),
-                'encoding_preference': ['vertical'],
-                'modulation_depth': 0.05,
-                'noise_floor': 0.01
-            }
+                "f0_range": (3500, 5000),
+                "duration_range": (0.15, 0.3),
+                "amplitude_range": (0.1, 0.3),
+                "encoding_preference": ["vertical"],
+                "modulation_depth": 0.05,
+                "noise_floor": 0.01,
+            },
         }
 
         # Encoding type synthesizers
         self.encoding_synthesizers = {
-            'horizontal': self._synthesize_horizontal,
-            'vertical': self._synthesize_vertical,
-            'combination': self._synthesize_combination
+            "horizontal": self._synthesize_horizontal,
+            "vertical": self._synthesize_vertical,
+            "combination": self._synthesize_combination,
         }
 
         logger.info(f"ContextAwareSynthesizer initialized at {sr}Hz")
@@ -177,7 +180,7 @@ class ContextAwareSynthesizer:
         context: ContextState,
         encoding_type: str,
         behavioral_dim: BehavioralDimension,
-        num_variants: int = 3
+        num_variants: int = 3,
     ) -> List[Tuple[np.ndarray, SynthesisParams]]:
         """
         Synthesize vocalizations with behavioral and encoding control.
@@ -206,8 +209,10 @@ class ContextAwareSynthesizer:
 
                 variants.append((audio, params))
 
-            logger.debug(f"Generated {num_variants} {behavioral_dim.value} vocalizations "
-                        f"with {encoding_type} encoding")
+            logger.debug(
+                f"Generated {num_variants} {behavioral_dim.value} vocalizations "
+                f"with {encoding_type} encoding"
+            )
 
             return variants
 
@@ -216,27 +221,28 @@ class ContextAwareSynthesizer:
             return []
 
     def _generate_synthesis_params(
-        self,
-        context: ContextState,
-        encoding_type: str,
-        behavioral_dim: BehavioralDimension
+        self, context: ContextState, encoding_type: str, behavioral_dim: BehavioralDimension
     ) -> SynthesisParams:
         """Generate synthesis parameters based on context and behavior."""
         # Get behavioral mapping
         mapping = self.behavioral_mappings[behavioral_dim]
 
         # Base parameters from behavior
-        f0_range = mapping['f0_range']
-        duration_range = mapping['duration_range']
-        amplitude_range = mapping['amplitude_range']
+        f0_range = mapping["f0_range"]
+        duration_range = mapping["duration_range"]
+        amplitude_range = mapping["amplitude_range"]
 
         # Adjust based on context
         context_adjustments = self._get_context_adjustments(context)
 
         # Apply context modifications
-        adjusted_f0 = np.random.uniform(*f0_range) * context_adjustments['f0_multiplier']
-        adjusted_duration = np.random.uniform(*duration_range) * context_adjustments['duration_multiplier']
-        adjusted_amplitude = np.random.uniform(*amplitude_range) * context_adjustments['amplitude_multiplier']
+        adjusted_f0 = np.random.uniform(*f0_range) * context_adjustments["f0_multiplier"]
+        adjusted_duration = (
+            np.random.uniform(*duration_range) * context_adjustments["duration_multiplier"]
+        )
+        adjusted_amplitude = (
+            np.random.uniform(*amplitude_range) * context_adjustments["amplitude_multiplier"]
+        )
 
         return SynthesisParams(
             base_f0=adjusted_f0,
@@ -244,29 +250,29 @@ class ContextAwareSynthesizer:
             amplitude=adjusted_amplitude,
             encoding_type=encoding_type,
             behavioral_dim=behavioral_dim,
-            modulation_depth=mapping['modulation_depth'],
-            noise_floor=mapping['noise_floor']
+            modulation_depth=mapping["modulation_depth"],
+            noise_floor=mapping["noise_floor"],
         )
 
     def _get_context_adjustments(self, context: ContextState) -> Dict[str, float]:
         """Get parameter adjustments based on context."""
         adjustments = {
-            'f0_multiplier': 1.0,
-            'duration_multiplier': 1.0,
-            'amplitude_multiplier': 1.0
+            "f0_multiplier": 1.0,
+            "duration_multiplier": 1.0,
+            "amplitude_multiplier": 1.0,
         }
 
         if context == ContextState.ALARM:
-            adjustments['f0_multiplier'] = 1.2  # Higher pitch for alarm
-            adjustments['amplitude_multiplier'] = 1.3  # Louder for alarm
+            adjustments["f0_multiplier"] = 1.2  # Higher pitch for alarm
+            adjustments["amplitude_multiplier"] = 1.3  # Louder for alarm
         elif context == ContextState.FOOD:
-            adjustments['f0_multiplier'] = 0.9  # Slightly lower for feeding
-            adjustments['duration_multiplier'] = 1.2  # Longer for food
+            adjustments["f0_multiplier"] = 0.9  # Slightly lower for feeding
+            adjustments["duration_multiplier"] = 1.2  # Longer for food
         elif context == ContextState.CONTACT:
-            adjustments['f0_multiplier'] = 1.0  # Normal pitch
-            adjustments['duration_multiplier'] = 1.1  # Slightly longer for contact
+            adjustments["f0_multiplier"] = 1.0  # Normal pitch
+            adjustments["duration_multiplier"] = 1.1  # Slightly longer for contact
         elif context == ContextState.SILENCE:
-            adjustments['amplitude_multiplier'] = 0.8  # Quieter for silence
+            adjustments["amplitude_multiplier"] = 0.8  # Quieter for silence
 
         return adjustments
 
@@ -369,7 +375,7 @@ class ContextAwareSynthesizer:
 
             # Add vibrato for naturalness
             vibrato = 0.02 * np.sin(2 * np.pi * 5.0 * t)
-            audio *= (1 + vibrato)
+            audio *= 1 + vibrato
 
             # Apply noise
             noise = np.random.normal(0, params.noise_floor * 1.5, len(audio))
@@ -381,7 +387,9 @@ class ContextAwareSynthesizer:
             logger.error(f"Error in combination synthesis: {e}")
             return np.zeros(int(self.sr * params.base_duration))
 
-    def _create_f0_contour(self, params: SynthesisParams, t: np.ndarray, complexity: int = 1) -> np.ndarray:
+    def _create_f0_contour(
+        self, params: SynthesisParams, t: np.ndarray, complexity: int = 1
+    ) -> np.ndarray:
         """Create F0 contour based on behavioral parameters."""
         # Base F0 with behavioral modulation
         f0_contour = np.full_like(t, params.base_f0)
@@ -404,7 +412,9 @@ class ContextAwareSynthesizer:
 
         return f0_contour
 
-    def _create_duration_envelope(self, t: np.ndarray, behavioral_dim: BehavioralDimension) -> np.ndarray:
+    def _create_duration_envelope(
+        self, t: np.ndarray, behavioral_dim: BehavioralDimension
+    ) -> np.ndarray:
         """Create amplitude envelope for duration encoding."""
         if behavioral_dim == BehavioralDimension.SUBMISSIVE:
             # Slow attack, long decay
@@ -453,7 +463,9 @@ class ContextAwareSynthesizer:
 
         return envelope
 
-    def _add_harmonics(self, audio: np.ndarray, fundamental_f0: float, amplitude: float) -> np.ndarray:
+    def _add_harmonics(
+        self, audio: np.ndarray, fundamental_f0: float, amplitude: float
+    ) -> np.ndarray:
         """Add harmonic content for natural vocal quality."""
         if len(audio) == 0:
             return audio
@@ -474,10 +486,7 @@ class ContextAwareSynthesizer:
         return harmonic_audio
 
     def _apply_behavioral_modifications(
-        self,
-        audio: np.ndarray,
-        params: SynthesisParams,
-        behavioral_dim: BehavioralDimension
+        self, audio: np.ndarray, params: SynthesisParams, behavioral_dim: BehavioralDimension
     ) -> np.ndarray:
         """Apply behavioral-specific modifications to synthesized audio."""
         try:
@@ -490,7 +499,7 @@ class ContextAwareSynthesizer:
 
                     # Increase high frequency content
                     fft = np.fft.rfft(audio)
-                    fft[len(fft)//4:] *= 1.3  # Boost high frequencies
+                    fft[len(fft) // 4 :] *= 1.3  # Boost high frequencies
                     audio = np.fft.irfft(fft)
 
             elif behavioral_dim == BehavioralDimension.FEEDING:
@@ -498,8 +507,9 @@ class ContextAwareSynthesizer:
                 if len(audio) > 0:
                     # Apply gentle low-pass filter
                     from scipy import signal
+
                     try:
-                        b, a = signal.butter(4, 8000/(self.sr/2), 'low')
+                        b, a = signal.butter(4, 8000 / (self.sr / 2), "low")
                         audio = signal.filtfilt(b, a, audio)
                     except ImportError:
                         pass  # Skip if scipy not available
@@ -523,7 +533,7 @@ class ContextAwareSynthesizer:
         self,
         atomic_words: List[AtomicWord],
         context: ContextState,
-        behavioral_dim: BehavioralDimension
+        behavioral_dim: BehavioralDimension,
     ) -> Tuple[np.ndarray, SynthesisParams]:
         """
         Synthesize phrase from atomic word sequence.
@@ -548,7 +558,7 @@ class ContextAwareSynthesizer:
                     base_duration=atomic_word.duration,
                     amplitude=0.3,
                     encoding_type=atomic_word.encoding_type,
-                    behavioral_dim=behavioral_dim
+                    behavioral_dim=behavioral_dim,
                 )
 
                 # Use appropriate synthesizer
@@ -556,10 +566,12 @@ class ContextAwareSynthesizer:
                 word_audios.append(audio)
 
             # Concatenate with appropriate gaps
-            phrase_audio = np.concatenate([
-                np.pad(audio, (0, int(0.02 * self.sr)), 'constant')  # 20ms gap
-                for audio in word_audios
-            ])[:-int(0.02 * self.sr)]  # Remove last gap
+            phrase_audio = np.concatenate(
+                [
+                    np.pad(audio, (0, int(0.02 * self.sr)), "constant")  # 20ms gap
+                    for audio in word_audios
+                ]
+            )[: -int(0.02 * self.sr)]  # Remove last gap
 
             return phrase_audio, SynthesisParams()
 
@@ -570,15 +582,16 @@ class ContextAwareSynthesizer:
     def get_encoding_summary(self) -> Dict[str, Any]:
         """Get summary of encoding methodology."""
         return {
-            'horizontal_encoding': 'F0 height variations with constant duration',
-            'vertical_encoding': 'Duration variations with constant F0',
-            'combination_encoding': 'Both F0 and duration variations for maximum expressiveness',
-            'behavioral_dimensions': [dim.value for dim in BehavioralDimension],
-            'context_mappings': {
+            "horizontal_encoding": "F0 height variations with constant duration",
+            "vertical_encoding": "Duration variations with constant F0",
+            "combination_encoding": "Both F0 and duration variations for maximum expressiveness",
+            "behavioral_dimensions": [dim.value for dim in BehavioralDimension],
+            "context_mappings": {
                 ctx.value: {
-                    'f0_adjustment': 'multiplier',
-                    'duration_adjustment': 'multiplier',
-                    'amplitude_adjustment': 'multiplier'
-                } for ctx in ContextState
-            }
+                    "f0_adjustment": "multiplier",
+                    "duration_adjustment": "multiplier",
+                    "amplitude_adjustment": "multiplier",
+                }
+                for ctx in ContextState
+            },
         }

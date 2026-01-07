@@ -33,15 +33,18 @@ import numpy as np
 # Optional MediaPipe import
 try:
     import mediapipe as mp
+
     # Import MediaPipe tasks (newer version)
     try:
         from mediapipe import tasks
         from mediapipe.tasks import python
         from mediapipe.tasks.python import holistics, vision
+
         MEDIAPIPE_VERSION_NEW = True
     except ImportError:
         # Fallback to older solutions
         from mediapipe import solutions
+
         mp_drawing = mp.solutions.drawing_utils
         mp_drawing_styles = mp.solutions.drawing_styles
         mp_hands = mp.solutions.hands
@@ -54,6 +57,7 @@ try:
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
     MEDIAPIPE_VERSION_NEW = False
+
     # Create mock classes for when MediaPipe is not available
     class MockMediaPipe:
         def __getattr__(self, name):
@@ -67,56 +71,75 @@ except ImportError:
     mp_pose = Mock()
     mp_holistic = Mock()
 
+
 # Create MediaPipe mock implementations that work for testing
 class MockHandsClass:
     """Mock MediaPipe Hands class for testing"""
+
     def __init__(self, **kwargs):
         pass
+
     def process(self, image):
         return MockMediaPipeResults()
+
 
 class MockFaceMeshClass:
     """Mock MediaPipe Face Mesh class for testing"""
+
     def __init__(self, **kwargs):
         pass
+
     def process(self, image):
         return MockMediaPipeResults()
+
 
 class MockPoseClass:
     """Mock MediaPipe Pose class for testing"""
+
     def __init__(self, **kwargs):
         pass
+
     def process(self, image):
         return MockMediaPipeResults()
 
+
 class MockDrawingUtils:
     """Mock MediaPipe Drawing Utils for testing"""
+
     @staticmethod
     def draw_landmarks(image, landmarks, connections):
         pass
+
     @staticmethod
     def draw_detection(image, detection):
         pass
 
+
 class MockDrawingStyles:
     """Mock MediaPipe Drawing Styles for testing"""
+
     @staticmethod
     def get_default_hand_landmarks_style():
         return {}
+
     @staticmethod
     def get_default_face_mesh_style():
         return {}
 
+
 class MockMediaPipeResults:
     """Mock MediaPipe Results for testing"""
+
     def __init__(self):
         self.multi_hand_landmarks = None
         self.multi_face_landmarks = None
         self.pose_landmarks = None
 
+
 # Create a mock module structure
 class MockMediaPipeModule:
     """Mock MediaPipe module structure"""
+
     class solutions:
         drawing_utils = MockDrawingUtils
         drawing_styles = MockDrawingStyles
@@ -125,27 +148,29 @@ class MockMediaPipeModule:
         pose = MockPoseClass
         holistic = Mock()
 
+
 # Create mock module structure
 class MockModule:
     def __init__(self, name):
         self.name = name
 
     def __getattr__(self, attr):
-        if attr == 'Hands':
+        if attr == "Hands":
             return MockHandsClass
-        elif attr == 'FaceMesh':
+        elif attr == "FaceMesh":
             return MockFaceMeshClass
-        elif attr == 'Pose':
+        elif attr == "Pose":
             return MockPoseClass
         else:
             return Mock()
 
+
 # Create mock objects that can be accessed as modules
 mp_drawing = MockDrawingUtils()
 mp_drawing_styles = MockDrawingStyles()
-mp_hands = MockModule('hands')
-mp_face_mesh = MockModule('face_mesh')
-mp_pose = MockModule('pose')
+mp_hands = MockModule("hands")
+mp_face_mesh = MockModule("face_mesh")
+mp_pose = MockModule("pose")
 mp_holistic = Mock()
 
 # Configure MediaPipe based on version
@@ -176,16 +201,20 @@ else:
     # Already set above with correct class names
     pass
 
+
 class VisualAttentionLevel(Enum):
     """Visual attention levels"""
+
     LOW = "Low"
     MODERATE = "Moderate"
     HIGH = "High"
     VERY_HIGH = "Very High"
 
+
 @dataclass
 class VisualFeatures:
     """Visual features extracted from video"""
+
     timestamp: float = 0.0
     gaze_direction: Optional[str] = None  # 'towards_camera', 'away', 'left', 'right'
     head_pose: Optional[str] = None  # 'straight', 'angled', 'extreme'
@@ -195,9 +224,11 @@ class VisualFeatures:
     body_facing: Optional[str] = None  # 'towards_camera', 'away', 'sideways'
     confidence: float = 0.0  # Overall confidence in visual analysis
 
+
 @dataclass
 class VisualFusionConfig:
     """Configuration for visual fusion system"""
+
     camera_resolution: Tuple[int, int] = (640, 480)
     fps: int = 30
     use_mediapipe: bool = True
@@ -208,6 +239,7 @@ class VisualFusionConfig:
     max_queue_size: int = 100
     frame_buffer_size: int = 10
     attention_calculation_window: int = 30  # frames
+
 
 class MediaPipeTracker:
     """MediaPipe visual tracking implementation"""
@@ -221,7 +253,7 @@ class MediaPipeTracker:
             static_image_mode=False,
             max_num_hands=2,
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+            min_tracking_confidence=0.5,
         )
 
         self.face_mesh = mp_face_mesh.FaceMesh(
@@ -229,7 +261,7 @@ class MediaPipeTracker:
             max_num_faces=1,
             refine_landmarks=True,
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+            min_tracking_confidence=0.5,
         )
 
         self.pose = mp_pose.Pose(
@@ -238,7 +270,7 @@ class MediaPipeTracker:
             enable_segmentation=False,
             smooth_landmarks=True,
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+            min_tracking_confidence=0.5,
         )
 
         # Movement tracking
@@ -268,8 +300,7 @@ class MediaPipeTracker:
             face_results = self.face_mesh.process(rgb_frame)
             if face_results.multi_face_landmarks:
                 gaze, head_pose = self._estimate_gaze_and_pose(
-                    face_results.multi_face_landmarks[0].landmark,
-                    rgb_frame.shape
+                    face_results.multi_face_landmarks[0].landmark, rgb_frame.shape
                 )
                 features.gaze_direction = gaze
                 features.head_pose = head_pose
@@ -288,9 +319,7 @@ class MediaPipeTracker:
 
             # Update movement history
             self.movement_history.append(movement)
-            self.attention_scores.append(
-                self._attention_score_from_level(features.attention_level)
-            )
+            self.attention_scores.append(self._attention_score_from_level(features.attention_level))
 
             return features
 
@@ -307,7 +336,7 @@ class MediaPipeTracker:
 
         for hand_landmarks in hand_results.multi_hand_landmarks:
             # Get handedness information
-            if hasattr(hand_results, 'multi_handedness') and hand_results.multi_handedness:
+            if hasattr(hand_results, "multi_handedness") and hand_results.multi_handedness:
                 handedness = hand_results.multi_handedness[0].classification[0].label
             else:
                 handedness = "Unknown"
@@ -316,14 +345,18 @@ class MediaPipeTracker:
             fingers_up = self._count_fingers_up(hand_landmarks.landmark)
 
             # Additional gesture detection using finger relationships
-            gesture = self._classify_advanced_gesture(hand_landmarks.landmark, fingers_up, handedness)
+            gesture = self._classify_advanced_gesture(
+                hand_landmarks.landmark, fingers_up, handedness
+            )
 
             if gesture:
                 gestures.append(gesture)
 
         return gestures
 
-    def _classify_advanced_gesture(self, landmarks, fingers_up: int, handedness: str) -> Optional[str]:
+    def _classify_advanced_gesture(
+        self, landmarks, fingers_up: int, handedness: str
+    ) -> Optional[str]:
         """Classify advanced hand gestures beyond simple finger counting"""
         # Get specific landmark positions
         thumb_tip = landmarks[4]
@@ -338,8 +371,10 @@ class MediaPipeTracker:
         pinky_pip = landmarks[18]
 
         # Calculate distances between fingertips
-        index_middle_dist = np.sqrt((index_tip.x - middle_tip.x)**2 + (index_tip.y - middle_tip.y)**2)
-        ring_pinky_dist = np.sqrt((ring_tip.x - pinky_tip.x)**2 + (ring_tip.y - pinky_tip.y)**2)
+        index_middle_dist = np.sqrt(
+            (index_tip.x - middle_tip.x) ** 2 + (index_tip.y - middle_tip.y) ** 2
+        )
+        ring_pinky_dist = np.sqrt((ring_tip.x - pinky_tip.x) ** 2 + (ring_tip.y - pinky_tip.y) ** 2)
 
         # Check for specific gesture patterns
         # Thumbs up/down detection
@@ -409,7 +444,9 @@ class MediaPipeTracker:
         # Ok gesture (thumb and index finger form circle)
         elif fingers_up == 0:
             # Calculate distance between thumb tip and index tip
-            thumb_index_dist = np.sqrt((thumb_tip.x - index_tip.x)**2 + (thumb_tip.y - index_tip.y)**2)
+            thumb_index_dist = np.sqrt(
+                (thumb_tip.x - index_tip.x) ** 2 + (thumb_tip.y - index_tip.y) ** 2
+            )
 
             if thumb_index_dist < 0.05:  # Thumb and finger touching
                 return "ok_gesture"
@@ -463,17 +500,17 @@ class MediaPipeTracker:
         """Estimate gaze direction and head pose from face landmarks with improved accuracy"""
         # Eye landmarks for better gaze estimation
         left_eye_inner = landmarks[133]  # Left eye inner corner
-        left_eye_outer = landmarks[33]   # Left eye outer corner
-        left_eye_top = landmarks[159]     # Left eye top
+        left_eye_outer = landmarks[33]  # Left eye outer corner
+        left_eye_top = landmarks[159]  # Left eye top
         left_eye_bottom = landmarks[145]  # Left eye bottom
 
         right_eye_inner = landmarks[362]  # Right eye inner corner
         right_eye_outer = landmarks[263]  # Right eye outer corner
-        right_eye_top = landmarks[386]    # Right eye top
-        right_eye_bottom = landmarks[374] # Right eye bottom
+        right_eye_top = landmarks[386]  # Right eye top
+        right_eye_bottom = landmarks[374]  # Right eye bottom
 
-        nose_tip = landmarks[1]          # Nose tip
-        landmarks[2]        # Nose bridge
+        nose_tip = landmarks[1]  # Nose tip
+        landmarks[2]  # Nose bridge
 
         # Calculate eye aspect ratios for gaze detection
         left_eye_width = abs(left_eye_outer.x - left_eye_inner.x)
@@ -554,7 +591,7 @@ class MediaPipeTracker:
         pose_confidence = 1.0 - (abs(head_angle) / 90)  # Inverse relationship
 
         # Store confidence in landmarks metadata if available
-        if hasattr(landmarks, '__getitem__'):
+        if hasattr(landmarks, "__getitem__"):
             landmarks[0].gaze_confidence = gaze_confidence
             landmarks[0].pose_confidence = pose_confidence
 
@@ -586,9 +623,7 @@ class MediaPipeTracker:
 
         for prev, curr in zip(self.previous_landmarks, current_landmarks):
             movement = np.sqrt(
-                (curr.x - prev.x) ** 2 +
-                (curr.y - prev.y) ** 2 +
-                (curr.z - prev.z) ** 2
+                (curr.x - prev.x) ** 2 + (curr.y - prev.y) ** 2 + (curr.z - prev.z) ** 2
             )
             total_movement += movement
             count += 1
@@ -637,7 +672,7 @@ class MediaPipeTracker:
             VisualAttentionLevel.LOW: 0.1,
             VisualAttentionLevel.MODERATE: 0.4,
             VisualAttentionLevel.HIGH: 0.7,
-            VisualAttentionLevel.VERY_HIGH: 1.0
+            VisualAttentionLevel.VERY_HIGH: 1.0,
         }
         return scores.get(level, 0.1)
 
@@ -663,6 +698,7 @@ class MediaPipeTracker:
 
         return confidence / count if count > 0 else 0.0
 
+
 class LightTrackFallback:
     """Enhanced lightweight visual tracking with advanced computer vision techniques"""
 
@@ -671,7 +707,7 @@ class LightTrackFallback:
         self.logger = logging.getLogger(__name__)
 
         # Initialize OpenCV-based tracking components
-        self.tracker_types = ['CSRT', 'KCF', 'MIL']
+        self.tracker_types = ["CSRT", "KCF", "MIL"]
         self.trackers = {}
         self.track_history = {}
         self.frame_count = 0
@@ -679,25 +715,21 @@ class LightTrackFallback:
 
         # Background subtractor for motion detection
         self.fgbg = cv2.createBackgroundSubtractorMOG2(
-            history=500, varThreshold=16, detectShadows=True)
+            history=500, varThreshold=16, detectShadows=True
+        )
 
         # Optical flow parameters
         self.lk_params = dict(
             winSize=(15, 15),
             maxLevel=2,
-            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
+            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
         )
 
         # Previous frame for optical flow
         self.prev_gray = None
 
         # Feature detection parameters
-        self.feature_params = dict(
-            maxCorners=100,
-            qualityLevel=0.3,
-            minDistance=7,
-            blockSize=7
-        )
+        self.feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
 
         self.logger.info("LightTrackFallback initialized with advanced computer vision")
 
@@ -718,19 +750,22 @@ class LightTrackFallback:
             attention_features = self._calculate_attention_features(frame)
 
             # Combine features
-            features.movement_intensity = (movement_features['intensity'] +
-                                         flow_features['intensity']) / 2
-            features.attention_level = attention_features['level']
+            features.movement_intensity = (
+                movement_features["intensity"] + flow_features["intensity"]
+            ) / 2
+            features.attention_level = attention_features["level"]
 
             # Detect basic body regions
             body_features = self._detect_body_regions(frame)
-            features.body_facing = body_features['facing']
-            features.head_pose = body_features['pose']
+            features.body_facing = body_features["facing"]
+            features.head_pose = body_features["pose"]
 
             # Calculate confidence based on detection quality
-            features.confidence = (movement_features['confidence'] +
-                                flow_features['confidence'] +
-                                attention_features['confidence']) / 3
+            features.confidence = (
+                movement_features["confidence"]
+                + flow_features["confidence"]
+                + attention_features["confidence"]
+            ) / 3
 
             # Update tracking information
             self._update_tracking_state(frame)
@@ -752,8 +787,7 @@ class LightTrackFallback:
         self.prev_gray = gray
 
         # Initialize feature points
-        self.prev_pts = cv2.goodFeaturesToTrack(
-            gray, mask=None, **self.feature_params)
+        self.prev_pts = cv2.goodFeaturesToTrack(gray, mask=None, **self.feature_params)
 
         self.logger.debug("LightTrack initialized successfully")
 
@@ -784,7 +818,7 @@ class LightTrackFallback:
 
                 # Draw bounding box for large movements
                 x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         # Calculate movement metrics
         frame_area = frame.shape[0] * frame.shape[1]
@@ -802,9 +836,9 @@ class LightTrackFallback:
         confidence = min(large_contours / 5.0, 1.0)  # Normalize by expected max
 
         return {
-            'intensity': min(movement_ratio * 10, 1.0),
-            'level': attention_level,
-            'confidence': confidence
+            "intensity": min(movement_ratio * 10, 1.0),
+            "level": attention_level,
+            "confidence": confidence,
         }
 
     def _optical_flow_analysis(self, frame):
@@ -812,11 +846,12 @@ class LightTrackFallback:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         if self.prev_gray is None or self.prev_pts is None:
-            return {'intensity': 0.0, 'confidence': 0.0}
+            return {"intensity": 0.0, "confidence": 0.0}
 
         # Calculate optical flow
         next_pts, status, err = cv2.calcOpticalFlowPyrLK(
-            self.prev_gray, gray, self.prev_pts, None, **self.lk_params)
+            self.prev_gray, gray, self.prev_pts, None, **self.lk_params
+        )
 
         # Calculate flow intensity
         if next_pts is not None:
@@ -827,7 +862,7 @@ class LightTrackFallback:
                 # Calculate average movement
                 flow_magnitudes = []
                 for i, (new, old) in enumerate(zip(good_new, good_old)):
-                    flow_magnitude = np.sqrt((new[0] - old[0])**2 + (new[1] - old[1])**2)
+                    flow_magnitude = np.sqrt((new[0] - old[0]) ** 2 + (new[1] - old[1]) ** 2)
                     flow_magnitudes.append(flow_magnitude)
 
                 avg_flow = np.mean(flow_magnitudes)
@@ -844,9 +879,9 @@ class LightTrackFallback:
                     cv2.line(frame, old.astype(int), new.astype(int), (0, 255, 0), 2)
                     cv2.circle(frame, new.astype(int), 5, (0, 0, 255), -1)
 
-                return {'intensity': intensity, 'confidence': confidence}
+                return {"intensity": intensity, "confidence": confidence}
 
-        return {'intensity': 0.0, 'confidence': 0.0}
+        return {"intensity": 0.0, "confidence": 0.0}
 
     def _calculate_attention_features(self, frame):
         """Calculate attention features based on motion and visual cues"""
@@ -867,10 +902,7 @@ class LightTrackFallback:
         blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
         confidence = min(blur_score / 500.0, 1.0)  # Normalize by typical good quality
 
-        return {
-            'level': attention_level,
-            'confidence': confidence
-        }
+        return {"level": attention_level, "confidence": confidence}
 
     def _detect_body_regions(self, frame):
         """Detect basic body regions and orientation"""
@@ -912,7 +944,7 @@ class LightTrackFallback:
             facing = "away"
             pose = "straight"
 
-        return {'facing': facing, 'pose': pose}
+        return {"facing": facing, "pose": pose}
 
     def _update_tracking_state(self, frame):
         """Update tracking state for next frame"""
@@ -921,8 +953,7 @@ class LightTrackFallback:
 
         # Update feature points periodically
         if self.frame_count % 10 == 0:  # Every 10 frames
-            self.prev_pts = cv2.goodFeaturesToTrack(
-                gray, mask=None, **self.feature_params)
+            self.prev_pts = cv2.goodFeaturesToTrack(gray, mask=None, **self.feature_params)
 
         self.frame_count += 1
 
@@ -931,22 +962,29 @@ class LightTrackFallback:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-        if hasattr(self, 'prev_gray'):
+        if hasattr(self, "prev_gray"):
             frame_delta = cv2.absdiff(self.prev_gray, gray)
             thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
             thresh = cv2.dilate(thresh, None, iterations=2)
 
-            contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             if contours:
                 features = VisualFeatures()
                 features.movement_intensity = min(len(contours) / 10.0, 1.0)
-                features.attention_level = VisualAttentionLevel.MODERATE if features.movement_intensity > 0.5 else VisualAttentionLevel.LOW
+                features.attention_level = (
+                    VisualAttentionLevel.MODERATE
+                    if features.movement_intensity > 0.5
+                    else VisualAttentionLevel.LOW
+                )
                 features.timestamp = time.time()
                 return features
 
         self.prev_gray = gray
         return VisualFeatures()
+
 
 class VisualFusionSystem:
     """Main visual fusion system that coordinates visual tracking"""
@@ -958,7 +996,9 @@ class VisualFusionSystem:
         # Initialize tracker
         if config.use_mediapipe:
             self.tracker = MediaPipeTracker(config)
-            self.fallback_tracker = LightTrackFallback(config) if config.use_lighttrack_fallback else None
+            self.fallback_tracker = (
+                LightTrackFallback(config) if config.use_lighttrack_fallback else None
+            )
         else:
             # Use fallback as primary
             self.tracker = LightTrackFallback(config)
@@ -1092,11 +1132,12 @@ class VisualFusionSystem:
             "avg_processing_time": np.mean(self.processing_times) if self.processing_times else 0.0,
             "max_processing_time": max(self.processing_times) if self.processing_times else 0.0,
             "fps_target": self.config.fps,
-            "camera_resolution": self.config.camera_resolution
+            "camera_resolution": self.config.camera_resolution,
         }
 
-    def integrate_with_audio(self, audio_features: Dict[str, Any],
-                           visual_features: Optional[VisualFeatures] = None) -> Dict[str, Any]:
+    def integrate_with_audio(
+        self, audio_features: Dict[str, Any], visual_features: Optional[VisualFeatures] = None
+    ) -> Dict[str, Any]:
         """Integrate visual features with audio features"""
         if not visual_features:
             return audio_features
@@ -1105,29 +1146,38 @@ class VisualFusionSystem:
         fusion_result = audio_features.copy()
 
         # Visual attention boost
-        if visual_features.attention_level in [VisualAttentionLevel.HIGH, VisualAttentionLevel.VERY_HIGH]:
-            boost_factor = 0.2 if visual_features.attention_level == VisualAttentionLevel.HIGH else 0.3
+        if visual_features.attention_level in [
+            VisualAttentionLevel.HIGH,
+            VisualAttentionLevel.VERY_HIGH,
+        ]:
+            boost_factor = (
+                0.2 if visual_features.attention_level == VisualAttentionLevel.HIGH else 0.3
+            )
 
             # Boost contact call probability if visual attention is high
-            if 'context' in fusion_result and fusion_result['context'] == 'contact_call':
-                fusion_result['response_probability'] = fusion_result.get('response_probability', 0.5) * (1 + boost_factor)
+            if "context" in fusion_result and fusion_result["context"] == "contact_call":
+                fusion_result["response_probability"] = fusion_result.get(
+                    "response_probability", 0.5
+                ) * (1 + boost_factor)
 
         # Gaze direction adjustment
-        if visual_features.gaze_direction == 'towards_camera':
-            fusion_result['attention_boost'] = 0.15
-        elif visual_features.gaze_direction in ['left', 'right']:
-            fusion_result['attention_boost'] = 0.05
+        if visual_features.gaze_direction == "towards_camera":
+            fusion_result["attention_boost"] = 0.15
+        elif visual_features.gaze_direction in ["left", "right"]:
+            fusion_result["attention_boost"] = 0.05
 
         # Movement intensity adjustment
         if visual_features.movement_intensity > 0.7:
-            fusion_result['urgency_factor'] = min(fusion_result.get('urgency_factor', 0.0) + 0.2, 1.0)
+            fusion_result["urgency_factor"] = min(
+                fusion_result.get("urgency_factor", 0.0) + 0.2, 1.0
+            )
 
         # Store visual context for future reference
-        fusion_result['visual_context'] = {
-            'attention_level': visual_features.attention_level.value,
-            'gaze_direction': visual_features.gaze_direction,
-            'movement_intensity': visual_features.movement_intensity,
-            'confidence': visual_features.confidence
+        fusion_result["visual_context"] = {
+            "attention_level": visual_features.attention_level.value,
+            "gaze_direction": visual_features.gaze_direction,
+            "movement_intensity": visual_features.movement_intensity,
+            "confidence": visual_features.confidence,
         }
 
         return fusion_result
@@ -1141,17 +1191,17 @@ class VisualFusionSystem:
             VisualAttentionLevel.LOW: 0.1,
             VisualAttentionLevel.MODERATE: 0.4,
             VisualAttentionLevel.HIGH: 0.7,
-            VisualAttentionLevel.VERY_HIGH: 1.0
+            VisualAttentionLevel.VERY_HIGH: 1.0,
         }
         score += level_scores.get(visual_features.attention_level, 0.1)
 
         # Gaze direction modifier
         gaze_modifiers = {
-            'towards_camera': 0.3,
-            'sideways': 0.1,
-            'away': -0.2,
-            'left': 0.0,
-            'right': 0.0
+            "towards_camera": 0.3,
+            "sideways": 0.1,
+            "away": -0.2,
+            "left": 0.0,
+            "right": 0.0,
         }
         score += gaze_modifiers.get(visual_features.gaze_direction, 0.0)
 
@@ -1175,6 +1225,6 @@ def create_test_visual_fusion_system() -> VisualFusionSystem:
         fps=30,
         use_mediapipe=True,
         separate_thread=False,  # Run in main thread for testing
-        max_queue_size=10
+        max_queue_size=10,
     )
     return VisualFusionSystem(config)

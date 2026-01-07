@@ -14,6 +14,7 @@ License: CC BY-ND 4.0 International
 """
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from pathlib import Path
@@ -43,9 +44,11 @@ import multiprocessing as mp
 # Data Models
 # =============================================================================
 
+
 @dataclass
 class Sentence:
     """A single vocalization (treated as a "sentence")"""
+
     sentence_id: str
     audio_file: str
     context: int
@@ -59,6 +62,7 @@ class Sentence:
 @dataclass
 class PhraseCandidate:
     """Candidate phrase from sliding window extraction"""
+
     audio_segment: np.ndarray
     start_sample: int
     end_sample: int
@@ -71,6 +75,7 @@ class PhraseCandidate:
 @dataclass
 class AtomicPhrase:
     """Validated atomic phrase (clustered from candidates)"""
+
     phrase_id: str
     cluster_id: int
     features_29d: Dict[str, float]
@@ -84,6 +89,7 @@ class AtomicPhrase:
 @dataclass
 class GrammarRule:
     """Grammar rule from phrase transitions"""
+
     antecedent: str  # phrase_id
     consequent: str  # phrase_id
     transition_count: int
@@ -94,6 +100,7 @@ class GrammarRule:
 @dataclass
 class ExtractionResult:
     """Complete extraction results"""
+
     sentences: List[Sentence]
     phrases: List[AtomicPhrase]
     grammar_rules: List[GrammarRule]
@@ -107,6 +114,7 @@ class ExtractionResult:
 # Feature Extraction (29D)
 # =============================================================================
 
+
 def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
     """Extract 29-dimensional acoustic features with micro-dynamics."""
     features = {}
@@ -119,22 +127,17 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
         fmax_hz = 100000.0  # 100kHz maximum for bats
         frame_len = 4096  # Larger frame for ultrasonic
     elif sr >= 96000:  # High quality
-        fmin_hz = librosa.note_to_hz('C2')
-        fmax_hz = librosa.note_to_hz('C7')
+        fmin_hz = librosa.note_to_hz("C2")
+        fmax_hz = librosa.note_to_hz("C7")
         frame_len = 2048
     else:  # Standard audio
-        fmin_hz = librosa.note_to_hz('C2')
-        fmax_hz = librosa.note_to_hz('C7')
+        fmin_hz = librosa.note_to_hz("C2")
+        fmax_hz = librosa.note_to_hz("C7")
         frame_len = 2048
 
     try:
         f0, voiced_flag, voiced_probs = librosa.pyin(
-            audio,
-            sr=sr,
-            fmin=fmin_hz,
-            fmax=fmax_hz,
-            frame_length=frame_len,
-            hop_length=512
+            audio, sr=sr, fmin=fmin_hz, fmax=fmax_hz, frame_length=frame_len, hop_length=512
         )
     except Exception:
         # Fallback: use zero array if pyin fails
@@ -145,13 +148,13 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
     voiced_f0 = f0[voiced_flag]
 
     if len(voiced_f0) > 0:
-        features['mean_f0_hz'] = float(np.mean(voiced_f0))
-        features['f0_range_hz'] = float(np.max(voiced_f0) - np.min(voiced_f0))
+        features["mean_f0_hz"] = float(np.mean(voiced_f0))
+        features["f0_range_hz"] = float(np.max(voiced_f0) - np.min(voiced_f0))
     else:
-        features['mean_f0_hz'] = 0.0
-        features['f0_range_hz'] = 0.0
+        features["mean_f0_hz"] = 0.0
+        features["f0_range_hz"] = 0.0
 
-    features['duration_ms'] = len(audio) / sr * 1000.0
+    features["duration_ms"] = len(audio) / sr * 1000.0
 
     # === Grit Factors (3 features) ===
     # Harmonic-to-noise ratio (adjust for ultrasonic)
@@ -161,17 +164,19 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
         hnr_fmin, hnr_fmax = 200.0, 16000.0
 
     try:
-        harmonicity = librosa.pyin(audio, sr=sr, fmin=hnr_fmin, fmax=hnr_fmax, frame_length=frame_len)[2]
-        features['harmonic_to_noise_ratio'] = float(np.mean(harmonicity[~np.isnan(harmonicity)]))
+        harmonicity = librosa.pyin(
+            audio, sr=sr, fmin=hnr_fmin, fmax=hnr_fmax, frame_length=frame_len
+        )[2]
+        features["harmonic_to_noise_ratio"] = float(np.mean(harmonicity[~np.isnan(harmonicity)]))
     except Exception:
-        features['harmonic_to_noise_ratio'] = 0.0
+        features["harmonic_to_noise_ratio"] = 0.0
 
     # Spectral flatness
     spectral_flatness = librosa.feature.spectral_flatness(y=audio, hop_length=512)[0]
-    features['spectral_flatness'] = float(np.mean(spectral_flatness))
+    features["spectral_flatness"] = float(np.mean(spectral_flatness))
 
     # Harmonicity (alternative measure)
-    features['harmonicity'] = float(np.mean(voiced_probs[~np.isnan(voiced_probs)]))
+    features["harmonicity"] = float(np.mean(voiced_probs[~np.isnan(voiced_probs)]))
 
     # === Motion Factors (7 features) ===
     # Envelope extraction
@@ -180,9 +185,9 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
     # Attack time
     onset_frames = librosa.onset.onset_detect(onset_envelope=envelope, sr=sr, hop_length=512)
     if len(onset_frames) > 0:
-        features['attack_time_ms'] = float(onset_frames[0] * 512 / sr * 1000)
+        features["attack_time_ms"] = float(onset_frames[0] * 512 / sr * 1000)
     else:
-        features['attack_time_ms'] = 0.0
+        features["attack_time_ms"] = 0.0
 
     # Decay time (time to 10% of peak)
     peak_idx = np.argmax(envelope)
@@ -190,70 +195,68 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
     decay_threshold = 0.1 * peak_val
     decay_frames = np.where(envelope[peak_idx:] < decay_threshold)[0]
     if len(decay_frames) > 0:
-        features['decay_time_ms'] = float((peak_idx + decay_frames[0]) * 512 / sr * 1000)
+        features["decay_time_ms"] = float((peak_idx + decay_frames[0]) * 512 / sr * 1000)
     else:
-        features['decay_time_ms'] = 0.0
+        features["decay_time_ms"] = 0.0
 
     # Sustain level (normalized)
-    features['sustain_level'] = float(np.mean(envelope) / (peak_val + 1e-6))
+    features["sustain_level"] = float(np.mean(envelope) / (peak_val + 1e-6))
 
     # Vibrato
     if len(voiced_f0) > 10:
         # Autocorrelation to find vibrato rate
-        autocorr = np.correlate(voiced_f0 - np.mean(voiced_f0),
-                                voiced_f0 - np.mean(voiced_f0), mode='full')
-        autocorr = autocorr[len(autocorr)//2:]
+        autocorr = np.correlate(
+            voiced_f0 - np.mean(voiced_f0), voiced_f0 - np.mean(voiced_f0), mode="full"
+        )
+        autocorr = autocorr[len(autocorr) // 2 :]
 
         # Find peaks in autocorrelation
         from scipy.signal import find_peaks
+
         peaks, _ = find_peaks(autocorr[1:50])  # Look for 2-50 frame lag
 
         if len(peaks) > 0:
             vibrato_period_frames = peaks[0] + 1
-            features['vibrato_rate_hz'] = float(sr / 512 / vibrato_period_frames)
+            features["vibrato_rate_hz"] = float(sr / 512 / vibrato_period_frames)
         else:
-            features['vibrato_rate_hz'] = 0.0
+            features["vibrato_rate_hz"] = 0.0
 
         # Vibrato depth
-        features['vibrato_depth'] = float(np.std(voiced_f0) / (np.mean(voiced_f0) + 1e-6))
+        features["vibrato_depth"] = float(np.std(voiced_f0) / (np.mean(voiced_f0) + 1e-6))
     else:
-        features['vibrato_rate_hz'] = 0.0
-        features['vibrato_depth'] = 0.0
+        features["vibrato_rate_hz"] = 0.0
+        features["vibrato_depth"] = 0.0
 
     # Jitter (frequency perturbation)
     if len(voiced_f0) > 2:
         f0_diff = np.diff(voiced_f0)
-        features['jitter'] = float(np.mean(np.abs(f0_diff)) / (np.mean(voiced_f0) + 1e-6))
+        features["jitter"] = float(np.mean(np.abs(f0_diff)) / (np.mean(voiced_f0) + 1e-6))
     else:
-        features['jitter'] = 0.0
+        features["jitter"] = 0.0
 
     # Shimmer (amplitude perturbation)
     if len(envelope) > 2:
         env_diff = np.diff(envelope)
-        features['shimmer'] = float(np.mean(np.abs(env_diff)) / (np.mean(envelope) + 1e-6))
+        features["shimmer"] = float(np.mean(np.abs(env_diff)) / (np.mean(envelope) + 1e-6))
     else:
-        features['shimmer'] = 0.0
+        features["shimmer"] = 0.0
 
     # === Fingerprint Factors (13 MFCCs) ===
     mfcc_frame_based = librosa.feature.mfcc(
-        y=audio.astype(np.float32),
-        sr=sr,
-        n_mfcc=13,
-        n_fft=2048,
-        hop_length=512
+        y=audio.astype(np.float32), sr=sr, n_mfcc=13, n_fft=2048, hop_length=512
     )
 
     for i in range(13):
-        features[f'mfcc_{i+1}'] = float(np.mean(mfcc_frame_based[i]))
+        features[f"mfcc_{i + 1}"] = float(np.mean(mfcc_frame_based[i]))
 
     # Spectral contrast
     spec_contrast = librosa.feature.spectral_contrast(y=audio, sr=sr)
-    features['spectral_contrast'] = float(np.mean(spec_contrast))
+    features["spectral_contrast"] = float(np.mean(spec_contrast))
 
     # === Spectral Dynamics (1 feature) ===
     # Spectral flux
     spectral_flux = librosa.onset.onset_strength(y=audio, sr=sr)
-    features['spectral_flux'] = float(np.mean(spectral_flux))
+    features["spectral_flux"] = float(np.mean(spectral_flux))
 
     # === Rhythm Factors (3 features) ===
     # Onset detection
@@ -262,13 +265,15 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
     if len(onsets) > 1:
         # Inter-onset intervals
         intervals = np.diff(onsets) * 512 / sr * 1000  # Convert to ms
-        features['median_ici_ms'] = float(np.median(intervals))
-        features['onset_rate_hz'] = float(len(onsets) / (len(audio) / sr))
-        features['ici_coefficient_of_variation'] = float(np.std(intervals) / (np.mean(intervals) + 1e-6))
+        features["median_ici_ms"] = float(np.median(intervals))
+        features["onset_rate_hz"] = float(len(onsets) / (len(audio) / sr))
+        features["ici_coefficient_of_variation"] = float(
+            np.std(intervals) / (np.mean(intervals) + 1e-6)
+        )
     else:
-        features['median_ici_ms'] = 0.0
-        features['onset_rate_hz'] = 0.0
-        features['ici_coefficient_of_variation'] = 0.0
+        features["median_ici_ms"] = 0.0
+        features["onset_rate_hz"] = 0.0
+        features["ici_coefficient_of_variation"] = 0.0
 
     return features
 
@@ -277,11 +282,9 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
 # PELT Sentence Segmentation
 # =============================================================================
 
+
 def segment_sentences_pelt(
-    audio: np.ndarray,
-    sr: int,
-    penalty: float = 10.0,
-    min_segment_length_sec: float = 0.3
+    audio: np.ndarray, sr: int, penalty: float = 10.0, min_segment_length_sec: float = 0.3
 ) -> List[int]:
     """
     Segment audio into sentences using PELT change point detection.
@@ -309,7 +312,9 @@ def segment_sentences_pelt(
     feature_matrix = np.concatenate([mfcc.T, spec_contrast.T, chroma.T], axis=1)
 
     # Normalize features
-    feature_matrix = (feature_matrix - np.mean(feature_matrix, axis=0)) / (np.std(feature_matrix, axis=0) + 1e-6)
+    feature_matrix = (feature_matrix - np.mean(feature_matrix, axis=0)) / (
+        np.std(feature_matrix, axis=0) + 1e-6
+    )
 
     # Convert penalty to feature frame space
     samples_per_frame = 512
@@ -322,7 +327,9 @@ def segment_sentences_pelt(
         change_point_indices = algo.predict(penalty)
 
         # Convert frame indices to sample indices
-        change_points = [int(cp * samples_per_frame) for cp in change_point_indices if cp < n_frames - 1]
+        change_points = [
+            int(cp * samples_per_frame) for cp in change_point_indices if cp < n_frames - 1
+        ]
 
         # Ensure start and end are included
         if len(change_points) == 0 or change_points[0] != 0:
@@ -341,12 +348,9 @@ def segment_sentences_pelt(
 # Sliding Window Phrase Extraction
 # =============================================================================
 
+
 def extract_phrase_candidates(
-    audio: np.ndarray,
-    sr: int,
-    sentence_id: str,
-    context: int,
-    window_sizes_sec: List[float] = None
+    audio: np.ndarray, sr: int, sentence_id: str, context: int, window_sizes_sec: List[float] = None
 ) -> List[PhraseCandidate]:
     """
     Extract phrase candidates using multi-scale sliding windows.
@@ -383,7 +387,7 @@ def extract_phrase_candidates(
                 features_29d=features,
                 source_sentence_id=sentence_id,
                 window_id=window_id,
-                context=context
+                context=context,
             )
 
             candidates.append(candidate)
@@ -396,10 +400,9 @@ def extract_phrase_candidates(
 # DBSCAN Phrase Clustering
 # =============================================================================
 
+
 def cluster_phrases_dbscan(
-    candidates: List[PhraseCandidate],
-    eps: float = 0.5,
-    min_samples: int = 5
+    candidates: List[PhraseCandidate], eps: float = 0.5, min_samples: int = 5
 ) -> List[AtomicPhrase]:
     """
     Cluster phrase candidates using DBSCAN.
@@ -438,7 +441,9 @@ def cluster_phrases_dbscan(
 
         # Calculate similarities
         intra_sim = _calculate_intra_cluster_similarity(X_normalized[member_indices])
-        inter_sim = _calculate_inter_cluster_similarity(X_normalized, member_indices, labels, cluster_id)
+        inter_sim = _calculate_inter_cluster_similarity(
+            X_normalized, member_indices, labels, cluster_id
+        )
 
         # Check atomicity
         is_atomic = (intra_sim > 0.2) and (inter_sim < 0.6)
@@ -450,17 +455,20 @@ def cluster_phrases_dbscan(
             phrase_id=f"phrase_{cluster_id}",
             cluster_id=cluster_id,
             features_29d=dict(zip(feature_names, scaler.inverse_transform([centroid_features])[0])),
-            member_candidates=[{
-                'source_sentence_id': c.source_sentence_id,
-                'window_id': c.window_id,
-                'start_sample': c.start_sample,
-                'end_sample': c.end_sample,
-                'context': c.context
-            } for c in cluster_members],
+            member_candidates=[
+                {
+                    "source_sentence_id": c.source_sentence_id,
+                    "window_id": c.window_id,
+                    "start_sample": c.start_sample,
+                    "end_sample": c.end_sample,
+                    "context": c.context,
+                }
+                for c in cluster_members
+            ],
             intra_cluster_similarity=intra_sim,
             inter_cluster_similarity=inter_sim,
             is_atomic=is_atomic,
-            contexts=contexts
+            contexts=contexts,
         )
 
         phrases.append(phrase)
@@ -491,10 +499,7 @@ def _calculate_intra_cluster_similarity(cluster_features: np.ndarray) -> float:
 
 
 def _calculate_inter_cluster_similarity(
-    all_features: np.ndarray,
-    cluster_indices: np.ndarray,
-    labels: np.ndarray,
-    cluster_id: int
+    all_features: np.ndarray, cluster_indices: np.ndarray, labels: np.ndarray, cluster_id: int
 ) -> float:
     """Calculate average similarity to nearest other cluster."""
     other_indices = np.where(labels != cluster_id)[0]
@@ -525,9 +530,9 @@ def _calculate_inter_cluster_similarity(
 # Compositionality Testing
 # =============================================================================
 
+
 def detect_compositionality(
-    sentences: List[Sentence],
-    phrases: List[AtomicPhrase]
+    sentences: List[Sentence], phrases: List[AtomicPhrase]
 ) -> Dict[str, Any]:
     """
     Detect phrase reuse patterns (compositionality).
@@ -540,27 +545,27 @@ def detect_compositionality(
     for sentence in sentences:
         for phrase_id in sentence.phrases:
             if phrase_id not in phrase_usage:
-                phrase_usage[phrase_id] = {
-                    'sentence_count': 0,
-                    'contexts': set()
-                }
-            phrase_usage[phrase_id]['sentence_count'] += 1
-            phrase_usage[phrase_id]['contexts'].add(sentence.context)
+                phrase_usage[phrase_id] = {"sentence_count": 0, "contexts": set()}
+            phrase_usage[phrase_id]["sentence_count"] += 1
+            phrase_usage[phrase_id]["contexts"].add(sentence.context)
 
     # Calculate statistics
-    reusable_phrases = [p for p, stats in phrase_usage.items() if stats['sentence_count'] > 1]
+    reusable_phrases = [p for p, stats in phrase_usage.items() if stats["sentence_count"] > 1]
 
     return {
-        'total_unique_phrases': len(phrase_usage),
-        'reusable_phrases': len(reusable_phrases),
-        'compositionality_ratio': len(reusable_phrases) / len(phrase_usage) if phrase_usage else 0.0,
-        'phrase_usage': phrase_usage
+        "total_unique_phrases": len(phrase_usage),
+        "reusable_phrases": len(reusable_phrases),
+        "compositionality_ratio": len(reusable_phrases) / len(phrase_usage)
+        if phrase_usage
+        else 0.0,
+        "phrase_usage": phrase_usage,
     }
 
 
 # =============================================================================
 # Grammar Rule Extraction
 # =============================================================================
+
 
 def extract_grammar_rules(sentences: List[Sentence]) -> List[GrammarRule]:
     """
@@ -578,13 +583,10 @@ def extract_grammar_rules(sentences: List[Sentence]) -> List[GrammarRule]:
 
             key = (antecedent, consequent)
             if key not in transitions:
-                transitions[key] = {
-                    'count': 0,
-                    'contexts': set()
-                }
+                transitions[key] = {"count": 0, "contexts": set()}
 
-            transitions[key]['count'] += 1
-            transitions[key]['contexts'].add(sentence.context)
+            transitions[key]["count"] += 1
+            transitions[key]["contexts"].add(sentence.context)
 
     # Convert to rules with probabilities
     rules = []
@@ -593,16 +595,16 @@ def extract_grammar_rules(sentences: List[Sentence]) -> List[GrammarRule]:
     for (ant, cons), data in transitions.items():
         if ant not in antecedent_totals:
             antecedent_totals[ant] = 0
-        antecedent_totals[ant] += data['count']
+        antecedent_totals[ant] += data["count"]
 
     for (ant, cons), data in transitions.items():
-        probability = data['count'] / antecedent_totals[ant]
+        probability = data["count"] / antecedent_totals[ant]
         rule = GrammarRule(
             antecedent=ant,
             consequent=cons,
-            transition_count=data['count'],
+            transition_count=data["count"],
             probability=probability,
-            contexts=list(data['contexts'])
+            contexts=list(data["contexts"]),
         )
         rules.append(rule)
 
@@ -616,7 +618,10 @@ def extract_grammar_rules(sentences: List[Sentence]) -> List[GrammarRule]:
 # Single File Processing (for parallelization)
 # =============================================================================
 
-def process_single_vocalization(args: Tuple[str, Dict[str, Any], Path, float, float, int]) -> Dict[str, Any]:
+
+def process_single_vocalization(
+    args: Tuple[str, Dict[str, Any], Path, float, float, int],
+) -> Dict[str, Any]:
     """
     Process a single vocalization file.
 
@@ -634,7 +639,7 @@ def process_single_vocalization(args: Tuple[str, Dict[str, Any], Path, float, fl
         audio, sr = librosa.load(str(audio_path), sr=None)
 
         # Create sentence ID
-        sentence_id = audio_filename.replace('.wav', '')
+        sentence_id = audio_filename.replace(".wav", "")
 
         # Step 1: Segment into sentences (for this bat dataset, each file is a sentence)
         # We still run PELT to check for internal structure
@@ -642,43 +647,37 @@ def process_single_vocalization(args: Tuple[str, Dict[str, Any], Path, float, fl
 
         # Step 2: Extract phrase candidates
         candidates = extract_phrase_candidates(
-            audio,
-            sr,
-            sentence_id=sentence_id,
-            context=annotation['context']
+            audio, sr, sentence_id=sentence_id, context=annotation["context"]
         )
 
         # Create sentence object
         sentence = Sentence(
             sentence_id=sentence_id,
             audio_file=audio_filename,
-            context=annotation['context'],
-            emitter=annotation['emitter'],
-            addressee=annotation['addressee'],
+            context=annotation["context"],
+            emitter=annotation["emitter"],
+            addressee=annotation["addressee"],
             duration_sec=len(audio) / sr,
-            change_points=change_points
+            change_points=change_points,
         )
 
         return {
-            'success': True,
-            'sentence': sentence,
-            'candidates': candidates,
-            'audio': audio,
-            'sr': sr,
-            'num_candidates': len(candidates)
+            "success": True,
+            "sentence": sentence,
+            "candidates": candidates,
+            "audio": audio,
+            "sr": sr,
+            "num_candidates": len(candidates),
         }
 
     except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'audio_filename': audio_filename
-        }
+        return {"success": False, "error": str(e), "audio_filename": audio_filename}
 
 
 # =============================================================================
 # Main Parallel Pipeline
 # =============================================================================
+
 
 def extract_phrases_sentences_grammar_parallel(
     audio_dir: Path,
@@ -688,7 +687,7 @@ def extract_phrases_sentences_grammar_parallel(
     pelt_penalty: float = 10.0,
     dbscan_eps: float = 0.5,
     dbscan_min_samples: int = 5,
-    max_files: Optional[int] = None
+    max_files: Optional[int] = None,
 ) -> ExtractionResult:
     """
     Parallel unified extraction pipeline optimized for 16-core machine.
@@ -716,6 +715,7 @@ def extract_phrases_sentences_grammar_parallel(
         ExtractionResult with all extracted data
     """
     import time
+
     start_time = time.time()
 
     print("=" * 80)
@@ -745,13 +745,15 @@ def extract_phrases_sentences_grammar_parallel(
     annotations = []
     for _, row in df.iterrows():
         # Get filename from 'File Name' column
-        audio_filename = str(row['File Name'])
-        annotations.append({
-            'filename': audio_filename,
-            'context': int(row['Context']),
-            'emitter': int(row['Emitter']),
-            'addressee': int(row['Addressee'])
-        })
+        audio_filename = str(row["File Name"])
+        annotations.append(
+            {
+                "filename": audio_filename,
+                "context": int(row["Context"]),
+                "emitter": int(row["Emitter"]),
+                "addressee": int(row["Addressee"]),
+            }
+        )
 
     # Filter to only those with context (user requirement)
     # All have context 0-12, so no filtering needed
@@ -770,7 +772,7 @@ def extract_phrases_sentences_grammar_parallel(
 
     # Prepare arguments for parallel processing
     process_args = [
-        (ann['filename'], ann, audio_dir, pelt_penalty, dbscan_eps, dbscan_min_samples)
+        (ann["filename"], ann, audio_dir, pelt_penalty, dbscan_eps, dbscan_min_samples)
         for ann in annotations
     ]
 
@@ -781,8 +783,7 @@ def extract_phrases_sentences_grammar_parallel(
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         # Submit all jobs
         futures = {
-            executor.submit(process_single_vocalization, args): args[0]
-            for args in process_args
+            executor.submit(process_single_vocalization, args): args[0] for args in process_args
         }
 
         # Process completed jobs with progress bar
@@ -790,12 +791,14 @@ def extract_phrases_sentences_grammar_parallel(
             audio_filename = futures[future]
             try:
                 result = future.result()
-                if result['success']:
+                if result["success"]:
                     all_results.append(result)
-                    all_candidates.extend(result['candidates'])
-                    sentences.append(result['sentence'])
+                    all_candidates.extend(result["candidates"])
+                    sentences.append(result["sentence"])
                 else:
-                    print(f"  ERROR processing {audio_filename}: {result.get('error', 'Unknown error')}")
+                    print(
+                        f"  ERROR processing {audio_filename}: {result.get('error', 'Unknown error')}"
+                    )
             except Exception as e:
                 print(f"  EXCEPTION processing {audio_filename}: {e}")
 
@@ -808,11 +811,7 @@ def extract_phrases_sentences_grammar_parallel(
     print(f"\n[3/7] Clustering {len(all_candidates)} phrase candidates (DBSCAN)...")
     print(f"  eps={dbscan_eps}, min_samples={dbscan_min_samples}")
 
-    phrases = cluster_phrases_dbscan(
-        all_candidates,
-        eps=dbscan_eps,
-        min_samples=dbscan_min_samples
-    )
+    phrases = cluster_phrases_dbscan(all_candidates, eps=dbscan_eps, min_samples=dbscan_min_samples)
 
     print(f"  Found {len(phrases)} phrase clusters")
     atomic_phrases = [p for p in phrases if p.is_atomic]
@@ -835,8 +834,7 @@ def extract_phrases_sentences_grammar_parallel(
 
         # Find all candidates from this sentence
         sentence_candidates = [
-            c for c in all_candidates
-            if c.source_sentence_id == sentence.sentence_id
+            c for c in all_candidates if c.source_sentence_id == sentence.sentence_id
         ]
 
         # Assign each candidate to its cluster
@@ -845,8 +843,10 @@ def extract_phrases_sentences_grammar_parallel(
             for phrase in phrases:
                 # Check if candidate is in this phrase's members
                 for member in phrase.member_candidates:
-                    if (member['source_sentence_id'] == candidate.source_sentence_id and
-                        member['window_id'] == candidate.window_id):
+                    if (
+                        member["source_sentence_id"] == candidate.source_sentence_id
+                        and member["window_id"] == candidate.window_id
+                    ):
                         assigned_phrases.append(phrase.phrase_id)
                         break
 
@@ -875,8 +875,10 @@ def extract_phrases_sentences_grammar_parallel(
 
     print(f"  Found {len(grammar_rules)} grammar rules")
     if grammar_rules:
-        print(f"  Top rule: {grammar_rules[0].antecedent} -> {grammar_rules[0].consequent} "
-              f"(count={grammar_rules[0].transition_count}, prob={grammar_rules[0].probability:.3f})")
+        print(
+            f"  Top rule: {grammar_rules[0].antecedent} -> {grammar_rules[0].consequent} "
+            f"(count={grammar_rules[0].transition_count}, prob={grammar_rules[0].probability:.3f})"
+        )
 
     # ========================================================================
     # Step 7: Export results
@@ -885,7 +887,7 @@ def extract_phrases_sentences_grammar_parallel(
 
     # Save sentences
     sentences_file = output_dir / "sentences.json"
-    with open(sentences_file, 'w') as f:
+    with open(sentences_file, "w") as f:
         sentences_data = []
         for s in sentences:
             sentence_dict = asdict(s)
@@ -895,7 +897,7 @@ def extract_phrases_sentences_grammar_parallel(
 
     # Save phrases
     phrases_file = output_dir / "phrases.json"
-    with open(phrases_file, 'w') as f:
+    with open(phrases_file, "w") as f:
         phrases_data = []
         for p in phrases:
             phrase_dict = asdict(p)
@@ -905,30 +907,30 @@ def extract_phrases_sentences_grammar_parallel(
 
     # Save grammar rules
     rules_file = output_dir / "grammar_rules.json"
-    with open(rules_file, 'w') as f:
+    with open(rules_file, "w") as f:
         rules_data = [asdict(r) for r in grammar_rules]
         json.dump(rules_data, f, indent=2)
     print(f"  Saved {len(grammar_rules)} grammar rules to {rules_file}")
 
     # Save metadata
     metadata = {
-        'total_vocalizations': len(annotations),
-        'successfully_processed': len(all_results),
-        'total_candidates': len(all_candidates),
-        'total_phrases': len(phrases),
-        'atomic_phrases': len(atomic_phrases),
-        'grammar_rules': len(grammar_rules),
-        'compositionality_ratio': compositionality['compositionality_ratio'],
-        'parameters': {
-            'pelt_penalty': pelt_penalty,
-            'dbscan_eps': dbscan_eps,
-            'dbscan_min_samples': dbscan_min_samples,
-            'num_workers': num_workers
-        }
+        "total_vocalizations": len(annotations),
+        "successfully_processed": len(all_results),
+        "total_candidates": len(all_candidates),
+        "total_phrases": len(phrases),
+        "atomic_phrases": len(atomic_phrases),
+        "grammar_rules": len(grammar_rules),
+        "compositionality_ratio": compositionality["compositionality_ratio"],
+        "parameters": {
+            "pelt_penalty": pelt_penalty,
+            "dbscan_eps": dbscan_eps,
+            "dbscan_min_samples": dbscan_min_samples,
+            "num_workers": num_workers,
+        },
     }
 
     metadata_file = output_dir / "metadata.json"
-    with open(metadata_file, 'w') as f:
+    with open(metadata_file, "w") as f:
         json.dump(metadata, f, indent=2)
     print(f"  Saved metadata to {metadata_file}")
 
@@ -940,8 +942,8 @@ def extract_phrases_sentences_grammar_parallel(
     print("\n" + "=" * 80)
     print("PIPELINE COMPLETE")
     print("=" * 80)
-    print(f"Processing time: {elapsed:.1f} seconds ({elapsed/60:.1f} minutes)")
-    print(f"Throughput: {len(all_results)/elapsed:.1f} vocalizations/second")
+    print(f"Processing time: {elapsed:.1f} seconds ({elapsed / 60:.1f} minutes)")
+    print(f"Throughput: {len(all_results) / elapsed:.1f} vocalizations/second")
     print(f"\nResults:")
     print(f"  Sentences: {len(sentences)}")
     print(f"  Phrase candidates: {len(all_candidates)}")
@@ -958,7 +960,7 @@ def extract_phrases_sentences_grammar_parallel(
         total_candidates=len(all_candidates),
         total_atomic_phrases=len(atomic_phrases),
         processing_time_sec=elapsed,
-        metadata=metadata
+        metadata=metadata,
     )
 
 
@@ -976,50 +978,29 @@ if __name__ == "__main__":
         "--audio-dir",
         type=str,
         default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio",
-        help="Directory containing audio files"
+        help="Directory containing audio files",
     )
     parser.add_argument(
         "--annotations",
         type=str,
         default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv",
-        help="Annotations CSV file"
+        help="Annotations CSV file",
     )
     parser.add_argument(
         "--output-dir",
         type=str,
         default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results",
-        help="Output directory for results"
+        help="Output directory for results",
     )
     parser.add_argument(
-        "--workers",
-        type=int,
-        default=16,
-        help="Number of parallel workers (default: 16)"
+        "--workers", type=int, default=16, help="Number of parallel workers (default: 16)"
     )
     parser.add_argument(
-        "--max-files",
-        type=int,
-        default=None,
-        help="Limit files to process (for testing)"
+        "--max-files", type=int, default=None, help="Limit files to process (for testing)"
     )
-    parser.add_argument(
-        "--penalty",
-        type=float,
-        default=10.0,
-        help="PELT penalty parameter"
-    )
-    parser.add_argument(
-        "--eps",
-        type=float,
-        default=0.5,
-        help="DBSCAN epsilon parameter"
-    )
-    parser.add_argument(
-        "--min-samples",
-        type=int,
-        default=5,
-        help="DBSCAN min_samples parameter"
-    )
+    parser.add_argument("--penalty", type=float, default=10.0, help="PELT penalty parameter")
+    parser.add_argument("--eps", type=float, default=0.5, help="DBSCAN epsilon parameter")
+    parser.add_argument("--min-samples", type=int, default=5, help="DBSCAN min_samples parameter")
 
     args = parser.parse_args()
 
@@ -1032,5 +1013,5 @@ if __name__ == "__main__":
         pelt_penalty=args.penalty,
         dbscan_eps=args.eps,
         dbscan_min_samples=args.min_samples,
-        max_files=args.max_files
+        max_files=args.max_files,
     )

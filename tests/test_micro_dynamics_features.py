@@ -29,6 +29,7 @@ from typing import List, Tuple
 # Test 1: Shimmer (Amplitude Instability)
 # =============================================================================
 
+
 class TestShimmerExtraction(unittest.TestCase):
     """Test 1: Shimmer measures amplitude wobble"""
 
@@ -48,7 +49,9 @@ class TestShimmerExtraction(unittest.TestCase):
         steady_tone = self._create_steady_tone(sr, duration=0.1, freq=1000, amp_variation=0.005)
 
         # Wobbly tone (high shimmer) - amplitude LFO
-        wobbly_tone = self._create_wobbly_tone(sr, duration=0.1, freq=1000, lfo_freq=15, lfo_depth=0.3)
+        wobbly_tone = self._create_wobbly_tone(
+            sr, duration=0.1, freq=1000, lfo_freq=15, lfo_depth=0.3
+        )
 
         # Act
         from realtime.micro_dynamics_features import calculate_shimmer
@@ -58,16 +61,19 @@ class TestShimmerExtraction(unittest.TestCase):
 
         # Assert
         # Steady tone should have low shimmer
-        self.assertLess(steady_shimmer, 0.02,
-                       f"Steady tone shimmer {steady_shimmer:.4f} should be <0.02")
+        self.assertLess(
+            steady_shimmer, 0.02, f"Steady tone shimmer {steady_shimmer:.4f} should be <0.02"
+        )
 
         # Wobbly tone should have high shimmer
-        self.assertGreater(wobbly_shimmer, 0.10,
-                          f"Wobbly tone shimmer {wobbly_shimmer:.4f} should be >0.10")
+        self.assertGreater(
+            wobbly_shimmer, 0.10, f"Wobbly tone shimmer {wobbly_shimmer:.4f} should be >0.10"
+        )
 
         # Wobbly should be significantly higher than steady
-        self.assertGreater(wobbly_shimmer / steady_shimmer, 5.0,
-                          "Wobbly shimmer should be >5x steady shimmer")
+        self.assertGreater(
+            wobbly_shimmer / steady_shimmer, 5.0, "Wobbly shimmer should be >5x steady shimmer"
+        )
 
         print(f"✓ Shimmer test passed")
         print(f"  Steady tone shimmer: {steady_shimmer:.4f}")
@@ -83,8 +89,9 @@ class TestShimmerExtraction(unittest.TestCase):
         """
         # Arrange - Create realistic phee with vibrato
         sr = 48000
-        phee = self._create_phee_with_vibrato(sr, duration=0.2, base_freq=7000,
-                                             vibrato_rate=8, vibrato_depth=0.05)
+        phee = self._create_phee_with_vibrato(
+            sr, duration=0.2, base_freq=7000, vibrato_rate=8, vibrato_depth=0.05
+        )
 
         # Act
         from realtime.micro_dynamics_features import calculate_shimmer
@@ -129,6 +136,7 @@ class TestShimmerExtraction(unittest.TestCase):
 # Test 2: Spectral Flux (Texture Change)
 # =============================================================================
 
+
 class TestSpectralFluxExtraction(unittest.TestCase):
     """Test 2: Spectral Flux measures rate of spectral change"""
 
@@ -158,16 +166,13 @@ class TestSpectralFluxExtraction(unittest.TestCase):
 
         # Assert
         # Steady should have low flux
-        self.assertLess(steady_flux, 5.0,
-                       f"Steady flux {steady_flux:.4f} should be <5.0")
+        self.assertLess(steady_flux, 5.0, f"Steady flux {steady_flux:.4f} should be <5.0")
 
         # Trill should have higher flux
-        self.assertGreater(trill_flux, 10.0,
-                          f"Trill flux {trill_flux:.4f} should be >10.0")
+        self.assertGreater(trill_flux, 10.0, f"Trill flux {trill_flux:.4f} should be >10.0")
 
         # Trill should be significantly higher
-        self.assertGreater(trill_flux / steady_flux, 2.0,
-                          "Trill flux should be >2x steady flux")
+        self.assertGreater(trill_flux / steady_flux, 2.0, "Trill flux should be >2x steady flux")
 
         print(f"✓ Spectral flux test passed")
         print(f"  Steady tone flux: {steady_flux:.4f}")
@@ -234,6 +239,7 @@ class TestSpectralFluxExtraction(unittest.TestCase):
 # Test 3: Harmonicity (Tonal vs Noisy)
 # =============================================================================
 
+
 class TestHarmonicityExtraction(unittest.TestCase):
     """Test 3: Harmonicity measures degree of periodicity"""
 
@@ -267,18 +273,18 @@ class TestHarmonicityExtraction(unittest.TestCase):
 
         # Assert
         # Pure tone should have high harmonicity
-        self.assertGreater(pure_harmonic, 0.85,
-                          f"Pure tone harmonicity {pure_harmonic:.4f} should be >0.85")
+        self.assertGreater(
+            pure_harmonic, 0.85, f"Pure tone harmonicity {pure_harmonic:.4f} should be >0.85"
+        )
 
         # Noise should have low harmonicity
-        self.assertLess(noise_harmonic, 0.3,
-                       f"Noise harmonicity {noise_harmonic:.4f} should be <0.3")
+        self.assertLess(
+            noise_harmonic, 0.3, f"Noise harmonicity {noise_harmonic:.4f} should be <0.3"
+        )
 
         # Mixed should be in between
-        self.assertGreater(mixed_harmonic, noise_harmonic,
-                          "Mixed harmonicity should be > noise")
-        self.assertLess(mixed_harmonic, pure_harmonic,
-                       "Mixed harmonicity should be < pure")
+        self.assertGreater(mixed_harmonic, noise_harmonic, "Mixed harmonicity should be > noise")
+        self.assertLess(mixed_harmonic, pure_harmonic, "Mixed harmonicity should be < pure")
 
         print(f"✓ Harmonicity test passed")
         print(f"  Pure tone: {pure_harmonic:.4f}")
@@ -327,6 +333,7 @@ class TestHarmonicityExtraction(unittest.TestCase):
 # Test 4: 20D Vector Integration
 # =============================================================================
 
+
 class Test20DVectorIntegration(unittest.TestCase):
     """Test 4: New features integrate into 20D vector"""
 
@@ -348,12 +355,10 @@ class Test20DVectorIntegration(unittest.TestCase):
             mean_f0_hz=7000.0,
             duration_ms=50.0,
             f0_range_hz=400.0,
-
             # Grit Factors (3) - Added harmonicity
             harmonic_to_noise_ratio=20.0,
             spectral_flatness=0.3,
             harmonicity=0.85,
-
             # Motion Factors (7) - Added shimmer
             attack_time_ms=5.0,
             decay_time_ms=20.0,
@@ -362,21 +367,18 @@ class Test20DVectorIntegration(unittest.TestCase):
             vibrato_depth=0.02,
             jitter=0.01,
             shimmer=0.015,
-
             # Fingerprint Factors (5)
             mfcc_1=-10.0,
             mfcc_2=-5.0,
             mfcc_3=-2.0,
             mfcc_4=-1.0,
             spectral_contrast=20.0,
-
             # Spectral Dynamics (1) - New
             spectral_flux=1.5,
-
             # Rhythm Factors (3)
             median_ici_ms=15.0,
             onset_rate_hz=50.0,
-            ici_coefficient_of_variation=0.3
+            ici_coefficient_of_variation=0.3,
         )
 
         # Assert
@@ -388,6 +390,7 @@ class Test20DVectorIntegration(unittest.TestCase):
 
         # Count fields (should be 22)
         import dataclasses
+
         field_count = len(dataclasses.fields(vector))
         self.assertEqual(field_count, 22, f"Vector should have 22 fields, got {field_count}")
 
@@ -407,22 +410,54 @@ class Test20DVectorIntegration(unittest.TestCase):
 
         # Steady state
         steady = Vector20D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.2, harmonicity=0.95,
-            attack_time_ms=5.0, decay_time_ms=20.0, sustain_level=0.7,
-            vibrato_rate_hz=7.0, vibrato_depth=0.01, jitter=0.005, shimmer=0.005,
-            mfcc_1=-10.0, mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0,
-            spectral_flux=0.5, median_ici_ms=15.0, onset_rate_hz=50.0, ici_coefficient_of_variation=0.2
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.2,
+            harmonicity=0.95,
+            attack_time_ms=5.0,
+            decay_time_ms=20.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=0.01,
+            jitter=0.005,
+            shimmer=0.005,
+            mfcc_1=-10.0,
+            mfcc_2=-5.0,
+            mfcc_3=-2.0,
+            mfcc_4=-1.0,
+            spectral_contrast=20.0,
+            spectral_flux=0.5,
+            median_ici_ms=15.0,
+            onset_rate_hz=50.0,
+            ici_coefficient_of_variation=0.2,
         )
 
         # Tremulous state (high fear)
         tremulous = Vector20D(
-            mean_f0_hz=7500.0, duration_ms=45.0, f0_range_hz=600.0,
-            harmonic_to_noise_ratio=15.0, spectral_flatness=0.5, harmonicity=0.70,
-            attack_time_ms=3.0, decay_time_ms=15.0, sustain_level=0.8,
-            vibrato_rate_hz=12.0, vibrato_depth=0.08, jitter=0.05, shimmer=0.08,
-            mfcc_1=-8.0, mfcc_2=-3.0, mfcc_3=-1.0, mfcc_4=-0.5, spectral_contrast=30.0,
-            spectral_flux=3.0, median_ici_ms=12.0, onset_rate_hz=70.0, ici_coefficient_of_variation=0.5
+            mean_f0_hz=7500.0,
+            duration_ms=45.0,
+            f0_range_hz=600.0,
+            harmonic_to_noise_ratio=15.0,
+            spectral_flatness=0.5,
+            harmonicity=0.70,
+            attack_time_ms=3.0,
+            decay_time_ms=15.0,
+            sustain_level=0.8,
+            vibrato_rate_hz=12.0,
+            vibrato_depth=0.08,
+            jitter=0.05,
+            shimmer=0.08,
+            mfcc_1=-8.0,
+            mfcc_2=-3.0,
+            mfcc_3=-1.0,
+            mfcc_4=-0.5,
+            spectral_contrast=30.0,
+            spectral_flux=3.0,
+            median_ici_ms=12.0,
+            onset_rate_hz=70.0,
+            ici_coefficient_of_variation=0.5,
         )
 
         # Assert - Steady should be low jitter/shimmer
@@ -442,5 +477,5 @@ class Test20DVectorIntegration(unittest.TestCase):
 # Test Runner
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -30,16 +30,20 @@ try:
         ACOUSTIC_PERSONAS,
         compute_persona_score,
     )
+
     HAS_PERSONA_SUPPORT = True
 except ImportError:
     HAS_PERSONA_SUPPORT = False
     ACOUSTIC_PERSONAS = {}
+
     def compute_persona_score(*args, **kwargs):
         return 0.0
+
 
 # Try to import advanced segmentation libraries
 try:
     import ruptures as rpt
+
     HAS_RUPTURES = True
 except ImportError:
     HAS_RUPTURES = False
@@ -47,21 +51,23 @@ except ImportError:
 
 try:
     import librosa
+
     HAS_LIBROSA = True
 except ImportError:
     HAS_LIBROSA = False
     print("Warning: librosa library not available. Install with: pip install librosa")
 
 # Suppress sklearn warnings
-warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 class Modality(Enum):
     """Acoustic modality types based on physical properties."""
-    HARMONIC = 1      # Flat tones, pitch stable (marmosets, some birds)
-    FM_SWEEP = 2       # Pitch changes over time (bats, dolphins)
-    TRANSIENT = 3     # Clicks/pulses (whales, insects)
-    RHYTHMIC = 4       # Temporal patterns (crickets, frogs)
+
+    HARMONIC = 1  # Flat tones, pitch stable (marmosets, some birds)
+    FM_SWEEP = 2  # Pitch changes over time (bats, dolphins)
+    TRANSIENT = 3  # Clicks/pulses (whales, insects)
+    RHYTHMIC = 4  # Temporal patterns (crickets, frogs)
 
 
 class PhraseSignature:
@@ -72,7 +78,13 @@ class PhraseSignature:
     its essential physical properties.
     """
 
-    def __init__(self, modality: Modality, data: np.ndarray, timestamp: Optional[float] = None, sample_rate: int = 48000):
+    def __init__(
+        self,
+        modality: Modality,
+        data: np.ndarray,
+        timestamp: Optional[float] = None,
+        sample_rate: int = 48000,
+    ):
         self.modality = modality
         self.data = data
         self.timestamp = timestamp
@@ -109,14 +121,14 @@ class PhraseSignature:
         # Fundamental frequency tracking using autocorrelation
         frame_size = min(2048, len(self.data))
         if frame_size < 256:
-            return {'f0_mean': 0, 'f0_std': 0, 'harmonicity': 0}
+            return {"f0_mean": 0, "f0_std": 0, "harmonicity": 0}
 
         # Use PYIN-style approach for F0 estimation
         f0_values = []
         for i in range(0, len(self.data) - frame_size, frame_size // 4):
-            frame = self.data[i:i + frame_size]
-            acf = np.correlate(frame, frame, mode='full')
-            acf = acf[len(acf)//2:]
+            frame = self.data[i : i + frame_size]
+            acf = np.correlate(frame, frame, mode="full")
+            acf = acf[len(acf) // 2 :]
 
             # Find first peak after zero lag
             if len(acf) > 10:
@@ -128,13 +140,13 @@ class PhraseSignature:
 
         if f0_values:
             return {
-                'f0_mean': np.mean(f0_values),
-                'f0_std': np.std(f0_values),
-                'f0_range': np.max(f0_values) - np.min(f0_values) if f0_values else 0,
-                'harmonicity': 1.0 / (1.0 + np.std(f0_values)) if f0_values else 0
+                "f0_mean": np.mean(f0_values),
+                "f0_std": np.std(f0_values),
+                "f0_range": np.max(f0_values) - np.min(f0_values) if f0_values else 0,
+                "harmonicity": 1.0 / (1.0 + np.std(f0_values)) if f0_values else 0,
             }
         else:
-            return {'f0_mean': 0, 'f0_std': 0, 'f0_range': 0, 'harmonicity': 0}
+            return {"f0_mean": 0, "f0_std": 0, "f0_range": 0, "harmonicity": 0}
 
     def _extract_fm_features(self) -> Dict[str, float]:
         """Extract features specific to FM sweep signals."""
@@ -143,26 +155,37 @@ class PhraseSignature:
 
         if len(inst_freq) > 0:
             return {
-                'start_freq': inst_freq[0],
-                'end_freq': inst_freq[-1],
-                'freq_range': np.max(inst_freq) - np.min(inst_freq),
-                'mean_freq': np.mean(inst_freq),
-                'freq_slope': np.polyfit(range(len(inst_freq)), inst_freq, 1)[0] if len(inst_freq) > 1 else 0,
-                'curve_linearity': 1.0 / (1.0 + np.std(np.diff(inst_freq)))
+                "start_freq": inst_freq[0],
+                "end_freq": inst_freq[-1],
+                "freq_range": np.max(inst_freq) - np.min(inst_freq),
+                "mean_freq": np.mean(inst_freq),
+                "freq_slope": np.polyfit(range(len(inst_freq)), inst_freq, 1)[0]
+                if len(inst_freq) > 1
+                else 0,
+                "curve_linearity": 1.0 / (1.0 + np.std(np.diff(inst_freq))),
             }
         else:
-            return {'start_freq': 0, 'end_freq': 0, 'freq_range': 0, 'mean_freq': 0, 'freq_slope': 0, 'curve_linearity': 0}
+            return {
+                "start_freq": 0,
+                "end_freq": 0,
+                "freq_range": 0,
+                "mean_freq": 0,
+                "freq_slope": 0,
+                "curve_linearity": 0,
+            }
 
     def _extract_transient_features(self) -> Dict[str, float]:
         """Extract features specific to transient signals."""
         # Energy envelope
-        energy = np.sum(self.data ** 2)
+        energy = np.sum(self.data**2)
         rms = np.sqrt(energy / len(self.data))
 
         # Spectral centroid (brightness)
         spectrum = np.abs(np.fft.rfft(self.data))
-        freqs = np.fft.rfftfreq(len(self.data), 1/48000)
-        spectral_centroid = np.sum(freqs * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
+        freqs = np.fft.rfftfreq(len(self.data), 1 / 48000)
+        spectral_centroid = (
+            np.sum(freqs * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
+        )
 
         # Zero crossing rate (spikiness)
         zcr = np.mean(np.abs(np.diff(np.sign(self.data))))
@@ -177,27 +200,27 @@ class PhraseSignature:
             kurtosis = 0
 
         return {
-            'rms': rms,
-            'energy': energy,
-            'spectral_centroid': spectral_centroid,
-            'zero_crossing_rate': zcr,
-            'kurtosis': kurtosis,
-            'peak_amplitude': np.max(np.abs(self.data))
+            "rms": rms,
+            "energy": energy,
+            "spectral_centroid": spectral_centroid,
+            "zero_crossing_rate": zcr,
+            "kurtosis": kurtosis,
+            "peak_amplitude": np.max(np.abs(self.data)),
         }
 
     def _extract_rhythmic_features(self) -> Dict[str, float]:
         """Extract features specific to rhythmic patterns."""
         # Autocorrelation for rhythmicity detection
         if len(self.data) < 256:
-            return {'rhythmic_strength': 0, 'tempo': 0}
+            return {"rhythmic_strength": 0, "tempo": 0}
 
-        acf = np.correlate(self.data, self.data, mode='full')
-        acf = acf[len(acf)//2:]
+        acf = np.correlate(self.data, self.data, mode="full")
+        acf = acf[len(acf) // 2 :]
 
         # Find periodicities
         periodicities = []
         for lag in range(20, min(len(acf) // 2, 500)):
-            if acf[lag] > acf[lag-1] and acf[lag] > acf[lag+1]:
+            if acf[lag] > acf[lag - 1] and acf[lag] > acf[lag + 1]:
                 if acf[lag] > 0.1 * acf[0]:
                     periodicities.append(lag)
 
@@ -205,9 +228,9 @@ class PhraseSignature:
             dominant_period = periodicities[0]
             tempo = 60000 / (dominant_period * 2) if dominant_period > 0 else 0  # BPM estimation
             rhythmic_strength = acf[dominant_period] / acf[0]
-            return {'rhythmic_strength': rhythmic_strength, 'tempo': tempo}
+            return {"rhythmic_strength": rhythmic_strength, "tempo": tempo}
         else:
-            return {'rhythmic_strength': 0, 'tempo': 0}
+            return {"rhythmic_strength": 0, "tempo": 0}
 
     def _extract_common_features(self) -> Dict[str, float]:
         """
@@ -229,26 +252,33 @@ class PhraseSignature:
         spectrum = np.abs(np.fft.rfft(self.data))
         spectrum_nonzero = spectrum[spectrum > 1e-10]  # Avoid log(0)
         if len(spectrum_nonzero) > 0:
-            spectral_flatness = np.exp(np.mean(np.log(spectrum_nonzero))) / np.mean(spectrum_nonzero)
+            spectral_flatness = np.exp(np.mean(np.log(spectrum_nonzero))) / np.mean(
+                spectrum_nonzero
+            )
         else:
             spectral_flatness = 1.0
 
-        freqs = np.fft.rfftfreq(len(self.data), 1/self.sample_rate)
-        freqs_for_spectrum = freqs[:len(spectrum)]
+        freqs = np.fft.rfftfreq(len(self.data), 1 / self.sample_rate)
+        freqs_for_spectrum = freqs[: len(spectrum)]
 
         # Spectral centroid (brightness/"center of mass")
-        spectral_centroid_hz = np.sum(freqs_for_spectrum * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
+        spectral_centroid_hz = (
+            np.sum(freqs_for_spectrum * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
+        )
 
         # Spectral bandwidth (spread around centroid)
         if np.sum(spectrum) > 0:
-            spectral_bandwidth = np.sqrt(np.sum(((freqs_for_spectrum - spectral_centroid_hz) ** 2) * spectrum) / np.sum(spectrum))
+            spectral_bandwidth = np.sqrt(
+                np.sum(((freqs_for_spectrum - spectral_centroid_hz) ** 2) * spectrum)
+                / np.sum(spectrum)
+            )
         else:
             spectral_bandwidth = 0
 
         # Spectral slope (linear regression fit to log spectrum)
         if len(spectrum_nonzero) > 1:
             log_spectrum = np.log(spectrum_nonzero + 1e-10)
-            freq_for_log = freqs_for_spectrum[:len(log_spectrum)]
+            freq_for_log = freqs_for_spectrum[: len(log_spectrum)]
             freq_mean = np.mean(freq_for_log)
             log_spectrum_mean = np.mean(log_spectrum)
             numerator = np.sum((freq_for_log - freq_mean) * (log_spectrum - log_spectrum_mean))
@@ -273,14 +303,14 @@ class PhraseSignature:
         # Harmonic-to-Noise Ratio (HNR) - "The Grit Factor"
         try:
             # Use autocorrelation to estimate HNR
-            acf = np.correlate(self.data, self.data, mode='full')
-            acf = acf[len(acf)//2:]
+            acf = np.correlate(self.data, self.data, mode="full")
+            acf = acf[len(acf) // 2 :]
 
             # Peak height (periodic component)
-            peak_height = np.max(acf[1:len(acf)//10]) if len(acf) > 10 else 0
+            peak_height = np.max(acf[1 : len(acf) // 10]) if len(acf) > 10 else 0
 
             # Mean of remaining (noise floor)
-            noise_floor = np.mean(acf[len(acf)//10:]) if len(acf) > 10 else 1
+            noise_floor = np.mean(acf[len(acf) // 10 :]) if len(acf) > 10 else 1
 
             # HNR as ratio
             harmonic_to_noise_ratio = peak_height / noise_floor if noise_floor > 0 else 0
@@ -293,7 +323,8 @@ class PhraseSignature:
 
         # Smooth envelope for cleaner attack/decay detection
         from scipy.ndimage import gaussian_filter1d
-        smoothed_envelope = gaussian_filter1d(envelope, sigma=min(5, len(envelope)//10))
+
+        smoothed_envelope = gaussian_filter1d(envelope, sigma=min(5, len(envelope) // 10))
 
         # Normalize envelope
         if np.max(smoothed_envelope) > 0:
@@ -303,15 +334,25 @@ class PhraseSignature:
         max_idx = np.argmax(smoothed_envelope)
         threshold = 0.1
         attack_start = np.where(smoothed_envelope[:max_idx] > threshold)[0]
-        attack_time_ms = (max_idx - attack_start[0]) / self.sample_rate * 1000 if len(attack_start) > 0 else 0
+        attack_time_ms = (
+            (max_idx - attack_start[0]) / self.sample_rate * 1000 if len(attack_start) > 0 else 0
+        )
 
         # Decay time: time from max to 10%
         decay_start = max_idx
         decay_end = np.where(smoothed_envelope[decay_start:] < threshold)[0]
-        decay_time_ms = (decay_end[0] if len(decay_end) > 0 else len(smoothed_envelope) - decay_start) / self.sample_rate * 1000
+        decay_time_ms = (
+            (decay_end[0] if len(decay_end) > 0 else len(smoothed_envelope) - decay_start)
+            / self.sample_rate
+            * 1000
+        )
 
         # Sustain level: mean amplitude during sustained portion
-        sustain_portion = smoothed_envelope[max_idx:max_idx + len(self.data)//4] if max_idx + len(self.data)//4 < len(smoothed_envelope) else smoothed_envelope[max_idx:]
+        sustain_portion = (
+            smoothed_envelope[max_idx : max_idx + len(self.data) // 4]
+            if max_idx + len(self.data) // 4 < len(smoothed_envelope)
+            else smoothed_envelope[max_idx:]
+        )
         sustain_level = np.mean(sustain_portion) if len(sustain_portion) > 0 else 0
 
         # Vibrato / Jitter (Micro-pitch variation)
@@ -322,10 +363,10 @@ class PhraseSignature:
 
             f0_contour = []
             for i in range(0, len(self.data) - frame_size, hop_size):
-                frame = self.data[i:i + frame_size]
+                frame = self.data[i : i + frame_size]
                 # Use autocorrelation for pitch tracking
-                acf = np.correlate(frame, frame, mode='full')
-                acf = acf[len(acf)//2:]
+                acf = np.correlate(frame, frame, mode="full")
+                acf = acf[len(acf) // 2 :]
 
                 # Find first peak
                 if len(acf) > 20:
@@ -341,16 +382,19 @@ class PhraseSignature:
                 f0_detrended = f0_contour - np.mean(f0_contour)
 
                 # Autocorrelation of F0 contour to detect periodicity
-                f0_acf = np.correlate(f0_detrended, f0_detrended, mode='full')
-                f0_acf = f0_acf[len(f0_acf)//2:]
+                f0_acf = np.correlate(f0_detrended, f0_detrended, mode="full")
+                f0_acf = f0_acf[len(f0_acf) // 2 :]
 
                 # Find peaks
                 from scipy.signal import find_peaks
-                peaks, _ = find_peaks(f0_acf[1:len(f0_acf)//10], height=0.3 * np.max(f0_acf))
+
+                peaks, _ = find_peaks(f0_acf[1 : len(f0_acf) // 10], height=0.3 * np.max(f0_acf))
 
                 if len(peaks) > 0:
                     vibrato_rate_hz = len(peaks) / (len(f0_contour) * hop_size / self.sample_rate)
-                    vibrato_depth = np.std(f0_detrended) / np.mean(f0_contour) if np.mean(f0_contour) > 0 else 0
+                    vibrato_depth = (
+                        np.std(f0_detrended) / np.mean(f0_contour) if np.mean(f0_contour) > 0 else 0
+                    )
                 else:
                     vibrato_rate_hz = 0
                     vibrato_depth = 0
@@ -376,7 +420,7 @@ class PhraseSignature:
             n_fft // 4
 
             # Power spectrum
-            power_spectrum = spectrum[:n_fft//2 + 1] ** 2
+            power_spectrum = spectrum[: n_fft // 2 + 1] ** 2
 
             # Mel filterbank (simplified)
             n_mels = 40
@@ -399,7 +443,8 @@ class PhraseSignature:
 
             # DCT to get MFCCs
             from scipy.fft import dct
-            mfccs = dct(log_mel_spectrum, type=2, norm='ortho')[:n_mfcc]
+
+            mfccs = dct(log_mel_spectrum, type=2, norm="ortho")[:n_mfcc]
 
             # Store first 4 MFCCs
             mfcc_1 = mfccs[0] if len(mfccs) > 0 else 0
@@ -445,6 +490,7 @@ class PhraseSignature:
         try:
             # Detect onsets in envelope
             from scipy.signal import find_peaks
+
             onset_threshold = np.mean(envelope) + 0.5 * np.std(envelope)
             min_distance = int(0.005 * self.sample_rate)  # 5ms minimum
 
@@ -472,41 +518,36 @@ class PhraseSignature:
 
         return {
             # ===== BASIC FEATURES =====
-            'duration_ms': duration,
-            'spectral_flatness': spectral_flatness,
-            'mean_amplitude': np.mean(amplitude),
-            'max_amplitude': np.max(amplitude),
-            'dynamic_range': np.max(amplitude) - np.min(amplitude),
-
+            "duration_ms": duration,
+            "spectral_flatness": spectral_flatness,
+            "mean_amplitude": np.mean(amplitude),
+            "max_amplitude": np.max(amplitude),
+            "dynamic_range": np.max(amplitude) - np.min(amplitude),
             # ===== TIMBRE FEATURES =====
-            'spectral_centroid_hz': spectral_centroid_hz,
-            'spectral_slope': spectral_slope,
-            'spectral_bandwidth_hz': spectral_bandwidth,
-            'spectral_rolloff_hz': spectral_rolloff,
-
+            "spectral_centroid_hz": spectral_centroid_hz,
+            "spectral_slope": spectral_slope,
+            "spectral_bandwidth_hz": spectral_bandwidth,
+            "spectral_rolloff_hz": spectral_rolloff,
             # ===== CATEGORY 1: GRIT FACTORS (HARMONIC CLARITY) =====
-            'harmonic_to_noise_ratio': harmonic_to_noise_ratio,
-
+            "harmonic_to_noise_ratio": harmonic_to_noise_ratio,
             # ===== CATEGORY 2: MOTION FACTORS (TEMPORAL DYNAMICS) =====
-            'attack_time_ms': attack_time_ms,
-            'decay_time_ms': decay_time_ms,
-            'sustain_level': sustain_level,
-            'vibrato_rate_hz': vibrato_rate_hz,
-            'vibrato_depth': vibrato_depth,
-            'jitter': jitter,
-
+            "attack_time_ms": attack_time_ms,
+            "decay_time_ms": decay_time_ms,
+            "sustain_level": sustain_level,
+            "vibrato_rate_hz": vibrato_rate_hz,
+            "vibrato_depth": vibrato_depth,
+            "jitter": jitter,
             # ===== CATEGORY 3: FINGERPRINT FACTORS =====
-            'mfcc_1': mfcc_1,
-            'mfcc_2': mfcc_2,
-            'mfcc_3': mfcc_3,
-            'mfcc_4': mfcc_4,
-            'mfcc_delta_mean': mfcc_delta_mean,
-            'spectral_contrast': spectral_contrast_mean,
-
+            "mfcc_1": mfcc_1,
+            "mfcc_2": mfcc_2,
+            "mfcc_3": mfcc_3,
+            "mfcc_4": mfcc_4,
+            "mfcc_delta_mean": mfcc_delta_mean,
+            "spectral_contrast": spectral_contrast_mean,
             # ===== CATEGORY 4: RHYTHM FACTORS =====
-            'median_ici_ms': median_ici_ms,
-            'onset_rate_hz': onset_rate_hz,
-            'ici_coefficient_of_variation': ici_cv,
+            "median_ici_ms": median_ici_ms,
+            "onset_rate_hz": onset_rate_hz,
+            "ici_coefficient_of_variation": ici_cv,
         }
 
     def _estimate_instantaneous_frequency(self) -> np.ndarray:
@@ -523,19 +564,19 @@ class PhraseSignature:
 
         return inst_freq
 
-    def distance_to(self, other: 'PhraseSignature') -> float:
+    def distance_to(self, other: "PhraseSignature") -> float:
         """
         Calculate distance to another phrase signature.
 
         Uses normalized Euclidean distance on feature space.
         """
         if self.modality != other.modality:
-            return float('inf')  # Different modalities are maximally distant
+            return float("inf")  # Different modalities are maximally distant
 
         # Get common features
         common_features = set(self.features.keys()) & set(other.features.keys())
         if not common_features:
-            return float('inf')
+            return float("inf")
 
         # Extract feature values, ensuring they're numeric
         self_vals = []
@@ -551,7 +592,7 @@ class PhraseSignature:
                 other_vals.append(float(other_val))
 
         if not self_vals:
-            return float('inf')
+            return float("inf")
 
         self_vals = np.array(self_vals)
         other_vals = np.array(other_vals)
@@ -562,7 +603,7 @@ class PhraseSignature:
 
         normalized_diff = (self_vals - other_vals) / ranges
 
-        return np.sqrt(np.sum(normalized_diff ** 2))
+        return np.sqrt(np.sum(normalized_diff**2))
 
     def __repr__(self) -> str:
         return f"PhraseSignature(modality={self.modality.name}, duration={self.features.get('duration_ms', 0):.1f}ms)"
@@ -589,9 +630,12 @@ class Sentence:
         """Add a phrase to this sentence."""
         self.phrases.append(phrase)
 
-    def discover_atomic_units(self, f0_bin_size: float = 200.0,
-                           duration_bin_size: float = 25.0,
-                           range_bin_size: float = 100.0) -> Dict[str, List[PhraseSignature]]:
+    def discover_atomic_units(
+        self,
+        f0_bin_size: float = 200.0,
+        duration_bin_size: float = 25.0,
+        range_bin_size: float = 100.0,
+    ) -> Dict[str, List[PhraseSignature]]:
         """
         Discover atomic units within this sentence using feature binning.
 
@@ -612,9 +656,9 @@ class Sentence:
 
         for phrase in self.phrases:
             # Extract features
-            f0_mean = phrase.features.get('f0_mean', 0)
-            duration_ms = phrase.features.get('duration_ms', 0)
-            f0_range = phrase.features.get('f0_range', 0)
+            f0_mean = phrase.features.get("f0_mean", 0)
+            duration_ms = phrase.features.get("duration_ms", 0)
+            f0_range = phrase.features.get("f0_range", 0)
 
             # Apply binning (METHODOLOGY_SUMMARY.md approach)
             f0_bin = round(f0_mean / f0_bin_size) * f0_bin_size
@@ -631,11 +675,14 @@ class Sentence:
         filtered_vocabulary = {k: v for k, v in vocabulary.items() if len(v) > 1}
 
         self.atomic_units = filtered_vocabulary
-        self.logger.info(f"Discovered {len(filtered_vocabulary)} atomic units in sentence {self.sentence_id}")
+        self.logger.info(
+            f"Discovered {len(filtered_vocabulary)} atomic units in sentence {self.sentence_id}"
+        )
         return filtered_vocabulary
 
-    def microharmonic_similarity(self, phrase1: PhraseSignature, phrase2: PhraseSignature,
-                               similarity_threshold: float = 0.7) -> float:
+    def microharmonic_similarity(
+        self, phrase1: PhraseSignature, phrase2: PhraseSignature, similarity_threshold: float = 0.7
+    ) -> float:
         """
         Calculate microharmonic similarity between two phrases.
 
@@ -654,8 +701,8 @@ class Sentence:
         if phrase1.modality != Modality.HARMONIC or phrase2.modality != Modality.HARMONIC:
             return 0.0
 
-        f1 = phrase1.features.get('f0_mean', 0)
-        f2 = phrase2.features.get('f0_mean', 0)
+        f1 = phrase1.features.get("f0_mean", 0)
+        f2 = phrase2.features.get("f0_mean", 0)
 
         if f1 == 0 or f2 == 0:
             return 0.0
@@ -695,7 +742,9 @@ class Sentence:
 
         return 0.0
 
-    def validate_atomic_units(self, similarity_threshold: float = 0.7) -> Dict[str, List[PhraseSignature]]:
+    def validate_atomic_units(
+        self, similarity_threshold: float = 0.7
+    ) -> Dict[str, List[PhraseSignature]]:
         """
         Validate atomic units using microharmonic similarity.
 
@@ -716,7 +765,9 @@ class Sentence:
                 max_similarity = 0.0
 
                 for existing_phrase in validated_group:
-                    similarity = self.microharmonic_similarity(phrase, existing_phrase, similarity_threshold)
+                    similarity = self.microharmonic_similarity(
+                        phrase, existing_phrase, similarity_threshold
+                    )
                     if similarity > max_similarity:
                         max_similarity = similarity
 
@@ -748,7 +799,7 @@ class UniversalRosettaStone:
         # Configure logging
         if not self.logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
@@ -790,37 +841,41 @@ class UniversalRosettaStone:
         signs = np.sign(audio)
         crossings = np.where(np.diff(signs))[0]
         zcr = len(crossings) / len(audio)
-        features['zcr'] = zcr
+        features["zcr"] = zcr
 
         # Spectral flatness
         spectrum = np.abs(np.fft.rfft(audio))
         spectrum = spectrum[spectrum > 1e-10]
         if len(spectrum) > 0:
-            features['spectral_flatness'] = np.exp(np.mean(np.log(spectrum))) / np.mean(spectrum)
+            features["spectral_flatness"] = np.exp(np.mean(np.log(spectrum))) / np.mean(spectrum)
         else:
-            features['spectral_flatness'] = 1.0
+            features["spectral_flatness"] = 1.0
 
         # Energy distribution
         envelope = np.abs(signal.hilbert(audio))
-        features['envelope_std'] = np.std(envelope)
-        features['envelope_mean'] = np.mean(envelope)
-        features['envelope_cv'] = features['envelope_std'] / (features['envelope_mean'] + 1e-10)
+        features["envelope_std"] = np.std(envelope)
+        features["envelope_mean"] = np.mean(envelope)
+        features["envelope_cv"] = features["envelope_std"] / (features["envelope_mean"] + 1e-10)
 
         # Timbre features (Category 1, Item 1: Spectral Centroid & Slope)
-        freqs = np.fft.rfftfreq(len(audio), 1/self.sample_rate)
-        freqs = freqs[:len(spectrum)]  # Ensure matching lengths
+        freqs = np.fft.rfftfreq(len(audio), 1 / self.sample_rate)
+        freqs = freqs[: len(spectrum)]  # Ensure matching lengths
 
         # Spectral centroid (already computed, but store in Hz)
-        spectral_centroid_hz = np.sum(freqs * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
-        features['spectral_centroid'] = spectral_centroid_hz
-        features['spectral_centroid_hz'] = spectral_centroid_hz
+        spectral_centroid_hz = (
+            np.sum(freqs * spectrum) / np.sum(spectrum) if np.sum(spectrum) > 0 else 0
+        )
+        features["spectral_centroid"] = spectral_centroid_hz
+        features["spectral_centroid_hz"] = spectral_centroid_hz
 
         # Spectral bandwidth (spread around centroid)
         if np.sum(spectrum) > 0:
-            spectral_bandwidth = np.sqrt(np.sum(((freqs - spectral_centroid_hz) ** 2) * spectrum) / np.sum(spectrum))
-            features['spectral_bandwidth_hz'] = spectral_bandwidth
+            spectral_bandwidth = np.sqrt(
+                np.sum(((freqs - spectral_centroid_hz) ** 2) * spectrum) / np.sum(spectrum)
+            )
+            features["spectral_bandwidth_hz"] = spectral_bandwidth
         else:
-            features['spectral_bandwidth_hz'] = 0.0
+            features["spectral_bandwidth_hz"] = 0.0
 
         # Spectral slope (linear regression fit to log spectrum)
         # Positive slope = brighter, negative slope = darker/muffled
@@ -832,9 +887,9 @@ class UniversalRosettaStone:
             numerator = np.sum((freqs - freq_mean) * (log_spectrum - log_spectrum_mean))
             denominator = np.sum((freqs - freq_mean) ** 2)
             spectral_slope = numerator / denominator if denominator > 0 else 0
-            features['spectral_slope'] = spectral_slope
+            features["spectral_slope"] = spectral_slope
         else:
-            features['spectral_slope'] = 0.0
+            features["spectral_slope"] = 0.0
 
         # Spectral rolloff (frequency below which 85% of energy is contained)
         if np.sum(spectrum) > 0:
@@ -843,16 +898,16 @@ class UniversalRosettaStone:
             rolloff_idx = np.where(cumulative_energy >= 0.85 * total_energy)[0]
             if len(rolloff_idx) > 0:
                 spectral_rolloff = freqs[rolloff_idx[0]]
-                features['spectral_rolloff_hz'] = spectral_rolloff
+                features["spectral_rolloff_hz"] = spectral_rolloff
             else:
-                features['spectral_rolloff_hz'] = freqs[-1]
+                features["spectral_rolloff_hz"] = freqs[-1]
         else:
-            features['spectral_rolloff_hz'] = 0.0
+            features["spectral_rolloff_hz"] = 0.0
 
         # Peak detection
         peaks, _ = signal.find_peaks(envelope, height=np.mean(envelope))
-        features['num_peaks'] = len(peaks)
-        features['peak_density'] = len(peaks) / len(audio)
+        features["num_peaks"] = len(peaks)
+        features["peak_density"] = len(peaks) / len(audio)
 
         return features
 
@@ -865,7 +920,7 @@ class UniversalRosettaStone:
         based on the spectral centroid to account for this.
         """
         # Determine frequency range based on spectral centroid
-        spectral_centroid = features.get('spectral_centroid', 0)
+        spectral_centroid = features.get("spectral_centroid", 0)
 
         # Frequency-aware ZCR threshold
         # Low frequency (< 2 kHz): strict threshold
@@ -884,9 +939,11 @@ class UniversalRosettaStone:
         # Low zero-crossing rate (stable pitch) - frequency-aware
         # Low spectral flatness indicates harmonic structure
         # Stable envelope (low coefficient of variation)
-        return (features['zcr'] < zcr_threshold and
-                features['spectral_flatness'] < 0.3 and
-                features['envelope_cv'] < 0.5)
+        return (
+            features["zcr"] < zcr_threshold
+            and features["spectral_flatness"] < 0.3
+            and features["envelope_cv"] < 0.5
+        )
 
     def _is_fm_sweep(self, features: Dict[str, float]) -> bool:
         """
@@ -896,7 +953,7 @@ class UniversalRosettaStone:
         but not extremely high (which would indicate noise or transients).
         """
         # Calculate frequency-aware ZCR threshold (same as _is_harmonic)
-        spectral_centroid = features.get('spectral_centroid', 0)
+        spectral_centroid = features.get("spectral_centroid", 0)
         if spectral_centroid < 2000:
             zcr_min = 0.1  # Above low-frequency harmonic threshold
         elif spectral_centroid < 5000:
@@ -908,23 +965,29 @@ class UniversalRosettaStone:
 
         # FM sweep: ZCR above harmonic threshold but not extremely high
         # Moderate spectral flatness
-        return (features['zcr'] > zcr_min and
-                features['zcr'] < 0.6 and
-                features['spectral_flatness'] < 0.6)
+        return (
+            features["zcr"] > zcr_min
+            and features["zcr"] < 0.6
+            and features["spectral_flatness"] < 0.6
+        )
 
     def _is_transient(self, features: Dict[str, float]) -> bool:
         """Check if features indicate transient signal."""
         # High peak density and energy variations
-        return (features['peak_density'] > 0.01 and
-                features['envelope_cv'] > 1.0 and
-                features['spectral_flatness'] > 0.5)
+        return (
+            features["peak_density"] > 0.01
+            and features["envelope_cv"] > 1.0
+            and features["spectral_flatness"] > 0.5
+        )
 
     def _is_rhythmic(self, features: Dict[str, float]) -> bool:
         """Check if features indicate rhythmic signal."""
         # Regular peak pattern
-        return (features['peak_density'] > 0.005 and
-                features['peak_density'] < 0.02 and
-                features['envelope_cv'] < 0.3)
+        return (
+            features["peak_density"] > 0.005
+            and features["peak_density"] < 0.02
+            and features["envelope_cv"] < 0.3
+        )
 
     def get_modality_probabilities(self, audio: np.ndarray) -> Dict[str, float]:
         """
@@ -949,7 +1012,7 @@ class UniversalRosettaStone:
         scores = {}
 
         # Determine frequency-aware ZCR threshold (same logic as _is_harmonic)
-        spectral_centroid = features.get('spectral_centroid', 0)
+        spectral_centroid = features.get("spectral_centroid", 0)
         if spectral_centroid < 2000:
             zcr_threshold = 0.1
         elif spectral_centroid < 5000:
@@ -961,46 +1024,46 @@ class UniversalRosettaStone:
 
         # Harmonic score: frequency-aware ZCR, low spectral flatness, stable envelope
         harmonic_score = 0.0
-        if features['zcr'] < zcr_threshold:
+        if features["zcr"] < zcr_threshold:
             # Score based on how far below threshold we are
-            zcr_margin = (zcr_threshold - features['zcr']) / zcr_threshold
+            zcr_margin = (zcr_threshold - features["zcr"]) / zcr_threshold
             harmonic_score += 0.4 * (1 + zcr_margin)  # Bonus for being well below threshold
-        if features['spectral_flatness'] < 0.3:
+        if features["spectral_flatness"] < 0.3:
             harmonic_score += 0.4
-        if features['envelope_cv'] < 0.5:
+        if features["envelope_cv"] < 0.5:
             harmonic_score += 0.2
-        scores['harmonic'] = min(harmonic_score, 1.0)
+        scores["harmonic"] = min(harmonic_score, 1.0)
 
         # FM sweep score: moderate ZCR (above harmonic threshold), moderate spectral flatness
         fm_score = 0.0
         # Use frequency-aware lower bound (above harmonic threshold but not too high)
-        if zcr_threshold < features['zcr'] < 0.6:
+        if zcr_threshold < features["zcr"] < 0.6:
             fm_score += 0.5
-        if features['spectral_flatness'] < 0.6:
+        if features["spectral_flatness"] < 0.6:
             fm_score += 0.3
-        if features['envelope_cv'] > 0.3:
+        if features["envelope_cv"] > 0.3:
             fm_score += 0.2  # FM sweeps have varying amplitude
-        scores['fm_sweep'] = min(fm_score, 1.0)
+        scores["fm_sweep"] = min(fm_score, 1.0)
 
         # Transient score: high peak density, high envelope variation, high spectral flatness
         transient_score = 0.0
-        if features['peak_density'] > 0.01:
+        if features["peak_density"] > 0.01:
             transient_score += 0.3
-        if features['envelope_cv'] > 0.8:
+        if features["envelope_cv"] > 0.8:
             transient_score += 0.4
-        if features['spectral_flatness'] > 0.5:
+        if features["spectral_flatness"] > 0.5:
             transient_score += 0.3
-        scores['transient'] = min(transient_score, 1.0)
+        scores["transient"] = min(transient_score, 1.0)
 
         # Rhythmic score: moderate peak density, low envelope variation
         rhythmic_score = 0.0
-        if 0.005 < features['peak_density'] < 0.02:
+        if 0.005 < features["peak_density"] < 0.02:
             rhythmic_score += 0.5
-        if features['envelope_cv'] < 0.3:
+        if features["envelope_cv"] < 0.3:
             rhythmic_score += 0.3
-        if features['num_peaks'] > 3:  # Multiple peaks indicate rhythm
+        if features["num_peaks"] > 3:  # Multiple peaks indicate rhythm
             rhythmic_score += 0.2
-        scores['rhythmic'] = min(rhythmic_score, 1.0)
+        scores["rhythmic"] = min(rhythmic_score, 1.0)
 
         # Normalize to sum to 1.0
         total = sum(scores.values())
@@ -1038,7 +1101,9 @@ class UniversalRosettaStone:
             # Default to TRANSIENT for event-based signals
             return Modality.TRANSIENT
 
-    def _calculate_adaptive_gap_threshold(self, audio: np.ndarray, percentile: float = 99.0) -> float:
+    def _calculate_adaptive_gap_threshold(
+        self, audio: np.ndarray, percentile: float = 99.0
+    ) -> float:
         """
         Calculate adaptive gap threshold based on inter-event interval distribution.
 
@@ -1061,6 +1126,7 @@ class UniversalRosettaStone:
 
         # Find events (peaks above threshold)
         from scipy.signal import find_peaks
+
         min_interval_samples = int(0.005 * self.sample_rate)  # Minimum 5ms between events
         peaks, _ = find_peaks(envelope, height=event_threshold, distance=min_interval_samples)
 
@@ -1080,10 +1146,13 @@ class UniversalRosettaStone:
 
         return adaptive_threshold_ms
 
-    def segment_phrases(self, audio: np.ndarray,
-                       min_gap_ms: float = 50.0,
-                       min_phrase_duration_ms: float = 20.0,
-                       use_adaptive_gap: bool = True) -> List[PhraseSignature]:
+    def segment_phrases(
+        self,
+        audio: np.ndarray,
+        min_gap_ms: float = 50.0,
+        min_phrase_duration_ms: float = 20.0,
+        use_adaptive_gap: bool = True,
+    ) -> List[PhraseSignature]:
         """
         Segment audio into individual phrases using harmonic similarity.
 
@@ -1110,15 +1179,19 @@ class UniversalRosettaStone:
                 adaptive_gap_ms = self._calculate_adaptive_gap_threshold(audio)
                 # Use minimum of adaptive and user-specified gap
                 effective_gap_ms = min(adaptive_gap_ms, min_gap_ms)
-                self.logger.debug(f"Adaptive gap threshold: {adaptive_gap_ms:.2f}ms "
-                                f"(using: {effective_gap_ms:.2f}ms)")
+                self.logger.debug(
+                    f"Adaptive gap threshold: {adaptive_gap_ms:.2f}ms "
+                    f"(using: {effective_gap_ms:.2f}ms)"
+                )
                 min_gap_ms = effective_gap_ms
 
         min_gap_samples = int(min_gap_ms * self.sample_rate / 1000)
         min_duration_samples = int(min_phrase_duration_ms * self.sample_rate / 1000)
 
         # Step 1: Initial segmentation (choose method based on modality)
-        overall_modality = self._detect_overall_modality(audio) if use_adaptive_gap else Modality.HARMONIC
+        overall_modality = (
+            self._detect_overall_modality(audio) if use_adaptive_gap else Modality.HARMONIC
+        )
 
         if overall_modality in [Modality.TRANSIENT, Modality.RHYTHMIC]:
             # Use event-based segmentation for click/pulse-based signals
@@ -1134,11 +1207,15 @@ class UniversalRosettaStone:
         # Step 2: Harmonic similarity-based merging
         merged_phrases = self._harmonic_similarity_merging(phrases, min_gap_samples)
 
-        self.logger.info(f"Segmented {len(merged_phrases)} phrases from {len(audio)/self.sample_rate:.2f}s audio "
-                        f"(initial: {len(phrases)}, merged: {len(merged_phrases)})")
+        self.logger.info(
+            f"Segmented {len(merged_phrases)} phrases from {len(audio) / self.sample_rate:.2f}s audio "
+            f"(initial: {len(phrases)}, merged: {len(merged_phrases)})"
+        )
         return merged_phrases
 
-    def _energy_based_segmentation(self, audio: np.ndarray, min_duration_samples: int) -> List[PhraseSignature]:
+    def _energy_based_segmentation(
+        self, audio: np.ndarray, min_duration_samples: int
+    ) -> List[PhraseSignature]:
         """Perform initial energy-based segmentation to get candidate phrases."""
         envelope = np.abs(signal.hilbert(audio))
         energy_threshold = np.median(envelope) * 0.5
@@ -1170,13 +1247,11 @@ class UniversalRosettaStone:
         for onset, offset in paired_segments:
             duration = offset - onset + 1
             if duration >= min_duration_samples:
-                phrase_data = audio[onset:offset+1]
+                phrase_data = audio[onset : offset + 1]
                 try:
                     modality = self.detect_modality(phrase_data)
                     phrase = PhraseSignature(
-                        modality=modality,
-                        data=phrase_data,
-                        timestamp=onset / self.sample_rate
+                        modality=modality, data=phrase_data, timestamp=onset / self.sample_rate
                     )
                     phrases.append(phrase)
                 except ValueError:
@@ -1185,10 +1260,7 @@ class UniversalRosettaStone:
         return phrases
 
     def _event_based_segmentation(
-        self,
-        audio: np.ndarray,
-        min_gap_samples: int,
-        min_duration_samples: int
+        self, audio: np.ndarray, min_gap_samples: int, min_duration_samples: int
     ) -> List[PhraseSignature]:
         """
         Perform event-based segmentation for TRANSIENT/RHYTHMIC signals.
@@ -1214,10 +1286,7 @@ class UniversalRosettaStone:
 
         min_event_distance = int(0.005 * self.sample_rate)  # Minimum 5ms between events
         peaks, properties = find_peaks(
-            envelope,
-            height=event_threshold,
-            distance=min_event_distance,
-            width=10
+            envelope, height=event_threshold, distance=min_event_distance, width=10
         )
 
         if len(peaks) < 1:
@@ -1228,7 +1297,7 @@ class UniversalRosettaStone:
         current_phrase_events = [peaks[0]]
 
         for i in range(1, len(peaks)):
-            gap_samples = peaks[i] - peaks[i-1]
+            gap_samples = peaks[i] - peaks[i - 1]
 
             if gap_samples <= min_gap_samples:
                 # Part of same phrase
@@ -1252,7 +1321,7 @@ class UniversalRosettaStone:
                         phrase = PhraseSignature(
                             modality=modality,
                             data=phrase_data,
-                            timestamp=phrase_start / self.sample_rate
+                            timestamp=phrase_start / self.sample_rate,
                         )
                         phrases.append(phrase)
                     except ValueError:
@@ -1279,7 +1348,7 @@ class UniversalRosettaStone:
                     phrase = PhraseSignature(
                         modality=modality,
                         data=phrase_data,
-                        timestamp=phrase_start / self.sample_rate
+                        timestamp=phrase_start / self.sample_rate,
                     )
                     phrases.append(phrase)
                 except ValueError:
@@ -1287,7 +1356,9 @@ class UniversalRosettaStone:
 
         return phrases
 
-    def _harmonic_similarity_merging(self, phrases: List[PhraseSignature], min_gap_samples: int) -> List[PhraseSignature]:
+    def _harmonic_similarity_merging(
+        self, phrases: List[PhraseSignature], min_gap_samples: int
+    ) -> List[PhraseSignature]:
         """Merge phrases with high harmonic similarity while preserving gaps."""
         if len(phrases) <= 1:
             return phrases
@@ -1296,17 +1367,19 @@ class UniversalRosettaStone:
         current_group = [phrases[0]]
 
         for i in range(1, len(phrases)):
-            prev_phrase = phrases[i-1]
+            prev_phrase = phrases[i - 1]
             curr_phrase = phrases[i]
 
             # Check if phrases should be merged based on harmonic similarity
-            gap_samples = int(curr_phrase.timestamp * self.sample_rate) - \
-                         int(prev_phrase.timestamp * self.sample_rate + prev_phrase.data.shape[0])
+            gap_samples = int(curr_phrase.timestamp * self.sample_rate) - int(
+                prev_phrase.timestamp * self.sample_rate + prev_phrase.data.shape[0]
+            )
 
             # Only merge if gap is small AND harmonic similarity is high
-            if gap_samples <= min_gap_samples and \
-               (prev_phrase.modality == Modality.HARMONIC and curr_phrase.modality == Modality.HARMONIC):
-
+            if gap_samples <= min_gap_samples and (
+                prev_phrase.modality == Modality.HARMONIC
+                and curr_phrase.modality == Modality.HARMONIC
+            ):
                 # Calculate harmonic similarity
                 similarity = self._calculate_harmonic_similarity(prev_phrase, curr_phrase)
 
@@ -1334,14 +1407,16 @@ class UniversalRosettaStone:
 
         return merged_phrases
 
-    def _calculate_harmonic_similarity(self, phrase1: PhraseSignature, phrase2: PhraseSignature) -> float:
+    def _calculate_harmonic_similarity(
+        self, phrase1: PhraseSignature, phrase2: PhraseSignature
+    ) -> float:
         """Calculate harmonic similarity between two phrases."""
         # Only compare harmonic phrases
         if phrase1.modality != Modality.HARMONIC or phrase2.modality != Modality.HARMONIC:
             return 0.0
 
-        f1 = phrase1.features.get('f0_mean', 0)
-        f2 = phrase2.features.get('f0_mean', 0)
+        f1 = phrase1.features.get("f0_mean", 0)
+        f2 = phrase2.features.get("f0_mean", 0)
 
         if f1 == 0 or f2 == 0:
             return 0.0
@@ -1388,14 +1463,12 @@ class UniversalRosettaStone:
 
         # Create merged phrase
         merged_phrase = PhraseSignature(
-            modality=modality,
-            data=merged_audio,
-            timestamp=avg_timestamp
+            modality=modality, data=merged_audio, timestamp=avg_timestamp
         )
 
         # Calculate average features
         features = {}
-        for feature_name in ['f0_mean', 'f0_std', 'duration_ms', 'f0_range']:
+        for feature_name in ["f0_mean", "f0_std", "duration_ms", "f0_range"]:
             values = [phrase.features.get(feature_name, 0) for phrase in phrase_group]
             features[feature_name] = np.mean(values)
 
@@ -1403,9 +1476,9 @@ class UniversalRosettaStone:
 
         return merged_phrase
 
-    def build_vocabulary(self, phrases: List[PhraseSignature],
-                        eps: float = 0.3,
-                        min_samples: int = 2) -> Dict[int, List[PhraseSignature]]:
+    def build_vocabulary(
+        self, phrases: List[PhraseSignature], eps: float = 0.3, min_samples: int = 2
+    ) -> Dict[int, List[PhraseSignature]]:
         """
         Build vocabulary by clustering similar phrases.
 
@@ -1436,10 +1509,9 @@ class UniversalRosettaStone:
 
             # Extract feature matrix
             feature_names = list(modality_phrases[0].features.keys())
-            feature_matrix = np.array([
-                [phrase.features[name] for name in feature_names]
-                for phrase in modality_phrases
-            ])
+            feature_matrix = np.array(
+                [[phrase.features[name] for name in feature_names] for phrase in modality_phrases]
+            )
 
             # Handle NaN/inf values
             feature_matrix = np.nan_to_num(feature_matrix, nan=0.0, posinf=0.0, neginf=0.0)
@@ -1477,9 +1549,7 @@ class UniversalRosettaStone:
         return vocabulary_clusters
 
     def compute_cluster_persona_score(
-        self,
-        phrases: List[PhraseSignature],
-        persona_name: str
+        self, phrases: List[PhraseSignature], persona_name: str
     ) -> float:
         """
         Compute the average persona match score for a cluster of phrases.
@@ -1524,7 +1594,7 @@ class UniversalRosettaStone:
         phrases: List[PhraseSignature],
         eps: float = 0.3,
         min_samples: int = 2,
-        enable_persona_mapping: bool = True
+        enable_persona_mapping: bool = True,
     ) -> Dict[int, Dict[str, Any]]:
         """
         Build vocabulary using hybrid architecture: DBSCAN + persona mapping.
@@ -1577,7 +1647,7 @@ class UniversalRosettaStone:
 
             # Tier 2: Acoustic persona mapping (post-hoc)
             persona_scores = {}
-            dominant_persona = 'unclassified'
+            dominant_persona = "unclassified"
             dominant_score = 0.0
 
             if enable_persona_mapping and HAS_PERSONA_SUPPORT:
@@ -1592,14 +1662,14 @@ class UniversalRosettaStone:
                 # Only assign persona if score exceeds threshold
                 # Lower threshold (0.15) for limited feature sets
                 if dominant_score < 0.15:
-                    dominant_persona = 'unclassified'
+                    dominant_persona = "unclassified"
 
             hybrid_clusters[cluster_id] = {
-                'phrases': phrase_list,
-                'dominant_persona': dominant_persona,
-                'persona_scores': persona_scores,
-                'cluster_size': cluster_size,
-                'mean_features': mean_features
+                "phrases": phrase_list,
+                "dominant_persona": dominant_persona,
+                "persona_scores": persona_scores,
+                "cluster_size": cluster_size,
+                "mean_features": mean_features,
             }
 
         self.logger.info(
@@ -1610,10 +1680,7 @@ class UniversalRosettaStone:
         return hybrid_clusters
 
     def find_phrases_by_persona(
-        self,
-        clusters: Dict[int, Dict[str, Any]],
-        persona_name: str,
-        min_score: float = 0.3
+        self, clusters: Dict[int, Dict[str, Any]], persona_name: str, min_score: float = 0.3
     ) -> List[Tuple[int, List[PhraseSignature], float]]:
         """
         Find vocabulary clusters matching a specific acoustic persona.
@@ -1635,14 +1702,14 @@ class UniversalRosettaStone:
         matches = []
 
         for cluster_id, cluster_data in clusters.items():
-            cluster_data.get('dominant_persona', 'unclassified')
-            persona_scores = cluster_data.get('persona_scores', {})
+            cluster_data.get("dominant_persona", "unclassified")
+            persona_scores = cluster_data.get("persona_scores", {})
 
             # Check if cluster matches the requested persona
             score = persona_scores.get(persona_name, 0.0)
 
             if score >= min_score:
-                phrases = cluster_data['phrases']
+                phrases = cluster_data["phrases"]
                 matches.append((cluster_id, phrases, score))
 
         # Sort by score (descending)
@@ -1655,10 +1722,7 @@ class UniversalRosettaStone:
 
         return matches
 
-    def get_persona_summary(
-        self,
-        clusters: Dict[int, Dict[str, Any]]
-    ) -> Dict[str, Dict[str, Any]]:
+    def get_persona_summary(self, clusters: Dict[int, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
         """
         Generate a summary of persona distribution across the vocabulary.
 
@@ -1682,40 +1746,36 @@ class UniversalRosettaStone:
 
         # Initialize summary for all personas
         for persona_name in ACOUSTIC_PERSONAS.keys():
-            summary[persona_name] = {
-                'cluster_count': 0,
-                'total_phrases': 0,
-                'scores': []
-            }
-        summary['unclassified'] = {'cluster_count': 0, 'total_phrases': 0, 'scores': []}
+            summary[persona_name] = {"cluster_count": 0, "total_phrases": 0, "scores": []}
+        summary["unclassified"] = {"cluster_count": 0, "total_phrases": 0, "scores": []}
 
         # Aggregate cluster data
         for cluster_data in clusters.values():
-            dominant = cluster_data.get('dominant_persona', 'unclassified')
-            cluster_size = cluster_data.get('cluster_size', 0)
-            persona_scores = cluster_data.get('persona_scores', {})
+            dominant = cluster_data.get("dominant_persona", "unclassified")
+            cluster_size = cluster_data.get("cluster_size", 0)
+            persona_scores = cluster_data.get("persona_scores", {})
 
             if dominant in summary:
-                summary[dominant]['cluster_count'] += 1
-                summary[dominant]['total_phrases'] += cluster_size
+                summary[dominant]["cluster_count"] += 1
+                summary[dominant]["total_phrases"] += cluster_size
 
                 # Track scores for averaging
                 if dominant in persona_scores:
-                    summary[dominant]['scores'].append(persona_scores[dominant])
+                    summary[dominant]["scores"].append(persona_scores[dominant])
 
         # Compute average scores
         for persona_name, data in summary.items():
-            if data['scores']:
-                data['avg_score'] = np.mean(data['scores'])
+            if data["scores"]:
+                data["avg_score"] = np.mean(data["scores"])
             else:
-                data['avg_score'] = 0.0
-            del data['scores']  # Remove raw scores from output
+                data["avg_score"] = 0.0
+            del data["scores"]  # Remove raw scores from output
 
         return summary
 
-    def discover_grammar(self, audio: np.ndarray,
-                        min_gap_ms: float = 50.0,
-                        min_phrase_duration_ms: float = 20.0) -> Tuple[Dict[int, PhraseSignature], Counter]:
+    def discover_grammar(
+        self, audio: np.ndarray, min_gap_ms: float = 50.0, min_phrase_duration_ms: float = 20.0
+    ) -> Tuple[Dict[int, PhraseSignature], Counter]:
         """
         Discover syntactic rules from audio.
 
@@ -1742,7 +1802,7 @@ class UniversalRosettaStone:
         sequence = []
         for phrase in phrases:
             # Find nearest cluster
-            min_distance = float('inf')
+            min_distance = float("inf")
             nearest_cluster = None
 
             for cluster_id, vocab_phrase in self.vocabulary.items():
@@ -1757,7 +1817,7 @@ class UniversalRosettaStone:
         # Build transition matrix
         self.grammar = Counter()
         for i in range(len(sequence) - 1):
-            transition = (sequence[i], sequence[i+1])
+            transition = (sequence[i], sequence[i + 1])
             self.grammar[transition] += 1
 
         self.logger.info(f"Discovered grammar with {len(self.grammar)} unique transitions")
@@ -1769,31 +1829,34 @@ class UniversalRosettaStone:
             return {}
 
         stats = {
-            'total_phrases': len(self.vocabulary),
-            'modality_distribution': defaultdict(int),
-            'feature_statistics': defaultdict(dict)
+            "total_phrases": len(self.vocabulary),
+            "modality_distribution": defaultdict(int),
+            "feature_statistics": defaultdict(dict),
         }
 
         # Count by modality
         for phrase in self.vocabulary.values():
-            stats['modality_distribution'][phrase.modality.name] += 1
+            stats["modality_distribution"][phrase.modality.name] += 1
 
         # Feature statistics
         for feature_name in self.vocabulary.values()[0].features.keys():
             values = [phrase.features[feature_name] for phrase in self.vocabulary.values()]
-            stats['feature_statistics'][feature_name] = {
-                'mean': np.mean(values),
-                'std': np.std(values),
-                'min': np.min(values),
-                'max': np.max(values)
+            stats["feature_statistics"][feature_name] = {
+                "mean": np.mean(values),
+                "std": np.std(values),
+                "min": np.min(values),
+                "max": np.max(values),
             }
 
         return dict(stats)
 
-    def _pyin_phrase_segmentation(self, audio: np.ndarray,
-                                   window_size_ms: float = 30.0,
-                                   hop_size_ms: float = 10.0,
-                                   f0_threshold: float = 50.0) -> List[PhraseSignature]:
+    def _pyin_phrase_segmentation(
+        self,
+        audio: np.ndarray,
+        window_size_ms: float = 30.0,
+        hop_size_ms: float = 10.0,
+        f0_threshold: float = 50.0,
+    ) -> List[PhraseSignature]:
         """
         Segment audio into phrases using sliding window PYIN analysis.
 
@@ -1815,21 +1878,23 @@ class UniversalRosettaStone:
             # Fallback to energy-based segmentation if librosa not available
             return self._energy_based_segmentation(
                 audio,
-                int(20 * self.sample_rate / 1000)  # 20ms min duration
+                int(20 * self.sample_rate / 1000),  # 20ms min duration
             )
 
         window_size_samples = int(window_size_ms * self.sample_rate / 1000)
         hop_size_samples = int(hop_size_ms * self.sample_rate / 1000)
 
         # Pad audio to handle edge cases
-        padded_audio = np.pad(audio, (window_size_samples//2, window_size_samples//2), mode='reflect')
+        padded_audio = np.pad(
+            audio, (window_size_samples // 2, window_size_samples // 2), mode="reflect"
+        )
 
         phrases = []
         current_phrase_start = 0
         current_phrase_f0s = []
 
         for i in range(0, len(audio) - window_size_samples + 1, hop_size_samples):
-            window_start = i + window_size_samples//2
+            window_start = i + window_size_samples // 2
             window_end = window_start + window_size_samples
             window_audio = padded_audio[window_start:window_end]
 
@@ -1837,11 +1902,11 @@ class UniversalRosettaStone:
             try:
                 f0, voiced_flag, voiced_prob = librosa.pyin(
                     window_audio,
-                    fmin=500,   # Lower min for marmosets
-                    fmax=12000, # Higher max for marmosets
+                    fmin=500,  # Lower min for marmosets
+                    fmax=12000,  # Higher max for marmosets
                     frame_length=window_size_samples,
                     hop_length=hop_size_samples,
-                    win_length=window_size_samples
+                    win_length=window_size_samples,
                 )
 
                 # Use the median F0 of voiced frames
@@ -1861,10 +1926,11 @@ class UniversalRosettaStone:
                     # 1. F0 drops to zero (end of harmonic phrase)
                     # 2. F0 changes abruptly (> 20% change)
                     # 3. Energy drops significantly
-                    if (current_f0 < f0_threshold and prev_f0 >= f0_threshold) or \
-                       (prev_f0 > f0_threshold and current_f0 > 0 and
-                        abs(current_f0 - prev_f0) / prev_f0 > 0.2):
-
+                    if (current_f0 < f0_threshold and prev_f0 >= f0_threshold) or (
+                        prev_f0 > f0_threshold
+                        and current_f0 > 0
+                        and abs(current_f0 - prev_f0) / prev_f0 > 0.2
+                    ):
                         # Create phrase from stable region
                         if i - current_phrase_start > window_size_samples:  # Minimum phrase length
                             phrase_data = audio[current_phrase_start:i]
@@ -1875,8 +1941,12 @@ class UniversalRosettaStone:
 
                                 # Calculate phrase features
                                 if modality == Modality.HARMONIC and len(current_phrase_f0s) > 1:
-                                    f0_mean = np.mean([f for f in current_phrase_f0s[:-1] if f > f0_threshold])
-                                    f0_std = np.std([f for f in current_phrase_f0s[:-1] if f > f0_threshold])
+                                    f0_mean = np.mean(
+                                        [f for f in current_phrase_f0s[:-1] if f > f0_threshold]
+                                    )
+                                    f0_std = np.std(
+                                        [f for f in current_phrase_f0s[:-1] if f > f0_threshold]
+                                    )
                                 else:
                                     f0_mean = 0
                                     f0_std = 0
@@ -1884,13 +1954,13 @@ class UniversalRosettaStone:
                                 phrase = PhraseSignature(
                                     modality=modality,
                                     data=phrase_data,
-                                    timestamp=current_phrase_start / self.sample_rate
+                                    timestamp=current_phrase_start / self.sample_rate,
                                 )
                                 phrase.features = {
-                                    'f0_mean': f0_mean,
-                                    'f0_std': f0_std,
-                                    'duration_ms': len(phrase_data) / self.sample_rate * 1000,
-                                    'f0_range': 0  # Will be calculated later
+                                    "f0_mean": f0_mean,
+                                    "f0_std": f0_std,
+                                    "duration_ms": len(phrase_data) / self.sample_rate * 1000,
+                                    "f0_range": 0,  # Will be calculated later
                                 }
 
                                 phrases.append(phrase)
@@ -1913,13 +1983,13 @@ class UniversalRosettaStone:
                 phrase = PhraseSignature(
                     modality=modality,
                     data=phrase_data,
-                    timestamp=current_phrase_start / self.sample_rate
+                    timestamp=current_phrase_start / self.sample_rate,
                 )
                 phrase.features = {
-                    'f0_mean': 0,
-                    'f0_std': 0,
-                    'duration_ms': len(phrase_data) / self.sample_rate * 1000,
-                    'f0_range': 0
+                    "f0_mean": 0,
+                    "f0_std": 0,
+                    "duration_ms": len(phrase_data) / self.sample_rate * 1000,
+                    "f0_range": 0,
                 }
                 phrases.append(phrase)
             except ValueError:
@@ -1927,9 +1997,9 @@ class UniversalRosettaStone:
 
         return phrases
 
-    def detect_sentences_pelt(self, audio: np.ndarray,
-                             max_sentences: int = 10,
-                           penalty: float = 10.0) -> List[int]:
+    def detect_sentences_pelt(
+        self, audio: np.ndarray, max_sentences: int = 10, penalty: float = 10.0
+    ) -> List[int]:
         """
         Detect sentence boundaries using PELT change point detection.
 
@@ -1953,7 +2023,7 @@ class UniversalRosettaStone:
         n_fft = 1024
         hop_length = 512
         stft = librosa.stft(audio, n_fft=n_fft, hop_length=hop_length)
-        spectral_energy = np.sum(np.abs(stft)**2, axis=0)
+        spectral_energy = np.sum(np.abs(stft) ** 2, axis=0)
 
         # PELT change point detection
         algo = rpt.Pelt(model="rbf").fit(spectral_energy)
@@ -1972,8 +2042,9 @@ class UniversalRosettaStone:
 
         return []
 
-    def create_sentences_from_vocalizations(self, audio_segments: List[np.ndarray],
-                                        segment_timestamps: List[float]) -> List['Sentence']:
+    def create_sentences_from_vocalizations(
+        self, audio_segments: List[np.ndarray], segment_timestamps: List[float]
+    ) -> List["Sentence"]:
         """
         Create sentences from individual vocalizations (recordings).
 
@@ -1992,10 +2063,7 @@ class UniversalRosettaStone:
         for i, (audio, timestamp) in enumerate(zip(audio_segments, segment_timestamps)):
             # Create a sentence for each vocalization
             sentence = Sentence(
-                sentence_id=i,
-                audio=audio,
-                timestamp=timestamp,
-                sample_rate=self.sample_rate
+                sentence_id=i, audio=audio, timestamp=timestamp, sample_rate=self.sample_rate
             )
 
             # Segment the vocalization into phrases using PYIN-based approach
@@ -2011,8 +2079,9 @@ class UniversalRosettaStone:
 
         return sentences
 
-    def discover_sentences(self, phrases: List['PhraseSignature'],
-                          gap_threshold_ms: float = 500.0) -> List[List['PhraseSignature']]:
+    def discover_sentences(
+        self, phrases: List["PhraseSignature"], gap_threshold_ms: float = 500.0
+    ) -> List[List["PhraseSignature"]]:
         """
         Legacy method - group phrases into sentences based on temporal proximity.
         Kept for backward compatibility.
@@ -2022,13 +2091,19 @@ class UniversalRosettaStone:
             return []
 
         # Sort phrases by timestamp
-        sorted_phrases = sorted(phrases, key=lambda p: p.timestamp if p.timestamp is not None else 0)
+        sorted_phrases = sorted(
+            phrases, key=lambda p: p.timestamp if p.timestamp is not None else 0
+        )
 
         sentences = []
         current_sentence = [sorted_phrases[0]]
 
         for i in range(1, len(sorted_phrases)):
-            gap = sorted_phrases[i].timestamp - current_sentence[-1].timestamp if sorted_phrases[i].timestamp and current_sentence[-1].timestamp else float('inf')
+            gap = (
+                sorted_phrases[i].timestamp - current_sentence[-1].timestamp
+                if sorted_phrases[i].timestamp and current_sentence[-1].timestamp
+                else float("inf")
+            )
 
             if gap > gap_threshold_ms:
                 if len(current_sentence) >= 2:
@@ -2042,19 +2117,22 @@ class UniversalRosettaStone:
 
         return sentences
 
-    def _get_phrase_start_time(self, phrase: 'PhraseSignature') -> float:
+    def _get_phrase_start_time(self, phrase: "PhraseSignature") -> float:
         """Get the start time of a phrase in samples."""
         return phrase.timestamp if phrase.timestamp is not None else 0
 
-    def _get_phrase_end_time(self, phrase: 'PhraseSignature') -> float:
+    def _get_phrase_end_time(self, phrase: "PhraseSignature") -> float:
         """Get the end time of a phrase in samples."""
         start_time = self._get_phrase_start_time(phrase)
-        duration_samples = int(phrase.features.get('duration_ms', 0) * self.sample_rate / 1000)
+        duration_samples = int(phrase.features.get("duration_ms", 0) * self.sample_rate / 1000)
         return start_time + duration_samples
 
-    def detect_superposition(self, phrases: List['PhraseSignature'],
-                           min_overlap_ratio: float = 0.3,
-                           same_recording_only: bool = True) -> List[List[str]]:
+    def detect_superposition(
+        self,
+        phrases: List["PhraseSignature"],
+        min_overlap_ratio: float = 0.3,
+        same_recording_only: bool = True,
+    ) -> List[List[str]]:
         """
         Detect superposition (temporal overlap) between phrases.
 
@@ -2076,7 +2154,7 @@ class UniversalRosettaStone:
                 recording_id = str(phrase.timestamp // 10000)  # Group by 10-second windows
                 recording_groups[recording_id].append(phrase)
         else:
-            recording_groups = {'all': phrases}
+            recording_groups = {"all": phrases}
 
         for recording_id, recording_phrases in recording_groups.items():
             n_phrases = len(recording_phrases)
@@ -2087,23 +2165,29 @@ class UniversalRosettaStone:
                     phrase_b = recording_phrases[j]
 
                     # Check temporal overlap
-                    overlap_start = max(self._get_phrase_start_time(phrase_a),
-                                      self._get_phrase_start_time(phrase_b))
-                    overlap_end = min(self._get_phrase_end_time(phrase_a),
-                                    self._get_phrase_end_time(phrase_b))
+                    overlap_start = max(
+                        self._get_phrase_start_time(phrase_a), self._get_phrase_start_time(phrase_b)
+                    )
+                    overlap_end = min(
+                        self._get_phrase_end_time(phrase_a), self._get_phrase_end_time(phrase_b)
+                    )
 
                     overlap_duration = max(0, overlap_end - overlap_start)
 
                     if overlap_duration > 0:
                         # Calculate overlap ratio
-                        min_duration = min(phrase_a.features.get('duration_ms', 0),
-                                         phrase_b.features.get('duration_ms', 0))
+                        min_duration = min(
+                            phrase_a.features.get("duration_ms", 0),
+                            phrase_b.features.get("duration_ms", 0),
+                        )
                         overlap_ratio = overlap_duration / (min_duration * self.sample_rate / 1000)
 
                         if overlap_ratio >= min_overlap_ratio:
                             # Check harmonic compatibility (optional for same modality)
                             if phrase_a.modality == phrase_b.modality:
-                                superposition_groups.append([phrase_a.__repr__(), phrase_b.__repr__()])
+                                superposition_groups.append(
+                                    [phrase_a.__repr__(), phrase_b.__repr__()]
+                                )
 
         self.logger.info(f"Detected {len(superposition_groups)} superposition groups")
         return superposition_groups
@@ -2133,53 +2217,59 @@ class UniversalRosettaStone:
         if len(G.nodes) > 0:
             try:
                 # Basic metrics
-                metrics['num_nodes'] = len(G.nodes)
-                metrics['num_edges'] = len(G.edges)
-                metrics['density'] = nx.density(G)
+                metrics["num_nodes"] = len(G.nodes)
+                metrics["num_edges"] = len(G.edges)
+                metrics["density"] = nx.density(G)
 
                 # Clustering coefficient
                 if len(G.nodes) > 2:
                     undirected_G = G.to_undirected()
-                    metrics['avg_clustering'] = nx.average_clustering(undirected_G)
+                    metrics["avg_clustering"] = nx.average_clustering(undirected_G)
 
                     # Path length
                     if nx.is_connected(undirected_G):
-                        metrics['avg_path_length'] = nx.average_shortest_path_length(undirected_G)
+                        metrics["avg_path_length"] = nx.average_shortest_path_length(undirected_G)
                     else:
                         # Handle disconnected components
                         components = list(nx.connected_components(undirected_G))
                         largest_component = max(components, key=len)
                         largest_subgraph = undirected_G.subgraph(largest_component)
-                        metrics['avg_path_length'] = nx.average_shortest_path_length(largest_subgraph)
+                        metrics["avg_path_length"] = nx.average_shortest_path_length(
+                            largest_subgraph
+                        )
 
                     # Small-world coefficient
                     random_graph = nx.gnm_random_graph(len(G.nodes), len(G.edges))
                     random_clustering = nx.average_clustering(random_graph)
-                    random_path_length = nx.average_shortest_path_length(random_graph.to_undirected())
+                    random_path_length = nx.average_shortest_path_length(
+                        random_graph.to_undirected()
+                    )
 
                     if random_path_length > 0:
-                        metrics['small_world_sigma'] = (metrics['avg_clustering'] / random_clustering) * \
-                                                     (random_path_length / metrics['avg_path_length'])
+                        metrics["small_world_sigma"] = (
+                            metrics["avg_clustering"] / random_clustering
+                        ) * (random_path_length / metrics["avg_path_length"])
                     else:
-                        metrics['small_world_sigma'] = 0
+                        metrics["small_world_sigma"] = 0
 
                     # Modularity
                     try:
                         communities = nx.community.greedy_modularity_communities(undirected_G)
-                        metrics['num_communities'] = len(communities)
-                        metrics['modularity'] = nx.community.modularity(undirected_G, communities)
+                        metrics["num_communities"] = len(communities)
+                        metrics["modularity"] = nx.community.modularity(undirected_G, communities)
                     except:
-                        metrics['num_communities'] = 0
-                        metrics['modularity'] = 0
+                        metrics["num_communities"] = 0
+                        metrics["modularity"] = 0
 
             except Exception as e:
                 self.logger.warning(f"Error computing network metrics: {e}")
-                metrics = {'num_nodes': len(G.nodes), 'num_edges': len(G.edges)}
+                metrics = {"num_nodes": len(G.nodes), "num_edges": len(G.edges)}
 
         return metrics
 
-    def species_specific_validation(self, phrases: List['PhraseSignature'],
-                                  species_type: str = 'harmonic') -> Dict[str, Any]:
+    def species_specific_validation(
+        self, phrases: List["PhraseSignature"], species_type: str = "harmonic"
+    ) -> Dict[str, Any]:
         """
         Perform species-specific validation including harmonic affirmation and compositional validation.
 
@@ -2191,18 +2281,22 @@ class UniversalRosettaStone:
             Dictionary with validation results
         """
         validation_results = {
-            'species_type': species_type,
-            'harmonic_affirmation': {},
-            'compositional_validation': {}
+            "species_type": species_type,
+            "harmonic_affirmation": {},
+            "compositional_validation": {},
         }
 
-        if species_type == 'harmonic' and phrases:
+        if species_type == "harmonic" and phrases:
             # Harmonic affirmation
             harmonic_phrases = [p for p in phrases if p.modality == Modality.HARMONIC]
 
             if harmonic_phrases:
                 # Check F0 similarity within harmonic series
-                f0_values = [p.features.get('f0_mean', 0) for p in harmonic_phrases if p.features.get('f0_mean', 0) > 0]
+                f0_values = [
+                    p.features.get("f0_mean", 0)
+                    for p in harmonic_phrases
+                    if p.features.get("f0_mean", 0) > 0
+                ]
 
                 if f0_values:
                     # Group by harmonic similarity (threshold: 20% of fundamental)
@@ -2212,20 +2306,21 @@ class UniversalRosettaStone:
                     harmonic_groups = defaultdict(list)
                     for i, f0 in enumerate(f0_values):
                         if abs(f0 - fundamental_freq) <= harmonic_threshold:
-                            harmonic_groups['fundamental'].append(i)
-                        elif abs(f0 - 2*fundamental_freq) <= harmonic_threshold:
-                            harmonic_groups['second_harmonic'].append(i)
-                        elif abs(f0 - 3*fundamental_freq) <= harmonic_threshold:
-                            harmonic_groups['third_harmonic'].append(i)
+                            harmonic_groups["fundamental"].append(i)
+                        elif abs(f0 - 2 * fundamental_freq) <= harmonic_threshold:
+                            harmonic_groups["second_harmonic"].append(i)
+                        elif abs(f0 - 3 * fundamental_freq) <= harmonic_threshold:
+                            harmonic_groups["third_harmonic"].append(i)
                         else:
-                            harmonic_groups['non_harmonic'].append(i)
+                            harmonic_groups["non_harmonic"].append(i)
 
-                    validation_results['harmonic_affirmation'] = {
-                        'total_harmonic_phrases': len(harmonic_phrases),
-                        'fundamental_freq': fundamental_freq,
-                        'harmonic_groups': dict(harmonic_groups),
-                        'harmonic_ratio': len([g for g in harmonic_groups.values() if g]) / len(f0_values),
-                        'threshold': harmonic_threshold
+                    validation_results["harmonic_affirmation"] = {
+                        "total_harmonic_phrases": len(harmonic_phrases),
+                        "fundamental_freq": fundamental_freq,
+                        "harmonic_groups": dict(harmonic_groups),
+                        "harmonic_ratio": len([g for g in harmonic_groups.values() if g])
+                        / len(f0_values),
+                        "threshold": harmonic_threshold,
                     }
 
         # Compositional validation (Chi-squared test for sequential dependence)
@@ -2244,24 +2339,29 @@ class UniversalRosettaStone:
                 observed_counts = [sum(transitions[fp].values()) for fp in from_phrase_types]
                 expected_count = total_transitions / len(from_phrase_types)
 
-                chi_squared = sum((obs - expected_count) ** 2 / expected_count for obs in observed_counts)
+                chi_squared = sum(
+                    (obs - expected_count) ** 2 / expected_count for obs in observed_counts
+                )
                 degrees_of_freedom = len(from_phrase_types) - 1
-                p_value = 1 - 0.5 * (1 + np.sign(chi_squared - degrees_of_freedom) *
-                                     (1 - np.exp(-0.5 * chi_squared / degrees_of_freedom)))
+                p_value = 1 - 0.5 * (
+                    1
+                    + np.sign(chi_squared - degrees_of_freedom)
+                    * (1 - np.exp(-0.5 * chi_squared / degrees_of_freedom))
+                )
 
-                validation_results['compositional_validation'] = {
-                    'chi_squared': chi_squared,
-                    'degrees_of_freedom': degrees_of_freedom,
-                    'p_value': max(0, min(1, p_value)),  # Clamp to [0,1]
-                    'total_transitions': total_transitions,
-                    'uniform_p_value': p_value < 0.05  # Significant if < 0.05
+                validation_results["compositional_validation"] = {
+                    "chi_squared": chi_squared,
+                    "degrees_of_freedom": degrees_of_freedom,
+                    "p_value": max(0, min(1, p_value)),  # Clamp to [0,1]
+                    "total_transitions": total_transitions,
+                    "uniform_p_value": p_value < 0.05,  # Significant if < 0.05
                 }
 
         return validation_results
 
-    def mixed_structure_analysis(self, phrases: List['PhraseSignature'],
-                               grammar: Counter,
-                               gap_threshold_ms: float = 500.0) -> Dict[str, Any]:
+    def mixed_structure_analysis(
+        self, phrases: List["PhraseSignature"], grammar: Counter, gap_threshold_ms: float = 500.0
+    ) -> Dict[str, Any]:
         """
         Analyze mixed structure combining sequential and superpositional elements.
 
@@ -2281,7 +2381,9 @@ class UniversalRosettaStone:
 
         # Sentence discovery for sequential structure
         sentences = self.discover_sentences(phrases, gap_threshold_ms)
-        sequential_ratio = len(sentences) / max(1, len(phrases) / 2)  # Normalize by expected sentences
+        sequential_ratio = len(sentences) / max(
+            1, len(phrases) / 2
+        )  # Normalize by expected sentences
 
         # Superposition analysis
         superposition_groups = self.detect_superposition(phrases)
@@ -2295,42 +2397,49 @@ class UniversalRosettaStone:
         for phrase in phrases:
             modality_counts[phrase.modality.name] += 1
 
-        results.update({
-            'sequential_phrases': sequential_phrases,
-            'sentences_discovered': len(sentences),
-            'sequential_ratio': sequential_ratio,
-            'superposition_groups': len(superposition_groups),
-            'superpositional_ratio': superpositional_ratio,
-            'mixed_structure_score': mixed_score,
-            'modality_distribution': dict(modality_counts),
-            'total_phrase_pairs': total_possible_pairs
-        })
+        results.update(
+            {
+                "sequential_phrases": sequential_phrases,
+                "sentences_discovered": len(sentences),
+                "sequential_ratio": sequential_ratio,
+                "superposition_groups": len(superposition_groups),
+                "superpositional_ratio": superpositional_ratio,
+                "mixed_structure_score": mixed_score,
+                "modality_distribution": dict(modality_counts),
+                "total_phrase_pairs": total_possible_pairs,
+            }
+        )
 
         # Compare with species from METHODOLOGY_SUMMARY.md
         if mixed_score > 0.5:
-            results['structure_category'] = 'High Mixed Complexity'
+            results["structure_category"] = "High Mixed Complexity"
         elif mixed_score > 0.1:
-            results['structure_category'] = 'Moderate Mixed Complexity'
+            results["structure_category"] = "Moderate Mixed Complexity"
         else:
-            results['structure_category'] = 'Low/Sequential Only'
+            results["structure_category"] = "Low/Sequential Only"
 
         # Compare with known species (approximate)
         if mixed_score >= 0.8:
-            results['comparison'] = 'Similar to Zebra Finch (0.90) or Chimpanzee (0.84)'
+            results["comparison"] = "Similar to Zebra Finch (0.90) or Chimpanzee (0.84)"
         elif mixed_score >= 0.3:
-            results['comparison'] = 'Similar to Human (0.36) - moderate complexity'
+            results["comparison"] = "Similar to Human (0.36) - moderate complexity"
         else:
-            results['comparison'] = 'Similar to Marmoset (0.00) - pure sequential'
+            results["comparison"] = "Similar to Marmoset (0.00) - pure sequential"
 
-        self.logger.info(f"Mixed structure score: {mixed_score:.3f} ({results['structure_category']})")
+        self.logger.info(
+            f"Mixed structure score: {mixed_score:.3f} ({results['structure_category']})"
+        )
         return results
 
-    def comprehensive_analysis(self, audio_segments: List[np.ndarray],
-                             segment_timestamps: List[float],
-                             gap_threshold_ms: float = 500.0,
-                             min_phrase_duration_ms: float = 20.0,
-                             species_type: Optional[str] = None,
-                             species_config: Optional[Dict] = None) -> Dict[str, Any]:
+    def comprehensive_analysis(
+        self,
+        audio_segments: List[np.ndarray],
+        segment_timestamps: List[float],
+        gap_threshold_ms: float = 500.0,
+        min_phrase_duration_ms: float = 20.0,
+        species_type: Optional[str] = None,
+        species_config: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
         """
         Perform comprehensive analysis including all missing components.
 
@@ -2348,21 +2457,21 @@ class UniversalRosettaStone:
         if species_config is None:
             # Default configuration for different species (from METHODOLOGY_SUMMARY.md)
             species_config = {
-                'marmoset': {'f0_bin': 200, 'duration_bin': 25, 'range_bin': 100},
-                'zebra_finch': {'f0_bin': 50, 'duration_bin': 50, 'range_bin': 100},
-                'chimpanzee': {'f0_bin': 100, 'duration_bin': 50, 'range_bin': 200},
-                'sperm_whale': {'f0_bin': 100, 'duration_bin': 100, 'range_bin': 0},
-                'egyptian_bat': {'f0_bin': 500, 'duration_bin': 25, 'range_bin': 1000}
+                "marmoset": {"f0_bin": 200, "duration_bin": 25, "range_bin": 100},
+                "zebra_finch": {"f0_bin": 50, "duration_bin": 50, "range_bin": 100},
+                "chimpanzee": {"f0_bin": 100, "duration_bin": 50, "range_bin": 200},
+                "sperm_whale": {"f0_bin": 100, "duration_bin": 100, "range_bin": 0},
+                "egyptian_bat": {"f0_bin": 500, "duration_bin": 25, "range_bin": 1000},
             }
 
         # Create sentences from vocalizations
         sentences = self.create_sentences_from_vocalizations(audio_segments, segment_timestamps)
 
         results = {
-            'basic_analysis': {
-                'total_sentences': len(sentences),
-                'total_phrases': sum(len(s.phrases) for s in sentences),
-                'atomic_units_discovered': 0
+            "basic_analysis": {
+                "total_sentences": len(sentences),
+                "total_phrases": sum(len(s.phrases) for s in sentences),
+                "atomic_units_discovered": 0,
             }
         }
 
@@ -2380,9 +2489,9 @@ class UniversalRosettaStone:
             if species_type and species_type in species_config:
                 config = species_config[species_type]
                 sentence.discover_atomic_units(
-                    f0_bin_size=config['f0_bin'],
-                    duration_bin_size=config['duration_bin'],
-                    range_bin_size=config['range_bin']
+                    f0_bin_size=config["f0_bin"],
+                    duration_bin_size=config["duration_bin"],
+                    range_bin_size=config["range_bin"],
                 )
             else:
                 # Default configuration
@@ -2396,61 +2505,75 @@ class UniversalRosettaStone:
         # Discover grammar across sentences
         vocabulary, grammar = self.discover_grammar_from_sentences(sentences)
 
-        results['basic_analysis'].update({
-            'vocabulary_size': len(vocabulary),
-            'grammar_rules': len(grammar),
-            'atomic_units_discovered': len(all_atomic_units)
-        })
+        results["basic_analysis"].update(
+            {
+                "vocabulary_size": len(vocabulary),
+                "grammar_rules": len(grammar),
+                "atomic_units_discovered": len(all_atomic_units),
+            }
+        )
 
         # Sentence-level analysis
-        results['sentence_analysis'] = []
+        results["sentence_analysis"] = []
         for sentence in sentences:
             sentence_result = {
-                'sentence_id': sentence.sentence_id,
-                'phrases': len(sentence.phrases),
-                'atomic_units': len(sentence.atomic_units),
-                'top_atomic_units': dict(list(sentence.atomic_units.items())[:5])  # Top 5
+                "sentence_id": sentence.sentence_id,
+                "phrases": len(sentence.phrases),
+                "atomic_units": len(sentence.atomic_units),
+                "top_atomic_units": dict(list(sentence.atomic_units.items())[:5]),  # Top 5
             }
-            results['sentence_analysis'].append(sentence_result)
+            results["sentence_analysis"].append(sentence_result)
 
         # Cross-sentence grammar discovery
         if sentences:
             # Superposition detection within each sentence
             all_superpositions = []
             for sentence in sentences:
-                sentence_superpositions = self.detect_superposition(sentence.phrases, same_recording_only=True)
+                sentence_superpositions = self.detect_superposition(
+                    sentence.phrases, same_recording_only=True
+                )
                 all_superpositions.extend(sentence_superpositions)
 
             # Network metrics
-            results['network_metrics'] = self.compute_network_metrics(grammar)
+            results["network_metrics"] = self.compute_network_metrics(grammar)
 
             # Species-specific validation
             if species_type:
-                results['species_validation'] = self.species_specific_validation(all_phrases, species_type)
+                results["species_validation"] = self.species_specific_validation(
+                    all_phrases, species_type
+                )
 
             # Mixed structure analysis
-            results['mixed_structure'] = self.mixed_structure_analysis(all_phrases, grammar, gap_threshold_ms)
+            results["mixed_structure"] = self.mixed_structure_analysis(
+                all_phrases, grammar, gap_threshold_ms
+            )
 
             # Cross-sentence superposition analysis
-            results['superposition_detection'] = {
-                'total_groups': len(all_superpositions),
-                'groups_per_sentence': [len(self.detect_superposition(s.phrases)) for s in sentences],
-                'average_superposition_rate': len(all_superpositions) / max(1, len(all_phrases))
+            results["superposition_detection"] = {
+                "total_groups": len(all_superpositions),
+                "groups_per_sentence": [
+                    len(self.detect_superposition(s.phrases)) for s in sentences
+                ],
+                "average_superposition_rate": len(all_superpositions) / max(1, len(all_phrases)),
             }
 
         # Overall statistics
-        results['summary'] = {
-            'species_type': species_type,
-            'total_vocalizations': len(sentences),
-            'total_phrases': len(all_phrases),
-            'unique_atomic_units': len(all_atomic_units),
-            'grammar_transitions': sum(grammar.values()),
-            'average_phrases_per_vocalization': len(all_phrases) / len(sentences) if sentences else 0
+        results["summary"] = {
+            "species_type": species_type,
+            "total_vocalizations": len(sentences),
+            "total_phrases": len(all_phrases),
+            "unique_atomic_units": len(all_atomic_units),
+            "grammar_transitions": sum(grammar.values()),
+            "average_phrases_per_vocalization": len(all_phrases) / len(sentences)
+            if sentences
+            else 0,
         }
 
         return results
 
-    def discover_grammar_from_sentences(self, sentences: List[Sentence]) -> Tuple[Dict[int, PhraseSignature], Counter]:
+    def discover_grammar_from_sentences(
+        self, sentences: List[Sentence]
+    ) -> Tuple[Dict[int, PhraseSignature], Counter]:
         """
         Discover grammar patterns across sentences.
 
@@ -2488,7 +2611,7 @@ class UniversalRosettaStone:
             sequence = []
             for phrase in sentence.phrases:
                 # Find the nearest atomic unit/vocabulary entry
-                min_distance = float('inf')
+                min_distance = float("inf")
                 nearest_phrase_id = None
 
                 for vocab_id, vocab_phrase in vocabulary.items():
@@ -2532,10 +2655,10 @@ class UniversalRosettaStone:
         """
         if not phrases:
             return {
-                'transition_matrix': {},
-                'transition_counts': {},
-                'sequence_stats': {'total_phrases': 0},
-                'common_sequences': []
+                "transition_matrix": {},
+                "transition_counts": {},
+                "sequence_stats": {"total_phrases": 0},
+                "common_sequences": [],
             }
 
         # Extract modality sequence
@@ -2555,7 +2678,9 @@ class UniversalRosettaStone:
         for from_mod in Modality:
             from_name = from_mod.name
             # Count total transitions from this modality
-            total_from = sum(count for (frm, to), count in transition_counts.items() if frm == from_name)
+            total_from = sum(
+                count for (frm, to), count in transition_counts.items() if frm == from_name
+            )
 
             if total_from > 0:
                 for to_mod in Modality:
@@ -2584,7 +2709,9 @@ class UniversalRosettaStone:
         avg_run_length = np.mean(run_lengths) if run_lengths else 0
 
         # Count alternations (modality changes)
-        alternations = sum(1 for i in range(n_phrases - 1) if modality_sequence[i] != modality_sequence[i + 1])
+        alternations = sum(
+            1 for i in range(n_phrases - 1) if modality_sequence[i] != modality_sequence[i + 1]
+        )
 
         # Compute entropy of modality distribution
         modality_probs = {m: count / n_phrases for m, count in modality_counts.items()}
@@ -2595,37 +2722,45 @@ class UniversalRosettaStone:
         for n in range(2, min(5, n_phrases + 1)):  # 2-grams to 4-grams
             ngram_counts = Counter()
             for i in range(n_phrases - n + 1):
-                ngram = tuple(modality_sequence[i:i+n])
+                ngram = tuple(modality_sequence[i : i + n])
                 ngram_counts[ngram] += 1
 
             for ngram, count in ngram_counts.most_common(3):
-                common_sequences.append({
-                    'sequence': [m.name for m in ngram],
-                    'length': n,
-                    'count': count,
-                    'frequency': count / (n_phrases - n + 1)
-                })
+                common_sequences.append(
+                    {
+                        "sequence": [m.name for m in ngram],
+                        "length": n,
+                        "count": count,
+                        "frequency": count / (n_phrases - n + 1),
+                    }
+                )
 
         # Compile results
         results = {
-            'transition_matrix': transition_matrix,
-            'transition_counts': {(frm, to): count for (frm, to), count in transition_counts.items()},
-            'sequence_stats': {
-                'total_phrases': n_phrases,
-                'unique_modalities': len(modality_counts),
-                'modality_distribution': dict(modality_counts),
-                'avg_run_length': avg_run_length,
-                'total_alternations': alternations,
-                'alternation_rate': alternations / (n_phrases - 1) if n_phrases > 1 else 0,
-                'entropy': entropy,
-                'max_entropy': np.log2(len(modality_counts)) if len(modality_counts) > 0 else 0,
-                'normalized_entropy': entropy / np.log2(len(modality_counts)) if len(modality_counts) > 1 else 0
+            "transition_matrix": transition_matrix,
+            "transition_counts": {
+                (frm, to): count for (frm, to), count in transition_counts.items()
             },
-            'common_sequences': common_sequences
+            "sequence_stats": {
+                "total_phrases": n_phrases,
+                "unique_modalities": len(modality_counts),
+                "modality_distribution": dict(modality_counts),
+                "avg_run_length": avg_run_length,
+                "total_alternations": alternations,
+                "alternation_rate": alternations / (n_phrases - 1) if n_phrases > 1 else 0,
+                "entropy": entropy,
+                "max_entropy": np.log2(len(modality_counts)) if len(modality_counts) > 0 else 0,
+                "normalized_entropy": entropy / np.log2(len(modality_counts))
+                if len(modality_counts) > 1
+                else 0,
+            },
+            "common_sequences": common_sequences,
         }
 
         return results
 
     def __repr__(self) -> str:
-        return (f"UniversalRosettaStone(vocabulary_size={len(self.vocabulary)}, "
-                f"grammar_rules={len(self.grammar)})")
+        return (
+            f"UniversalRosettaStone(vocabulary_size={len(self.vocabulary)}, "
+            f"grammar_rules={len(self.grammar)})"
+        )

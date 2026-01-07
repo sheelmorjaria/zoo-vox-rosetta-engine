@@ -51,22 +51,22 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
     print("   In production, contexts would come from field observations.")
     print("   This demonstrates the ANALYSIS METHOD, not real discoveries.\n")
 
-    phrases = db['species_data'][species]['phrases']
+    phrases = db["species_data"][species]["phrases"]
 
     # Context mapping based on acoustic properties
     context_mappings = {
-        'gritty': ['alarm', 'threat', 'aggression'],
-        'pure': ['contact', 'affiliation', 'feed'],
-        'bouncy': ['courtship', 'play'],
-        'sharp': ['startle', 'alarm', 'predator'],
-        'sustained': ['territory', 'long_range_contact'],
-        'transient': ['social', 'feed', 'foraging']
+        "gritty": ["alarm", "threat", "aggression"],
+        "pure": ["contact", "affiliation", "feed"],
+        "bouncy": ["courtship", "play"],
+        "sharp": ["startle", "alarm", "predator"],
+        "sustained": ["territory", "long_range_contact"],
+        "transient": ["social", "feed", "foraging"],
     }
 
     assigned_count = 0
 
     for phrase_key, phrase_data in phrases.items():
-        af = phrase_data['acoustic_features']
+        af = phrase_data["acoustic_features"]
 
         # Determine persona based on features
         best_persona = None
@@ -96,10 +96,10 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
             contexts_list = context_mappings[best_persona]
 
             # Create weighted distribution (first context is most common)
-            weights = [0.5, 0.3, 0.2][:len(contexts_list)]
+            weights = [0.5, 0.3, 0.2][: len(contexts_list)]
 
             # Assign context to occurrences
-            total_occurrences = phrase_data.get('total_occurrences', 1)
+            total_occurrences = phrase_data.get("total_occurrences", 1)
 
             # Distribute occurrences across contexts
             contexts = []
@@ -113,13 +113,15 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
                     remaining -= count
 
                 if count > 0:
-                    contexts.append({
-                        'context_name': ctx_name,
-                        'count': count,
-                        'percentage': 0.0  # Will be calculated
-                    })
+                    contexts.append(
+                        {
+                            "context_name": ctx_name,
+                            "count": count,
+                            "percentage": 0.0,  # Will be calculated
+                        }
+                    )
 
-            phrase_data['contexts'] = contexts
+            phrase_data["contexts"] = contexts
             assigned_count += 1
 
     print(f"✅ Assigned contexts to {assigned_count} phrases")
@@ -128,9 +130,9 @@ def assign_synthetic_contexts(db: Dict, species: str) -> Dict:
     print("\n📊 SAMPLE CONTEXT ASSIGNMENTS:")
     sample_count = 0
     for phrase_key, phrase_data in phrases.items():
-        if phrase_data.get('contexts'):
-            contexts = phrase_data['contexts']
-            sum(c['count'] for c in contexts)
+        if phrase_data.get("contexts"):
+            contexts = phrase_data["contexts"]
+            sum(c["count"] for c in contexts)
             ctx_str = ", ".join([f"{c['context_name']} ({c['count']})" for c in contexts[:3]])
             print(f"  {phrase_key}: {ctx_str}")
             sample_count += 1
@@ -199,10 +201,10 @@ def main():
     print("=" * 80)
 
     # Load database
-    db_path = '/home/sheel/birdsong_analysis/src/vocalization_database.json'
+    db_path = "/home/sheel/birdsong_analysis/src/vocalization_database.json"
     db = load_vocalization_database(db_path)
 
-    species = 'marmoset'
+    species = "marmoset"
 
     # Assign synthetic contexts (for demonstration)
     db = assign_synthetic_contexts(db, species)
@@ -228,9 +230,7 @@ def main():
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)
 
     # Discover persona semantics
-    persona_semantics = discover_persona_semantics(
-        associations, residuals, min_occurrences=3
-    )
+    persona_semantics = discover_persona_semantics(associations, residuals, min_occurrences=3)
 
     # Print summary
     print_summary_of_findings(persona_semantics)

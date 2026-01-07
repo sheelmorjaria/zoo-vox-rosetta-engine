@@ -61,6 +61,7 @@ import scipy.stats as stats
 
 class TestStatus(Enum):
     """Test execution status"""
+
     NOT_STARTED = 1
     RUNNING = 2
     COMPLETED = 3
@@ -70,6 +71,7 @@ class TestStatus(Enum):
 
 class AssignmentStrategy(Enum):
     """Assignment strategies for participants"""
+
     RANDOM = 1
     WEIGHTED_RANDOM = 2
     BLOCKED_RANDOM = 3
@@ -79,6 +81,7 @@ class AssignmentStrategy(Enum):
 @dataclass
 class Variant:
     """A/B test variant configuration"""
+
     variant_id: str
     name: str
     parameters: Dict[str, Any]
@@ -95,6 +98,7 @@ class Variant:
 @dataclass
 class Participant:
     """Test participant information"""
+
     participant_id: str
     assigned_variant: str
     variant_name: str
@@ -110,6 +114,7 @@ class Participant:
 @dataclass
 class TestResult:
     """Single test result"""
+
     participant_id: str
     variant_id: str
     timestamp: float
@@ -124,13 +129,15 @@ class TestResult:
 class ABTestingController:
     """Main A/B Testing Controller with Blind Mode"""
 
-    def __init__(self,
-                 experiment_name: str,
-                 blind_mode: bool = True,
-                 significance_threshold: float = 0.05,
-                 confidence_level: float = 0.95,
-                 assignment_strategy: AssignmentStrategy = AssignmentStrategy.RANDOM,
-                 min_sample_size: int = 30):
+    def __init__(
+        self,
+        experiment_name: str,
+        blind_mode: bool = True,
+        significance_threshold: float = 0.05,
+        confidence_level: float = 0.95,
+        assignment_strategy: AssignmentStrategy = AssignmentStrategy.RANDOM,
+        min_sample_size: int = 30,
+    ):
         """
         Initialize A/B Testing Controller
 
@@ -178,12 +185,14 @@ class ABTestingController:
         self.total_counts = defaultdict(int)
         self.metrics_history = defaultdict(lambda: deque(maxlen=100))
 
-    def create_variant(self,
-                      variant_id: str,
-                      name: str,
-                      parameters: Dict[str, Any],
-                      weight: float = 1.0,
-                      is_control: bool = False) -> Variant:
+    def create_variant(
+        self,
+        variant_id: str,
+        name: str,
+        parameters: Dict[str, Any],
+        weight: float = 1.0,
+        is_control: bool = False,
+    ) -> Variant:
         """Create a new test variant"""
         with self._lock:
             if variant_id in self.variants:
@@ -194,7 +203,7 @@ class ABTestingController:
                 name=name,
                 parameters=parameters,
                 weight=weight,
-                is_control=is_control
+                is_control=is_control,
             )
 
             self.variants[variant_id] = variant
@@ -205,8 +214,7 @@ class ABTestingController:
             self.logger.info(f"Created variant {variant_id}: {name}")
             return variant
 
-    def assign_participant(self, participant_id: str,
-                          group_metadata: Dict[str, Any] = None) -> str:
+    def assign_participant(self, participant_id: str, group_metadata: Dict[str, Any] = None) -> str:
         """Assign a participant to a variant"""
         with self._lock:
             if participant_id in self.participant_assignments:
@@ -228,7 +236,7 @@ class ABTestingController:
                 variant_name=f"Variant {variant_id}" if self.blind_mode else variant.name,
                 parameters={} if self.blind_mode else variant.parameters.copy(),
                 assignment_timestamp=time.time(),
-                group_metadata=group_metadata or {}
+                group_metadata=group_metadata or {},
             )
 
             # Store assignment
@@ -253,7 +261,8 @@ class ABTestingController:
 
             # Select from variants with minimum count to maintain balance
             balanced_variants = [
-                variant_id for variant_id, count in zip(self.variants.keys(), counts)
+                variant_id
+                for variant_id, count in zip(self.variants.keys(), counts)
                 if count == min_count
             ]
             return random.choice(balanced_variants)
@@ -262,10 +271,7 @@ class ABTestingController:
             # Default to random
             return random.choice(list(self.variants.keys()))
 
-    def record_result(self,
-                     participant_id: str,
-                     success: bool,
-                     metrics: Dict[str, Any] = None):
+    def record_result(self, participant_id: str, success: bool, metrics: Dict[str, Any] = None):
         """Record a test result for a participant"""
         with self._lock:
             if participant_id not in self.participant_assignments:
@@ -280,7 +286,7 @@ class ABTestingController:
                 variant_id=variant_id,
                 timestamp=time.time(),
                 success=success,
-                metrics=metrics or {}
+                metrics=metrics or {},
             )
 
             # Store result
@@ -332,7 +338,7 @@ class ABTestingController:
                 p_pooled = (successes_a + successes_b) / (n_a + n_b)
 
                 # Standard error
-                se = math.sqrt(p_pooled * (1 - p_pooled) * (1/n_a + 1/n_b))
+                se = math.sqrt(p_pooled * (1 - p_pooled) * (1 / n_a + 1 / n_b))
 
                 if se > 0:
                     z_score = (p_b - p_a) / se
@@ -351,7 +357,7 @@ class ABTestingController:
                 "success_rate_a": p_a,
                 "success_rate_b": p_b,
                 "sample_size_a": n_a,
-                "sample_size_b": n_b
+                "sample_size_b": n_b,
             }
 
     def calculate_confidence_intervals(self, variant_id: str) -> Dict[str, Any]:
@@ -371,9 +377,9 @@ class ABTestingController:
 
             # Wilson score interval
             z = stats.norm.ppf((1 + self.confidence_level) / 2)
-            denominator = 1 + z**2/n
-            centre = p + z**2/(2*n)
-            width = z * math.sqrt((p*(1-p) + z**2/(4*n))/n)
+            denominator = 1 + z**2 / n
+            centre = p + z**2 / (2 * n)
+            width = z * math.sqrt((p * (1 - p) + z**2 / (4 * n)) / n)
 
             lower = (centre - width) / denominator
             upper = (centre + width) / denominator
@@ -382,7 +388,7 @@ class ABTestingController:
                 "success_rate": p,
                 "confidence_interval": [max(0, lower), min(1, upper)],
                 "sample_size": n,
-                "confidence_level": self.confidence_level
+                "confidence_level": self.confidence_level,
             }
 
     def get_participant_info(self, participant_id: str) -> Optional[Dict[str, Any]]:
@@ -408,7 +414,7 @@ class ABTestingController:
                 "total_results": total_results,
                 "successful_results": successful_results,
                 "success_rate": successful_results / total_results if total_results > 0 else 0,
-                "group_metadata": participant.group_metadata
+                "group_metadata": participant.group_metadata,
             }
 
             return info
@@ -433,14 +439,14 @@ class ABTestingController:
                     "successful_results": successes,
                     "failed_results": failures,
                     "success_rate": successes / total if total > 0 else 0,
-                    "parameters": variant.parameters.copy()
+                    "parameters": variant.parameters.copy(),
                 }
 
             # Calculate significance between variants
             significance_tests = {}
             variant_ids = list(self.variants.keys())
             for i, variant_a in enumerate(variant_ids):
-                for variant_b in variant_ids[i+1:]:
+                for variant_b in variant_ids[i + 1 :]:
                     if variant_a in self.variants and variant_b in self.variants:
                         significance = self.calculate_significance(variant_a, variant_b)
                         significance_tests[f"{variant_a}_vs_{variant_b}"] = significance
@@ -456,39 +462,43 @@ class ABTestingController:
                 "significance_tests": significance_tests,
                 "start_time": self.experiment_start_time,
                 "end_time": self.experiment_end_time,
-                "duration_seconds": (self.experiment_end_time or time.time()) -
-                                   (self.experiment_start_time or 0)
+                "duration_seconds": (self.experiment_end_time or time.time())
+                - (self.experiment_start_time or 0),
             }
 
-    def export_results(self, format: str = 'json', filepath: str = None) -> Union[str, Dict[str, Any]]:
+    def export_results(
+        self, format: str = "json", filepath: str = None
+    ) -> Union[str, Dict[str, Any]]:
         """Export experiment results"""
         with self._lock:
             stats = self.get_experiment_stats()
 
-            if format.lower() == 'json':
+            if format.lower() == "json":
                 if filepath:
-                    with open(filepath, 'w') as f:
+                    with open(filepath, "w") as f:
                         json.dump(stats, f, indent=2, default=str)
                     return filepath
                 else:
                     return stats
 
-            elif format.lower() == 'csv':
+            elif format.lower() == "csv":
                 if not filepath:
                     filepath = f"ab_test_results_{self.experiment_name}.csv"
 
-                with open(filepath, 'w', newline='') as f:
+                with open(filepath, "w", newline="") as f:
                     writer = csv.writer(f)
-                    writer.writerow(['Variant', 'Total', 'Successes', 'Failures', 'Success Rate'])
+                    writer.writerow(["Variant", "Total", "Successes", "Failures", "Success Rate"])
 
-                    for variant_id, variant_data in stats['variants'].items():
-                        writer.writerow([
-                            variant_id,
-                            variant_data['total_participants'],
-                            variant_data['successful_results'],
-                            variant_data['failed_results'],
-                            f"{variant_data['success_rate']:.4f}"
-                        ])
+                    for variant_id, variant_data in stats["variants"].items():
+                        writer.writerow(
+                            [
+                                variant_id,
+                                variant_data["total_participants"],
+                                variant_data["successful_results"],
+                                variant_data["failed_results"],
+                                f"{variant_data['success_rate']:.4f}",
+                            ]
+                        )
 
                 return filepath
 
@@ -537,8 +547,9 @@ class ABTestingController:
     def _rebalance_assignments(self):
         """Rebalance participant assignments if needed"""
         # Calculate current distribution
-        variant_counts = {variant_id: len(self.test_results[variant_id])
-                         for variant_id in self.variants.keys()}
+        variant_counts = {
+            variant_id: len(self.test_results[variant_id]) for variant_id in self.variants.keys()
+        }
 
         # Check if rebalancing is needed
         max_count = max(variant_counts.values())
@@ -549,10 +560,9 @@ class ABTestingController:
             # In a real implementation, you might implement rebalancing logic here
             # For now, just log the need for rebalancing
 
-    def calculate_required_sample_size(self,
-                                     baseline_rate: float,
-                                     minimum_detectable_effect: float,
-                                     power: float = 0.8) -> int:
+    def calculate_required_sample_size(
+        self, baseline_rate: float, minimum_detectable_effect: float, power: float = 0.8
+    ) -> int:
         """Calculate required sample size for desired power"""
         # Using standard sample size calculation for two proportions
         z_alpha = stats.norm.ppf(1 - self.significance_threshold / 2)
@@ -562,10 +572,12 @@ class ABTestingController:
         p2 = baseline_rate + minimum_detectable_effect
 
         # Standard formula for two-sample proportion test
-        numerator = (z_alpha * math.sqrt(2 * p1 * (1 - p1)) +
-                    z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)))**2
+        numerator = (
+            z_alpha * math.sqrt(2 * p1 * (1 - p1))
+            + z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))
+        ) ** 2
 
-        denominator = (p2 - p1)**2
+        denominator = (p2 - p1) ** 2
 
         if denominator > 0:
             required_per_group = math.ceil(numerator / denominator)
@@ -579,9 +591,7 @@ class ABTestingController:
 def create_test_ab_testing_controller() -> ABTestingController:
     """Create an A/B Testing Controller for testing"""
     controller = ABTestingController(
-        experiment_name="test_experiment",
-        blind_mode=True,
-        significance_threshold=0.05
+        experiment_name="test_experiment", blind_mode=True, significance_threshold=0.05
     )
 
     # Create test variants

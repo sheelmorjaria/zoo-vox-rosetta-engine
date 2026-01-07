@@ -38,6 +38,7 @@ import warnings
 # Data Models
 # =============================================================================
 
+
 @dataclass
 class Vector20D:
     """
@@ -48,6 +49,7 @@ class Vector20D:
     - spectral_flux: Rate of spectral change (Spectral Dynamics)
     - harmonicity: Degree of periodicity (Grit Factor)
     """
+
     # === Fundamental (3 features) ===
     mean_f0_hz: float
     duration_ms: float
@@ -87,11 +89,8 @@ class Vector20D:
 # Shimmer (Amplitude Instability)
 # =============================================================================
 
-def calculate_shimmer(
-    audio: np.ndarray,
-    sr: int,
-    f0: Optional[np.ndarray] = None
-) -> float:
+
+def calculate_shimmer(audio: np.ndarray, sr: int, f0: Optional[np.ndarray] = None) -> float:
     """
     Calculate shimmer (amplitude instability).
 
@@ -125,7 +124,7 @@ def calculate_shimmer(
 
             # Extract F0 if not provided
             if f0 is None:
-                f0, _ = librosa.piptrack(y=audio, sr=sr, fmin=100, fmax=sr//2)
+                f0, _ = librosa.piptrack(y=audio, sr=sr, fmin=100, fmax=sr // 2)
                 # Get dominant pitch per frame
                 f0 = np.max(f0, axis=0)
 
@@ -167,11 +166,9 @@ def calculate_shimmer(
 # Spectral Flux (Texture Change)
 # =============================================================================
 
+
 def calculate_spectral_flux(
-    audio: np.ndarray,
-    sr: int,
-    n_fft: int = 2048,
-    hop_length: int = 512
+    audio: np.ndarray, sr: int, n_fft: int = 2048, hop_length: int = 512
 ) -> float:
     """
     Calculate spectral flux (rate of spectral change over time).
@@ -232,11 +229,9 @@ def calculate_spectral_flux(
 # Harmonicity (Tonal vs Noisy)
 # =============================================================================
 
+
 def calculate_harmonicity(
-    audio: np.ndarray,
-    sr: int,
-    fmin: float = 100.0,
-    fmax: Optional[float] = None
+    audio: np.ndarray, sr: int, fmin: float = 100.0, fmax: Optional[float] = None
 ) -> float:
     """
     Calculate harmonicity (degree of periodicity vs noise).
@@ -281,8 +276,8 @@ def calculate_harmonicity(
             # Calculate correlation
             if len(audio) > 0 and len(y_harmonic) > 0:
                 # Energy ratio
-                energy_total = np.mean(audio ** 2)
-                energy_harmonic = np.mean(y_harmonic ** 2)
+                energy_total = np.mean(audio**2)
+                energy_harmonic = np.mean(y_harmonic**2)
 
                 if energy_total > 1e-10:
                     harmonicity = energy_harmonic / energy_total
@@ -298,10 +293,8 @@ def calculate_harmonicity(
 # Combined Feature Extraction
 # =============================================================================
 
-def extract_micro_dynamics(
-    audio: np.ndarray,
-    sr: int
-) -> Tuple[float, float, float]:
+
+def extract_micro_dynamics(audio: np.ndarray, sr: int) -> Tuple[float, float, float]:
     """
     Extract all micro-dynamics features.
 
@@ -323,10 +316,8 @@ def extract_micro_dynamics(
 # Feature Interpretation
 # =============================================================================
 
-def interpret_nervousness(
-    jitter: float,
-    shimmer: float
-) -> str:
+
+def interpret_nervousness(jitter: float, shimmer: float) -> str:
     """
     Interpret the [Jitter, Shimmer] 2D vector.
 
@@ -359,10 +350,7 @@ def interpret_nervousness(
         return "Intermediate"
 
 
-def interpret_texture(
-    spectral_flux: float,
-    harmonicity: float
-) -> str:
+def interpret_texture(spectral_flux: float, harmonicity: float) -> str:
     """
     Interpret texture based on flux and harmonicity.
 

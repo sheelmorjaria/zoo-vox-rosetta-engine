@@ -8,7 +8,7 @@ import os
 import sys
 import unittest
 
-sys.path.append('src')
+sys.path.append("src")
 
 from realtime.deep_reinforcement_learning import (
     A2CAgent,
@@ -37,8 +37,8 @@ class TestDeepReinforcementLearning(unittest.TestCase):
     def setUp(self):
         """Set up test environment"""
         self.drl = DeepReinforcementLearning()
-        self.test_observation = {'features': [0.1, 0.2, 0.3, 0.4]}
-        self.test_action = {'type': 'vocalization', 'parameters': {'frequency': 1000}}
+        self.test_observation = {"features": [0.1, 0.2, 0.3, 0.4]}
+        self.test_action = {"type": "vocalization", "parameters": {"frequency": 1000}}
         self.test_reward = 0.5
         self.test_done = False
 
@@ -56,8 +56,8 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         # Test prediction
         prediction = env_model.predict(self.test_observation, self.test_action)
         self.assertIsInstance(prediction, dict)
-        self.assertIn('next_state', prediction)
-        self.assertIn('reward', prediction)
+        self.assertIn("next_state", prediction)
+        self.assertIn("reward", prediction)
 
     def test_policy_network(self):
         """Test policy network operations"""
@@ -82,7 +82,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
             action=self.test_action,
             reward=self.test_reward,
             next_observation=self.test_observation,
-            done=self.test_done
+            done=self.test_done,
         )
 
         # Sample experience
@@ -96,17 +96,17 @@ class TestDeepReinforcementLearning(unittest.TestCase):
     def test_exploration_strategy(self):
         """Test exploration strategies"""
         # Test epsilon-greedy
-        epsilon_greedy = ExplorationStrategy(strategy='epsilon_greedy', epsilon=0.1)
+        epsilon_greedy = ExplorationStrategy(strategy="epsilon_greedy", epsilon=0.1)
         action = epsilon_greedy.get_action(self.test_observation, lambda: self.test_action)
         self.assertIsInstance(action, dict)
 
         # Test boltzmann
-        boltzmann = ExplorationStrategy(strategy='boltzmann', temperature=1.0)
+        boltzmann = ExplorationStrategy(strategy="boltzmann", temperature=1.0)
         action = boltzmann.get_action(self.test_observation, lambda: self.test_action)
         self.assertIsInstance(action, dict)
 
         # Test ucb
-        ucb = ExplorationStrategy(strategy='ucb', c=1.0)
+        ucb = ExplorationStrategy(strategy="ucb", c=1.0)
         action = ucb.get_action(self.test_observation, lambda: self.test_action)
         self.assertIsInstance(action, dict)
 
@@ -118,7 +118,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         reward = reward_func.calculate_reward(
             observation=self.test_observation,
             action=self.test_action,
-            next_observation=self.test_observation
+            next_observation=self.test_observation,
         )
         self.assertIsInstance(reward, float)
 
@@ -127,7 +127,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         reward = shaped_reward_func.calculate_reward(
             observation=self.test_observation,
             action=self.test_action,
-            next_observation=self.test_observation
+            next_observation=self.test_observation,
         )
         self.assertIsInstance(reward, float)
 
@@ -141,7 +141,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
             action=self.test_action,
             reward=self.test_reward,
             next_observation=self.test_observation,
-            done=self.test_done
+            done=self.test_done,
         )
         self.assertIsInstance(loss, (float, type(None)))
 
@@ -150,10 +150,10 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         self.assertIsInstance(action, dict)
 
         # Test policy saving/loading
-        agent.save_policy('test_dqn_policy.pkl')
-        self.assertTrue(os.path.exists('test_dqn_policy.pkl'))
-        agent.load_policy('test_dqn_policy.pkl')
-        os.remove('test_dqn_policy.pkl')
+        agent.save_policy("test_dqn_policy.pkl")
+        self.assertTrue(os.path.exists("test_dqn_policy.pkl"))
+        agent.load_policy("test_dqn_policy.pkl")
+        os.remove("test_dqn_policy.pkl")
 
     def test_ppo_agent(self):
         """Test PPO agent implementation"""
@@ -161,8 +161,11 @@ class TestDeepReinforcementLearning(unittest.TestCase):
 
         # Test policy update
         trajectories = [
-            {'observations': [self.test_observation], 'actions': [self.test_action],
-             'rewards': [self.test_reward]}
+            {
+                "observations": [self.test_observation],
+                "actions": [self.test_action],
+                "rewards": [self.test_reward],
+            }
         ]
         policy_loss, value_loss = agent.update(trajectories)
         self.assertIsInstance(policy_loss, float)
@@ -182,7 +185,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
             action=self.test_action,
             reward=self.test_reward,
             next_observation=self.test_observation,
-            done=self.test_done
+            done=self.test_done,
         )
         self.assertIsInstance(loss, dict)
 
@@ -200,7 +203,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
             action=self.test_action,
             reward=self.test_reward,
             next_observation=self.test_observation,
-            done=self.test_done
+            done=self.test_done,
         )
         self.assertIsInstance(actor_loss, float)
         self.assertIsInstance(critic_loss, float)
@@ -214,13 +217,13 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         agent = HERAgent()
 
         # Test goal-conditioned learning
-        goal = {'target_frequency': 2000}
+        goal = {"target_frequency": 2000}
         goal_conditioned_loss = agent.learn_with_her(
             observation=self.test_observation,
             action=self.test_action,
             next_observation=self.test_observation,
             goal=goal,
-            achieved_goal=self.test_observation
+            achieved_goal=self.test_observation,
         )
         self.assertIsInstance(goal_conditioned_loss, float)
 
@@ -229,13 +232,13 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         multi_agent = MultiAgentLearner(num_agents=3)
 
         # Test communication
-        messages = multi_agent.communicate([0, 1, 2], 'exchange_info')
+        messages = multi_agent.communicate([0, 1, 2], "exchange_info")
         self.assertIsInstance(messages, list)
 
         # Test coordinated action
-        coordinated_action = multi_agent.get_coordinated_action([
-            self.test_observation, self.test_observation, self.test_observation
-        ])
+        coordinated_action = multi_agent.get_coordinated_action(
+            [self.test_observation, self.test_observation, self.test_observation]
+        )
         self.assertIsInstance(coordinated_action, dict)
 
     def test_meta_learner(self):
@@ -244,15 +247,13 @@ class TestDeepReinforcementLearning(unittest.TestCase):
 
         # Test meta-knowledge update
         meta_knowledge = meta_learner.update_meta_knowledge(
-            task_id='task1',
-            performance_metrics={'accuracy': 0.8}
+            task_id="task1", performance_metrics={"accuracy": 0.8}
         )
         self.assertIsInstance(meta_knowledge, dict)
 
         # Test fast adaptation
         adapted_policy = meta_learner.fast_adapt(
-            new_task_data=[self.test_observation],
-            num_adaptation_steps=5
+            new_task_data=[self.test_observation], num_adaptation_steps=5
         )
         self.assertIsNotNone(adapted_policy)
 
@@ -262,20 +263,14 @@ class TestDeepReinforcementLearning(unittest.TestCase):
 
         # Test safety validation
         is_safe = safety_checker.is_safe_action(
-            observation=self.test_observation,
-            action=self.test_action
+            observation=self.test_observation, action=self.test_action
         )
         self.assertIsInstance(is_safe, bool)
 
         # Test constraint violation detection
-        constraints = {
-            'min_frequency': 100,
-            'max_frequency': 10000,
-            'max_amplitude': 1.0
-        }
+        constraints = {"min_frequency": 100, "max_frequency": 10000, "max_amplitude": 1.0}
         violation = safety_checker.check_constraints(
-            action=self.test_action,
-            constraints=constraints
+            action=self.test_action, constraints=constraints
         )
         self.assertIsInstance(violation, list)
 
@@ -285,18 +280,14 @@ class TestDeepReinforcementLearning(unittest.TestCase):
 
         # Test task difficulty adjustment
         difficulty = scheduler.adjust_difficulty(
-            performance_metrics={'success_rate': 0.9},
-            current_difficulty=0.5
+            performance_metrics={"success_rate": 0.9}, current_difficulty=0.5
         )
         self.assertIsInstance(difficulty, float)
         self.assertGreaterEqual(difficulty, 0.0)
         self.assertLessEqual(difficulty, 1.0)
 
         # Test curriculum generation
-        curriculum = scheduler.generate_curriculum(
-            num_tasks=10,
-            complexity_range=(0.1, 1.0)
-        )
+        curriculum = scheduler.generate_curriculum(num_tasks=10, complexity_range=(0.1, 1.0))
         self.assertEqual(len(curriculum), 10)
 
     def test_ensemble_learner(self):
@@ -309,9 +300,9 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         self.assertEqual(len(predictions), 5)
 
         # Test ensemble update
-        update_loss = ensemble.update_ensemble([
-            self.test_observation, self.test_observation
-        ], [self.test_action, self.test_action])
+        update_loss = ensemble.update_ensemble(
+            [self.test_observation, self.test_observation], [self.test_action, self.test_action]
+        )
         self.assertIsInstance(update_loss, float)
 
     def test_integration_with_main_system(self):
@@ -340,7 +331,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         # Test policy evaluation
         evaluated_policy = self.drl.evaluate_policy(num_episodes=5)
         self.assertIsInstance(evaluated_policy, dict)
-        self.assertIn('average_reward', evaluated_policy)
+        self.assertIn("average_reward", evaluated_policy)
 
     def test_real_time_learning(self):
         """Test real-time learning capabilities"""
@@ -348,7 +339,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
 
         # Simulate real-time learning
         for i in range(100):
-            observation = {'features': [0.1 * i, 0.2 * i, 0.3 * i, 0.4 * i]}
+            observation = {"features": [0.1 * i, 0.2 * i, 0.3 * i, 0.4 * i]}
             action = self.drl.real_time_act(observation)
             reward = 0.5 * (i / 100)  # Simulated reward
 
@@ -357,19 +348,19 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         # Check learning progress
         progress = self.drl.get_learning_progress()
         self.assertIsInstance(progress, dict)
-        self.assertIn('episodes_completed', progress)
+        self.assertIn("episodes_completed", progress)
 
     def test_multi_objective_learning(self):
         """Test multi-objective reinforcement learning"""
         self.drl.setup_multi_objective(
-            objectives=['vocalization_accuracy', 'energy_efficiency', 'social_coherence']
+            objectives=["vocalization_accuracy", "energy_efficiency", "social_coherence"]
         )
 
         # Test multi-objective learning
         objectives_rewards = {
-            'vocalization_accuracy': 0.8,
-            'energy_efficiency': 0.6,
-            'social_coherence': 0.7
+            "vocalization_accuracy": 0.8,
+            "energy_efficiency": 0.6,
+            "social_coherence": 0.7,
         }
 
         combined_reward = self.drl.combine_objectives(objectives_rewards)
@@ -379,17 +370,15 @@ class TestDeepReinforcementLearning(unittest.TestCase):
     def test_transfer_learning(self):
         """Test transfer learning capabilities"""
         # Pre-train on source task
-        self.drl.pretrain_on_source_task(
-            source_data=[self.test_observation] * 100
-        )
+        self.drl.pretrain_on_source_task(source_data=[self.test_observation] * 100)
 
         # Transfer to target task
         transfer_performance = self.drl.transfer_to_target_task(
             target_data=[self.test_observation] * 50
         )
         self.assertIsInstance(transfer_performance, dict)
-        self.assertIn('improvement', transfer_performance)
+        self.assertIn("improvement", transfer_performance)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

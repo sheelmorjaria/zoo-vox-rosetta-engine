@@ -28,7 +28,7 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
     print("=" * 80)
 
     # Initialize phrase library
-    library = PhraseAudioLibrary(species='marmoset', sr=22050)
+    library = PhraseAudioLibrary(species="marmoset", sr=22050)
 
     # Define complete ascending frequency sentences
     # These represent the linguistic structure discovered in marmoset communication
@@ -39,144 +39,146 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
                 "phrase_key": "alarm_low_threat",
                 "f0_hz": 4200,
                 "context": "alarm",
-                "meaning": "Low-level threat detection"
+                "meaning": "Low-level threat detection",
             },
             {
                 "phrase_key": "alarm_medium_threat",
                 "f0_hz": 4600,
                 "context": "alarm",
-                "meaning": "Medium threat alert"
+                "meaning": "Medium threat alert",
             },
             {
                 "phrase_key": "alarm_high_threat",
                 "f0_hz": 5000,
                 "context": "alarm",
-                "meaning": "High threat warning"
+                "meaning": "High threat warning",
             },
             {
                 "phrase_key": "alarm_imminent_danger",
                 "f0_hz": 5400,
                 "context": "alarm",
-                "meaning": "Imminent danger"
+                "meaning": "Imminent danger",
             },
             {
                 "phrase_key": "alarm_emergency_response",
                 "f0_hz": 5800,
                 "context": "alarm",
-                "meaning": "Emergency response call"
-            }
+                "meaning": "Emergency response call",
+            },
         ],
         "Food Foraging Sentence": [
             {
                 "phrase_key": "food_discovery",
                 "f0_hz": 4000,
                 "context": "food",
-                "meaning": "Food discovered"
+                "meaning": "Food discovered",
             },
             {
                 "phrase_key": "food_interest",
                 "f0_hz": 4400,
                 "context": "food",
-                "meaning": "Showing interest in food"
+                "meaning": "Showing interest in food",
             },
             {
                 "phrase_key": "food_approach",
                 "f0_hz": 4800,
                 "context": "food",
-                "meaning": "Approaching food"
+                "meaning": "Approaching food",
             },
             {
                 "phrase_key": "food_acquisition",
                 "f0_hz": 5200,
                 "context": "food",
-                "meaning": "Acquiring food"
+                "meaning": "Acquiring food",
             },
             {
                 "phrase_key": "food_consumption_start",
                 "f0_hz": 5600,
                 "context": "food",
-                "meaning": "Beginning consumption"
+                "meaning": "Beginning consumption",
             },
             {
                 "phrase_key": "food_satisfaction",
                 "f0_hz": 6000,
                 "context": "food",
-                "meaning": "Food satisfaction"
-            }
+                "meaning": "Food satisfaction",
+            },
         ],
         "Social Bonding Sentence": [
             {
                 "phrase_key": "social_contact_initiation",
                 "f0_hz": 3800,
                 "context": "social",
-                "meaning": "Contact initiation"
+                "meaning": "Contact initiation",
             },
             {
                 "phrase_key": "social_greeting",
                 "f0_hz": 4200,
                 "context": "social",
-                "meaning": "Social greeting"
+                "meaning": "Social greeting",
             },
             {
                 "phrase_key": "social_engagement",
                 "f0_hz": 4600,
                 "context": "social",
-                "meaning": "Social engagement"
+                "meaning": "Social engagement",
             },
             {
                 "phrase_key": "social_cooperation",
                 "f0_hz": 5000,
                 "context": "social",
-                "meaning": "Cooperation signal"
+                "meaning": "Cooperation signal",
             },
             {
                 "phrase_key": "social_bonding",
                 "f0_hz": 5400,
                 "context": "social",
-                "meaning": "Bonding behavior"
+                "meaning": "Bonding behavior",
             },
             {
                 "phrase_key": "social_trust",
                 "f0_hz": 5800,
                 "context": "social",
-                "meaning": "Trust expression"
-            }
+                "meaning": "Trust expression",
+            },
         ],
         "Information Processing Sentence": [
             {
                 "phrase_key": "neutral_attention",
                 "f0_hz": 3600,
                 "context": "neutral",
-                "meaning": "Attention focus"
+                "meaning": "Attention focus",
             },
             {
                 "phrase_key": "neutral_assessment",
                 "f0_hz": 4000,
                 "context": "neutral",
-                "meaning": "Situation assessment"
+                "meaning": "Situation assessment",
             },
             {
                 "phrase_key": "neutral_decision_making",
                 "f0_hz": 4400,
                 "context": "neutral",
-                "meaning": "Decision making"
+                "meaning": "Decision making",
             },
             {
                 "phrase_key": "neutral_action_planning",
                 "f0_hz": 4800,
                 "context": "neutral",
-                "meaning": "Action planning"
+                "meaning": "Action planning",
             },
             {
                 "phrase_key": "neutral_execution",
                 "f0_hz": 5200,
                 "context": "neutral",
-                "meaning": "Action execution"
-            }
-        ]
+                "meaning": "Action execution",
+            },
+        ],
     }
 
-    print(f"\n1. Creating vocabulary with {sum(len(seq) for seq in sentence_structures.values())} phrase types...")
+    print(
+        f"\n1. Creating vocabulary with {sum(len(seq) for seq in sentence_structures.values())} phrase types..."
+    )
 
     total_segments = 0
 
@@ -188,7 +190,7 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
             # Generate flat tone phrase with proper harmonics
             duration_ms = 60
             samples = int(duration_ms / 1000.0 * library.sr)
-            t = np.linspace(0, duration_ms/1000.0, samples)
+            t = np.linspace(0, duration_ms / 1000.0, samples)
 
             # Create flat tone with harmonics
             audio = np.sin(2 * np.pi * phrase_data["f0_hz"] * t)
@@ -224,22 +226,25 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
                 snr_db=25.0,
                 quality_score=0.9,
                 microharmonic_signature={
-                    'dominant_harmonic': 1,
-                    'harmonic_entropy': 0.1,
-                    'spectral_centroid_hz': phrase_data["f0_hz"],
-                    'formants': [phrase_data["f0_hz"]],
-                    'modulation_depth': 0.05
-                }
+                    "dominant_harmonic": 1,
+                    "harmonic_entropy": 0.1,
+                    "spectral_centroid_hz": phrase_data["f0_hz"],
+                    "formants": [phrase_data["f0_hz"]],
+                    "modulation_depth": 0.05,
+                },
             )
 
             # Add to library
             if library.add_segment(segment):
                 total_segments += 1
-                print(f"     ✓ {phrase_data['phrase_key']}: {phrase_data['f0_hz']}Hz - {phrase_data['meaning']}")
+                print(
+                    f"     ✓ {phrase_data['phrase_key']}: {phrase_data['f0_hz']}Hz - {phrase_data['meaning']}"
+                )
             else:
                 print(f"     ✗ Failed to add {phrase_data['phrase_key']}")
 
     return library
+
 
 def demonstrate_linguistic_structure(library: PhraseAudioLibrary):
     """Demonstrate the linguistic structure of ascending frequency sentences."""
@@ -275,21 +280,22 @@ def demonstrate_linguistic_structure(library: PhraseAudioLibrary):
         if len(phrases) > 1:
             # Calculate linguistic properties
             f0_values = [f0 for _, f0 in phrases]
-            steps = [f0_values[i+1] - f0_values[i] for i in range(len(f0_values)-1)]
+            steps = [f0_values[i + 1] - f0_values[i] for i in range(len(f0_values) - 1)]
 
             print(f"     Ascending steps: {steps}Hz")
             print(f"     Mean interval: {np.mean(steps):.0f}Hz")
             print(f"     Consistency: σ={np.std(steps):.0f}Hz")
 
             # Linguistic interpretation
-            if context == 'alarm':
+            if context == "alarm":
                 print("     Linguistic pattern: Threat escalation (frequency = urgency)")
-            elif context == 'food':
+            elif context == "food":
                 print("     Linguistic pattern: Foraging sequence (frequency = motivation)")
-            elif context == 'social':
+            elif context == "social":
                 print("     Linguistic pattern: Bonding escalation (frequency = intimacy)")
-            elif context == 'neutral':
+            elif context == "neutral":
                 print("     Linguistic pattern: Information processing (frequency = complexity)")
+
 
 def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
     """Demonstrate how phrases can be combined to form complex sentences."""
@@ -305,7 +311,10 @@ def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
         ("Alarm Sequence", ["alarm_low_threat", "alarm_medium_threat", "alarm_high_threat"]),
         ("Food Sequence", ["food_discovery", "food_interest", "food_approach"]),
         ("Social Sequence", ["social_contact_initiation", "social_greeting", "social_engagement"]),
-        ("Neutral Sequence", ["neutral_attention", "neutral_assessment", "neutral_decision_making"])
+        (
+            "Neutral Sequence",
+            ["neutral_attention", "neutral_assessment", "neutral_decision_making"],
+        ),
     ]
 
     for sentence_type, phrase_keys in sentence_examples:
@@ -315,7 +324,7 @@ def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
         phrases_with_f0 = []
         for phrase_key in phrase_keys:
             segments = library.get_segment(phrase_key)
-            if segments and segments.context == phrase_key.split('_')[0]:
+            if segments and segments.context == phrase_key.split("_")[0]:
                 phrases_with_f0.append((segments.phrase_key, segments.mean_f0_hz, segments.context))
 
         # Sort by frequency to show ascending pattern
@@ -324,6 +333,7 @@ def demonstrate_phrase_combinations(library: PhraseAudioLibrary):
         print(f"     Sentence structure: {' → '.join(key for key, _, _ in phrases_with_f0)}")
         print(f"     Frequency pattern: {' → '.join(f'{f0}Hz' for _, f0, _ in phrases_with_f0)}")
         print(f"     Behavioral meaning: {' → '.join(ctx for _, _, ctx in phrases_with_f0)}")
+
 
 def show_comprehensive_statistics(library: PhraseAudioLibrary):
     """Show comprehensive statistics about the populated library."""
@@ -338,20 +348,22 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
 
     # Context statistics
     context_stats = library.get_context_statistics()
-    if 'context_statistics' in context_stats:
+    if "context_statistics" in context_stats:
         print("\n   Context distribution:")
         total_context_segments = 0
-        for context, stats in context_stats['context_statistics'].items():
-            count = stats['total_occurrences']
+        for context, stats in context_stats["context_statistics"].items():
+            count = stats["total_occurrences"]
             total_context_segments += count
-            print(f"     {context}: {count} segments ({count/library.total_segments*100:.1f}%)")
+            print(f"     {context}: {count} segments ({count / library.total_segments * 100:.1f}%)")
 
     # Phrase occurrence statistics
     phrase_stats = library.get_phrase_occurrence_statistics()
     print("\n   Phrase occurrence distribution:")
     print(f"   Unique phrases: {len(phrase_stats)}")
     print(f"   Mean occurrences per phrase: {np.mean(list(phrase_stats.values())):.1f}")
-    print(f"   Most frequent phrase: {max(phrase_stats, key=phrase_stats.get)} ({phrase_stats[max(phrase_stats, key=phrase_stats.get)]} occurrences)")
+    print(
+        f"   Most frequent phrase: {max(phrase_stats, key=phrase_stats.get)} ({phrase_stats[max(phrase_stats, key=phrase_stats.get)]} occurrences)"
+    )
 
     # Quality analysis
     quality_scores = []
@@ -364,6 +376,7 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
         print("\n   Quality analysis:")
         print(f"   Mean quality: {np.mean(quality_scores):.3f}")
         print(f"   Quality range: {np.min(quality_scores):.3f} - {np.max(quality_scores):.3f}")
+
 
 def main():
     """Main demonstration function."""
@@ -401,6 +414,7 @@ def main():
     output_path = "complete_marmoset_ascending_sentences.pkl"
     library.save(output_path)
     print(f"\nLibrary saved to: {output_path}")
+
 
 if __name__ == "__main__":
     main()

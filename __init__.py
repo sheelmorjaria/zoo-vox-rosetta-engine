@@ -38,27 +38,24 @@ __author__ = "Sheel Morjaria"
 
 __all__ = [
     # Data models
-    'Species',
-    'VocalizationModality',
-    'AcousticFeatures',
-    'Phrase',
-    'PhraseContext',
-    'Sentence',
-    'GrammarRule',
-    'SpeciesData',
-    'VocalizationDatabase',
-
+    "Species",
+    "VocalizationModality",
+    "AcousticFeatures",
+    "Phrase",
+    "PhraseContext",
+    "Sentence",
+    "GrammarRule",
+    "SpeciesData",
+    "VocalizationDatabase",
     # Import functionality
-    'VocalizationDataImporter',
-
+    "VocalizationDataImporter",
     # Query interface
-    'VocalizationQueryInterface',
-    'get_query_interface',
-
+    "VocalizationQueryInterface",
+    "get_query_interface",
     # Semiotic analysis
-    'SemioticEngine',
-    'SemioticState',
-    'SemioticRelation',
-    'SemioticContext',
-    'SemioticAnalysisResult'
+    "SemioticEngine",
+    "SemioticState",
+    "SemioticRelation",
+    "SemioticContext",
+    "SemioticAnalysisResult",
 ]

@@ -41,7 +41,7 @@ class TestAudioFeatures(unittest.TestCase):
             fundamental_freq=6000.0,
             spectral_flatness=0.3,
             temporal_envelope=np.array([0.1, 0.05, 0.2, 0.0]),
-            mfcc_features=np.array([1, 2, 3, 4, 5])
+            mfcc_features=np.array([1, 2, 3, 4, 5]),
         )
 
         self.assertEqual(features.rms, 0.1)
@@ -59,7 +59,7 @@ class TestAudioFeatures(unittest.TestCase):
             fundamental_freq=6000.0,
             spectral_flatness=0.3,
             temporal_envelope=np.array([0.1, 0.05, 0.2, 0.0]),
-            mfcc_features=np.array([1, 2, 3])
+            mfcc_features=np.array([1, 2, 3]),
         )
 
         feature_vector = features.feature_vector
@@ -78,7 +78,7 @@ class TestContextState(unittest.TestCase):
             ContextState.ALARM,
             ContextState.FOOD,
             ContextState.NEUTRAL,
-            ContextState.UNCERTAIN
+            ContextState.UNCERTAIN,
         ]
 
         for state in states:
@@ -96,11 +96,11 @@ class TestProbabilisticContextMachine(unittest.TestCase):
 
         # Test audio signals for different contexts
         self.test_audios = {
-            'silence': np.random.randn(4410) * 0.001,
-            'contact': np.sin(2 * np.pi * 5000 * np.linspace(0, 0.1, 4410)),
-            'alarm': np.sin(2 * np.pi * 7000 * np.linspace(0, 0.1, 4410)) * 1.5,
-            'food': np.sin(2 * np.pi * 5500 * np.linspace(0, 0.1, 4410)),
-            'neutral': np.sin(2 * np.pi * 3000 * np.linspace(0, 0.1, 4410))
+            "silence": np.random.randn(4410) * 0.001,
+            "contact": np.sin(2 * np.pi * 5000 * np.linspace(0, 0.1, 4410)),
+            "alarm": np.sin(2 * np.pi * 7000 * np.linspace(0, 0.1, 4410)) * 1.5,
+            "food": np.sin(2 * np.pi * 5500 * np.linspace(0, 0.1, 4410)),
+            "neutral": np.sin(2 * np.pi * 3000 * np.linspace(0, 0.1, 4410)),
         }
 
     def test_machine_initialization(self):
@@ -125,7 +125,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Foundation for context detection accuracy
         """
         # Arrange
-        audio = self.test_audios['contact']
+        audio = self.test_audios["contact"]
 
         # Act
         features = self.machine.extract_features(audio, self.sr)
@@ -158,7 +158,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Core Bayesian inference functionality
         """
         # Arrange
-        audio = self.test_audios['alarm']
+        audio = self.test_audios["alarm"]
         features = self.machine.extract_features(audio, self.sr)
 
         # Act
@@ -183,10 +183,12 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Primary use case: marmoset contact calls
         """
         # Arrange
-        contact_audio = self.test_audios['contact']
+        contact_audio = self.test_audios["contact"]
 
         # Act
-        predicted_state, confidence, probabilities = self.machine.update_state_machine(contact_audio, self.sr)
+        predicted_state, confidence, probabilities = self.machine.update_state_machine(
+            contact_audio, self.sr
+        )
 
         # Assert
         self.assertIsInstance(predicted_state, ContextState)
@@ -204,10 +206,12 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Primary use case: alarm calls with high energy
         """
         # Arrange
-        alarm_audio = self.test_audios['alarm']
+        alarm_audio = self.test_audios["alarm"]
 
         # Act
-        predicted_state, confidence, probabilities = self.machine.update_state_machine(alarm_audio, self.sr)
+        predicted_state, confidence, probabilities = self.machine.update_state_machine(
+            alarm_audio, self.sr
+        )
 
         # Assert
         self.assertIsInstance(predicted_state, ContextState)
@@ -222,7 +226,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Reduces false positives in rapidly changing contexts
         """
         # Arrange
-        contact_audio = self.test_audios['contact']
+        contact_audio = self.test_audios["contact"]
 
         # Feed multiple contact signals
         states = []
@@ -249,7 +253,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Safety mechanism for ambiguous signals
         """
         # Arrange - create ambiguous signal (between contact and food)
-        ambiguous_audio = self.test_audios['contact'] * 0.5 + self.test_audios['food'] * 0.5
+        ambiguous_audio = self.test_audios["contact"] * 0.5 + self.test_audios["food"] * 0.5
 
         # Act
         predicted_state, confidence, _ = self.machine.update_state_machine(ambiguous_audio, self.sr)
@@ -266,10 +270,10 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         """
         # Arrange
         audio_sequence = [
-            self.test_audios['silence'],
-            self.test_audios['contact'],
-            self.test_audios['alarm'],
-            self.test_audios['food']
+            self.test_audios["silence"],
+            self.test_audios["contact"],
+            self.test_audios["alarm"],
+            self.test_audios["food"],
         ]
 
         # Act
@@ -292,9 +296,9 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         """
         # Arrange
         audios = [
-            self.test_audios['silence'],  # Low confidence expected
-            self.test_audios['contact'],   # Higher confidence expected
-            self.test_audios['alarm']      # High confidence expected
+            self.test_audios["silence"],  # Low confidence expected
+            self.test_audios["contact"],  # Higher confidence expected
+            self.test_audios["alarm"],  # High confidence expected
         ]
 
         # Act
@@ -339,7 +343,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Critical for Bayesian consistency
         """
         # Arrange
-        audio = self.test_audios['food']
+        audio = self.test_audios["food"]
 
         # Act
         probabilities = self.machine.calculate_context_probabilities(
@@ -356,7 +360,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         Enables reuse for multiple experiments
         """
         # Arrange - process some audio first
-        self.machine.update_state_machine(self.test_audios['contact'], self.sr)
+        self.machine.update_state_machine(self.test_audios["contact"], self.sr)
         self.assertEqual(len(self.machine.get_state_history()), 1)
 
         # Act
@@ -374,9 +378,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         # Arrange
         custom_states = [ContextState.SILENCE, ContextState.CONTACT, ContextState.ALARM]
         custom_machine = ProbabilisticContextMachine(
-            context_states=custom_states,
-            history_length=3,
-            confidence_threshold=0.8
+            context_states=custom_states, history_length=3, confidence_threshold=0.8
         )
 
         # Act & Assert
@@ -408,7 +410,7 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         import time
 
         # Arrange
-        audio = self.test_audios['contact']
+        audio = self.test_audios["contact"]
 
         # Act & Measure
         start_time = time.perf_counter()
@@ -416,9 +418,12 @@ class TestProbabilisticContextMachine(unittest.TestCase):
         processing_time = (time.perf_counter() - start_time) * 1000
 
         # Assert
-        self.assertLess(processing_time, 20,
-                        f"Context detection took {processing_time:.1f}ms, exceeds 20ms limit")
+        self.assertLess(
+            processing_time,
+            20,
+            f"Context detection took {processing_time:.1f}ms, exceeds 20ms limit",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

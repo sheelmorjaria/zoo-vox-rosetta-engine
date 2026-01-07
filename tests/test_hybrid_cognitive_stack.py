@@ -25,9 +25,11 @@ from typing import Optional, Dict, Any
 # Mock Dependencies
 # =============================================================================
 
+
 @dataclass
 class Vector17D:
     """20D acoustic vector (expanded from 17D, matches Rust implementation)"""
+
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
@@ -55,6 +57,7 @@ class Vector17D:
 @dataclass
 class AudioPhrase:
     """Audio phrase from database"""
+
     key: str
     features: Vector17D
     species: str
@@ -63,6 +66,7 @@ class AudioPhrase:
 # =============================================================================
 # Test 3.1: Full Stack Gradient Generation
 # =============================================================================
+
 
 class TestFullStackGradientGeneration(unittest.TestCase):
     """Test 3.1: Complete pipeline from intent to synthesis parameters"""
@@ -81,25 +85,57 @@ class TestFullStackGradientGeneration(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
-            mean_f0_hz=8200.0, duration_ms=35.0, f0_range_hz=600.0,
-            harmonic_to_noise_ratio=26.0, spectral_flatness=0.5, attack_time_ms=3.0,
-            decay_time_ms=15.0, sustain_level=0.85, vibrato_rate_hz=10.0,
-            vibrato_depth=0.05, jitter=0.03, mfcc_1=-7.0, mfcc_2=-3.0,
-            mfcc_3=-1.0, mfcc_4=-0.3, spectral_contrast=30.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=12.0,
-            onset_rate_hz=60.0, ici_coefficient_of_variation=0.35
+            mean_f0_hz=8200.0,
+            duration_ms=35.0,
+            f0_range_hz=600.0,
+            harmonic_to_noise_ratio=26.0,
+            spectral_flatness=0.5,
+            attack_time_ms=3.0,
+            decay_time_ms=15.0,
+            sustain_level=0.85,
+            vibrato_rate_hz=10.0,
+            vibrato_depth=0.05,
+            jitter=0.03,
+            mfcc_1=-7.0,
+            mfcc_2=-3.0,
+            mfcc_3=-1.0,
+            mfcc_4=-0.3,
+            spectral_contrast=30.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=12.0,
+            onset_rate_hz=60.0,
+            ici_coefficient_of_variation=0.35,
         )
 
         nearest_phrase = AudioPhrase(
             key="neutral_001",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0, mfcc_2=-5.0,
-                mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0,
-                onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -117,7 +153,7 @@ class TestFullStackGradientGeneration(unittest.TestCase):
             algebra_map=mock_algebra,
             phrase_db=mock_db,
             synthesizer=mock_synthesizer,
-            max_safe_warp=0.25
+            max_safe_warp=0.25,
         )
 
         # Act - Generate response
@@ -127,14 +163,13 @@ class TestFullStackGradientGeneration(unittest.TestCase):
 
         # Assert
         self.assertIsNotNone(result, "Result should not be None")
-        self.assertEqual(result['intent'], 'aggression')
-        self.assertEqual(result['intensity'], 0.7)
-        self.assertEqual(result['source_phrase'], 'neutral_001')
+        self.assertEqual(result["intent"], "aggression")
+        self.assertEqual(result["intensity"], 0.7)
+        self.assertEqual(result["source_phrase"], "neutral_001")
 
         # Verify algebra was called correctly
         mock_algebra.generate_graded_vector.assert_called_once_with(
-            intent='aggression',
-            intensity=0.7
+            intent="aggression", intensity=0.7
         )
 
         # Verify nearest neighbor was found
@@ -148,19 +183,19 @@ class TestFullStackGradientGeneration(unittest.TestCase):
         warp_params = call_args[0] if call_args else {}
 
         # Verify key parameters
-        self.assertIn('pitch_shift_ratio', warp_params)
-        self.assertIn('roughness_amount', warp_params)
-        self.assertIn('duration_scale', warp_params)
+        self.assertIn("pitch_shift_ratio", warp_params)
+        self.assertIn("roughness_amount", warp_params)
+        self.assertIn("duration_scale", warp_params)
 
         # Pitch should increase (target is higher)
-        self.assertGreater(warp_params['pitch_shift_ratio'], 1.0,
-                          "Pitch shift should be >1.0 (pitch increase)")
+        self.assertGreater(
+            warp_params["pitch_shift_ratio"], 1.0, "Pitch shift should be >1.0 (pitch increase)"
+        )
 
         # Roughness should increase (target is rougher)
-        self.assertGreater(warp_params['roughness_amount'], 0.3,
-                          "Roughness should increase")
+        self.assertGreater(warp_params["roughness_amount"], 0.3, "Roughness should increase")
 
-        print(f"✓ Full stack test passed in {elapsed*1000:.2f}ms")
+        print(f"✓ Full stack test passed in {elapsed * 1000:.2f}ms")
         print(f"  Source phrase: {result['source_phrase']}")
         print(f"  Pitch shift: {warp_params['pitch_shift_ratio']:.2f}x")
         print(f"  Roughness: {warp_params['roughness_amount']:.2f}")
@@ -170,6 +205,7 @@ class TestFullStackGradientGeneration(unittest.TestCase):
 # =============================================================================
 # Test 3.2: Latency Constraints
 # =============================================================================
+
 
 class TestLatencyConstraints(unittest.TestCase):
     """Test 3.2: Full pipeline completes in <100ms"""
@@ -183,25 +219,57 @@ class TestLatencyConstraints(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
-            mean_f0_hz=7500.0, duration_ms=40.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=22.5, spectral_flatness=0.4, attack_time_ms=4.0,
-            decay_time_ms=17.5, sustain_level=0.8, vibrato_rate_hz=8.5,
-            vibrato_depth=0.035, jitter=0.02, mfcc_1=-9.0, mfcc_2=-4.0,
-            mfcc_3=-1.5, mfcc_4=-0.5, spectral_contrast=25.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=14.0,
-            onset_rate_hz=55.0, ici_coefficient_of_variation=0.32
+            mean_f0_hz=7500.0,
+            duration_ms=40.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=22.5,
+            spectral_flatness=0.4,
+            attack_time_ms=4.0,
+            decay_time_ms=17.5,
+            sustain_level=0.8,
+            vibrato_rate_hz=8.5,
+            vibrato_depth=0.035,
+            jitter=0.02,
+            mfcc_1=-9.0,
+            mfcc_2=-4.0,
+            mfcc_3=-1.5,
+            mfcc_4=-0.5,
+            spectral_contrast=25.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=14.0,
+            onset_rate_hz=55.0,
+            ici_coefficient_of_variation=0.32,
         )
 
         phrase = AudioPhrase(
             key="test_phrase",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0, mfcc_2=-5.0,
-                mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0,
-                onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -215,9 +283,7 @@ class TestLatencyConstraints(unittest.TestCase):
         from realtime.cognitive_interaction_engine import CognitiveInteractionEngine
 
         engine = CognitiveInteractionEngine(
-            algebra_map=mock_algebra,
-            phrase_db=mock_db,
-            synthesizer=mock_synthesizer
+            algebra_map=mock_algebra, phrase_db=mock_db, synthesizer=mock_synthesizer
         )
 
         # Act - Generate 10 responses
@@ -238,12 +304,12 @@ class TestLatencyConstraints(unittest.TestCase):
 
         # All responses must be <100ms
         for i, latency in enumerate(latencies):
-            self.assertLess(latency, 100.0,
-                           f"Response {i} took {latency:.2f}ms (exceeds 100ms limit)")
+            self.assertLess(
+                latency, 100.0, f"Response {i} took {latency:.2f}ms (exceeds 100ms limit)"
+            )
 
         # Average should be significantly lower (ideally <50ms)
-        self.assertLess(avg_latency, 50.0,
-                       f"Average latency {avg_latency:.2f}ms should be <50ms")
+        self.assertLess(avg_latency, 50.0, f"Average latency {avg_latency:.2f}ms should be <50ms")
 
         print(f"✓ Latency test passed")
         print(f"  Average: {avg_latency:.2f}ms")
@@ -255,6 +321,7 @@ class TestLatencyConstraints(unittest.TestCase):
 # =============================================================================
 # Test 3.3: Gradient Intensity Mapping
 # =============================================================================
+
 
 class TestGradientIntensityMapping(unittest.TestCase):
     """Test 3.3: Intensity maps to correct gradient"""
@@ -275,6 +342,7 @@ class TestGradientIntensityMapping(unittest.TestCase):
 # Test 3.4: Safety Clamp Activation
 # =============================================================================
 
+
 class TestSafetyClampActivation(unittest.TestCase):
     """Test 3.4: Safety clamp activates when needed"""
 
@@ -288,25 +356,56 @@ class TestSafetyClampActivation(unittest.TestCase):
         # Arrange
         virtual_target = Vector17D(
             mean_f0_hz=10500.0,  # Very far from anchor
-            duration_ms=10.0, f0_range_hz=900.0,
-            harmonic_to_noise_ratio=40.0, spectral_flatness=0.9, attack_time_ms=0.0,
-            decay_time_ms=5.0, sustain_level=1.0, vibrato_rate_hz=20.0,
-            vibrato_depth=0.1, jitter=0.1, mfcc_1=0.0, mfcc_2=0.0,
-            mfcc_3=0.0, mfcc_4=0.0, spectral_contrast=50.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=5.0,
-            onset_rate_hz=100.0, ici_coefficient_of_variation=1.0
+            duration_ms=10.0,
+            f0_range_hz=900.0,
+            harmonic_to_noise_ratio=40.0,
+            spectral_flatness=0.9,
+            attack_time_ms=0.0,
+            decay_time_ms=5.0,
+            sustain_level=1.0,
+            vibrato_rate_hz=20.0,
+            vibrato_depth=0.1,
+            jitter=0.1,
+            mfcc_1=0.0,
+            mfcc_2=0.0,
+            mfcc_3=0.0,
+            mfcc_4=0.0,
+            spectral_contrast=50.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=5.0,
+            onset_rate_hz=100.0,
+            ici_coefficient_of_variation=1.0,
         )
 
         nearest_phrase = AudioPhrase(
             key="neutral_001",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0, mfcc_2=-5.0,
-                mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0,
-                onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -323,21 +422,22 @@ class TestSafetyClampActivation(unittest.TestCase):
             algebra_map=mock_algebra,
             phrase_db=mock_db,
             synthesizer=mock_synthesizer,
-            max_safe_warp=0.2  # 20% max warp
+            max_safe_warp=0.2,  # 20% max warp
         )
 
         # Act
-        with self.assertLogs(engine.logger, level='WARNING') as log:
+        with self.assertLogs(engine.logger, level="WARNING") as log:
             result = engine.generate_response(intent="aggression", intensity=1.0)
 
         # Assert
         self.assertIsNotNone(result)
-        self.assertTrue(result['was_clamped'], "Result should be clamped")
+        self.assertTrue(result["was_clamped"], "Result should be clamped")
 
         # Verify warning was logged
-        self.assertTrue(any("clamping" in msg.lower() or "clamp" in msg.lower()
-                           for msg in log.output),
-                       "Should log clamping warning")
+        self.assertTrue(
+            any("clamping" in msg.lower() or "clamp" in msg.lower() for msg in log.output),
+            "Should log clamping warning",
+        )
 
         # Verify synthesizer received clamped parameters
         self.assertTrue(mock_synthesizer.set_warp_delta.called)
@@ -351,5 +451,5 @@ class TestSafetyClampActivation(unittest.TestCase):
 # Test Runner
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

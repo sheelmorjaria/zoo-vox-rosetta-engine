@@ -26,11 +26,11 @@ class ProbabilisticContextualAgent:
     def should_respond(self):
         """Determine if system should respond and with what context"""
         if not self.context_probabilities:
-            return False, 'silence'
+            return False, "silence"
 
         max_conf = max(self.context_probabilities.values())
         if max_conf < 0.5:  # Low confidence threshold
-            return False, 'silence'
+            return False, "silence"
 
         best_context = max(self.context_probabilities, key=self.context_probabilities.get)
         return True, best_context

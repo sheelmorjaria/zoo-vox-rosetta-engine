@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.annotation_loader import (
@@ -33,7 +34,7 @@ from realtime.annotation_loader import (
     JSONAnnotationLoader,
     CSVAnnotationLoader,
     AnnotationLoader,
-    associate_context_to_segments
+    associate_context_to_segments,
 )
 
 
@@ -41,10 +42,11 @@ from realtime.annotation_loader import (
 # Test Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def sample_eaf_content():
     """Sample ELAN .eaf file content."""
-    return '''<?xml version="1.0" encoding="UTF-8"?>
+    return """<?xml version="1.0" encoding="UTF-8"?>
 <ANNOTATION_DOCUMENT AUTHOR="" DATE="2026-01-06" FORMAT="2.8" VERSION="2.8"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv2.8.xsd">
     <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
@@ -75,13 +77,13 @@ def sample_eaf_content():
         </ALIGNABLE_ANNOTATION>
     </TIER>
 </ANNOTATION_DOCUMENT>
-'''
+"""
 
 
 @pytest.fixture
 def sample_textgrid_content():
     """Sample Praat .TextGrid file content."""
-    return '''File type = "ooTextFile"
+    return """File type = "ooTextFile"
 Object class = "TextGrid"
 
 xmin = 0
@@ -129,18 +131,14 @@ item []:
             xmin = 1.5
             xmax = 2.5
             text = "marmoset_A"
-'''
+"""
 
 
 @pytest.fixture
 def sample_json_annotations():
     """Sample JSON annotations."""
     return {
-        "metadata": {
-            "species": "marmoset",
-            "recording_date": "2026-01-06",
-            "location": "cage_A"
-        },
+        "metadata": {"species": "marmoset", "recording_date": "2026-01-06", "location": "cage_A"},
         "annotations": [
             {
                 "id": "annot_1",
@@ -150,7 +148,7 @@ def sample_json_annotations():
                 "individual_id": "marmoset_A",
                 "participant_role": "dominant",
                 "notes": "Chase behavior",
-                "confidence": 0.95
+                "confidence": 0.95,
             },
             {
                 "id": "annot_2",
@@ -160,7 +158,7 @@ def sample_json_annotations():
                 "individual_id": "marmoset_B",
                 "participant_role": "submissive",
                 "notes": "Display behavior",
-                "confidence": 0.88
+                "confidence": 0.88,
             },
             {
                 "id": "annot_3",
@@ -169,36 +167,33 @@ def sample_json_annotations():
                 "context": "food_discovery",
                 "individual_id": "marmoset_A",
                 "notes": "Found fruit",
-                "confidence": 1.0
-            }
-        ]
+                "confidence": 1.0,
+            },
+        ],
     }
 
 
 @pytest.fixture
 def sample_csv_content():
     """Sample CSV annotations."""
-    return '''start_time_ms,end_time_ms,context,individual_id,notes,confidence
+    return """start_time_ms,end_time_ms,context,individual_id,notes,confidence
 0.0,500.0,aggression,marmoset_A,Chase behavior,0.95
 1000.0,1500.0,courtship,marmoset_B,Display behavior,0.88
 2000.0,2500.0,food_discovery,marmoset_A,Found fruit,1.0
-'''
+"""
 
 
 # ============================================================================
 # Annotation Data Structure Tests
 # ============================================================================
 
+
 class TestAnnotation:
     """Test Annotation dataclass."""
 
     def test_create_annotation(self):
         """Test creating a basic annotation."""
-        annotation = Annotation(
-            start_time_ms=0.0,
-            end_time_ms=500.0,
-            context="aggression"
-        )
+        annotation = Annotation(start_time_ms=0.0, end_time_ms=500.0, context="aggression")
 
         assert annotation.start_time_ms == 0.0
         assert annotation.end_time_ms == 500.0
@@ -215,7 +210,7 @@ class TestAnnotation:
             participant_role="dominant",
             location="cage_A",
             notes="Chase behavior",
-            confidence=0.95
+            confidence=0.95,
         )
 
         assert annotation.individual_id == "marmoset_A"
@@ -225,11 +220,7 @@ class TestAnnotation:
 
     def test_overlaps_with(self):
         """Test overlaps_with method."""
-        annotation = Annotation(
-            start_time_ms=500.0,
-            end_time_ms=1000.0,
-            context="test"
-        )
+        annotation = Annotation(start_time_ms=500.0, end_time_ms=1000.0, context="test")
 
         # Overlapping cases
         assert annotation.overlaps_with(400.0, 600.0) is True
@@ -244,11 +235,7 @@ class TestAnnotation:
 
     def test_contains(self):
         """Test contains method."""
-        annotation = Annotation(
-            start_time_ms=500.0,
-            end_time_ms=1000.0,
-            context="test"
-        )
+        annotation = Annotation(start_time_ms=500.0, end_time_ms=1000.0, context="test")
 
         # Contained cases
         assert annotation.contains(500.0) is True
@@ -267,16 +254,16 @@ class TestAnnotation:
             end_time_ms=500.0,
             context="courtship",
             individual_id="marmoset_B",
-            tier="behavior"
+            tier="behavior",
         )
 
         result = annotation.to_dict()
 
-        assert result['start_time_ms'] == 100.0
-        assert result['end_time_ms'] == 500.0
-        assert result['context'] == "courtship"
-        assert result['individual_id'] == "marmoset_B"
-        assert result['tier'] == "behavior"
+        assert result["start_time_ms"] == 100.0
+        assert result["end_time_ms"] == 500.0
+        assert result["context"] == "courtship"
+        assert result["individual_id"] == "marmoset_B"
+        assert result["tier"] == "behavior"
 
 
 class TestAnnotationTrack:
@@ -289,11 +276,7 @@ class TestAnnotationTrack:
         assert track.name == "context"
         assert len(track.annotations) == 0
 
-        annotation = Annotation(
-            start_time_ms=0.0,
-            end_time_ms=500.0,
-            context="aggression"
-        )
+        annotation = Annotation(start_time_ms=0.0, end_time_ms=500.0, context="aggression")
 
         track.add_annotation(annotation)
 
@@ -391,10 +374,10 @@ class TestAnnotationCollection:
         assert collection.get_primary_context(500.0) == "aggression"
 
         # Custom priority
-        assert collection.get_primary_context(
-            500.0,
-            priority=["event", "behavior", "context"]
-        ) == "feeding"
+        assert (
+            collection.get_primary_context(500.0, priority=["event", "behavior", "context"])
+            == "feeding"
+        )
 
     def test_get_all_annotations_at_time(self):
         """Test getting all annotations from all tracks."""
@@ -421,12 +404,13 @@ class TestAnnotationCollection:
 # ELAN Loader Tests
 # ============================================================================
 
+
 class TestELANAnnotationLoader:
     """Test ELAN .eaf file loader."""
 
     def test_load_eaf_file(self, sample_eaf_content):
         """Test loading ELAN .eaf file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.eaf', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".eaf", delete=False) as f:
             f.write(sample_eaf_content)
             temp_path = f.name
 
@@ -448,7 +432,7 @@ class TestELANAnnotationLoader:
 
     def test_parse_structured_context(self, sample_eaf_content):
         """Test parsing structured context (context:individual:notes)."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.eaf', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".eaf", delete=False) as f:
             f.write(sample_eaf_content)
             temp_path = f.name
 
@@ -478,12 +462,13 @@ class TestELANAnnotationLoader:
 # Praat TextGrid Loader Tests
 # ============================================================================
 
+
 class TestPraatTextGridLoader:
     """Test Praat .TextGrid file loader."""
 
     def test_load_textgrid_file(self, sample_textgrid_content):
         """Test loading Praat .TextGrid file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.TextGrid', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".TextGrid", delete=False) as f:
             f.write(sample_textgrid_content)
             temp_path = f.name
 
@@ -507,7 +492,7 @@ class TestPraatTextGridLoader:
 
     def test_parse_time_units(self, sample_textgrid_content):
         """Test that time units are correctly converted to milliseconds."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.TextGrid', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".TextGrid", delete=False) as f:
             f.write(sample_textgrid_content)
             temp_path = f.name
 
@@ -530,12 +515,13 @@ class TestPraatTextGridLoader:
 # JSON Loader Tests
 # ============================================================================
 
+
 class TestJSONAnnotationLoader:
     """Test JSON annotation loader."""
 
     def test_load_json_file(self, sample_json_annotations):
         """Test loading JSON annotations."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_json_annotations, f)
             temp_path = f.name
 
@@ -557,7 +543,7 @@ class TestJSONAnnotationLoader:
 
     def test_load_all_fields(self, sample_json_annotations):
         """Test that all JSON fields are loaded correctly."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_json_annotations, f)
             temp_path = f.name
 
@@ -584,12 +570,13 @@ class TestJSONAnnotationLoader:
 # CSV Loader Tests
 # ============================================================================
 
+
 class TestCSVAnnotationLoader:
     """Test CSV annotation loader."""
 
     def test_load_csv_file(self, sample_csv_content):
         """Test loading CSV annotations."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(sample_csv_content)
             temp_path = f.name
 
@@ -609,13 +596,13 @@ class TestCSVAnnotationLoader:
 
     def test_parse_time_formats(self):
         """Test parsing different time formats."""
-        csv_content = '''start_time_ms,end_time_ms,context
+        csv_content = """start_time_ms,end_time_ms,context
 0,500,aggression
 1.0,1.5,courtship
 00:00:02,00:00:02.5,food
-'''
+"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(csv_content)
             temp_path = f.name
 
@@ -642,12 +629,13 @@ class TestCSVAnnotationLoader:
 # Unified AnnotationLoader Tests
 # ============================================================================
 
+
 class TestAnnotationLoader:
     """Test unified annotation loader with auto-detect."""
 
     def test_auto_detect_eaf(self, sample_eaf_content):
         """Test auto-detection of .eaf files."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.eaf', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".eaf", delete=False) as f:
             f.write(sample_eaf_content)
             temp_path = f.name
 
@@ -662,7 +650,7 @@ class TestAnnotationLoader:
 
     def test_auto_detect_textgrid(self, sample_textgrid_content):
         """Test auto-detection of .TextGrid files."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.TextGrid', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".TextGrid", delete=False) as f:
             f.write(sample_textgrid_content)
             temp_path = f.name
 
@@ -677,7 +665,7 @@ class TestAnnotationLoader:
 
     def test_auto_detect_json(self, sample_json_annotations):
         """Test auto-detection of .json files."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_json_annotations, f)
             temp_path = f.name
 
@@ -692,7 +680,7 @@ class TestAnnotationLoader:
 
     def test_auto_detect_csv(self, sample_csv_content):
         """Test auto-detection of .csv files."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(sample_csv_content)
             temp_path = f.name
 
@@ -707,7 +695,7 @@ class TestAnnotationLoader:
 
     def test_unsupported_format(self):
         """Test error handling for unsupported formats."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("Not a valid annotation format")
             temp_path = f.name
 
@@ -722,19 +710,21 @@ class TestAnnotationLoader:
     def test_load_multiple_files(self):
         """Test loading and merging multiple annotation files."""
         # Create multiple JSON files
-        json1 = {"metadata": {}, "annotations": [
-            {"start_time_ms": 0, "end_time_ms": 500, "context": "aggression"}
-        ]}
+        json1 = {
+            "metadata": {},
+            "annotations": [{"start_time_ms": 0, "end_time_ms": 500, "context": "aggression"}],
+        }
 
-        json2 = {"metadata": {}, "annotations": [
-            {"start_time_ms": 1000, "end_time_ms": 1500, "context": "courtship"}
-        ]}
+        json2 = {
+            "metadata": {},
+            "annotations": [{"start_time_ms": 1000, "end_time_ms": 1500, "context": "courtship"}],
+        }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f1:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f1:
             json.dump(json1, f1)
             path1 = f1.name
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f2:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f2:
             json.dump(json2, f2)
             path2 = f2.name
 
@@ -753,6 +743,7 @@ class TestAnnotationLoader:
 # ============================================================================
 # Context Association Tests
 # ============================================================================
+
 
 class TestContextAssociation:
     """Test context association helper functions."""
@@ -778,17 +769,26 @@ class TestContextAssociation:
 
         # Create segments with midpoints that clearly fall within one annotation each
         segments = [
-            {"start_time_ms": 100.0, "end_time_ms": 400.0, "phrase_key": "phrase1"},  # midpoint: 250ms
-            {"start_time_ms": 600.0, "end_time_ms": 900.0, "phrase_key": "phrase2"},  # midpoint: 750ms
-            {"start_time_ms": 1100.0, "end_time_ms": 1400.0, "phrase_key": "phrase3"},  # midpoint: 1250ms
+            {
+                "start_time_ms": 100.0,
+                "end_time_ms": 400.0,
+                "phrase_key": "phrase1",
+            },  # midpoint: 250ms
+            {
+                "start_time_ms": 600.0,
+                "end_time_ms": 900.0,
+                "phrase_key": "phrase2",
+            },  # midpoint: 750ms
+            {
+                "start_time_ms": 1100.0,
+                "end_time_ms": 1400.0,
+                "phrase_key": "phrase3",
+            },  # midpoint: 1250ms
         ]
 
         # Associate context
         enriched = associate_context_to_segments(
-            collection,
-            segments,
-            context_track="context",
-            individual_track="individual"
+            collection, segments, context_track="context", individual_track="individual"
         )
 
         # Verify associations
@@ -806,13 +806,14 @@ class TestContextAssociation:
 # Integration Tests
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests for complete workflow."""
 
     def test_complete_workflow_json_to_context_association(self, sample_json_annotations):
         """Test complete workflow from JSON loading to context association."""
         # Save JSON to file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_json_annotations, f)
             temp_path = f.name
 
@@ -844,7 +845,7 @@ class TestIntegration:
 
     def test_serialization_roundtrip(self, sample_json_annotations):
         """Test that annotation collections can be serialized and deserialized."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(sample_json_annotations, f)
             temp_path = f.name
 

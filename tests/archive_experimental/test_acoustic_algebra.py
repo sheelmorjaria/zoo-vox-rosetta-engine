@@ -40,6 +40,7 @@ from analysis.rosetta_stone.acoustic_algebra import (
 # TEST FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def sample_rate():
     return 48000
@@ -55,7 +56,7 @@ def neutral_phrase_vector():
         harmonicity=0.95,
         spectral_flatness=0.1,
         jitter=0.0,
-        shimmer=0.0
+        shimmer=0.0,
     )
 
 
@@ -69,7 +70,7 @@ def excited_phrase_vector():
         harmonicity=0.90,
         spectral_flatness=0.15,
         jitter=0.05,
-        shimmer=0.02
+        shimmer=0.02,
     )
 
 
@@ -84,7 +85,7 @@ def aggression_context():
         harmonicity_delta=-0.1,  # Less tonal
         spectral_flatness_delta=0.2,  # More noisy
         jitter_add=0.1,  # Add instability
-        shimmer_add=0.05
+        shimmer_add=0.05,
     )
 
 
@@ -99,13 +100,14 @@ def urgency_context():
         harmonicity_delta=-0.15,
         spectral_flatness_delta=0.3,
         jitter_add=0.15,
-        shimmer_add=0.08
+        shimmer_add=0.08,
     )
 
 
 # ============================================================================
 # TEST CLASS: AcousticVector
 # ============================================================================
+
 
 class TestAcousticVector:
     """Test acoustic vector representation and operations."""
@@ -164,6 +166,7 @@ class TestAcousticVector:
 # TEST CLASS: ContextVector
 # ============================================================================
 
+
 class TestContextVector:
     """Test context vector for directional extrapolation."""
 
@@ -207,17 +210,14 @@ class TestContextVector:
 # TEST CLASS: PhraseInterpolator
 # ============================================================================
 
+
 class TestPhraseInterpolator:
     """Test interpolation between two phrase vectors."""
 
     def test_interpolate_midpoint(self, neutral_phrase_vector, excited_phrase_vector):
         """50% interpolation should average features."""
         interpolator = PhraseInterpolator()
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=0.5
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=0.5)
 
         # F0: (6000 + 7000) / 2 = 6500
         assert abs(result.f0_hz - 6500.0) < 0.1
@@ -231,11 +231,7 @@ class TestPhraseInterpolator:
     def test_interpolate_favor_a(self, neutral_phrase_vector, excited_phrase_vector):
         """Alpha=0.2 should favor neutral phrase (80% A, 20% B)."""
         interpolator = PhraseInterpolator()
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=0.2
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=0.2)
 
         # Should be closer to neutral
         expected_f0 = 6000 * 0.8 + 7000 * 0.2  # 6200
@@ -244,11 +240,7 @@ class TestPhraseInterpolator:
     def test_interpolate_favor_b(self, neutral_phrase_vector, excited_phrase_vector):
         """Alpha=0.8 should favor excited phrase (20% A, 80% B)."""
         interpolator = PhraseInterpolator()
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=0.8
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=0.8)
 
         # Should be closer to excited
         expected_f0 = 6000 * 0.2 + 7000 * 0.8  # 6800
@@ -257,22 +249,14 @@ class TestPhraseInterpolator:
     def test_interpolate_identity(self, neutral_phrase_vector):
         """Alpha=0 should return original vector A."""
         interpolator = PhraseInterpolator()
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            neutral_phrase_vector,
-            alpha=0.0
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, neutral_phrase_vector, alpha=0.0)
 
         assert result.f0_hz == neutral_phrase_vector.f0_hz
 
     def test_interpolate_full_b(self, neutral_phrase_vector, excited_phrase_vector):
         """Alpha=1 should return vector B."""
         interpolator = PhraseInterpolator()
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=1.0
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=1.0)
 
         assert result.f0_hz == excited_phrase_vector.f0_hz
 
@@ -281,19 +265,11 @@ class TestPhraseInterpolator:
         interpolator = PhraseInterpolator()
 
         # Alpha > 1 should clip to 1.0
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=1.5
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=1.5)
         assert result.f0_hz == excited_phrase_vector.f0_hz
 
         # Alpha < 0 should clip to 0.0
-        result = interpolator.interpolate(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            alpha=-0.5
-        )
+        result = interpolator.interpolate(neutral_phrase_vector, excited_phrase_vector, alpha=-0.5)
         assert result.f0_hz == neutral_phrase_vector.f0_hz
 
 
@@ -301,16 +277,14 @@ class TestPhraseInterpolator:
 # TEST CLASS: ContextualExtrapolator
 # ============================================================================
 
+
 class TestContextualExtrapolator:
     """Test extrapolation beyond known data using context vectors."""
 
     def test_extrapolate_from_neutral(self, neutral_phrase_vector, aggression_context):
         """Should extrapolate aggressive phrase from neutral."""
         extrapolator = ContextualExtrapolator()
-        result = extrapolator.extrapolate(
-            neutral_phrase_vector,
-            aggression_context
-        )
+        result = extrapolator.extrapolate(neutral_phrase_vector, aggression_context)
 
         # F0 should increase
         assert result.f0_hz > neutral_phrase_vector.f0_hz
@@ -332,7 +306,7 @@ class TestContextualExtrapolator:
             harmonicity_delta=-0.3,
             spectral_flatness_delta=0.5,
             jitter_add=0.3,
-            shimmer_add=0.2
+            shimmer_add=0.2,
         )
 
         extrapolator = ContextualExtrapolator()
@@ -345,9 +319,14 @@ class TestContextualExtrapolator:
     def test_chained_extrapolation(self, neutral_phrase_vector):
         """Should support chaining contexts (neutral -> aggression -> extreme)."""
         aggression = ContextVector(
-            name="aggression", f0_multiplier=1.2, duration_ratio=0.8,
-            f0_range_multiplier=1.5, harmonicity_delta=-0.1,
-            spectral_flatness_delta=0.2, jitter_add=0.1, shimmer_add=0.05
+            name="aggression",
+            f0_multiplier=1.2,
+            duration_ratio=0.8,
+            f0_range_multiplier=1.5,
+            harmonicity_delta=-0.1,
+            spectral_flatness_delta=0.2,
+            jitter_add=0.1,
+            shimmer_add=0.05,
         )
 
         extrapolator = ContextualExtrapolator()
@@ -366,9 +345,14 @@ class TestContextualExtrapolator:
     def test_extrapolation_with_preservation(self, neutral_phrase_vector):
         """Should preserve modality and other metadata."""
         context = ContextVector(
-            name="test", f0_multiplier=1.1, duration_ratio=0.9,
-            f0_range_multiplier=1.1, harmonicity_delta=-0.05,
-            spectral_flatness_delta=0.1, jitter_add=0.02, shimmer_add=0.01
+            name="test",
+            f0_multiplier=1.1,
+            duration_ratio=0.9,
+            f0_range_multiplier=1.1,
+            harmonicity_delta=-0.05,
+            spectral_flatness_delta=0.1,
+            jitter_add=0.02,
+            shimmer_add=0.01,
         )
 
         extrapolator = ContextualExtrapolator()
@@ -385,18 +369,33 @@ class TestContextualExtrapolator:
 # TEST CLASS: SentenceExtrapolator
 # ============================================================================
 
+
 @pytest.fixture
 def neutral_sentence():
     """Neutral sentence: [Phrase A] -> [Pause 50ms] -> [Phrase B]."""
     return SENTENCE_TEMPLATE(
         phrases=[
-            AcousticVector(f0_hz=6000.0, duration_ms=40.0, f0_range_hz=300.0,
-                          harmonicity=0.95, spectral_flatness=0.1, jitter=0.0, shimmer=0.0),
-            AcousticVector(f0_hz=6200.0, duration_ms=45.0, f0_range_hz=350.0,
-                          harmonicity=0.93, spectral_flatness=0.12, jitter=0.01, shimmer=0.0)
+            AcousticVector(
+                f0_hz=6000.0,
+                duration_ms=40.0,
+                f0_range_hz=300.0,
+                harmonicity=0.95,
+                spectral_flatness=0.1,
+                jitter=0.0,
+                shimmer=0.0,
+            ),
+            AcousticVector(
+                f0_hz=6200.0,
+                duration_ms=45.0,
+                f0_range_hz=350.0,
+                harmonicity=0.93,
+                spectral_flatness=0.12,
+                jitter=0.01,
+                shimmer=0.0,
+            ),
         ],
         pauses_ms=[50.0],  # Pause between phrases
-        modality="harmonic"
+        modality="harmonic",
     )
 
 
@@ -412,7 +411,7 @@ def urgent_context():
         harmonicity_delta=-0.1,
         spectral_flatness_delta=0.2,
         jitter_add=0.1,
-        shimmer_add=0.05
+        shimmer_add=0.05,
     )
 
 
@@ -473,7 +472,7 @@ class TestSentenceExtrapolator:
             spectral_flatness_delta=0.0,
             jitter_add=0.02,  # Slight jitter increase per phrase
             shimmer_add=0.01,
-            progressive_intensity=True  # Enable ramp
+            progressive_intensity=True,  # Enable ramp
         )
 
         extrapolator = SentenceExtrapolator()
@@ -488,6 +487,7 @@ class TestSentenceExtrapolator:
 # ============================================================================
 # TEST CLASS: AcousticAlgebraEngine
 # ============================================================================
+
 
 class TestAcousticAlgebraEngine:
     """Test the main acoustic algebra orchestrator."""
@@ -551,6 +551,7 @@ class TestAcousticAlgebraEngine:
 # TEST CLASS: SemanticContinuitySimulation
 # ============================================================================
 
+
 class TestSemanticContinuitySimulation:
     """Test semantic continuity through gradual transformation."""
 
@@ -560,9 +561,7 @@ class TestSemanticContinuitySimulation:
 
         # Generate 10 steps from neutral to aggressive
         continuum = engine.generate_continuum(
-            neutral_phrase_vector,
-            aggression_context,
-            num_steps=10
+            neutral_phrase_vector, aggression_context, num_steps=10
         )
 
         assert len(continuum) == 10
@@ -590,7 +589,7 @@ class TestSemanticContinuitySimulation:
             harmonicity_delta=-0.5,
             spectral_flatness_delta=0.8,
             jitter_add=0.5,
-            shimmer_add=0.3
+            shimmer_add=0.3,
         )
 
         result = engine.extrapolate(neutral_phrase_vector, extreme_context)
@@ -609,9 +608,7 @@ class TestSemanticContinuitySimulation:
 
         # Generate 100 interpolated steps
         continuum = engine.generate_interpolation_continuum(
-            neutral_phrase_vector,
-            excited_phrase_vector,
-            num_steps=100
+            neutral_phrase_vector, excited_phrase_vector, num_steps=100
         )
 
         assert len(continuum) == 100
@@ -624,5 +621,5 @@ class TestSemanticContinuitySimulation:
         assert abs(midpoint.f0_hz - expected_f0) < 1.0
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

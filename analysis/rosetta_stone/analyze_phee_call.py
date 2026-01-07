@@ -24,14 +24,17 @@ from universal_rosetta_stone import Modality, UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
 
 try:
     import matplotlib
-    matplotlib.use('Agg')  # Non-interactive backend
+
+    matplotlib.use("Agg")  # Non-interactive backend
     import matplotlib.pyplot as plt
+
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -65,9 +68,9 @@ def load_phee_call():
 
 def analyze_acoustic_features(audio, sr):
     """Extract detailed acoustic features."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("DETAILED ACOUSTIC FEATURE ANALYSIS")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Basic info
     duration = len(audio) / sr
@@ -75,7 +78,7 @@ def analyze_acoustic_features(audio, sr):
 
     print("\n📊 Basic Properties:")
     print(f"  Sample rate: {sr} Hz")
-    print(f"  Duration: {duration*1000:.1f} ms")
+    print(f"  Duration: {duration * 1000:.1f} ms")
     print(f"  Samples: {len(audio)}")
     print(f"  RMS amplitude: {rms:.6f}")
     print(f"  Peak amplitude: {np.max(np.abs(audio)):.6f}")
@@ -85,12 +88,12 @@ def analyze_acoustic_features(audio, sr):
 
     # FFT for frequency content
     fft_result = fft(audio)
-    freqs = fftfreq(len(audio), 1/sr)
+    freqs = fftfreq(len(audio), 1 / sr)
     magnitude = np.abs(fft_result)
 
     # Only positive frequencies
-    pos_freqs = freqs[:len(freqs)//2]
-    pos_magnitude = magnitude[:len(magnitude)//2]
+    pos_freqs = freqs[: len(freqs) // 2]
+    pos_magnitude = magnitude[: len(magnitude) // 2]
 
     # Find dominant frequency
     dom_freq_idx = np.argmax(pos_magnitude)
@@ -98,7 +101,7 @@ def analyze_acoustic_features(audio, sr):
 
     print("\n📊 Frequency Content:")
     print(f"  Dominant frequency: {dom_freq:.0f} Hz")
-    print(f"  Frequency range: 0 - {sr/2:.0f} Hz (Nyquist)")
+    print(f"  Frequency range: 0 - {sr / 2:.0f} Hz (Nyquist)")
 
     # Energy in different bands
     bands = [
@@ -106,37 +109,38 @@ def analyze_acoustic_features(audio, sr):
         ("Mid (1-5 kHz)", 1000, 5000),
         ("Marmoset range (5-12 kHz)", 5000, 12000),
         ("High (12-20 kHz)", 12000, 20000),
-        ("Ultrasonic (>20 kHz)", 20000, sr//2)
+        ("Ultrasonic (>20 kHz)", 20000, sr // 2),
     ]
 
     print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
-        band_energy = np.sum(pos_magnitude[mask]**2)
+        band_energy = np.sum(pos_magnitude[mask] ** 2)
         total_energy = np.sum(pos_magnitude**2)
         percentage = band_energy / total_energy * 100
-        bar = '█' * int(percentage / 5)
+        bar = "█" * int(percentage / 5)
         print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     return {
-        'duration_ms': duration * 1000,
-        'rms': rms,
-        'dominant_frequency_hz': dom_freq,
-        'sample_rate': sr
+        "duration_ms": duration * 1000,
+        "rms": rms,
+        "dominant_frequency_hz": dom_freq,
+        "sample_rate": sr,
     }
 
 
 def analyze_phrase_structure(audio, sr):
     """Analyze the phrase structure of the Phee call."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("PHRASE STRUCTURE ANALYSIS")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     analyzer = UniversalRosettaStone(sample_rate=48000)
 
     # Resample to 48 kHz if needed
     if sr != 48000:
         from scipy import signal as scipy_signal
+
         num_samples = int(len(audio) * 48000 / sr)
         audio = scipy_signal.resample(audio, num_samples)
         sr = 48000
@@ -146,11 +150,7 @@ def analyze_phrase_structure(audio, sr):
     print("   min_gap_ms: 30")
     print("   min_phrase_duration_ms: 5")
 
-    phrases = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=30,
-        min_phrase_duration_ms=5
-    )
+    phrases = analyzer.segment_phrases(audio, min_gap_ms=30, min_phrase_duration_ms=5)
 
     print("\n📊 Segmentation Results:")
     print(f"  Total phrases detected: {len(phrases)}")
@@ -165,8 +165,8 @@ def analyze_phrase_structure(audio, sr):
     phrase_details = []
 
     for i, phrase in enumerate(phrases):
-        print(f"\n  Phrase {i+1}:")
-        print(f"    Duration: {len(phrase.data)/sr*1000:.1f} ms")
+        print(f"\n  Phrase {i + 1}:")
+        print(f"    Duration: {len(phrase.data) / sr * 1000:.1f} ms")
         print(f"    Samples: {len(phrase.data)}")
         print(f"    Timestamp: {phrase.timestamp if phrase.timestamp else 'N/A'}")
 
@@ -187,27 +187,29 @@ def analyze_phrase_structure(audio, sr):
             else:
                 print(f"      {key}: {value}")
 
-        phrase_details.append({
-            'index': i + 1,
-            'modality': modality.name,
-            'probabilities': probabilities,
-            'features': features,
-            'duration_ms': len(phrase.data) / sr * 1000
-        })
+        phrase_details.append(
+            {
+                "index": i + 1,
+                "modality": modality.name,
+                "probabilities": probabilities,
+                "features": features,
+                "duration_ms": len(phrase.data) / sr * 1000,
+            }
+        )
 
     return phrase_details
 
 
 def compare_with_synthetic():
     """Compare Phee call with synthetic marmoset-like signals."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("COMPARISON WITH SYNTHETIC SIGNALS")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Generate synthetic marmoset call (7 kHz harmonic)
     sr = 48000
     duration_ms = 50
-    t = np.linspace(0, duration_ms/1000, int(sr * duration_ms/1000))
+    t = np.linspace(0, duration_ms / 1000, int(sr * duration_ms / 1000))
 
     # Fundamental at 7 kHz (marmoset range)
     synthetic = 0.5 * np.sin(2 * np.pi * 7000 * t)
@@ -251,30 +253,32 @@ def generate_spectrogram(audio, sr, output_path):
 
     # Waveform
     ax1.plot(np.arange(len(audio)) / sr, audio)
-    ax1.set_title('Phee Call Waveform')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('Amplitude')
+    ax1.set_title("Phee Call Waveform")
+    ax1.set_xlabel("Time (s)")
+    ax1.set_ylabel("Amplitude")
     ax1.grid(True, alpha=0.3)
 
     # Spectrogram
-    im = ax2.pcolormesh(times, frequencies, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='viridis')
-    ax2.set_title('Phee Call Spectrogram')
-    ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('Frequency (Hz)')
-    ax2.set_ylim([0, min(24000, sr//2)])  # Show up to 24 kHz
-    fig.colorbar(im, ax=ax2, label='Power (dB)')
+    im = ax2.pcolormesh(
+        times, frequencies, 10 * np.log10(Sxx + 1e-10), shading="gouraud", cmap="viridis"
+    )
+    ax2.set_title("Phee Call Spectrogram")
+    ax2.set_xlabel("Time (s)")
+    ax2.set_ylabel("Frequency (Hz)")
+    ax2.set_ylim([0, min(24000, sr // 2)])  # Show up to 24 kHz
+    fig.colorbar(im, ax=ax2, label="Power (dB)")
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
     print(f"  📊 Spectrogram saved to: {output_path}")
 
 
 def main():
     """Main analysis function."""
-    print("="*70)
+    print("=" * 70)
     print("DETAILED PHEE CALL ANALYSIS")
     print("Marmoset vocalization (Phee_62767.flac)")
-    print("="*70)
+    print("=" * 70)
 
     # Load the Phee call
     audio, sr, filepath = load_phee_call()
@@ -292,29 +296,29 @@ def main():
     compare_with_synthetic()
 
     # 4. Generate spectrogram
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SPECTROGRAM GENERATION")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     output_path = Path(__file__).parent / "phee_call_analysis.png"
     generate_spectrogram(audio, sr, output_path)
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("ANALYSIS SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     if phrase_details:
         # Count modalities
         modality_counts = {}
         for p in phrase_details:
-            m = p['modality']
+            m = p["modality"]
             modality_counts[m] = modality_counts.get(m, 0) + 1
 
         print(f"\n📊 Modality Distribution ({len(phrase_details)} phrases):")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(phrase_details) * 100
-            bar = '█' * int(percentage / 10)
+            bar = "█" * int(percentage / 10)
             print(f"  {modality:15s}: {count} ({percentage:.0f}%) {bar}")
 
         print("\n🔬 Key Findings:")
@@ -322,7 +326,7 @@ def main():
         print("  • Mixed modality detected (HARMONIC + FM_SWEEP)")
 
         # Check for HARMONIC presence
-        harmonic_count = modality_counts.get('HARMONIC', 0)
+        harmonic_count = modality_counts.get("HARMONIC", 0)
         if harmonic_count > 0:
             print("  ✓ HARMONIC components detected (expected for marmosets)")
         else:
@@ -333,9 +337,9 @@ def main():
         print("  the FM_SWEEP classification. This is scientifically valid as")
         print("  marmoset calls are not pure flat tones but have some modulation.")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Analysis complete!")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

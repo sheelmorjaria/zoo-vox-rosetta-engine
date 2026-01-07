@@ -34,11 +34,12 @@ class ContextCentroid:
         centroid_aggression = mean(all 17D vectors for "Aggression" labeled phrases)
         centroid_contact = mean(all 17D vectors for "Contact" labeled phrases)
     """
+
     context_name: str
     centroid_vector: AcousticFeatureVector17
     sample_count: int
     variance: Optional[np.ndarray] = None  # Per-feature variance
-    std_dev: Optional[np.ndarray] = None   # Per-feature std dev
+    std_dev: Optional[np.ndarray] = None  # Per-feature std dev
 
 
 class ContextualMap:
@@ -70,9 +71,7 @@ class ContextualMap:
         self.baseline_context: Optional[str] = None  # Typically "contact" or "neutral"
 
     def calculate_context_centroids(
-        self,
-        phrase_vectors: Dict[str, AcousticFeatureVector17],
-        context_labels: Dict[str, str]
+        self, phrase_vectors: Dict[str, AcousticFeatureVector17], context_labels: Dict[str, str]
     ) -> Dict[str, ContextCentroid]:
         """
         Calculate semantic centroids for each context from annotated phrases.
@@ -117,7 +116,7 @@ class ContextualMap:
                 centroid_vector=AcousticFeatureVector17.from_numpy(centroid_vec),
                 sample_count=len(vectors),
                 variance=variance,
-                std_dev=std_dev
+                std_dev=std_dev,
             )
 
         # Set baseline to "contact" if available, otherwise first context
@@ -137,10 +136,7 @@ class ContextualMap:
         self.baseline_context = context_name
 
     def generate_graded_phrase(
-        self,
-        target_context: str,
-        intensity: float,
-        baseline_context: Optional[str] = None
+        self, target_context: str, intensity: float, baseline_context: Optional[str] = None
     ) -> AcousticFeatureVector17:
         """
         Generate a "Virtual Phrase" at specified intensity along semantic gradient.
@@ -169,18 +165,14 @@ class ContextualMap:
         vec_target = self.centroids[target_context].centroid_vector
 
         # Interpolate: Start + (Direction * Distance)
-        virtual_phrase = self.algebra.interpolate(
-            vec_baseline,
-            vec_target,
-            alpha=intensity
-        )
+        virtual_phrase = self.algebra.interpolate(vec_baseline, vec_target, alpha=intensity)
 
         return virtual_phrase
 
     def find_nearest_real_phrase(
         self,
         virtual_vector: AcousticFeatureVector17,
-        phrase_vectors: Dict[str, AcousticFeatureVector17]
+        phrase_vectors: Dict[str, AcousticFeatureVector17],
     ) -> Tuple[str, AcousticFeatureVector17, float]:
         """
         Find the nearest real phrase to a virtual vector.
@@ -197,7 +189,7 @@ class ContextualMap:
         """
         best_key = None
         best_vector = None
-        best_distance = float('inf')
+        best_distance = float("inf")
 
         virtual_vec = virtual_vector.to_numpy()
 
@@ -217,11 +209,7 @@ class ContextualMap:
 
         return best_key, best_vector, best_distance
 
-    def calculate_context_delta(
-        self,
-        context_a: str,
-        context_b: str
-    ) -> AcousticFeatureVector17:
+    def calculate_context_delta(self, context_a: str, context_b: str) -> AcousticFeatureVector17:
         """
         Calculate the "delta" vector between two contexts.
 
@@ -248,11 +236,7 @@ class ContextualMap:
 
         return self.algebra.subtract(vec_a, vec_b)
 
-    def get_context_variance_explained(
-        self,
-        context_name: str,
-        feature_name: str
-    ) -> float:
+    def get_context_variance_explained(self, context_name: str, feature_name: str) -> float:
         """
         Get variance of a specific feature for a context.
 
@@ -284,49 +268,46 @@ class ContextualMap:
 
     def save(self, filepath: Path):
         """Save centroids to JSON file."""
-        data = {
-            'baseline_context': self.baseline_context,
-            'centroids': {}
-        }
+        data = {"baseline_context": self.baseline_context, "centroids": {}}
 
         for ctx_name, centroid in self.centroids.items():
-            data['centroids'][ctx_name] = {
-                'context_name': centroid.context_name,
-                'centroid_vector': centroid.centroid_vector.to_dict(),
-                'sample_count': centroid.sample_count,
-                'variance': centroid.variance.tolist() if centroid.variance is not None else None,
-                'std_dev': centroid.std_dev.tolist() if centroid.std_dev is not None else None
+            data["centroids"][ctx_name] = {
+                "context_name": centroid.context_name,
+                "centroid_vector": centroid.centroid_vector.to_dict(),
+                "sample_count": centroid.sample_count,
+                "variance": centroid.variance.tolist() if centroid.variance is not None else None,
+                "std_dev": centroid.std_dev.tolist() if centroid.std_dev is not None else None,
             }
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
 
     @classmethod
-    def load(cls, filepath: Path) -> 'ContextualMap':
+    def load(cls, filepath: Path) -> "ContextualMap":
         """Load centroids from JSON file."""
         with open(filepath) as f:
             data = json.load(f)
 
         algebra = HighDimensionalAcousticAlgebra()
         map_obj = cls(algebra)
-        map_obj.baseline_context = data.get('baseline_context')
+        map_obj.baseline_context = data.get("baseline_context")
 
-        for ctx_name, ctx_data in data['centroids'].items():
+        for ctx_name, ctx_data in data["centroids"].items():
             map_obj.centroids[ctx_name] = ContextCentroid(
-                context_name=ctx_data['context_name'],
-                centroid_vector=AcousticFeatureVector17.from_dict(ctx_data['centroid_vector']),
-                sample_count=ctx_data['sample_count'],
-                variance=np.array(ctx_data['variance']) if ctx_data.get('variance') else None,
-                std_dev=np.array(ctx_data['std_dev']) if ctx_data.get('std_dev') else None
+                context_name=ctx_data["context_name"],
+                centroid_vector=AcousticFeatureVector17.from_dict(ctx_data["centroid_vector"]),
+                sample_count=ctx_data["sample_count"],
+                variance=np.array(ctx_data["variance"]) if ctx_data.get("variance") else None,
+                std_dev=np.array(ctx_data["std_dev"]) if ctx_data.get("std_dev") else None,
             )
 
         return map_obj
 
     def summarize(self):
         """Print summary of contextual map."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("CONTEXTUAL MAP SUMMARY")
-        print("="*70)
+        print("=" * 70)
 
         if self.baseline_context:
             print(f"\n📍 Baseline Context: {self.baseline_context}")
@@ -350,7 +331,7 @@ class ContextualMap:
                 for idx in top_variance_idx:
                     print(f"    - {feature_names[idx]}: {variances[idx]:.2f}")
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
 
 
 # ============================================================================
@@ -358,51 +339,95 @@ class ContextualMap:
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CONTEXTUAL MAP DEMONSTRATION")
-    print("="*70)
+    print("=" * 70)
 
     # Create example phrase vectors with context labels
     phrase_vectors = {
-        'phrase_001': AcousticFeatureVector17(
-            mean_f0_hz=6500, duration_ms=70, attack_ms=0.010, decay_ms=0.050,
-            f0_range_hz=400, vibrato_rate_hz=8.0, vibrato_depth_hz=50.0,
-            jitter=0.02, shimmer=0.03, harmonicity_hnr=20.0, spectral_flatness=0.1,
-            spectral_centroid_hz=7000.0, spectral_rolloff_hz=13000.0,
-            bandwidth_hz=5000.0, slope_db_per_octave=-8.0,
-            rms_db=-20.0, peak_amplitude=0.15
+        "phrase_001": AcousticFeatureVector17(
+            mean_f0_hz=6500,
+            duration_ms=70,
+            attack_ms=0.010,
+            decay_ms=0.050,
+            f0_range_hz=400,
+            vibrato_rate_hz=8.0,
+            vibrato_depth_hz=50.0,
+            jitter=0.02,
+            shimmer=0.03,
+            harmonicity_hnr=20.0,
+            spectral_flatness=0.1,
+            spectral_centroid_hz=7000.0,
+            spectral_rolloff_hz=13000.0,
+            bandwidth_hz=5000.0,
+            slope_db_per_octave=-8.0,
+            rms_db=-20.0,
+            peak_amplitude=0.15,
         ),
-        'phrase_002': AcousticFeatureVector17(
-            mean_f0_hz=6400, duration_ms=75, attack_ms=0.012, decay_ms=0.045,
-            f0_range_hz=450, vibrato_rate_hz=7.5, vibrato_depth_hz=45.0,
-            jitter=0.018, shimmer=0.028, harmonicity_hnr=22.0, spectral_flatness=0.12,
-            spectral_centroid_hz=7200.0, spectral_rolloff_hz=12500.0,
-            bandwidth_hz=5200.0, slope_db_per_octave=-7.5,
-            rms_db=-19.0, peak_amplitude=0.14
+        "phrase_002": AcousticFeatureVector17(
+            mean_f0_hz=6400,
+            duration_ms=75,
+            attack_ms=0.012,
+            decay_ms=0.045,
+            f0_range_hz=450,
+            vibrato_rate_hz=7.5,
+            vibrato_depth_hz=45.0,
+            jitter=0.018,
+            shimmer=0.028,
+            harmonicity_hnr=22.0,
+            spectral_flatness=0.12,
+            spectral_centroid_hz=7200.0,
+            spectral_rolloff_hz=12500.0,
+            bandwidth_hz=5200.0,
+            slope_db_per_octave=-7.5,
+            rms_db=-19.0,
+            peak_amplitude=0.14,
         ),
-        'phrase_003': AcousticFeatureVector17(
-            mean_f0_hz=6100, duration_ms=55, attack_ms=0.005, decay_ms=0.030,
-            f0_range_hz=3500, vibrato_rate_hz=12.0, vibrato_depth_hz=150.0,
-            jitter=0.08, shimmer=0.05, harmonicity_hnr=5.0, spectral_flatness=0.3,
-            spectral_centroid_hz=8000.0, spectral_rolloff_hz=15000.0,
-            bandwidth_hz=8000.0, slope_db_per_octave=-4.0,
-            rms_db=-15.0, peak_amplitude=0.25
+        "phrase_003": AcousticFeatureVector17(
+            mean_f0_hz=6100,
+            duration_ms=55,
+            attack_ms=0.005,
+            decay_ms=0.030,
+            f0_range_hz=3500,
+            vibrato_rate_hz=12.0,
+            vibrato_depth_hz=150.0,
+            jitter=0.08,
+            shimmer=0.05,
+            harmonicity_hnr=5.0,
+            spectral_flatness=0.3,
+            spectral_centroid_hz=8000.0,
+            spectral_rolloff_hz=15000.0,
+            bandwidth_hz=8000.0,
+            slope_db_per_octave=-4.0,
+            rms_db=-15.0,
+            peak_amplitude=0.25,
         ),
-        'phrase_004': AcousticFeatureVector17(
-            mean_f0_hz=6000, duration_ms=50, attack_ms=0.004, decay_ms=0.025,
-            f0_range_hz=3800, vibrato_rate_hz=11.0, vibrato_depth_hz=140.0,
-            jitter=0.075, shimmer=0.045, harmonicity_hnr=6.0, spectral_flatness=0.28,
-            spectral_centroid_hz=8200.0, spectral_rolloff_hz=14500.0,
-            bandwidth_hz=7500.0, slope_db_per_octave=-4.5,
-            rms_db=-14.0, peak_amplitude=0.23
+        "phrase_004": AcousticFeatureVector17(
+            mean_f0_hz=6000,
+            duration_ms=50,
+            attack_ms=0.004,
+            decay_ms=0.025,
+            f0_range_hz=3800,
+            vibrato_rate_hz=11.0,
+            vibrato_depth_hz=140.0,
+            jitter=0.075,
+            shimmer=0.045,
+            harmonicity_hnr=6.0,
+            spectral_flatness=0.28,
+            spectral_centroid_hz=8200.0,
+            spectral_rolloff_hz=14500.0,
+            bandwidth_hz=7500.0,
+            slope_db_per_octave=-4.5,
+            rms_db=-14.0,
+            peak_amplitude=0.23,
         ),
     }
 
     context_labels = {
-        'phrase_001': 'contact',
-        'phrase_002': 'contact',
-        'phrase_003': 'aggression',
-        'phrase_004': 'aggression',
+        "phrase_001": "contact",
+        "phrase_002": "contact",
+        "phrase_003": "aggression",
+        "phrase_004": "aggression",
     }
 
     # Create contextual map
@@ -411,25 +436,27 @@ if __name__ == "__main__":
     map_obj.summarize()
 
     # Generate graded phrases
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("GRADIENT GENERATION")
-    print("="*70)
+    print("=" * 70)
 
     for intensity in [0.0, 0.25, 0.5, 0.75, 1.0]:
-        print(f"\n🎯 Intensity {intensity*100:.0f}% (Contact → Aggression)")
+        print(f"\n🎯 Intensity {intensity * 100:.0f}% (Contact → Aggression)")
 
-        virtual = map_obj.generate_graded_phrase('aggression', intensity)
+        virtual = map_obj.generate_graded_phrase("aggression", intensity)
         print(f"  Virtual: {virtual}")
 
-        nearest_key, nearest_vec, distance = map_obj.find_nearest_real_phrase(virtual, phrase_vectors)
+        nearest_key, nearest_vec, distance = map_obj.find_nearest_real_phrase(
+            virtual, phrase_vectors
+        )
         print(f"  Nearest: {nearest_key} (distance: {distance:.3f})")
 
     # Context delta
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CONTEXT DELTA (What makes Aggression different from Contact?)")
-    print("="*70)
+    print("=" * 70)
 
-    delta = map_obj.calculate_context_delta('aggression', 'contact')
+    delta = map_obj.calculate_context_delta("aggression", "contact")
     print(f"\nDelta Vector: {delta}")
 
     # Show most different features
@@ -441,7 +468,7 @@ if __name__ == "__main__":
     for idx in top_delta_idx:
         print(f"  - {feature_names[idx]}: {delta_vec[idx]:+.2f}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("\n✅ Contextual Map enables:")
     print("   ✓ Semantic centroids (define 'meaning' of contexts)")
     print("   ✓ Gradient generation (30% Aggressive, 50% Aggressive, etc.)")

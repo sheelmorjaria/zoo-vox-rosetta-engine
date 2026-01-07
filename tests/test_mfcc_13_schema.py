@@ -25,6 +25,7 @@ from typing import Dict, Any
 # Test 2.1: PhraseSignature MFCC Expansion
 # =============================================================================
 
+
 class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
     """Test 2.1: PhraseSignature supports 13 MFCCs"""
 
@@ -66,7 +67,7 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
             mfcc_6=-0.3,  # NEW
             mfcc_7=-0.2,  # NEW
             mfcc_8=-0.1,  # NEW
-            mfcc_9=0.0,   # NEW
+            mfcc_9=0.0,  # NEW
             mfcc_10=0.1,  # NEW
             mfcc_11=0.2,  # NEW
             mfcc_12=0.3,  # NEW
@@ -75,7 +76,7 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
             spectral_flux=1.5,
             median_ici_ms=15.0,
             onset_rate_hz=50.0,
-            ici_coefficient_of_variation=0.3
+            ici_coefficient_of_variation=0.3,
         )
 
         # Assert - Verify 13 MFCC fields exist and have correct values
@@ -87,7 +88,7 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
         self.assertEqual(signature.mfcc_6, -0.3)  # NEW
         self.assertEqual(signature.mfcc_7, -0.2)  # NEW
         self.assertEqual(signature.mfcc_8, -0.1)  # NEW
-        self.assertEqual(signature.mfcc_9, 0.0)   # NEW
+        self.assertEqual(signature.mfcc_9, 0.0)  # NEW
         self.assertEqual(signature.mfcc_10, 0.1)  # NEW
         self.assertEqual(signature.mfcc_11, 0.2)  # NEW
         self.assertEqual(signature.mfcc_12, 0.3)  # NEW
@@ -98,15 +99,23 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
         # Legacy fields: 16 (for backward compatibility with old code)
         # Total: 45 fields
         import dataclasses
+
         field_count = len(dataclasses.fields(signature))
-        self.assertEqual(field_count, 45,
-                        f"PhraseSignature should have 45 fields (29 core + 16 legacy), got {field_count}")
+        self.assertEqual(
+            field_count,
+            45,
+            f"PhraseSignature should have 45 fields (29 core + 16 legacy), got {field_count}",
+        )
 
         print(f"✓ PhraseSignature MFCC expansion test passed")
         print(f"  Total fields: {field_count} (29D vector)")
-        print(f"  MFCCs 1-4: {signature.mfcc_1}, {signature.mfcc_2}, {signature.mfcc_3}, {signature.mfcc_4}")
-        print(f"  MFCCs 5-13: {signature.mfcc_5}, {signature.mfcc_6}, {signature.mfcc_7}, {signature.mfcc_8}, "
-              f"{signature.mfcc_9}, {signature.mfcc_10}, {signature.mfcc_11}, {signature.mfcc_12}, {signature.mfcc_13}")
+        print(
+            f"  MFCCs 1-4: {signature.mfcc_1}, {signature.mfcc_2}, {signature.mfcc_3}, {signature.mfcc_4}"
+        )
+        print(
+            f"  MFCCs 5-13: {signature.mfcc_5}, {signature.mfcc_6}, {signature.mfcc_7}, {signature.mfcc_8}, "
+            f"{signature.mfcc_9}, {signature.mfcc_10}, {signature.mfcc_11}, {signature.mfcc_12}, {signature.mfcc_13}"
+        )
 
     def test_phrase_signature_backward_compatibility(self):
         """
@@ -145,15 +154,15 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
             spectral_flux=1.5,
             median_ici_ms=15.0,
             onset_rate_hz=50.0,
-            ici_coefficient_of_variation=0.3
+            ici_coefficient_of_variation=0.3,
         )
 
         # Assert - New MFCCs should default to 0.0
-        self.assertEqual(signature.mfcc_5, 0.0)   # NEW (default)
-        self.assertEqual(signature.mfcc_6, 0.0)   # NEW (default)
-        self.assertEqual(signature.mfcc_7, 0.0)   # NEW (default)
-        self.assertEqual(signature.mfcc_8, 0.0)   # NEW (default)
-        self.assertEqual(signature.mfcc_9, 0.0)   # NEW (default)
+        self.assertEqual(signature.mfcc_5, 0.0)  # NEW (default)
+        self.assertEqual(signature.mfcc_6, 0.0)  # NEW (default)
+        self.assertEqual(signature.mfcc_7, 0.0)  # NEW (default)
+        self.assertEqual(signature.mfcc_8, 0.0)  # NEW (default)
+        self.assertEqual(signature.mfcc_9, 0.0)  # NEW (default)
         self.assertEqual(signature.mfcc_10, 0.0)  # NEW (default)
         self.assertEqual(signature.mfcc_11, 0.0)  # NEW (default)
         self.assertEqual(signature.mfcc_12, 0.0)  # NEW (default)
@@ -167,6 +176,7 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
 # =============================================================================
 # Test 2.2: JSON Serialization 13D
 # =============================================================================
+
 
 class TestJSONSerialization13D(unittest.TestCase):
     """Test 2.2: JSON serialization/deserialization works with 13 MFCCs"""
@@ -218,7 +228,7 @@ class TestJSONSerialization13D(unittest.TestCase):
             spectral_flux=1.8,
             median_ici_ms=14.0,
             onset_rate_hz=55.0,
-            ici_coefficient_of_variation=0.32
+            ici_coefficient_of_variation=0.32,
         )
 
         # Act - Serialize to JSON
@@ -245,11 +255,15 @@ class TestJSONSerialization13D(unittest.TestCase):
         self.assertAlmostEqual(restored.mfcc_13, original.mfcc_13, places=5)  # NEW
 
         print(f"✓ JSON serialization 13D test passed")
-        print(f"  Original MFCCs 1-4: {original.mfcc_1:.2f}, {original.mfcc_2:.2f}, "
-              f"{original.mfcc_3:.2f}, {original.mfcc_4:.2f}")
-        print(f"  Original MFCCs 5-13: {original.mfcc_5:.2f}, {original.mfcc_6:.2f}, "
-              f"{original.mfcc_7:.2f}, {original.mfcc_8:.2f}, {original.mfcc_9:.2f}, "
-              f"{original.mfcc_10:.2f}, {original.mfcc_11:.2f}, {original.mfcc_12:.2f}, {original.mfcc_13:.2f}")
+        print(
+            f"  Original MFCCs 1-4: {original.mfcc_1:.2f}, {original.mfcc_2:.2f}, "
+            f"{original.mfcc_3:.2f}, {original.mfcc_4:.2f}"
+        )
+        print(
+            f"  Original MFCCs 5-13: {original.mfcc_5:.2f}, {original.mfcc_6:.2f}, "
+            f"{original.mfcc_7:.2f}, {original.mfcc_8:.2f}, {original.mfcc_9:.2f}, "
+            f"{original.mfcc_10:.2f}, {original.mfcc_11:.2f}, {original.mfcc_12:.2f}, {original.mfcc_13:.2f}"
+        )
         print(f"  Restored MFCCs match: All within 1e-5")
 
     def test_json_backward_compatibility_4mfcc(self):
@@ -266,7 +280,7 @@ class TestJSONSerialization13D(unittest.TestCase):
         from data_models import PhraseSignature
 
         # Arrange - Old JSON format with only 4 MFCCs
-        old_json = '''{
+        old_json = """{
             "mean_f0_hz": 7000.0,
             "duration_ms": 50.0,
             "f0_range_hz": 400.0,
@@ -289,14 +303,14 @@ class TestJSONSerialization13D(unittest.TestCase):
             "median_ici_ms": 15.0,
             "onset_rate_hz": 50.0,
             "ici_coefficient_of_variation": 0.3
-        }'''
+        }"""
 
         # Act - Deserialize old JSON
         old_dict = json.loads(old_json)
 
         # Add default values for missing MFCCs (5-13)
         for i in range(5, 14):
-            old_dict[f'mfcc_{i}'] = 0.0
+            old_dict[f"mfcc_{i}"] = 0.0
 
         restored = PhraseSignature(**old_dict)
 
@@ -305,7 +319,7 @@ class TestJSONSerialization13D(unittest.TestCase):
         self.assertEqual(restored.mfcc_2, -5.0)
         self.assertEqual(restored.mfcc_3, -2.0)
         self.assertEqual(restored.mfcc_4, -1.0)
-        self.assertEqual(restored.mfcc_5, 0.0)   # Defaulted
+        self.assertEqual(restored.mfcc_5, 0.0)  # Defaulted
         self.assertEqual(restored.mfcc_13, 0.0)  # Defaulted
 
         print(f"✓ Backward compatibility test passed")
@@ -317,5 +331,5 @@ class TestJSONSerialization13D(unittest.TestCase):
 # Test Runner
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

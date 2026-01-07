@@ -38,7 +38,7 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # Import your existing frameworks
 from intracall_linguistic_analysis import IntraCallSyntaxAnalyzer, MicroHarmonicExtractor
@@ -47,6 +47,7 @@ from intracall_linguistic_analysis import IntraCallSyntaxAnalyzer, MicroHarmonic
 @dataclass
 class PhraseTemplate:
     """Template for individual phrase with acoustic parameters."""
+
     phrase_type: str
     harmonic_features: np.ndarray  # 23-dim from your framework
     duration_ms: float
@@ -58,6 +59,7 @@ class PhraseTemplate:
 @dataclass
 class CallContext:
     """Context definition for vocalization generation."""
+
     context_name: str
     species: str  # 'marmoset' or 'bat'
     behavioral_context: str  # 'contact', 'alarm', 'feeding', etc.
@@ -80,9 +82,9 @@ class EnhancedPhraseExtractor:
         self.syntax_analyzer = IntraCallSyntaxAnalyzer()
         self.phrase_templates = {}
 
-    def extract_phrases_from_audio(self, audio: np.ndarray,
-                                  context: str = 'unknown',
-                                  min_phrase_duration: float = 0.05) -> List[PhraseTemplate]:
+    def extract_phrases_from_audio(
+        self, audio: np.ndarray, context: str = "unknown", min_phrase_duration: float = 0.05
+    ) -> List[PhraseTemplate]:
         """
         Extract synthesis-ready phrase templates from audio using your existing framework.
 
@@ -136,7 +138,7 @@ class EnhancedPhraseExtractor:
                 duration_ms=duration_ms,
                 amplitude_profile=amplitude_profile,
                 formant_transition=formant_transition,
-                context_associations=context_associations
+                context_associations=context_associations,
             )
 
             phrase_templates.append(template)
@@ -161,46 +163,46 @@ class EnhancedPhraseExtractor:
 
         # Formant frequencies (first 3 harmonics' mean frequencies)
         for i in range(1, 4):
-            freqs = [h['frequency'] for h in all_harmonics.get(i, [])]
-            feature_dict[f'formant{i}'] = np.mean(freqs) if freqs else 0.0
+            freqs = [h["frequency"] for h in all_harmonics.get(i, [])]
+            feature_dict[f"formant{i}"] = np.mean(freqs) if freqs else 0.0
 
         # Harmonic strengths
         for i in range(2, 6):
-            amps = [h['amplitude'] for h in all_harmonics.get(i, [])]
-            feature_dict[f'h{i}_strength'] = np.mean(amps) if amps else 0.0
+            amps = [h["amplitude"] for h in all_harmonics.get(i, [])]
+            feature_dict[f"h{i}_strength"] = np.mean(amps) if amps else 0.0
 
         # Harmonic noise ratio
-        deviations = [abs(h['deviation_cents']) for h_list in all_harmonics.values()
-                     for h in h_list]
-        feature_dict['hnr_mean'] = 1.0 / (np.mean(deviations) + 1) if deviations else 0.0
-        feature_dict['hnr_std'] = np.std(deviations) if len(deviations) > 1 else 0.0
+        deviations = [
+            abs(h["deviation_cents"]) for h_list in all_harmonics.values() for h in h_list
+        ]
+        feature_dict["hnr_mean"] = 1.0 / (np.mean(deviations) + 1) if deviations else 0.0
+        feature_dict["hnr_std"] = np.std(deviations) if len(deviations) > 1 else 0.0
 
         # Spectral flux
-        all_amps = [h['amplitude'] for h_list in all_harmonics.values()
-                   for h in h_list]
-        feature_dict['spectral_flux'] = np.std(all_amps) if len(all_amps) > 1 else 0.0
+        all_amps = [h["amplitude"] for h_list in all_harmonics.values() for h in h_list]
+        feature_dict["spectral_flux"] = np.std(all_amps) if len(all_amps) > 1 else 0.0
 
         # Additional features to reach 23 dimensions
-        feature_dict['formant_spacing_f2_f1'] = (
-            feature_dict.get('formant2', 0) - feature_dict.get('formant1', 0)
+        feature_dict["formant_spacing_f2_f1"] = feature_dict.get("formant2", 0) - feature_dict.get(
+            "formant1", 0
         )
-        feature_dict['formant_spacing_f3_f2'] = (
-            feature_dict.get('formant3', 0) - feature_dict.get('formant2', 0)
+        feature_dict["formant_spacing_f3_f2"] = feature_dict.get("formant3", 0) - feature_dict.get(
+            "formant2", 0
         )
 
         # Vocal tract length estimate
-        f1 = feature_dict.get('formant1', 1000)
-        feature_dict['vocal_tract_mm'] = 35000 / (2 * f1) if f1 > 0 else 180
+        f1 = feature_dict.get("formant1", 1000)
+        feature_dict["vocal_tract_mm"] = 35000 / (2 * f1) if f1 > 0 else 180
 
         # Harmonic ratios
-        even_amps = [feature_dict.get(f'h{i}_strength', 0) for i in range(2, 6, 2)]
-        odd_amps = [feature_dict.get(f'h{i}_strength', 0) for i in range(3, 6, 2)]
-        feature_dict['even_odd_ratio'] = np.mean(even_amps) / (np.mean(odd_amps) + 0.001)
+        even_amps = [feature_dict.get(f"h{i}_strength", 0) for i in range(2, 6, 2)]
+        odd_amps = [feature_dict.get(f"h{i}_strength", 0) for i in range(3, 6, 2)]
+        feature_dict["even_odd_ratio"] = np.mean(even_amps) / (np.mean(odd_amps) + 0.001)
 
         # Fill remaining features with derived characteristics
         remaining_features = 23 - len(feature_dict)
         for i in range(remaining_features):
-            feature_dict[f'derived_{i}'] = np.random.randn() * 0.01  # Small random values
+            feature_dict[f"derived_{i}"] = np.random.randn() * 0.01  # Small random values
 
         # Convert to array in consistent order
         feature_names = sorted(feature_dict.keys())
@@ -214,7 +216,7 @@ class EnhancedPhraseExtractor:
 
         for frame in phrase:
             # Total energy in frame
-            total_energy = sum(h.get('amplitude', 0)**2 for h in frame.values())
+            total_energy = sum(h.get("amplitude", 0) ** 2 for h in frame.values())
             amplitudes.append(np.sqrt(total_energy))
 
         if not amplitudes:
@@ -227,7 +229,7 @@ class EnhancedPhraseExtractor:
         # Smooth with moving average
         window_size = min(3, len(amplitudes))
         if window_size > 1:
-            smoothed = np.convolve(amplitudes, np.ones(window_size)/window_size, mode='same')
+            smoothed = np.convolve(amplitudes, np.ones(window_size) / window_size, mode="same")
             return smoothed
 
         return amplitudes
@@ -244,7 +246,7 @@ class EnhancedPhraseExtractor:
             f1 = None
             for h_num, h_data in frame.items():
                 if h_num == 1:  # First harmonic
-                    f1 = h_data['frequency']
+                    f1 = h_data["frequency"]
                     break
             f1_trajectory.append(f1 if f1 is not None else 0.0)
 
@@ -255,30 +257,31 @@ class EnhancedPhraseExtractor:
 
         return transitions
 
-    def _determine_context_associations(self, phrase_type: str, position: int,
-                                     total_phrases: int, context: str) -> List[str]:
+    def _determine_context_associations(
+        self, phrase_type: str, position: int, total_phrases: int, context: str
+    ) -> List[str]:
         """Determine likely contexts where this phrase would appear."""
         associations = [context]  # Start with given context
 
         # Position-based associations
         if position == 0:
-            associations.append('phrase_initial')
+            associations.append("phrase_initial")
         elif position == total_phrases - 1:
-            associations.append('phrase_terminal')
+            associations.append("phrase_terminal")
         else:
-            associations.append('phrase_medial')
+            associations.append("phrase_medial")
 
         # Phrase type based associations
-        if 'H1' in phrase_type:
-            associations.append('fundamental_dominant')
-        elif 'H2' in phrase_type:
-            associations.append('second_harmonic_dominant')
+        if "H1" in phrase_type:
+            associations.append("fundamental_dominant")
+        elif "H2" in phrase_type:
+            associations.append("second_harmonic_dominant")
 
         # Contour-based associations
-        if 'rising' in phrase_type:
-            associations.append('rising_contour')
-        elif 'falling' in phrase_type:
-            associations.append('falling_contour')
+        if "rising" in phrase_type:
+            associations.append("rising_contour")
+        elif "falling" in phrase_type:
+            associations.append("falling_contour")
 
         return list(set(associations))  # Remove duplicates
 
@@ -293,8 +296,9 @@ class ContextualPhraseSequencer:
         self.context_templates = {}
         self.phrase_type_vocab = set()
 
-    def learn_grammar_from_phrases(self, phrase_sequences: List[List[PhraseTemplate]],
-                                  contexts: List[str]):
+    def learn_grammar_from_phrases(
+        self, phrase_sequences: List[List[PhraseTemplate]], contexts: List[str]
+    ):
         """
         Learn context-specific grammar from extracted phrase sequences.
         """
@@ -314,9 +318,11 @@ class ContextualPhraseSequencer:
             # Store typical sequence length
             lengths = [len(seq) for seq in sequences]
             self.context_templates[context] = {
-                'typical_length': (int(np.percentile(lengths, 25)),
-                                 int(np.percentile(lengths, 75))),
-                'common_patterns': self._find_common_patterns(sequences)
+                "typical_length": (
+                    int(np.percentile(lengths, 25)),
+                    int(np.percentile(lengths, 75)),
+                ),
+                "common_patterns": self._find_common_patterns(sequences),
             }
 
         print(f"  Learned grammar for {len(self.grammar_models)} contexts")
@@ -344,23 +350,27 @@ class ContextualPhraseSequencer:
 
         return transition_matrix
 
-    def _find_common_patterns(self, sequences: List[List[str]],
-                            min_length: int = 2, max_length: int = 4) -> List[Tuple[str, int]]:
+    def _find_common_patterns(
+        self, sequences: List[List[str]], min_length: int = 2, max_length: int = 4
+    ) -> List[Tuple[str, int]]:
         """Find common n-gram patterns in sequences."""
         pattern_counts = Counter()
 
         for sequence in sequences:
             for length in range(min_length, min(max_length + 1, len(sequence))):
                 for i in range(len(sequence) - length + 1):
-                    pattern = tuple(sequence[i:i+length])
+                    pattern = tuple(sequence[i : i + length])
                     pattern_counts[pattern] += 1
 
         # Return most common patterns
-        common_patterns = [(str(pattern), count) for pattern, count in pattern_counts.most_common(10)]
+        common_patterns = [
+            (str(pattern), count) for pattern, count in pattern_counts.most_common(10)
+        ]
         return common_patterns
 
-    def generate_sequence(self, context: str, length: Optional[int] = None,
-                         temperature: float = 1.0) -> List[str]:
+    def generate_sequence(
+        self, context: str, length: Optional[int] = None, temperature: float = 1.0
+    ) -> List[str]:
         """
         Generate phrase sequence for specific context.
 
@@ -381,7 +391,7 @@ class ContextualPhraseSequencer:
 
         # Determine sequence length
         if length is None:
-            min_len, max_len = self.context_templates[context]['typical_length']
+            min_len, max_len = self.context_templates[context]["typical_length"]
             length = np.random.randint(min_len, max_len + 1)
 
         # Generate sequence
@@ -423,7 +433,7 @@ class RealisticVocalSynthesizer:
     High-quality vocal synthesis using phrase templates and your harmonic features.
     """
 
-    def __init__(self, sr: int = 44100, species: str = 'marmoset'):
+    def __init__(self, sr: int = 44100, species: str = "marmoset"):
         self.sr = sr
         self.species = species
         self.species_params = self._get_species_parameters(species)
@@ -431,30 +441,31 @@ class RealisticVocalSynthesizer:
     def _get_species_parameters(self, species: str) -> Dict:
         """Get species-specific acoustic parameters."""
         params = {
-            'marmoset': {
-                'f0_range': (500, 2000),  # Hz
-                'formant_range': (800, 4000),  # Hz
-                'harmonic_decay': 0.7,  # Energy falloff per harmonic
-                'typical_duration': (1.5, 3.0),  # seconds
-                'noise_level': 0.02,
-                'vibrato_rate': (5, 8),  # Hz
-                'vibrato_depth': 0.03
+            "marmoset": {
+                "f0_range": (500, 2000),  # Hz
+                "formant_range": (800, 4000),  # Hz
+                "harmonic_decay": 0.7,  # Energy falloff per harmonic
+                "typical_duration": (1.5, 3.0),  # seconds
+                "noise_level": 0.02,
+                "vibrato_rate": (5, 8),  # Hz
+                "vibrato_depth": 0.03,
             },
-            'bat': {
-                'f0_range': (15000, 80000),  # Hz (ultrasonic)
-                'formant_range': (20000, 100000),  # Hz
-                'harmonic_decay': 0.8,
-                'typical_duration': (0.01, 0.1),  # Very short calls
-                'noise_level': 0.05,
-                'vibrato_rate': None,  # Bats typically don't use vibrato
-                'vibrato_depth': 0.0
-            }
+            "bat": {
+                "f0_range": (15000, 80000),  # Hz (ultrasonic)
+                "formant_range": (20000, 100000),  # Hz
+                "harmonic_decay": 0.8,
+                "typical_duration": (0.01, 0.1),  # Very short calls
+                "noise_level": 0.05,
+                "vibrato_rate": None,  # Bats typically don't use vibrato
+                "vibrato_depth": 0.0,
+            },
         }
 
-        return params.get(species, params['marmoset'])
+        return params.get(species, params["marmoset"])
 
-    def synthesize_phrase(self, template: PhraseTemplate,
-                         amplitude_modulation: float = 1.0) -> np.ndarray:
+    def synthesize_phrase(
+        self, template: PhraseTemplate, amplitude_modulation: float = 1.0
+    ) -> np.ndarray:
         """
         Synthesize a single phrase from template using your 23-dim features.
         """
@@ -483,8 +494,10 @@ class RealisticVocalSynthesizer:
                 amplitude = 1.0
             else:
                 # Use harmonic strength from features
-                strength_key = f'h{h}_strength'
-                base_amplitude = params.get(strength_key, 0.5) * (self.species_params['harmonic_decay'] ** (h-1))
+                strength_key = f"h{h}_strength"
+                base_amplitude = params.get(strength_key, 0.5) * (
+                    self.species_params["harmonic_decay"] ** (h - 1)
+                )
                 amplitude = base_amplitude
 
             # Apply amplitude profile
@@ -496,15 +509,15 @@ class RealisticVocalSynthesizer:
 
             # Add formant filtering (simplified)
             if h <= 3:  # Apply to first few harmonics
-                formant_freq = params.get(f'formant{h}', 1000 * h)
+                formant_freq = params.get(f"formant{h}", 1000 * h)
                 harmonic = self._apply_formant_filter(harmonic, formant_freq, t)
 
             audio += harmonic
 
         # Add species-specific characteristics
-        if self.species == 'marmoset':
+        if self.species == "marmoset":
             audio = self._add_marmoset_characteristics(audio, t, params)
-        elif self.species == 'bat':
+        elif self.species == "bat":
             audio = self._add_bat_characteristics(audio, t, params)
 
         # Normalize
@@ -519,69 +532,67 @@ class RealisticVocalSynthesizer:
 
         # Extract key parameters (assuming standard feature order)
         if len(features) >= 3:
-            params['formant1'] = features[0]
-            params['formant2'] = features[1]
-            params['formant3'] = features[2]
+            params["formant1"] = features[0]
+            params["formant2"] = features[1]
+            params["formant3"] = features[2]
 
         if len(features) >= 6:
-            params['h2_strength'] = features[3]
-            params['h3_strength'] = features[4]
-            params['h4_strength'] = features[5]
+            params["h2_strength"] = features[3]
+            params["h3_strength"] = features[4]
+            params["h4_strength"] = features[5]
 
         if len(features) >= 8:
-            params['hnr_mean'] = features[6]
-            params['hnr_std'] = features[7]
+            params["hnr_mean"] = features[6]
+            params["hnr_std"] = features[7]
 
         if len(features) >= 9:
-            params['spectral_flux'] = features[8]
+            params["spectral_flux"] = features[8]
 
         # Estimate F0 from formants
-        f1 = params.get('formant1', 1000)
-        if self.species == 'marmoset':
-            params['f0'] = f1 / 2  # Approximate relationship
+        f1 = params.get("formant1", 1000)
+        if self.species == "marmoset":
+            params["f0"] = f1 / 2  # Approximate relationship
         else:  # bat
-            params['f0'] = f1 / 3  # Different relationship for bats
+            params["f0"] = f1 / 3  # Different relationship for bats
 
         # Ensure F0 is in species-appropriate range
-        f0_min, f0_max = self.species_params['f0_range']
-        params['f0'] = np.clip(params['f0'], f0_min, f0_max)
+        f0_min, f0_max = self.species_params["f0_range"]
+        params["f0"] = np.clip(params["f0"], f0_min, f0_max)
 
         return params
 
-    def _generate_f0_contour(self, t: np.ndarray, params: Dict,
-                           duration_sec: float) -> np.ndarray:
+    def _generate_f0_contour(self, t: np.ndarray, params: Dict, duration_sec: float) -> np.ndarray:
         """Generate fundamental frequency contour for phrase."""
-        f0_base = params['f0']
+        f0_base = params["f0"]
 
         # Start with base frequency
         f0 = np.full_like(t, f0_base)
 
         # Add phrase-specific contour
-        if 'formant_transition' in params and params['formant_transition'] is not None:
+        if "formant_transition" in params and params["formant_transition"] is not None:
             # Apply frequency modulation based on formant transitions
             modulation = np.interp(
                 t,
-                np.linspace(0, duration_sec, len(params['formant_transition'])),
-                params['formant_transition']
+                np.linspace(0, duration_sec, len(params["formant_transition"])),
+                params["formant_transition"],
             )
             f0 += modulation * 0.1  # Scale down modulation
 
         # Add species-specific characteristics
-        if self.species == 'marmoset':
+        if self.species == "marmoset":
             # Add vibrato for marmosets
-            vibrato_rate = np.random.uniform(*self.species_params['vibrato_rate'])
-            vibrato_depth = self.species_params['vibrato_depth']
+            vibrato_rate = np.random.uniform(*self.species_params["vibrato_rate"])
+            vibrato_depth = self.species_params["vibrato_depth"]
             vibrato = vibrato_depth * np.sin(2 * np.pi * vibrato_rate * t)
-            f0 *= (1 + vibrato)
+            f0 *= 1 + vibrato
 
         # Ensure F0 stays in range
-        f0_min, f0_max = self.species_params['f0_range']
+        f0_min, f0_max = self.species_params["f0_range"]
         f0 = np.clip(f0, f0_min, f0_max)
 
         return f0
 
-    def _interpolate_amplitude_profile(self, profile: np.ndarray,
-                                     target_length: int) -> np.ndarray:
+    def _interpolate_amplitude_profile(self, profile: np.ndarray, target_length: int) -> np.ndarray:
         """Interpolate amplitude profile to target length."""
         if len(profile) == 0:
             return np.ones(target_length)
@@ -592,8 +603,9 @@ class RealisticVocalSynthesizer:
 
         return interpolated
 
-    def _apply_formant_filter(self, audio: np.ndarray, formant_freq: float,
-                            t: np.ndarray, q_factor: float = 5.0) -> np.ndarray:
+    def _apply_formant_filter(
+        self, audio: np.ndarray, formant_freq: float, t: np.ndarray, q_factor: float = 5.0
+    ) -> np.ndarray:
         """Apply simple formant filtering."""
         # Create bandpass filter around formant frequency
         # This is a simplified implementation
@@ -603,35 +615,39 @@ class RealisticVocalSynthesizer:
         # Simple resonant filter
         y = np.zeros_like(audio)
         for i in range(2, len(audio)):
-            y[i] = (2 * np.cos(omega / self.sr) * y[i-1] -
-                   y[i-2] + bw * audio[i])
+            y[i] = 2 * np.cos(omega / self.sr) * y[i - 1] - y[i - 2] + bw * audio[i]
 
         return y * 0.5  # Scale down
 
-    def _add_marmoset_characteristics(self, audio: np.ndarray, t: np.ndarray,
-                                     params: Dict) -> np.ndarray:
+    def _add_marmoset_characteristics(
+        self, audio: np.ndarray, t: np.ndarray, params: Dict
+    ) -> np.ndarray:
         """Add marmoset-specific vocal characteristics."""
         # Add slight noise for naturalness
-        noise_level = self.species_params['noise_level']
+        noise_level = self.species_params["noise_level"]
         noise = np.random.randn(len(audio)) * noise_level
         audio += noise
 
         # Add slight spectral coloration
         # Simple high-frequency emphasis
         from scipy.signal import lfilter
+
         b = [1, -0.95]  # High-pass filter
         audio = lfilter(b, [1], audio)
 
         return audio
 
-    def _add_bat_characteristics(self, audio: np.ndarray, t: np.ndarray,
-                               params: Dict) -> np.ndarray:
+    def _add_bat_characteristics(
+        self, audio: np.ndarray, t: np.ndarray, params: Dict
+    ) -> np.ndarray:
         """Add bat-specific ultrasonic characteristics."""
         # Bats need different characteristics - FM sweeps, rapid transitions
 
         # Add frequency modulation for FM sweep effect
         if len(audio) > 10:
-            sweep_rate = (params['f0_max'] - params['f0_min']) / len(audio) if 'f0_max' in params else 1000
+            sweep_rate = (
+                (params["f0_max"] - params["f0_min"]) / len(audio) if "f0_max" in params else 1000
+            )
             sweep = np.linspace(0, sweep_rate, len(audio))
 
             # Apply FM modulation
@@ -639,14 +655,15 @@ class RealisticVocalSynthesizer:
             audio += fm_modulation * 0.1
 
         # Add ultrasonic noise
-        noise_level = self.species_params['noise_level']
+        noise_level = self.species_params["noise_level"]
         noise = np.random.randn(len(audio)) * noise_level
         audio += noise
 
         return audio
 
-    def synthesize_sequence(self, phrase_templates: List[PhraseTemplate],
-                          sequence_spec: Optional[Dict] = None) -> np.ndarray:
+    def synthesize_sequence(
+        self, phrase_templates: List[PhraseTemplate], sequence_spec: Optional[Dict] = None
+    ) -> np.ndarray:
         """
         Synthesize complete vocalization from phrase sequence.
 
@@ -668,7 +685,7 @@ class RealisticVocalSynthesizer:
 
             # Apply sequence-level modifications if specified
             if sequence_spec:
-                amplitude_mod = sequence_spec.get('amplitude_modulation', 1.0)
+                amplitude_mod = sequence_spec.get("amplitude_modulation", 1.0)
                 phrase_audio *= amplitude_mod
 
             audio_segments.append(phrase_audio)
@@ -678,8 +695,9 @@ class RealisticVocalSynthesizer:
 
         return full_audio
 
-    def _smooth_concatenation(self, segments: List[np.ndarray],
-                            crossfade_ms: float = 5.0) -> np.ndarray:
+    def _smooth_concatenation(
+        self, segments: List[np.ndarray], crossfade_ms: float = 5.0
+    ) -> np.ndarray:
         """Concatenate audio segments with smooth crossfades."""
         if not segments:
             return np.array([])
@@ -723,8 +741,9 @@ class FieldReadyPlaybackSystem:
         self.calibration_settings = {}
         self.playback_queue = []
 
-    def calibrate_amplitude(self, species: str, measurement_distance: float = 1.0,
-                          target_spl: float = 80.0):
+    def calibrate_amplitude(
+        self, species: str, measurement_distance: float = 1.0, target_spl: float = 80.0
+    ):
         """
         Calibrate playback amplitude for field use.
 
@@ -735,38 +754,44 @@ class FieldReadyPlaybackSystem:
         """
         # Species-specific calibration factors
         calibration_factors = {
-            'marmoset': {
-                'reference_distance': 1.0,  # meters
-                'natural_spl': 75,  # dB at 1m
-                'frequency_weighting': 'A'  # Human hearing range
+            "marmoset": {
+                "reference_distance": 1.0,  # meters
+                "natural_spl": 75,  # dB at 1m
+                "frequency_weighting": "A",  # Human hearing range
             },
-            'bat': {
-                'reference_distance': 0.5,  # meters (closer for ultrasonic)
-                'natural_spl': 90,  # dB at 0.5m
-                'frequency_weighting': 'U'  # Ultrasonic weighting
-            }
+            "bat": {
+                "reference_distance": 0.5,  # meters (closer for ultrasonic)
+                "natural_spl": 90,  # dB at 0.5m
+                "frequency_weighting": "U",  # Ultrasonic weighting
+            },
         }
 
-        species_params = calibration_factors.get(species, calibration_factors['marmoset'])
+        species_params = calibration_factors.get(species, calibration_factors["marmoset"])
 
         # Calculate required gain
-        distance_factor = 20 * np.log10(measurement_distance / species_params['reference_distance'])
-        required_gain = target_spl - species_params['natural_spl'] + distance_factor
+        distance_factor = 20 * np.log10(measurement_distance / species_params["reference_distance"])
+        required_gain = target_spl - species_params["natural_spl"] + distance_factor
 
         self.calibration_settings[species] = {
-            'gain_linear': 10 ** (required_gain / 20),
-            'measurement_distance': measurement_distance,
-            'target_spl': target_spl,
-            'reference_distance': species_params['reference_distance']
+            "gain_linear": 10 ** (required_gain / 20),
+            "measurement_distance": measurement_distance,
+            "target_spl": target_spl,
+            "reference_distance": species_params["reference_distance"],
         }
 
         print(f"Calibrated {species} playback:")
-        print(f"  Gain: {required_gain:.1f} dB ({self.calibration_settings[species]['gain_linear']:.2f}x)")
+        print(
+            f"  Gain: {required_gain:.1f} dB ({self.calibration_settings[species]['gain_linear']:.2f}x)"
+        )
         print(f"  Target: {target_spl} dB at {measurement_distance}m")
 
-    def prepare_playback_stimuli(self, vocalizations: List[np.ndarray],
-                               contexts: List[str], species: str,
-                               isi_range: Tuple[float, float] = (0.5, 2.0)) -> np.ndarray:
+    def prepare_playback_stimuli(
+        self,
+        vocalizations: List[np.ndarray],
+        contexts: List[str],
+        species: str,
+        isi_range: Tuple[float, float] = (0.5, 2.0),
+    ) -> np.ndarray:
         """
         Prepare playback stimuli with appropriate inter-stimulus intervals.
 
@@ -783,7 +808,7 @@ class FieldReadyPlaybackSystem:
             print(f"Warning: No calibration for {species}, using unity gain")
             gain = 1.0
         else:
-            gain = self.calibration_settings[species]['gain_linear']
+            gain = self.calibration_settings[species]["gain_linear"]
 
         combined_audio = []
 
@@ -803,8 +828,13 @@ class FieldReadyPlaybackSystem:
 
         return np.concatenate(combined_audio)
 
-    def save_playback_protocol(self, audio: np.ndarray, contexts: List[str],
-                             output_dir: str, protocol_name: str = 'playback_protocol'):
+    def save_playback_protocol(
+        self,
+        audio: np.ndarray,
+        contexts: List[str],
+        output_dir: str,
+        protocol_name: str = "playback_protocol",
+    ):
         """
         Save complete playback protocol for field use.
 
@@ -818,27 +848,27 @@ class FieldReadyPlaybackSystem:
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Save audio
-        audio_file = output_path / f'{protocol_name}.wav'
+        audio_file = output_path / f"{protocol_name}.wav"
         sf.write(audio_file, audio, self.sr)
 
         # Save protocol metadata
         protocol_data = {
-            'protocol_name': protocol_name,
-            'sample_rate': self.sr,
-            'duration_seconds': len(audio) / self.sr,
-            'n_stimuli': len(contexts),
-            'contexts': contexts,
-            'calibration_settings': self.calibration_settings,
-            'creation_timestamp': pd.Timestamp.now().isoformat()
+            "protocol_name": protocol_name,
+            "sample_rate": self.sr,
+            "duration_seconds": len(audio) / self.sr,
+            "n_stimuli": len(contexts),
+            "contexts": contexts,
+            "calibration_settings": self.calibration_settings,
+            "creation_timestamp": pd.Timestamp.now().isoformat(),
         }
 
-        protocol_file = output_path / f'{protocol_name}_metadata.json'
-        with open(protocol_file, 'w') as f:
+        protocol_file = output_path / f"{protocol_name}_metadata.json"
+        with open(protocol_file, "w") as f:
             json.dump(protocol_data, f, indent=2)
 
         # Save timing information
         timing_info = self._extract_timing_info(audio, contexts)
-        timing_file = output_path / f'{protocol_name}_timing.csv'
+        timing_file = output_path / f"{protocol_name}_timing.csv"
         timing_df = pd.DataFrame(timing_info)
         timing_df.to_csv(timing_file, index=False)
 
@@ -870,32 +900,38 @@ class FieldReadyPlaybackSystem:
             elif in_stimulus and abs(sample) < energy_threshold:
                 # Check if this is actual silence or just low amplitude
                 if i + silence_samples < len(audio):
-                    if np.max(np.abs(audio[i:i+silence_samples])) < energy_threshold:
+                    if np.max(np.abs(audio[i : i + silence_samples])) < energy_threshold:
                         # End of stimulus
                         in_stimulus = False
                         stimulus_end = current_time
 
                         # Add timing info if we have context info available
                         if timing_info < len(contexts):
-                            timing_info.append({
-                                'stimulus_id': len(timing_info) + 1,
-                                'context': contexts[timing_info] if timing_info < len(contexts) else 'unknown',
-                                'start_time': stimulus_start,
-                                'end_time': stimulus_end,
-                                'duration': stimulus_end - stimulus_start
-                            })
+                            timing_info.append(
+                                {
+                                    "stimulus_id": len(timing_info) + 1,
+                                    "context": contexts[timing_info]
+                                    if timing_info < len(contexts)
+                                    else "unknown",
+                                    "start_time": stimulus_start,
+                                    "end_time": stimulus_end,
+                                    "duration": stimulus_end - stimulus_start,
+                                }
+                            )
 
             current_time += 1.0 / self.sr
 
         # Handle final stimulus if audio ends without silence
         if in_stimulus and timing_info < len(contexts):
-            timing_info.append({
-                'stimulus_id': len(timing_info) + 1,
-                'context': contexts[timing_info] if timing_info < len(contexts) else 'unknown',
-                'start_time': stimulus_start,
-                'end_time': current_time,
-                'duration': current_time - stimulus_start
-            })
+            timing_info.append(
+                {
+                    "stimulus_id": len(timing_info) + 1,
+                    "context": contexts[timing_info] if timing_info < len(contexts) else "unknown",
+                    "start_time": stimulus_start,
+                    "end_time": current_time,
+                    "duration": current_time - stimulus_start,
+                }
+            )
 
         return timing_info
 
@@ -908,7 +944,7 @@ class AdvancedPhraseSynthesizer:
     for field-ready vocalization synthesis.
     """
 
-    def __init__(self, sr: int = 44100, species: str = 'marmoset'):
+    def __init__(self, sr: int = 44100, species: str = "marmoset"):
         self.sr = sr
         self.species = species
 
@@ -922,9 +958,9 @@ class AdvancedPhraseSynthesizer:
         self.learned_phrase_templates = {}
         self.context_calls = {}  # context -> list of call data
 
-    def learn_from_audio_dataset(self, audio_files: List[str],
-                               contexts: List[str],
-                               validation_split: float = 0.2):
+    def learn_from_audio_dataset(
+        self, audio_files: List[str], contexts: List[str], validation_split: float = 0.2
+    ):
         """
         Learn phrase templates and grammar from audio dataset.
 
@@ -933,9 +969,9 @@ class AdvancedPhraseSynthesizer:
             contexts: Corresponding context labels
             validation_split: Fraction of data to hold out for validation
         """
-        print("="*80)
+        print("=" * 80)
         print(f"LEARNING PHRASE MODELS FROM {len(audio_files)} AUDIO FILES")
-        print("="*80)
+        print("=" * 80)
 
         if len(audio_files) != len(contexts):
             raise ValueError("audio_files and contexts must have same length")
@@ -954,27 +990,24 @@ class AdvancedPhraseSynthesizer:
         all_phrase_sequences = []
         file_contexts = []
 
-        for audio_file, context in tqdm(zip(train_files, train_contexts),
-                                      desc="Extracting phrases"):
+        for audio_file, context in tqdm(
+            zip(train_files, train_contexts), desc="Extracting phrases"
+        ):
             try:
                 # Load audio
                 audio, sr = librosa.load(audio_file, sr=self.sr)
 
                 # Extract phrases
-                phrases = self.phrase_extractor.extract_phrases_from_audio(
-                    audio, context
-                )
+                phrases = self.phrase_extractor.extract_phrases_from_audio(audio, context)
 
                 if len(phrases) > 0:
                     all_phrase_sequences.append(phrases)
                     file_contexts.append(context)
 
                     # Store raw call data for potential synthesis
-                    self.context_calls.setdefault(context, []).append({
-                        'audio': audio,
-                        'phrases': phrases,
-                        'filename': Path(audio_file).name
-                    })
+                    self.context_calls.setdefault(context, []).append(
+                        {"audio": audio, "phrases": phrases, "filename": Path(audio_file).name}
+                    )
 
             except Exception as e:
                 print(f"Error processing {audio_file}: {e}")
@@ -1022,7 +1055,9 @@ class AdvancedPhraseSynthesizer:
                 actual_sequence = [p.phrase_type for p in phrases]
 
                 # Calculate sequence similarity
-                similarity = self._calculate_sequence_similarity(predicted_sequence, actual_sequence)
+                similarity = self._calculate_sequence_similarity(
+                    predicted_sequence, actual_sequence
+                )
                 validation_scores.append(similarity)
 
             except Exception as e:
@@ -1031,28 +1066,38 @@ class AdvancedPhraseSynthesizer:
 
         if validation_scores:
             print(f"  Mean sequence similarity: {np.mean(validation_scores):.3f}")
-            print(f"  Validation score: {'✓ PASS' if np.mean(validation_scores) > 0.5 else '✗ NEEDS IMPROVEMENT'}")
+            print(
+                f"  Validation score: {'✓ PASS' if np.mean(validation_scores) > 0.5 else '✗ NEEDS IMPROVEMENT'}"
+            )
 
     def _calculate_sequence_similarity(self, seq1: List[str], seq2: List[str]) -> float:
         """Calculate similarity between two phrase sequences."""
+
         # Simple sequence similarity based on common n-grams
         def ngrams(seq, n):
-            return [tuple(seq[i:i+n]) for i in range(len(seq)-n+1)]
+            return [tuple(seq[i : i + n]) for i in range(len(seq) - n + 1)]
 
         # Compare bigrams and trigrams
         bigrams1, bigrams2 = set(ngrams(seq1, 2)), set(ngrams(seq2, 2))
         trigrams1, trigrams2 = set(ngrams(seq1, 3)), set(ngrams(seq3, 3))
 
         # Jaccard similarity
-        bigram_sim = len(bigrams1 & bigrams2) / len(bigrams1 | bigrams2) if bigrams1 | bigrams2 else 0
-        trigram_sim = len(trigrams1 & trigrams2) / len(trigrams1 | trigrams2) if trigrams1 | trigrams2 else 0
+        bigram_sim = (
+            len(bigrams1 & bigrams2) / len(bigrams1 | bigrams2) if bigrams1 | bigrams2 else 0
+        )
+        trigram_sim = (
+            len(trigrams1 & trigrams2) / len(trigrams1 | trigrams2) if trigrams1 | trigrams2 else 0
+        )
 
         return (bigram_sim + trigram_sim) / 2
 
-    def generate_vocalization(self, context: str,
-                            sequence_length: Optional[int] = None,
-                            semantic_parameters: Optional[Dict] = None,
-                            variation_level: float = 0.1) -> Tuple[np.ndarray, List[PhraseTemplate]]:
+    def generate_vocalization(
+        self,
+        context: str,
+        sequence_length: Optional[int] = None,
+        semantic_parameters: Optional[Dict] = None,
+        variation_level: float = 0.1,
+    ) -> Tuple[np.ndarray, List[PhraseTemplate]]:
         """
         Generate a new vocalization for specified context.
 
@@ -1093,8 +1138,9 @@ class AdvancedPhraseSynthesizer:
 
         return audio, selected_templates
 
-    def _vary_phrase_template(self, template: PhraseTemplate,
-                            variation_level: float) -> PhraseTemplate:
+    def _vary_phrase_template(
+        self, template: PhraseTemplate, variation_level: float
+    ) -> PhraseTemplate:
         """Create a varied version of a phrase template."""
         # Vary harmonic features slightly
         varied_features = template.harmonic_features.copy()
@@ -1118,7 +1164,7 @@ class AdvancedPhraseSynthesizer:
             duration_ms=varied_duration,
             amplitude_profile=varied_profile,
             formant_transition=template.formant_transition,
-            context_associations=template.context_associations
+            context_associations=template.context_associations,
         )
 
     def _create_generic_template(self, phrase_type: str) -> PhraseTemplate:
@@ -1127,7 +1173,7 @@ class AdvancedPhraseSynthesizer:
         features = np.random.randn(23) * 0.1
 
         # Set some reasonable defaults
-        if self.species == 'marmoset':
+        if self.species == "marmoset":
             features[0] = np.random.uniform(800, 1200)  # Formant 1
             features[1] = np.random.uniform(1600, 2400)  # Formant 2
             features[2] = np.random.uniform(2400, 3600)  # Formant 3
@@ -1142,14 +1188,17 @@ class AdvancedPhraseSynthesizer:
             duration_ms=np.random.uniform(80, 120),
             amplitude_profile=np.ones(10),  # Flat profile
             formant_transition=None,
-            context_associations=['generic']
+            context_associations=["generic"],
         )
 
-    def create_playback_protocol(self, contexts: List[str],
-                               n_per_context: int = 5,
-                               include_natural: bool = True,
-                               isi_range: Tuple[float, float] = (1.0, 3.0),
-                               output_dir: str = 'output/playback_protocols') -> Tuple[str, str, str]:
+    def create_playback_protocol(
+        self,
+        contexts: List[str],
+        n_per_context: int = 5,
+        include_natural: bool = True,
+        isi_range: Tuple[float, float] = (1.0, 3.0),
+        output_dir: str = "output/playback_protocols",
+    ) -> Tuple[str, str, str]:
         """
         Create complete playback protocol for field experiments.
 
@@ -1163,9 +1212,9 @@ class AdvancedPhraseSynthesizer:
         Returns:
             (audio_file, metadata_file, timing_file)
         """
-        print("="*80)
+        print("=" * 80)
         print("CREATING PLAYBACK PROTOCOL")
-        print("="*80)
+        print("=" * 80)
 
         all_vocalizations = []
         all_contexts = []
@@ -1176,11 +1225,9 @@ class AdvancedPhraseSynthesizer:
 
             for i in range(n_per_context):
                 try:
-                    audio, phrases = self.generate_vocalization(
-                        context, variation_level=0.2
-                    )
+                    audio, phrases = self.generate_vocalization(context, variation_level=0.2)
                     all_vocalizations.append(audio)
-                    all_contexts.append(f"{context}_synthetic_{i+1}")
+                    all_contexts.append(f"{context}_synthetic_{i + 1}")
 
                 except Exception as e:
                     print(f"  Error generating vocalization: {e}")
@@ -1193,7 +1240,7 @@ class AdvancedPhraseSynthesizer:
                 if context in self.context_calls:
                     natural_calls = self.context_calls[context][:2]  # Add 2 natural calls
                     for call_data in natural_calls:
-                        all_vocalizations.append(call_data['audio'])
+                        all_vocalizations.append(call_data["audio"])
                         all_contexts.append(f"{context}_natural_{call_data['filename']}")
 
         print(f"\nTotal vocalizations: {len(all_vocalizations)}")
@@ -1215,7 +1262,7 @@ class AdvancedPhraseSynthesizer:
         )
 
         print("\n✓ Playback protocol ready!")
-        print(f"  Duration: {len(playback_audio)/self.sr:.1f} seconds")
+        print(f"  Duration: {len(playback_audio) / self.sr:.1f} seconds")
         print(f"  Output: {output_dir}")
 
         return audio_file, metadata_file, timing_file
@@ -1225,13 +1272,13 @@ def main():
     """
     Demonstrate the advanced phrase synthesizer system.
     """
-    print("="*80)
+    print("=" * 80)
     print("ADVANCED PHRASE SYNTHESIZER")
     print("Building on MicroHarmonicExtractor and IntraCallLinguisticAnalysis")
-    print("="*80)
+    print("=" * 80)
 
     # Initialize synthesizer
-    synthesizer = AdvancedPhraseSynthesizer(sr=44100, species='marmoset')
+    synthesizer = AdvancedPhraseSynthesizer(sr=44100, species="marmoset")
 
     # Demo: Generate some vocalizations (would normally load real audio files)
     print("\nThis demo requires actual audio files for full functionality.")
@@ -1266,7 +1313,7 @@ def main():
             phrase_type="H1_rising",
             harmonic_features=features,
             duration_ms=90,
-            amplitude_profile=np.ones(10)
+            amplitude_profile=np.ones(10),
         )
         mock_templates.append(template)
 
@@ -1274,20 +1321,21 @@ def main():
     audio = synthesizer.synthesizer.synthesize_sequence(mock_templates)
 
     # Save demo
-    output_dir = Path('output/advanced_phrase_synthesizer_demo')
+    output_dir = Path("output/advanced_phrase_synthesizer_demo")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    demo_file = output_dir / 'synthetic_vocalization_demo.wav'
+    demo_file = output_dir / "synthetic_vocalization_demo.wav"
     sf.write(demo_file, audio, synthesizer.sr)
 
     print(f"✓ Demo saved to: {demo_file}")
-    print(f"  Duration: {len(audio)/synthesizer.sr:.2f} seconds")
+    print(f"  Duration: {len(audio) / synthesizer.sr:.2f} seconds")
     print()
-    print("="*80)
+    print("=" * 80)
     print("Ready for field deployment!")
-    print("="*80)
+    print("=" * 80)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tqdm import tqdm
+
     main()

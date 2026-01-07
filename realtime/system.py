@@ -30,7 +30,9 @@ class RealTimeAnimalCommunicationSystem:
     - Graceful degradation
     """
 
-    def __init__(self, max_spl_db: float = 80.0, species: str = 'marmoset', synthesis_mode: str = 'basic'):
+    def __init__(
+        self, max_spl_db: float = 80.0, species: str = "marmoset", synthesis_mode: str = "basic"
+    ):
         """
         Initialize the real-time communication system.
 
@@ -49,7 +51,7 @@ class RealTimeAnimalCommunicationSystem:
         self.response_validator = ResponseValidator()
 
         # Initialize synthesizer based on mode
-        if synthesis_mode == 'microharmonic':
+        if synthesis_mode == "microharmonic":
             try:
                 from .advanced_synthesis_methods import MicroharmonicController
                 from .gpu_phrase_integration import PhraseLibraryManager
@@ -57,8 +59,7 @@ class RealTimeAnimalCommunicationSystem:
                 # Initialize phrase library (minimal implementation)
                 self.phrase_library = PhraseLibraryManager()
                 self.microharmonic_controller = MicroharmonicController(
-                    phrase_library=self.phrase_library,
-                    species=species
+                    phrase_library=self.phrase_library, species=species
                 )
                 self.synthesizer = self.microharmonic_controller
                 logger.info("Initialized with microharmonic synthesis")
@@ -91,52 +92,49 @@ class RealTimeAnimalCommunicationSystem:
 
         try:
             # Extract basic features from input
-            rms = np.sqrt(np.mean(audio ** 2))
+            rms = np.sqrt(np.mean(audio**2))
 
             # Detect context based on audio characteristics
             context = self._detect_context(audio)
             print(f"Detected context: {context}")
 
             # Generate context-appropriate response
-            if self.synthesis_mode == 'microharmonic' and hasattr(self.synthesizer, 'synthesize_microharmonically_gpu'):
+            if self.synthesis_mode == "microharmonic" and hasattr(
+                self.synthesizer, "synthesize_microharmonically_gpu"
+            ):
                 # Use microharmonic synthesis
-                phrase_sequence = ['F0_6520', 'F0_7080', 'F0_7480']  # Data-driven hierarchy
+                phrase_sequence = ["F0_6520", "F0_7080", "F0_7480"]  # Data-driven hierarchy
                 response_audio = self.synthesizer.synthesize_microharmonically_gpu(
-                    phrase_sequence=phrase_sequence,
-                    context=context,
-                    sample_rate=22050
+                    phrase_sequence=phrase_sequence, context=context, sample_rate=22050
                 )
 
                 # Add metadata for microharmonic synthesis
                 metadata = {
-                    'synthesis_method': 'microharmonic',
-                    'phrase_sequence': phrase_sequence,
-                    'species': self.species,
-                    'success': True
+                    "synthesis_method": "microharmonic",
+                    "phrase_sequence": phrase_sequence,
+                    "species": self.species,
+                    "success": True,
                 }
             else:
                 # Use basic synthesis
                 response_audio = self.synthesizer.synthesize(context)
-                metadata = {
-                    'synthesis_method': 'basic',
-                    'success': True
-                }
+                metadata = {"synthesis_method": "basic", "success": True}
 
             # Scale response to match input amplitude
-            if np.sqrt(np.mean(response_audio ** 2)) > 0:
-                response_audio *= rms / np.sqrt(np.mean(response_audio ** 2))
+            if np.sqrt(np.mean(response_audio**2)) > 0:
+                response_audio *= rms / np.sqrt(np.mean(response_audio**2))
 
             # Estimate F0 of response (rough approximation)
             response_f0 = self._estimate_f0_simple(response_audio)
 
             response = {
-                'audio': response_audio,
-                'context': context,
-                'audio_f0': response_f0,
-                'timestamp': time.time(),
-                'processing_time_ms': (time.perf_counter() - start_time) * 1000,
-                'metadata': metadata,
-                'success': True
+                "audio": response_audio,
+                "context": context,
+                "audio_f0": response_f0,
+                "timestamp": time.time(),
+                "processing_time_ms": (time.perf_counter() - start_time) * 1000,
+                "metadata": metadata,
+                "success": True,
             }
 
             # Ensure response time <100ms
@@ -152,23 +150,23 @@ class RealTimeAnimalCommunicationSystem:
             logger.error(f"Error processing audio: {e}")
             # Return minimal response as fallback
             return {
-                'audio': np.zeros(100, dtype=np.float32),
-                'context': 'neutral',
-                'audio_f0': 5000.0,
-                'timestamp': time.time(),
-                'processing_time_ms': (time.perf_counter() - start_time) * 1000,
-                'metadata': {'synthesis_method': 'fallback', 'success': False},
-                'success': False
+                "audio": np.zeros(100, dtype=np.float32),
+                "context": "neutral",
+                "audio_f0": 5000.0,
+                "timestamp": time.time(),
+                "processing_time_ms": (time.perf_counter() - start_time) * 1000,
+                "metadata": {"synthesis_method": "fallback", "success": False},
+                "success": False,
             }
 
     def _detect_context(self, audio: np.ndarray) -> str:
         """Simple context detection based on audio features"""
         # Calculate RMS energy
-        rms = np.sqrt(np.mean(audio ** 2))
+        rms = np.sqrt(np.mean(audio**2))
 
         # Estimate dominant frequency
         fft = np.abs(np.fft.rfft(audio))
-        freqs = np.fft.rfftfreq(len(audio), 1/44100)
+        freqs = np.fft.rfftfreq(len(audio), 1 / 44100)
         dominant_freq = freqs[np.argmax(fft)]
 
         # Simple rules for context detection
@@ -176,27 +174,27 @@ class RealTimeAnimalCommunicationSystem:
         print(f"Context detection: freq={dominant_freq:.1f}Hz, rms={rms:.3f}")
         if dominant_freq > 6000 and rms > 0.1:
             print(" -> alarm")
-            return 'alarm'
+            return "alarm"
         elif 4000 < dominant_freq <= 6000:
             print(" -> contact")
-            return 'contact'  # Contact: up to and including 6000Hz
+            return "contact"  # Contact: up to and including 6000Hz
         elif 5000 < dominant_freq < 7000 and rms > 0.05:
             print(" -> food")
-            return 'food'
+            return "food"
         else:
             print(" -> contact (default)")
-            return 'contact'  # Default context for edge cases
+            return "contact"  # Default context for edge cases
 
     def _estimate_f0_simple(self, audio: np.ndarray) -> float:
         """Simple F0 estimation for response"""
         # Auto-correlation method
-        correlation = np.correlate(audio, audio, mode='full')
-        correlation = correlation[len(correlation)//2:]
+        correlation = np.correlate(audio, audio, mode="full")
+        correlation = correlation[len(correlation) // 2 :]
 
         # Find first peak
         peaks = []
-        for i in range(1, len(correlation)-1):
-            if correlation[i] > correlation[i-1] and correlation[i] > correlation[i+1]:
+        for i in range(1, len(correlation) - 1):
+            if correlation[i] > correlation[i - 1] and correlation[i] > correlation[i + 1]:
                 if correlation[i] > 0.1 * np.max(correlation):
                     peaks.append(i)
 
@@ -219,6 +217,7 @@ class RealTimeAnimalCommunicationSystem:
 # Placeholder classes (to be implemented as tests pass)
 class AdaptiveSafetyManager:
     """Manages SPL safety limits and adaptive calibration"""
+
     def __init__(self, max_spl_db: float = 80.0):
         self.max_spl_db = max_spl_db
         self.adaptive_gain = 1.0
@@ -234,6 +233,7 @@ class AdaptiveSafetyManager:
 
 class NaturalVocalizationSynthesizer:
     """Synthesizes natural vocalizations"""
+
     def synthesize(self, context: str) -> np.ndarray:
         """Synthesize vocalization for given context"""
         duration = 0.1
@@ -241,9 +241,9 @@ class NaturalVocalizationSynthesizer:
         t = np.linspace(0, duration, int(sr * duration))
 
         # Simple sine wave for testing
-        if context == 'alarm':
+        if context == "alarm":
             audio = np.sin(2 * np.pi * 7000 * t) * 0.3
-        elif context == 'food':
+        elif context == "food":
             audio = np.sin(2 * np.pi * 5000 * t) * 0.3
         else:  # contact/neutral
             audio = np.sin(2 * np.pi * 6000 * t) * 0.3
@@ -253,6 +253,7 @@ class NaturalVocalizationSynthesizer:
 
 class ProbabilisticContextualAgent:
     """Handles context detection and probabilistic reasoning"""
+
     def __init__(self):
         self.context_probabilities = {}
 
@@ -263,11 +264,11 @@ class ProbabilisticContextualAgent:
     def should_respond(self) -> tuple:
         """Determine if system should respond and with what context"""
         if not self.context_probabilities:
-            return False, 'silence'
+            return False, "silence"
 
         max_conf = max(self.context_probabilities.values())
         if max_conf < 0.5:  # Low confidence threshold
-            return False, 'silence'
+            return False, "silence"
 
         best_context = max(self.context_probabilities, key=self.context_probabilities.get)
         return True, best_context
@@ -293,9 +294,9 @@ class ResponseValidator:
         is_valid_response = is_harmonic and spectral_match
 
         return {
-            'is_harmonic': is_harmonic,
-            'spectral_match': spectral_match,
-            'is_valid_response': is_valid_response
+            "is_harmonic": is_harmonic,
+            "spectral_match": spectral_match,
+            "is_valid_response": is_valid_response,
         }
 
     def _check_harmonic_structure(self, audio, sr):
@@ -315,7 +316,7 @@ class ResponseValidator:
         """Calculate zero crossing rate"""
         crossings = 0
         for i in range(1, len(audio)):
-            if (audio[i-1] >= 0) != (audio[i] >= 0):
+            if (audio[i - 1] >= 0) != (audio[i] >= 0):
                 crossings += 1
         return crossings / len(audio)
 
@@ -338,7 +339,9 @@ class ResponseValidator:
         response_peak_freq = self._dominant_frequency(response, sr)
 
         # Allow some frequency mismatch
-        freq_diff_ratio = abs(trigger_peak_freq - response_peak_freq) / max(trigger_peak_freq, response_peak_freq, 1)
+        freq_diff_ratio = abs(trigger_peak_freq - response_peak_freq) / max(
+            trigger_peak_freq, response_peak_freq, 1
+        )
 
         # Match if frequencies are reasonably close
         return freq_diff_ratio < 0.3  # 30% tolerance
@@ -346,7 +349,7 @@ class ResponseValidator:
     def _dominant_frequency(self, audio, sr):
         """Find the dominant frequency in audio"""
         fft = np.abs(np.fft.rfft(audio))
-        freqs = np.fft.rfftfreq(len(audio), 1/sr)
+        freqs = np.fft.rfftfreq(len(audio), 1 / sr)
 
         # Find peak frequency (avoid DC component)
         if len(freqs) > 1:

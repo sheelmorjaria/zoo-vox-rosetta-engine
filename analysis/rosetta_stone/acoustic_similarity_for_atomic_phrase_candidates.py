@@ -32,6 +32,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 @dataclass
 class AcousticPersona:
     """Definition of an acoustic persona (semantic category)."""
+
     name: str
     description: str
     feature_weights: Dict[str, float]  # Feature -> target direction (+1 or -1)
@@ -40,106 +41,101 @@ class AcousticPersona:
 
 # Define acoustic personas based on feature combinations
 ACOUSTIC_PERSONAS = {
-    'gritty': AcousticPersona(
-        name='GRITTY',
-        description='Aggressive, alert calls with noisy texture and sharp onset',
+    "gritty": AcousticPersona(
+        name="GRITTY",
+        description="Aggressive, alert calls with noisy texture and sharp onset",
         feature_weights={
-            'harmonic_to_noise_ratio': -1.0,  # Low HNR = noisy
-            'spectral_flatness': 1.0,         # High flatness = noise-like
-            'attack_time_ms': -1.0,           # Fast attack
-            'spectral_contrast': -1.0,         # Low contrast = diffuse
+            "harmonic_to_noise_ratio": -1.0,  # Low HNR = noisy
+            "spectral_flatness": 1.0,  # High flatness = noise-like
+            "attack_time_ms": -1.0,  # Fast attack
+            "spectral_contrast": -1.0,  # Low contrast = diffuse
         },
         feature_ranges={
-            'harmonic_to_noise_ratio': (0.0, 5.0),
-            'spectral_flatness': (0.3, 1.0),
-            'attack_time_ms': (0.0, 20.0),
-            'spectral_contrast': (0.0, 5.0),
-        }
+            "harmonic_to_noise_ratio": (0.0, 5.0),
+            "spectral_flatness": (0.3, 1.0),
+            "attack_time_ms": (0.0, 20.0),
+            "spectral_contrast": (0.0, 5.0),
+        },
     ),
-
-    'pure': AcousticPersona(
-        name='PURE',
-        description='Clean tonal calls for contact and affiliation',
+    "pure": AcousticPersona(
+        name="PURE",
+        description="Clean tonal calls for contact and affiliation",
         feature_weights={
-            'harmonic_to_noise_ratio': 1.0,   # High HNR = tonal
-            'spectral_flatness': -1.0,        # Low flatness = tonal
-            'attack_time_ms': 1.0,            # Slow attack = gentle
-            'decay_time_ms': 1.0,             # Slow decay = smooth
+            "harmonic_to_noise_ratio": 1.0,  # High HNR = tonal
+            "spectral_flatness": -1.0,  # Low flatness = tonal
+            "attack_time_ms": 1.0,  # Slow attack = gentle
+            "decay_time_ms": 1.0,  # Slow decay = smooth
         },
         feature_ranges={
-            'harmonic_to_noise_ratio': (10.0, 100.0),
-            'spectral_flatness': (0.0, 0.2),
-            'attack_time_ms': (20.0, 100.0),
-            'decay_time_ms': (50.0, 200.0),
-        }
+            "harmonic_to_noise_ratio": (10.0, 100.0),
+            "spectral_flatness": (0.0, 0.2),
+            "attack_time_ms": (20.0, 100.0),
+            "decay_time_ms": (50.0, 200.0),
+        },
     ),
-
-    'bouncy': AcousticPersona(
-        name='BOUNCY',
-        description='Playful, courtship calls with vibrato and amplitude modulation',
+    "bouncy": AcousticPersona(
+        name="BOUNCY",
+        description="Playful, courtship calls with vibrato and amplitude modulation",
         feature_weights={
-            'vibrato_rate_hz': 1.0,           # Strong vibrato
-            'vibrato_depth': 1.0,             # Deep modulation
-            'jitter': -1.0,                   # Low jitter = periodic
-            'attack_time_ms': -1.0,           # Fast onset
+            "vibrato_rate_hz": 1.0,  # Strong vibrato
+            "vibrato_depth": 1.0,  # Deep modulation
+            "jitter": -1.0,  # Low jitter = periodic
+            "attack_time_ms": -1.0,  # Fast onset
         },
         feature_ranges={
-            'vibrato_rate_hz': (5.0, 15.0),
-            'vibrato_depth': (0.5, 2.0),
-            'jitter': (0.0, 0.1),
-            'attack_time_ms': (5.0, 30.0),
-        }
+            "vibrato_rate_hz": (5.0, 15.0),
+            "vibrato_depth": (0.5, 2.0),
+            "jitter": (0.0, 0.1),
+            "attack_time_ms": (5.0, 30.0),
+        },
     ),
-
-    'sharp': AcousticPersona(
-        name='SHARP',
-        description='Alarm and startle calls with sharp onset and offset',
+    "sharp": AcousticPersona(
+        name="SHARP",
+        description="Alarm and startle calls with sharp onset and offset",
         feature_weights={
-            'attack_time_ms': -1.0,           # Very fast attack
-            'decay_time_ms': -1.0,            # Fast decay
-            'spectral_contrast': 1.0,         # High contrast = formant structure
-            'spectral_flatness': -1.0,        # Tonal
+            "attack_time_ms": -1.0,  # Very fast attack
+            "decay_time_ms": -1.0,  # Fast decay
+            "spectral_contrast": 1.0,  # High contrast = formant structure
+            "spectral_flatness": -1.0,  # Tonal
         },
         feature_ranges={
-            'attack_time_ms': (0.0, 10.0),
-            'decay_time_ms': (0.0, 30.0),
-            'spectral_contrast': (10.0, 30.0),
-            'spectral_flatness': (0.0, 0.3),
-        }
+            "attack_time_ms": (0.0, 10.0),
+            "decay_time_ms": (0.0, 30.0),
+            "spectral_contrast": (10.0, 30.0),
+            "spectral_flatness": (0.0, 0.3),
+        },
     ),
-
-    'sustained': AcousticPersona(
-        name='SUSTAINED',
-        description='Long-range territorial or contact calls with steady amplitude',
+    "sustained": AcousticPersona(
+        name="SUSTAINED",
+        description="Long-range territorial or contact calls with steady amplitude",
         feature_weights={
-            'attack_time_ms': 1.0,            # Slow attack
-            'decay_time_ms': 1.0,             # Slow decay
-            'sustain_level': 1.0,             # High sustain
-            'jitter': -1.0,                   # Stable pitch
+            "attack_time_ms": 1.0,  # Slow attack
+            "decay_time_ms": 1.0,  # Slow decay
+            "sustain_level": 1.0,  # High sustain
+            "jitter": -1.0,  # Stable pitch
         },
         feature_ranges={
-            'attack_time_ms': (50.0, 200.0),
-            'decay_time_ms': (100.0, 500.0),
-            'sustain_level': (0.5, 1.0),
-            'jitter': (0.0, 0.05),
-        }
+            "attack_time_ms": (50.0, 200.0),
+            "decay_time_ms": (100.0, 500.0),
+            "sustain_level": (0.5, 1.0),
+            "jitter": (0.0, 0.05),
+        },
     ),
-
-    'transient': AcousticPersona(
-        name='TRANSIENT',
-        description='Rhythmic mechanical sounds (clicks, pops) with regular timing',
+    "transient": AcousticPersona(
+        name="TRANSIENT",
+        description="Rhythmic mechanical sounds (clicks, pops) with regular timing",
         feature_weights={
-            'onset_rate_hz': 1.0,             # High click rate
-            'ici_coefficient_of_variation': -1.0,  # Low CV = regular
-            'median_ici_ms': -1.0,            # Short intervals
-            'harmonic_to_noise_ratio': -1.0,  # Low HNR = aperiodic
+            "onset_rate_hz": 1.0,  # High click rate
+            "ici_coefficient_of_variation": -1.0,  # Low CV = regular
+            "median_ici_ms": -1.0,  # Short intervals
+            "harmonic_to_noise_ratio": -1.0,  # Low HNR = aperiodic
         },
         feature_ranges={
-            'onset_rate_hz': (10.0, 100.0),
-            'ici_coefficient_of_variation': (0.0, 0.3),
-            'median_ici_ms': (5.0, 50.0),
-            'harmonic_to_noise_ratio': (0.0, 3.0),
-        }
+            "onset_rate_hz": (10.0, 100.0),
+            "ici_coefficient_of_variation": (0.0, 0.3),
+            "median_ici_ms": (5.0, 50.0),
+            "harmonic_to_noise_ratio": (0.0, 3.0),
+        },
     ),
 }
 
@@ -148,12 +144,11 @@ def load_vocalization_database(db_path: str) -> Dict:
     """Load vocalization database from JSON."""
     print(f"Loading database from {db_path}...")
 
-    with open(db_path, 'r') as f:
+    with open(db_path, "r") as f:
         db = json.load(f)
 
     total_phrases = sum(
-        len(species_data['phrases'])
-        for species_data in db['species_data'].values()
+        len(species_data["phrases"]) for species_data in db["species_data"].values()
     )
 
     print(f"✅ Loaded {total_phrases} phrases across {len(db['species_data'])} species")
@@ -161,48 +156,39 @@ def load_vocalization_database(db_path: str) -> Dict:
     return db
 
 
-def extract_micro_dynamics_features(
-    phrase_data: Dict,
-    species: str
-) -> Dict[str, float]:
+def extract_micro_dynamics_features(phrase_data: Dict, species: str) -> Dict[str, float]:
     """Extract micro-dynamics features from phrase data."""
-    af = phrase_data['acoustic_features']
+    af = phrase_data["acoustic_features"]
 
     # Extract all available micro-dynamics features
     features = {
         # Grit factors
-        'harmonic_to_noise_ratio': af.get('harmonic_to_noise_ratio', 0.0),
-        'spectral_flatness': af.get('spectral_flatness', 0.0),
-
+        "harmonic_to_noise_ratio": af.get("harmonic_to_noise_ratio", 0.0),
+        "spectral_flatness": af.get("spectral_flatness", 0.0),
         # Motion factors
-        'attack_time_ms': af.get('attack_time_ms', 0.0),
-        'decay_time_ms': af.get('decay_time_ms', 0.0),
-        'sustain_level': af.get('sustain_level', 0.0),
-        'vibrato_rate_hz': af.get('vibrato_rate_hz', 0.0),
-        'vibrato_depth': af.get('vibrato_depth', 0.0),
-        'jitter': af.get('jitter', 0.0),
-
+        "attack_time_ms": af.get("attack_time_ms", 0.0),
+        "decay_time_ms": af.get("decay_time_ms", 0.0),
+        "sustain_level": af.get("sustain_level", 0.0),
+        "vibrato_rate_hz": af.get("vibrato_rate_hz", 0.0),
+        "vibrato_depth": af.get("vibrato_depth", 0.0),
+        "jitter": af.get("jitter", 0.0),
         # Fingerprint factors
-        'mfcc_1': af.get('mfcc_1', 0.0),
-        'mfcc_2': af.get('mfcc_2', 0.0),
-        'mfcc_3': af.get('mfcc_3', 0.0),
-        'mfcc_4': af.get('mfcc_4', 0.0),
-        'mfcc_delta_mean': af.get('mfcc_delta_mean', 0.0),
-        'spectral_contrast': af.get('spectral_contrast', 0.0),
-
+        "mfcc_1": af.get("mfcc_1", 0.0),
+        "mfcc_2": af.get("mfcc_2", 0.0),
+        "mfcc_3": af.get("mfcc_3", 0.0),
+        "mfcc_4": af.get("mfcc_4", 0.0),
+        "mfcc_delta_mean": af.get("mfcc_delta_mean", 0.0),
+        "spectral_contrast": af.get("spectral_contrast", 0.0),
         # Rhythm factors
-        'median_ici_ms': af.get('median_ici_ms', 0.0),
-        'onset_rate_hz': af.get('onset_rate_hz', 0.0),
-        'ici_coefficient_of_variation': af.get('ici_coefficient_of_variation', 0.0),
+        "median_ici_ms": af.get("median_ici_ms", 0.0),
+        "onset_rate_hz": af.get("onset_rate_hz", 0.0),
+        "ici_coefficient_of_variation": af.get("ici_coefficient_of_variation", 0.0),
     }
 
     return features
 
 
-def compute_persona_score(
-    features: Dict[str, float],
-    persona: AcousticPersona
-) -> float:
+def compute_persona_score(features: Dict[str, float], persona: AcousticPersona) -> float:
     """
     Compute how well a phrase matches a persona.
 
@@ -247,7 +233,7 @@ def find_atomic_phrases_by_persona(
     persona_name: str,
     species: Optional[str] = None,
     top_n: int = 20,
-    min_score: float = 0.3
+    min_score: float = 0.3,
 ) -> List[Tuple[str, Dict[str, float], float]]:
     """
     Find phrases that match an acoustic persona.
@@ -267,13 +253,13 @@ def find_atomic_phrases_by_persona(
     candidates = []
 
     # Search through species
-    species_to_search = [species] if species else db['species_data'].keys()
+    species_to_search = [species] if species else db["species_data"].keys()
 
     for species_name in species_to_search:
-        if species_name not in db['species_data']:
+        if species_name not in db["species_data"]:
             continue
 
-        phrases = db['species_data'][species_name]['phrases']
+        phrases = db["species_data"][species_name]["phrases"]
 
         for phrase_key, phrase_data in phrases.items():
             # Extract micro-dynamics features
@@ -295,7 +281,7 @@ def find_atomic_phrases_by_persona(
 def compute_multi_feature_similarity(
     features1: Dict[str, float],
     features2: Dict[str, float],
-    feature_weights: Optional[Dict[str, float]] = None
+    feature_weights: Optional[Dict[str, float]] = None,
 ) -> float:
     """
     Compute similarity between two phrases in multi-dimensional feature space.
@@ -314,23 +300,23 @@ def compute_multi_feature_similarity(
     # Normalize features
     # Define typical ranges for normalization
     feature_ranges = {
-        'harmonic_to_noise_ratio': 100.0,
-        'spectral_flatness': 1.0,
-        'attack_time_ms': 200.0,
-        'decay_time_ms': 500.0,
-        'sustain_level': 1.0,
-        'vibrato_rate_hz': 20.0,
-        'vibrato_depth': 3.0,
-        'jitter': 0.5,
-        'mfcc_1': 100.0,
-        'mfcc_2': 50.0,
-        'mfcc_3': 30.0,
-        'mfcc_4': 20.0,
-        'mfcc_delta_mean': 10.0,
-        'spectral_contrast': 50.0,
-        'median_ici_ms': 200.0,
-        'onset_rate_hz': 100.0,
-        'ici_coefficient_of_variation': 1.0,
+        "harmonic_to_noise_ratio": 100.0,
+        "spectral_flatness": 1.0,
+        "attack_time_ms": 200.0,
+        "decay_time_ms": 500.0,
+        "sustain_level": 1.0,
+        "vibrato_rate_hz": 20.0,
+        "vibrato_depth": 3.0,
+        "jitter": 0.5,
+        "mfcc_1": 100.0,
+        "mfcc_2": 50.0,
+        "mfcc_3": 30.0,
+        "mfcc_4": 20.0,
+        "mfcc_delta_mean": 10.0,
+        "spectral_contrast": 50.0,
+        "median_ici_ms": 200.0,
+        "onset_rate_hz": 100.0,
+        "ici_coefficient_of_variation": 1.0,
     }
 
     # Compute normalized distance
@@ -366,7 +352,7 @@ def find_similar_phrases_multi_dimensional(
     query_phrase_key: str,
     species: str,
     top_n: int = 10,
-    feature_weights: Optional[Dict[str, float]] = None
+    feature_weights: Optional[Dict[str, float]] = None,
 ) -> List[Tuple[str, float]]:
     """
     Find phrases similar to a query phrase using multi-dimensional features.
@@ -375,11 +361,11 @@ def find_similar_phrases_multi_dimensional(
     similar even if they have different F0 values.
     """
     # Get query phrase
-    if species not in db['species_data']:
+    if species not in db["species_data"]:
         print(f"❌ Species not found: {species}")
         return []
 
-    phrases = db['species_data'][species]['phrases']
+    phrases = db["species_data"][species]["phrases"]
 
     if query_phrase_key not in phrases:
         print(f"❌ Phrase not found: {query_phrase_key}")
@@ -404,9 +390,7 @@ def find_similar_phrases_multi_dimensional(
         other_features = extract_micro_dynamics_features(other_data, species)
 
         similarity = compute_multi_feature_similarity(
-            query_features,
-            other_features,
-            feature_weights
+            query_features, other_features, feature_weights
         )
 
         if similarity > 0:
@@ -424,13 +408,13 @@ def analyze_persona_distribution(db: Dict, species: Optional[str] = None):
     print("ACOUSTIC PERSONA DISTRIBUTION")
     print("=" * 80)
 
-    species_to_analyze = [species] if species else db['species_data'].keys()
+    species_to_analyze = [species] if species else db["species_data"].keys()
 
     for species_name in species_to_analyze:
-        if species_name not in db['species_data']:
+        if species_name not in db["species_data"]:
             continue
 
-        phrases = db['species_data'][species_name]['phrases']
+        phrases = db["species_data"][species_name]["phrases"]
 
         print(f"\n📊 {species_name.upper()}:")
         print(f"   Total phrases: {len(phrases)}")
@@ -459,23 +443,34 @@ def analyze_feature_coverage(db: Dict):
     print("=" * 80)
 
     all_features = [
-        'harmonic_to_noise_ratio', 'spectral_flatness',
-        'attack_time_ms', 'decay_time_ms', 'sustain_level',
-        'vibrato_rate_hz', 'vibrato_depth', 'jitter',
-        'mfcc_1', 'mfcc_2', 'mfcc_3', 'mfcc_4',
-        'mfcc_delta_mean', 'spectral_contrast',
-        'median_ici_ms', 'onset_rate_hz', 'ici_coefficient_of_variation'
+        "harmonic_to_noise_ratio",
+        "spectral_flatness",
+        "attack_time_ms",
+        "decay_time_ms",
+        "sustain_level",
+        "vibrato_rate_hz",
+        "vibrato_depth",
+        "jitter",
+        "mfcc_1",
+        "mfcc_2",
+        "mfcc_3",
+        "mfcc_4",
+        "mfcc_delta_mean",
+        "spectral_contrast",
+        "median_ici_ms",
+        "onset_rate_hz",
+        "ici_coefficient_of_variation",
     ]
 
-    for species_name, species_data in db['species_data'].items():
-        phrases = species_data['phrases']
+    for species_name, species_data in db["species_data"].items():
+        phrases = species_data["phrases"]
 
         print(f"\n📊 {species_name.upper()} ({len(phrases)} phrases):")
 
         feature_counts = {f: 0 for f in all_features}
 
         for phrase_data in phrases.values():
-            af = phrase_data['acoustic_features']
+            af = phrase_data["acoustic_features"]
             for feature in all_features:
                 if af.get(feature, 0.0) > 0:
                     feature_counts[feature] += 1
@@ -499,16 +494,18 @@ def demo_persona_search(db: Dict):
     print("-" * 80)
 
     gritty_candidates = find_atomic_phrases_by_persona(
-        db, 'gritty', species='marmoset', top_n=10, min_score=0.4
+        db, "gritty", species="marmoset", top_n=10, min_score=0.4
     )
 
     if gritty_candidates:
         print(f"\n✅ Found {len(gritty_candidates)} 'GRITTY' phrases:")
         for i, (phrase_key, features, score) in enumerate(gritty_candidates[:5], 1):
             print(f"\n   {i}. {phrase_key} (score: {score:.3f})")
-            print(f"      HNR: {features['harmonic_to_noise_ratio']:.2f}, "
-                  f"Flatness: {features['spectral_flatness']:.3f}, "
-                  f"Attack: {features['attack_time_ms']:.1f}ms")
+            print(
+                f"      HNR: {features['harmonic_to_noise_ratio']:.2f}, "
+                f"Flatness: {features['spectral_flatness']:.3f}, "
+                f"Attack: {features['attack_time_ms']:.1f}ms"
+            )
     else:
         print("\n⚠️  No 'GRITTY' phrases found (database may not have micro-dynamics features)")
 
@@ -518,16 +515,18 @@ def demo_persona_search(db: Dict):
     print("-" * 80)
 
     pure_candidates = find_atomic_phrases_by_persona(
-        db, 'pure', species='marmoset', top_n=10, min_score=0.4
+        db, "pure", species="marmoset", top_n=10, min_score=0.4
     )
 
     if pure_candidates:
         print(f"\n✅ Found {len(pure_candidates)} 'PURE' phrases:")
         for i, (phrase_key, features, score) in enumerate(pure_candidates[:5], 1):
             print(f"\n   {i}. {phrase_key} (score: {score:.3f})")
-            print(f"      HNR: {features['harmonic_to_noise_ratio']:.2f}, "
-                  f"Flatness: {features['spectral_flatness']:.3f}, "
-                  f"Attack: {features['attack_time_ms']:.1f}ms")
+            print(
+                f"      HNR: {features['harmonic_to_noise_ratio']:.2f}, "
+                f"Flatness: {features['spectral_flatness']:.3f}, "
+                f"Attack: {features['attack_time_ms']:.1f}ms"
+            )
 
     # Demo 3: Multi-dimensional similarity search
     print("\n" + "-" * 80)
@@ -535,13 +534,11 @@ def demo_persona_search(db: Dict):
     print("-" * 80)
 
     # Pick a query phrase (first available)
-    if 'marmoset' in db['species_data']:
-        marmoset_phrases = db['species_data']['marmoset']['phrases']
+    if "marmoset" in db["species_data"]:
+        marmoset_phrases = db["species_data"]["marmoset"]["phrases"]
         if marmoset_phrases:
             query_key = list(marmoset_phrases.keys())[0]
-            similar = find_similar_phrases_multi_dimensional(
-                db, query_key, 'marmoset', top_n=5
-            )
+            similar = find_similar_phrases_multi_dimensional(db, query_key, "marmoset", top_n=5)
 
             if similar:
                 print(f"\n✅ Found {len(similar)} phrases similar to {query_key}:")
@@ -577,29 +574,28 @@ def main():
     """Main analysis function."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='Acoustic similarity for atomic phrase discovery'
+    parser = argparse.ArgumentParser(description="Acoustic similarity for atomic phrase discovery")
+    parser.add_argument(
+        "--db",
+        type=str,
+        default="/home/sheel/birdsong_analysis/src/vocalization_database.json",
+        help="Path to vocalization database",
     )
-    parser.add_argument('--db', type=str,
-                       default='/home/sheel/birdsong_analysis/src/vocalization_database.json',
-                       help='Path to vocalization database')
-    parser.add_argument('--persona', type=str,
-                       choices=list(ACOUSTIC_PERSONAS.keys()),
-                       help='Acoustic persona to search for')
-    parser.add_argument('--species', type=str,
-                       help='Species to filter by')
-    parser.add_argument('--query', type=str,
-                       help='Query phrase key for similarity search')
-    parser.add_argument('--top-n', type=int, default=20,
-                       help='Number of results to return')
-    parser.add_argument('--min-score', type=float, default=0.3,
-                       help='Minimum persona score')
-    parser.add_argument('--analyze-distribution', action='store_true',
-                       help='Analyze persona distribution')
-    parser.add_argument('--analyze-coverage', action='store_true',
-                       help='Analyze feature coverage')
-    parser.add_argument('--demo', action='store_true',
-                       help='Run demo analysis')
+    parser.add_argument(
+        "--persona",
+        type=str,
+        choices=list(ACOUSTIC_PERSONAS.keys()),
+        help="Acoustic persona to search for",
+    )
+    parser.add_argument("--species", type=str, help="Species to filter by")
+    parser.add_argument("--query", type=str, help="Query phrase key for similarity search")
+    parser.add_argument("--top-n", type=int, default=20, help="Number of results to return")
+    parser.add_argument("--min-score", type=float, default=0.3, help="Minimum persona score")
+    parser.add_argument(
+        "--analyze-distribution", action="store_true", help="Analyze persona distribution"
+    )
+    parser.add_argument("--analyze-coverage", action="store_true", help="Analyze feature coverage")
+    parser.add_argument("--demo", action="store_true", help="Run demo analysis")
 
     args = parser.parse_args()
 
@@ -631,9 +627,7 @@ def main():
                     print(f"      {f}: {v:.3f}")
 
     if args.query and args.species:
-        similar = find_similar_phrases_multi_dimensional(
-            db, args.query, args.species, args.top_n
-        )
+        similar = find_similar_phrases_multi_dimensional(db, args.query, args.species, args.top_n)
 
         print(f"\n✅ Found {len(similar)} phrases similar to {args.query}:")
         for i, (other_key, similarity) in enumerate(similar, 1):
@@ -643,8 +637,13 @@ def main():
         demo_persona_search(db)
 
     # If no specific action, show usage
-    if not (args.persona or args.query or args.analyze_distribution or
-            args.analyze_coverage or args.demo):
+    if not (
+        args.persona
+        or args.query
+        or args.analyze_distribution
+        or args.analyze_coverage
+        or args.demo
+    ):
         print_usage_examples()
         analyze_feature_coverage(db)
 

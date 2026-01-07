@@ -23,11 +23,13 @@ from typing import List, Optional
 # Phase 1: Data Model Tests - Composite Personas
 # =============================================================================
 
+
 class Modality(Enum):
     """Vocalization modality types"""
+
     HARMONIC = "HARMONIC"  # Tonal, sine-like (whistle, phee)
     TRANSIENT = "TRANSIENT"  # Clicky, noise-like (rattle, click)
-    FM_SWEEP = "FM_SWEEP"    # Frequency modulated (trill, sweep)
+    FM_SWEEP = "FM_SWEEP"  # Frequency modulated (trill, sweep)
 
 
 @dataclass
@@ -38,6 +40,7 @@ class CorvidPersona:
     A Corvid "Persona" is defined as a Sequence of Textures, not a single buffer.
     Example: "Alert Call" = [Harmonic_Start (whistle), Transient_Rattle (rattle), Harmonic_End (whistle)]
     """
+
     species: str
     id: str
     modality_sequence: List[Modality]  # NEW: Sequence of modalities
@@ -51,6 +54,7 @@ class PhraseModalityTag:
     Old (Marmoset): Phrase_001 = [Grain, Grain, Grain]
     New (Corvid): Phrase_002 = { Grains: [H, H, H], Dominant: "HARMONIC", Mixed: False }
     """
+
     phrase_id: str
     grain_modalities: List[Modality]
     dominant_modality: Modality
@@ -63,9 +67,7 @@ class TestCorvidDataModels(unittest.TestCase):
     def test_corvid_persona_with_single_modality(self):
         """Test that CorvidPersona can represent single-modality calls"""
         persona = CorvidPersona(
-            species="American Crow",
-            id="alert_call",
-            modality_sequence=[Modality.HARMONIC]
+            species="American Crow", id="alert_call", modality_sequence=[Modality.HARMONIC]
         )
 
         self.assertEqual(persona.species, "American Crow")
@@ -79,10 +81,10 @@ class TestCorvidDataModels(unittest.TestCase):
             species="Common Raven",
             id="alarm_call",
             modality_sequence=[
-                Modality.HARMONIC,   # Whistle to get attention
-                Modality.TRANSIENT,   # Rattle (the message)
-                Modality.HARMONIC,    # Whistle (close)
-            ]
+                Modality.HARMONIC,  # Whistle to get attention
+                Modality.TRANSIENT,  # Rattle (the message)
+                Modality.HARMONIC,  # Whistle (close)
+            ],
         )
 
         self.assertEqual(len(persona.modality_sequence), 3)
@@ -96,7 +98,7 @@ class TestCorvidDataModels(unittest.TestCase):
             phrase_id="crow_whistle_001",
             grain_modalities=[Modality.HARMONIC, Modality.HARMONIC, Modality.HARMONIC],
             dominant_modality=Modality.HARMONIC,
-            is_mixed=False
+            is_mixed=False,
         )
 
         self.assertEqual(tag.dominant_modality, Modality.HARMONIC)
@@ -109,7 +111,7 @@ class TestCorvidDataModels(unittest.TestCase):
             phrase_id="crow_rattle_001",
             grain_modalities=[Modality.TRANSIENT, Modality.TRANSIENT, Modality.TRANSIENT],
             dominant_modality=Modality.TRANSIENT,
-            is_mixed=False
+            is_mixed=False,
         )
 
         self.assertEqual(tag.dominant_modality, Modality.TRANSIENT)
@@ -121,7 +123,7 @@ class TestCorvidDataModels(unittest.TestCase):
             phrase_id="raven_mixed_001",
             grain_modalities=[Modality.HARMONIC, Modality.TRANSIENT, Modality.TRANSIENT],
             dominant_modality=Modality.TRANSIENT,  # Transient is dominant (2/3)
-            is_mixed=True
+            is_mixed=True,
         )
 
         self.assertEqual(tag.dominant_modality, Modality.TRANSIENT)
@@ -148,6 +150,7 @@ class TestCorvidDataModels(unittest.TestCase):
 # Phase 2: Synthesis Tests - Multi-Buffer Granular Sequencer
 # =============================================================================
 
+
 @dataclass
 class TimelineEvent:
     """
@@ -155,6 +158,7 @@ class TimelineEvent:
 
     Example: At 100ms, play TRANSIENT source for 50ms
     """
+
     start_ms: float
     duration_ms: float
     source_buffer: str  # e.g., "corvid_whistle.wav"
@@ -164,15 +168,13 @@ class TimelineEvent:
 @dataclass
 class ModalityTimeline:
     """Timeline of events for multi-modal synthesis"""
+
     events: List[TimelineEvent] = field(default_factory=list)
 
     def add_event(self, start_ms: float, duration_ms: float, source: str, modality: Modality):
         """Add an event to the timeline"""
         event = TimelineEvent(
-            start_ms=start_ms,
-            duration_ms=duration_ms,
-            source_buffer=source,
-            modality=modality
+            start_ms=start_ms, duration_ms=duration_ms, source_buffer=source, modality=modality
         )
         self.events.append(event)
 
@@ -193,7 +195,7 @@ class ModalityTimeline:
             if current_end > next_event.start_ms:
                 raise ValueError(
                     f"Timeline overlap: Event {i} ends at {current_end}ms, "
-                    f"Event {i+1} starts at {next_event.start_ms}ms"
+                    f"Event {i + 1} starts at {next_event.start_ms}ms"
                 )
 
         return True
@@ -213,10 +215,7 @@ class TestModalityTimeline(unittest.TestCase):
         """Test adding a single event to timeline"""
         timeline = ModalityTimeline()
         timeline.add_event(
-            start_ms=0.0,
-            duration_ms=100.0,
-            source="whistle.wav",
-            modality=Modality.HARMONIC
+            start_ms=0.0, duration_ms=100.0, source="whistle.wav", modality=Modality.HARMONIC
         )
 
         self.assertEqual(len(timeline.events), 1)
@@ -350,22 +349,30 @@ class TestGranularSequencer(unittest.TestCase):
         # Validate modality assignment
         for event in timeline.events:
             if event.source_buffer == "whistle.wav":
-                self.assertEqual(event.modality, Modality.HARMONIC,
-                    "Whistle source should produce harmonic modality")
+                self.assertEqual(
+                    event.modality,
+                    Modality.HARMONIC,
+                    "Whistle source should produce harmonic modality",
+                )
             elif event.source_buffer == "rattle.wav":
-                self.assertEqual(event.modality, Modality.TRANSIENT,
-                    "Rattle source should produce transient modality")
+                self.assertEqual(
+                    event.modality,
+                    Modality.TRANSIENT,
+                    "Rattle source should produce transient modality",
+                )
 
 
 # =============================================================================
 # Phase 3: Acoustic Algebra Tests - Modality Constraints
 # =============================================================================
 
+
 @dataclass
 class AcousticVector:
     """
     17D acoustic feature vector with modality constraint.
     """
+
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
@@ -412,7 +419,8 @@ def interpolate_vectors(v1: AcousticVector, v2: AcousticVector, alpha: float) ->
         mean_f0_hz=v1.mean_f0_hz * (1 - alpha) + v2.mean_f0_hz * alpha,
         duration_ms=v1.duration_ms * (1 - alpha) + v2.duration_ms * alpha,
         f0_range_hz=v1.f0_range_hz * (1 - alpha) + v2.f0_range_hz * alpha,
-        harmonic_to_noise_ratio=v1.harmonic_to_noise_ratio * (1 - alpha) + v2.harmonic_to_noise_ratio * alpha,
+        harmonic_to_noise_ratio=v1.harmonic_to_noise_ratio * (1 - alpha)
+        + v2.harmonic_to_noise_ratio * alpha,
         spectral_flatness=v1.spectral_flatness * (1 - alpha) + v2.spectral_flatness * alpha,
         attack_time_ms=v1.attack_time_ms * (1 - alpha) + v2.attack_time_ms * alpha,
         decay_time_ms=v1.decay_time_ms * (1 - alpha) + v2.decay_time_ms * alpha,
@@ -427,7 +435,8 @@ def interpolate_vectors(v1: AcousticVector, v2: AcousticVector, alpha: float) ->
         spectral_contrast=v1.spectral_contrast * (1 - alpha) + v2.spectral_contrast * alpha,
         median_ici_ms=v1.median_ici_ms * (1 - alpha) + v2.median_ici_ms * alpha,
         onset_rate_hz=v1.onset_rate_hz * (1 - alpha) + v2.onset_rate_hz * alpha,
-        ici_coefficient_of_variation=v1.ici_coefficient_of_variation * (1 - alpha) + v2.ici_coefficient_of_variation * alpha,
+        ici_coefficient_of_variation=v1.ici_coefficient_of_variation * (1 - alpha)
+        + v2.ici_coefficient_of_variation * alpha,
         modality=v1.modality,  # Preserve source modality
     )
 
@@ -442,25 +451,49 @@ class TestAcousticAlgebraConstraints(unittest.TestCase):
         Harmonic + Harmonic = Harmonic (nuanced, but still harmonic)
         """
         v1 = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.05,  # Pure harmonic
-            attack_time_ms=25.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=8.0, vibrato_depth=50.0, jitter=0.01,
-            mfcc_1=-500.0, mfcc_2=-100.0, mfcc_3=-50.0, mfcc_4=-20.0,
-            spectral_contrast=20.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.05,  # Pure harmonic
+            attack_time_ms=25.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=8.0,
+            vibrato_depth=50.0,
+            jitter=0.01,
+            mfcc_1=-500.0,
+            mfcc_2=-100.0,
+            mfcc_3=-50.0,
+            mfcc_4=-20.0,
+            spectral_contrast=20.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         v2 = AcousticVector(
-            mean_f0_hz=7500.0, duration_ms=60.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.08,  # Still harmonic
-            attack_time_ms=20.0, decay_time_ms=12.0, sustain_level=0.6,
-            vibrato_rate_hz=7.0, vibrato_depth=40.0, jitter=0.02,
-            mfcc_1=-450.0, mfcc_2=-90.0, mfcc_3=-40.0, mfcc_4=-15.0,
-            spectral_contrast=18.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7500.0,
+            duration_ms=60.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.08,  # Still harmonic
+            attack_time_ms=20.0,
+            decay_time_ms=12.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=40.0,
+            jitter=0.02,
+            mfcc_1=-450.0,
+            mfcc_2=-90.0,
+            mfcc_3=-40.0,
+            mfcc_4=-15.0,
+            spectral_contrast=18.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         # Interpolate at 50%
@@ -468,10 +501,10 @@ class TestAcousticAlgebraConstraints(unittest.TestCase):
 
         # Assert: Result is still harmonic
         self.assertEqual(result.modality, Modality.HARMONIC)
-        self.assertGreater(result.harmonic_to_noise_ratio, 15.0,
-            "Interpolated harmonic should remain tonal")
-        self.assertLess(result.spectral_flatness, 0.2,
-            "Interpolated harmonic should remain tonal")
+        self.assertGreater(
+            result.harmonic_to_noise_ratio, 15.0, "Interpolated harmonic should remain tonal"
+        )
+        self.assertLess(result.spectral_flatness, 0.2, "Interpolated harmonic should remain tonal")
 
     def test_interpolate_across_modalities_is_forbidden(self):
         """
@@ -481,25 +514,49 @@ class TestAcousticAlgebraConstraints(unittest.TestCase):
         The modality gate prevents cross-modality interpolation to avoid garbage.
         """
         v_harmonic = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.05,  # Pure
-            attack_time_ms=25.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=8.0, vibrato_depth=50.0, jitter=0.01,
-            mfcc_1=-500.0, mfcc_2=-100.0, mfcc_3=-50.0, mfcc_4=-20.0,
-            spectral_contrast=20.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.05,  # Pure
+            attack_time_ms=25.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=8.0,
+            vibrato_depth=50.0,
+            jitter=0.01,
+            mfcc_1=-500.0,
+            mfcc_2=-100.0,
+            mfcc_3=-50.0,
+            mfcc_4=-20.0,
+            spectral_contrast=20.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         v_transient = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=10.0, f0_range_hz=200.0,
-            harmonic_to_noise_ratio=2.0, spectral_flatness=0.8,  # Noisy
-            attack_time_ms=3.0, decay_time_ms=5.0, sustain_level=0.3,
-            vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.15,
-            mfcc_1=100.0, mfcc_2=50.0, mfcc_3=20.0, mfcc_4=10.0,
-            spectral_contrast=5.0, median_ici_ms=50.0, onset_rate_hz=20.0,
+            mean_f0_hz=7000.0,
+            duration_ms=10.0,
+            f0_range_hz=200.0,
+            harmonic_to_noise_ratio=2.0,
+            spectral_flatness=0.8,  # Noisy
+            attack_time_ms=3.0,
+            decay_time_ms=5.0,
+            sustain_level=0.3,
+            vibrato_rate_hz=0.0,
+            vibrato_depth=0.0,
+            jitter=0.15,
+            mfcc_1=100.0,
+            mfcc_2=50.0,
+            mfcc_3=20.0,
+            mfcc_4=10.0,
+            spectral_contrast=5.0,
+            median_ici_ms=50.0,
+            onset_rate_hz=20.0,
             ici_coefficient_of_variation=0.2,
-            modality=Modality.TRANSIENT
+            modality=Modality.TRANSIENT,
         )
 
         # Assert: Cross-modality interpolation raises ValueError
@@ -517,25 +574,49 @@ class TestAcousticAlgebraConstraints(unittest.TestCase):
         The system should detect and prevent cross-modality interpolation.
         """
         v_neutral = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.05,
-            attack_time_ms=25.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=8.0, vibrato_depth=50.0, jitter=0.01,
-            mfcc_1=-500.0, mfcc_2=-100.0, mfcc_3=-50.0, mfcc_4=-20.0,
-            spectral_contrast=20.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.05,
+            attack_time_ms=25.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=8.0,
+            vibrato_depth=50.0,
+            jitter=0.01,
+            mfcc_1=-500.0,
+            mfcc_2=-100.0,
+            mfcc_3=-50.0,
+            mfcc_4=-20.0,
+            spectral_contrast=20.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         v_aggression = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=10.0, f0_range_hz=200.0,
-            harmonic_to_noise_ratio=2.0, spectral_flatness=0.8,
-            attack_time_ms=3.0, decay_time_ms=5.0, sustain_level=0.3,
-            vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.15,
-            mfcc_1=100.0, mfcc_2=50.0, mfcc_3=20.0, mfcc_4=10.0,
-            spectral_contrast=5.0, median_ici_ms=50.0, onset_rate_hz=20.0,
+            mean_f0_hz=7000.0,
+            duration_ms=10.0,
+            f0_range_hz=200.0,
+            harmonic_to_noise_ratio=2.0,
+            spectral_flatness=0.8,
+            attack_time_ms=3.0,
+            decay_time_ms=5.0,
+            sustain_level=0.3,
+            vibrato_rate_hz=0.0,
+            vibrato_depth=0.0,
+            jitter=0.15,
+            mfcc_1=100.0,
+            mfcc_2=50.0,
+            mfcc_3=20.0,
+            mfcc_4=10.0,
+            spectral_contrast=5.0,
+            median_ici_ms=50.0,
+            onset_rate_hz=20.0,
             ici_coefficient_of_variation=0.2,
-            modality=Modality.TRANSIENT
+            modality=Modality.TRANSIENT,
         )
 
         # CONSTRAINT CHECK
@@ -553,25 +634,49 @@ class TestModalityGate(unittest.TestCase):
     def test_safe_interpolation_same_modality(self):
         """Test that same-modality interpolation passes the gate"""
         v1 = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.05,
-            attack_time_ms=25.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=8.0, vibrato_depth=50.0, jitter=0.01,
-            mfcc_1=-500.0, mfcc_2=-100.0, mfcc_3=-50.0, mfcc_4=-20.0,
-            spectral_contrast=20.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.05,
+            attack_time_ms=25.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=8.0,
+            vibrato_depth=50.0,
+            jitter=0.01,
+            mfcc_1=-500.0,
+            mfcc_2=-100.0,
+            mfcc_3=-50.0,
+            mfcc_4=-20.0,
+            spectral_contrast=20.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         v2 = AcousticVector(
-            mean_f0_hz=7500.0, duration_ms=60.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.08,
-            attack_time_ms=20.0, decay_time_ms=12.0, sustain_level=0.6,
-            vibrato_rate_hz=7.0, vibrato_depth=40.0, jitter=0.02,
-            mfcc_1=-450.0, mfcc_2=-90.0, mfcc_3=-40.0, mfcc_4=-15.0,
-            spectral_contrast=18.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7500.0,
+            duration_ms=60.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.08,
+            attack_time_ms=20.0,
+            decay_time_ms=12.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=40.0,
+            jitter=0.02,
+            mfcc_1=-450.0,
+            mfcc_2=-90.0,
+            mfcc_3=-40.0,
+            mfcc_4=-15.0,
+            spectral_contrast=18.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         # Should NOT raise error
@@ -585,25 +690,49 @@ class TestModalityGate(unittest.TestCase):
     def test_blocked_interpolation_cross_modality(self):
         """Test that cross-modality interpolation is blocked"""
         v_harmonic = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=25.0, spectral_flatness=0.05,
-            attack_time_ms=25.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=8.0, vibrato_depth=50.0, jitter=0.01,
-            mfcc_1=-500.0, mfcc_2=-100.0, mfcc_3=-50.0, mfcc_4=-20.0,
-            spectral_contrast=20.0, median_ici_ms=0.0, onset_rate_hz=0.0,
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=25.0,
+            spectral_flatness=0.05,
+            attack_time_ms=25.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=8.0,
+            vibrato_depth=50.0,
+            jitter=0.01,
+            mfcc_1=-500.0,
+            mfcc_2=-100.0,
+            mfcc_3=-50.0,
+            mfcc_4=-20.0,
+            spectral_contrast=20.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
             ici_coefficient_of_variation=0.0,
-            modality=Modality.HARMONIC
+            modality=Modality.HARMONIC,
         )
 
         v_transient = AcousticVector(
-            mean_f0_hz=7000.0, duration_ms=10.0, f0_range_hz=200.0,
-            harmonic_to_noise_ratio=2.0, spectral_flatness=0.8,
-            attack_time_ms=3.0, decay_time_ms=5.0, sustain_level=0.3,
-            vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.15,
-            mfcc_1=100.0, mfcc_2=50.0, mfcc_3=20.0, mfcc_4=10.0,
-            spectral_contrast=5.0, median_ici_ms=50.0, onset_rate_hz=20.0,
+            mean_f0_hz=7000.0,
+            duration_ms=10.0,
+            f0_range_hz=200.0,
+            harmonic_to_noise_ratio=2.0,
+            spectral_flatness=0.8,
+            attack_time_ms=3.0,
+            decay_time_ms=5.0,
+            sustain_level=0.3,
+            vibrato_rate_hz=0.0,
+            vibrato_depth=0.0,
+            jitter=0.15,
+            mfcc_1=100.0,
+            mfcc_2=50.0,
+            mfcc_3=20.0,
+            mfcc_4=10.0,
+            spectral_contrast=5.0,
+            median_ici_ms=50.0,
+            onset_rate_hz=20.0,
             ici_coefficient_of_variation=0.2,
-            modality=Modality.TRANSIENT
+            modality=Modality.TRANSIENT,
         )
 
         # Should raise ValueError
@@ -617,9 +746,11 @@ class TestModalityGate(unittest.TestCase):
 # Phase 4: Semiotic Engine Tests - Deception Detection via Modality
 # =============================================================================
 
+
 @dataclass
 class ContextualState:
     """Contextual state for semiotic analysis"""
+
     predator_present: bool
     conspecific_present: bool
     food_present: bool
@@ -629,6 +760,7 @@ class ContextualState:
 @dataclass
 class SemioticAnalysis:
     """Result of semiotic analysis"""
+
     audio_modality: Modality
     context: ContextualState
     expected_modality: Optional[Modality]
@@ -655,11 +787,11 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
                 predator_present=True,  # Danger!
                 conspecific_present=False,
                 food_present=False,
-                territory_violation=True
+                territory_violation=True,
             ),
             expected_modality=Modality.TRANSIENT,  # Should use alarm
             modality_mismatch=True,  # Harmonic != Transient
-            deception_probability=0.85  # High probability of deception
+            deception_probability=0.85,  # High probability of deception
         )
 
         # Assert: Modality mismatch detected
@@ -668,8 +800,11 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
         self.assertEqual(analysis.expected_modality, Modality.TRANSIENT)
 
         # Assert: High deception probability
-        self.assertGreater(analysis.deception_probability, 0.7,
-            "Context modality mismatch should indicate high deception probability")
+        self.assertGreater(
+            analysis.deception_probability,
+            0.7,
+            "Context modality mismatch should indicate high deception probability",
+        )
 
     def test_correct_modality_for_context(self):
         """
@@ -687,17 +822,20 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
                 predator_present=True,
                 conspecific_present=False,
                 food_present=False,
-                territory_violation=True
+                territory_violation=True,
             ),
             expected_modality=Modality.TRANSIENT,  # Correct!
             modality_mismatch=False,  # Transient == Transient
-            deception_probability=0.05  # Low probability
+            deception_probability=0.05,  # Low probability
         )
 
         # Assert: No modality mismatch
         self.assertFalse(analysis.modality_mismatch)
-        self.assertLess(analysis.deception_probability, 0.2,
-            "Correct modality should indicate low deception probability")
+        self.assertLess(
+            analysis.deception_probability,
+            0.2,
+            "Correct modality should indicate low deception probability",
+        )
 
     def test_mating_context_harmonic_appropriate(self):
         """
@@ -715,11 +853,11 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
                 predator_present=False,
                 conspecific_present=True,
                 food_present=False,
-                territory_violation=False
+                territory_violation=False,
             ),
             expected_modality=Modality.HARMONIC,  # Appropriate for courtship
             modality_mismatch=False,
-            deception_probability=0.03
+            deception_probability=0.03,
         )
 
         self.assertFalse(analysis.modality_mismatch)
@@ -731,10 +869,10 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
         """
         # Define rules: Context -> Expected Modality
         rules = {
-            "predator": Modality.TRANSIENT,     # Alarm calls = urgent
-            "mating": Modality.HARMONIC,          # Courtship = tonal
-            "food": Modality.TRANSIENT,          # Food discovery = excited
-            "territory": Modality.TRANSIENT,      # Territory defense = aggressive
+            "predator": Modality.TRANSIENT,  # Alarm calls = urgent
+            "mating": Modality.HARMONIC,  # Courtship = tonal
+            "food": Modality.TRANSIENT,  # Food discovery = excited
+            "territory": Modality.TRANSIENT,  # Territory defense = aggressive
         }
 
         # Test predator context
@@ -747,6 +885,7 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
         """
         TEST: System can detect contextual modality mismatches
         """
+
         # Define detection logic
         def detect_modality_mismatch(audio_modality: Modality, context: ContextualState) -> bool:
             """Check if audio modality matches expected for context"""
@@ -766,7 +905,7 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
             predator_present=True,
             conspecific_present=False,
             food_present=False,
-            territory_violation=True
+            territory_violation=True,
         )
         is_mismatch1 = detect_modality_mismatch(Modality.HARMONIC, context1)
         self.assertTrue(is_mismatch1, "Harmonic during predator = mismatch")
@@ -776,7 +915,7 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
             predator_present=False,
             conspecific_present=True,
             food_present=False,
-            territory_violation=False
+            territory_violation=False,
         )
         is_mismatch2 = detect_modality_mismatch(Modality.HARMONIC, context2)
         self.assertFalse(is_mismatch2, "Harmonic during mating = correct")
@@ -789,6 +928,7 @@ class TestSemioticDeceptionDetection(unittest.TestCase):
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestCorvidIntegration(unittest.TestCase):
     """Integration tests for complete multi-modal corvid support"""
@@ -833,19 +973,17 @@ class TestCorvidIntegration(unittest.TestCase):
                 {"buffer": "rattle.wav", "modality": Modality.TRANSIENT, "duration": 50.0},
                 {"buffer": "whistle.wav", "modality": Modality.HARMONIC, "duration": 20.0},
             ],
-            "structure": "composite"
+            "structure": "composite",
         }
 
         # Assert: Corvid has multiple buffers
-        self.assertGreater(len(corvid_persona["sequence"]), 1,
-            "Corvid should use multiple buffers")
+        self.assertGreater(len(corvid_persona["sequence"]), 1, "Corvid should use multiple buffers")
         self.assertEqual(corvid_persona["structure"], "composite")
 
         # Assert: At least two modalities represented
         modalities = set(e["modality"] for e in corvid_persona["sequence"])
-        self.assertTrue(len(modalities) >= 2,
-            "Corvid sequence should use multiple modalities")
+        self.assertTrue(len(modalities) >= 2, "Corvid sequence should use multiple modalities")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

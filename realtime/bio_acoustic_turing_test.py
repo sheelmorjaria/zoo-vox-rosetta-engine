@@ -49,9 +49,9 @@ class StimulusController:
                 - output_device: Audio output device name
                 - volume_db: Playback volume in dB
         """
-        self.sample_rate = config.get('sample_rate', 22050)
-        self.output_device = config.get('output_device', 'default')
-        self.volume_db = config.get('volume_db', -6.0)
+        self.sample_rate = config.get("sample_rate", 22050)
+        self.output_device = config.get("output_device", "default")
+        self.volume_db = config.get("volume_db", -6.0)
 
         # Stimulus storage
         self.stimuli: Dict[str, Dict] = {}
@@ -70,10 +70,10 @@ class StimulusController:
             stimulus_type: Type of stimulus ('concatenative' or 'granular')
         """
         self.stimuli[stimulus_id] = {
-            'audio': np.array(audio, dtype=np.float32),
-            'type': stimulus_type,
-            'duration_ms': len(audio) / self.sample_rate * 1000,
-            'loaded_at': datetime.now().isoformat()
+            "audio": np.array(audio, dtype=np.float32),
+            "type": stimulus_type,
+            "duration_ms": len(audio) / self.sample_rate * 1000,
+            "loaded_at": datetime.now().isoformat(),
         }
 
     def has_stimulus(self, stimulus_id: str) -> bool:
@@ -82,12 +82,10 @@ class StimulusController:
 
     def get_stimulus_type(self, stimulus_id: str) -> str:
         """Get the type of a loaded stimulus."""
-        return self.stimuli[stimulus_id]['type']
+        return self.stimuli[stimulus_id]["type"]
 
     def create_counterbalanced_sequence(
-        self,
-        num_trials: int,
-        stimulus_ids: List[str]
+        self, num_trials: int, stimulus_ids: List[str]
     ) -> List[str]:
         """
         Create a counterbalanced, randomized sequence of stimuli.
@@ -137,10 +135,10 @@ class StimulusController:
 
         # In real implementation, this would play audio
         return {
-            'stimulus_id': stimulus_id,
-            'type': stimulus['type'],
-            'duration_ms': stimulus['duration_ms'],
-            'played_at': datetime.now().isoformat()
+            "stimulus_id": stimulus_id,
+            "type": stimulus["type"],
+            "duration_ms": stimulus["duration_ms"],
+            "played_at": datetime.now().isoformat(),
         }
 
 
@@ -204,24 +202,20 @@ class ResponseRecorder:
             Dictionary with response information
         """
         if not self.recorded_audio:
-            return {
-                'has_response': False,
-                'audio': [],
-                'duration_ms': 0
-            }
+            return {"has_response": False, "audio": [], "duration_ms": 0}
 
         # Concatenate all frames
         full_audio = np.concatenate(self.recorded_audio)
 
         # Check if there's a meaningful response
-        rms = np.sqrt(np.mean(full_audio ** 2))
+        rms = np.sqrt(np.mean(full_audio**2))
         has_response = rms > self.response_threshold
 
         return {
-            'has_response': has_response,
-            'audio': full_audio.tolist(),
-            'duration_ms': len(full_audio) / self.sample_rate * 1000,
-            'rms': rms
+            "has_response": has_response,
+            "audio": full_audio.tolist(),
+            "duration_ms": len(full_audio) / self.sample_rate * 1000,
+            "rms": rms,
         }
 
     def get_response_latency_ms(self) -> float:
@@ -258,18 +252,18 @@ class ResponseRecorder:
             Response type: 'vocalization', 'no_response', etc.
         """
         audio_array = np.array(audio, dtype=np.float32)
-        rms = np.sqrt(np.mean(audio_array ** 2))
+        rms = np.sqrt(np.mean(audio_array**2))
 
         if rms < self.response_threshold:
-            return 'no_response'
+            return "no_response"
         else:
             # Check for harmonic structure (vocalization)
             # Simplified: high zero-crossing rate suggests vocalization
             zcr = np.mean(np.abs(np.diff(np.sign(audio_array))))
             if zcr > 0.1:
-                return 'vocalization'
+                return "vocalization"
             else:
-                return 'movement'
+                return "movement"
 
 
 class ExperimentDesign:
@@ -287,7 +281,7 @@ class ExperimentDesign:
         session_type: str,
         randomize_order: bool = True,
         min_inter_trial_interval_s: int = 30,
-        max_inter_trial_interval_s: int = 60
+        max_inter_trial_interval_s: int = 60,
     ):
         """
         Initialize experiment design.
@@ -319,12 +313,14 @@ class ExperimentDesign:
             stimulus_type: Type of stimulus ('concatenative' or 'granular')
             stimulus_id: ID of stimulus to present
         """
-        self.trials.append({
-            'trial_id': trial_id,
-            'stimulus_type': stimulus_type,
-            'stimulus_id': stimulus_id,
-            'inter_trial_interval_s': self.get_next_inter_trial_interval()
-        })
+        self.trials.append(
+            {
+                "trial_id": trial_id,
+                "stimulus_type": stimulus_type,
+                "stimulus_id": stimulus_id,
+                "inter_trial_interval_s": self.get_next_inter_trial_interval(),
+            }
+        )
 
     def get_trials(self) -> List[Dict]:
         """Get all trials."""
@@ -341,10 +337,7 @@ class ExperimentDesign:
         Returns:
             Interval in seconds
         """
-        return random.randint(
-            self.min_inter_trial_interval_s,
-            self.max_inter_trial_interval_s
-        )
+        return random.randint(self.min_inter_trial_interval_s, self.max_inter_trial_interval_s)
 
 
 class StatisticalAnalyzer:
@@ -369,8 +362,8 @@ class StatisticalAnalyzer:
         Returns:
             Statistical comparison results
         """
-        concat_responses = results['concatenative']['responses']
-        granular_responses = results['granular']['responses']
+        concat_responses = results["concatenative"]["responses"]
+        granular_responses = results["granular"]["responses"]
 
         concat_rate = np.mean(concat_responses)
         granular_rate = np.mean(granular_responses)
@@ -384,26 +377,23 @@ class StatisticalAnalyzer:
 
         # Chi-square test (approximation for Fisher's exact)
         try:
-            contingency = np.array([
-                [concat_yes, concat_no],
-                [granular_yes, granular_no]
-            ])
+            contingency = np.array([[concat_yes, concat_no], [granular_yes, granular_no]])
             chi2, p_value, _, _ = stats.chi2_contingency(contingency)
-            test_used = 'chi_square'
+            test_used = "chi_square"
         except:
             # Fallback to simple comparison if test fails
             p_value = None
-            test_used = 'descriptive_only'
+            test_used = "descriptive_only"
 
         return {
-            'concatenative_response_rate': concat_rate,
-            'granular_response_rate': granular_rate,
-            'concatenative_n': len(concat_responses),
-            'granular_n': len(granular_responses),
-            'difference': concat_rate - granular_rate,
-            'statistical_test': test_used,
-            'p_value': p_value,
-            'significant_at_005': p_value is not None and p_value < 0.05
+            "concatenative_response_rate": concat_rate,
+            "granular_response_rate": granular_rate,
+            "concatenative_n": len(concat_responses),
+            "granular_n": len(granular_responses),
+            "difference": concat_rate - granular_rate,
+            "statistical_test": test_used,
+            "p_value": p_value,
+            "significant_at_005": p_value is not None and p_value < 0.05,
         }
 
     def compare_latencies(self, results: Dict) -> Dict:
@@ -416,8 +406,8 @@ class StatisticalAnalyzer:
         Returns:
             Statistical comparison results
         """
-        concat_latencies = results['concatenative']['latencies_ms']
-        granular_latencies = results['granular']['latencies_ms']
+        concat_latencies = results["concatenative"]["latencies_ms"]
+        granular_latencies = results["granular"]["latencies_ms"]
 
         concat_mean = np.mean(concat_latencies)
         granular_mean = np.mean(granular_latencies)
@@ -426,15 +416,15 @@ class StatisticalAnalyzer:
         t_stat, p_value = stats.ttest_ind(concat_latencies, granular_latencies)
 
         return {
-            'concatenative_mean_latency': concat_mean,
-            'granular_mean_latency': granular_mean,
-            'concatenative_std': np.std(concat_latencies),
-            'granular_std': np.std(granular_latencies),
-            'difference_ms': concat_mean - granular_mean,
-            'statistical_test': 'independent_t_test',
-            't_statistic': t_stat,
-            'p_value': p_value,
-            'significant_at_005': p_value < 0.05
+            "concatenative_mean_latency": concat_mean,
+            "granular_mean_latency": granular_mean,
+            "concatenative_std": np.std(concat_latencies),
+            "granular_std": np.std(granular_latencies),
+            "difference_ms": concat_mean - granular_mean,
+            "statistical_test": "independent_t_test",
+            "t_statistic": t_stat,
+            "p_value": p_value,
+            "significant_at_005": p_value < 0.05,
         }
 
     def evaluate_turing_test(self, results: Dict) -> Dict:
@@ -450,9 +440,9 @@ class StatisticalAnalyzer:
         Returns:
             Evaluation with conclusion
         """
-        concat_rate = results['concatenative_response_rate']
-        granular_rate = results['granular_response_rate']
-        p_value = results.get('p_value', 1.0)
+        concat_rate = results["concatenative_response_rate"]
+        granular_rate = results["granular_response_rate"]
+        p_value = results.get("p_value", 1.0)
 
         # Turing test PASSES if no significant difference
         passed = p_value is None or p_value >= 0.05
@@ -463,23 +453,23 @@ class StatisticalAnalyzer:
         engaged = min_response_rate > 0.3  # At least 30% response rate
 
         if passed and engaged:
-            conclusion = 'Animals cannot distinguish between natural and granular'
-            interpretation = 'PASSED: Granular synthesis is bio-acoustically valid'
+            conclusion = "Animals cannot distinguish between natural and granular"
+            interpretation = "PASSED: Granular synthesis is bio-acoustically valid"
         elif not passed:
-            conclusion = 'Animals can distinguish between natural and granular'
-            interpretation = 'FAILED: Granular synthesis needs improvement'
+            conclusion = "Animals can distinguish between natural and granular"
+            interpretation = "FAILED: Granular synthesis needs improvement"
         else:
-            conclusion = 'Low response rates suggest animals were not engaged'
-            interpretation = 'INCONCLUSIVE: Need to verify experimental setup'
+            conclusion = "Low response rates suggest animals were not engaged"
+            interpretation = "INCONCLUSIVE: Need to verify experimental setup"
 
         return {
-            'passed': passed and engaged,
-            'p_value': p_value,
-            'conclusion': conclusion,
-            'interpretation': interpretation,
-            'concatenative_rate': concat_rate,
-            'granular_rate': granular_rate,
-            'min_response_rate': min_response_rate
+            "passed": passed and engaged,
+            "p_value": p_value,
+            "conclusion": conclusion,
+            "interpretation": interpretation,
+            "concatenative_rate": concat_rate,
+            "granular_rate": granular_rate,
+            "min_response_rate": min_response_rate,
         }
 
 
@@ -507,7 +497,7 @@ class BioAcousticTuringTest:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize components
-        self.stimulus_controller = StimulusController({'sample_rate': 22050})
+        self.stimulus_controller = StimulusController({"sample_rate": 22050})
         self.response_recorder = ResponseRecorder(sample_rate=22050)
         self.statistical_analyzer = StatisticalAnalyzer()
 
@@ -525,11 +515,7 @@ class BioAcousticTuringTest:
         """
         self.current_phase = phase_name
         if phase_name not in self.phase_results:
-            self.phase_results[phase_name] = {
-                'trials': [],
-                'responses': [],
-                'latencies_ms': []
-            }
+            self.phase_results[phase_name] = {"trials": [], "responses": [], "latencies_ms": []}
 
     def add_stimulus(self, stimulus_id: str, audio: List[float], stimulus_type: str):
         """Add a stimulus to the test."""
@@ -561,14 +547,17 @@ class BioAcousticTuringTest:
         # Simulate response (in real experiment, this would be actual recording)
         # For testing, we'll simulate response 70% of the time
         import random
+
         if random.random() < 0.7:
             # Simulate response with 200ms latency
             silence_samples = int(0.2 * 22050)
             response_duration = int(0.5 * 22050)
-            simulated_response = np.concatenate([
-                np.zeros(silence_samples),
-                np.sin(2 * np.pi * 8000 * np.linspace(0, 0.5, response_duration)) * 0.3
-            ])
+            simulated_response = np.concatenate(
+                [
+                    np.zeros(silence_samples),
+                    np.sin(2 * np.pi * 8000 * np.linspace(0, 0.5, response_duration)) * 0.3,
+                ]
+            )
             self.response_recorder.record_frame(simulated_response.tolist())
 
         self.response_recorder.stop_recording()
@@ -579,24 +568,28 @@ class BioAcousticTuringTest:
 
         # Store results
         if self.current_phase:
-            self.phase_results[self.current_phase]['trials'].append({
-                'trial_number': self.trial_counter,
-                'stimulus_id': stimulus_id,
-                'stimulus_type': playback_info['type'],
-                'has_response': response['has_response'],
-                'latency_ms': latency,
-                'timestamp': datetime.now().isoformat()
-            })
+            self.phase_results[self.current_phase]["trials"].append(
+                {
+                    "trial_number": self.trial_counter,
+                    "stimulus_id": stimulus_id,
+                    "stimulus_type": playback_info["type"],
+                    "has_response": response["has_response"],
+                    "latency_ms": latency,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
-            self.phase_results[self.current_phase]['responses'].append(1 if response['has_response'] else 0)
+            self.phase_results[self.current_phase]["responses"].append(
+                1 if response["has_response"] else 0
+            )
             if latency > 0:
-                self.phase_results[self.current_phase]['latencies_ms'].append(latency)
+                self.phase_results[self.current_phase]["latencies_ms"].append(latency)
 
         return {
-            'trial_number': self.trial_counter,
-            'stimulus_id': stimulus_id,
-            'has_response': response['has_response'],
-            'latency_ms': latency
+            "trial_number": self.trial_counter,
+            "stimulus_id": stimulus_id,
+            "has_response": response["has_response"],
+            "latency_ms": latency,
         }
 
     def get_results(self) -> Dict:
@@ -610,26 +603,29 @@ class BioAcousticTuringTest:
         Returns:
             Statistical evaluation results
         """
-        if 'concatenative_baseline' not in self.phase_results or 'granular_synthesis' not in self.phase_results:
+        if (
+            "concatenative_baseline" not in self.phase_results
+            or "granular_synthesis" not in self.phase_results
+        ):
             return {
-                'error': 'Both phases must be completed before evaluation',
-                'null_hypothesis': 'Animals cannot distinguish between natural and granular',
-                'conclusion': 'INCOMPLETE'
+                "error": "Both phases must be completed before evaluation",
+                "null_hypothesis": "Animals cannot distinguish between natural and granular",
+                "conclusion": "INCOMPLETE",
             }
 
-        concat_results = self.phase_results['concatenative_baseline']
-        granular_results = self.phase_results['granular_synthesis']
+        concat_results = self.phase_results["concatenative_baseline"]
+        granular_results = self.phase_results["granular_synthesis"]
 
         # Prepare statistical comparison
         comparison_data = {
-            'concatenative': {
-                'responses': concat_results['responses'],
-                'latencies_ms': concat_results['latencies_ms']
+            "concatenative": {
+                "responses": concat_results["responses"],
+                "latencies_ms": concat_results["latencies_ms"],
             },
-            'granular': {
-                'responses': granular_results['responses'],
-                'latencies_ms': granular_results['latencies_ms']
-            }
+            "granular": {
+                "responses": granular_results["responses"],
+                "latencies_ms": granular_results["latencies_ms"],
+            },
         }
 
         # Compare response rates
@@ -639,13 +635,13 @@ class BioAcousticTuringTest:
         evaluation = self.statistical_analyzer.evaluate_turing_test(rate_comparison)
 
         return {
-            'null_hypothesis': 'Animals cannot distinguish between natural and granular',
-            'alternative_hypothesis': 'Animals can distinguish between natural and granular',
-            'conclusion': evaluation['conclusion'],
-            'interpretation': evaluation['interpretation'],
-            'p_value': evaluation.get('p_value'),
-            'concatenative_response_rate': evaluation['concatenative_rate'],
-            'granular_response_rate': evaluation['granular_rate'],
-            'statistical_test': rate_comparison.get('statistical_test'),
-            'passed': evaluation['passed']
+            "null_hypothesis": "Animals cannot distinguish between natural and granular",
+            "alternative_hypothesis": "Animals can distinguish between natural and granular",
+            "conclusion": evaluation["conclusion"],
+            "interpretation": evaluation["interpretation"],
+            "p_value": evaluation.get("p_value"),
+            "concatenative_response_rate": evaluation["concatenative_rate"],
+            "granular_response_rate": evaluation["granular_rate"],
+            "statistical_test": rate_comparison.get("statistical_test"),
+            "passed": evaluation["passed"],
         }

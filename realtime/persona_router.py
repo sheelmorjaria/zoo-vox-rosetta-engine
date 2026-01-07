@@ -25,20 +25,22 @@ logger = logging.getLogger(__name__)
 
 class ContextState(Enum):
     """Behavioral context states for synthesis."""
-    SILENCE = 'silence'
-    CONTACT = 'contact'
-    ALARM = 'alarm'
-    AGGRESSIVE = 'aggressive'
-    FOOD = 'food'
-    NEUTRAL = 'neutral'
-    UNCERTAIN = 'uncertain'
-    SUBMISSION = 'submission'
-    URGENCY = 'urgency'
+
+    SILENCE = "silence"
+    CONTACT = "contact"
+    ALARM = "alarm"
+    AGGRESSIVE = "aggressive"
+    FOOD = "food"
+    NEUTRAL = "neutral"
+    UNCERTAIN = "uncertain"
+    SUBMISSION = "submission"
+    URGENCY = "urgency"
 
 
 @dataclass
 class PersonaDefinition:
     """Complete definition of a vocal persona."""
+
     persona_id: str
     species: str
     cluster_id: int
@@ -51,6 +53,7 @@ class PersonaDefinition:
 @dataclass
 class RoutingDecision:
     """Result of persona routing decision."""
+
     persona_id: str
     source_file: str
     synthesis_params: Dict[str, Any]
@@ -105,34 +108,33 @@ class PersonaRouter:
             return str(path)
 
         raise FileNotFoundError(
-            "Could not find persona_source_map.json. "
-            "Expected location: ./persona_source_map.json"
+            "Could not find persona_source_map.json. Expected location: ./persona_source_map.json"
         )
 
     def _load_persona_map(self):
         """Load persona definitions and routing rules from JSON."""
         try:
-            with open(self.persona_map_path, 'r') as f:
+            with open(self.persona_map_path, "r") as f:
                 data = json.load(f)
 
             # Load personas
-            for persona_id, persona_data in data.get('personas', {}).items():
+            for persona_id, persona_data in data.get("personas", {}).items():
                 self.personas[persona_id] = PersonaDefinition(
                     persona_id=persona_id,
-                    species=persona_data['species'],
-                    cluster_id=persona_data['cluster_id'],
-                    source_file=persona_data['source_file'],
-                    usage=persona_data['usage'],
-                    acoustic_profile=persona_data['acoustic_profile'],
-                    synthesis_params=persona_data.get('synthesis_params', {})
+                    species=persona_data["species"],
+                    cluster_id=persona_data["cluster_id"],
+                    source_file=persona_data["source_file"],
+                    usage=persona_data["usage"],
+                    acoustic_profile=persona_data["acoustic_profile"],
+                    synthesis_params=persona_data.get("synthesis_params", {}),
                 )
 
             # Load routing rules
-            self.routing_rules = data.get('routing_rules', {})
+            self.routing_rules = data.get("routing_rules", {})
 
             # Load context vectors for extrapolation
-            extrapolation_data = data.get('contextual_extrapolation', {})
-            self.context_vectors = extrapolation_data.get('context_vectors', {})
+            extrapolation_data = data.get("contextual_extrapolation", {})
+            self.context_vectors = extrapolation_data.get("context_vectors", {})
 
             logger.info(
                 f"Loaded {len(self.personas)} personas, "
@@ -150,7 +152,7 @@ class PersonaRouter:
         context: ContextState,
         arousal_level: float = 0.5,
         comm_distance: str = "navigation",
-        social_complexity: str = "medium"
+        social_complexity: str = "medium",
     ) -> RoutingDecision:
         """
         Select the appropriate persona based on context.
@@ -170,23 +172,23 @@ class PersonaRouter:
 
         # Get routing rules for this species
         species_rules = self.routing_rules.get(species, {})
-        default_persona = species_rules.get('default_persona', f'{species.upper()}_DEFAULT')
-        exceptions = species_rules.get('exceptions', [])
+        default_persona = species_rules.get("default_persona", f"{species.upper()}_DEFAULT")
+        exceptions = species_rules.get("exceptions", [])
 
         # Evaluate exceptions in order
         selected_persona = default_persona
         reasoning = f"Using default persona: {default_persona}"
 
         for exception in exceptions:
-            condition = exception['condition']
-            target_persona = exception['persona']
+            condition = exception["condition"]
+            target_persona = exception["persona"]
 
             if self._evaluate_condition(
                 condition,
                 context=context,
                 arousal_level=arousal_level,
                 comm_distance=comm_distance,
-                social_complexity=social_complexity
+                social_complexity=social_complexity,
             ):
                 selected_persona = target_persona
                 reasoning = (
@@ -211,18 +213,18 @@ class PersonaRouter:
             synthesis_params=persona_def.synthesis_params,
             acoustic_profile=persona_def.acoustic_profile,
             context_vector=context_vector,
-            reasoning=reasoning
+            reasoning=reasoning,
         )
 
     def _normalize_species(self, species: str) -> str:
         """Normalize species name to match routing rules."""
         species_map = {
-            'marmoset': 'marmoset',
-            'egyptian_bat': 'egyptian_bat',
-            'bat': 'egyptian_bat',
-            'dolphin': 'dolphin',
-            'finch': 'finch',
-            'sperm_whale': 'sperm_whale',
+            "marmoset": "marmoset",
+            "egyptian_bat": "egyptian_bat",
+            "bat": "egyptian_bat",
+            "dolphin": "dolphin",
+            "finch": "finch",
+            "sperm_whale": "sperm_whale",
         }
         return species_map.get(species.lower(), species.lower())
 
@@ -232,7 +234,7 @@ class PersonaRouter:
         context: ContextState,
         arousal_level: float,
         comm_distance: str,
-        social_complexity: str
+        social_complexity: str,
     ) -> bool:
         """
         Evaluate routing exception condition.
@@ -245,10 +247,10 @@ class PersonaRouter:
         """
         # Build evaluation context
         eval_context = {
-            'context': context.value,
-            'arousal_level': arousal_level,
-            'comm_distance': comm_distance,
-            'social_complexity': social_complexity,
+            "context": context.value,
+            "arousal_level": arousal_level,
+            "comm_distance": comm_distance,
+            "social_complexity": social_complexity,
         }
 
         try:
@@ -263,18 +265,18 @@ class PersonaRouter:
         """Get contextual extrapolation vector for a context."""
         # Map context states to vector names
         vector_map = {
-            'neutral': 'neutral',
-            'contact': 'contact',
-            'aggressive': 'aggression',
-            'alarm': 'alarm',
-            'submission': 'submission',
-            'urgency': 'urgency',
-            'silence': 'neutral',
-            'uncertain': 'neutral',
-            'food': 'neutral',
+            "neutral": "neutral",
+            "contact": "contact",
+            "aggressive": "aggression",
+            "alarm": "alarm",
+            "submission": "submission",
+            "urgency": "urgency",
+            "silence": "neutral",
+            "uncertain": "neutral",
+            "food": "neutral",
         }
 
-        vector_name = vector_map.get(context, 'neutral')
+        vector_name = vector_map.get(context, "neutral")
         return self.context_vectors.get(vector_name)
 
     def get_persona_definition(self, persona_id: str) -> Optional[PersonaDefinition]:
@@ -285,10 +287,7 @@ class PersonaRouter:
         """List available personas, optionally filtered by species."""
         if species:
             species = self._normalize_species(species)
-            return [
-                p_id for p_id, p_def in self.personas.items()
-                if p_def.species == species
-            ]
+            return [p_id for p_id, p_def in self.personas.items() if p_def.species == species]
         return list(self.personas.keys())
 
     def get_routing_rules(self, species: str) -> Dict:
@@ -300,6 +299,7 @@ class PersonaRouter:
 # ============================================================================
 # High-Level Interface
 # ============================================================================
+
 
 def get_persona_router(persona_map_path: Optional[str] = None) -> PersonaRouter:
     """
@@ -321,23 +321,20 @@ def get_persona_router(persona_map_path: Optional[str] = None) -> PersonaRouter:
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     # Create router
     router = PersonaRouter()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Persona Router Demo")
-    print("="*60)
+    print("=" * 60)
 
     # Test 1: Marmoset neutral contact
     print("\n--- Test 1: Marmoset Neutral Contact ---")
     decision = router.select_persona(
-        species='marmoset',
-        context=ContextState.CONTACT,
-        arousal_level=0.3
+        species="marmoset", context=ContextState.CONTACT, arousal_level=0.3
     )
     print(f"Persona: {decision.persona_id}")
     print(f"Source: {decision.source_file}")
@@ -346,9 +343,7 @@ if __name__ == "__main__":
     # Test 2: Marmoset high-arousal alarm
     print("\n--- Test 2: Marmoset High-Arousal Alarm ---")
     decision = router.select_persona(
-        species='marmoset',
-        context=ContextState.ALARM,
-        arousal_level=0.9
+        species="marmoset", context=ContextState.ALARM, arousal_level=0.9
     )
     print(f"Persona: {decision.persona_id}")
     print(f"Source: {decision.source_file}")
@@ -357,9 +352,7 @@ if __name__ == "__main__":
     # Test 3: Bat roost communication
     print("\n--- Test 3: Bat Roost Communication ---")
     decision = router.select_persona(
-        species='egyptian_bat',
-        context=ContextState.CONTACT,
-        comm_distance='roost'
+        species="egyptian_bat", context=ContextState.CONTACT, comm_distance="roost"
     )
     print(f"Persona: {decision.persona_id}")
     print(f"Source: {decision.source_file}")
@@ -368,25 +361,22 @@ if __name__ == "__main__":
     # Test 4: Bat close-range high-complexity social
     print("\n--- Test 4: Bat Close-Range High-Complexity Social ---")
     decision = router.select_persona(
-        species='bat',
-        context=ContextState.CONTACT,
-        comm_distance='close',
-        social_complexity='high'
+        species="bat", context=ContextState.CONTACT, comm_distance="close", social_complexity="high"
     )
     print(f"Persona: {decision.persona_id}")
     print(f"Source: {decision.source_file}")
     print(f"Reasoning: {decision.reasoning}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Available Personas:")
-    print("="*60)
-    for species in ['marmoset', 'egyptian_bat']:
+    print("=" * 60)
+    for species in ["marmoset", "egyptian_bat"]:
         personas = router.list_personas(species)
         print(f"\n{species.title()}: {', '.join(personas)}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Context Vectors Available:")
-    print("="*60)
+    print("=" * 60)
     for name, vector in router.context_vectors.items():
         print(f"\n{name}:")
         for key, value in vector.items():

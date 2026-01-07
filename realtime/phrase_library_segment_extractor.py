@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SegmentExtractionConfig:
     """Configuration for segment extraction."""
+
     output_dir: str = "audio_library"
     audio_format: str = "wav"
     normalize: bool = True
@@ -54,7 +55,7 @@ class PhraseLibrarySegmentExtractor:
         self,
         library_path: str,
         source_audio_dir: Optional[str] = None,
-        config: Optional[SegmentExtractionConfig] = None
+        config: Optional[SegmentExtractionConfig] = None,
     ):
         """
         Initialize extractor.
@@ -69,21 +70,19 @@ class PhraseLibrarySegmentExtractor:
         self.config = config or SegmentExtractionConfig()
 
         # Load library
-        with open(library_path, 'rb') as f:
+        with open(library_path, "rb") as f:
             self.library_data = pickle.load(f)
 
-        self.species = self.library_data['species']
-        self.sample_rate = self.library_data['sr']
-        self.phrase_segments = self.library_data['phrase_segments']
+        self.species = self.library_data["species"]
+        self.sample_rate = self.library_data["sr"]
+        self.phrase_segments = self.library_data["phrase_segments"]
 
         logger.info(f"Loaded phrase library for {self.species}")
         logger.info(f"  Sample rate: {self.sample_rate} Hz")
         logger.info(f"  Phrase types: {len(self.phrase_segments)}")
 
     def extract_segments(
-        self,
-        output_dir: Optional[str] = None,
-        progress: bool = True
+        self, output_dir: Optional[str] = None, progress: bool = True
     ) -> Dict[str, List[str]]:
         """
         Extract all audio segments from source files.
@@ -140,11 +139,7 @@ class PhraseLibrarySegmentExtractor:
                 yield phrase_key, segment, segment_idx
 
     def _extract_single_segment(
-        self,
-        phrase_key: str,
-        segment: dict,
-        segment_idx: int,
-        output_dir: Path
+        self, phrase_key: str, segment: dict, segment_idx: int, output_dir: Path
     ) -> Optional[str]:
         """
         Extract a single audio segment.
@@ -158,9 +153,9 @@ class PhraseLibrarySegmentExtractor:
         Returns:
             Path to extracted file or None
         """
-        source_file = segment['source_file']
-        start_ms = segment['start_time_ms']
-        end_ms = segment['end_time_ms']
+        source_file = segment["source_file"]
+        start_ms = segment["start_time_ms"]
+        end_ms = segment["end_time_ms"]
 
         # Resolve source file path
         source_path = self._resolve_source_path(source_file)
@@ -179,6 +174,7 @@ class PhraseLibrarySegmentExtractor:
             # Resample if needed
             if sr != self.sample_rate:
                 from scipy import signal
+
                 num_samples = int(len(audio) * self.sample_rate / sr)
                 audio = signal.resample(audio, num_samples)
 
@@ -199,7 +195,7 @@ class PhraseLibrarySegmentExtractor:
 
             # Normalize if requested
             if self.config.normalize and len(segment_audio) > 0:
-                rms = np.sqrt(np.mean(segment_audio ** 2))
+                rms = np.sqrt(np.mean(segment_audio**2))
                 if rms > 0:
                     target_rms = 10 ** (self.config.target_level_db / 20)
                     segment_audio = segment_audio * (target_rms / rms)
@@ -207,8 +203,8 @@ class PhraseLibrarySegmentExtractor:
                     segment_audio = np.clip(segment_audio, -1.0, 1.0)
 
             # Create output filename
-            occurrence_id = segment.get('occurrence_id', f'{segment_idx}')
-            safe_phrase_key = phrase_key.replace('/', '_').replace('\\', '_')
+            occurrence_id = segment.get("occurrence_id", f"{segment_idx}")
+            safe_phrase_key = phrase_key.replace("/", "_").replace("\\", "_")
             output_filename = f"{safe_phrase_key}_{segment_idx:03d}.wav"
             output_path = output_dir / output_filename
 
@@ -274,21 +270,18 @@ class PhraseLibrarySegmentExtractor:
         import json
 
         index = {
-            'species': self.species,
-            'sample_rate': self.sample_rate,
-            'total_phrases': len(output_files),
-            'total_segments': sum(len(v) for v in output_files.values()),
-            'phrases': {}
+            "species": self.species,
+            "sample_rate": self.sample_rate,
+            "total_phrases": len(output_files),
+            "total_segments": sum(len(v) for v in output_files.values()),
+            "phrases": {},
         }
 
         for phrase_key, files in output_files.items():
-            index['phrases'][phrase_key] = {
-                'count': len(files),
-                'files': files
-            }
+            index["phrases"][phrase_key] = {"count": len(files), "files": files}
 
-        index_path = output_dir / 'segment_index.json'
-        with open(index_path, 'w') as f:
+        index_path = output_dir / "segment_index.json"
+        with open(index_path, "w") as f:
             json.dump(index, f, indent=2)
 
         logger.info(f"Saved index to {index_path}")
@@ -305,16 +298,18 @@ class PhraseLibrarySegmentExtractor:
         rows = []
         for phrase_key, segments in self.phrase_segments.items():
             for segment in segments:
-                rows.append({
-                    'phrase_key': phrase_key,
-                    'source_file': segment['source_file'],
-                    'start_ms': segment['start_time_ms'],
-                    'end_ms': segment['end_time_ms'],
-                    'duration_ms': segment['end_time_ms'] - segment['start_time_ms'],
-                    'mean_f0_hz': segment['mean_f0_hz'],
-                    'std_f0_hz': segment['std_f0_hz'],
-                    'quality_score': segment['quality_score']
-                })
+                rows.append(
+                    {
+                        "phrase_key": phrase_key,
+                        "source_file": segment["source_file"],
+                        "start_ms": segment["start_time_ms"],
+                        "end_ms": segment["end_time_ms"],
+                        "duration_ms": segment["end_time_ms"] - segment["start_time_ms"],
+                        "mean_f0_hz": segment["mean_f0_hz"],
+                        "std_f0_hz": segment["std_f0_hz"],
+                        "quality_score": segment["quality_score"],
+                    }
+                )
 
         return pd.DataFrame(rows)
 
@@ -323,10 +318,9 @@ class PhraseLibrarySegmentExtractor:
 # Convenience Functions
 # ============================================================================
 
+
 def extract_from_library(
-    library_path: str,
-    source_audio_dir: Optional[str] = None,
-    output_dir: str = "audio_library"
+    library_path: str, source_audio_dir: Optional[str] = None, output_dir: str = "audio_library"
 ) -> Dict[str, List[str]]:
     """
     Extract all audio segments from a phrase library.
@@ -340,8 +334,7 @@ def extract_from_library(
         Dictionary mapping phrase_key to list of extracted file paths
     """
     extractor = PhraseLibrarySegmentExtractor(
-        library_path=library_path,
-        source_audio_dir=source_audio_dir
+        library_path=library_path, source_audio_dir=source_audio_dir
     )
 
     return extractor.extract_segments(output_dir=output_dir)
@@ -355,7 +348,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python phrase_library_segment_extractor.py <library.pkl> [source_audio_dir] [output_dir]")
+        print(
+            "Usage: python phrase_library_segment_extractor.py <library.pkl> [source_audio_dir] [output_dir]"
+        )
         sys.exit(1)
 
     library_path = sys.argv[1]
@@ -368,9 +363,7 @@ if __name__ == "__main__":
     print(f"Output directory: {output_dir}\n")
 
     output_files = extract_from_library(
-        library_path=library_path,
-        source_audio_dir=source_dir,
-        output_dir=output_dir
+        library_path=library_path, source_audio_dir=source_dir, output_dir=output_dir
     )
 
     print(f"\n✓ Extracted {sum(len(v) for v in output_files.values())} segments")

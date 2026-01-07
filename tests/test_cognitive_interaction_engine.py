@@ -25,9 +25,11 @@ import time
 # Mock Dependencies
 # =============================================================================
 
+
 @dataclass
 class Vector17D:
     """29D acoustic vector (expanded from 17D/20D, matches Rust implementation)"""
+
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
@@ -66,7 +68,8 @@ class Vector17D:
             delta_mean_f0_hz=self.mean_f0_hz - other.mean_f0_hz,
             delta_duration_ms=self.duration_ms - other.duration_ms,
             delta_f0_range_hz=self.f0_range_hz - other.f0_range_hz,
-            delta_harmonic_to_noise_ratio=self.harmonic_to_noise_ratio - other.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio=self.harmonic_to_noise_ratio
+            - other.harmonic_to_noise_ratio,
             delta_spectral_flatness=self.spectral_flatness - other.spectral_flatness,
             delta_harmonicity=self.harmonicity - other.harmonicity,
             delta_attack_time_ms=self.attack_time_ms - other.attack_time_ms,
@@ -93,13 +96,15 @@ class Vector17D:
             delta_spectral_flux=self.spectral_flux - other.spectral_flux,
             delta_median_ici_ms=self.median_ici_ms - other.median_ici_ms,
             delta_onset_rate_hz=self.onset_rate_hz - other.onset_rate_hz,
-            delta_ici_coefficient_of_variation=self.ici_coefficient_of_variation - other.ici_coefficient_of_variation,
+            delta_ici_coefficient_of_variation=self.ici_coefficient_of_variation
+            - other.ici_coefficient_of_variation,
         )
 
 
 @dataclass
 class VectorDelta:
     """Delta between two vectors"""
+
     delta_mean_f0_hz: float
     delta_duration_ms: float
     delta_f0_range_hz: float
@@ -136,6 +141,7 @@ class VectorDelta:
 @dataclass
 class AudioPhrase:
     """Audio phrase from database"""
+
     key: str
     features: Vector17D
     species: str
@@ -144,6 +150,7 @@ class AudioPhrase:
 # =============================================================================
 # Test 1.1: Virtual Target Calculation
 # =============================================================================
+
 
 class TestVirtualTargetCalculation(unittest.TestCase):
     """Test 1.1: Engine calculates virtual target from intent"""
@@ -157,23 +164,57 @@ class TestVirtualTargetCalculation(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
-            mean_f0_hz=7500.0, duration_ms=40.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=22.5, spectral_flatness=0.4, attack_time_ms=4.0,
-            decay_time_ms=17.5, sustain_level=0.8, vibrato_rate_hz=8.5,
-            vibrato_depth=0.035, jitter=0.02, mfcc_1=-9.0,
-            mfcc_2=-4.0, mfcc_3=-1.5, mfcc_4=-0.5, spectral_contrast=25.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=14.0, onset_rate_hz=55.0, ici_coefficient_of_variation=0.32
+            mean_f0_hz=7500.0,
+            duration_ms=40.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=22.5,
+            spectral_flatness=0.4,
+            attack_time_ms=4.0,
+            decay_time_ms=17.5,
+            sustain_level=0.8,
+            vibrato_rate_hz=8.5,
+            vibrato_depth=0.035,
+            jitter=0.02,
+            mfcc_1=-9.0,
+            mfcc_2=-4.0,
+            mfcc_3=-1.5,
+            mfcc_4=-0.5,
+            spectral_contrast=25.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=14.0,
+            onset_rate_hz=55.0,
+            ici_coefficient_of_variation=0.32,
         )
 
         phrase = AudioPhrase(
             key="test_phrase",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0,
-                mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0, onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -188,21 +229,15 @@ class TestVirtualTargetCalculation(unittest.TestCase):
         from realtime.cognitive_interaction_engine import CognitiveInteractionEngine
 
         engine = CognitiveInteractionEngine(
-            algebra_map=mock_algebra,
-            phrase_db=mock_db,
-            synthesizer=mock_synthesizer
+            algebra_map=mock_algebra, phrase_db=mock_db, synthesizer=mock_synthesizer
         )
 
         # Act
-        result = engine.generate_response(
-            intent="aggression",
-            intensity=0.5
-        )
+        result = engine.generate_response(intent="aggression", intensity=0.5)
 
         # Assert
         mock_algebra.generate_graded_vector.assert_called_once_with(
-            intent="aggression",
-            intensity=0.5
+            intent="aggression", intensity=0.5
         )
         self.assertIsNotNone(result)
 
@@ -210,6 +245,7 @@ class TestVirtualTargetCalculation(unittest.TestCase):
 # =============================================================================
 # Test 1.2: Nearest Neighbor Lookup
 # =============================================================================
+
 
 class TestNearestNeighborLookup(unittest.TestCase):
     """Test 1.2: Engine finds nearest phrase in database"""
@@ -224,35 +260,86 @@ class TestNearestNeighborLookup(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
-            mean_f0_hz=7500.0, duration_ms=40.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=22.5, spectral_flatness=0.4, attack_time_ms=4.0,
-            decay_time_ms=17.5, sustain_level=0.8, vibrato_rate_hz=8.5,
-            vibrato_depth=0.035, jitter=0.02, mfcc_1=-9.0,
-            mfcc_2=-4.0, mfcc_3=-1.5, mfcc_4=-0.5, spectral_contrast=25.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=14.0, onset_rate_hz=55.0, ici_coefficient_of_variation=0.32
+            mean_f0_hz=7500.0,
+            duration_ms=40.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=22.5,
+            spectral_flatness=0.4,
+            attack_time_ms=4.0,
+            decay_time_ms=17.5,
+            sustain_level=0.8,
+            vibrato_rate_hz=8.5,
+            vibrato_depth=0.035,
+            jitter=0.02,
+            mfcc_1=-9.0,
+            mfcc_2=-4.0,
+            mfcc_3=-1.5,
+            mfcc_4=-0.5,
+            spectral_contrast=25.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=14.0,
+            onset_rate_hz=55.0,
+            ici_coefficient_of_variation=0.32,
         )
 
         phrase_a = AudioPhrase(
             key="neutral",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0,
-                mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0, onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         phrase_b = AudioPhrase(
             key="aggressive",
             features=Vector17D(
-                mean_f0_hz=9000.0, duration_ms=30.0, f0_range_hz=700.0,
-                harmonic_to_noise_ratio=30.0, spectral_flatness=0.6, attack_time_ms=2.0,
-                decay_time_ms=10.0, sustain_level=0.9, vibrato_rate_hz=12.0,
-                vibrato_depth=0.06, jitter=0.05, mfcc_1=-5.0,
-                mfcc_2=-2.0, mfcc_3=-0.5, mfcc_4=0.0, spectral_contrast=35.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=10.0, onset_rate_hz=70.0, ici_coefficient_of_variation=0.5
+                mean_f0_hz=9000.0,
+                duration_ms=30.0,
+                f0_range_hz=700.0,
+                harmonic_to_noise_ratio=30.0,
+                spectral_flatness=0.6,
+                attack_time_ms=2.0,
+                decay_time_ms=10.0,
+                sustain_level=0.9,
+                vibrato_rate_hz=12.0,
+                vibrato_depth=0.06,
+                jitter=0.05,
+                mfcc_1=-5.0,
+                mfcc_2=-2.0,
+                mfcc_3=-0.5,
+                mfcc_4=0.0,
+                spectral_contrast=35.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=10.0,
+                onset_rate_hz=70.0,
+                ici_coefficient_of_variation=0.5,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -266,9 +353,7 @@ class TestNearestNeighborLookup(unittest.TestCase):
         from realtime.cognitive_interaction_engine import CognitiveInteractionEngine
 
         engine = CognitiveInteractionEngine(
-            algebra_map=mock_algebra,
-            phrase_db=mock_db,
-            synthesizer=mock_synthesizer
+            algebra_map=mock_algebra, phrase_db=mock_db, synthesizer=mock_synthesizer
         )
 
         # Act
@@ -277,12 +362,13 @@ class TestNearestNeighborLookup(unittest.TestCase):
         # Assert
         mock_db.find_nearest.assert_called_once_with(virtual_target)
         # Verify phrase_a was returned (it's closer to 7500 than phrase_b's 9000)
-        self.assertEqual(result['source_phrase'], 'neutral')
+        self.assertEqual(result["source_phrase"], "neutral")
 
 
 # =============================================================================
 # Test 1.3: The Safety Valve (Delta Clamping)
 # =============================================================================
+
 
 class TestDeltaClamping(unittest.TestCase):
     """Test 1.3: Engine applies safety clamping to prevent over-warping"""
@@ -296,23 +382,57 @@ class TestDeltaClamping(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
-            mean_f0_hz=9000.0, duration_ms=20.0, f0_range_hz=700.0,  # Very far
-            harmonic_to_noise_ratio=30.0, spectral_flatness=0.6, attack_time_ms=2.0,
-            decay_time_ms=10.0, sustain_level=0.9, vibrato_rate_hz=12.0,
-            vibrato_depth=0.06, jitter=0.05, mfcc_1=-5.0,
-            mfcc_2=-2.0, mfcc_3=-0.5, mfcc_4=0.0, spectral_contrast=35.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=5.0, onset_rate_hz=100.0, ici_coefficient_of_variation=1.0
+            mean_f0_hz=9000.0,
+            duration_ms=20.0,
+            f0_range_hz=700.0,  # Very far
+            harmonic_to_noise_ratio=30.0,
+            spectral_flatness=0.6,
+            attack_time_ms=2.0,
+            decay_time_ms=10.0,
+            sustain_level=0.9,
+            vibrato_rate_hz=12.0,
+            vibrato_depth=0.06,
+            jitter=0.05,
+            mfcc_1=-5.0,
+            mfcc_2=-2.0,
+            mfcc_3=-0.5,
+            mfcc_4=0.0,
+            spectral_contrast=35.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=5.0,
+            onset_rate_hz=100.0,
+            ici_coefficient_of_variation=1.0,
         )
 
         nearest_phrase = AudioPhrase(
             key="neutral",
             features=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-                decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-                vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0,
-                mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0, onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.3,
+                attack_time_ms=5.0,
+                decay_time_ms=20.0,
+                sustain_level=0.7,
+                vibrato_rate_hz=7.0,
+                vibrato_depth=0.02,
+                jitter=0.01,
+                mfcc_1=-10.0,
+                mfcc_2=-5.0,
+                mfcc_3=-2.0,
+                mfcc_4=-1.0,
+                spectral_contrast=20.0,
+                harmonicity=0.75,
+                shimmer=0.015,
+                spectral_flux=1.5,
+                median_ici_ms=15.0,
+                onset_rate_hz=50.0,
+                ici_coefficient_of_variation=0.3,
             ),
-            species="marmoset"
+            species="marmoset",
         )
 
         mock_algebra = Mock()
@@ -329,11 +449,11 @@ class TestDeltaClamping(unittest.TestCase):
             algebra_map=mock_algebra,
             phrase_db=mock_db,
             synthesizer=mock_synthesizer,
-            max_safe_warp=0.2
+            max_safe_warp=0.2,
         )
 
         # Act
-        with self.assertLogs(engine.logger, level='WARNING') as log:
+        with self.assertLogs(engine.logger, level="WARNING") as log:
             result = engine.generate_response(intent="aggression", intensity=0.8)
 
         # Assert
@@ -347,6 +467,7 @@ class TestDeltaClamping(unittest.TestCase):
 # Test 1.4: Delta to Rust Parameter Conversion
 # =============================================================================
 
+
 class TestDeltaConversion(unittest.TestCase):
     """Test 1.4: Engine correctly converts delta to Rust synthesis parameters"""
 
@@ -359,12 +480,28 @@ class TestDeltaConversion(unittest.TestCase):
         """
         # Arrange
         anchor_features = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, attack_time_ms=5.0,
-            decay_time_ms=20.0, sustain_level=0.7, vibrato_rate_hz=7.0,
-            vibrato_depth=0.02, jitter=0.01, mfcc_1=-10.0, mfcc_2=-5.0,
-            mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0,
-            onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.3,
+            attack_time_ms=5.0,
+            decay_time_ms=20.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=0.02,
+            jitter=0.01,
+            mfcc_1=-10.0,
+            mfcc_2=-5.0,
+            mfcc_3=-2.0,
+            mfcc_4=-1.0,
+            spectral_contrast=20.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=15.0,
+            onset_rate_hz=50.0,
+            ici_coefficient_of_variation=0.3,
         )
 
         virtual_target = Vector17D(
@@ -373,9 +510,23 @@ class TestDeltaConversion(unittest.TestCase):
             f0_range_hz=400.0,
             harmonic_to_noise_ratio=20.0,
             spectral_flatness=0.4,  # +0.1 increase
-            attack_time_ms=5.0, decay_time_ms=20.0, sustain_level=0.7,
-            vibrato_rate_hz=7.0, vibrato_depth=0.02, jitter=0.01,
-            mfcc_1=-10.0, mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0, spectral_contrast=20.0, harmonicity=0.75, shimmer=0.015, spectral_flux=1.5, median_ici_ms=15.0, onset_rate_hz=50.0, ici_coefficient_of_variation=0.3
+            attack_time_ms=5.0,
+            decay_time_ms=20.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=0.02,
+            jitter=0.01,
+            mfcc_1=-10.0,
+            mfcc_2=-5.0,
+            mfcc_3=-2.0,
+            mfcc_4=-1.0,
+            spectral_contrast=20.0,
+            harmonicity=0.75,
+            shimmer=0.015,
+            spectral_flux=1.5,
+            median_ici_ms=15.0,
+            onset_rate_hz=50.0,
+            ici_coefficient_of_variation=0.3,
         )
 
         nearest_phrase = AudioPhrase(key="neutral", features=anchor_features, species="marmoset")
@@ -394,7 +545,7 @@ class TestDeltaConversion(unittest.TestCase):
             algebra_map=mock_algebra,
             phrase_db=mock_db,
             synthesizer=mock_synthesizer,
-            max_safe_warp=0.3
+            max_safe_warp=0.3,
         )
 
         # Act
@@ -408,23 +559,23 @@ class TestDeltaConversion(unittest.TestCase):
         warp_params = call_args[0] if call_args else {}
 
         # Verify pitch_shift_ratio (should be ~1.05 for 5% F0 increase)
-        pitch_shift = warp_params.get('pitch_shift_ratio', warp_params.get('pitch_shift'))
+        pitch_shift = warp_params.get("pitch_shift_ratio", warp_params.get("pitch_shift"))
         if isinstance(pitch_shift, dict):
-            pitch_shift = pitch_shift.get('value', pitch_shift)
-        self.assertAlmostEqual(pitch_shift, 1.05, delta=0.01,
-                              msg="Pitch shift should be ~1.05 (5% increase)")
+            pitch_shift = pitch_shift.get("value", pitch_shift)
+        self.assertAlmostEqual(
+            pitch_shift, 1.05, delta=0.01, msg="Pitch shift should be ~1.05 (5% increase)"
+        )
 
         # Verify roughness_amount (should be ~0.4)
-        roughness = warp_params.get('roughness_amount', warp_params.get('roughness'))
+        roughness = warp_params.get("roughness_amount", warp_params.get("roughness"))
         if isinstance(roughness, dict):
-            roughness = roughness.get('value', roughness)
-        self.assertAlmostEqual(roughness, 0.4, delta=0.01,
-                              msg="Roughness should be ~0.4")
+            roughness = roughness.get("value", roughness)
+        self.assertAlmostEqual(roughness, 0.4, delta=0.01, msg="Roughness should be ~0.4")
 
 
 # =============================================================================
 # Test Runner
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

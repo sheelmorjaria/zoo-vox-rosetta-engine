@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class ErrorType(Enum):
     """Enumeration of error types."""
+
     INITIALIZATION = "initialization"
     RESOURCE_EXHAUSTION = "resource_exhaustion"
     COMMUNICATION_FAILURE = "communication_failure"
@@ -37,6 +38,7 @@ class ErrorType(Enum):
 @dataclass
 class ErrorContext:
     """Context information for error handling."""
+
     error_type: ErrorType
     component_name: str
     operation: str
@@ -50,7 +52,9 @@ class ErrorContext:
 class CircuitBreaker:
     """Circuit breaker pattern for handling repeated failures."""
 
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: float = 30.0, timeout_window: int = 60):
+    def __init__(
+        self, failure_threshold: int = 5, recovery_timeout: float = 30.0, timeout_window: int = 60
+    ):
         """
         Initialize circuit breaker.
 
@@ -76,14 +80,18 @@ class CircuitBreaker:
             self.failure_times.append(current_time)
 
             # Clean up old failures
-            self.failure_times = [t for t in self.failure_times if current_time - t <= self.timeout_window]
+            self.failure_times = [
+                t for t in self.failure_times if current_time - t <= self.timeout_window
+            ]
 
             self.failure_count = len(self.failure_times)
 
             if self.failure_count >= self.failure_threshold:
                 self.state = "open"
                 self.last_failure_time = current_time
-                logger.warning(f"Circuit breaker opened for component after {self.failure_count} failures")
+                logger.warning(
+                    f"Circuit breaker opened for component after {self.failure_count} failures"
+                )
 
     def record_success(self):
         """Record a success and reset failure count."""
@@ -115,7 +123,13 @@ class CircuitBreaker:
 class RetryPolicy:
     """Retry policy with exponential backoff."""
 
-    def __init__(self, max_retries: int = 3, base_delay: float = 0.1, max_delay: float = 10.0, backoff_factor: float = 2.0):
+    def __init__(
+        self,
+        max_retries: int = 3,
+        base_delay: float = 0.1,
+        max_delay: float = 10.0,
+        backoff_factor: float = 2.0,
+    ):
         """
         Initialize retry policy.
 
@@ -132,7 +146,7 @@ class RetryPolicy:
 
     def get_delay(self, attempt: int) -> float:
         """Calculate delay for given attempt number."""
-        delay = self.base_delay * (self.backoff_factor ** attempt)
+        delay = self.base_delay * (self.backoff_factor**attempt)
         return min(delay, self.max_delay)
 
 
@@ -144,13 +158,15 @@ class ErrorContextManager:
         self.lock = threading.RLock()
         self.error_callbacks: Dict[str, List[Callable]] = {}
 
-    def create_context(self, component_name: str, operation: str, error_type: ErrorType, **kwargs) -> ErrorContext:
+    def create_context(
+        self, component_name: str, operation: str, error_type: ErrorType, **kwargs
+    ) -> ErrorContext:
         """Create a new error context."""
         context = ErrorContext(
             error_type=error_type,
             component_name=component_name,
             operation=operation,
-            error_details=kwargs
+            error_details=kwargs,
         )
 
         with self.lock:
@@ -230,7 +246,7 @@ class ResourceMonitor:
             "cpu_usage": 80.0,
             "memory_usage": 85.0,
             "gpu_memory": 90.0,
-            "disk_space": 90.0
+            "disk_space": 90.0,
         }
         self.resource_history: Dict[str, List[float]] = {}
         self.lock = threading.RLock()
@@ -308,8 +324,14 @@ class ErrorHandler:
         with self.lock:
             self.global_error_handlers.append(handler)
 
-    def handle_error(self, component_name: str, operation: str, error: Exception,
-                    error_type: ErrorType = None, **kwargs) -> bool:
+    def handle_error(
+        self,
+        component_name: str,
+        operation: str,
+        error: Exception,
+        error_type: ErrorType = None,
+        **kwargs,
+    ) -> bool:
         """
         Handle error with appropriate recovery strategies.
 
@@ -326,8 +348,11 @@ class ErrorHandler:
         with self.lock:
             # Create error context
             context = self.context_manager.create_context(
-                component_name, operation, error_type or ErrorType.VALIDATION_ERROR,
-                error=str(error), **kwargs
+                component_name,
+                operation,
+                error_type or ErrorType.VALIDATION_ERROR,
+                error=str(error),
+                **kwargs,
             )
 
             # Log error
@@ -347,8 +372,10 @@ class ErrorHandler:
                     logger.info(f"Successfully used fallback for {component_name}.{operation}")
                     return True
                 except Exception as fallback_error:
-                    logger.error(f"Fallback failed for {component_name}.{operation}: {fallback_error}")
-                    context.error_details['fallback_error'] = str(fallback_error)
+                    logger.error(
+                        f"Fallback failed for {component_name}.{operation}: {fallback_error}"
+                    )
+                    context.error_details["fallback_error"] = str(fallback_error)
 
             # Trigger error callbacks
             self.context_manager.trigger_error_callbacks(component_name, context)
@@ -362,8 +389,9 @@ class ErrorHandler:
 
             return False
 
-    def execute_with_error_handling(self, func: Callable, component_name: str,
-                                  operation: str, *args, **kwargs) -> Any:
+    def execute_with_error_handling(
+        self, func: Callable, component_name: str, operation: str, *args, **kwargs
+    ) -> Any:
         """
         Execute function with comprehensive error handling.
 
@@ -379,8 +407,12 @@ class ErrorHandler:
         """
         circuit_breaker = self.circuit_breakers.get(component_name)
         if circuit_breaker and not circuit_breaker.allow_request():
-            self.handle_error(component_name, operation, Exception("Circuit breaker open"),
-                            error_type=ErrorType.CIRCUIT_BREAKER)
+            self.handle_error(
+                component_name,
+                operation,
+                Exception("Circuit breaker open"),
+                error_type=ErrorType.CIRCUIT_BREAKER,
+            )
             return None
 
         retry_policy = self.retry_policies.get(component_name)
@@ -391,7 +423,9 @@ class ErrorHandler:
 
                 # Record success if this was a retry
                 if attempt > 0:
-                    logger.info(f"Operation {component_name}.{operation} succeeded on attempt {attempt + 1}")
+                    logger.info(
+                        f"Operation {component_name}.{operation} succeeded on attempt {attempt + 1}"
+                    )
                     if circuit_breaker:
                         circuit_breaker.record_success()
 
@@ -405,8 +439,10 @@ class ErrorHandler:
 
                 # Calculate delay for retry
                 delay = retry_policy.get_delay(attempt) if retry_policy else 0.1
-                logger.warning(f"Attempt {attempt + 1} failed for {component_name}.{operation}, "
-                             f"retrying in {delay:.2f}s: {error}")
+                logger.warning(
+                    f"Attempt {attempt + 1} failed for {component_name}.{operation}, "
+                    f"retrying in {delay:.2f}s: {error}"
+                )
 
                 if attempt < retry_policy.max_retries if retry_policy else 0:
                     time.sleep(delay)
@@ -416,13 +452,7 @@ class ErrorHandler:
 
     def _is_retryable(self, error: Exception) -> bool:
         """Check if error is retryable."""
-        retryable_errors = (
-            TimeoutError,
-            ConnectionError,
-            OSError,
-            RuntimeError,
-            IOError
-        )
+        retryable_errors = (TimeoutError, ConnectionError, OSError, RuntimeError, IOError)
         return isinstance(error, retryable_errors)
 
     @contextmanager
@@ -439,7 +469,7 @@ class ErrorHandler:
             raise
         finally:
             # Clean up context if successful
-            if not hasattr(error, '__traceback__') or error.__traceback__ is None:
+            if not hasattr(error, "__traceback__") or error.__traceback__ is None:
                 circuit_breaker = self.circuit_breakers.get(component_name)
                 if circuit_breaker:
                     circuit_breaker.record_success()
@@ -451,18 +481,25 @@ error_handler = ErrorHandler()
 
 def with_error_handling(component_name: str, operation: str, error_type: ErrorType = None):
     """Decorator for adding error handling to functions."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             return error_handler.execute_with_error_handling(
                 func, component_name, operation, *args, **kwargs
             )
+
         return wrapper
+
     return decorator
 
 
-def safe_execute(func: Callable, default_value: Any = None,
-                component_name: str = "unknown", operation: str = "unknown") -> Any:
+def safe_execute(
+    func: Callable,
+    default_value: Any = None,
+    component_name: str = "unknown",
+    operation: str = "unknown",
+) -> Any:
     """
     Safely execute a function with error handling.
 

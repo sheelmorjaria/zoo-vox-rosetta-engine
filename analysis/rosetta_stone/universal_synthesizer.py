@@ -26,12 +26,13 @@ except ImportError:
         # Fallback for running as script
         import os
         import sys
+
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from universal_rosetta_stone import Modality, PhraseSignature
 
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class UniversalSynthesizer:
@@ -57,14 +58,14 @@ class UniversalSynthesizer:
         # Configure logging
         if not self.logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
 
-    def generate_sequence(self, num_phrases: int,
-                         start_phrase: Optional[int] = None,
-                         temperature: float = 1.0) -> List[int]:
+    def generate_sequence(
+        self, num_phrases: int, start_phrase: Optional[int] = None, temperature: float = 1.0
+    ) -> List[int]:
         """
         Generate a sequence of phrase IDs using Markov chain generation.
 
@@ -125,10 +126,13 @@ class UniversalSynthesizer:
         self.logger.info(f"Generated sequence of {len(sequence)} phrases: {sequence}")
         return sequence
 
-    def synthesize_audio(self, sequence: List[int],
-                       phrase_duration_ms: float = 100.0,
-                       gap_ms: float = 50.0,
-                       sample_rate: int = 48000) -> np.ndarray:
+    def synthesize_audio(
+        self,
+        sequence: List[int],
+        phrase_duration_ms: float = 100.0,
+        gap_ms: float = 50.0,
+        sample_rate: int = 48000,
+    ) -> np.ndarray:
         """
         Convert a sequence of phrase IDs into audio.
 
@@ -169,11 +173,12 @@ class UniversalSynthesizer:
             # Add synthesized phrase
             audio = np.concatenate([audio, synthesized_phrase])
 
-        self.logger.info(f"Synthesized audio: {len(audio)/sample_rate:.2f}s")
+        self.logger.info(f"Synthesized audio: {len(audio) / sample_rate:.2f}s")
         return audio
 
-    def _synthesize_phrase(self, phrase_signature: PhraseSignature,
-                          duration_samples: int, sample_rate: int) -> np.ndarray:
+    def _synthesize_phrase(
+        self, phrase_signature: PhraseSignature, duration_samples: int, sample_rate: int
+    ) -> np.ndarray:
         """
         Synthesize audio for a single phrase based on its signature.
 
@@ -189,7 +194,7 @@ class UniversalSynthesizer:
 
         if phrase_signature.modality == Modality.HARMONIC:
             # Synthesize harmonic tone with discovered pitch
-            f0 = phrase_signature.features.get('f0_mean', 6000)  # Default to 6kHz
+            f0 = phrase_signature.features.get("f0_mean", 6000)  # Default to 6kHz
             if f0 <= 0:
                 f0 = 6000  # Fallback
 
@@ -201,28 +206,30 @@ class UniversalSynthesizer:
                 audio += amplitude * np.sin(2 * np.pi * f0 * harmonic * t + phase)
 
             # Apply amplitude envelope
-            envelope = self._create_envelope(t, 'exponential')
+            envelope = self._create_envelope(t, "exponential")
             audio = audio * envelope
 
         elif phrase_signature.modality == Modality.FM_SWEEP:
             # Synthesize FM sweep with discovered parameters
-            start_freq = phrase_signature.features.get('start_freq', 4000)
-            end_freq = phrase_signature.features.get('end_freq', 6000)
-            phrase_signature.features.get('mean_freq', 5000)
-            phrase_signature.features.get('freq_slope', 2000)
+            start_freq = phrase_signature.features.get("start_freq", 4000)
+            end_freq = phrase_signature.features.get("end_freq", 6000)
+            phrase_signature.features.get("mean_freq", 5000)
+            phrase_signature.features.get("freq_slope", 2000)
 
             # Linear sweep
-            instantaneous_freq = start_freq + (end_freq - start_freq) * t / (duration_samples / sample_rate)
-            audio = np.sin(2 * np.pi * cumulative_sum(instantaneous_freq) * (1/sample_rate))
+            instantaneous_freq = start_freq + (end_freq - start_freq) * t / (
+                duration_samples / sample_rate
+            )
+            audio = np.sin(2 * np.pi * cumulative_sum(instantaneous_freq) * (1 / sample_rate))
 
             # Apply envelope
-            envelope = self._create_envelope(t, 'linear')
+            envelope = self._create_envelope(t, "linear")
             audio = audio * envelope
 
         elif phrase_signature.modality == Modality.TRANSIENT:
             # Synthesize transient/click
-            centroid = phrase_signature.features.get('spectral_centroid', 5000)
-            phrase_signature.features.get('kurtosis', 3.0)
+            centroid = phrase_signature.features.get("spectral_centroid", 5000)
+            phrase_signature.features.get("kurtosis", 3.0)
 
             # Create damped sinusoid
             decay = np.exp(-t * 5)  # Exponential decay
@@ -231,13 +238,13 @@ class UniversalSynthesizer:
 
             # Apply envelope for click-like sound
             envelope = np.zeros_like(t)
-            envelope[:len(t)//10] = np.ones(len(t)//10)  # Short duration
+            envelope[: len(t) // 10] = np.ones(len(t) // 10)  # Short duration
             audio = audio * envelope
 
         elif phrase_signature.modality == Modality.RHYTHMIC:
             # Synthesize rhythmic pattern
-            tempo = phrase_signature.features.get('tempo', 120)  # BPM
-            strength = phrase_signature.features.get('rhythmic_strength', 0.5)
+            tempo = phrase_signature.features.get("tempo", 120)  # BPM
+            strength = phrase_signature.features.get("rhythmic_strength", 0.5)
 
             # Generate rhythm based on tempo
             beat_duration = 60.0 / tempo  # seconds per beat
@@ -246,8 +253,10 @@ class UniversalSynthesizer:
             audio = np.zeros_like(t)
             for beat in range(int(duration_samples / beat_samples)):
                 beat_start = beat * beat_samples
-                beat_end = min(beat_start + beat_samples//4, len(audio))  # Quarter note
-                audio[beat_start:beat_end] = strength * np.sin(2 * np.pi * 1000 * t[beat_start:beat_end])
+                beat_end = min(beat_start + beat_samples // 4, len(audio))  # Quarter note
+                audio[beat_start:beat_end] = strength * np.sin(
+                    2 * np.pi * 1000 * t[beat_start:beat_end]
+                )
 
         else:
             # Default: simple sine wave
@@ -259,7 +268,7 @@ class UniversalSynthesizer:
 
         return audio
 
-    def _create_envelope(self, t: np.ndarray, envelope_type: str = 'exponential') -> np.ndarray:
+    def _create_envelope(self, t: np.ndarray, envelope_type: str = "exponential") -> np.ndarray:
         """
         Create amplitude envelope for audio synthesis.
 
@@ -272,7 +281,7 @@ class UniversalSynthesizer:
         """
         duration = t[-1]
 
-        if envelope_type == 'exponential':
+        if envelope_type == "exponential":
             # Exponential rise and fall (natural for vocalizations)
             attack_time = duration * 0.1
             decay_time = duration * 0.3
@@ -293,8 +302,9 @@ class UniversalSynthesizer:
                 envelope[decay_idx] = 1.0 - (1.0 - sustain_level) * decay_progress
 
             # Sustain
-            sustain_idx = np.where((t > attack_time + decay_time) &
-                                 (t <= duration - release_time))[0]
+            sustain_idx = np.where((t > attack_time + decay_time) & (t <= duration - release_time))[
+                0
+            ]
             if len(sustain_idx) > 0:
                 envelope[sustain_idx] = sustain_level
 
@@ -304,7 +314,7 @@ class UniversalSynthesizer:
                 release_progress = (t[release_idx] - (duration - release_time)) / release_time
                 envelope[release_idx] = sustain_level * (1.0 - release_progress)
 
-        elif envelope_type == 'linear':
+        elif envelope_type == "linear":
             # Linear fade in/out
             fade_time = duration * 0.1
             envelope = np.ones_like(t)
@@ -319,7 +329,7 @@ class UniversalSynthesizer:
             if len(fade_out_idx) > 0:
                 envelope[fade_out_idx] = (duration - t[fade_out_idx]) / fade_time
 
-        elif envelope_type == 'gaussian':
+        elif envelope_type == "gaussian":
             # Gaussian envelope (smooth)
             center = duration / 2
             std = duration / 4
@@ -330,9 +340,12 @@ class UniversalSynthesizer:
 
         return envelope
 
-    def generate_variations(self, base_sequence: List[int],
-                          num_variations: int = 5,
-                          temperature_range: Tuple[float, float] = (0.5, 2.0)) -> List[List[int]]:
+    def generate_variations(
+        self,
+        base_sequence: List[int],
+        num_variations: int = 5,
+        temperature_range: Tuple[float, float] = (0.5, 2.0),
+    ) -> List[List[int]]:
         """
         Generate variations of a base sequence.
 
@@ -352,7 +365,7 @@ class UniversalSynthesizer:
             variation = self.generate_sequence(
                 num_phrases=len(base_sequence),
                 start_phrase=base_sequence[0] if base_sequence else None,
-                temperature=temp
+                temperature=temp,
             )
             variations.append(variation)
 
@@ -362,20 +375,23 @@ class UniversalSynthesizer:
     def get_statistics(self) -> Dict[str, Any]:
         """Get synthesizer statistics."""
         if not self.grammar:
-            return {'status': 'no_grammar'}
+            return {"status": "no_grammar"}
 
         stats = {
-            'vocabulary_size': len(self.vocabulary),
-            'grammar_rules': len(self.grammar),
-            'most_common_transitions': self.grammar.most_common(5),
-            'phrase_coverage': len(set([pid for seq in self.generate_sequence(10) for pid in seq])) / len(self.vocabulary)
+            "vocabulary_size": len(self.vocabulary),
+            "grammar_rules": len(self.grammar),
+            "most_common_transitions": self.grammar.most_common(5),
+            "phrase_coverage": len(set([pid for seq in self.generate_sequence(10) for pid in seq]))
+            / len(self.vocabulary),
         }
 
         return stats
 
     def __repr__(self) -> str:
-        return (f"UniversalSynthesizer(vocabulary_size={len(self.vocabulary)}, "
-                f"grammar_rules={len(self.grammar)})")
+        return (
+            f"UniversalSynthesizer(vocabulary_size={len(self.vocabulary)}, "
+            f"grammar_rules={len(self.grammar)})"
+        )
 
 
 def cumulative_sum(array: np.ndarray) -> np.ndarray:

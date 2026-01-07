@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from analysis.rosetta_stone.high_dimensional_acoustic_algebra import (
     AcousticFeatureVector17,
     ZScoreNormalizer,
-    HighDimensionalAcousticAlgebra
+    HighDimensionalAcousticAlgebra,
 )
 
 from analysis.rosetta_stone.grain_based_grammar_discovery import (
@@ -36,16 +36,18 @@ from analysis.rosetta_stone.grain_based_grammar_discovery import (
     SentenceReconstructor,
     SentenceStructure,
     TransitionEntropyAnalyzer,
-    GrammarDiscoveryPipeline
+    GrammarDiscoveryPipeline,
 )
 
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 
 # ============================================================================
 # Test Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def phee_vector():
@@ -67,7 +69,7 @@ def phee_vector():
         bandwidth_hz=5000.0,
         slope_db_per_octave=-8.0,
         rms_db=-20.0,
-        peak_amplitude=0.15
+        peak_amplitude=0.15,
     )
 
 
@@ -91,7 +93,7 @@ def alarm_vector():
         bandwidth_hz=8000.0,
         slope_db_per_octave=-4.0,
         rms_db=-15.0,
-        peak_amplitude=0.25
+        peak_amplitude=0.25,
     )
 
 
@@ -104,6 +106,7 @@ def algebra():
 # ============================================================================
 # Test Suite 1: AcousticFeatureVector17
 # ============================================================================
+
 
 class TestAcousticFeatureVector17:
     """Test 17-dimensional feature vector."""
@@ -127,7 +130,7 @@ class TestAcousticFeatureVector17:
             bandwidth_hz=5000,
             slope_db_per_octave=-8,
             rms_db=-20,
-            peak_amplitude=0.15
+            peak_amplitude=0.15,
         )
 
         assert vec.mean_f0_hz == 6500
@@ -151,13 +154,13 @@ class TestAcousticFeatureVector17:
         """Convert to dictionary."""
         d = phee_vector.to_dict()
 
-        assert d['mean_f0_hz'] == 6526
-        assert d['duration_ms'] == 76.5
+        assert d["mean_f0_hz"] == 6526
+        assert d["duration_ms"] == 76.5
         assert len(d) == 17
 
     def test_from_dict_with_defaults(self):
         """Create from dict with missing features (uses defaults)."""
-        d = {'mean_f0_hz': 6500, 'duration_ms': 70}
+        d = {"mean_f0_hz": 6500, "duration_ms": 70}
         vec = AcousticFeatureVector17.from_dict(d)
 
         assert vec.mean_f0_hz == 6500
@@ -169,14 +172,15 @@ class TestAcousticFeatureVector17:
         names = phee_vector.feature_names()
 
         assert len(names) == 17
-        assert 'mean_f0_hz' in names
-        assert 'duration_ms' in names
-        assert 'harmonicity_hnr' in names
+        assert "mean_f0_hz" in names
+        assert "duration_ms" in names
+        assert "harmonicity_hnr" in names
 
 
 # ============================================================================
 # Test Suite 2: Z-Score Normalization
 # ============================================================================
+
 
 class TestZScoreNormalizer:
     """Test Z-score normalization for 17-dim vectors."""
@@ -185,7 +189,27 @@ class TestZScoreNormalizer:
         """Normalize and denormalize preserves values."""
         normalizer = ZScoreNormalizer()
 
-        vec = np.array([6500, 70, 0.01, 0.04, 500, 8, 50, 0.02, 0.03, 15, 0.2, 7000, 13000, 5000, -8, -20, 0.15])
+        vec = np.array(
+            [
+                6500,
+                70,
+                0.01,
+                0.04,
+                500,
+                8,
+                50,
+                0.02,
+                0.03,
+                15,
+                0.2,
+                7000,
+                13000,
+                5000,
+                -8,
+                -20,
+                0.15,
+            ]
+        )
 
         # Normalize
         z = normalizer.normalize(vec)
@@ -203,8 +227,48 @@ class TestZScoreNormalizer:
         """Different features scale differently based on variance."""
         normalizer = ZScoreNormalizer()
 
-        vec_a = np.array([7000, 100, 0.02, 0.05, 1000, 10, 60, 0.03, 0.04, 20, 0.3, 8000, 14000, 6000, -6, -18, 0.2])
-        vec_b = np.array([6000, 40, 0.01, 0.03, 200, 6, 40, 0.01, 0.02, 10, 0.1, 6000, 12000, 4000, -10, -22, 0.1])
+        vec_a = np.array(
+            [
+                7000,
+                100,
+                0.02,
+                0.05,
+                1000,
+                10,
+                60,
+                0.03,
+                0.04,
+                20,
+                0.3,
+                8000,
+                14000,
+                6000,
+                -6,
+                -18,
+                0.2,
+            ]
+        )
+        vec_b = np.array(
+            [
+                6000,
+                40,
+                0.01,
+                0.03,
+                200,
+                6,
+                40,
+                0.01,
+                0.02,
+                10,
+                0.1,
+                6000,
+                12000,
+                4000,
+                -10,
+                -22,
+                0.1,
+            ]
+        )
 
         z_a = normalizer.normalize(vec_a)
         z_b = normalizer.normalize(vec_b)
@@ -220,8 +284,8 @@ class TestZScoreNormalizer:
         # Create synthetic corpus
         vectors = [
             np.random.randn(17) * 100 + 6500,  # High F0
-            np.random.randn(17) * 50 + 6000,   # Low F0
-            np.random.randn(17) * 75 + 6250,   # Mid F0
+            np.random.randn(17) * 50 + 6000,  # Low F0
+            np.random.randn(17) * 75 + 6250,  # Mid F0
         ]
 
         mean, std = normalizer.compute_corpus_statistics(vectors)
@@ -234,6 +298,7 @@ class TestZScoreNormalizer:
 # ============================================================================
 # Test Suite 3: High-Dimensional Interpolation
 # ============================================================================
+
 
 class TestHighDimensionalInterpolation:
     """Test 17-dimensional interpolation."""
@@ -287,6 +352,7 @@ class TestHighDimensionalInterpolation:
 # Test Suite 4: Phonetic Constraints
 # ============================================================================
 
+
 class TestPhoneticConstraints:
     """Test phonetic constraint checking."""
 
@@ -294,45 +360,68 @@ class TestPhoneticConstraints:
         """Valid vector should pass constraints."""
         result = algebra.check_phonetic_constraints(phee_vector)
 
-        assert result['valid']
-        assert len(result['violations']) == 0
+        assert result["valid"]
+        assert len(result["violations"]) == 0
 
     def test_negative_hnr_fails(self, algebra):
         """Negative HNR violates constraint (silence)."""
         vec = AcousticFeatureVector17(
-            mean_f0_hz=6500, duration_ms=70, attack_ms=0.01, decay_ms=0.04,
-            f0_range_hz=500, vibrato_rate_hz=8, vibrato_depth_hz=50,
-            jitter=0.02, shimmer=0.03,
+            mean_f0_hz=6500,
+            duration_ms=70,
+            attack_ms=0.01,
+            decay_ms=0.04,
+            f0_range_hz=500,
+            vibrato_rate_hz=8,
+            vibrato_depth_hz=50,
+            jitter=0.02,
+            shimmer=0.03,
             harmonicity_hnr=-5.0,  # Violation!
-            spectral_flatness=0.2, spectral_centroid_hz=7000,
-            spectral_rolloff_hz=13000, bandwidth_hz=5000, slope_db_per_octave=-8,
-            rms_db=-20, peak_amplitude=0.15
+            spectral_flatness=0.2,
+            spectral_centroid_hz=7000,
+            spectral_rolloff_hz=13000,
+            bandwidth_hz=5000,
+            slope_db_per_octave=-8,
+            rms_db=-20,
+            peak_amplitude=0.15,
         )
 
         result = algebra.check_phonetic_constraints(vec)
 
-        assert not result['valid']
-        assert any('HNR < 0' in v for v in result['violations'])
+        assert not result["valid"]
+        assert any("HNR < 0" in v for v in result["violations"])
 
     def test_negative_attack_fails(self, algebra):
         """Negative attack time is impossible."""
         vec = AcousticFeatureVector17(
-            mean_f0_hz=6500, duration_ms=70, attack_ms=-0.01, decay_ms=0.04,  # Violation!
-            f0_range_hz=500, vibrato_rate_hz=8, vibrato_depth_hz=50,
-            jitter=0.02, shimmer=0.03, harmonicity_hnr=15, spectral_flatness=0.2,
-            spectral_centroid_hz=7000, spectral_rolloff_hz=13000, bandwidth_hz=5000,
-            slope_db_per_octave=-8, rms_db=-20, peak_amplitude=0.15
+            mean_f0_hz=6500,
+            duration_ms=70,
+            attack_ms=-0.01,
+            decay_ms=0.04,  # Violation!
+            f0_range_hz=500,
+            vibrato_rate_hz=8,
+            vibrato_depth_hz=50,
+            jitter=0.02,
+            shimmer=0.03,
+            harmonicity_hnr=15,
+            spectral_flatness=0.2,
+            spectral_centroid_hz=7000,
+            spectral_rolloff_hz=13000,
+            bandwidth_hz=5000,
+            slope_db_per_octave=-8,
+            rms_db=-20,
+            peak_amplitude=0.15,
         )
 
         result = algebra.check_phonetic_constraints(vec)
 
-        assert not result['valid']
-        assert any('Attack < 0' in v for v in result['violations'])
+        assert not result["valid"]
+        assert any("Attack < 0" in v for v in result["violations"])
 
 
 # ============================================================================
 # Test Suite 5: Grain-Based Discovery
 # ============================================================================
+
 
 class TestGrainBasedDiscovery:
     """Test grain extraction and phrase discovery."""
@@ -362,7 +451,7 @@ class TestGrainBasedDiscovery:
 
         grains = []
         for i, feat in enumerate(features):
-            grain = Grain(start_time_ms=i*10, duration_ms=10, features=feat)
+            grain = Grain(start_time_ms=i * 10, duration_ms=10, features=feat)
             grains.append(grain)
 
         phrases, labels = discoverer.discover_phrases(grains)
@@ -394,6 +483,7 @@ class TestGrainBasedDiscovery:
 # Test Suite 6: Transition Entropy Analysis
 # ============================================================================
 
+
 class TestTransitionEntropyAnalysis:
     """Test entropy-based grammar discovery."""
 
@@ -404,7 +494,7 @@ class TestTransitionEntropyAnalysis:
             phrase_sequence=[0, 1, 0, 1, 0, 1],
             grain_labels=np.array([0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]),
             n_phrases=2,
-            transitions={(0, 1): 3, (1, 0): 3}
+            transitions={(0, 1): 3, (1, 0): 3},
         )
 
         analyzer = TransitionEntropyAnalyzer()
@@ -421,7 +511,7 @@ class TestTransitionEntropyAnalysis:
             phrase_sequence=[0, 1, 2],
             grain_labels=np.array([0, 1, 2, 1, 0, 2]),
             n_phrases=3,
-            transitions={(0, 1): 1, (0, 2): 1, (1, 0): 1, (1, 2): 1, (2, 0): 1, (2, 1): 1}
+            transitions={(0, 1): 1, (0, 2): 1, (1, 0): 1, (1, 2): 1, (2, 0): 1, (2, 1): 1},
         )
 
         analyzer = TransitionEntropyAnalyzer()
@@ -436,15 +526,14 @@ class TestTransitionEntropyAnalysis:
 # Test Suite 7: Complete Pipeline
 # ============================================================================
 
+
 class TestGrammarDiscoveryPipeline:
     """Test complete grammar discovery pipeline."""
 
     def test_end_to_end_discovery(self):
         """Test complete pipeline with synthetic data."""
         pipeline = GrammarDiscoveryPipeline(
-            grain_duration_ms=10.0,
-            dbscan_eps=0.5,
-            dbscan_min_samples=3
+            grain_duration_ms=10.0, dbscan_eps=0.5, dbscan_min_samples=3
         )
 
         # Create synthetic sentence: A-A-B-B-A

@@ -22,6 +22,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -43,6 +44,7 @@ def load_flac_file(filepath, target_sr=48000):
         # Resample if needed
         if sr != target_sr:
             from scipy import signal as scipy_signal
+
             num_samples = int(len(audio) * target_sr / sr)
             audio = scipy_signal.resample(audio, num_samples)
 
@@ -54,9 +56,9 @@ def load_flac_file(filepath, target_sr=48000):
 
 def analyze_marmoset_vocalization(audio_file_path, num_segments=5):
     """Analyze modality of a marmoset vocalization file."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Analyzing: {Path(audio_file_path).name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Load audio
     audio, original_sr = load_flac_file(audio_file_path)
@@ -64,7 +66,7 @@ def analyze_marmoset_vocalization(audio_file_path, num_segments=5):
         return None
 
     print(f"Original sample rate: {original_sr} Hz")
-    print(f"Audio duration: {len(audio)/original_sr*1000:.1f} ms")
+    print(f"Audio duration: {len(audio) / original_sr * 1000:.1f} ms")
     print(f"Audio samples: {len(audio)}")
 
     # Initialize analyzer
@@ -73,11 +75,7 @@ def analyze_marmoset_vocalization(audio_file_path, num_segments=5):
     # Segment into phrases
     print("\n📊 Segmenting into phrases...")
     try:
-        phrases = analyzer.segment_phrases(
-            audio,
-            min_gap_ms=10,
-            min_phrase_duration_ms=10
-        )
+        phrases = analyzer.segment_phrases(audio, min_gap_ms=10, min_phrase_duration_ms=10)
         print(f"Found {len(phrases)} phrases")
     except Exception as e:
         print(f"Error during phrase segmentation: {e}")
@@ -99,22 +97,22 @@ def analyze_marmoset_vocalization(audio_file_path, num_segments=5):
         features = phrase.features
 
         result = {
-            'phrase_num': i + 1,
-            'modality': modality.name,
-            'probabilities': probabilities,
-            'duration_ms': features.get('duration_ms', len(phrase.data) / 48000 * 1000),
-            'mean_f0_hz': features.get('f0_mean'),
-            'f0_range_hz': features.get('f0_range'),
+            "phrase_num": i + 1,
+            "modality": modality.name,
+            "probabilities": probabilities,
+            "duration_ms": features.get("duration_ms", len(phrase.data) / 48000 * 1000),
+            "mean_f0_hz": features.get("f0_mean"),
+            "f0_range_hz": features.get("f0_range"),
         }
         results.append(result)
 
         # Print result
-        print(f"\n  Phrase {i+1}:")
+        print(f"\n  Phrase {i + 1}:")
         print(f"    Modality: {modality.name}")
         print(f"    Probabilities: {probabilities}")
-        if result['mean_f0_hz'] is not None:
+        if result["mean_f0_hz"] is not None:
             print(f"    Mean F0: {result['mean_f0_hz']:.0f} Hz")
-        if result['f0_range_hz'] is not None:
+        if result["f0_range_hz"] is not None:
             print(f"    F0 Range: {result['f0_range_hz']:.0f} Hz")
         print(f"    Duration: {result['duration_ms']:.1f} ms")
 
@@ -123,9 +121,9 @@ def analyze_marmoset_vocalization(audio_file_path, num_segments=5):
 
 def main():
     """Main test function."""
-    print("="*70)
+    print("=" * 70)
     print("REAL MARMOSET VOCALIZATION MODALITY DETECTION TEST")
-    print("="*70)
+    print("=" * 70)
 
     # Data directory
     data_dir = Path.home() / "birdsong_analysis" / "data" / "Vocalizations"
@@ -160,15 +158,15 @@ def main():
             successful_files += 1
 
     # Summary statistics
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     if all_results:
         # Count modality detections
         modality_counts = {}
         for result in all_results:
-            modality = result['modality']
+            modality = result["modality"]
             modality_counts[modality] = modality_counts.get(modality, 0) + 1
 
         print(f"\nFiles successfully analyzed: {successful_files}/{num_files_to_test}")
@@ -176,7 +174,7 @@ def main():
         print("\nModality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(all_results) * 100
-            bar = '█' * int(percentage / 5)
+            bar = "█" * int(percentage / 5)
             print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
         # Expected modality for marmosets

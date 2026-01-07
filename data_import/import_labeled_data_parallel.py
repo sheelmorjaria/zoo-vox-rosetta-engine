@@ -27,7 +27,7 @@ import soundfile as sf
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Add URS path
-urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
+urs_path = str(Path(__file__).parent.parent / "analysis" / "rosetta_stone")
 sys.path.insert(0, urs_path)
 
 from universal_rosetta_stone import Modality, PhraseSignature
@@ -61,6 +61,7 @@ def load_and_extract_audio(args: Tuple[str, str]) -> Tuple[str, Dict, str]:
         # Resample if needed
         if sr != SAMPLE_RATE:
             from scipy import signal
+
             num_samples = int(len(audio) * SAMPLE_RATE / sr)
             audio = signal.resample(audio, num_samples)
 
@@ -85,10 +86,10 @@ def process_batch(batch: List[Tuple[str, str]]) -> List[Tuple]:
 
 
 def import_marmoset_data(
-    annotations_path: str = '/home/sheel/birdsong_analysis/Annotations.tsv',
-    vocalizations_dir: str = '/home/sheel/birdsong_analysis/data/Vocalizations',
-    output_path: str = '/home/sheel/birdsong_analysis/src/vocalization_database_with_contexts.json',
-    max_files: int = 5000
+    annotations_path: str = "/home/sheel/birdsong_analysis/Annotations.tsv",
+    vocalizations_dir: str = "/home/sheel/birdsong_analysis/data/Vocalizations",
+    output_path: str = "/home/sheel/birdsong_analysis/src/vocalization_database_with_contexts.json",
+    max_files: int = 5000,
 ):
     """Import marmoset vocalizations with behavioral contexts."""
 
@@ -101,7 +102,7 @@ def import_marmoset_data(
 
     # Load annotations
     print(f"\n📊 Loading annotations from {annotations_path}...")
-    df = pd.read_csv(annotations_path, sep='\t')
+    df = pd.read_csv(annotations_path, sep="\t")
     print(f"✅ Loaded {len(df)} annotations")
 
     # Sample if needed
@@ -114,15 +115,20 @@ def import_marmoset_data(
     file_tasks = []
 
     for _, row in df.iterrows():
-        parent_name = str(row['parent_name']).replace(' ', '_')
-        file_name = str(row['file_name'])
-        label = str(row['label'])
+        parent_name = str(row["parent_name"]).replace(" ", "_")
+        file_name = str(row["file_name"])
+        label = str(row["label"])
 
         # Normalize label to context
         context_map = {
-            'Tsik': 'tsik', 'Trill': 'trill', 'Twitter': 'twitter',
-            'Phee': 'phee', 'Seep': 'seep', 'Infant': 'infant',
-            'Infant_cry': 'infant', 'Vocalization': 'vocalization'
+            "Tsik": "tsik",
+            "Trill": "trill",
+            "Twitter": "twitter",
+            "Phee": "phee",
+            "Seep": "seep",
+            "Infant": "infant",
+            "Infant_cry": "infant",
+            "Vocalization": "vocalization",
         }
         context_name = context_map.get(label, label.lower())
 
@@ -134,94 +140,95 @@ def import_marmoset_data(
     print(f"✅ Found {len(file_tasks)} audio files")
 
     # Process in batches
-    print(f"\n⚙️  Processing in {len(file_tasks)//BATCH_SIZE + 1} batches...")
+    print(f"\n⚙️  Processing in {len(file_tasks) // BATCH_SIZE + 1} batches...")
 
     all_results = []
 
     for i in range(0, len(file_tasks), BATCH_SIZE):
-        batch = file_tasks[i:i+BATCH_SIZE]
+        batch = file_tasks[i : i + BATCH_SIZE]
         batch_results = process_batch(batch)
         all_results.extend(batch_results)
 
-        print(f"  Batch {i//BATCH_SIZE + 1}: processed {len(batch_results)} files")
+        print(f"  Batch {i // BATCH_SIZE + 1}: processed {len(batch_results)} files")
 
     print(f"\n✅ Successfully processed {len(all_results)} files")
 
     # Group into phrases
     print("\n📊 Grouping into phrases...")
 
-    phrase_library = defaultdict(lambda: {
-        'contexts': Counter(),
-        'features_list': []
-    })
+    phrase_library = defaultdict(lambda: {"contexts": Counter(), "features_list": []})
 
     for audio_path, features, context_name in all_results:
         # Generate phrase key from features
-        mean_f0 = int(features.get('f0_mean', 0) / 100) * 100
-        f0_range = int(features.get('f0_range', 0) / 100) * 100
-        duration_ms = int(features.get('duration_ms', 0) / 5) * 5
+        mean_f0 = int(features.get("f0_mean", 0) / 100) * 100
+        f0_range = int(features.get("f0_range", 0) / 100) * 100
+        duration_ms = int(features.get("duration_ms", 0) / 5) * 5
 
         phrase_key = f"F0_{mean_f0}_DUR_{duration_ms}_RANGE_{f0_range}"
 
-        phrase_library[phrase_key]['contexts'][context_name] += 1
-        phrase_library[phrase_key]['features_list'].append(features)
+        phrase_library[phrase_key]["contexts"][context_name] += 1
+        phrase_library[phrase_key]["features_list"].append(features)
 
     print(f"✅ Created {len(phrase_library)} phrase types")
 
     # Create export structure
     species_data = {
-        'species': 'marmoset',
-        'analysis_date': datetime.now().isoformat(),
-        'total_phrases': len(phrase_library),
-        'phrases': {}
+        "species": "marmoset",
+        "analysis_date": datetime.now().isoformat(),
+        "total_phrases": len(phrase_library),
+        "phrases": {},
     }
 
     for phrase_key, phrase_data in phrase_library.items():
-        features = phrase_data['features_list'][0]
+        features = phrase_data["features_list"][0]
 
         # Determine modality
-        spectral_flatness = features.get('spectral_flatness', 0)
+        spectral_flatness = features.get("spectral_flatness", 0)
         if spectral_flatness > 0.5:
-            modality = 'transient'
-        elif features.get('vibrato_rate_hz', 0) > 5:
-            modality = 'rhythmic'
+            modality = "transient"
+        elif features.get("vibrato_rate_hz", 0) > 5:
+            modality = "rhythmic"
         else:
-            modality = 'harmonic'
+            modality = "harmonic"
 
         # Create contexts list
         contexts = []
-        total_ctx = sum(phrase_data['contexts'].values())
+        total_ctx = sum(phrase_data["contexts"].values())
 
-        for ctx_name, count in phrase_data['contexts'].most_common():
-            contexts.append({
-                'context_name': ctx_name,
-                'count': count,
-                'percentage': (count / total_ctx * 100) if total_ctx > 0 else 0
-            })
+        for ctx_name, count in phrase_data["contexts"].most_common():
+            contexts.append(
+                {
+                    "context_name": ctx_name,
+                    "count": count,
+                    "percentage": (count / total_ctx * 100) if total_ctx > 0 else 0,
+                }
+            )
 
-        species_data['phrases'][phrase_key] = {
-            'phrase_key': phrase_key,
-            'signature': f"{modality}_{phrase_key}",
-            'species': 'marmoset',
-            'modality': modality,
-            'acoustic_features': {k: float(v) for k, v in features.items()},
-            'total_occurrences': len(phrase_data['features_list']),
-            'contexts': contexts,
-            'social_contexts': {},
-            'is_compositional': False,
-            'phrase_components': []
+        species_data["phrases"][phrase_key] = {
+            "phrase_key": phrase_key,
+            "signature": f"{modality}_{phrase_key}",
+            "species": "marmoset",
+            "modality": modality,
+            "acoustic_features": {k: float(v) for k, v in features.items()},
+            "total_occurrences": len(phrase_data["features_list"]),
+            "contexts": contexts,
+            "social_contexts": {},
+            "is_compositional": False,
+            "phrase_components": [],
         }
 
     # Show statistics
     print("\n📊 STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
-    print(f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}")
+    print(
+        f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}"
+    )
 
     # Context distribution
     all_contexts = Counter()
-    for phrase in species_data['phrases'].values():
-        for ctx in phrase['contexts']:
-            all_contexts[ctx['context_name']] += ctx['count']
+    for phrase in species_data["phrases"].values():
+        for ctx in phrase["contexts"]:
+            all_contexts[ctx["context_name"]] += ctx["count"]
 
     print("\n📊 CONTEXT DISTRIBUTION:")
     for ctx, count in all_contexts.most_common():
@@ -230,12 +237,12 @@ def import_marmoset_data(
 
     # Save
     export_data = {
-        'export_date': datetime.now().isoformat(),
-        'species_data': {'marmoset': species_data}
+        "export_date": datetime.now().isoformat(),
+        "species_data": {"marmoset": species_data},
     }
 
     print(f"\n💾 Saving to {output_path}...")
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(export_data, f, indent=2)
     print("✅ Saved!")
 
@@ -243,10 +250,10 @@ def import_marmoset_data(
 
 
 def import_bat_data(
-    annotations_path: str = '/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv',
-    audio_dir: str = '/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio',
-    output_path: str = '/home/sheel/birdsong_analysis/src/vocalization_database_with_bat_contexts.json',
-    max_files: int = 5000
+    annotations_path: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv",
+    audio_dir: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio",
+    output_path: str = "/home/sheel/birdsong_analysis/src/vocalization_database_with_bat_contexts.json",
+    max_files: int = 5000,
 ):
     """Import Egyptian fruit bat vocalizations with behavioral contexts."""
 
@@ -266,7 +273,7 @@ def import_bat_data(
 
     # Show context distribution
     print("\n📊 CONTEXT DISTRIBUTION:")
-    context_counts = df['Context'].value_counts()
+    context_counts = df["Context"].value_counts()
     for ctx, count in context_counts.head(10).items():
         pct = (count / len(df)) * 100
         print(f"   Context {ctx:<5} {count:>8} ({pct:>5.1f}%)")
@@ -281,8 +288,8 @@ def import_bat_data(
     file_tasks = []
 
     for _, row in df.iterrows():
-        file_name = str(row['File Name'])
-        context_code = int(row['Context'])
+        file_name = str(row["File Name"])
+        context_code = int(row["Context"])
 
         file_path = Path(audio_dir) / file_name
 
@@ -292,74 +299,73 @@ def import_bat_data(
     print(f"✅ Found {len(file_tasks)} audio files")
 
     # Process in batches
-    print(f"\n⚙️  Processing in {len(file_tasks)//BATCH_SIZE + 1} batches...")
+    print(f"\n⚙️  Processing in {len(file_tasks) // BATCH_SIZE + 1} batches...")
 
     all_results = []
 
     for i in range(0, len(file_tasks), BATCH_SIZE):
-        batch = file_tasks[i:i+BATCH_SIZE]
+        batch = file_tasks[i : i + BATCH_SIZE]
         batch_results = process_batch(batch)
         all_results.extend(batch_results)
 
-        print(f"  Batch {i//BATCH_SIZE + 1}: processed {len(batch_results)} files")
+        print(f"  Batch {i // BATCH_SIZE + 1}: processed {len(batch_results)} files")
 
     print(f"\n✅ Successfully processed {len(all_results)} files")
 
     # Group into phrases (for FM sweep modality)
     print("\n📊 Grouping into phrases...")
 
-    phrase_library = defaultdict(lambda: {
-        'contexts': Counter(),
-        'features_list': []
-    })
+    phrase_library = defaultdict(lambda: {"contexts": Counter(), "features_list": []})
 
     for audio_path, features, context_name in all_results:
         # Generate phrase key for FM sweeps
-        start_freq = int(features.get('start_freq', 0) / 1000) * 1000
-        end_freq = int(features.get('end_freq', 0) / 1000) * 1000
-        duration_ms = int(features.get('duration_ms', 0) / 10) * 10
+        start_freq = int(features.get("start_freq", 0) / 1000) * 1000
+        end_freq = int(features.get("end_freq", 0) / 1000) * 1000
+        duration_ms = int(features.get("duration_ms", 0) / 10) * 10
 
         phrase_key = f"FM_{start_freq}_{end_freq}_DUR_{duration_ms}"
 
-        phrase_library[phrase_key]['contexts'][context_name] += 1
-        phrase_library[phrase_key]['features_list'].append(features)
+        phrase_library[phrase_key]["contexts"][context_name] += 1
+        phrase_library[phrase_key]["features_list"].append(features)
 
     print(f"✅ Created {len(phrase_library)} phrase types")
 
     # Create export structure
     species_data = {
-        'species': 'egyptian_bat',
-        'analysis_date': datetime.now().isoformat(),
-        'total_phrases': len(phrase_library),
-        'phrases': {}
+        "species": "egyptian_bat",
+        "analysis_date": datetime.now().isoformat(),
+        "total_phrases": len(phrase_library),
+        "phrases": {},
     }
 
     for phrase_key, phrase_data in phrase_library.items():
-        features = phrase_data['features_list'][0]
-        modality = 'fm_sweep'  # Bats use FM sweeps
+        features = phrase_data["features_list"][0]
+        modality = "fm_sweep"  # Bats use FM sweeps
 
         # Create contexts list
         contexts = []
-        total_ctx = sum(phrase_data['contexts'].values())
+        total_ctx = sum(phrase_data["contexts"].values())
 
-        for ctx_name, count in phrase_data['contexts'].most_common():
-            contexts.append({
-                'context_name': ctx_name,
-                'count': count,
-                'percentage': (count / total_ctx * 100) if total_ctx > 0 else 0
-            })
+        for ctx_name, count in phrase_data["contexts"].most_common():
+            contexts.append(
+                {
+                    "context_name": ctx_name,
+                    "count": count,
+                    "percentage": (count / total_ctx * 100) if total_ctx > 0 else 0,
+                }
+            )
 
-        species_data['phrases'][phrase_key] = {
-            'phrase_key': phrase_key,
-            'signature': f"{modality}_{phrase_key}",
-            'species': 'egyptian_bat',
-            'modality': modality,
-            'acoustic_features': {k: float(v) for k, v in features.items()},
-            'total_occurrences': len(phrase_data['features_list']),
-            'contexts': contexts,
-            'social_contexts': {},
-            'is_compositional': False,
-            'phrase_components': []
+        species_data["phrases"][phrase_key] = {
+            "phrase_key": phrase_key,
+            "signature": f"{modality}_{phrase_key}",
+            "species": "egyptian_bat",
+            "modality": modality,
+            "acoustic_features": {k: float(v) for k, v in features.items()},
+            "total_occurrences": len(phrase_data["features_list"]),
+            "contexts": contexts,
+            "social_contexts": {},
+            "is_compositional": False,
+            "phrase_components": [],
         }
 
     # Show statistics
@@ -368,9 +374,9 @@ def import_bat_data(
 
     # Context distribution
     all_contexts = Counter()
-    for phrase in species_data['phrases'].values():
-        for ctx in phrase['contexts']:
-            all_contexts[ctx['context_name']] += ctx['count']
+    for phrase in species_data["phrases"].values():
+        for ctx in phrase["contexts"]:
+            all_contexts[ctx["context_name"]] += ctx["count"]
 
     print("\n📊 CONTEXT DISTRIBUTION:")
     for ctx, count in all_contexts.most_common():
@@ -379,12 +385,12 @@ def import_bat_data(
 
     # Save
     export_data = {
-        'export_date': datetime.now().isoformat(),
-        'species_data': {'egyptian_bat': species_data}
+        "export_date": datetime.now().isoformat(),
+        "species_data": {"egyptian_bat": species_data},
     }
 
     print(f"\n💾 Saving to {output_path}...")
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(export_data, f, indent=2)
     print("✅ Saved!")
 
@@ -394,14 +400,16 @@ def import_bat_data(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Optimized import of labeled vocalizations')
-    parser.add_argument('--species', type=str, choices=['marmoset', 'bat'], default='marmoset')
-    parser.add_argument('--max-files', type=int, default=5000, help='Max files to process (for testing)')
-    parser.add_argument('--workers', type=int, default=None, help='Number of worker processes')
+    parser = argparse.ArgumentParser(description="Optimized import of labeled vocalizations")
+    parser.add_argument("--species", type=str, choices=["marmoset", "bat"], default="marmoset")
+    parser.add_argument(
+        "--max-files", type=int, default=5000, help="Max files to process (for testing)"
+    )
+    parser.add_argument("--workers", type=int, default=None, help="Number of worker processes")
 
     args = parser.parse_args()
 
-    if args.species == 'marmoset':
+    if args.species == "marmoset":
         import_marmoset_data(max_files=args.max_files)
     else:
         import_bat_data(max_files=args.max_files)

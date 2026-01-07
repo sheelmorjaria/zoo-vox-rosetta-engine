@@ -54,6 +54,7 @@ except ImportError:
     @dataclass
     class VisualFeatures:
         """Visual features container (mock implementation)"""
+
         attention_level: VisualAttentionLevel = VisualAttentionLevel.LOW
         gaze_direction: Optional[str] = None
         movement_intensity: float = 0.0
@@ -69,6 +70,7 @@ except ImportError:
 @dataclass
 class AudioFeatures:
     """Audio features container"""
+
     rms: float  # Root mean square energy
     f0: float  # Fundamental frequency
     spectral_centroid: float
@@ -82,6 +84,7 @@ class AudioFeatures:
 @dataclass
 class FusionConfig:
     """Configuration for Data Fusion System"""
+
     attention_boost_factor: float = 0.2  # 20% boost for high attention
     species_weights: Dict[str, Dict[str, float]] = None
     min_attention_threshold: VisualAttentionLevel = VisualAttentionLevel.MODERATE
@@ -91,10 +94,10 @@ class FusionConfig:
     def __post_init__(self):
         if self.species_weights is None:
             self.species_weights = {
-                'marmoset': {'visual_weight': 0.3, 'audio_weight': 0.7},
-                'dolphin': {'visual_weight': 0.1, 'audio_weight': 0.9},
-                'human': {'visual_weight': 0.6, 'audio_weight': 0.4},
-                'default': {'visual_weight': 0.5, 'audio_weight': 0.5}
+                "marmoset": {"visual_weight": 0.3, "audio_weight": 0.7},
+                "dolphin": {"visual_weight": 0.1, "audio_weight": 0.9},
+                "human": {"visual_weight": 0.6, "audio_weight": 0.4},
+                "default": {"visual_weight": 0.5, "audio_weight": 0.5},
             }
 
 
@@ -120,9 +123,9 @@ class VisualAttentionCalculator:
 
         # Apply gaze direction modifier
         gaze_modifier = 1.0
-        if visual_features.gaze_direction == 'towards_camera':
+        if visual_features.gaze_direction == "towards_camera":
             gaze_modifier = 1.2
-        elif visual_features.gaze_direction == 'away':
+        elif visual_features.gaze_direction == "away":
             gaze_modifier = 0.5
 
         # Apply movement intensity modifier
@@ -144,13 +147,15 @@ class AuditoryFeatureExtractor:
 
     def normalize_audio_features(self, audio_features: AudioFeatures) -> np.ndarray:
         """Normalize audio features to [0, 1] range"""
-        features = np.array([
-            min(audio_features.rms / 0.5, 1.0),  # Normalize RMS
-            min(audio_features.f0 / 20000.0, 1.0),  # Normalize F0 (max 20kHz)
-            min(audio_features.spectral_centroid / 10000.0, 1.0),  # Normalize spectral centroid
-            min(audio_features.bandwidth / 10000.0, 1.0),  # Normalize bandwidth
-            audio_features.response_probability  # Already in [0, 1]
-        ])
+        features = np.array(
+            [
+                min(audio_features.rms / 0.5, 1.0),  # Normalize RMS
+                min(audio_features.f0 / 20000.0, 1.0),  # Normalize F0 (max 20kHz)
+                min(audio_features.spectral_centroid / 10000.0, 1.0),  # Normalize spectral centroid
+                min(audio_features.bandwidth / 10000.0, 1.0),  # Normalize bandwidth
+                audio_features.response_probability,  # Already in [0, 1]
+            ]
+        )
         return features
 
     def extract_context_features(self, audio_features: AudioFeatures) -> Dict[str, float]:
@@ -158,16 +163,16 @@ class AuditoryFeatureExtractor:
         context_features = {}
 
         # Contact call modifier
-        if audio_features.context.lower() == 'contact_call':
-            context_features['contact_call_boost'] = 1.2
+        if audio_features.context.lower() == "contact_call":
+            context_features["contact_call_boost"] = 1.2
         else:
-            context_features['contact_call_boost'] = 1.0
+            context_features["contact_call_boost"] = 1.0
 
         # Alarm call modifier
-        if audio_features.context.lower() == 'alarm_call':
-            context_features['alarm_call_modifier'] = 0.8
+        if audio_features.context.lower() == "alarm_call":
+            context_features["alarm_call_modifier"] = 0.8
         else:
-            context_features['alarm_call_modifier'] = 1.0
+            context_features["alarm_call_modifier"] = 1.0
 
         return context_features
 
@@ -178,22 +183,23 @@ class AttentionEnsemble:
     def __init__(self, config: FusionConfig):
         self.config = config
 
-    def combine_attention_signals(self, visual_attention: float, auditory_attention: float,
-                                species: str = 'default') -> float:
+    def combine_attention_signals(
+        self, visual_attention: float, auditory_attention: float, species: str = "default"
+    ) -> float:
         """Combine visual and auditory attention signals using species-specific weights"""
         # Get species-specific weights, fall back to default
         if species in self.config.species_weights:
             weights = self.config.species_weights[species]
-        elif 'default' in self.config.species_weights:
-            weights = self.config.species_weights['default']
+        elif "default" in self.config.species_weights:
+            weights = self.config.species_weights["default"]
         else:
             # Fallback to equal weights if no default available
-            weights = {'visual_weight': 0.5, 'audio_weight': 0.5}
+            weights = {"visual_weight": 0.5, "audio_weight": 0.5}
 
         # Weighted combination
         combined_attention = (
-            visual_attention * weights['visual_weight'] +
-            auditory_attention * weights['audio_weight']
+            visual_attention * weights["visual_weight"]
+            + auditory_attention * weights["audio_weight"]
         )
 
         # Apply context modulation if enabled
@@ -215,9 +221,12 @@ class CrossModalFusion:
         self.attention_ensemble = AttentionEnsemble(config)
         self.logger = logging.getLogger(__name__)
 
-    def fuse_modalities(self, visual_features: VisualFeatures,
-                       audio_features: AudioFeatures,
-                       species: str = 'default') -> Dict[str, Any]:
+    def fuse_modalities(
+        self,
+        visual_features: VisualFeatures,
+        audio_features: AudioFeatures,
+        species: str = "default",
+    ) -> Dict[str, Any]:
         """Fuse visual and auditory modalities"""
         # Calculate individual attention scores
         visual_attention = self.visual_calculator.calculate_attention_score(visual_features)
@@ -233,37 +242,42 @@ class CrossModalFusion:
             visual_features, audio_features, combined_attention, species
         )
 
-        fusion_result.update({
-            'visual_attention_score': visual_attention,
-            'auditory_attention_score': auditory_attention,
-            'combined_attention': combined_attention,
-            'fusion_timestamp': time.time(),
-            'species': species
-        })
+        fusion_result.update(
+            {
+                "visual_attention_score": visual_attention,
+                "auditory_attention_score": auditory_attention,
+                "combined_attention": combined_attention,
+                "fusion_timestamp": time.time(),
+                "species": species,
+            }
+        )
 
         return fusion_result
 
-    def _apply_species_fusion_logic(self, visual_features: VisualFeatures,
-                                  audio_features: AudioFeatures,
-                                  combined_attention: float,
-                                  species: str) -> Dict[str, Any]:
+    def _apply_species_fusion_logic(
+        self,
+        visual_features: VisualFeatures,
+        audio_features: AudioFeatures,
+        combined_attention: float,
+        species: str,
+    ) -> Dict[str, Any]:
         """Apply species-specific fusion logic"""
-        result = {'response_probability': combined_attention}
+        result = {"response_probability": combined_attention}
 
         # Marmoset-specific logic
-        if species == 'marmoset':
-            if audio_features.context.lower() == 'contact_call':
-                result['enhanced_social_bonding'] = True
-                result['call_sharpness_boost'] = 0.1
+        if species == "marmoset":
+            if audio_features.context.lower() == "contact_call":
+                result["enhanced_social_bonding"] = True
+                result["call_sharpness_boost"] = 0.1
 
         # Dolphin-specific logic
-        elif species == 'dolphin':
-            if audio_features.context.lower() == 'contact_call':
-                result['whistle_modulation_enhanced'] = True
+        elif species == "dolphin":
+            if audio_features.context.lower() == "contact_call":
+                result["whistle_modulation_enhanced"] = True
 
         # Human-specific logic
-        elif species == 'human':
-            result['verbal_hinting_enabled'] = True
+        elif species == "human":
+            result["verbal_hinting_enabled"] = True
 
         return result
 
@@ -275,13 +289,14 @@ class ResponseBoostLogic:
         self.config = config
         self.logger = logging.getLogger(__name__)
 
-    def calculate_attention_boost(self, visual_features: VisualFeatures,
-                                audio_features: AudioFeatures) -> float:
+    def calculate_attention_boost(
+        self, visual_features: VisualFeatures, audio_features: AudioFeatures
+    ) -> float:
         """Calculate attention-based response probability boost"""
         # Only apply boost for contact calls with high attention
-        if (audio_features.context.lower() == 'contact_call' and
-            self._is_attention_level_sufficient(visual_features.attention_level)):
-
+        if audio_features.context.lower() == "contact_call" and self._is_attention_level_sufficient(
+            visual_features.attention_level
+        ):
             base_boost = self.config.attention_boost_factor
 
             # Boost scaling based on attention level
@@ -306,13 +321,7 @@ class ResponseBoostLogic:
         # Handle both string and enum values
         if isinstance(current_value, str):
             # Map string values to numeric for comparison
-            level_mapping = {
-                'Low': 1,
-                'Moderate': 2,
-                'High': 3,
-                'VERY_HIGH': 4,
-                'Very High': 4
-            }
+            level_mapping = {"Low": 1, "Moderate": 2, "High": 3, "VERY_HIGH": 4, "Very High": 4}
             threshold_num = level_mapping.get(threshold_value, 2)
             current_num = level_mapping.get(current_value, 1)
             return current_num >= threshold_num
@@ -320,8 +329,9 @@ class ResponseBoostLogic:
             # Handle enum comparison
             return attention_level.value >= threshold_value
 
-    def apply_response_boost(self, audio_features: AudioFeatures,
-                           visual_features: VisualFeatures) -> AudioFeatures:
+    def apply_response_boost(
+        self, audio_features: AudioFeatures, visual_features: VisualFeatures
+    ) -> AudioFeatures:
         """Apply attention boost to audio features"""
         # Calculate boost amount
         boost_amount = self.calculate_attention_boost(visual_features, audio_features)
@@ -340,7 +350,7 @@ class ResponseBoostLogic:
                 context=audio_features.context,
                 response_probability=boosted_probability,
                 confidence=max(audio_features.confidence, boost_amount),
-                timestamp=time.time()
+                timestamp=time.time(),
             )
 
             self.logger.info(
@@ -367,9 +377,12 @@ class DataFusionSystem:
         self.boost_count = 0
         self.last_fusion_time = None
 
-    def integrate_with_audio(self, audio_features: Dict[str, Any],
-                           visual_features: VisualFeatures,
-                           species: str = 'default') -> Dict[str, Any]:
+    def integrate_with_audio(
+        self,
+        audio_features: Dict[str, Any],
+        visual_features: VisualFeatures,
+        species: str = "default",
+    ) -> Dict[str, Any]:
         """Integrate visual features with audio features"""
         # Convert dict to AudioFeatures if needed
         if isinstance(audio_features, dict):
@@ -378,10 +391,7 @@ class DataFusionSystem:
             except TypeError:
                 # Handle invalid dict gracefully
                 self.logger.warning(f"Invalid audio features dict: {audio_features}")
-                return {
-                    'error': 'Invalid audio features',
-                    'fusion_timestamp': time.time()
-                }
+                return {"error": "Invalid audio features", "fusion_timestamp": time.time()}
 
         # Perform cross-modal fusion
         fusion_result = self.cross_modal_fusion.fuse_modalities(
@@ -394,22 +404,26 @@ class DataFusionSystem:
         )
 
         # Update fusion result with boosted features
-        fusion_result.update({
-            'original_response_probability': audio_features.response_probability,
-            'boosted_response_probability': boosted_features.response_probability,
-            'boost_applied': boosted_features.response_probability > audio_features.response_probability,
-            'boost_amount': boosted_features.response_probability - audio_features.response_probability,
-            'visual_context': {
-                'attention_level': visual_features.attention_level.value,
-                'gaze_direction': visual_features.gaze_direction,
-                'movement_intensity': visual_features.movement_intensity,
-                'hand_gestures': visual_features.hand_gestures
+        fusion_result.update(
+            {
+                "original_response_probability": audio_features.response_probability,
+                "boosted_response_probability": boosted_features.response_probability,
+                "boost_applied": boosted_features.response_probability
+                > audio_features.response_probability,
+                "boost_amount": boosted_features.response_probability
+                - audio_features.response_probability,
+                "visual_context": {
+                    "attention_level": visual_features.attention_level.value,
+                    "gaze_direction": visual_features.gaze_direction,
+                    "movement_intensity": visual_features.movement_intensity,
+                    "hand_gestures": visual_features.hand_gestures,
+                },
             }
-        })
+        )
 
         # Update performance tracking
         self.fusion_count += 1
-        if fusion_result['boost_applied']:
+        if fusion_result["boost_applied"]:
             self.boost_count += 1
 
         # Log fusion result
@@ -428,14 +442,14 @@ class DataFusionSystem:
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get performance statistics for the fusion system"""
         return {
-            'fusion_count': self.fusion_count,
-            'boost_count': self.boost_count,
-            'boost_rate': self.boost_count / max(self.fusion_count, 1),
-            'config': {
-                'attention_boost_factor': self.config.attention_boost_factor,
-                'min_attention_threshold': self.config.min_attention_threshold.value,
-                'enable_cross_modal_fusion': self.config.enable_cross_modal_fusion
-            }
+            "fusion_count": self.fusion_count,
+            "boost_count": self.boost_count,
+            "boost_rate": self.boost_count / max(self.fusion_count, 1),
+            "config": {
+                "attention_boost_factor": self.config.attention_boost_factor,
+                "min_attention_threshold": self.config.min_attention_threshold.value,
+                "enable_cross_modal_fusion": self.config.enable_cross_modal_fusion,
+            },
         }
 
 
@@ -445,9 +459,9 @@ def create_test_data_fusion_system() -> DataFusionSystem:
     config = FusionConfig(
         attention_boost_factor=0.2,
         species_weights={
-            'marmoset': {'visual_weight': 0.3, 'audio_weight': 0.7},
-            'dolphin': {'visual_weight': 0.1, 'audio_weight': 0.9},
-            'human': {'visual_weight': 0.6, 'audio_weight': 0.4}
-        }
+            "marmoset": {"visual_weight": 0.3, "audio_weight": 0.7},
+            "dolphin": {"visual_weight": 0.1, "audio_weight": 0.9},
+            "human": {"visual_weight": 0.6, "audio_weight": 0.4},
+        },
     )
     return DataFusionSystem(config)

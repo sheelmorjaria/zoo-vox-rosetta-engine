@@ -42,6 +42,7 @@ from .synthesis_enhancements import EmotionalMorpher, GranularSynthesisEngine
 @dataclass
 class AudioConfig:
     """Audio configuration parameters."""
+
     sample_rate: int = 48000
     channels: int = 2
     block_size_ms: int = 16
@@ -52,8 +53,9 @@ class AudioConfig:
 @dataclass
 class SystemConfig:
     """System configuration parameters."""
-    species: str = 'marmoset'
-    synthesis_mode: str = 'enhanced'
+
+    species: str = "marmoset"
+    synthesis_mode: str = "enhanced"
     enable_fpga: bool = True
     enable_logging: bool = True
     enable_cognitive: bool = True
@@ -114,7 +116,7 @@ class EnhancedRealTimeSystem:
             self.latency_pipeline = DynamicBlockProcessor(
                 sample_rate=self.audio_config.sample_rate,
                 block_size_ms=self.audio_config.block_size_ms,
-                overlap_ratio=self.audio_config.overlap_ratio
+                overlap_ratio=self.audio_config.overlap_ratio,
             )
 
             # Initialize cognitive layer
@@ -127,8 +129,7 @@ class EnhancedRealTimeSystem:
 
             # Initialize safety manager
             self.safety_manager = EnhancedSafetyManager(
-                max_spl_db=self.audio_config.max_spl_db,
-                species=self.system_config.species
+                max_spl_db=self.audio_config.max_spl_db, species=self.system_config.species
             )
 
             # Initialize data logger
@@ -137,10 +138,10 @@ class EnhancedRealTimeSystem:
 
             # Initialize hardware optimizer
             self.hardware_optimizer = {
-                'fpga': FPGAOffloader(),
-                'thermal': ThermalManager(max_temp_threshold=self.system_config.thermal_threshold),
-                'power': PowerEfficiencyManager(),
-                'resources': ResourceMonitor()
+                "fpga": FPGAOffloader(),
+                "thermal": ThermalManager(max_temp_threshold=self.system_config.thermal_threshold),
+                "power": PowerEfficiencyManager(),
+                "resources": ResourceMonitor(),
             }
 
             self.is_initialized = True
@@ -175,12 +176,8 @@ class EnhancedRealTimeSystem:
 
             if not processed_blocks:
                 return {
-                    'audio': np.zeros(len(audio_data)),
-                    'metadata': {
-                        'status': 'no_blocks',
-                        'processing_time_ms': 0,
-                        'latency_ms': 0
-                    }
+                    "audio": np.zeros(len(audio_data)),
+                    "metadata": {"status": "no_blocks", "processing_time_ms": 0, "latency_ms": 0},
                 }
 
             # Process each block
@@ -191,9 +188,9 @@ class EnhancedRealTimeSystem:
 
             # Combine responses
             if len(responses) > 1:
-                combined_audio = np.concatenate([r['audio'] for r in responses])
+                combined_audio = np.concatenate([r["audio"] for r in responses])
             else:
-                combined_audio = responses[0]['audio'] if responses else np.zeros(len(audio_data))
+                combined_audio = responses[0]["audio"] if responses else np.zeros(len(audio_data))
 
             # Step 2: Apply safety constraints
             safe_audio = self.safety_manager.apply_spectral_safety(combined_audio)
@@ -218,31 +215,32 @@ class EnhancedRealTimeSystem:
                 self.safety_manager.heartbeat()
 
             return {
-                'audio': safe_audio,
-                'metadata': {
-                    'status': 'success',
-                    'processing_time_ms': processing_time * 1000,
-                    'latency_ms': total_latency_ms,
-                    'blocks_processed': len(processed_blocks) if processed_blocks else 0,
-                    'system_healthy': self.is_system_healthy()
+                "audio": safe_audio,
+                "metadata": {
+                    "status": "success",
+                    "processing_time_ms": processing_time * 1000,
+                    "latency_ms": total_latency_ms,
+                    "blocks_processed": len(processed_blocks) if processed_blocks else 0,
+                    "system_healthy": self.is_system_healthy(),
                 },
-                'hardware_stats': self.get_hardware_stats()
+                "hardware_stats": self.get_hardware_stats(),
             }
 
         except Exception as e:
             import traceback
+
             self.error_count += 1
             self.last_error_time = time.time()
             self.logger.error(f"Audio processing error: {e}")
             self.logger.error(f"Traceback: {traceback.format_exc()}")
 
             return {
-                'audio': np.zeros(len(audio_data), dtype=np.float32),
-                'metadata': {
-                    'status': 'error',
-                    'error': str(e),
-                    'processing_time_ms': (time.perf_counter() - start_time) * 1000
-                }
+                "audio": np.zeros(len(audio_data), dtype=np.float32),
+                "metadata": {
+                    "status": "error",
+                    "error": str(e),
+                    "processing_time_ms": (time.perf_counter() - start_time) * 1000,
+                },
             }
 
     def _process_audio_block(self, audio_block: np.ndarray) -> Dict[str, Any]:
@@ -263,30 +261,26 @@ class EnhancedRealTimeSystem:
             context_result = self.cognitive_layer.process_context(features)
         else:
             context_result = {
-                'context_type': 'audio_only',
-                'audio_confidence': 0.8,
-                'contact_probability': 0.6
+                "context_type": "audio_only",
+                "audio_confidence": 0.8,
+                "contact_probability": 0.6,
             }
 
         # Synthesize response based on context
         response_audio = self._synthesize_response(context_result)
 
-        return {
-            'audio': response_audio,
-            'features': features,
-            'context': context_result
-        }
+        return {"audio": response_audio, "features": features, "context": context_result}
 
     def _extract_audio_features(self, audio: np.ndarray) -> Dict[str, float]:
         """Extract audio features."""
         # Ensure audio is numpy array
-        if hasattr(audio, 'get'):  # CuPy array
+        if hasattr(audio, "get"):  # CuPy array
             audio_np = audio.get()
         else:
             audio_np = audio
 
         # Basic features
-        rms = np.sqrt(np.mean(audio_np ** 2))
+        rms = np.sqrt(np.mean(audio_np**2))
         duration = len(audio_np) / self.audio_config.sample_rate
         max_amplitude = np.max(np.abs(audio_np))
 
@@ -298,23 +292,25 @@ class EnhancedRealTimeSystem:
         magnitude_spectrum = np.abs(fft)
         spectral_sum = np.sum(magnitude_spectrum)
         if spectral_sum > 0:
-            spectral_centroid = np.sum(np.arange(len(magnitude_spectrum)) * magnitude_spectrum) / spectral_sum
+            spectral_centroid = (
+                np.sum(np.arange(len(magnitude_spectrum)) * magnitude_spectrum) / spectral_sum
+            )
         else:
             spectral_centroid = 0
 
         return {
-            'rms': rms,
-            'duration': duration,
-            'max_amplitude': max_amplitude,
-            'zero_crossings': zero_crossings,
-            'spectral_centroid': spectral_centroid / 1000,  # Convert to kHz
-            'energy': np.sum(audio_np ** 2)
+            "rms": rms,
+            "duration": duration,
+            "max_amplitude": max_amplitude,
+            "zero_crossings": zero_crossings,
+            "spectral_centroid": spectral_centroid / 1000,  # Convert to kHz
+            "energy": np.sum(audio_np**2),
         }
 
     def _synthesize_response(self, context_result: Dict[str, Any]) -> np.ndarray:
         """Synthesize response based on context."""
         # Generate synthetic response based on context
-        contact_prob = context_result.get('contact_probability', 0.5)
+        contact_prob = context_result.get("contact_probability", 0.5)
 
         # Generate response audio
         if contact_prob > 0.5:
@@ -332,18 +328,18 @@ class EnhancedRealTimeSystem:
 
         # Apply emotional modulation if cognitive layer is available
         if self.cognitive_layer:
-            adapted_params = self.cognitive_layer.get_adapted_parameters('contact')
+            adapted_params = self.cognitive_layer.get_adapted_parameters("contact")
             if adapted_params:
                 # Create emotional state from parameters
                 from realtime.synthesis_enhancements import EmotionalState
+
                 emotional_state = EmotionalState()
-                emotional_state.playful = min(1.0, adapted_params.get('adaptation_count', 0) * 0.1)
+                emotional_state.playful = min(1.0, adapted_params.get("adaptation_count", 0) * 0.1)
                 emotional_state.normalize()
 
                 # Apply emotional modulation
                 response_audio = self.synthesis_engine.apply_emotional_modulation(
-                    response_audio,
-                    emotional_state
+                    response_audio, emotional_state
                 )
 
         return response_audio
@@ -351,33 +347,31 @@ class EnhancedRealTimeSystem:
     def get_system_stats(self) -> Dict[str, Any]:
         """Get comprehensive system statistics."""
         stats = {
-            'system_initialized': self.is_initialized,
-            'system_running': self.is_running,
-            'error_count': self.error_count,
-            'last_error_time': self.last_error_time,
-            'processing_times': {
-                'mean': np.mean(self.processing_times) * 1000 if self.processing_times else 0,
-                'max': np.max(self.processing_times) * 1000 if self.processing_times else 0,
-                'min': np.min(self.processing_times) * 1000 if self.processing_times else 0
+            "system_initialized": self.is_initialized,
+            "system_running": self.is_running,
+            "error_count": self.error_count,
+            "last_error_time": self.last_error_time,
+            "processing_times": {
+                "mean": np.mean(self.processing_times) * 1000 if self.processing_times else 0,
+                "max": np.max(self.processing_times) * 1000 if self.processing_times else 0,
+                "min": np.min(self.processing_times) * 1000 if self.processing_times else 0,
             },
-            'response_latencies': {
-                'mean': np.mean(self.response_latencies) if self.response_latencies else 0,
-                'max': np.max(self.response_latencies) if self.response_latencies else 0,
-                'min': np.min(self.response_latencies) if self.response_latencies else 0
-            }
+            "response_latencies": {
+                "mean": np.mean(self.response_latencies) if self.response_latencies else 0,
+                "max": np.max(self.response_latencies) if self.response_latencies else 0,
+                "min": np.min(self.response_latencies) if self.response_latencies else 0,
+            },
         }
 
         # Add component-specific stats
         if self.safety_manager:
-            stats['safety'] = self.safety_manager.get_safety_status()
+            stats["safety"] = self.safety_manager.get_safety_status()
 
         if self.hardware_optimizer:
-            stats['hardware'] = self.get_hardware_stats()
+            stats["hardware"] = self.get_hardware_stats()
 
         if self.data_logger:
-            stats['logging'] = {
-                'decisions_logged': len(self.data_logger.get_decision_history())
-            }
+            stats["logging"] = {"decisions_logged": len(self.data_logger.get_decision_history())}
 
         return stats
 
@@ -389,35 +383,35 @@ class EnhancedRealTimeSystem:
         stats = {}
 
         # FPGA stats
-        fpga = self.hardware_optimizer['fpga']
+        fpga = self.hardware_optimizer["fpga"]
         if fpga.is_available:
-            stats['fpga'] = {
-                'available': True,
-                'healthy': fpga.is_healthy(),
-                'temperature': fpga.get_temperature(),
-                'performance_stats': fpga.get_performance_stats()
+            stats["fpga"] = {
+                "available": True,
+                "healthy": fpga.is_healthy(),
+                "temperature": fpga.get_temperature(),
+                "performance_stats": fpga.get_performance_stats(),
             }
 
         # Thermal stats
-        thermal = self.hardware_optimizer['thermal']
-        stats['thermal'] = {
-            'current_temperature': thermal.current_temperature,
-            'thermal_state': thermal.get_thermal_adjustments()['thermal_state'],
-            'temperature_stats': thermal.get_temperature_stats()
+        thermal = self.hardware_optimizer["thermal"]
+        stats["thermal"] = {
+            "current_temperature": thermal.current_temperature,
+            "thermal_state": thermal.get_thermal_adjustments()["thermal_state"],
+            "temperature_stats": thermal.get_temperature_stats(),
         }
 
         # Power stats
-        power = self.hardware_optimizer['power']
-        stats['power'] = {
-            'current_usage': power.measure_power_usage(),
-            'efficiency_stats': power.get_power_efficiency_stats(),
-            'optimizations': power.suggest_optimizations()
+        power = self.hardware_optimizer["power"]
+        stats["power"] = {
+            "current_usage": power.measure_power_usage(),
+            "efficiency_stats": power.get_power_efficiency_stats(),
+            "optimizations": power.suggest_optimizations(),
         }
 
         # Resource stats
-        resources = self.hardware_optimizer['resources']
-        stats['resources'] = resources.get_resource_stats()
-        stats['resource_alerts'] = resources.get_resource_alerts()
+        resources = self.hardware_optimizer["resources"]
+        stats["resources"] = resources.get_resource_stats()
+        stats["resource_alerts"] = resources.get_resource_alerts()
 
         return stats
 
@@ -432,7 +426,7 @@ class EnhancedRealTimeSystem:
 
         # Check hardware optimizer
         if self.hardware_optimizer:
-            resources = self.hardware_optimizer['resources']
+            resources = self.hardware_optimizer["resources"]
             if not resources.is_system_healthy():
                 return False
 
@@ -446,42 +440,42 @@ class EnhancedRealTimeSystem:
     def system_check(self) -> Dict[str, Any]:
         """Perform comprehensive system check."""
         check_results = {
-            'overall_health': self.is_system_healthy(),
-            'timestamp': time.time(),
-            'components': {}
+            "overall_health": self.is_system_healthy(),
+            "timestamp": time.time(),
+            "components": {},
         }
 
         # Check each component
         if self.latency_pipeline:
-            check_results['components']['latency_pipeline'] = {
-                'status': 'healthy',
-                'type': 'dynamic_block_processor'
+            check_results["components"]["latency_pipeline"] = {
+                "status": "healthy",
+                "type": "dynamic_block_processor",
             }
 
         if self.cognitive_layer:
-            check_results['components']['cognitive_layer'] = {
-                'status': 'healthy',
-                'type': 'cognitive_intelligence'
+            check_results["components"]["cognitive_layer"] = {
+                "status": "healthy",
+                "type": "cognitive_intelligence",
             }
 
         if self.synthesis_engine:
-            check_results['components']['synthesis_engine'] = {
-                'status': 'healthy',
-                'type': 'granular_synthesis'
+            check_results["components"]["synthesis_engine"] = {
+                "status": "healthy",
+                "type": "granular_synthesis",
             }
 
         if self.safety_manager:
-            check_results['components']['safety_manager'] = {
-                'status': 'healthy' if self.safety_manager.is_healthy() else 'error',
-                'type': 'enhanced_safety'
+            check_results["components"]["safety_manager"] = {
+                "status": "healthy" if self.safety_manager.is_healthy() else "error",
+                "type": "enhanced_safety",
             }
 
         if self.hardware_optimizer:
             for name, component in self.hardware_optimizer.items():
-                if hasattr(component, 'is_healthy'):
-                    check_results['components'][name] = {
-                        'status': 'healthy' if component.is_healthy() else 'error',
-                        'type': name
+                if hasattr(component, "is_healthy"):
+                    check_results["components"][name] = {
+                        "status": "healthy" if component.is_healthy() else "error",
+                        "type": name,
                     }
 
         return check_results
@@ -493,12 +487,12 @@ class EnhancedRealTimeSystem:
 
         # Cleanup hardware resources
         if self.hardware_optimizer:
-            thermal = self.hardware_optimizer['thermal']
-            if hasattr(thermal, 'stop_monitoring'):
+            thermal = self.hardware_optimizer["thermal"]
+            if hasattr(thermal, "stop_monitoring"):
                 thermal.stop_monitoring()
 
         self.logger.info("System shutdown complete")
 
 
 # Export the main enhanced system class
-__all__ = ['EnhancedRealTimeSystem', 'AudioConfig', 'SystemConfig']
+__all__ = ["EnhancedRealTimeSystem", "AudioConfig", "SystemConfig"]

@@ -28,7 +28,7 @@ from datetime import datetime
 
 import numpy as np
 
-sys.path.append('/mnt/c/Users/sheel/Desktop/src')
+sys.path.append("/mnt/c/Users/sheel/Desktop/src")
 
 # Import database modules
 try:
@@ -40,6 +40,7 @@ try:
         SQLiteDatabase,
         UnifiedDatabaseManager,
     )
+
     DATABASE_AVAILABLE = True
 except ImportError as e:
     DATABASE_AVAILABLE = False
@@ -66,7 +67,7 @@ class TestUnifiedDatabase(unittest.TestCase):
             max_cache_size=100,
             cache_ttl=3600,
             enable_cloud_sync=False,  # Disable cloud sync for testing
-            auto_backup=False
+            auto_backup=False,
         )
 
         # Create database manager
@@ -74,7 +75,7 @@ class TestUnifiedDatabase(unittest.TestCase):
 
     def tearDown(self):
         """Clean up test environment"""
-        if hasattr(self, 'db_manager'):
+        if hasattr(self, "db_manager"):
             asyncio.run(self.db_manager.stop())
 
         # Remove temporary directory
@@ -113,19 +114,19 @@ class TestUnifiedDatabase(unittest.TestCase):
     def test_decision_logging(self):
         """Test decision logging to database"""
         decision_record = {
-            'session_id': 'test_session_001',
-            'timestamp': datetime.now().isoformat(),
-            'input_features': {'f0': 7400, 'duration': 0.1},
-            'context_probabilities': {'contact': 0.8, 'alarm': 0.2},
-            'phrase_selection': {'phrase_key': 'F0_7400'},
-            'synthesis_method': 'microharmonic',
-            'output_audio': [0.1, 0.2, 0.3] * 100,
-            'processing_time_ms': 45.6,
-            'adaptation_parameters': {'learning_rate': 0.01},
-            'safety_applied': True,
-            'cognitive_context': None,
-            'visual_context': None,
-            'experimental_conditions': {}
+            "session_id": "test_session_001",
+            "timestamp": datetime.now().isoformat(),
+            "input_features": {"f0": 7400, "duration": 0.1},
+            "context_probabilities": {"contact": 0.8, "alarm": 0.2},
+            "phrase_selection": {"phrase_key": "F0_7400"},
+            "synthesis_method": "microharmonic",
+            "output_audio": [0.1, 0.2, 0.3] * 100,
+            "processing_time_ms": 45.6,
+            "adaptation_parameters": {"learning_rate": 0.01},
+            "safety_applied": True,
+            "cognitive_context": None,
+            "visual_context": None,
+            "experimental_conditions": {},
         }
 
         # Log decision
@@ -133,16 +134,15 @@ class TestUnifiedDatabase(unittest.TestCase):
 
         # Verify it was logged
         result = self.db_manager.sqlite_db.execute_query(
-            "SELECT * FROM decisions WHERE session_id = ?",
-            (decision_record['session_id'],)
+            "SELECT * FROM decisions WHERE session_id = ?", (decision_record["session_id"],)
         )
         self.assertEqual(len(result), 1)
 
         # Check stored data
         row = result[0]
-        self.assertEqual(row['session_id'], decision_record['session_id'])
-        self.assertEqual(row['synthesis_method'], decision_record['synthesis_method'])
-        self.assertEqual(json.loads(row['input_features']), decision_record['input_features'])
+        self.assertEqual(row["session_id"], decision_record["session_id"])
+        self.assertEqual(row["synthesis_method"], decision_record["synthesis_method"])
+        self.assertEqual(json.loads(row["input_features"]), decision_record["input_features"])
 
     def test_phrase_database_operations(self):
         """Test phrase database operations"""
@@ -158,56 +158,56 @@ class TestUnifiedDatabase(unittest.TestCase):
             species=species,
             audio_data=pickle.dumps(audio_data),
             acoustic_features=acoustic_features,
-            context_info=context_info
+            context_info=context_info,
         )
 
         # Load phrase from database
         loaded_phrase = self.db_manager.load_phrase_database(phrase_key, species)
 
         self.assertIsNotNone(loaded_phrase)
-        self.assertEqual(loaded_phrase['acoustic_features'], acoustic_features)
-        self.assertEqual(loaded_phrase['context_info'], context_info)
-        np.testing.assert_array_equal(pickle.loads(loaded_phrase['audio_data']), audio_data)
+        self.assertEqual(loaded_phrase["acoustic_features"], acoustic_features)
+        self.assertEqual(loaded_phrase["context_info"], context_info)
+        np.testing.assert_array_equal(pickle.loads(loaded_phrase["audio_data"]), audio_data)
 
     def test_experiments_management(self):
         """Test experiment data management"""
         experiment_data = {
-            'experiment_id': 'exp_test_001',
-            'name': 'Test Experiment',
-            'description': 'A test experiment',
-            'start_time': datetime.now().isoformat(),
-            'end_time': None,
-            'conditions': {'param1': 'value1'},
-            'metrics': {'accuracy': 0.95},
-            'status': 'active'
+            "experiment_id": "exp_test_001",
+            "name": "Test Experiment",
+            "description": "A test experiment",
+            "start_time": datetime.now().isoformat(),
+            "end_time": None,
+            "conditions": {"param1": "value1"},
+            "metrics": {"accuracy": 0.95},
+            "status": "active",
         }
 
         # Save experiment
         self.db_manager.save_experiment_data(experiment_data)
 
         # Load experiment
-        loaded = self.db_manager.get_experiment_data('exp_test_001')
+        loaded = self.db_manager.get_experiment_data("exp_test_001")
         self.assertIsNotNone(loaded)
-        self.assertEqual(loaded['experiment_id'], experiment_data['experiment_id'])
-        self.assertEqual(loaded['name'], experiment_data['name'])
+        self.assertEqual(loaded["experiment_id"], experiment_data["experiment_id"])
+        self.assertEqual(loaded["name"], experiment_data["name"])
 
     def test_backup_and_recovery(self):
         """Test backup and recovery functionality"""
         # Create some data
         decision_record = {
-            'session_id': 'backup_test_001',
-            'timestamp': datetime.now().isoformat(),
-            'input_features': {'backup': True},
-            'context_probabilities': {},
-            'phrase_selection': {},
-            'synthesis_method': 'backup_test',
-            'output_audio': [],
-            'processing_time_ms': 0.0,
-            'adaptation_parameters': {},
-            'safety_applied': False,
-            'cognitive_context': None,
-            'visual_context': None,
-            'experimental_conditions': {}
+            "session_id": "backup_test_001",
+            "timestamp": datetime.now().isoformat(),
+            "input_features": {"backup": True},
+            "context_probabilities": {},
+            "phrase_selection": {},
+            "synthesis_method": "backup_test",
+            "output_audio": [],
+            "processing_time_ms": 0.0,
+            "adaptation_parameters": {},
+            "safety_applied": False,
+            "cognitive_context": None,
+            "visual_context": None,
+            "experimental_conditions": {},
         }
         self.db_manager.log_decision(decision_record)
 
@@ -219,17 +219,17 @@ class TestUnifiedDatabase(unittest.TestCase):
         # Get backup list
         backups = self.db_manager.backup.get_backup_list()
         self.assertEqual(len(backups), 1)
-        self.assertEqual(backups[0]['name'], os.path.basename(backup_file))
+        self.assertEqual(backups[0]["name"], os.path.basename(backup_file))
 
     def test_database_stats(self):
         """Test database statistics"""
         # Get initial stats
         stats = self.db_manager.get_database_stats()
-        self.assertIn('database_size_bytes', stats)
-        self.assertIn('cache_size', stats)
-        self.assertIn('cache_max_size', stats)
-        self.assertIn('decisions_count', stats)
-        self.assertEqual(stats['cache_size'], 0)
+        self.assertIn("database_size_bytes", stats)
+        self.assertIn("cache_size", stats)
+        self.assertIn("cache_max_size", stats)
+        self.assertIn("decisions_count", stats)
+        self.assertEqual(stats["cache_size"], 0)
 
     def test_concurrent_operations(self):
         """Test concurrent database operations"""
@@ -243,19 +243,19 @@ class TestUnifiedDatabase(unittest.TestCase):
             try:
                 for i in range(10):
                     decision_record = {
-                        'session_id': f'concurrent_{worker_id}_{i}',
-                        'timestamp': datetime.now().isoformat(),
-                        'input_features': {'worker': worker_id, 'iteration': i},
-                        'context_probabilities': {},
-                        'phrase_selection': {},
-                        'synthesis_method': 'concurrent_test',
-                        'output_audio': [],
-                        'processing_time_ms': 0.0,
-                        'adaptation_parameters': {},
-                        'safety_applied': False,
-                        'cognitive_context': None,
-                        'visual_context': None,
-                        'experimental_conditions': {}
+                        "session_id": f"concurrent_{worker_id}_{i}",
+                        "timestamp": datetime.now().isoformat(),
+                        "input_features": {"worker": worker_id, "iteration": i},
+                        "context_probabilities": {},
+                        "phrase_selection": {},
+                        "synthesis_method": "concurrent_test",
+                        "output_audio": [],
+                        "processing_time_ms": 0.0,
+                        "adaptation_parameters": {},
+                        "safety_applied": False,
+                        "cognitive_context": None,
+                        "visual_context": None,
+                        "experimental_conditions": {},
                     }
                     self.db_manager.log_decision(decision_record)
                     time.sleep(0.01)
@@ -280,7 +280,7 @@ class TestUnifiedDatabase(unittest.TestCase):
 
         # Verify data was logged
         stats = self.db_manager.get_database_stats()
-        self.assertGreater(stats['decisions_count'], 0)
+        self.assertGreater(stats["decisions_count"], 0)
 
 
 class TestDatabaseIntegration(unittest.TestCase):
@@ -297,10 +297,10 @@ class TestDatabaseIntegration(unittest.TestCase):
 
             # Create database config
             config = {
-                'sqlite_path': db_path,
-                'cache_path': os.path.join(temp_dir, "cache"),
-                'enable_cloud_sync': False,
-                'auto_backup': False
+                "sqlite_path": db_path,
+                "cache_path": os.path.join(temp_dir, "cache"),
+                "enable_cloud_sync": False,
+                "auto_backup": False,
             }
 
             # Test EdgeComputingFramework initialization with database
@@ -309,27 +309,29 @@ class TestDatabaseIntegration(unittest.TestCase):
 
                 framework = EdgeComputingFramework(
                     model_path=None,  # Use default models
-                    device='cpu',
-                    database_config=config
+                    device="cpu",
+                    database_config=config,
                 )
 
                 # Verify database manager was initialized
                 self.assertIsNotNone(framework.db_manager)
 
                 # Test sync functionality
-                framework.sync_queue.append({
-                    'id': 'test_sync_001',
-                    'timestamp': datetime.now(),
-                    'results': {'test': True},
-                    'metadata': {'type': 'test'}
-                })
+                framework.sync_queue.append(
+                    {
+                        "id": "test_sync_001",
+                        "timestamp": datetime.now(),
+                        "results": {"test": True},
+                        "metadata": {"type": "test"},
+                    }
+                )
 
                 # Sync to database
                 framework.sync_when_connected()
 
                 # Verify sync was processed
                 stats = framework.db_manager.get_database_stats()
-                self.assertGreater(stats['decisions_count'], 0)
+                self.assertGreater(stats["decisions_count"], 0)
 
             except ImportError:
                 self.skipTest("EdgeComputingFramework not available")
@@ -345,14 +347,15 @@ class TestDatabaseIntegration(unittest.TestCase):
 
             # Create database config
             config = {
-                'sqlite_path': db_path,
-                'cache_path': os.path.join(temp_dir, "cache"),
-                'enable_cloud_sync': False,
-                'auto_backup': False
+                "sqlite_path": db_path,
+                "cache_path": os.path.join(temp_dir, "cache"),
+                "enable_cloud_sync": False,
+                "auto_backup": False,
             }
 
             # Create database manager
             from realtime.unified_database import DatabaseConfig, UnifiedDatabaseManager
+
             db_config = DatabaseConfig(**config)
             db_manager = UnifiedDatabaseManager(db_config)
 

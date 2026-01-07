@@ -34,9 +34,9 @@ except ImportError:
     except ImportError:
         # Last resort: import from current directory
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
-            "universal_rosetta_stone",
-            Path(__file__).parent / "universal_rosetta_stone.py"
+            "universal_rosetta_stone", Path(__file__).parent / "universal_rosetta_stone.py"
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -61,7 +61,9 @@ def generate_harmonic_signal(freq_hz, duration_ms, sample_rate=48000, amplitude=
     return signal
 
 
-def generate_fm_sweep_signal(start_freq_hz, end_freq_hz, duration_ms, sample_rate=48000, amplitude=0.5):
+def generate_fm_sweep_signal(
+    start_freq_hz, end_freq_hz, duration_ms, sample_rate=48000, amplitude=0.5
+):
     """Generate an FM sweep signal (frequency changes over time)."""
     t = np.linspace(0, duration_ms / 1000, int(sample_rate * duration_ms / 1000))
 
@@ -86,10 +88,10 @@ def generate_transient_signal(duration_ms, sample_rate=48000, amplitude=0.5):
 
     # Create a short Gaussian pulse
     t = np.linspace(-5, 5, num_samples)
-    pulse = amplitude * np.exp(-t**2)
+    pulse = amplitude * np.exp(-(t**2))
 
     # Add some high-frequency content
-    pulse += (amplitude / 2) * np.exp(-((t - 1)**2) / 0.5) * np.sin(2 * np.pi * 10000 * t)
+    pulse += (amplitude / 2) * np.exp(-((t - 1) ** 2) / 0.5) * np.sin(2 * np.pi * 10000 * t)
 
     # Normalize
     pulse = pulse / np.max(np.abs(pulse))
@@ -121,7 +123,7 @@ def generate_rhythmic_signal(tempo_bpm, duration_ms, sample_rate=48000, amplitud
         pulse_start = int(i * sample_rate)
         pulse_width = int(0.01 * sample_rate)  # 10ms pulse
         if pulse_start + pulse_width < len(signal):
-            signal[pulse_start:pulse_start + pulse_width] += amplitude * 0.5
+            signal[pulse_start : pulse_start + pulse_width] += amplitude * 0.5
 
     # Normalize
     signal = signal / np.max(np.abs(signal))
@@ -129,8 +131,9 @@ def generate_rhythmic_signal(tempo_bpm, duration_ms, sample_rate=48000, amplitud
     return signal
 
 
-def generate_mixed_modality_signal(harmonic_ratio=0.5, fm_ratio=0.5,
-                                   duration_ms=100, sample_rate=48000):
+def generate_mixed_modality_signal(
+    harmonic_ratio=0.5, fm_ratio=0.5, duration_ms=100, sample_rate=48000
+):
     """Generate a mixed modality signal (harmonic + FM sweep)."""
     t = np.linspace(0, duration_ms / 1000, int(sample_rate * duration_ms / 1000))
 
@@ -152,8 +155,14 @@ def generate_mixed_modality_signal(harmonic_ratio=0.5, fm_ratio=0.5,
 
 class ModalityDetectionResult:
     """Result of modality detection test."""
-    def __init__(self, species: str, expected_modality: Modality,
-                 detected_modality: Modality, confidence: float = 1.0):
+
+    def __init__(
+        self,
+        species: str,
+        expected_modality: Modality,
+        detected_modality: Modality,
+        confidence: float = 1.0,
+    ):
         self.species = species
         self.expected_modality = expected_modality
         self.detected_modality = detected_modality
@@ -257,8 +266,10 @@ def test_modality_detection():
 
     for i, result in enumerate(results, 1):
         status = "✓" if result.correct else "✗"
-        print(f"{i}. {result.species:20} - Expected: {result.expected_modality.name:10} "
-              f"Detected: {result.detected_modality.name:10} {status}")
+        print(
+            f"{i}. {result.species:20} - Expected: {result.expected_modality.name:10} "
+            f"Detected: {result.detected_modality.name:10} {status}"
+        )
 
     print()
     return accuracy >= 66.7  # At least 2/3 correct
@@ -302,7 +313,9 @@ def test_mixed_modality_detection():
     # Test 3: Mixed - Harmonic dominant (70% harmonic, 30% FM)
     print("Test 3: Mixed Signal - Harmonic Dominant (70% H, 30% FM)")
     print("-" * 40)
-    mixed_h_dominant = generate_mixed_modality_signal(harmonic_ratio=0.7, fm_ratio=0.3, duration_ms=100)
+    mixed_h_dominant = generate_mixed_modality_signal(
+        harmonic_ratio=0.7, fm_ratio=0.3, duration_ms=100
+    )
     detected = analyzer.detect_modality(mixed_h_dominant)
     probs = analyzer.get_modality_probabilities(mixed_h_dominant)
     print(f"Detected: {detected.name}")
@@ -313,7 +326,9 @@ def test_mixed_modality_detection():
     # Test 4: Mixed - FM dominant (30% harmonic, 70% FM)
     print("Test 4: Mixed Signal - FM Sweep Dominant (30% H, 70% FM)")
     print("-" * 40)
-    mixed_fm_dominant = generate_mixed_modality_signal(harmonic_ratio=0.3, fm_ratio=0.7, duration_ms=100)
+    mixed_fm_dominant = generate_mixed_modality_signal(
+        harmonic_ratio=0.3, fm_ratio=0.7, duration_ms=100
+    )
     detected = analyzer.detect_modality(mixed_fm_dominant)
     probs = analyzer.get_modality_probabilities(mixed_fm_dominant)
     print(f"Detected: {detected.name}")
@@ -324,7 +339,9 @@ def test_mixed_modality_detection():
     # Test 5: Balanced mix (50% harmonic, 50% FM)
     print("Test 5: Balanced Mixed Signal (50% H, 50% FM)")
     print("-" * 40)
-    balanced_mixed = generate_mixed_modality_signal(harmonic_ratio=0.5, fm_ratio=0.5, duration_ms=100)
+    balanced_mixed = generate_mixed_modality_signal(
+        harmonic_ratio=0.5, fm_ratio=0.5, duration_ms=100
+    )
     detected = analyzer.detect_modality(balanced_mixed)
     probs = analyzer.get_modality_probabilities(balanced_mixed)
     print(f"Detected: {detected.name}")
@@ -382,21 +399,18 @@ def test_phrase_level_modality():
     harmonic_part = generate_harmonic_signal(freq_hz=7000, duration_ms=50, sample_rate=sample_rate)
 
     # Segment 2: FM sweep (30ms)
-    fm_part = generate_fm_sweep_signal(start_freq_hz=20000, end_freq_hz=40000,
-                                       duration_ms=30, sample_rate=sample_rate)
+    fm_part = generate_fm_sweep_signal(
+        start_freq_hz=20000, end_freq_hz=40000, duration_ms=30, sample_rate=sample_rate
+    )
 
     # Segment 3: Transient click (20ms)
     transient_part = generate_transient_signal(duration_ms=20, sample_rate=sample_rate)
 
     # Combine with gaps
     gap_silence = np.zeros(int(0.01 * sample_rate))  # 10ms gap
-    mixed_recording = np.concatenate([
-        harmonic_part,
-        gap_silence,
-        fm_part,
-        gap_silence,
-        transient_part
-    ])
+    mixed_recording = np.concatenate(
+        [harmonic_part, gap_silence, fm_part, gap_silence, transient_part]
+    )
 
     print("Mixed Recording Composition:")
     print("  Segment 1: Harmonic (7 kHz, 50ms)")
@@ -407,11 +421,7 @@ def test_phrase_level_modality():
 
     # Segment the recording
     analyzer = UniversalRosettaStone(sample_rate=sample_rate)
-    phrases = analyzer.segment_phrases(
-        mixed_recording,
-        min_gap_ms=10,
-        min_phrase_duration_ms=10
-    )
+    phrases = analyzer.segment_phrases(mixed_recording, min_gap_ms=10, min_phrase_duration_ms=10)
 
     print(f"Number of phrases detected: {len(phrases)}")
     print()
@@ -498,16 +508,16 @@ def test_species_specific_modality_profiles():
         print(f"{species}:")
         print(f"  Primary Modality: {profile['primary'].name}")
 
-        if 'secondary' in profile:
-            if isinstance(profile['secondary'], list):
-                secondaries = ", ".join(m.name for m in profile['secondary'])
+        if "secondary" in profile:
+            if isinstance(profile["secondary"], list):
+                secondaries = ", ".join(m.name for m in profile["secondary"])
                 print(f"  Secondary Modalities: {secondaries}")
 
         print(f"  Description: {profile['description']}")
         print(f"  F0 Range: {profile.get('f0_range', 'N/A')}")
 
-        if 'examples' in profile:
-            examples = ", ".join(profile['examples'])
+        if "examples" in profile:
+            examples = ", ".join(profile["examples"])
             print(f"  Examples: {examples}")
 
         print()
@@ -561,5 +571,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error during testing: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from realtime.task_management import (
     DependencyTracker,
@@ -43,7 +43,7 @@ class TestTask:
             type=TaskType.AUDIO_ANALYSIS,
             priority=Priority.HIGH,
             payload={"audio": np.array([0.1] * 1000)},
-            dependencies=[]
+            dependencies=[],
         )
 
         assert task.id == "task_1"
@@ -71,7 +71,9 @@ class TestTask:
         assert not task_b.can_execute({})  # No dependencies completed
         # task_c depends on task_a and task_b
         assert not task_c.can_execute({"task_a": TaskStatus.COMPLETED})
-        assert not task_c.can_execute({"task_a": TaskStatus.COMPLETED, "task_b": TaskStatus.RUNNING})
+        assert not task_c.can_execute(
+            {"task_a": TaskStatus.COMPLETED, "task_b": TaskStatus.RUNNING}
+        )
         assert task_c.can_execute({"task_a": TaskStatus.COMPLETED, "task_b": TaskStatus.COMPLETED})
 
     def test_task_priority_updates(self):
@@ -197,7 +199,7 @@ class TestResourcePool:
         """Test basic resource allocation."""
         pool = ResourcePool(
             total_resources={"cpu": 8, "memory": 16 * 1024 * 1024 * 1024, "gpu": 2},
-            allocation_strategy="static"
+            allocation_strategy="static",
         )
 
         # Allocate resources
@@ -216,8 +218,7 @@ class TestResourcePool:
     def test_resource_starvation_prevention(self):
         """Test prevention of resource starvation."""
         pool = ResourcePool(
-            total_resources={"cpu": 4, "memory": 8 * 1024 * 1024 * 1024},
-            allocation_strategy="fair"
+            total_resources={"cpu": 4, "memory": 8 * 1024 * 1024 * 1024}, allocation_strategy="fair"
         )
 
         # Allocate half the resources
@@ -230,9 +231,7 @@ class TestResourcePool:
 
     def test_resource_deallocation(self):
         """Test resource deallocation."""
-        pool = ResourcePool(
-            total_resources={"cpu": 4, "memory": 8 * 1024 * 1024 * 1024}
-        )
+        pool = ResourcePool(total_resources={"cpu": 4, "memory": 8 * 1024 * 1024 * 1024})
 
         allocation = pool.allocate({"cpu": 2, "memory": 4 * 1024 * 1024 * 1024})
         assert allocation is not None
@@ -247,9 +246,7 @@ class TestResourcePool:
 
     def test_resource_contention(self):
         """Test resource contention resolution."""
-        pool = ResourcePool(
-            total_resources={"cpu": 2, "memory": 4 * 1024 * 1024 * 1024}
-        )
+        pool = ResourcePool(total_resources={"cpu": 2, "memory": 4 * 1024 * 1024 * 1024})
 
         # Concurrent allocations
         def allocate_resources(cpu, memory):
@@ -468,10 +465,10 @@ class TestTaskExecutor:
         light_task.resources = {"cpu": 1, "memory": 512 * 1024 * 1024}
 
         # Mock resource availability
-        with patch.object(executor, '_check_resources') as mock_check:
+        with patch.object(executor, "_check_resources") as mock_check:
             mock_check.side_effect = [
                 True,  # First check - resources available
-                True   # Second check - resources available
+                True,  # Second check - resources available
             ]
 
             result1 = executor.execute_task(heavy_task)
@@ -543,8 +540,10 @@ class TestTaskDag:
         dag = TaskDag()
 
         # Create complex DAG
-        tasks = {f"task_{i}": Task(f"task_{i}", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
-                 for i in range(6)}
+        tasks = {
+            f"task_{i}": Task(f"task_{i}", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
+            for i in range(6)
+        }
         for task in tasks.values():
             dag.add_task(task)
 
@@ -575,8 +574,10 @@ class TestTaskDag:
         dag = TaskDag()
 
         # Create tasks
-        tasks = {f"task_{i}": Task(f"task_{i}", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
-                 for i in range(5)}
+        tasks = {
+            f"task_{i}": Task(f"task_{i}", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
+            for i in range(5)
+        }
         for task in tasks.values():
             dag.add_task(task)
 
@@ -624,7 +625,9 @@ class TestDependencyTracker:
 
         # Add task with no dependencies
         task_d = Task("D", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
-        task_b = Task("B", TaskType.FEATURE_EXTRACTION, Priority.HIGH, payload={}, dependencies=["A"])
+        task_b = Task(
+            "B", TaskType.FEATURE_EXTRACTION, Priority.HIGH, payload={}, dependencies=["A"]
+        )
         tracker.add_task(task_d)
         tracker.add_task(task_b)
 
@@ -639,7 +642,9 @@ class TestDependencyTracker:
 
         # Add tasks with dependencies
         task_a = Task("A", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={})
-        task_b = Task("B", TaskType.FEATURE_EXTRACTION, Priority.HIGH, payload={}, dependencies=["A"])
+        task_b = Task(
+            "B", TaskType.FEATURE_EXTRACTION, Priority.HIGH, payload={}, dependencies=["A"]
+        )
         task_c = Task("C", TaskType.AUDIO_ANALYSIS, Priority.HIGH, payload={}, dependencies=["B"])
 
         tracker.add_task(task_a)
@@ -722,6 +727,7 @@ class TestTaskManager:
 
         # Process with delay to simulate parent execution
         import time
+
         time.sleep(0.1)
 
         results = manager.process_tasks()

@@ -54,7 +54,7 @@ def detect_codas_with_rhythm(audio, sr):
     current_coda_clicks = [peaks[0]]
 
     for i in range(1, len(peaks)):
-        gap_ms = intervals_ms[i-1]
+        gap_ms = intervals_ms[i - 1]
         if gap_ms <= adaptive_threshold:
             current_coda_clicks.append(peaks[i])
         else:
@@ -91,12 +91,12 @@ def analyze_coda_rhythm(click_positions, sr):
         rhythm_regularity = 0.0
 
     return {
-        'num_clicks': len(click_positions),
-        'duration_ms': (click_positions[-1] - click_positions[0]) / sr * 1000,
-        'mean_ici_ms': mean_ici,
-        'std_ici_ms': std_ici,
-        'rhythm_regularity': rhythm_regularity,
-        'icis_ms': icis_ms
+        "num_clicks": len(click_positions),
+        "duration_ms": (click_positions[-1] - click_positions[0]) / sr * 1000,
+        "mean_ici_ms": mean_ici,
+        "std_ici_ms": std_ici,
+        "rhythm_regularity": rhythm_regularity,
+        "icis_ms": icis_ms,
     }
 
 
@@ -110,12 +110,12 @@ def classify_coda_semantic(coda):
     - MEDIUM: 10-49 clicks (intermediate information)
     - LONG: >= 50 clicks (complex information encoding)
     """
-    if coda['num_clicks'] < 10:
-        return 'SHORT'
-    elif coda['num_clicks'] < 50:
-        return 'MEDIUM'
+    if coda["num_clicks"] < 10:
+        return "SHORT"
+    elif coda["num_clicks"] < 50:
+        return "MEDIUM"
     else:
-        return 'LONG'
+        return "LONG"
 
 
 def compare_with_prior_research(all_codas):
@@ -128,20 +128,22 @@ def compare_with_prior_research(all_codas):
 
     # Current analysis statistics
     total_codas = len(all_codas)
-    coda_lengths = [c['num_clicks'] for c in all_codas]
-    rhythm_scores = [c['rhythm_regularity'] for c in all_codas]
+    coda_lengths = [c["num_clicks"] for c in all_codas]
+    rhythm_scores = [c["rhythm_regularity"] for c in all_codas]
 
     # Classify into semantic categories
-    short_codas = [c for c in all_codas if c['num_clicks'] < 10]
-    medium_codas = [c for c in all_codas if 10 <= c['num_clicks'] < 50]
-    long_codas = [c for c in all_codas if c['num_clicks'] >= 50]
+    short_codas = [c for c in all_codas if c["num_clicks"] < 10]
+    medium_codas = [c for c in all_codas if 10 <= c["num_clicks"] < 50]
+    long_codas = [c for c in all_codas if c["num_clicks"] >= 50]
 
     print("\n📊 OVERALL STATISTICS:")
     print("-" * 80)
     print(f"{'Metric':<30} {'Current':<20} {'Prior Research':<20}")
     print("-" * 80)
     print(f"{'Total codas analyzed':<30} {total_codas:<20} {404:<20}")
-    print(f"{'Mean clicks per coda':<30} {np.mean(coda_lengths):.1f} ± {np.std(coda_lengths):.1f}<{69.6: <10} ± 215.3")
+    print(
+        f"{'Mean clicks per coda':<30} {np.mean(coda_lengths):.1f} ± {np.std(coda_lengths):.1f}<{69.6: <10} ± 215.3"
+    )
     print(f"{'Click range':<30} {min(coda_lengths)}-{max(coda_lengths):<13} {3}-{1933:<10}")
     print(f"{'Mean rhythm regularity':<30} {np.mean(rhythm_scores):.3f}<{0.691: <10}")
 
@@ -159,33 +161,47 @@ def compare_with_prior_research(all_codas):
 
     print(f"{'Category':<15} {'Current':<15} {'Prior Research':<20} {'Match':<10}")
     print("-" * 80)
-    print(f"{'SHORT (<10)':<15} {len(short_codas):4d} ({current_short_pct:5.1f}%) {94:4d} ({prior_short_pct:5.1f}%) {'✓' if abs(current_short_pct - prior_short_pct) < 5 else 'diff':<10}")
-    print(f"{'MEDIUM (10-49)':<15} {len(medium_codas):4d} ({current_medium_pct:5.1f}%) {61:4d} ({prior_medium_pct:5.1f}%) {'✓' if abs(current_medium_pct - prior_medium_pct) < 5 else 'diff':<10}")
-    print(f"{'LONG (50+)':<15} {len(long_codas):4d} ({current_long_pct:5.1f}%) {249:4d} ({prior_long_pct:5.1f}%) {'✓' if abs(current_long_pct - prior_long_pct) < 5 else 'diff':<10}")
+    print(
+        f"{'SHORT (<10)':<15} {len(short_codas):4d} ({current_short_pct:5.1f}%) {94:4d} ({prior_short_pct:5.1f}%) {'✓' if abs(current_short_pct - prior_short_pct) < 5 else 'diff':<10}"
+    )
+    print(
+        f"{'MEDIUM (10-49)':<15} {len(medium_codas):4d} ({current_medium_pct:5.1f}%) {61:4d} ({prior_medium_pct:5.1f}%) {'✓' if abs(current_medium_pct - prior_medium_pct) < 5 else 'diff':<10}"
+    )
+    print(
+        f"{'LONG (50+)':<15} {len(long_codas):4d} ({current_long_pct:5.1f}%) {249:4d} ({prior_long_pct:5.1f}%) {'✓' if abs(current_long_pct - prior_long_pct) < 5 else 'diff':<10}"
+    )
 
     print("\n📊 SEMANTIC CATEGORY CHARACTERISTICS:")
     print("-" * 80)
-    print(f"{'Category':<15} {'Mean Clicks':<15} {'Rhythm Score':<15} {'Current Mean':<20} {'Prior Research':<15}")
+    print(
+        f"{'Category':<15} {'Mean Clicks':<15} {'Rhythm Score':<15} {'Current Mean':<20} {'Prior Research':<15}"
+    )
     print("-" * 80)
 
     if short_codas:
-        current_short_clicks = np.mean([c['num_clicks'] for c in short_codas])
-        current_short_rhythm = np.mean([c['rhythm_regularity'] for c in short_codas])
-        print(f"{'SHORT':<15} {current_short_clicks:<15.1f} {current_short_rhythm:<15.3f} {'3.9 clicks, 0.825 rhythm':<20}")
+        current_short_clicks = np.mean([c["num_clicks"] for c in short_codas])
+        current_short_rhythm = np.mean([c["rhythm_regularity"] for c in short_codas])
+        print(
+            f"{'SHORT':<15} {current_short_clicks:<15.1f} {current_short_rhythm:<15.3f} {'3.9 clicks, 0.825 rhythm':<20}"
+        )
     else:
         print(f"{'SHORT':<15} {'N/A':<15} {'N/A':<15} {'3.9 clicks, 0.825 rhythm':<20}")
 
     if medium_codas:
-        current_medium_clicks = np.mean([c['num_clicks'] for c in medium_codas])
-        current_medium_rhythm = np.mean([c['rhythm_regularity'] for c in medium_codas])
-        print(f"{'MEDIUM':<15} {current_medium_clicks:<15.1f} {current_medium_rhythm:<15.3f} {'6.9 clicks, 0.736 rhythm':<20}")
+        current_medium_clicks = np.mean([c["num_clicks"] for c in medium_codas])
+        current_medium_rhythm = np.mean([c["rhythm_regularity"] for c in medium_codas])
+        print(
+            f"{'MEDIUM':<15} {current_medium_clicks:<15.1f} {current_medium_rhythm:<15.3f} {'6.9 clicks, 0.736 rhythm':<20}"
+        )
     else:
         print(f"{'MEDIUM':<15} {'N/A':<15} {'N/A':<15} {'6.9 clicks, 0.736 rhythm':<20}")
 
     if long_codas:
-        current_long_clicks = np.mean([c['num_clicks'] for c in long_codas])
-        current_long_rhythm = np.mean([c['rhythm_regularity'] for c in long_codas])
-        print(f"{'LONG':<15} {current_long_clicks:<15.1f} {current_long_rhythm:<15.3f} {'109.8 clicks, 0.630 rhythm':<20}")
+        current_long_clicks = np.mean([c["num_clicks"] for c in long_codas])
+        current_long_rhythm = np.mean([c["rhythm_regularity"] for c in long_codas])
+        print(
+            f"{'LONG':<15} {current_long_clicks:<15.1f} {current_long_rhythm:<15.3f} {'109.8 clicks, 0.630 rhythm':<20}"
+        )
     else:
         print(f"{'LONG':<15} {'N/A':<15} {'N/A':<15} {'109.8 clicks, 0.630 rhythm':<20}")
 
@@ -195,7 +211,7 @@ def compare_with_prior_research(all_codas):
     # Combine all ICIs
     all_icis = []
     for coda in all_codas:
-        all_icis.extend(coda['icis_ms'])
+        all_icis.extend(coda["icis_ms"])
 
     print(f"{'Percentile':<15} {'Current (ms)':<20} {'Interpretation':<30}")
     print("-" * 80)

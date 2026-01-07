@@ -22,6 +22,7 @@ from dataclasses import dataclass
 # Data Models
 # =============================================================================
 
+
 @dataclass
 class Vector17D:
     """29-dimensional acoustic feature vector (expanded from 17D/20D)
@@ -29,6 +30,7 @@ class Vector17D:
     Note: Named Vector17D for backwards compatibility, now contains 29 fields.
     Added features: shimmer, spectral_flux, harmonicity, mfcc_5-13 (9 new MFCCs)
     """
+
     # === Fundamental (3 features) ===
     mean_f0_hz: float
     duration_ms: float
@@ -76,6 +78,7 @@ class Vector17D:
 @dataclass
 class VectorDelta:
     """Delta between two vectors (matches expanded Vector17D implementation)"""
+
     delta_mean_f0_hz: float
     delta_duration_ms: float
     delta_f0_range_hz: float
@@ -112,6 +115,7 @@ class VectorDelta:
 @dataclass
 class AudioPhrase:
     """Audio phrase from database"""
+
     key: str
     features: Vector17D
     species: str
@@ -120,6 +124,7 @@ class AudioPhrase:
 # =============================================================================
 # Cognitive Interaction Engine
 # =============================================================================
+
 
 class CognitiveInteractionEngine:
     """
@@ -132,13 +137,7 @@ class CognitiveInteractionEngine:
     4. Delta → Rust Synthesis Parameters
     """
 
-    def __init__(
-        self,
-        algebra_map,
-        phrase_db,
-        synthesizer,
-        max_safe_warp: float = 0.2
-    ):
+    def __init__(self, algebra_map, phrase_db, synthesizer, max_safe_warp: float = 0.2):
         """
         Initialize the cognitive interaction engine.
 
@@ -154,11 +153,7 @@ class CognitiveInteractionEngine:
         self.max_safe_warp = max_safe_warp
         self.logger = logging.getLogger(__name__)
 
-    def generate_response(
-        self,
-        intent: str,
-        intensity: float
-    ) -> Optional[Dict[str, Any]]:
+    def generate_response(self, intent: str, intensity: float) -> Optional[Dict[str, Any]]:
         """
         Generate a response audio buffer from intent and intensity.
 
@@ -178,8 +173,7 @@ class CognitiveInteractionEngine:
         try:
             # Step 1: Calculate virtual target
             virtual_target = self.algebra_map.generate_graded_vector(
-                intent=intent,
-                intensity=intensity
+                intent=intent, intensity=intensity
             )
 
             if virtual_target is None:
@@ -197,29 +191,22 @@ class CognitiveInteractionEngine:
             delta = self._calculate_delta(virtual_target, nearest_phrase.features)
 
             # Step 4: Apply safety clamping
-            clamped_delta = self._apply_safety_clamp(
-                delta,
-                nearest_phrase.features,
-                virtual_target
-            )
+            clamped_delta = self._apply_safety_clamp(delta, nearest_phrase.features, virtual_target)
 
             # Step 5: Convert delta to Rust parameters
-            warp_params = self._delta_to_rust_parameters(
-                clamped_delta,
-                nearest_phrase.features
-            )
+            warp_params = self._delta_to_rust_parameters(clamped_delta, nearest_phrase.features)
 
             # Step 6: Send to synthesizer
             self.synthesizer.set_warp_delta(warp_params)
 
             return {
-                'intent': intent,
-                'intensity': intensity,
-                'source_phrase': nearest_phrase.key,
-                'virtual_target': virtual_target,
-                'delta': clamped_delta,
-                'warp_params': warp_params,
-                'was_clamped': clamped_delta != delta
+                "intent": intent,
+                "intensity": intensity,
+                "source_phrase": nearest_phrase.key,
+                "virtual_target": virtual_target,
+                "delta": clamped_delta,
+                "warp_params": warp_params,
+                "was_clamped": clamped_delta != delta,
             }
 
         except Exception as e:
@@ -232,7 +219,8 @@ class CognitiveInteractionEngine:
             delta_mean_f0_hz=target.mean_f0_hz - anchor.mean_f0_hz,
             delta_duration_ms=target.duration_ms - anchor.duration_ms,
             delta_f0_range_hz=target.f0_range_hz - anchor.f0_range_hz,
-            delta_harmonic_to_noise_ratio=target.harmonic_to_noise_ratio - anchor.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio=target.harmonic_to_noise_ratio
+            - anchor.harmonic_to_noise_ratio,
             delta_spectral_flatness=target.spectral_flatness - anchor.spectral_flatness,
             delta_harmonicity=target.harmonicity - anchor.harmonicity,
             delta_attack_time_ms=target.attack_time_ms - anchor.attack_time_ms,
@@ -259,14 +247,12 @@ class CognitiveInteractionEngine:
             delta_spectral_flux=target.spectral_flux - anchor.spectral_flux,
             delta_median_ici_ms=target.median_ici_ms - anchor.median_ici_ms,
             delta_onset_rate_hz=target.onset_rate_hz - anchor.onset_rate_hz,
-            delta_ici_coefficient_of_variation=target.ici_coefficient_of_variation - anchor.ici_coefficient_of_variation,
+            delta_ici_coefficient_of_variation=target.ici_coefficient_of_variation
+            - anchor.ici_coefficient_of_variation,
         )
 
     def _apply_safety_clamp(
-        self,
-        delta: VectorDelta,
-        anchor: Vector17D,
-        target: Vector17D
+        self, delta: VectorDelta, anchor: Vector17D, target: Vector17D
     ) -> VectorDelta:
         """
         Apply safety clamping to prevent over-warping.
@@ -320,7 +306,8 @@ class CognitiveInteractionEngine:
                 delta_spectral_flux=delta.delta_spectral_flux * clamp_factor,
                 delta_median_ici_ms=delta.delta_median_ici_ms * clamp_factor,
                 delta_onset_rate_hz=delta.delta_onset_rate_hz * clamp_factor,
-                delta_ici_coefficient_of_variation=delta.delta_ici_coefficient_of_variation * clamp_factor,
+                delta_ici_coefficient_of_variation=delta.delta_ici_coefficient_of_variation
+                * clamp_factor,
             )
 
     def _calculate_distance(self, v1: Vector17D, v2: Vector17D) -> float:
@@ -342,13 +329,9 @@ class CognitiveInteractionEngine:
         flatness_diff = (v1.spectral_flatness - v2.spectral_flatness) / flatness_range
 
         # Euclidean distance
-        return (f0_diff**2 + dur_diff**2 + hnr_diff**2 + flatness_diff**2)**0.5
+        return (f0_diff**2 + dur_diff**2 + hnr_diff**2 + flatness_diff**2) ** 0.5
 
-    def _delta_to_rust_parameters(
-        self,
-        delta: VectorDelta,
-        anchor: Vector17D
-    ) -> Dict[str, float]:
+    def _delta_to_rust_parameters(self, delta: VectorDelta, anchor: Vector17D) -> Dict[str, float]:
         """
         Convert 17D delta to Rust synthesis parameters.
 
@@ -373,9 +356,9 @@ class CognitiveInteractionEngine:
             duration_scale = 1.0
 
         return {
-            'pitch_shift_ratio': pitch_shift_ratio,
-            'roughness_amount': roughness_amount,
-            'duration_scale': duration_scale,
-            'delta_mean_f0_hz': delta.delta_mean_f0_hz,
-            'delta_spectral_flatness': delta.delta_spectral_flatness,
+            "pitch_shift_ratio": pitch_shift_ratio,
+            "roughness_amount": roughness_amount,
+            "duration_scale": duration_scale,
+            "delta_mean_f0_hz": delta.delta_mean_f0_hz,
+            "delta_spectral_flatness": delta.delta_spectral_flatness,
         }

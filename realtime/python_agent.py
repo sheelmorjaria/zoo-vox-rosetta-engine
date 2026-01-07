@@ -18,13 +18,14 @@ import zmq
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("PythonAgent")
 
+
 class AgentState(Enum):
     """Probabilistic contextual agent states"""
+
     SILENCE = "silence"
     CONTACT = "contact"
     ALARM = "alarm"
@@ -32,9 +33,11 @@ class AgentState(Enum):
     NEUTRAL = "neutral"
     UNCERTAIN = "uncertain"
 
+
 @dataclass
 class AudioFeatures:
     """Audio features from Rust engine"""
+
     rms: float
     zcr: float
     spectral_centroid: float
@@ -43,14 +46,17 @@ class AudioFeatures:
     mfcc: List[float]
     f0_estimate: Optional[float]
 
+
 @dataclass
 class SynthesisCommand:
     """Command sent to Rust engine for synthesis"""
+
     phrase_id: int
     pitch_shift: float
     time_stretch: float
     gain: float
     emotional_state: Optional[Dict[str, float]]
+
 
 class ContextualAgent:
     """Probabilistic contextual agent with 6 states"""
@@ -63,7 +69,7 @@ class ContextualAgent:
             AgentState.ALARM: 0.1,
             AgentState.FOOD: 0.1,
             AgentState.NEUTRAL: 0.5,
-            AgentState.UNCERTAIN: 0.1
+            AgentState.UNCERTAIN: 0.1,
         }
 
         # Context history for learning
@@ -79,26 +85,32 @@ class ContextualAgent:
             AgentState.FOOD: {"urgency": 0.4, "aggression": 0.1, "playfulness": 0.6},
             AgentState.NEUTRAL: {"urgency": 0.3, "aggression": 0.2, "playfulness": 0.5},
             AgentState.SILENCE: {"urgency": 0.1, "aggression": 0.0, "playfulness": 0.2},
-            AgentState.UNCERTAIN: {"urgency": 0.5, "aggression": 0.3, "playfulness": 0.4}
+            AgentState.UNCERTAIN: {"urgency": 0.5, "aggression": 0.3, "playfulness": 0.4},
         }
 
-    def process_audio_features(self, features: AudioFeatures, context: str = "unknown") -> Dict[str, Any]:
+    def process_audio_features(
+        self, features: AudioFeatures, context: str = "unknown"
+    ) -> Dict[str, Any]:
         """Process audio features and update context state"""
         # Extract meaningful features
-        feature_vector = np.array([
-            features.rms,
-            features.zcr,
-            features.spectral_centroid / 10000.0,  # Normalize
-            features.f0_estimate / 10000.0 if features.f0_estimate else 0.0
-        ])
+        feature_vector = np.array(
+            [
+                features.rms,
+                features.zcr,
+                features.spectral_centroid / 10000.0,  # Normalize
+                features.f0_estimate / 10000.0 if features.f0_estimate else 0.0,
+            ]
+        )
 
         # Update context history
-        self.context_history.append({
-            "timestamp": features.timestamp,
-            "context": context,
-            "features": feature_vector.tolist(),
-            "state_probs": self.state_probabilities.copy()
-        })
+        self.context_history.append(
+            {
+                "timestamp": features.timestamp,
+                "context": context,
+                "features": feature_vector.tolist(),
+                "state_probs": self.state_probabilities.copy(),
+            }
+        )
 
         # Perform context inference (simplified)
         self._update_context_inference(feature_vector, context)
@@ -106,13 +118,15 @@ class ContextualAgent:
         # Determine most likely state
         most_likely_state = max(self.state_probabilities.items(), key=lambda x: x[1])[0]
 
-        logger.info(f"Context inferred: {most_likely_state.value} (prob: {self.state_probabilities[most_likely_state]:.3f})")
+        logger.info(
+            f"Context inferred: {most_likely_state.value} (prob: {self.state_probabilities[most_likely_state]:.3f})"
+        )
 
         return {
             "most_likely_state": most_likely_state.value,
             "state_probabilities": {s.value: p for s, p in self.state_probabilities.items()},
             "confidence": self.state_probabilities[most_likely_state],
-            "context": context
+            "context": context,
         }
 
     def _update_context_inference(self, feature_vector: np.ndarray, context: str):
@@ -170,7 +184,9 @@ class ContextualAgent:
 
         return emotional_params
 
-    def update_phrase_context_association(self, phrase_id: int, context: str, response_positive: bool = True):
+    def update_phrase_context_association(
+        self, phrase_id: int, context: str, response_positive: bool = True
+    ):
         """Update phrase-to-context associations for learning"""
         if phrase_id not in self.phrase_context_associations:
             self.phrase_context_associations[phrase_id] = {}
@@ -180,7 +196,7 @@ class ContextualAgent:
                 "count": 0,
                 "success_rate": 0.0,
                 "total_responses": 0,
-                "successful_responses": 0
+                "successful_responses": 0,
             }
 
         association = self.phrase_context_associations[phrase_id][context]
@@ -190,10 +206,15 @@ class ContextualAgent:
         if response_positive:
             association["successful_responses"] += 1
 
-        association["success_rate"] = association["successful_responses"] / association["total_responses"]
+        association["success_rate"] = (
+            association["successful_responses"] / association["total_responses"]
+        )
 
-        logger.info(f"Updated phrase {phrase_id} context association for {context}: "
-                   f"success_rate = {association['success_rate']:.3f}")
+        logger.info(
+            f"Updated phrase {phrase_id} context association for {context}: "
+            f"success_rate = {association['success_rate']:.3f}"
+        )
+
 
 class CognitiveProcessor:
     """Advanced cognitive processing layer"""
@@ -205,8 +226,9 @@ class CognitiveProcessor:
         self.working_memory = deque(maxlen=50)
         self.adaptation_threshold = 0.7
 
-    def process_audio_cognitively(self, features: AudioFeatures,
-                                 additional_context: Dict[str, Any] = None) -> Dict[str, Any]:
+    def process_audio_cognitively(
+        self, features: AudioFeatures, additional_context: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """Process audio through cognitive framework"""
         start_time = time.time()
 
@@ -217,12 +239,14 @@ class CognitiveProcessor:
         context_result = self.agent.process_audio_features(features, context)
 
         # Update working memory
-        self.working_memory.append({
-            "timestamp": features.timestamp,
-            "context": context,
-            "context_result": context_result,
-            "features": asdict(features)
-        })
+        self.working_memory.append(
+            {
+                "timestamp": features.timestamp,
+                "context": context,
+                "context_result": context_result,
+                "features": asdict(features),
+            }
+        )
 
         # Determine synthesis parameters
         emotional_params = self.agent.get_emotional_parameters()
@@ -243,11 +267,12 @@ class CognitiveProcessor:
             "emotional_parameters": emotional_params,
             "synthesis_command": synthesis_cmd,
             "attention_level": self.attention_focus,
-            "working_memory_size": len(self.working_memory)
+            "working_memory_size": len(self.working_memory),
         }
 
-    def _generate_synthesis_command(self, context_result: Dict,
-                                  emotional_params: Dict[str, float]) -> SynthesisCommand:
+    def _generate_synthesis_command(
+        self, context_result: Dict, emotional_params: Dict[str, float]
+    ) -> SynthesisCommand:
         """Generate synthesis command based on context and emotional state"""
         # Map context to phrase IDs (simplified mapping)
         context_to_phrase = {
@@ -255,7 +280,7 @@ class CognitiveProcessor:
             "alarm_call": 2,
             "food_call": 3,
             "neutral": 4,
-            "unknown": 4
+            "unknown": 4,
         }
 
         most_likely_state = context_result["most_likely_state"]
@@ -288,11 +313,10 @@ class CognitiveProcessor:
             pitch_shift=pitch_shift,
             time_stretch=time_stretch,
             gain=gain,
-            emotional_state=emotional_params
+            emotional_state=emotional_params,
         )
 
-    def _update_long_term_memory(self, features: AudioFeatures,
-                               context_result: Dict, context: str):
+    def _update_long_term_memory(self, features: AudioFeatures, context_result: Dict, context: str):
         """Update long-term memory with significant events"""
         memory_key = f"{context}_{int(features.timestamp)}"
 
@@ -302,7 +326,7 @@ class CognitiveProcessor:
             "context_state": context_result["most_likely_state"],
             "features": asdict(features),
             "emotional_state": self.agent.get_emotional_parameters(),
-            "significance": context_result["confidence"]
+            "significance": context_result["confidence"],
         }
 
         # Keep only recent memories (last 1000)
@@ -311,6 +335,7 @@ class CognitiveProcessor:
             del self.long_term_memory[oldest_key]
 
         logger.debug(f"Updated long-term memory: {memory_key}")
+
 
 class PythonAgent:
     """Main Python agent class"""
@@ -326,7 +351,7 @@ class PythonAgent:
             "messages_processed": 0,
             "synthesis_commands_sent": 0,
             "processing_errors": 0,
-            "avg_processing_time": 0.0
+            "avg_processing_time": 0.0,
         }
 
     async def initialize(self):
@@ -356,8 +381,7 @@ class PythonAgent:
 
                 # Process cognitively
                 result = self.context_processor.process_audio_cognitively(
-                    features,
-                    message.get("context", {})
+                    features, message.get("context", {})
                 )
 
                 # Update statistics
@@ -393,7 +417,7 @@ class PythonAgent:
             message = {
                 "type": "synthesis_command",
                 "data": asdict(cmd),
-                "timestamp": int(time.time() * 1000)
+                "timestamp": int(time.time() * 1000),
             }
 
             packed = msgpack.packb(message, use_bin_type=True)
@@ -460,7 +484,7 @@ class PythonAgent:
             message = {
                 "type": "heartbeat",
                 "timestamp": int(time.time() * 1000),
-                "agent_stats": self.stats
+                "agent_stats": self.stats,
             }
 
             packed = msgpack.packb(message, use_bin_type=True)
@@ -485,15 +509,18 @@ class PythonAgent:
         logger.info(f"Agent stats: {self.stats}")
         logger.info("Python Agent shutdown complete")
 
+
 async def main():
     """Main entry point"""
     import argparse
 
     parser = argparse.ArgumentParser(description="Python Agent for Hybrid Audio Architecture")
-    parser.add_argument("--ipc-endpoint", default="ipc:///tmp/animal_comm.ipc",
-                       help="IPC endpoint for communication")
-    parser.add_argument("--verbose", action="store_true",
-                       help="Enable verbose logging")
+    parser.add_argument(
+        "--ipc-endpoint",
+        default="ipc:///tmp/animal_comm.ipc",
+        help="IPC endpoint for communication",
+    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
     args = parser.parse_args()
 
@@ -506,6 +533,7 @@ async def main():
         await agent.run()
     except KeyboardInterrupt:
         logger.info("Shutting down gracefully...")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -16,6 +16,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -45,15 +46,11 @@ def test_marmoset_file(filepath, duration_sec=2):
         phrases_adaptive = analyzer.segment_phrases(
             audio,
             min_gap_ms=30.0,  # Use 30ms for marmosets (optimized parameter)
-            use_adaptive_gap=True
+            use_adaptive_gap=True,
         )
 
         # Test without adaptive gap
-        phrases_fixed = analyzer.segment_phrases(
-            audio,
-            min_gap_ms=30.0,
-            use_adaptive_gap=False
-        )
+        phrases_fixed = analyzer.segment_phrases(audio, min_gap_ms=30.0, use_adaptive_gap=False)
 
         # Get modality distribution
         modality_counts = {}
@@ -61,18 +58,18 @@ def test_marmoset_file(filepath, duration_sec=2):
             modality_counts[phrase.modality.name] = modality_counts.get(phrase.modality.name, 0) + 1
 
         return {
-            'filename': Path(filepath).name,
-            'duration_sec': len(audio) / sr,
-            'sample_rate': sr,
-            'overall_modality': overall_modality.name,
-            'adaptive_threshold_ms': adaptive_threshold,
-            'phrases_adaptive': len(phrases_adaptive),
-            'phrases_fixed': len(phrases_fixed),
-            'improvement': len(phrases_adaptive) - len(phrases_fixed),
-            'modality_distribution': modality_counts
+            "filename": Path(filepath).name,
+            "duration_sec": len(audio) / sr,
+            "sample_rate": sr,
+            "overall_modality": overall_modality.name,
+            "adaptive_threshold_ms": adaptive_threshold,
+            "phrases_adaptive": len(phrases_adaptive),
+            "phrases_fixed": len(phrases_fixed),
+            "improvement": len(phrases_adaptive) - len(phrases_fixed),
+            "modality_distribution": modality_counts,
         }
     except Exception as e:
-        return {'error': str(e), 'filename': Path(filepath).name}
+        return {"error": str(e), "filename": Path(filepath).name}
 
 
 def main():
@@ -126,7 +123,7 @@ def main():
     for i, filepath in enumerate(test_files):
         result = test_marmoset_file(filepath, duration_sec=2)
 
-        if 'error' in result:
+        if "error" in result:
             errors.append(result)
             continue
 
@@ -134,7 +131,7 @@ def main():
 
         # Print progress every 10 files
         if (i + 1) % 10 == 0:
-            print(f"Progress: {i+1}/{len(test_files)} files processed...")
+            print(f"Progress: {i + 1}/{len(test_files)} files processed...")
 
     # Summary
     print("\n" + "=" * 80)
@@ -155,7 +152,7 @@ def main():
     print("\n📊 MODALITY DISTRIBUTION:")
     modality_counts = {}
     for r in results:
-        m = r['overall_modality']
+        m = r["overall_modality"]
         modality_counts[m] = modality_counts.get(m, 0) + 1
 
     for modality, count in sorted(modality_counts.items()):
@@ -163,42 +160,52 @@ def main():
         print(f"  {modality:15s}: {count:3d} ({percentage:5.1f}%)")
 
     print("\n📊 ADAPTIVE THRESHOLD STATISTICS:")
-    thresholds = [r['adaptive_threshold_ms'] for r in results]
+    thresholds = [r["adaptive_threshold_ms"] for r in results]
     print(f"  Mean: {np.mean(thresholds):.2f} ms")
     print(f"  Median: {np.median(thresholds):.2f} ms")
     print(f"  Range: {np.min(thresholds):.2f} - {np.max(thresholds):.2f} ms")
     print(f"  Std: {np.std(thresholds):.2f} ms")
 
     print("\n📊 PHRASE DETECTION:")
-    total_phrases_adaptive = sum(r['phrases_adaptive'] for r in results)
-    total_phrases_fixed = sum(r['phrases_fixed'] for r in results)
-    files_with_phrases_adaptive = sum(1 for r in results if r['phrases_adaptive'] > 0)
-    files_with_phrases_fixed = sum(1 for r in results if r['phrases_fixed'] > 0)
+    total_phrases_adaptive = sum(r["phrases_adaptive"] for r in results)
+    total_phrases_fixed = sum(r["phrases_fixed"] for r in results)
+    files_with_phrases_adaptive = sum(1 for r in results if r["phrases_adaptive"] > 0)
+    files_with_phrases_fixed = sum(1 for r in results if r["phrases_fixed"] > 0)
 
     print(f"  Total phrases (adaptive): {total_phrases_adaptive}")
     print(f"  Total phrases (fixed 30ms): {total_phrases_fixed}")
-    print(f"  Files with phrases (adaptive): {files_with_phrases_adaptive}/{len(results)} ({files_with_phrases_adaptive/len(results)*100:.1f}%)")
-    print(f"  Files with phrases (fixed): {files_with_phrases_fixed}/{len(results)} ({files_with_phrases_fixed/len(results)*100:.1f}%)")
+    print(
+        f"  Files with phrases (adaptive): {files_with_phrases_adaptive}/{len(results)} ({files_with_phrases_adaptive / len(results) * 100:.1f}%)"
+    )
+    print(
+        f"  Files with phrases (fixed): {files_with_phrases_fixed}/{len(results)} ({files_with_phrases_fixed / len(results) * 100:.1f}%)"
+    )
 
     # Improvement analysis
-    improvements = [r['improvement'] for r in results]
+    improvements = [r["improvement"] for r in results]
     files_with_improvement = sum(1 for i in improvements if i > 0)
     files_with_decrease = sum(1 for i in improvements if i < 0)
     files_same = sum(1 for i in improvements if i == 0)
     total_improvement = sum(improvements)
 
     print("\n📊 ADAPTIVE GAP EFFECT:")
-    print(f"  Files with improvement: {files_with_improvement}/{len(results)} ({files_with_improvement/len(results)*100:.1f}%)")
-    print(f"  Files with decrease: {files_with_decrease}/{len(results)} ({files_with_decrease/len(results)*100:.1f}%)")
-    print(f"  Files unchanged: {files_same}/{len(results)} ({files_same/len(results)*100:.1f}%)")
+    print(
+        f"  Files with improvement: {files_with_improvement}/{len(results)} ({files_with_improvement / len(results) * 100:.1f}%)"
+    )
+    print(
+        f"  Files with decrease: {files_with_decrease}/{len(results)} ({files_with_decrease / len(results) * 100:.1f}%)"
+    )
+    print(
+        f"  Files unchanged: {files_same}/{len(results)} ({files_same / len(results) * 100:.1f}%)"
+    )
     print(f"  Net change: {total_improvement:+d} phrases")
 
     # For HARMONIC signals, adaptive should have minimal effect
-    harmonic_results = [r for r in results if r['overall_modality'] == 'HARMONIC']
+    harmonic_results = [r for r in results if r["overall_modality"] == "HARMONIC"]
     if harmonic_results:
         print(f"\n📊 HARMONIC FILES (n={len(harmonic_results)}):")
-        harmonic_adaptive = sum(r['phrases_adaptive'] for r in harmonic_results)
-        harmonic_fixed = sum(r['phrases_fixed'] for r in harmonic_results)
+        harmonic_adaptive = sum(r["phrases_adaptive"] for r in harmonic_results)
+        harmonic_fixed = sum(r["phrases_fixed"] for r in harmonic_results)
         print(f"  Phrases (adaptive): {harmonic_adaptive}")
         print(f"  Phrases (fixed): {harmonic_fixed}")
         if harmonic_fixed > 0:
@@ -209,7 +216,7 @@ def main():
     print("\n📊 DETECTED PHRASE MODALITY:")
     phrase_modality_counts = {}
     for r in results:
-        for modality, count in r['modality_distribution'].items():
+        for modality, count in r["modality_distribution"].items():
             phrase_modality_counts[modality] = phrase_modality_counts.get(modality, 0) + count
 
     total_detected_phrases = sum(phrase_modality_counts.values())

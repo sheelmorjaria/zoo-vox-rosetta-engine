@@ -44,17 +44,12 @@ class TestVectorDeltaCommands(unittest.TestCase):
         num_samples = int(duration_ms / 1000.0 * 22050)
         frequency_hz = 6800.0
         self.audio_buffer = [
-            0.5 * np.sin(2.0 * np.pi * frequency_hz * i / 22050.0)
-            for i in range(num_samples)
+            0.5 * np.sin(2.0 * np.pi * frequency_hz * i / 22050.0) for i in range(num_samples)
         ]
 
     def test_source_metadata_creation(self):
         """Test SourceMetadata object creation."""
-        metadata = SourceMetadata(
-            mean_f0_hz=6800.0,
-            duration_ms=50.0,
-            f0_range_hz=400.0
-        )
+        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
 
         # Use getter methods
         self.assertEqual(metadata.get_mean_f0_hz(), 6800.0)
@@ -69,11 +64,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
 
     def test_load_source_with_metadata(self):
         """Test loading source audio with metadata."""
-        metadata = SourceMetadata(
-            mean_f0_hz=6800.0,
-            duration_ms=50.0,
-            f0_range_hz=400.0
-        )
+        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
 
         # Should not raise any errors
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
@@ -162,18 +153,14 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_apply_vector_delta_complete(self):
         """Test complete vector delta application (pitch + duration + range)."""
         # Load source with known metadata
-        metadata = SourceMetadata(
-            mean_f0_hz=6800.0,
-            duration_ms=50.0,
-            f0_range_hz=400.0
-        )
+        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Apply vector delta (simulating acoustic algebra output)
         # From virtual phrase (7000Hz, 40ms, 500Hz) minus source (6800Hz, 50ms, 400Hz)
-        delta_f0 = 200.0      # 7000 - 6800 = +200Hz
-        delta_dur = -10.0     # 40 - 50 = -10ms
-        delta_range = 100.0   # 500 - 400 = +100Hz
+        delta_f0 = 200.0  # 7000 - 6800 = +200Hz
+        delta_dur = -10.0  # 40 - 50 = -10ms
+        delta_range = 100.0  # 500 - 400 = +100Hz
 
         self.synth.apply_vector_delta(delta_f0, delta_dur, delta_range)
 
@@ -281,15 +268,12 @@ class TestAcousticAlgebraIntegration(unittest.TestCase):
         # Create test audio
         num_samples = int(50.0 / 1000.0 * 22050)
         audio_buffer = [
-            0.5 * np.sin(2.0 * np.pi * nearest_f0 * i / 22050.0)
-            for i in range(num_samples)
+            0.5 * np.sin(2.0 * np.pi * nearest_f0 * i / 22050.0) for i in range(num_samples)
         ]
 
         # Load with nearest phrase metadata
         metadata = SourceMetadata(
-            mean_f0_hz=nearest_f0,
-            duration_ms=nearest_dur,
-            f0_range_hz=nearest_range
+            mean_f0_hz=nearest_f0, duration_ms=nearest_dur, f0_range_hz=nearest_range
         )
         synth.load_source_with_metadata(audio_buffer, metadata)
 
@@ -310,9 +294,9 @@ class TestAcousticAlgebraIntegration(unittest.TestCase):
 
 def run_tests():
     """Run all tests and display results."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("VECTOR DELTA SYNTHESIS TESTS")
-    print("="*80)
+    print("=" * 80)
 
     # Run tests
     loader = unittest.TestLoader()
@@ -327,9 +311,9 @@ def run_tests():
     result = runner.run(suite)
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
@@ -344,12 +328,13 @@ def run_tests():
     else:
         print("\n❌ SOME TESTS FAILED - Review output above")
 
-    print("="*80)
+    print("=" * 80)
 
     return result.wasSuccessful()
 
 
 if __name__ == "__main__":
     import sys
+
     success = run_tests()
     sys.exit(0 if success else 1)

@@ -35,19 +35,20 @@ from sklearn.preprocessing import StandardScaler
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configuration
-MARMOSET_AUDIO_INDEX = '/home/sheel/birdsong_analysis/src/audio_library/audio_index.json'
-OUTPUT_DIR = '/home/sheel/birdsong_analysis/src/validation_results'
+MARMOSET_AUDIO_INDEX = "/home/sheel/birdsong_analysis/src/audio_library/audio_index.json"
+OUTPUT_DIR = "/home/sheel/birdsong_analysis/src/validation_results"
 NUM_SAMPLES_PER_GROUP = 100
 
 # Import Rust Granular Concatenative Synthesizer
 try:
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
-        'technical_architecture',
-        '/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so'
+        "technical_architecture",
+        "/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so",
     )
     module = importlib.util.module_from_spec(spec)
-    sys.modules['technical_architecture'] = module
+    sys.modules["technical_architecture"] = module
     spec.loader.exec_module(module)
     GranularConcatenativeSynthesizer = module.GranularConcatenativeSynthesizer
     print("✅ Successfully imported GranularConcatenativeSynthesizer from Rust")
@@ -63,11 +64,12 @@ def extract_micro_dynamics_features(audio: np.ndarray, sample_rate: int) -> np.n
     features = []
 
     # Time-domain features
-    rms = np.sqrt(np.mean(audio ** 2))
+    rms = np.sqrt(np.mean(audio**2))
     zcr = np.mean(np.abs(np.diff(np.sign(audio))))
 
     # Spectral features
     from scipy.signal import spectrogram
+
     freqs, times, Sxx = spectrogram(audio, sample_rate)
 
     # Spectral centroid
@@ -101,6 +103,7 @@ def extract_micro_dynamics_features(audio: np.ndarray, sample_rate: int) -> np.n
 
     # Estimate vibrato (simplified)
     from scipy.signal import find_peaks
+
     peaks, _ = find_peaks(envelope, distance=int(sample_rate * 0.05))
     if len(peaks) > 1:
         peak_intervals = np.diff(peaks) / sample_rate
@@ -113,9 +116,9 @@ def extract_micro_dynamics_features(audio: np.ndarray, sample_rate: int) -> np.n
     jitter = 0
 
     # HNR (simplified)
-    signal_energy = np.sum(audio ** 2)
+    signal_energy = np.sum(audio**2)
     noise_estimate = np.diff(audio)
-    noise_energy = np.sum(noise_estimate ** 2)
+    noise_energy = np.sum(noise_estimate**2)
     hnr = 10 * np.log10((signal_energy + 1e-10) / (noise_energy + 1e-10))
 
     features = [
@@ -128,7 +131,7 @@ def extract_micro_dynamics_features(audio: np.ndarray, sample_rate: int) -> np.n
         hnr,
         centroid_mean,
         rms,
-        zcr
+        zcr,
     ]
 
     return np.array(features)
@@ -138,19 +141,19 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
     """Load natural audio samples from the audio library."""
     print(f"\nLoading natural samples from {audio_index_path}...")
 
-    with open(audio_index_path, 'r') as f:
+    with open(audio_index_path, "r") as f:
         audio_index = json.load(f)
 
     features_list = []
     file_paths = []
 
     # Sample from phrase types
-    phrase_keys = list(audio_index['phrases'].keys())
+    phrase_keys = list(audio_index["phrases"].keys())
     random.shuffle(phrase_keys)
 
     for phrase_key in phrase_keys[:num_samples]:
-        phrase_data = audio_index['phrases'][phrase_key]
-        segments = phrase_data['segments']
+        phrase_data = audio_index["phrases"][phrase_key]
+        segments = phrase_data["segments"]
 
         if not segments:
             continue
@@ -159,7 +162,7 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
         segment = random.choice(segments)
 
         # Construct file path
-        relative_path = segment['relative_path']
+        relative_path = segment["relative_path"]
         file_path = Path(audio_index_path).parent / relative_path
 
         if file_path.exists():
@@ -185,17 +188,19 @@ def load_natural_samples(audio_index_path: str, num_samples: int) -> Tuple[np.nd
     return np.array(features_list), file_paths
 
 
-def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> Tuple[np.ndarray, List[str]]:
+def generate_concatenative_samples(
+    audio_index_path: str, num_samples: int
+) -> Tuple[np.ndarray, List[str]]:
     """Generate concatenative samples by concatenating real audio segments."""
     print("\nGenerating concatenative samples...")
 
-    with open(audio_index_path, 'r') as f:
+    with open(audio_index_path, "r") as f:
         audio_index = json.load(f)
 
     features_list = []
     descriptions = []
 
-    phrase_keys = list(audio_index['phrases'].keys())
+    phrase_keys = list(audio_index["phrases"].keys())
 
     for _ in range(num_samples):
         # Select 2-3 random phrases
@@ -205,10 +210,10 @@ def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> T
         concatenated_audio = []
 
         for phrase_key in selected_phrases:
-            segments = audio_index['phrases'][phrase_key]['segments']
+            segments = audio_index["phrases"][phrase_key]["segments"]
             if segments:
                 segment = random.choice(segments)
-                relative_path = segment['relative_path']
+                relative_path = segment["relative_path"]
                 file_path = Path(audio_index_path).parent / relative_path
 
                 if file_path.exists():
@@ -237,17 +242,19 @@ def generate_concatenative_samples(audio_index_path: str, num_samples: int) -> T
     return np.array(features_list), descriptions
 
 
-def generate_granular_samples(audio_index_path: str, num_samples: int) -> Tuple[np.ndarray, List[str]]:
+def generate_granular_samples(
+    audio_index_path: str, num_samples: int
+) -> Tuple[np.ndarray, List[str]]:
     """Generate granular synthesis samples using Rust synthesizer."""
     print("\nGenerating Granular Concatenative samples (with pitch/time manipulation)...")
 
-    with open(audio_index_path, 'r') as f:
+    with open(audio_index_path, "r") as f:
         audio_index = json.load(f)
 
     features_list = []
     descriptions = []
 
-    phrase_keys = list(audio_index['phrases'].keys())
+    phrase_keys = list(audio_index["phrases"].keys())
 
     # Create synthesizer
     synthesizer = GranularConcatenativeSynthesizer(sample_rate=22050)
@@ -255,14 +262,14 @@ def generate_granular_samples(audio_index_path: str, num_samples: int) -> Tuple[
     for i in range(num_samples):
         # Select a random phrase
         phrase_key = random.choice(phrase_keys)
-        segments = audio_index['phrases'][phrase_key]['segments']
+        segments = audio_index["phrases"][phrase_key]["segments"]
 
         if not segments:
             continue
 
         # Load a random segment as source
         segment = random.choice(segments)
-        relative_path = segment['relative_path']
+        relative_path = segment["relative_path"]
         file_path = Path(audio_index_path).parent / relative_path
 
         if not file_path.exists():
@@ -279,6 +286,7 @@ def generate_granular_samples(audio_index_path: str, num_samples: int) -> Tuple[
             # Resample if needed
             if sr != 22050:
                 from scipy import signal
+
                 num_samples = int(len(source_audio) * 22050 / sr)
                 source_audio = signal.resample(source_audio, num_samples)
                 sr = 22050
@@ -352,17 +360,9 @@ def plot_tsne_results(projections: np.ndarray, labels: np.ndarray, output_path: 
     print("\nPlotting t-SNE results...")
 
     # Color mapping
-    color_map = {
-        'Natural': 'green',
-        'Concatenative': 'blue',
-        'Granular': 'red'
-    }
+    color_map = {"Natural": "green", "Concatenative": "blue", "Granular": "red"}
 
-    marker_map = {
-        'Natural': 'o',
-        'Concatenative': 's',
-        'Granular': '^'
-    }
+    marker_map = {"Natural": "o", "Concatenative": "s", "Granular": "^"}
 
     plt.figure(figsize=(12, 9))
 
@@ -371,17 +371,17 @@ def plot_tsne_results(projections: np.ndarray, labels: np.ndarray, output_path: 
         plt.scatter(
             projections[mask, 0],
             projections[mask, 1],
-            c=color_map.get(group, 'gray'),
-            marker=marker_map.get(group, 'o'),
+            c=color_map.get(group, "gray"),
+            marker=marker_map.get(group, "o"),
             label=group,
             alpha=0.6,
-            s=80
+            s=80,
         )
 
-    plt.legend(fontsize=14, loc='best')
-    plt.xlabel('t-SNE Dimension 1', fontsize=12)
-    plt.ylabel('t-SNE Dimension 2', fontsize=12)
-    plt.title('t-SNE Validation: Natural vs Concatenative vs Granular Synthesis', fontsize=14)
+    plt.legend(fontsize=14, loc="best")
+    plt.xlabel("t-SNE Dimension 1", fontsize=12)
+    plt.ylabel("t-SNE Dimension 2", fontsize=12)
+    plt.title("t-SNE Validation: Natural vs Concatenative vs Granular Synthesis", fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
@@ -398,9 +398,9 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     metrics = {}
 
     # Get projections for each group
-    natural_idx = labels == 'Natural'
-    concat_idx = labels == 'Concatenative'
-    granular_idx = labels == 'Granular'
+    natural_idx = labels == "Natural"
+    concat_idx = labels == "Concatenative"
+    granular_idx = labels == "Granular"
 
     natural_proj = projections[natural_idx]
     concat_proj = projections[concat_idx]
@@ -416,10 +416,10 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     natural_granular_dist = np.linalg.norm(natural_centroid - granular_centroid)
     concat_granular_dist = np.linalg.norm(concat_centroid - granular_centroid)
 
-    metrics['centroid_distances'] = {
-        'natural_concatenative': float(natural_concat_dist),
-        'natural_granular': float(natural_granular_dist),
-        'concatenative_granular': float(concat_granular_dist)
+    metrics["centroid_distances"] = {
+        "natural_concatenative": float(natural_concat_dist),
+        "natural_granular": float(natural_granular_dist),
+        "concatenative_granular": float(concat_granular_dist),
     }
 
     # Calculate spread (standard deviation from centroid)
@@ -427,16 +427,16 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     concat_spread = np.mean(np.linalg.norm(concat_proj - concat_centroid, axis=1))
     granular_spread = np.mean(np.linalg.norm(granular_proj - granular_centroid, axis=1))
 
-    metrics['spread'] = {
-        'natural': float(natural_spread),
-        'concatenative': float(concat_spread),
-        'granular': float(granular_spread)
+    metrics["spread"] = {
+        "natural": float(natural_spread),
+        "concatenative": float(concat_spread),
+        "granular": float(granular_spread),
     }
 
     # Congruence score: lower distance from natural = higher congruence
     # Normalize by natural spread
     granular_congruence = 1.0 / (1.0 + natural_granular_dist / natural_spread)
-    metrics['granular_congruence_score'] = float(granular_congruence)
+    metrics["granular_congruence_score"] = float(granular_congruence)
 
     print("\n  Centroid Distances:")
     print(f"    Natural ↔ Concatenative: {natural_concat_dist:.3f}")
@@ -473,10 +473,14 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     # Comparison with additive synthesis
     print("\n  Comparison with Additive Synthesis (previous result):")
     print("    Additive:     Natural ↔ Dynamic distance ≈ 27.0 (POOR)")
-    print(f"    Granular:     Natural ↔ Granular distance ≈ {natural_granular_dist:.1f} ({'GOOD' if natural_granular_dist < 7.0 else 'MODERATE'})")
-    print(f"    Improvement:  {(27.0 - natural_granular_dist) / 27.0 * 100:.1f}% reduction in distance")
+    print(
+        f"    Granular:     Natural ↔ Granular distance ≈ {natural_granular_dist:.1f} ({'GOOD' if natural_granular_dist < 7.0 else 'MODERATE'})"
+    )
+    print(
+        f"    Improvement:  {(27.0 - natural_granular_dist) / 27.0 * 100:.1f}% reduction in distance"
+    )
 
-    metrics['interpretation'] = interpretation
+    metrics["interpretation"] = interpretation
 
     return metrics
 
@@ -497,29 +501,29 @@ def main():
 
     # Natural samples
     natural_features, _ = load_natural_samples(MARMOSET_AUDIO_INDEX, NUM_SAMPLES_PER_GROUP)
-    features_dict['Natural'] = natural_features
+    features_dict["Natural"] = natural_features
 
     # Concatenative samples
     concat_features, _ = generate_concatenative_samples(MARMOSET_AUDIO_INDEX, NUM_SAMPLES_PER_GROUP)
-    features_dict['Concatenative'] = concat_features
+    features_dict["Concatenative"] = concat_features
 
     # Granular samples
     granular_features, _ = generate_granular_samples(MARMOSET_AUDIO_INDEX, NUM_SAMPLES_PER_GROUP)
-    features_dict['Granular'] = granular_features
+    features_dict["Granular"] = granular_features
 
     # Run t-SNE
     projections, labels = run_tsne_validation(features_dict)
 
     # Plot results
-    plot_path = Path(OUTPUT_DIR) / 'granular_synthesis_tsne_validation.png'
+    plot_path = Path(OUTPUT_DIR) / "granular_synthesis_tsne_validation.png"
     plot_tsne_results(projections, labels, str(plot_path))
 
     # Calculate metrics
     metrics = calculate_congruence_metrics(projections, labels)
 
     # Save results
-    results_path = Path(OUTPUT_DIR) / 'granular_synthesis_validation_results.json'
-    with open(results_path, 'w') as f:
+    results_path = Path(OUTPUT_DIR) / "granular_synthesis_validation_results.json"
+    with open(results_path, "w") as f:
         json.dump(metrics, f, indent=2)
 
     print(f"\n💾 Results saved to {results_path}")
@@ -533,13 +537,19 @@ def main():
     print(f"   - Results: {results_path}")
 
     print("\n📊 Summary:")
-    print(f"   Natural ↔ Concatenative distance: {metrics['centroid_distances']['natural_concatenative']:.3f}")
-    print(f"   Natural ↔ Granular distance:      {metrics['centroid_distances']['natural_granular']:.3f}")
+    print(
+        f"   Natural ↔ Concatenative distance: {metrics['centroid_distances']['natural_concatenative']:.3f}"
+    )
+    print(
+        f"   Natural ↔ Granular distance:      {metrics['centroid_distances']['natural_granular']:.3f}"
+    )
     print("   Target: < 7.0")
-    print(f"   Result: {'✅ PASS' if metrics['centroid_distances']['natural_granular'] < 7.0 else '❌ FAIL'}")
+    print(
+        f"   Result: {'✅ PASS' if metrics['centroid_distances']['natural_granular'] < 7.0 else '❌ FAIL'}"
+    )
 
     print("\n🎯 NEXT STEPS:")
-    if metrics['centroid_distances']['natural_granular'] < 7.0:
+    if metrics["centroid_distances"]["natural_granular"] < 7.0:
         print("   1. ✅ Granular synthesis validated!")
         print("   2. Proceed to Bio-Acoustic Turing Test")
         print("   3. Test granular vs natural vocalizations with live animals")

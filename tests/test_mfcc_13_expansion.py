@@ -24,6 +24,7 @@ from typing import Tuple
 # Test 1.1: Full MFCC Extraction
 # =============================================================================
 
+
 class TestMFCCExtraction(unittest.TestCase):
     """Test 1.1: Extract full 13 MFCC coefficients"""
 
@@ -50,23 +51,31 @@ class TestMFCCExtraction(unittest.TestCase):
         mfccs = extract_13_mfcc(audio, sr)
 
         # Assert - Vector length should be exactly 13
-        self.assertIsInstance(mfccs, np.ndarray,
-                            "MFCC output should be numpy array")
-        self.assertEqual(mfccs.shape[0], 13,
-                        f"MFCC vector should have 13 coefficients, got {mfccs.shape[0]}")
-        self.assertEqual(len(mfccs.shape), 1,
-                        "MFCC output should be 1D array (time-averaged), not 2D (frame-based)")
+        self.assertIsInstance(mfccs, np.ndarray, "MFCC output should be numpy array")
+        self.assertEqual(
+            mfccs.shape[0], 13, f"MFCC vector should have 13 coefficients, got {mfccs.shape[0]}"
+        )
+        self.assertEqual(
+            len(mfccs.shape),
+            1,
+            "MFCC output should be 1D array (time-averaged), not 2D (frame-based)",
+        )
 
         # Assert - All values should be finite (no NaN/Inf)
-        self.assertTrue(np.all(np.isfinite(mfccs)),
-                       "All MFCC coefficients should be finite (no NaN/Inf)")
+        self.assertTrue(
+            np.all(np.isfinite(mfccs)), "All MFCC coefficients should be finite (no NaN/Inf)"
+        )
 
         # Assert - MFCC_0 (log-energy coefficient) should be finite
         # Note: MFCC[0] is log-energy, which is negative for amplitudes < 1.0
-        self.assertTrue(np.isfinite(mfccs[0]),
-                      "First MFCC coefficient (log-energy) should be finite")
-        self.assertLess(mfccs[0], 100,  # Upper bound check
-                       "First MFCC coefficient should be reasonable (< 100)")
+        self.assertTrue(
+            np.isfinite(mfccs[0]), "First MFCC coefficient (log-energy) should be finite"
+        )
+        self.assertLess(
+            mfccs[0],
+            100,  # Upper bound check
+            "First MFCC coefficient should be reasonable (< 100)",
+        )
 
         print(f"✓ Full 13 MFCC extraction test passed")
         print(f"  Vector shape: {mfccs.shape}")
@@ -100,21 +109,28 @@ class TestMFCCExtraction(unittest.TestCase):
         mfcc_high = extract_13_mfcc(audio_high, sr)
 
         # Assert - Both should have shape (13,)
-        self.assertEqual(mfcc_low.shape, (13,),
-                        f"Low freq MFCCs should have shape (13,), got {mfcc_low.shape}")
-        self.assertEqual(mfcc_high.shape, (13,),
-                        f"High freq MFCCs should have shape (13,), got {mfcc_high.shape}")
+        self.assertEqual(
+            mfcc_low.shape, (13,), f"Low freq MFCCs should have shape (13,), got {mfcc_low.shape}"
+        )
+        self.assertEqual(
+            mfcc_high.shape,
+            (13,),
+            f"High freq MFCCs should have shape (13,), got {mfcc_high.shape}",
+        )
 
         # Assert - Shapes should match each other
-        self.assertEqual(mfcc_low.shape, mfcc_high.shape,
-                        "Both MFCC vectors should have identical shape")
+        self.assertEqual(
+            mfcc_low.shape, mfcc_high.shape, "Both MFCC vectors should have identical shape"
+        )
 
         # Assert - Different frequencies should produce different MFCCs
         # (especially in higher coefficients which capture spectral envelope)
         max_diff = np.max(np.abs(mfcc_low - mfcc_high))
-        self.assertGreater(max_diff, 0.1,
-                          f"Different frequencies should produce different MFCCs "
-                          f"(max diff: {max_diff:.4f})")
+        self.assertGreater(
+            max_diff,
+            0.1,
+            f"Different frequencies should produce different MFCCs (max diff: {max_diff:.4f})",
+        )
 
         print(f"✓ MFCC vector consistency test passed")
         print(f"  Low freq MFCCs: {mfcc_low}")
@@ -125,6 +141,7 @@ class TestMFCCExtraction(unittest.TestCase):
 # =============================================================================
 # Test 1.3: Real-World Audio Validation
 # =============================================================================
+
 
 class TestMFCCRealWorld(unittest.TestCase):
     """Test 1.3: Validate with realistic marmoset-like vocalizations"""
@@ -159,19 +176,23 @@ class TestMFCCRealWorld(unittest.TestCase):
         mfccs = extract_13_mfcc(audio, sr)
 
         # Assert
-        self.assertEqual(mfccs.shape[0], 13,
-                        f"Real phee should produce 13 MFCCs, got {mfccs.shape[0]}")
+        self.assertEqual(
+            mfccs.shape[0], 13, f"Real phee should produce 13 MFCCs, got {mfccs.shape[0]}"
+        )
 
         # Assert - Coefficients should show realistic distribution
         # (MFCC_0 is typically largest, decreasing thereafter)
-        self.assertGreater(abs(mfccs[0]), abs(mfccs[1]),
-                          "MFCC_0 should typically be larger than MFCC_1")
+        self.assertGreater(
+            abs(mfccs[0]), abs(mfccs[1]), "MFCC_0 should typically be larger than MFCC_1"
+        )
 
         # Assert - Higher coefficients should be non-zero (capture fine structure)
         higher_mfccs = mfccs[5:]  # mfcc_6 through mfcc_13
-        self.assertGreater(np.mean(np.abs(higher_mfccs)), 0.001,
-                          "Higher MFCCs (6-13) should have non-zero values "
-                          "capturing fine spectral structure")
+        self.assertGreater(
+            np.mean(np.abs(higher_mfccs)),
+            0.001,
+            "Higher MFCCs (6-13) should have non-zero values capturing fine spectral structure",
+        )
 
         print(f"✓ Real phee MFCC test passed")
         print(f"  Lower MFCCs (1-4): {mfccs[1:5]}")
@@ -195,18 +216,18 @@ class TestMFCCRealWorld(unittest.TestCase):
 
         # Signal 1: Emphasize lower harmonics (like "ah" vowel)
         audio_vowel1 = (
-            0.5 * np.sin(2 * np.pi * 500 * t) +
-            0.3 * np.sin(2 * np.pi * 1000 * t) +
-            0.2 * np.sin(2 * np.pi * 1500 * t) +
-            0.1 * np.sin(2 * np.pi * 2000 * t)
+            0.5 * np.sin(2 * np.pi * 500 * t)
+            + 0.3 * np.sin(2 * np.pi * 1000 * t)
+            + 0.2 * np.sin(2 * np.pi * 1500 * t)
+            + 0.1 * np.sin(2 * np.pi * 2000 * t)
         )
 
         # Signal 2: Emphasize higher harmonics (like "ee" vowel)
         audio_vowel2 = (
-            0.1 * np.sin(2 * np.pi * 500 * t) +
-            0.2 * np.sin(2 * np.pi * 1000 * t) +
-            0.3 * np.sin(2 * np.pi * 2000 * t) +
-            0.5 * np.sin(2 * np.pi * 3000 * t)
+            0.1 * np.sin(2 * np.pi * 500 * t)
+            + 0.2 * np.sin(2 * np.pi * 1000 * t)
+            + 0.3 * np.sin(2 * np.pi * 2000 * t)
+            + 0.5 * np.sin(2 * np.pi * 3000 * t)
         )
 
         # Act
@@ -221,15 +242,20 @@ class TestMFCCRealWorld(unittest.TestCase):
         lower_mfcc2 = mfcc2[1:5]
         lower_diff = np.max(np.abs(lower_mfcc1 - lower_mfcc2))
 
-        self.assertGreater(lower_diff, 0.5,
-                          f"Lower MFCCs (1-4) should differ significantly "
-                          f"for different formant structures (max diff: {lower_diff:.4f})")
+        self.assertGreater(
+            lower_diff,
+            0.5,
+            f"Lower MFCCs (1-4) should differ significantly "
+            f"for different formant structures (max diff: {lower_diff:.4f})",
+        )
 
         # Assert - Full 13D distance should be measurable
         full_diff = np.linalg.norm(mfcc1 - mfcc2)
-        self.assertGreater(full_diff, 1.0,
-                          f"Full 13D distance should be significant "
-                          f"(Euclidean distance: {full_diff:.4f})")
+        self.assertGreater(
+            full_diff,
+            1.0,
+            f"Full 13D distance should be significant (Euclidean distance: {full_diff:.4f})",
+        )
 
         print(f"✓ Vowel quality discrimination test passed")
         print(f"  Vowel 1 MFCCs (1-4): {lower_mfcc1}")
@@ -242,5 +268,5 @@ class TestMFCCRealWorld(unittest.TestCase):
 # Test Runner
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

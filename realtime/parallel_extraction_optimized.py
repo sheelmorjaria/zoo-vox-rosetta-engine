@@ -15,6 +15,7 @@ License: CC BY-ND 4.0 International
 """
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from pathlib import Path
@@ -32,11 +33,17 @@ import soundfile as sf  # Faster than librosa
 
 # Import optimized feature extraction
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from parallel_unified_extraction import (
-    Sentence, AtomicPhrase, GrammarRule, ExtractionResult,
-    cluster_phrases_dbscan, detect_compositionality, extract_grammar_rules
+    Sentence,
+    AtomicPhrase,
+    GrammarRule,
+    ExtractionResult,
+    cluster_phrases_dbscan,
+    detect_compositionality,
+    extract_grammar_rules,
 )
 
 # Import librosa only for feature extraction
@@ -47,9 +54,11 @@ import librosa
 # Data Models
 # =============================================================================
 
+
 @dataclass
 class PhraseCandidate:
     """Lightweight phrase candidate - audio_segment NOT stored (memory optimization)"""
+
     start_sample: int
     end_sample: int
     features_29d: Dict[str, float]
@@ -62,6 +71,7 @@ class PhraseCandidate:
 # Optimized Feature Extraction
 # =============================================================================
 
+
 def extract_features_fast(
     audio: np.ndarray,
     sr: int,
@@ -71,7 +81,7 @@ def extract_features_fast(
     spec_rolloff_full: Optional[np.ndarray] = None,
     zcr_full: Optional[np.ndarray] = None,
     rms_full: Optional[np.ndarray] = None,
-    start_sample: int = 0
+    start_sample: int = 0,
 ) -> Dict[str, float]:
     """
     Fast 29D feature extraction using pre-computed features.
@@ -84,7 +94,7 @@ def extract_features_fast(
     features = {}
 
     # Duration
-    features['duration_ms'] = len(audio) / sr * 1000.0
+    features["duration_ms"] = len(audio) / sr * 1000.0
 
     # Compute hop-based indices for segment
     hop_length = 512
@@ -95,26 +105,26 @@ def extract_features_fast(
     if mfcc_full is not None:
         mfcc_seg = mfcc_full[:, start_frame:end_frame]
         for i in range(min(13, mfcc_seg.shape[0])):
-            features[f'mfcc_{i+1}'] = float(np.mean(mfcc_seg[i]))
+            features[f"mfcc_{i + 1}"] = float(np.mean(mfcc_seg[i]))
 
     if spec_centroid_full is not None:
-        features['spectral_centroid'] = float(np.mean(spec_centroid_full[start_frame:end_frame]))
-        features['mean_f0_hz'] = features['spectral_centroid']  # Proxy for F0
-        features['f0_range_hz'] = float(np.std(spec_centroid_full[start_frame:end_frame]))
+        features["spectral_centroid"] = float(np.mean(spec_centroid_full[start_frame:end_frame]))
+        features["mean_f0_hz"] = features["spectral_centroid"]  # Proxy for F0
+        features["f0_range_hz"] = float(np.std(spec_centroid_full[start_frame:end_frame]))
 
     if spec_bandwidth_full is not None:
-        features['spectral_bandwidth'] = float(np.mean(spec_bandwidth_full[start_frame:end_frame]))
+        features["spectral_bandwidth"] = float(np.mean(spec_bandwidth_full[start_frame:end_frame]))
 
     if spec_rolloff_full is not None:
-        features['spectral_rolloff'] = float(np.mean(spec_rolloff_full[start_frame:end_frame]))
+        features["spectral_rolloff"] = float(np.mean(spec_rolloff_full[start_frame:end_frame]))
 
     if zcr_full is not None:
-        features['zcr'] = float(np.mean(zcr_full[start_frame:end_frame]))
+        features["zcr"] = float(np.mean(zcr_full[start_frame:end_frame]))
 
     if rms_full is not None:
         rms_seg = rms_full[start_frame:end_frame]
-        features['rms'] = float(np.mean(rms_seg))
-        features['spectral_flatness'] = float(np.exp(np.mean(np.log(rms_seg + 1e-6))))  # Proxy
+        features["rms"] = float(np.mean(rms_seg))
+        features["spectral_flatness"] = float(np.exp(np.mean(np.log(rms_seg + 1e-6))))  # Proxy
 
     # Additional spectral features
     stft = librosa.stft(audio, hop_length=hop_length)
@@ -122,29 +132,59 @@ def extract_features_fast(
 
     # Spectral contrast
     spec_contrast = librosa.feature.spectral_contrast(S=mag, sr=sr)
-    features['spectral_contrast'] = float(np.mean(spec_contrast))
+    features["spectral_contrast"] = float(np.mean(spec_contrast))
 
     # Spectral flux
     spec_flux = np.diff(mag, axis=1)
-    features['spectral_flux'] = float(np.mean(np.sqrt(np.mean(spec_flux**2, axis=0))))
+    features["spectral_flux"] = float(np.mean(np.sqrt(np.mean(spec_flux**2, axis=0))))
 
     # Harmonic-to-noise ratio (simplified)
-    harmonic = librosa.yin(audio, sr=sr, fmin=10000, fmax=100000, frame_length=4096) if sr >= 200000 else librosa.yin(audio, sr=sr, fmin=200, fmax=16000)
-    features['harmonic_to_noise_ratio'] = float(np.mean(harmonic[~np.isnan(harmonic)])) if len(harmonic) > 0 else 0.0
+    harmonic = (
+        librosa.yin(audio, sr=sr, fmin=10000, fmax=100000, frame_length=4096)
+        if sr >= 200000
+        else librosa.yin(audio, sr=sr, fmin=200, fmax=16000)
+    )
+    features["harmonic_to_noise_ratio"] = (
+        float(np.mean(harmonic[~np.isnan(harmonic)])) if len(harmonic) > 0 else 0.0
+    )
 
     # Fill missing features with defaults
     defaults = {
-        'mfcc_1': 0.0, 'mfcc_2': 0.0, 'mfcc_3': 0.0, 'mfcc_4': 0.0, 'mfcc_5': 0.0,
-        'mfcc_6': 0.0, 'mfcc_7': 0.0, 'mfcc_8': 0.0, 'mfcc_9': 0.0, 'mfcc_10': 0.0,
-        'mfcc_11': 0.0, 'mfcc_12': 0.0, 'mfcc_13': 0.0,
-        'mean_f0_hz': 0.0, 'f0_range_hz': 0.0,
-        'spectral_centroid': 0.0, 'spectral_bandwidth': 0.0, 'spectral_rolloff': 0.0,
-        'spectral_flatness': 0.0, 'spectral_contrast': 0.0, 'spectral_flux': 0.0,
-        'zcr': 0.0, 'rms': 0.0,
-        'harmonic_to_noise_ratio': 0.0, 'harmonicity': 0.0,
-        'attack_time_ms': 0.0, 'decay_time_ms': 0.0, 'sustain_level': 0.0,
-        'vibrato_rate_hz': 0.0, 'vibrato_depth': 0.0, 'jitter': 0.0, 'shimmer': 0.0,
-        'median_ici_ms': 0.0, 'onset_rate_hz': 0.0, 'ici_coefficient_of_variation': 0.0
+        "mfcc_1": 0.0,
+        "mfcc_2": 0.0,
+        "mfcc_3": 0.0,
+        "mfcc_4": 0.0,
+        "mfcc_5": 0.0,
+        "mfcc_6": 0.0,
+        "mfcc_7": 0.0,
+        "mfcc_8": 0.0,
+        "mfcc_9": 0.0,
+        "mfcc_10": 0.0,
+        "mfcc_11": 0.0,
+        "mfcc_12": 0.0,
+        "mfcc_13": 0.0,
+        "mean_f0_hz": 0.0,
+        "f0_range_hz": 0.0,
+        "spectral_centroid": 0.0,
+        "spectral_bandwidth": 0.0,
+        "spectral_rolloff": 0.0,
+        "spectral_flatness": 0.0,
+        "spectral_contrast": 0.0,
+        "spectral_flux": 0.0,
+        "zcr": 0.0,
+        "rms": 0.0,
+        "harmonic_to_noise_ratio": 0.0,
+        "harmonicity": 0.0,
+        "attack_time_ms": 0.0,
+        "decay_time_ms": 0.0,
+        "sustain_level": 0.0,
+        "vibrato_rate_hz": 0.0,
+        "vibrato_depth": 0.0,
+        "jitter": 0.0,
+        "shimmer": 0.0,
+        "median_ici_ms": 0.0,
+        "onset_rate_hz": 0.0,
+        "ici_coefficient_of_variation": 0.0,
     }
 
     for key, val in defaults.items():
@@ -152,19 +192,19 @@ def extract_features_fast(
             features[key] = val
 
     # Motion factors (simplified)
-    features['attack_time_ms'] = 5.0
-    features['decay_time_ms'] = 20.0
-    features['sustain_level'] = 0.7
-    features['vibrato_rate_hz'] = 7.0
-    features['vibrato_depth'] = 0.02
-    features['jitter'] = 0.01
-    features['shimmer'] = 0.015
-    features['harmonicity'] = 0.75
+    features["attack_time_ms"] = 5.0
+    features["decay_time_ms"] = 20.0
+    features["sustain_level"] = 0.7
+    features["vibrato_rate_hz"] = 7.0
+    features["vibrato_depth"] = 0.02
+    features["jitter"] = 0.01
+    features["shimmer"] = 0.015
+    features["harmonicity"] = 0.75
 
     # Rhythm factors
-    features['median_ici_ms'] = 15.0
-    features['onset_rate_hz'] = 50.0
-    features['ici_coefficient_of_variation'] = 0.3
+    features["median_ici_ms"] = 15.0
+    features["onset_rate_hz"] = 50.0
+    features["ici_coefficient_of_variation"] = 0.3
 
     return features
 
@@ -179,7 +219,7 @@ def extract_phrase_candidates_fast(
     spec_bandwidth_full: np.ndarray,
     spec_rolloff_full: np.ndarray,
     zcr_full: np.ndarray,
-    rms_full: np.ndarray
+    rms_full: np.ndarray,
 ) -> List[PhraseCandidate]:
     """
     Fast phrase extraction using pre-computed features.
@@ -208,14 +248,15 @@ def extract_phrase_candidates_fast(
 
             # Extract features using pre-computed arrays
             features = extract_features_fast(
-                segment, sr,
+                segment,
+                sr,
                 mfcc_full=mfcc_full,
                 spec_centroid_full=spec_centroid_full,
                 spec_bandwidth_full=spec_bandwidth_full,
                 spec_rolloff_full=spec_rolloff_full,
                 zcr_full=zcr_full,
                 rms_full=rms_full,
-                start_sample=start
+                start_sample=start,
             )
 
             candidate = PhraseCandidate(
@@ -224,7 +265,7 @@ def extract_phrase_candidates_fast(
                 features_29d=features,
                 source_sentence_id=sentence_id,
                 window_id=window_id,
-                context=context
+                context=context,
             )
 
             candidates.append(candidate)
@@ -236,6 +277,7 @@ def extract_phrase_candidates_fast(
 # =============================================================================
 # Single File Processing (Optimized)
 # =============================================================================
+
 
 def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> Dict[str, Any]:
     """
@@ -258,7 +300,7 @@ def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> 
             audio = np.mean(audio, axis=1)
 
         # Create sentence ID
-        sentence_id = audio_filename.replace('.wav', '')
+        sentence_id = audio_filename.replace(".wav", "")
 
         # Pre-compute features for entire audio (KEY OPTIMIZATION)
         hop_length = 512
@@ -267,9 +309,15 @@ def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> 
         mfcc_full = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13, hop_length=hop_length)
 
         # Spectral features
-        spec_centroid_full = librosa.feature.spectral_centroid(y=audio, sr=sr, hop_length=hop_length)[0]
-        spec_bandwidth_full = librosa.feature.spectral_bandwidth(y=audio, sr=sr, hop_length=hop_length)[0]
-        spec_rolloff_full = librosa.feature.spectral_rolloff(y=audio, sr=sr, hop_length=hop_length)[0]
+        spec_centroid_full = librosa.feature.spectral_centroid(
+            y=audio, sr=sr, hop_length=hop_length
+        )[0]
+        spec_bandwidth_full = librosa.feature.spectral_bandwidth(
+            y=audio, sr=sr, hop_length=hop_length
+        )[0]
+        spec_rolloff_full = librosa.feature.spectral_rolloff(y=audio, sr=sr, hop_length=hop_length)[
+            0
+        ]
         zcr_full = librosa.feature.zero_crossing_rate(audio, hop_length=hop_length)[0]
         rms_full = librosa.feature.rms(y=audio, hop_length=hop_length)[0]
 
@@ -277,11 +325,11 @@ def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> 
         sentence = Sentence(
             sentence_id=sentence_id,
             audio_file=audio_filename,
-            context=annotation['context'],
-            emitter=annotation['emitter'],
-            addressee=annotation['addressee'],
+            context=annotation["context"],
+            emitter=annotation["emitter"],
+            addressee=annotation["addressee"],
             duration_sec=len(audio) / sr,
-            change_points=[0, len(audio)]  # Simple: entire file is one sentence
+            change_points=[0, len(audio)],  # Simple: entire file is one sentence
         )
 
         # Extract phrase candidates using pre-computed features
@@ -289,30 +337,31 @@ def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> 
             audio,
             sr,
             sentence_id=sentence_id,
-            context=annotation['context'],
+            context=annotation["context"],
             mfcc_full=mfcc_full,
             spec_centroid_full=spec_centroid_full,
             spec_bandwidth_full=spec_bandwidth_full,
             spec_rolloff_full=spec_rolloff_full,
             zcr_full=zcr_full,
-            rms_full=rms_full
+            rms_full=rms_full,
         )
 
         return {
-            'success': True,
-            'sentence': sentence,
-            'candidates': candidates,
-            'num_candidates': len(candidates),
-            'audio_filename': audio_filename
+            "success": True,
+            "sentence": sentence,
+            "candidates": candidates,
+            "num_candidates": len(candidates),
+            "audio_filename": audio_filename,
         }
 
     except Exception as e:
         import traceback
+
         return {
-            'success': False,
-            'error': str(e),
-            'audio_filename': audio_filename,
-            'traceback': traceback.format_exc()
+            "success": False,
+            "error": str(e),
+            "audio_filename": audio_filename,
+            "traceback": traceback.format_exc(),
         }
 
 
@@ -320,8 +369,10 @@ def process_single_vocalization_fast(args: Tuple[str, Dict[str, Any], Path]) -> 
 # Checkpoint Manager (from previous version)
 # =============================================================================
 
+
 class CheckpointManager:
     """Manages incremental checkpointing."""
+
     def __init__(self, checkpoint_dir: Path):
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -334,41 +385,57 @@ class CheckpointManager:
 
     def _load_metadata(self) -> Dict[str, Any]:
         if self.metadata_file.exists():
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 return json.load(f)
-        return {'created_at': datetime.now().isoformat(), 'last_updated': None,
-                'total_files': 0, 'processed_files': 0, 'parameters': {}}
+        return {
+            "created_at": datetime.now().isoformat(),
+            "last_updated": None,
+            "total_files": 0,
+            "processed_files": 0,
+            "parameters": {},
+        }
 
     def _load_progress(self) -> Dict[str, Any]:
         if self.progress_file.exists():
-            with open(self.progress_file, 'r') as f:
+            with open(self.progress_file, "r") as f:
                 return json.load(f)
-        return {'processed_files': [], 'failed_files': [], 'current_batch': 0, 'total_candidates': 0}
+        return {
+            "processed_files": [],
+            "failed_files": [],
+            "current_batch": 0,
+            "total_candidates": 0,
+        }
 
     def save_metadata(self, total_files: int, parameters: Dict[str, Any]):
-        self.metadata['last_updated'] = datetime.now().isoformat()
-        self.metadata['total_files'] = total_files
-        self.metadata['processed_files'] = len(self.progress['processed_files'])
-        self.metadata['parameters'] = parameters
-        with open(self.metadata_file, 'w') as f:
+        self.metadata["last_updated"] = datetime.now().isoformat()
+        self.metadata["total_files"] = total_files
+        self.metadata["processed_files"] = len(self.progress["processed_files"])
+        self.metadata["parameters"] = parameters
+        with open(self.metadata_file, "w") as f:
             json.dump(self.metadata, f, indent=2)
 
-    def save_progress(self, processed_files: List[str], failed_files: List[str],
-                     total_candidates: int, batch_id: int):
-        self.progress['processed_files'] = processed_files
-        self.progress['failed_files'] = failed_files
-        self.progress['total_candidates'] = total_candidates
-        self.progress['current_batch'] = batch_id
-        with open(self.progress_file, 'w') as f:
+    def save_progress(
+        self,
+        processed_files: List[str],
+        failed_files: List[str],
+        total_candidates: int,
+        batch_id: int,
+    ):
+        self.progress["processed_files"] = processed_files
+        self.progress["failed_files"] = failed_files
+        self.progress["total_candidates"] = total_candidates
+        self.progress["current_batch"] = batch_id
+        with open(self.progress_file, "w") as f:
             json.dump(self.progress, f, indent=2)
 
-    def save_batch_results(self, batch_id: int, sentences: List[Sentence],
-                          candidates_data: List[Dict[str, Any]]):
+    def save_batch_results(
+        self, batch_id: int, sentences: List[Sentence], candidates_data: List[Dict[str, Any]]
+    ):
         sentences_file = self.results_dir / f"batch_{batch_id:04d}_sentences.pkl"
-        with open(sentences_file, 'wb') as f:
+        with open(sentences_file, "wb") as f:
             pickle.dump(sentences, f)
         candidates_file = self.results_dir / f"batch_{batch_id:04d}_candidates.pkl"
-        with open(candidates_file, 'wb') as f:
+        with open(candidates_file, "wb") as f:
             pickle.dump(candidates_data, f)
 
     def load_batch_results(self, batch_id: int) -> Tuple[List[Sentence], List[Dict[str, Any]]]:
@@ -377,21 +444,21 @@ class CheckpointManager:
         sentences = []
         candidates_data = []
         if sentences_file.exists():
-            with open(sentences_file, 'rb') as f:
+            with open(sentences_file, "rb") as f:
                 sentences = pickle.load(f)
         if candidates_file.exists():
-            with open(candidates_file, 'rb') as f:
+            with open(candidates_file, "rb") as f:
                 candidates_data = pickle.load(f)
         return sentences, candidates_data
 
     def get_processed_files(self) -> set:
-        return set(self.progress['processed_files'])
+        return set(self.progress["processed_files"])
 
     def load_all_results(self) -> Tuple[List[Sentence], List[Dict[str, Any]]]:
         all_sentences = []
         all_candidates = []
         for batch_file in sorted(self.results_dir.glob("batch_*_sentences.pkl")):
-            batch_id = int(batch_file.stem.split('_')[1])
+            batch_id = int(batch_file.stem.split("_")[1])
             sentences, candidates = self.load_batch_results(batch_id)
             all_sentences.extend(sentences)
             all_candidates.extend(candidates)
@@ -402,6 +469,7 @@ class CheckpointManager:
 # Main Optimized Pipeline
 # =============================================================================
 
+
 def extract_optimized(
     audio_dir: Path,
     annotations_file: Path,
@@ -411,7 +479,7 @@ def extract_optimized(
     dbscan_min_samples: int = 5,
     max_files: Optional[int] = None,
     batch_size: int = 100,
-    resume: bool = True
+    resume: bool = True,
 ) -> ExtractionResult:
     """
     Optimized parallel extraction pipeline.
@@ -450,12 +518,14 @@ def extract_optimized(
     df = pd.read_csv(annotations_file)
     annotations = []
     for _, row in df.iterrows():
-        annotations.append({
-            'filename': str(row['File Name']),
-            'context': int(row['Context']),
-            'emitter': int(row['Emitter']),
-            'addressee': int(row['Addressee'])
-        })
+        annotations.append(
+            {
+                "filename": str(row["File Name"]),
+                "context": int(row["Context"]),
+                "emitter": int(row["Emitter"]),
+                "addressee": int(row["Addressee"]),
+            }
+        )
     print(f"  Loaded {len(annotations)} vocalizations")
 
     if max_files:
@@ -464,14 +534,20 @@ def extract_optimized(
 
     processed_files = checkpoint_manager.get_processed_files() if resume else set()
     if resume and processed_files:
-        remaining_annotations = [a for a in annotations if a['filename'] not in processed_files]
-        print(f"  Resuming: {len(annotations)} total, {len(processed_files)} processed, {len(remaining_annotations)} remaining")
+        remaining_annotations = [a for a in annotations if a["filename"] not in processed_files]
+        print(
+            f"  Resuming: {len(annotations)} total, {len(processed_files)} processed, {len(remaining_annotations)} remaining"
+        )
         annotations = remaining_annotations
 
     checkpoint_manager.save_metadata(
         total_files=max_files if max_files else len(annotations),
-        parameters={'dbscan_eps': dbscan_eps, 'dbscan_min_samples': dbscan_min_samples,
-                   'num_workers': num_workers, 'optimized': True}
+        parameters={
+            "dbscan_eps": dbscan_eps,
+            "dbscan_min_samples": dbscan_min_samples,
+            "num_workers": num_workers,
+            "optimized": True,
+        },
     )
 
     # ========================================================================
@@ -491,31 +567,31 @@ def extract_optimized(
 
         print(f"\n  Batch {batch_idx + 1}/{num_batches} (files {batch_start + 1}-{batch_end})")
 
-        process_args = [
-            (ann['filename'], ann, audio_dir)
-            for ann in batch_annotations
-        ]
+        process_args = [(ann["filename"], ann, audio_dir) for ann in batch_annotations]
 
         batch_sentences = []
         batch_candidates = []
 
         with ProcessPoolExecutor(max_workers=num_workers) as executor:
-            futures = {executor.submit(process_single_vocalization_fast, args): args[0]
-                      for args in process_args}
+            futures = {
+                executor.submit(process_single_vocalization_fast, args): args[0]
+                for args in process_args
+            }
 
-            for future in tqdm(as_completed(futures), total=len(futures),
-                              desc=f"  Batch {batch_idx + 1}"):
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc=f"  Batch {batch_idx + 1}"
+            ):
                 audio_filename = futures[future]
                 try:
                     result = future.result()
-                    if result['success']:
-                        batch_sentences.append(result['sentence'])
-                        batch_candidates.extend(result['candidates'])
-                        all_sentences.append(result['sentence'])
-                        all_candidates.extend(result['candidates'])
+                    if result["success"]:
+                        batch_sentences.append(result["sentence"])
+                        batch_candidates.extend(result["candidates"])
+                        all_sentences.append(result["sentence"])
+                        all_candidates.extend(result["candidates"])
                     else:
                         failed_files.append(audio_filename)
-                        if 'traceback' in result:
+                        if "traceback" in result:
                             print(f"\n  ERROR: {audio_filename}\n{result['traceback']}")
                         else:
                             print(f"\n  ERROR: {audio_filename} - {result.get('error', 'Unknown')}")
@@ -527,14 +603,16 @@ def extract_optimized(
         # Convert candidates to lightweight format
         candidates_lightweight = []
         for c in batch_candidates:
-            candidates_lightweight.append({
-                'start_sample': c.start_sample,
-                'end_sample': c.end_sample,
-                'features_29d': c.features_29d,
-                'source_sentence_id': c.source_sentence_id,
-                'window_id': c.window_id,
-                'context': c.context
-            })
+            candidates_lightweight.append(
+                {
+                    "start_sample": c.start_sample,
+                    "end_sample": c.end_sample,
+                    "features_29d": c.features_29d,
+                    "source_sentence_id": c.source_sentence_id,
+                    "window_id": c.window_id,
+                    "context": c.context,
+                }
+            )
 
         checkpoint_manager.save_batch_results(batch_idx, batch_sentences, candidates_lightweight)
 
@@ -543,12 +621,16 @@ def extract_optimized(
             processed_files=processed_filenames,
             failed_files=failed_files,
             total_candidates=len(all_candidates),
-            batch_id=batch_idx
+            batch_id=batch_idx,
         )
 
-        print(f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates")
-        print(f"  Progress: {len(processed_filenames)}/{checkpoint_manager.metadata['total_files']} "
-              f"({len(processed_filenames)/checkpoint_manager.metadata['total_files']*100:.1f}%)")
+        print(
+            f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates"
+        )
+        print(
+            f"  Progress: {len(processed_filenames)}/{checkpoint_manager.metadata['total_files']} "
+            f"({len(processed_filenames) / checkpoint_manager.metadata['total_files'] * 100:.1f}%)"
+        )
 
     # ========================================================================
     # Step 3: Load all results from checkpoints
@@ -566,12 +648,14 @@ def extract_optimized(
     # Convert back to objects
     def candidate_dict_to_obj(c_dict):
         return PhraseCandidate(
-            start_sample=c_dict['start_sample'],
-            end_sample=c_dict['end_sample'],
-            features_29d=c_dict['feature_29d'] if 'feature_29d' in c_dict else c_dict['features_29d'],
-            source_sentence_id=c_dict['source_sentence_id'],
-            window_id=c_dict['window_id'],
-            context=c_dict['context']
+            start_sample=c_dict["start_sample"],
+            end_sample=c_dict["end_sample"],
+            features_29d=c_dict["feature_29d"]
+            if "feature_29d" in c_dict
+            else c_dict["features_29d"],
+            source_sentence_id=c_dict["source_sentence_id"],
+            window_id=c_dict["window_id"],
+            context=c_dict["context"],
         )
 
     candidate_objs = [candidate_dict_to_obj(c) for c in all_candidates]
@@ -587,17 +671,19 @@ def extract_optimized(
     # Assign phrases to sentences
     candidate_lookup = {}
     for i, c_dict in enumerate(all_candidates):
-        key = (c_dict['source_sentence_id'], c_dict['window_id'])
+        key = (c_dict["source_sentence_id"], c_dict["window_id"])
         candidate_lookup[key] = c_dict
 
     for sentence in all_sentences:
         assigned = []
         for c_dict in all_candidates:
-            if c_dict['source_sentence_id'] == sentence.sentence_id:
+            if c_dict["source_sentence_id"] == sentence.sentence_id:
                 for phrase in phrases:
                     for member in phrase.member_candidates:
-                        if (member['source_sentence_id'] == c_dict['source_sentence_id'] and
-                            member['window_id'] == c_dict['window_id']):
+                        if (
+                            member["source_sentence_id"] == c_dict["source_sentence_id"]
+                            and member["window_id"] == c_dict["window_id"]
+                        ):
                             assigned.append(phrase.phrase_id)
                             break
         sentence.phrases = list(set(assigned))
@@ -621,43 +707,43 @@ def extract_optimized(
 
     # Save final results
     sentences_file = output_dir / "sentences_final.json"
-    with open(sentences_file, 'w') as f:
+    with open(sentences_file, "w") as f:
         sentences_serializable = [convert_to_json_serializable(asdict(s)) for s in all_sentences]
         json.dump(sentences_serializable, f, indent=2)
 
     phrases_file = output_dir / "phrases_final.json"
-    with open(phrases_file, 'w') as f:
+    with open(phrases_file, "w") as f:
         phrases_serializable = [convert_to_json_serializable(asdict(p)) for p in phrases]
         json.dump(phrases_serializable, f, indent=2)
 
     rules_file = output_dir / "grammar_rules_final.json"
-    with open(rules_file, 'w') as f:
+    with open(rules_file, "w") as f:
         rules_serializable = [convert_to_json_serializable(asdict(r)) for r in grammar_rules]
         json.dump(rules_serializable, f, indent=2)
 
     metadata = {
-        'total_vocalizations': checkpoint_manager.metadata.get('total_files', len(annotations)),
-        'successfully_processed': len(all_sentences),
-        'failed_files': len(failed_files),
-        'total_candidates': len(all_candidates),
-        'total_phrases': len(phrases),
-        'atomic_phrases': len(atomic_phrases),
-        'grammar_rules': len(grammar_rules),
-        'compositionality_ratio': compositionality['compositionality_ratio'],
-        'processing_time_sec': time.time() - start_time,
-        'parameters': checkpoint_manager.metadata.get('parameters', {}),
-        'optimized': True
+        "total_vocalizations": checkpoint_manager.metadata.get("total_files", len(annotations)),
+        "successfully_processed": len(all_sentences),
+        "failed_files": len(failed_files),
+        "total_candidates": len(all_candidates),
+        "total_phrases": len(phrases),
+        "atomic_phrases": len(atomic_phrases),
+        "grammar_rules": len(grammar_rules),
+        "compositionality_ratio": compositionality["compositionality_ratio"],
+        "processing_time_sec": time.time() - start_time,
+        "parameters": checkpoint_manager.metadata.get("parameters", {}),
+        "optimized": True,
     }
 
-    with open(output_dir / "metadata_final.json", 'w') as f:
+    with open(output_dir / "metadata_final.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
     elapsed = time.time() - start_time
     print("\n" + "=" * 80)
     print("PIPELINE COMPLETE")
     print("=" * 80)
-    print(f"Processing time: {elapsed:.1f}s ({elapsed/60:.1f}min)")
-    print(f"Throughput: {len(all_sentences)/elapsed:.1f} files/sec")
+    print(f"Processing time: {elapsed:.1f}s ({elapsed / 60:.1f}min)")
+    print(f"Throughput: {len(all_sentences) / elapsed:.1f} files/sec")
     print(f"\nResults:")
     print(f"  Sentences: {len(all_sentences)}")
     print(f"  Candidates: {len(all_candidates):,}")
@@ -673,16 +759,27 @@ def extract_optimized(
         total_candidates=len(all_candidates),
         total_atomic_phrases=len(atomic_phrases),
         processing_time_sec=elapsed,
-        metadata=metadata
+        metadata=metadata,
     )
 
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Optimized Parallel Extraction")
-    parser.add_argument("--audio-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio")
-    parser.add_argument("--annotations", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv")
-    parser.add_argument("--output-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized")
+    parser.add_argument(
+        "--audio-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio"
+    )
+    parser.add_argument(
+        "--annotations",
+        type=str,
+        default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized",
+    )
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--max-files", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=100)
@@ -701,5 +798,5 @@ if __name__ == "__main__":
         dbscan_min_samples=args.min_samples,
         max_files=args.max_files,
         batch_size=args.batch_size,
-        resume=not args.no_resume
+        resume=not args.no_resume,
     )

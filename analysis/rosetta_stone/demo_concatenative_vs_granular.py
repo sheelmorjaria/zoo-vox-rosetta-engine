@@ -34,10 +34,7 @@ except ImportError:
 def create_test_phrase(f0_hz=6500, duration_ms=50, sample_rate=22050):
     """Create a test phrase (sine wave for simplicity)."""
     num_samples = int(duration_ms / 1000.0 * sample_rate)
-    audio = [
-        0.5 * np.sin(2.0 * np.pi * f0_hz * i / sample_rate)
-        for i in range(num_samples)
-    ]
+    audio = [0.5 * np.sin(2.0 * np.pi * f0_hz * i / sample_rate) for i in range(num_samples)]
     return audio
 
 
@@ -47,9 +44,9 @@ def demo_concatenative_synthesis():
 
     Simply plays audio segments back-to-back. Zero manipulation.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CONCATENATIVE SYNTHESIS")
-    print("="*80)
+    print("=" * 80)
     print("\n📋 Method: Direct playback of audio segments")
     print("   Fidelity: PERFECT (t-SNE distance: 4.208)")
     print("   Flexibility: NONE (no parameter variation)")
@@ -67,7 +64,7 @@ def demo_concatenative_synthesis():
     print("   Phrase 1: F0=6500Hz, Dur=50ms")
     print("   Phrase 2: F0=7000Hz, Dur=50ms")
     print("   Phrase 3: F0=6500Hz, Dur=50ms")
-    print(f"   Total: {len(concatenated)} samples ({len(concatenated)/22050*1000:.1f}ms)")
+    print(f"   Total: {len(concatenated)} samples ({len(concatenated) / 22050 * 1000:.1f}ms)")
 
     return concatenated, [phrase_1, phrase_2, phrase_3]
 
@@ -78,9 +75,9 @@ def demo_granular_synthesis_no_shift():
 
     Same as concatenative but uses granular engine with ratio=1.0
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("GRANULAR SYNTHESIS (No Pitch Shift)")
-    print("="*80)
+    print("=" * 80)
     print("\n📋 Method: Grain-based playback with ratio=1.0")
     print("   Fidelity: NEAR-PERFECT (t-SNE distance: 6.452)")
     print("   Flexibility: HIGH (can shift parameters)")
@@ -93,11 +90,7 @@ def demo_granular_synthesis_no_shift():
     phrase = create_test_phrase(f0_hz=6500, duration_ms=50)
 
     # Load source
-    metadata = SourceMetadata(
-        mean_f0_hz=6500.0,
-        duration_ms=50.0,
-        f0_range_hz=400.0
-    )
+    metadata = SourceMetadata(mean_f0_hz=6500.0, duration_ms=50.0, f0_range_hz=400.0)
     synth.load_source_with_metadata(phrase, metadata)
 
     # Synthesize with NO shift (ratio=1.0)
@@ -105,7 +98,7 @@ def demo_granular_synthesis_no_shift():
 
     print("\n📊 Result:")
     print("   Source: F0=6500Hz, Dur=50ms")
-    print(f"   Output: {len(output)} samples ({len(output)/22050*1000:.1f}ms)")
+    print(f"   Output: {len(output)} samples ({len(output) / 22050 * 1000:.1f}ms)")
     print("   Pitch shift: 1.0 (no change)")
 
     return output
@@ -117,9 +110,9 @@ def demo_granular_synthesis_with_shift():
 
     This is where acoustic algebra integrates!
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("GRANULAR SYNTHESIS (With Vector Delta)")
-    print("="*80)
+    print("=" * 80)
     print("\n📋 Method: Apply delta command to shift parameters")
     print("   Fidelity: NEAR-PERFECT (t-SNE distance: 6.452)")
     print("   Flexibility: VERY HIGH (any pitch/duration)")
@@ -142,11 +135,7 @@ def demo_granular_synthesis_with_shift():
     phrase = create_test_phrase(f0_hz=nearest_f0, duration_ms=50)
 
     # Load with metadata
-    metadata = SourceMetadata(
-        mean_f0_hz=nearest_f0,
-        duration_ms=50.0,
-        f0_range_hz=400.0
-    )
+    metadata = SourceMetadata(mean_f0_hz=nearest_f0, duration_ms=50.0, f0_range_hz=400.0)
     synth.load_source_with_metadata(phrase, metadata)
 
     # Apply delta (VECTOR DELTA COMMAND!)
@@ -159,7 +148,7 @@ def demo_granular_synthesis_with_shift():
     print(f"   Source: F0={nearest_f0}Hz")
     print(f"   Delta: +{delta_f0}Hz")
     print(f"   Target: F0={virtual_f0}Hz")
-    print(f"   Output: {len(output)} samples ({len(output)/22050*1000:.1f}ms)")
+    print(f"   Output: {len(output)} samples ({len(output) / 22050 * 1000:.1f}ms)")
 
     return output, virtual_f0
 
@@ -171,9 +160,9 @@ def demo_comparison_acoustic_analysis():
     In production, you'd use librosa for F0 extraction, spectral analysis, etc.
     Here we'll simulate the comparison.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ACOUSTIC COMPARISON: Concatenative vs Granular")
-    print("="*80)
+    print("=" * 80)
 
     # Generate same phrase using both methods
     # Method 1: Concatenative (baseline)
@@ -198,8 +187,8 @@ def demo_comparison_acoustic_analysis():
     print(f"{'Length (samples)':<20} {concat_len:<15} {gran_len:<15} {len_diff}")
 
     # RMS amplitude
-    concat_rms = np.sqrt(np.mean(np.array(concat_output)**2))
-    gran_rms = np.sqrt(np.mean(np.array(granular_output)**2))
+    concat_rms = np.sqrt(np.mean(np.array(concat_output) ** 2))
+    gran_rms = np.sqrt(np.mean(np.array(granular_output) ** 2))
     rms_diff = abs(concat_rms - gran_rms)
     print(f"{'RMS Amplitude':<20} {concat_rms:<15.4f} {gran_rms:<15.4f} {rms_diff:.6f}")
 
@@ -232,9 +221,9 @@ def demo_acoustic_algebra_comparison():
     This shows how to validate that delta-based granular synthesis
     produces acoustically valid results.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ACOUSTIC ALGEBRA: Synthesis Method Comparison")
-    print("="*80)
+    print("=" * 80)
 
     # Simulate acoustic algebra output
     print("\n📊 Scenario from Acoustic Algebra:")
@@ -250,18 +239,18 @@ def demo_acoustic_algebra_comparison():
     phrase = create_test_phrase(f0_hz=nearest_f0, duration_ms=50)
 
     # Method 1: Concatenative (play nearest as-is)
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("Method 1: CONCATENATIVE (Nearest Real Phrase)")
-    print("-"*80)
+    print("-" * 80)
     print(f"   Plays: F0={nearest_f0}Hz (nearest real)")
     print(f"   Target: F0={virtual_f0}Hz (virtual)")
     print(f"   Error: {delta_f0}Hz (not perfect match)")
     concat_output = phrase
 
     # Method 2: Granular (apply delta to match target)
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("Method 2: GRANULAR (Delta-Based Synthesis)")
-    print("-"*80)
+    print("-" * 80)
     synth = GranularConcatenativeSynthesizer(sample_rate=22050)
     metadata = SourceMetadata(mean_f0_hz=nearest_f0, duration_ms=50.0, f0_range_hz=400.0)
     synth.load_source_with_metadata(phrase, metadata)
@@ -273,9 +262,9 @@ def demo_acoustic_algebra_comparison():
     print(f"   Result: F0≈{virtual_f0}Hz (matches target)")
 
     # Compare to ideal target
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("COMPARISON TO IDEAL TARGET")
-    print("-"*80)
+    print("-" * 80)
 
     # Generate ideal target (what we'd get if we had a real recording at 6750Hz)
     ideal_target = create_test_phrase(f0_hz=virtual_f0, duration_ms=50)
@@ -287,7 +276,7 @@ def demo_acoustic_algebra_comparison():
     print("\n   Acoustic Distance to Ideal Target:")
     print(f"   Concatenative (nearest): {concat_error:.6f}")
     print(f"   Granular (delta-shift): {granular_error:.6f}")
-    print(f"   Improvement: {(1 - granular_error/concat_error)*100:.1f}%")
+    print(f"   Improvement: {(1 - granular_error / concat_error) * 100:.1f}%")
 
     if granular_error < concat_error:
         print("\n   ✅ Granular synthesis CLOSER to target!")
@@ -321,9 +310,9 @@ def measure_acoustic_distance(audio1, audio2):
 
 def main():
     """Run all demonstrations."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CONCATENATIVE VS GRANULAR SYNTHESIS COMPARISON")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 🎯 Key Insight:
@@ -352,9 +341,9 @@ def main():
     correlation = demo_comparison_acoustic_analysis()
     demo_acoustic_algebra_comparison()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
 
     print(f"""
 ✅ Both methods can create the same phrase sequences!
@@ -377,7 +366,7 @@ def main():
    • Ready for threshold test experiments ✅
     """)
 
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

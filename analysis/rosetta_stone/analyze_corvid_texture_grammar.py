@@ -27,6 +27,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -52,7 +53,7 @@ def analyze_corvid_texture_grammar(filepath, duration_sec=5):
         phrases = analyzer.segment_phrases(
             audio,
             min_gap_ms=30.0,  # Optimized for corvids
-            use_adaptive_gap=True
+            use_adaptive_gap=True,
         )
 
         if len(phrases) < 2:
@@ -62,13 +63,13 @@ def analyze_corvid_texture_grammar(filepath, duration_sec=5):
         texture_grammar = analyzer.analyze_modality_sequences(phrases)
 
         return {
-            'filename': Path(filepath).name,
-            'duration_sec': len(audio) / sr,
-            'num_phrases': len(phrases),
-            'texture_grammar': texture_grammar
+            "filename": Path(filepath).name,
+            "duration_sec": len(audio) / sr,
+            "num_phrases": len(phrases),
+            "texture_grammar": texture_grammar,
         }
     except Exception as e:
-        return {'error': str(e), 'filename': Path(filepath).name}
+        return {"error": str(e), "filename": Path(filepath).name}
 
 
 def print_transition_matrix(transition_matrix, title="TRANSITION PROBABILITY MATRIX"):
@@ -77,15 +78,17 @@ def print_transition_matrix(transition_matrix, title="TRANSITION PROBABILITY MAT
         return
 
     print(f"\n📊 {title}")
-    print(f"{'FROM \\ TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} {'TRANSIENT':>12} {'RHYTHMIC':>12}")
+    print(
+        f"{'FROM \\ TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} {'TRANSIENT':>12} {'RHYTHMIC':>12}"
+    )
     print("-" * 70)
 
-    for from_mod in ['HARMONIC', 'FM_SWEEP', 'TRANSIENT', 'RHYTHMIC']:
+    for from_mod in ["HARMONIC", "FM_SWEEP", "TRANSIENT", "RHYTHMIC"]:
         row = [from_mod]
-        for to_mod in ['HARMONIC', 'FM_SWEEP', 'TRANSIENT', 'RHYTHMIC']:
+        for to_mod in ["HARMONIC", "FM_SWEEP", "TRANSIENT", "RHYTHMIC"]:
             prob = transition_matrix.get((from_mod, to_mod), 0.0)
             if prob > 0:
-                row.append(f"{prob*100:5.1f}%")
+                row.append(f"{prob * 100:5.1f}%")
             else:
                 row.append("    -   ")
         print(f"{row[0]:<15} {row[1]:>12} {row[2]:>12} {row[3]:>12} {row[4]:>12}")
@@ -93,9 +96,9 @@ def print_transition_matrix(transition_matrix, title="TRANSITION PROBABILITY MAT
 
 def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
     """Analyze texture grammar across multiple corvid recordings."""
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print(f"{species_name.upper()} TEXTURE GRAMMAR ANALYSIS")
-    print(f"{'='*90}\n")
+    print(f"{'=' * 90}\n")
 
     # Get all MP3 files
     all_files = sorted(list(species_dir.glob("*.mp3")))
@@ -123,7 +126,7 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
         if result is None:
             continue  # Skip files with insufficient phrases
 
-        if 'error' in result:
+        if "error" in result:
             all_results.append(result)
             continue
 
@@ -137,83 +140,91 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
     print(f"✅ {len(valid_results)} files with sufficient phrases")
 
     # Aggregate statistics
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print("AGGREGATE STATISTICS")
-    print(f"{'='*90}")
+    print(f"{'=' * 90}")
 
-    total_phrases = sum(r['num_phrases'] for r in valid_results)
+    total_phrases = sum(r["num_phrases"] for r in valid_results)
     print(f"\n📊 Total phrases analyzed: {total_phrases}")
     print(f"📊 Mean phrases per file: {np.mean([r['num_phrases'] for r in valid_results]):.2f}")
-    print(f"📊 Range: {np.min([r['num_phrases'] for r in valid_results])} - {np.max([r['num_phrases'] for r in valid_results])} phrases")
+    print(
+        f"📊 Range: {np.min([r['num_phrases'] for r in valid_results])} - {np.max([r['num_phrases'] for r in valid_results])} phrases"
+    )
 
     # Aggregate transition matrix
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print("AGGREGATE TRANSITION PROBABILITY MATRIX")
-    print(f"{'='*90}")
+    print(f"{'=' * 90}")
 
     # Aggregate all transition counts
     aggregate_counts = {}
 
     for result in valid_results:
-        transition_counts = result['texture_grammar']['transition_counts']
+        transition_counts = result["texture_grammar"]["transition_counts"]
         for (frm, to), count in transition_counts.items():
             aggregate_counts[(frm, to)] = aggregate_counts.get((frm, to), 0) + count
 
     # Convert to probability matrix
     aggregate_matrix = {}
-    for from_mod in ['HARMONIC', 'FM_SWEEP', 'TRANSIENT', 'RHYTHMIC']:
+    for from_mod in ["HARMONIC", "FM_SWEEP", "TRANSIENT", "RHYTHMIC"]:
         total_from = sum(count for (frm, to), count in aggregate_counts.items() if frm == from_mod)
 
         if total_from > 0:
-            for to_mod in ['HARMONIC', 'FM_SWEEP', 'TRANSIENT', 'RHYTHMIC']:
+            for to_mod in ["HARMONIC", "FM_SWEEP", "TRANSIENT", "RHYTHMIC"]:
                 count = aggregate_counts.get((from_mod, to_mod), 0)
                 prob = count / total_from
                 if prob > 0:
                     aggregate_matrix[(from_mod, to_mod)] = prob
 
-    print_transition_matrix(aggregate_matrix, f"{species_name.upper()} - AGGREGATE TRANSITION PROBABILITIES")
+    print_transition_matrix(
+        aggregate_matrix, f"{species_name.upper()} - AGGREGATE TRANSITION PROBABILITIES"
+    )
 
     # Aggregate sequence statistics
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print("AGGREGATE SEQUENCE STATISTICS")
-    print(f"{'='*90}")
+    print(f"{'=' * 90}")
 
-    avg_run_length = np.mean([r['texture_grammar']['sequence_stats']['avg_run_length']
-                             for r in valid_results])
-    avg_alternation_rate = np.mean([r['texture_grammar']['sequence_stats']['alternation_rate']
-                                    for r in valid_results])
-    avg_entropy = np.mean([r['texture_grammar']['sequence_stats']['entropy']
-                          for r in valid_results])
-    avg_normalized_entropy = np.mean([r['texture_grammar']['sequence_stats']['normalized_entropy']
-                                     for r in valid_results])
+    avg_run_length = np.mean(
+        [r["texture_grammar"]["sequence_stats"]["avg_run_length"] for r in valid_results]
+    )
+    avg_alternation_rate = np.mean(
+        [r["texture_grammar"]["sequence_stats"]["alternation_rate"] for r in valid_results]
+    )
+    avg_entropy = np.mean(
+        [r["texture_grammar"]["sequence_stats"]["entropy"] for r in valid_results]
+    )
+    avg_normalized_entropy = np.mean(
+        [r["texture_grammar"]["sequence_stats"]["normalized_entropy"] for r in valid_results]
+    )
 
     print(f"\n  Average run length: {avg_run_length:.2f} phrases")
     print(f"  Average alternation rate: {avg_alternation_rate:.3f} (changes per transition)")
     print(f"  Average entropy: {avg_entropy:.3f} bits")
-    print(f"  Average normalized entropy: {avg_normalized_entropy:.3f} (0 = uniform, 1 = maximum diversity)")
+    print(
+        f"  Average normalized entropy: {avg_normalized_entropy:.3f} (0 = uniform, 1 = maximum diversity)"
+    )
 
     # Most common sequences across all files
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print("MOST COMMON MODALITY SEQUENCES")
-    print(f"{'='*90}\n")
+    print(f"{'=' * 90}\n")
 
     all_sequences = []
     for result in valid_results:
-        all_sequences.extend(result['texture_grammar']['common_sequences'])
+        all_sequences.extend(result["texture_grammar"]["common_sequences"])
 
     # Group by sequence pattern
     sequence_patterns = {}
     for seq in all_sequences:
-        pattern_key = tuple(seq['sequence'])
+        pattern_key = tuple(seq["sequence"])
         if pattern_key not in sequence_patterns:
-            sequence_patterns[pattern_key] = {'count': 0, 'length': seq['length'], 'files': 0}
-        sequence_patterns[pattern_key]['count'] += seq['count']
-        sequence_patterns[pattern_key]['files'] += 1
+            sequence_patterns[pattern_key] = {"count": 0, "length": seq["length"], "files": 0}
+        sequence_patterns[pattern_key]["count"] += seq["count"]
+        sequence_patterns[pattern_key]["files"] += 1
 
     # Sort by occurrence
-    sorted_patterns = sorted(sequence_patterns.items(),
-                            key=lambda x: x[1]['count'],
-                            reverse=True)
+    sorted_patterns = sorted(sequence_patterns.items(), key=lambda x: x[1]["count"], reverse=True)
 
     for i, (pattern, stats) in enumerate(sorted_patterns[:10], 1):
         sequence_str = " → ".join(pattern)
@@ -221,15 +232,15 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
         print(f"      Occurrences: {stats['count']}, Files: {stats['files']}")
 
     return {
-        'species': species_name,
-        'num_files': len(valid_results),
-        'total_phrases': total_phrases,
-        'aggregate_matrix': aggregate_matrix,
-        'avg_run_length': avg_run_length,
-        'avg_alternation_rate': avg_alternation_rate,
-        'avg_entropy': avg_entropy,
-        'avg_normalized_entropy': avg_normalized_entropy,
-        'common_sequences': sorted_patterns[:10]
+        "species": species_name,
+        "num_files": len(valid_results),
+        "total_phrases": total_phrases,
+        "aggregate_matrix": aggregate_matrix,
+        "avg_run_length": avg_run_length,
+        "avg_alternation_rate": avg_alternation_rate,
+        "avg_entropy": avg_entropy,
+        "avg_normalized_entropy": avg_normalized_entropy,
+        "common_sequences": sorted_patterns[:10],
     }
 
 
@@ -259,9 +270,7 @@ def main():
 
     if american_crow_dir.exists():
         american_crow_results = analyze_species_texture_grammar(
-            "American Crow",
-            american_crow_dir,
-            num_files=30
+            "American Crow", american_crow_dir, num_files=30
         )
 
     # Overall summary
@@ -280,10 +289,10 @@ def main():
 
         # Interpretation
         print("\nInterpretation:")
-        if american_crow_results['avg_normalized_entropy'] > 0.7:
+        if american_crow_results["avg_normalized_entropy"] > 0.7:
             print("  ✅ HIGH diversity - Corvids frequently switch between modalities")
             print("     This indicates complex 'Texture Syntax' with mixed acoustic textures")
-        elif american_crow_results['avg_normalized_entropy'] > 0.4:
+        elif american_crow_results["avg_normalized_entropy"] > 0.4:
             print("  ⚠️  MODERATE diversity - Some modality switching observed")
         else:
             print("  ⚠️  LOW diversity - Corvids tend to stay in same modality")

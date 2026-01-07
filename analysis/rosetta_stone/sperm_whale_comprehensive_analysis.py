@@ -25,11 +25,11 @@ def analyze_sperm_whale_file(filepath):
 
     if len(peaks) < 2:
         return {
-            'filename': Path(filepath).name,
-            'duration_s': len(audio) / sr,
-            'total_clicks': len(peaks),
-            'num_codas': 0,
-            'coda_sizes': []
+            "filename": Path(filepath).name,
+            "duration_s": len(audio) / sr,
+            "total_clicks": len(peaks),
+            "num_codas": 0,
+            "coda_sizes": [],
         }
 
     # Calculate inter-click intervals
@@ -43,7 +43,7 @@ def analyze_sperm_whale_file(filepath):
     current_coda = [0]
 
     for i in range(1, len(peaks)):
-        gap_ms = intervals_ms[i-1]
+        gap_ms = intervals_ms[i - 1]
         if gap_ms <= adaptive_threshold:
             current_coda.append(i)
         else:
@@ -55,14 +55,14 @@ def analyze_sperm_whale_file(filepath):
         codas.append(current_coda)
 
     return {
-        'filename': Path(filepath).name,
-        'duration_s': len(audio) / sr,
-        'total_clicks': len(peaks),
-        'click_rate': len(peaks) / (len(audio) / sr),
-        'num_codas': len(codas),
-        'coda_threshold_ms': adaptive_threshold,
-        'coda_sizes': [len(c) for c in codas],
-        'intervals_ms': intervals_ms
+        "filename": Path(filepath).name,
+        "duration_s": len(audio) / sr,
+        "total_clicks": len(peaks),
+        "click_rate": len(peaks) / (len(audio) / sr),
+        "num_codas": len(codas),
+        "coda_threshold_ms": adaptive_threshold,
+        "coda_sizes": [len(c) for c in codas],
+        "intervals_ms": intervals_ms,
     }
 
 
@@ -84,42 +84,50 @@ def main():
         result = analyze_sperm_whale_file(filepath)
         all_results.append(result)
 
-        coda_mean = np.mean(result['coda_sizes']) if result['coda_sizes'] else 0
-        coda_std = np.std(result['coda_sizes']) if result['coda_sizes'] else 0
+        coda_mean = np.mean(result["coda_sizes"]) if result["coda_sizes"] else 0
+        coda_std = np.std(result["coda_sizes"]) if result["coda_sizes"] else 0
 
-        print(f"{result['filename']:<20} {result['duration_s']:7.0f} {result['total_clicks']:8d} {result['click_rate']:8.1f} {result['num_codas']:6d} {result['coda_threshold_ms']:10.1f}  {coda_mean:6.0f}±{coda_std:5.0f}")
+        print(
+            f"{result['filename']:<20} {result['duration_s']:7.0f} {result['total_clicks']:8d} {result['click_rate']:8.1f} {result['num_codas']:6d} {result['coda_threshold_ms']:10.1f}  {coda_mean:6.0f}±{coda_std:5.0f}"
+        )
 
     # Summary statistics
     print("=" * 100)
     print("SUMMARY STATISTICS")
     print("=" * 100)
 
-    total_clicks = sum(r['total_clicks'] for r in all_results)
-    total_duration = sum(r['duration_s'] for r in all_results)
-    total_codas = sum(r['num_codas'] for r in all_results)
+    total_clicks = sum(r["total_clicks"] for r in all_results)
+    total_duration = sum(r["duration_s"] for r in all_results)
+    total_codas = sum(r["num_codas"] for r in all_results)
 
-    files_with_codas = [r for r in all_results if r['num_codas'] > 0]
-    files_without_codas = [r for r in all_results if r['num_codas'] == 0]
+    files_with_codas = [r for r in all_results if r["num_codas"] > 0]
+    files_without_codas = [r for r in all_results if r["num_codas"] == 0]
 
     print("\n📁 File Coverage:")
     print(f"  Total files analyzed: {len(all_results)}")
-    print(f"  Files with codas: {len(files_with_codas)} ({len(files_with_codas)/len(all_results)*100:.1f}%)")
-    print(f"  Files without codas: {len(files_without_codas)} ({len(files_without_codas)/len(all_results)*100:.1f}%)")
+    print(
+        f"  Files with codas: {len(files_with_codas)} ({len(files_with_codas) / len(all_results) * 100:.1f}%)"
+    )
+    print(
+        f"  Files without codas: {len(files_without_codas)} ({len(files_without_codas) / len(all_results) * 100:.1f}%)"
+    )
 
     print("\n📊 Click Statistics:")
     print(f"  Total clicks: {total_clicks:,}")
-    print(f"  Total duration: {total_duration:.0f}s ({total_duration/60:.1f} minutes)")
-    print(f"  Average click rate: {total_clicks/total_duration:.1f} clicks/second")
+    print(f"  Total duration: {total_duration:.0f}s ({total_duration / 60:.1f} minutes)")
+    print(f"  Average click rate: {total_clicks / total_duration:.1f} clicks/second")
 
     print("\n📊 Coda Statistics:")
     print(f"  Total codas detected: {total_codas}")
-    print(f"  Codas per file: {total_codas/len(all_results):.1f} ± {np.std([r['num_codas'] for r in all_results]):.1f}")
+    print(
+        f"  Codas per file: {total_codas / len(all_results):.1f} ± {np.std([r['num_codas'] for r in all_results]):.1f}"
+    )
 
     if files_with_codas:
         # Combine all coda sizes
         all_coda_sizes = []
         for r in files_with_codas:
-            all_coda_sizes.extend(r['coda_sizes'])
+            all_coda_sizes.extend(r["coda_sizes"])
 
         print(f"\n  All Coda Sizes (n={len(all_coda_sizes)}):")
         print(f"    Mean: {np.mean(all_coda_sizes):.1f} clicks/coda")
@@ -134,15 +142,19 @@ def main():
         long_codas = sum(1 for s in all_coda_sizes if s >= 50)
 
         print("\n  Coda Length Distribution:")
-        print(f"    SHORT (<10 clicks): {short_codas} ({short_codas/len(all_coda_sizes)*100:.1f}%)")
-        print(f"    MEDIUM (10-49): {medium_codas} ({medium_codas/len(all_coda_sizes)*100:.1f}%)")
-        print(f"    LONG (50+): {long_codas} ({long_codas/len(all_coda_sizes)*100:.1f}%)")
+        print(
+            f"    SHORT (<10 clicks): {short_codas} ({short_codas / len(all_coda_sizes) * 100:.1f}%)"
+        )
+        print(
+            f"    MEDIUM (10-49): {medium_codas} ({medium_codas / len(all_coda_sizes) * 100:.1f}%)"
+        )
+        print(f"    LONG (50+): {long_codas} ({long_codas / len(all_coda_sizes) * 100:.1f}%)")
 
         # Inter-click interval analysis
         all_intervals = []
         for r in files_with_codas:
-            if 'intervals_ms' in r:
-                all_intervals.extend(r['intervals_ms'])
+            if "intervals_ms" in r:
+                all_intervals.extend(r["intervals_ms"])
 
         if all_intervals:
             print(f"\n📊 Inter-Click Interval Analysis (n={len(all_intervals)}):")

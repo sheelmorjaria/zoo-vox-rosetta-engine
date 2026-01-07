@@ -16,7 +16,8 @@ import time
 import unittest
 
 # Import all enhancement modules
-sys.path.append('src')
+sys.path.append("src")
+
 
 class TestABTestingController(unittest.TestCase):
     """Test Suite for A/B Testing Controller Implementation"""
@@ -24,11 +25,12 @@ class TestABTestingController(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures for A/B testing"""
         self.temp_dir = tempfile.mkdtemp()
-        self.config_file = os.path.join(self.temp_dir, 'ab_testing_config.json')
+        self.config_file = os.path.join(self.temp_dir, "ab_testing_config.json")
 
     def tearDown(self):
         """Clean up test fixtures"""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_ab_testing_controller_creation(self):
@@ -37,9 +39,7 @@ class TestABTestingController(unittest.TestCase):
         from scientific_validation.ab_testing_controller import ABTestingController
 
         controller = ABTestingController(
-            experiment_name="test_experiment",
-            blind_mode=True,
-            significance_threshold=0.05
+            experiment_name="test_experiment", blind_mode=True, significance_threshold=0.05
         )
 
         self.assertIsNotNone(controller)
@@ -51,22 +51,15 @@ class TestABTestingController(unittest.TestCase):
         """Test that variants can be created and managed"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="test_experiment",
-            blind_mode=True
-        )
+        controller = ABTestingController(experiment_name="test_experiment", blind_mode=True)
 
         # Add variants
         variant_a = controller.create_variant(
-            variant_id="A",
-            name="Control Group",
-            parameters={"method": "traditional"}
+            variant_id="A", name="Control Group", parameters={"method": "traditional"}
         )
 
         variant_b = controller.create_variant(
-            variant_id="B",
-            name="Treatment Group",
-            parameters={"method": "enhanced"}
+            variant_id="B", name="Treatment Group", parameters={"method": "enhanced"}
         )
 
         self.assertEqual(len(controller.variants), 2)
@@ -79,10 +72,7 @@ class TestABTestingController(unittest.TestCase):
         """Test that participants can be assigned to variants"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="test_experiment",
-            blind_mode=True
-        )
+        controller = ABTestingController(experiment_name="test_experiment", blind_mode=True)
 
         # Create variants
         controller.create_variant("A", "Control", {})
@@ -104,10 +94,7 @@ class TestABTestingController(unittest.TestCase):
         """Test that blind mode hides variant information"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="test_experiment",
-            blind_mode=True
-        )
+        controller = ABTestingController(experiment_name="test_experiment", blind_mode=True)
 
         # Create variants with different parameters
         controller.create_variant("A", "Control", {"method": "traditional"})
@@ -130,8 +117,7 @@ class TestABTestingController(unittest.TestCase):
         from scientific_validation.ab_testing_controller import ABTestingController
 
         controller = ABTestingController(
-            experiment_name="test_experiment",
-            significance_threshold=0.05
+            experiment_name="test_experiment", significance_threshold=0.05
         )
 
         # Add variants
@@ -164,9 +150,7 @@ class TestABTestingController(unittest.TestCase):
         """Test that experiment results can be exported"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="test_experiment"
-        )
+        controller = ABTestingController(experiment_name="test_experiment")
 
         # Add variants and record results
         controller.create_variant("A", "Control", {})
@@ -195,10 +179,7 @@ class TestABTestingController(unittest.TestCase):
         """Test support for more than two variants"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="multi_variant_test",
-            blind_mode=True
-        )
+        controller = ABTestingController(experiment_name="multi_variant_test", blind_mode=True)
 
         # Create multiple variants
         variants = ["A", "B", "C", "D"]
@@ -217,9 +198,7 @@ class TestABTestingController(unittest.TestCase):
         """Test real-time monitoring of experiment progress"""
         from scientific_validation.ab_testing_controller import ABTestingController
 
-        controller = ABTestingController(
-            experiment_name="real_time_test"
-        )
+        controller = ABTestingController(experiment_name="real_time_test")
 
         # Add variants
         controller.create_variant("A", "Control", {})
@@ -243,7 +222,9 @@ class TestABTestingController(unittest.TestCase):
         self.assertIn("completion_rates", stats)
         self.assertTrue(stats["total_participants"] > 0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
-    sys.path.append('src/scientific_validation')
+
+    sys.path.append("src/scientific_validation")
     unittest.main()

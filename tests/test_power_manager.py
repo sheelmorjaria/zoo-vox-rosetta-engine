@@ -10,7 +10,7 @@ import sys
 import pytest
 
 # Add path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 # Import Rust modules (will be implemented)
 try:
@@ -23,7 +23,9 @@ try:
 except ImportError:
     # Create Python mock for testing
     class PowerHealth:
-        Normal, LowBattery, PowerSave, Emergency, Critical, Failure, Charging, Maintenance = range(8)
+        Normal, LowBattery, PowerSave, Emergency, Critical, Failure, Charging, Maintenance = range(
+            8
+        )
 
     class PowerStatus:
         def __init__(self, power_save_threshold=30.0, emergency_threshold=15.0):
@@ -36,8 +38,8 @@ except ImportError:
             self.available_power_w = 5.0
             self.status = PowerHealth.Normal
             self.estimated_runtime_min = 0
-            self.charging_status = 'None'
-            self.active_source = 'Battery'
+            self.charging_status = "None"
+            self.active_source = "Battery"
             self._power_save_threshold = power_save_threshold
             self._emergency_threshold = emergency_threshold
             self._update_status()
@@ -73,12 +75,12 @@ except ImportError:
             self._solar_input_w = value
             # Update charging status and active source
             if value > 0:
-                self.charging_status = 'Charging'
-                self.active_source = 'Solar'
+                self.charging_status = "Charging"
+                self.active_source = "Solar"
                 self.available_power_w = value
             else:
-                self.charging_status = 'None'
-                self.active_source = 'Battery'
+                self.charging_status = "None"
+                self.active_source = "Battery"
 
     class PowerConfig:
         def __init__(self):
@@ -94,20 +96,24 @@ except ImportError:
             self.enable_emergency_mode = True
             self.monitor_interval = 10
             self.max_discharge_depth = 80.0
-            self.battery_type = 'LithiumIon'
-            self.power_source_priority = ['Solar', 'External', 'Battery']
+            self.battery_type = "LithiumIon"
+            self.power_source_priority = ["Solar", "External", "Battery"]
 
     class PowerManager:
         def __init__(self, config):
             self.config = config
             self.status = PowerStatus(
                 power_save_threshold=config.power_save_threshold,
-                emergency_threshold=config.emergency_threshold
+                emergency_threshold=config.emergency_threshold,
             )
             self.power_save_active = False
             self.emergency_active = False
             self.last_update = None
-            self.stats = {'total_events': 0, 'power_save_activations': 0, 'emergency_activations': 0}
+            self.stats = {
+                "total_events": 0,
+                "power_save_activations": 0,
+                "emergency_activations": 0,
+            }
 
         async def initialize(self):
             self.last_update = asyncio.get_event_loop().time()
@@ -129,7 +135,10 @@ except ImportError:
             return self.status
 
         async def is_healthy(self):
-            return self.status.status != PowerHealth.Critical and self.status.status != PowerHealth.Failure
+            return (
+                self.status.status != PowerHealth.Critical
+                and self.status.status != PowerHealth.Failure
+            )
 
         async def emergency_shutdown(self):
             self.status.status = PowerHealth.Failure
@@ -175,9 +184,9 @@ class TestPowerManager:
         assert self.power_config.enable_emergency_mode
         assert self.power_config.monitor_interval == 10
         assert self.power_config.max_discharge_depth == 80.0
-        assert self.power_config.battery_type == 'LithiumIon'
+        assert self.power_config.battery_type == "LithiumIon"
         assert len(self.power_config.power_source_priority) == 3
-        assert self.power_config.power_source_priority[0] == 'Solar'
+        assert self.power_config.power_source_priority[0] == "Solar"
 
     @pytest.mark.asyncio
     async def test_power_manager_initialization(self):
@@ -188,8 +197,8 @@ class TestPowerManager:
         assert manager.status.battery_level == 100.0
         assert manager.status.battery_voltage == 12.0
         assert manager.status.status == PowerHealth.Normal
-        assert manager.status.charging_status == 'None'
-        assert manager.status.active_source == 'Battery'
+        assert manager.status.charging_status == "None"
+        assert manager.status.active_source == "Battery"
 
     @pytest.mark.asyncio
     async def test_power_manager_initialization(self):
@@ -273,8 +282,8 @@ class TestPowerManager:
 
         # Status should show charging
         status = await manager.get_status()
-        assert status.charging_status != 'None'
-        assert status.active_source == 'Solar'
+        assert status.charging_status != "None"
+        assert status.active_source == "Solar"
 
     @pytest.mark.asyncio
     async def test_battery_runtime_calculation(self):
@@ -395,9 +404,9 @@ class TestPowerManager:
 
         # Check power source priority
         priority = manager.config.power_source_priority
-        assert priority[0] == 'Solar'  # Solar should be first priority
-        assert priority[1] == 'External'  # External power second
-        assert priority[2] == 'Battery'  # Battery last
+        assert priority[0] == "Solar"  # Solar should be first priority
+        assert priority[1] == "External"  # External power second
+        assert priority[2] == "Battery"  # Battery last
 
     @pytest.mark.asyncio
     async def test_monitoring_interval(self):

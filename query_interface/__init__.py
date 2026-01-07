@@ -15,10 +15,10 @@ from .vocalization_query_interface import (
 )
 
 __all__ = [
-    'VocalizationQueryInterface',
-    'get_query_interface',
-    'query_phrases_by_f0',
-    'query_phrases_by_duration',
-    'get_phrase_similarities',
-    'get_database_statistics'
+    "VocalizationQueryInterface",
+    "get_query_interface",
+    "query_phrases_by_f0",
+    "query_phrases_by_duration",
+    "get_phrase_similarities",
+    "get_database_statistics",
 ]

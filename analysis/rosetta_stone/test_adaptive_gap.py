@@ -15,6 +15,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -30,7 +31,7 @@ def create_synthetic_click_train(sr, duration_sec, click_interval_ms=10):
     for i in range(0, num_samples, interval_samples):
         if i + 100 < num_samples:
             # Add click (short pulse)
-            audio[i:i+100] = 0.5 * np.sin(2 * np.pi * 1000 * np.arange(100) / sr)
+            audio[i : i + 100] = 0.5 * np.sin(2 * np.pi * 1000 * np.arange(100) / sr)
 
     return audio
 
@@ -44,9 +45,9 @@ def create_synthetic_harmonic_tone(sr, duration_sec, frequency_hz=440):
 
 def test_adaptive_gap_detection():
     """Test adaptive gap threshold with synthetic signals."""
-    print("="*70)
+    print("=" * 70)
     print("ADAPTIVE GAP THRESHOLD TEST")
-    print("="*70)
+    print("=" * 70)
 
     sr = 48000
 
@@ -90,9 +91,9 @@ def test_adaptive_gap_detection():
     phrases_adaptive = analyzer2.segment_phrases(harmonic_tone, use_adaptive_gap=True)
     print(f"  Phrases detected: {len(phrases_adaptive)}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("✅ Synthetic tests complete!")
-    print("="*70)
+    print("=" * 70)
 
 
 def test_real_sperm_whale_audio():
@@ -107,19 +108,19 @@ def test_real_sperm_whale_audio():
         print("\n⚠️  Sperm whale test file not found, skipping real audio test")
         return
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("REAL SPERM WHALE AUDIO TEST")
-    print("="*70)
+    print("=" * 70)
 
     audio, sr = sf.read(test_file)
     if len(audio.shape) > 1:
         audio = audio[:, 0]
 
     # Use first 10 seconds for quick test
-    audio = audio[:10 * sr]
+    audio = audio[: 10 * sr]
 
     print(f"\n📊 File: {test_file.name}")
-    print(f"  Duration: {len(audio)/sr:.1f}s")
+    print(f"  Duration: {len(audio) / sr:.1f}s")
     print(f"  Sample rate: {sr} Hz")
 
     analyzer = UniversalRosettaStone(sample_rate=sr)
@@ -134,27 +135,15 @@ def test_real_sperm_whale_audio():
 
     # Test with adaptive gap
     print("\n  Segmentation comparison:")
-    phrases_adaptive = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=50.0,
-        use_adaptive_gap=True
-    )
+    phrases_adaptive = analyzer.segment_phrases(audio, min_gap_ms=50.0, use_adaptive_gap=True)
     print(f"    With adaptive gap (max 50ms): {len(phrases_adaptive)} phrases")
 
     # Test without adaptive gap
-    phrases_fixed_50 = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=50.0,
-        use_adaptive_gap=False
-    )
+    phrases_fixed_50 = analyzer.segment_phrases(audio, min_gap_ms=50.0, use_adaptive_gap=False)
     print(f"    With fixed 50ms gap: {len(phrases_fixed_50)} phrases")
 
     # Test with larger fixed gap
-    phrases_fixed_100 = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=100.0,
-        use_adaptive_gap=False
-    )
+    phrases_fixed_100 = analyzer.segment_phrases(audio, min_gap_ms=100.0, use_adaptive_gap=False)
     print(f"    With fixed 100ms gap: {len(phrases_fixed_100)} phrases")
 
     # Show improvement
@@ -163,7 +152,7 @@ def test_real_sperm_whale_audio():
     else:
         print("\n  ⚠️  No phrases detected - may need parameter adjustment")
 
-    print("="*70)
+    print("=" * 70)
 
 
 def main():

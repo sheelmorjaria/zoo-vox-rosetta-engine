@@ -17,8 +17,9 @@ import unittest
 import numpy as np
 
 # Import all enhancement modules
-sys.path.append('src/realtime')
-sys.path.append('src/architecture')
+sys.path.append("src/realtime")
+sys.path.append("src/architecture")
+
 
 class TestSharedMemoryArchitecture(unittest.TestCase):
     """Test Suite for Shared Memory + Command Queue Implementation"""
@@ -75,7 +76,6 @@ class TestSharedMemoryArchitecture(unittest.TestCase):
         # aggression_level: f32
         # target_duration_ms: u32
         # sequence_id: u64
-
 
         # Test to implement:
         # 1. Serialize command to binary format
@@ -220,10 +220,10 @@ class TestGILHandlingStrategy(unittest.TestCase):
         """Test that safe fallback activates when Python is slow"""
         # Test scenarios:
         fallback_scenarios = [
-            'gil_pause',
-            'long_computation',
-            'memory_allocation',
-            'network_io',
+            "gil_pause",
+            "long_computation",
+            "memory_allocation",
+            "network_io",
         ]
 
         for scenario in fallback_scenarios:
@@ -270,7 +270,7 @@ class TestGILHandlingStrategy(unittest.TestCase):
 
     def test_priority_based_command_processing(self):
         """Test that commands are processed by priority"""
-        command_priorities = ['emergency', 'high', 'normal', 'low']
+        command_priorities = ["emergency", "high", "normal", "low"]
 
         # Test to implement:
         # 1. Send commands with different priorities
@@ -323,10 +323,10 @@ class TestIntegration(unittest.TestCase):
     def test_fault_inolation_mechanisms(self):
         """Test that faults are properly isolated between components"""
         fault_scenarios = [
-            'python_crash',
-            'rust_crash',
-            'shared_memory_corruption',
-            'queue_overflow',
+            "python_crash",
+            "rust_crash",
+            "shared_memory_corruption",
+            "queue_overflow",
         ]
 
         for scenario in fault_scenarios:
@@ -355,8 +355,9 @@ def cleanup_shared_memory(name):
     """Clean up shared memory segment"""
     try:
         # On Windows
-        if os.name == 'nt':
+        if os.name == "nt":
             import ctypes
+
             kernel32 = ctypes.windll.kernel32
             kernel32.UnmapViewOfFile(0)
             kernel32.CloseHandle(0)
@@ -369,7 +370,7 @@ def cleanup_shared_memory(name):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create test suite with all test cases
     suite = unittest.TestSuite()
 
@@ -378,7 +379,7 @@ if __name__ == '__main__':
         TestSharedMemoryArchitecture,
         TestZeroCopyFeaturePassing,
         TestGILHandlingStrategy,
-        TestIntegration
+        TestIntegration,
     ]
 
     for test_class in test_classes:
@@ -390,24 +391,26 @@ if __name__ == '__main__':
     result = runner.run(suite)
 
     # Print summary
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print("Technical Architecture Test Results:")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%")
+    print(
+        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    )
 
     if result.failures:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("FAILURES:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.failures:
             print(f"- {test}: {traceback}")
 
     if result.errors:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("ERRORS:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.errors:
             print(f"- {test}: {traceback}")

@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class SemioticRelation(Enum):
     """Types of semiotic relationships in animal communication"""
+
     INDEXICAL = "indexical"  # Direct causal connection (smoke -> fire)
     ICONIC = "iconic"  # Resemblance-based relationship (sound -> meaning)
     SYMBOLIC = "symbolic"  # Arbitrary conventional relationship
@@ -36,6 +37,7 @@ class SemioticRelation(Enum):
 
 class SemioticState(Enum):
     """Three fundamental states of semiosis"""
+
     CONSISTENT = "consistent"  # Signifier -> Object -> Interpretant aligned
     DECEPTIVE = "deceptive"  # Signifier -> Object mismatch (deception)
     EMERGENT = "emergent"  # New Interpretant emerges (innovation)
@@ -44,6 +46,7 @@ class SemioticState(Enum):
 @dataclass
 class SemioticContext:
     """Context for semiotic analysis including sensory and social dimensions"""
+
     species: Species
     acoustic_features: AcousticFeatures
     social_context: Dict[str, Any] = field(default_factory=dict)
@@ -57,6 +60,7 @@ class SemioticContext:
 @dataclass
 class SemioticAnalysisResult:
     """Results of semiotic analysis on a vocalization"""
+
     phrase_key: str
     semiotic_state: SemioticState
     relation_type: SemioticRelation
@@ -75,6 +79,7 @@ class SemioticAnalysisResult:
 @dataclass
 class SemioticPattern:
     """Recurring semiotic patterns across the population"""
+
     pattern_id: str
     phrase_keys: List[str]
     relation_type: SemioticRelation
@@ -105,14 +110,14 @@ class SemioticEngine:
     def _load_database(self):
         """Load vocalization database"""
         try:
-            with open(self.database_path, 'r') as f:
+            with open(self.database_path, "r") as f:
                 data = json.load(f)
 
             # Reconstruct database
             self.db = VocalizationDatabase()
 
             # Import species data
-            for species_value, species_data in data['species_data'].items():
+            for species_value, species_data in data["species_data"].items():
                 species = Species(species_value)
                 species_data_obj = self._create_species_data_from_json(species, species_data)
                 self.db.add_species_data(species_data_obj)
@@ -131,27 +136,31 @@ class SemioticEngine:
         species_data_obj = SpeciesData(species=species)
 
         # Set basic stats
-        species_data_obj.total_phrases = species_data.get('total_phrases', 0)
-        species_data_obj.total_sentences = species_data.get('total_sentences', 0)
-        species_data_obj.total_grammar_rules = species_data.get('total_grammar_rules', 0)
-        species_data_obj.vocabulary_size = species_data.get('vocabulary_size', 0)
+        species_data_obj.total_phrases = species_data.get("total_phrases", 0)
+        species_data_obj.total_sentences = species_data.get("total_sentences", 0)
+        species_data_obj.total_grammar_rules = species_data.get("total_grammar_rules", 0)
+        species_data_obj.vocabulary_size = species_data.get("vocabulary_size", 0)
 
         # Import phrases
-        for phrase_key, phrase_data in species_data['phrases'].items():
-            acoustic_features = self._create_acoustic_features_from_json(phrase_data['acoustic_features'])
+        for phrase_key, phrase_data in species_data["phrases"].items():
+            acoustic_features = self._create_acoustic_features_from_json(
+                phrase_data["acoustic_features"]
+            )
 
             phrase = Phrase(
                 phrase_key=phrase_key,
-                signature=phrase_data['signature'],
-                species=Species(phrase_data['species']),
-                modality=VocalizationModality(phrase_data['modality']),
+                signature=phrase_data["signature"],
+                species=Species(phrase_data["species"]),
+                modality=VocalizationModality(phrase_data["modality"]),
                 acoustic_features=acoustic_features,
-                total_occurrences=phrase_data['total_occurrences'],
-                contexts=[PhraseContext(ctx['context_name'], ctx['count'], ctx.get('percentage', 0))
-                         for ctx in phrase_data.get('contexts', [])],
-                social_contexts=phrase_data.get('social_contexts', {}),
-                is_compositional=phrase_data.get('is_compositional', False),
-                phrase_components=phrase_data.get('phrase_components', [])
+                total_occurrences=phrase_data["total_occurrences"],
+                contexts=[
+                    PhraseContext(ctx["context_name"], ctx["count"], ctx.get("percentage", 0))
+                    for ctx in phrase_data.get("contexts", [])
+                ],
+                social_contexts=phrase_data.get("social_contexts", {}),
+                is_compositional=phrase_data.get("is_compositional", False),
+                phrase_components=phrase_data.get("phrase_components", []),
             )
             species_data_obj.add_phrase(phrase)
 
@@ -162,17 +171,17 @@ class SemioticEngine:
         from data_models import AcousticFeatures
 
         return AcousticFeatures(
-            mean_f0_hz=features_data['mean_f0_hz'],
-            std_f0_hz=features_data['std_f0_hz'],
-            min_f0_hz=features_data['min_f0_hz'],
-            max_f0_hz=features_data['max_f0_hz'],
-            f0_range_hz=features_data['f0_range_hz'],
-            duration_frames=features_data['duration_frames'],
-            voiced_ratio=features_data['voiced_ratio'],
-            f0_slope=features_data['f0_slope'],
-            modulation_rate=features_data['modulation_rate'],
-            acoustic_variance=features_data['acoustic_variance'],
-            mean_duration_ms=features_data['mean_duration_ms']
+            mean_f0_hz=features_data["mean_f0_hz"],
+            std_f0_hz=features_data["std_f0_hz"],
+            min_f0_hz=features_data["min_f0_hz"],
+            max_f0_hz=features_data["max_f0_hz"],
+            f0_range_hz=features_data["f0_range_hz"],
+            duration_frames=features_data["duration_frames"],
+            voiced_ratio=features_data["voiced_ratio"],
+            f0_slope=features_data["f0_slope"],
+            modulation_rate=features_data["modulation_rate"],
+            acoustic_variance=features_data["acoustic_variance"],
+            mean_duration_ms=features_data["mean_duration_ms"],
         )
 
     def _initialize_semiotic_patterns(self):
@@ -181,7 +190,7 @@ class SemioticEngine:
             Species.MARMOSET: [],
             Species.EGYPTIAN_BAT: [],
             Species.DOLPHIN: [],
-            Species.CHIMPANZEE: []
+            Species.CHIMPANZEE: [],
         }
 
         # Add species-specific patterns
@@ -207,7 +216,7 @@ class SemioticEngine:
             semiotic_state=SemioticState.CONSISTENT,
             relation_type=SemioticRelation.INDEXICAL,
             confidence=0.0,
-            communication_target=context.communication_target
+            communication_target=context.communication_target,
         )
 
         # 1. Calculate deception score based on context misalignment
@@ -339,7 +348,9 @@ class SemioticEngine:
 
         return min(score, 1.0)
 
-    def _analyze_cross_modal_attention(self, phrase: Phrase, context: SemioticContext) -> Dict[str, float]:
+    def _analyze_cross_modal_attention(
+        self, phrase: Phrase, context: SemioticContext
+    ) -> Dict[str, float]:
         """Analyze cross-modal attention patterns"""
         attention_scores = {}
 
@@ -353,7 +364,9 @@ class SemioticEngine:
 
         # Spatial coordination
         if context.cross_sensory_data.get("spatial_coordination", 0) > 0:
-            attention_scores["spatial_coordination"] = context.cross_sensory_data["spatial_coordination"]
+            attention_scores["spatial_coordination"] = context.cross_sensory_data[
+                "spatial_coordination"
+            ]
 
         # Attention focus strength
         if context.attention_focus:
@@ -400,7 +413,9 @@ class SemioticEngine:
 
         # Cross-modal attention adds confidence
         if result.cross_modal_attention:
-            attention_confidence = sum(result.cross_modal_attention.values()) / len(result.cross_modal_attention)
+            attention_confidence = sum(result.cross_modal_attention.values()) / len(
+                result.cross_modal_attention
+            )
             confidence += attention_confidence
             factors += 1
 
@@ -424,7 +439,9 @@ class SemioticEngine:
 
         return potential
 
-    def _extract_behavioral_correlates(self, phrase: Phrase, context: SemioticContext, result: SemioticAnalysisResult) -> Dict[str, Any]:
+    def _extract_behavioral_correlates(
+        self, phrase: Phrase, context: SemioticContext, result: SemioticAnalysisResult
+    ) -> Dict[str, Any]:
         """Extract behavioral correlates from analysis"""
         correlates = {}
 
@@ -450,7 +467,9 @@ class SemioticEngine:
 
         return correlates
 
-    def _generate_interpretant_chain(self, phrase: Phrase, context: SemioticContext, result: SemioticAnalysisResult) -> List[str]:
+    def _generate_interpretant_chain(
+        self, phrase: Phrase, context: SemioticContext, result: SemioticAnalysisResult
+    ) -> List[str]:
         """Generate interpretant chain for the vocalization"""
         chain = []
 
@@ -478,87 +497,103 @@ class SemioticEngine:
     def _add_marmoset_patterns(self):
         """Add marmoset-specific semiotic patterns"""
         # Alarm call patterns
-        self.semiotic_patterns[Species.MARMOSET].append(SemioticPattern(
-            pattern_id="marmoset_alarm_calls",
-            phrase_keys=["F0_12000_DUR_0_RANGE_0", "F0_11000_DUR_0_RANGE_0"],
-            relation_type=SemioticRelation.INDEXICAL,
-            common_contexts=["predator", "threat"],
-            frequency=156,
-            adaptive_value=0.95
-        ))
+        self.semiotic_patterns[Species.MARMOSET].append(
+            SemioticPattern(
+                pattern_id="marmoset_alarm_calls",
+                phrase_keys=["F0_12000_DUR_0_RANGE_0", "F0_11000_DUR_0_RANGE_0"],
+                relation_type=SemioticRelation.INDEXICAL,
+                common_contexts=["predator", "threat"],
+                frequency=156,
+                adaptive_value=0.95,
+            )
+        )
 
         # Social bonding patterns
-        self.semiotic_patterns[Species.MARMOSET].append(SemioticPattern(
-            pattern_id="marmoset_bonding_calls",
-            phrase_keys=["F0_6400_DUR_5_RANGE_0", "F0_7200_DUR_5_RANGE_0"],
-            relation_type=SemioticRelation.EMERGENT,
-            common_contexts=["grooming", "proximity"],
-            frequency=89,
-            adaptive_value=0.87
-        ))
+        self.semiotic_patterns[Species.MARMOSET].append(
+            SemioticPattern(
+                pattern_id="marmoset_bonding_calls",
+                phrase_keys=["F0_6400_DUR_5_RANGE_0", "F0_7200_DUR_5_RANGE_0"],
+                relation_type=SemioticRelation.EMERGENT,
+                common_contexts=["grooming", "proximity"],
+                frequency=89,
+                adaptive_value=0.87,
+            )
+        )
 
     def _add_bat_patterns(self):
         """Add bat-specific semiotic patterns"""
         # Foraging communication
-        self.semiotic_patterns[Species.EGYPTIAN_BAT].append(SemioticPattern(
-            pattern_id="bat_foraging_calls",
-            phrase_keys=["F0_25000_DUR_0_RANGE_15000", "F0_22000_DUR_0_RANGE_12000"],
-            relation_type=SemioticRelation.INDEXICAL,
-            common_contexts=["hunting", "feeding"],
-            frequency=67,
-            adaptive_value=0.92
-        ))
+        self.semiotic_patterns[Species.EGYPTIAN_BAT].append(
+            SemioticPattern(
+                pattern_id="bat_foraging_calls",
+                phrase_keys=["F0_25000_DUR_0_RANGE_15000", "F0_22000_DUR_0_RANGE_12000"],
+                relation_type=SemioticRelation.INDEXICAL,
+                common_contexts=["hunting", "feeding"],
+                frequency=67,
+                adaptive_value=0.92,
+            )
+        )
 
         # Social calls
-        self.semiotic_patterns[Species.EGYPTIAN_BAT].append(SemioticPattern(
-            pattern_id="bat_social_interaction",
-            phrase_keys=["F0_18000_DUR_0_RANGE_8000", "F0_15000_DUR_0_RANGE_6000"],
-            relation_type=SemioticRelation.ICONIC,
-            common_contexts=["roost", "group"],
-            frequency=43,
-            adaptive_value=0.78
-        ))
+        self.semiotic_patterns[Species.EGYPTIAN_BAT].append(
+            SemioticPattern(
+                pattern_id="bat_social_interaction",
+                phrase_keys=["F0_18000_DUR_0_RANGE_8000", "F0_15000_DUR_0_RANGE_6000"],
+                relation_type=SemioticRelation.ICONIC,
+                common_contexts=["roost", "group"],
+                frequency=43,
+                adaptive_value=0.78,
+            )
+        )
 
     def _add_dolphin_patterns(self):
         """Add dolphin-specific semiotic patterns"""
         # Signature whistle patterns
-        self.semiotic_patterns[Species.DOLPHIN].append(SemioticPattern(
-            pattern_id="dolphin_signature_whistles",
-            phrase_keys=["F0_10000_DUR_650_RANGE_7500", "F0_12000_DUR_700_RANGE_8000"],
-            relation_type=SemioticRelation.SYMBOLIC,
-            common_contexts=["identity", "recognition"],
-            frequency=124,
-            adaptive_value=0.94
-        ))
+        self.semiotic_patterns[Species.DOLPHIN].append(
+            SemioticPattern(
+                pattern_id="dolphin_signature_whistles",
+                phrase_keys=["F0_10000_DUR_650_RANGE_7500", "F0_12000_DUR_700_RANGE_8000"],
+                relation_type=SemioticRelation.SYMBOLIC,
+                common_contexts=["identity", "recognition"],
+                frequency=124,
+                adaptive_value=0.94,
+            )
+        )
 
         # Cooperative hunting
-        self.semiotic_patterns[Species.DOLPHIN].append(SemioticPattern(
-            pattern_id="dolphin_hunting_cooperation",
-            phrase_keys=["F0_8000_DUR_0_RANGE_300", "F0_9000_DUR_0_RANGE_400"],
-            relation_type=SemioticRelation.DIRECTED,
-            common_contexts=["hunting", "cooperation"],
-            frequency=78,
-            adaptive_value=0.91
-        ))
+        self.semiotic_patterns[Species.DOLPHIN].append(
+            SemioticPattern(
+                pattern_id="dolphin_hunting_cooperation",
+                phrase_keys=["F0_8000_DUR_0_RANGE_300", "F0_9000_DUR_0_RANGE_400"],
+                relation_type=SemioticRelation.DIRECTED,
+                common_contexts=["hunting", "cooperation"],
+                frequency=78,
+                adaptive_value=0.91,
+            )
+        )
 
     def _add_chimpanzee_patterns(self):
         """Add chimpanzee-specific semiotic patterns"""
         # Food calls
-        self.semiotic_patterns[Species.CHIMPANZEE].append(SemioticPattern(
-            pattern_id="chimpanzee_food_calls",
-            phrase_keys=["F0_4000_DUR_100_RANGE_500", "F0_4500_DUR_150_RANGE_600"],
-            relation_type=SemioticRelation.INDEXICAL,
-            common_contexts=["food", "foraging"],
-            frequency=92,
-            adaptive_value=0.89
-        ))
+        self.semiotic_patterns[Species.CHIMPANZEE].append(
+            SemioticPattern(
+                pattern_id="chimpanzee_food_calls",
+                phrase_keys=["F0_4000_DUR_100_RANGE_500", "F0_4500_DUR_150_RANGE_600"],
+                relation_type=SemioticRelation.INDEXICAL,
+                common_contexts=["food", "foraging"],
+                frequency=92,
+                adaptive_value=0.89,
+            )
+        )
 
         # Social hierarchy
-        self.semiotic_patterns[Species.CHIMPANZEE].append(SemioticPattern(
-            pattern_id="chimpanzee_hierarchy_calls",
-            phrase_keys=["F0_5500_DUR_0_RANGE_0", "F0_6000_DUR_0_RANGE_0"],
-            relation_type=SemioticRelation.DIRECTED,
-            common_contexts=["dominance", "subordination"],
-            frequency=67,
-            adaptive_value=0.85
-        ))
+        self.semiotic_patterns[Species.CHIMPANZEE].append(
+            SemioticPattern(
+                pattern_id="chimpanzee_hierarchy_calls",
+                phrase_keys=["F0_5500_DUR_0_RANGE_0", "F0_6000_DUR_0_RANGE_0"],
+                relation_type=SemioticRelation.DIRECTED,
+                common_contexts=["dominance", "subordination"],
+                frequency=67,
+                adaptive_value=0.85,
+            )
+        )

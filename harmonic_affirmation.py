@@ -51,10 +51,12 @@ class HarmonicAffirmation:
     from the Rosetta Stone analysis pipeline.
     """
 
-    def __init__(self,
-                 harmonic_threshold_ratio: float = 0.2,
-                 min_harmonic_group_size: int = 2,
-                 max_harmonic_deviation: float = 0.15):
+    def __init__(
+        self,
+        harmonic_threshold_ratio: float = 0.2,
+        min_harmonic_group_size: int = 2,
+        max_harmonic_deviation: float = 0.15,
+    ):
         """
         Initialize HarmonicAffirmation with configuration parameters.
 
@@ -79,24 +81,27 @@ class HarmonicAffirmation:
         """
         if not phrases:
             return {
-                'total_harmonic_phrases': 0,
-                'fundamental_freq': None,
-                'harmonic_groups': {},
-                'harmonic_ratio': 0.0,
-                'threshold': 0.0
+                "total_harmonic_phrases": 0,
+                "fundamental_freq": None,
+                "harmonic_groups": {},
+                "harmonic_ratio": 0.0,
+                "threshold": 0.0,
             }
 
         # Extract F0 values
-        f0_values = [p.get('features', {}).get('f0_mean', 0) or p.get('f0_mean', 0)
-                      for p in phrases if p.get('features', {}).get('f0_mean', 0) or p.get('f0_mean', 0) > 0]
+        f0_values = [
+            p.get("features", {}).get("f0_mean", 0) or p.get("f0_mean", 0)
+            for p in phrases
+            if p.get("features", {}).get("f0_mean", 0) or p.get("f0_mean", 0) > 0
+        ]
 
         if not f0_values:
             return {
-                'total_harmonic_phrases': 0,
-                'fundamental_freq': None,
-                'harmonic_groups': {},
-                'harmonic_ratio': 0.0,
-                'threshold': 0.0
+                "total_harmonic_phrases": 0,
+                "fundamental_freq": None,
+                "harmonic_groups": {},
+                "harmonic_ratio": 0.0,
+                "threshold": 0.0,
             }
 
         # Find fundamental frequency (use the lowest frequency)
@@ -115,27 +120,30 @@ class HarmonicAffirmation:
             for harmonic_order in range(1, 11):
                 expected_freq = harmonic_order * fundamental_freq
                 if abs(f0 - expected_freq) <= harmonic_threshold:
-                    group_name = f'harmonic_{harmonic_order}'
+                    group_name = f"harmonic_{harmonic_order}"
                     harmonic_groups[group_name].append(i)
                     harmonic_found = True
                     break
 
             if not harmonic_found:
-                harmonic_groups['non_harmonic'].append(i)
+                harmonic_groups["non_harmonic"].append(i)
                 non_harmonic_count += 1
 
         # Calculate harmonic ratio (exclude non_harmonic and multiple fundamentals)
-        harmonic_keys = [key for key in harmonic_groups.keys()
-                        if key != 'non_harmonic' and not key.startswith('fundamental_')]
+        harmonic_keys = [
+            key
+            for key in harmonic_groups.keys()
+            if key != "non_harmonic" and not key.startswith("fundamental_")
+        ]
         total_harmonic_phrases = sum(len(harmonic_groups[key]) for key in harmonic_keys)
         harmonic_ratio = total_harmonic_phrases / len(f0_values) if f0_values else 0.0
 
         return {
-            'total_harmonic_phrases': total_harmonic_phrases,
-            'fundamental_freq': float(fundamental_freq),
-            'harmonic_groups': dict(harmonic_groups),
-            'harmonic_ratio': float(harmonic_ratio),
-            'threshold': float(harmonic_threshold)
+            "total_harmonic_phrases": total_harmonic_phrases,
+            "fundamental_freq": float(fundamental_freq),
+            "harmonic_groups": dict(harmonic_groups),
+            "harmonic_ratio": float(harmonic_ratio),
+            "threshold": float(harmonic_threshold),
         }
 
     def calculate_harmonic_distance(self, freq1: float, freq2: float) -> float:
@@ -150,7 +158,7 @@ class HarmonicAffirmation:
             Harmonic distance (0 for perfect harmonics, >0 for deviations)
         """
         if freq1 == 0 or freq2 == 0:
-            return float('inf')
+            return float("inf")
 
         # Calculate harmonic ratio
         ratio = freq1 / freq2
@@ -160,7 +168,7 @@ class HarmonicAffirmation:
 
         # Calculate relative deviation
         if closest_harmonic == 0:
-            return float('inf')
+            return float("inf")
 
         deviation = abs(ratio - closest_harmonic) / closest_harmonic
         return deviation
@@ -179,8 +187,8 @@ class HarmonicAffirmation:
         harmonic_analysis = self.analyze_harmonic_series(phrases)
 
         # Calculate confidence score
-        confidence_score = harmonic_analysis['harmonic_ratio']
-        if harmonic_analysis['total_harmonic_phrases'] < self.min_harmonic_group_size:
+        confidence_score = harmonic_analysis["harmonic_ratio"]
+        if harmonic_analysis["total_harmonic_phrases"] < self.min_harmonic_group_size:
             confidence_score *= 0.5  # Penalize small groups
 
         # Generate summary
@@ -196,42 +204,49 @@ class HarmonicAffirmation:
         # Generate recommendations
         recommendations = []
 
-        if harmonic_analysis['harmonic_ratio'] < 0.5:
-            recommendations.append("Consider analyzing with different threshold values for harmonic detection.")
+        if harmonic_analysis["harmonic_ratio"] < 0.5:
+            recommendations.append(
+                "Consider analyzing with different threshold values for harmonic detection."
+            )
 
-        if harmonic_analysis['total_harmonic_phrases'] < self.min_harmonic_group_size:
+        if harmonic_analysis["total_harmonic_phrases"] < self.min_harmonic_group_size:
             recommendations.append("More data needed to establish reliable harmonic patterns.")
 
-        if 'non_harmonic' in harmonic_analysis['harmonic_groups']:
-            non_harmonic_count = len(harmonic_analysis['harmonic_groups']['non_harmonic'])
+        if "non_harmonic" in harmonic_analysis["harmonic_groups"]:
+            non_harmonic_count = len(harmonic_analysis["harmonic_groups"]["non_harmonic"])
             if non_harmonic_count > len(phrases) * 0.5:
                 recommendations.append("High proportion of non-harmonic frequencies detected.")
 
         # Check for multiple fundamental frequencies
-        fundamentals = [key for key in harmonic_analysis['harmonic_groups'].keys()
-                       if key.startswith('fundamental_') or key == 'fundamental']
+        fundamentals = [
+            key
+            for key in harmonic_analysis["harmonic_groups"].keys()
+            if key.startswith("fundamental_") or key == "fundamental"
+        ]
 
         if len(fundamentals) > 1:
-            recommendations.append("Multiple harmonic series detected - consider analyzing separately.")
+            recommendations.append(
+                "Multiple harmonic series detected - consider analyzing separately."
+            )
 
         # Metadata
         metadata = {
-            'analysis_type': 'harmonic_affirmation',
-            'timestamp': None,  # Will be set by caller
-            'parameters': {
-                'harmonic_threshold_ratio': self.harmonic_threshold_ratio,
-                'min_harmonic_group_size': self.min_harmonic_group_size,
-                'max_harmonic_deviation': self.max_harmonic_deviation
+            "analysis_type": "harmonic_affirmation",
+            "timestamp": None,  # Will be set by caller
+            "parameters": {
+                "harmonic_threshold_ratio": self.harmonic_threshold_ratio,
+                "min_harmonic_group_size": self.min_harmonic_group_size,
+                "max_harmonic_deviation": self.max_harmonic_deviation,
             },
-            'total_phrases_analyzed': len(phrases)
+            "total_phrases_analyzed": len(phrases),
         }
 
         return {
-            'summary': summary,
-            'detailed_analysis': harmonic_analysis,
-            'recommendations': recommendations,
-            'confidence_score': float(confidence_score),
-            'metadata': metadata
+            "summary": summary,
+            "detailed_analysis": harmonic_analysis,
+            "recommendations": recommendations,
+            "confidence_score": float(confidence_score),
+            "metadata": metadata,
         }
 
 
@@ -239,10 +254,10 @@ class HarmonicAffirmation:
 if __name__ == "__main__":
     # Test data
     test_phrases = [
-        {'f0_mean': 440.0, 'features': {'f0_mean': 440.0}},
-        {'f0_mean': 880.0, 'features': {'f0_mean': 880.0}},
-        {'f0_mean': 1320.0, 'features': {'f0_mean': 1320.0}},
-        {'f0_mean': 2000.0, 'features': {'f0_mean': 2000.0}},
+        {"f0_mean": 440.0, "features": {"f0_mean": 440.0}},
+        {"f0_mean": 880.0, "features": {"f0_mean": 880.0}},
+        {"f0_mean": 1320.0, "features": {"f0_mean": 1320.0}},
+        {"f0_mean": 2000.0, "features": {"f0_mean": 2000.0}},
     ]
 
     # Create analyzer and test

@@ -21,7 +21,7 @@ def generate_flat_tone_phrase_with_ascension(
     duration_ms: float,
     sample_rate: int = 22050,
     num_harmonics: int = 5,
-    ascension_rate: float = 0.1  # Frequency ascension rate (Hz/ms)
+    ascension_rate: float = 0.1,  # Frequency ascension rate (Hz/ms)
 ) -> np.ndarray:
     """
     Generate a flat tone with gentle frequency ascension.
@@ -68,6 +68,7 @@ def generate_flat_tone_phrase_with_ascension(
 
     return audio
 
+
 def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
     """
     Create a comprehensive marmoset vocabulary with ascending frequency sentences.
@@ -80,7 +81,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
     print("=" * 80)
 
     # Initialize phrase library
-    library = PhraseAudioLibrary(species='marmoset', sr=22050)
+    library = PhraseAudioLibrary(species="marmoset", sr=22050)
 
     # Define vocabulary with ascending frequency patterns
     # Each sentence demonstrates a different behavioral pattern
@@ -90,7 +91,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         (5200, "alarm_warning", "Warning escalation"),
         (5600, "alarm_alert", "Alert level"),
         (6000, "alarm_danger", "Danger alert"),
-        (6400, "alarm_emergency", "Emergency response")
+        (6400, "alarm_emergency", "Emergency response"),
     ]
 
     sentence_2_food_sequence = [
@@ -99,7 +100,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         (4800, "food_search", "Searching"),
         (5200, "food_location", "Located food"),
         (5600, "food_intake", "Beginning intake"),
-        (6000, "food_consumption", "Consuming")
+        (6000, "food_consumption", "Consuming"),
     ]
 
     sentence_3_social_sequence = [
@@ -108,7 +109,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         (5000, "social_interaction", "Interaction"),
         (5400, "social_play", "Play initiation"),
         (5800, "social_bonding", "Bonding behavior"),
-        (6200, "social_cooperation", "Cooperation")
+        (6200, "social_cooperation", "Cooperation"),
     ]
 
     sentence_4_neutral_sequence = [
@@ -116,17 +117,19 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         (4800, "neutral_attention", "Attention focused"),
         (5200, "neutral_processing", "Processing information"),
         (5600, "neutral_decision", "Making decision"),
-        (6000, "neutral_action", "Taking action")
+        (6000, "neutral_action", "Taking action"),
     ]
 
     all_sentences = [
         ("Alarm Sequence", sentence_1_alarm_sequence),
         ("Food Sequence", sentence_2_food_sequence),
         ("Social Sequence", sentence_3_social_sequence),
-        ("Neutral Sequence", sentence_4_neutral_sequence)
+        ("Neutral Sequence", sentence_4_neutral_sequence),
     ]
 
-    print(f"\n1. Creating vocabulary with {sum(len(seq) for _, seq in all_sentences)} phrase types...")
+    print(
+        f"\n1. Creating vocabulary with {sum(len(seq) for _, seq in all_sentences)} phrase types..."
+    )
 
     total_segments = 0
 
@@ -139,20 +142,20 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
             audio = generate_flat_tone_phrase_with_ascension(
                 base_f0=f0,
                 duration_ms=duration_ms,
-                ascension_rate=0.05  # Gentle ascension
+                ascension_rate=0.05,  # Gentle ascension
             )
 
             # Extract context from phrase key
-            context = phrase_key.split('_')[0]
+            context = phrase_key.split("_")[0]
 
             # Create phrase segment
             segment = library.create_phrase_segment(
                 audio=audio,
                 phrase_key=phrase_key,
                 context=context,
-                individual_id='marmoset_alpha',
+                individual_id="marmoset_alpha",
                 quality_score=0.85 + (i * 0.02),  # Increasing quality in sequence
-                source_file="ascending_sentence_generation"
+                source_file="ascending_sentence_generation",
             )
 
             if segment:
@@ -165,9 +168,9 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
 
     # Context analysis
     context_stats = library.get_context_statistics()
-    if 'context_statistics' in context_stats:
+    if "context_statistics" in context_stats:
         print("   Context distribution:")
-        for context, stats in context_stats['context_statistics'].items():
+        for context, stats in context_stats["context_statistics"].items():
             print(f"     {context}: {stats['total_occurrences']} segments")
 
     # Frequency analysis
@@ -178,7 +181,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
     for phrase_key in phrase_keys:
         if phrase_key in library.phrase_segments:
             for segment in library.phrase_segments[phrase_key]:
-                if hasattr(segment, 'mean_f0_hz'):
+                if hasattr(segment, "mean_f0_hz"):
                     f0_values.append(segment.mean_f0_hz)
 
     if f0_values:
@@ -193,7 +196,9 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         print(f"\n   {sentence_name}:")
         f0_sequence = [f0 for f0, _, _ in phrase_sequence]
         print(f"     Frequency sequence: {' → '.join(f'{f0}Hz' for f0 in f0_sequence)}")
-        print(f"     Ascending steps: {[f0_sequence[i+1] - f0_sequence[i] for i in range(len(f0_sequence)-1)]}Hz")
+        print(
+            f"     Ascending steps: {[f0_sequence[i + 1] - f0_sequence[i] for i in range(len(f0_sequence) - 1)]}Hz"
+        )
 
     # Save the library
     output_path = "marmoset_ascending_sentences_library.pkl"
@@ -202,6 +207,7 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
 
     return library
 
+
 def demonstrate_phrase_selection(library: PhraseAudioLibrary):
     """Demonstrate context-aware phrase selection from ascending sequences."""
     print("\n" + "=" * 80)
@@ -209,28 +215,29 @@ def demonstrate_phrase_selection(library: PhraseAudioLibrary):
     print("=" * 80)
 
     # Demonstrate context-aware selection
-    contexts = ['alarm', 'food', 'social', 'neutral']
+    contexts = ["alarm", "food", "social", "neutral"]
 
     for context in contexts:
         print(f"\n{context.upper()} context phrases:")
 
         # Select phrases by context
         selected_phrases = library.select_phrases_by_context(
-            context=context,
-            min_quality=0.5,
-            max_results=5
+            context=context, min_quality=0.5, max_results=5
         )
 
         if selected_phrases:
             # Sort by frequency to show ascending patterns
-            selected_phrases.sort(key=lambda x: getattr(x, 'mean_f0_hz', 0))
+            selected_phrases.sort(key=lambda x: getattr(x, "mean_f0_hz", 0))
 
             print(f"   Found {len(selected_phrases)} phrases:")
             for i, segment in enumerate(selected_phrases):
-                print(f"     {i+1}. {segment.phrase_key}: {getattr(segment, 'mean_f0_hz', 0):.0f}Hz, "
-                      f"Quality: {segment.quality_score:.2f}")
+                print(
+                    f"     {i + 1}. {segment.phrase_key}: {getattr(segment, 'mean_f0_hz', 0):.0f}Hz, "
+                    f"Quality: {segment.quality_score:.2f}"
+                )
         else:
             print("   No phrases found for this context")
+
 
 def analyze_ascending_patterns(library: PhraseAudioLibrary):
     """Analyze the ascending frequency patterns in the library."""
@@ -246,7 +253,7 @@ def analyze_ascending_patterns(library: PhraseAudioLibrary):
             segments = library.phrase_segments[phrase_key]
             if segments:
                 segment = segments[0]  # Get first segment
-                if hasattr(segment, 'context') and hasattr(segment, 'mean_f0_hz'):
+                if hasattr(segment, "context") and hasattr(segment, "mean_f0_hz"):
                     context = segment.context
                     f0 = segment.mean_f0_hz
 
@@ -265,10 +272,11 @@ def analyze_ascending_patterns(library: PhraseAudioLibrary):
 
             # Calculate ascension pattern
             if len(f0_values) > 1:
-                steps = [f0_values[i+1] - f0_values[i] for i in range(len(f0_values)-1)]
+                steps = [f0_values[i + 1] - f0_values[i] for i in range(len(f0_values) - 1)]
                 print(f"   Ascension steps: {steps}Hz")
                 print(f"   Mean step: {np.mean(steps):.0f}Hz")
                 print(f"   Consistency (std): {np.std(steps):.0f}Hz")
+
 
 def main():
     """Main demonstration function."""
@@ -292,6 +300,7 @@ def main():
     print("✅ Context-aware selection working")
     print("✅ Ascending pattern analysis completed")
     print("=" * 80)
+
 
 if __name__ == "__main__":
     main()

@@ -7,4 +7,4 @@ into the unified database system.
 
 from .import_vocalization_data import DataImporter
 
-__all__ = ['DataImporter']
+__all__ = ["DataImporter"]

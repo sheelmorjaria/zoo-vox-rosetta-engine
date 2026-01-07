@@ -50,11 +50,13 @@ def load_annotations_tsv(tsv_path: str) -> pd.DataFrame:
     """Load marmoset annotations from TSV file."""
     print(f"Loading annotations from {tsv_path}...")
 
-    df = pd.read_csv(tsv_path, sep='\t')
+    df = pd.read_csv(tsv_path, sep="\t")
 
     print(f"✅ Loaded {len(df)} annotations")
-    print(f"   Date range: {df['year'].min()}-{df['month'].min()}-{df['day'].min()} "
-          f"to {df['year'].max()}-{df['month'].max()}-{df['day'].max()}")
+    print(
+        f"   Date range: {df['year'].min()}-{df['month'].min()}-{df['day'].min()} "
+        f"to {df['year'].max()}-{df['month'].max()}-{df['day'].max()}"
+    )
 
     return df
 
@@ -63,7 +65,7 @@ def get_label_distribution(df: pd.DataFrame) -> Dict[str, int]:
     """Get distribution of vocalization labels (behavioral contexts)."""
     print("\n📊 VOCALIZATION LABEL DISTRIBUTION (Behavioral Contexts):")
 
-    label_counts = df['label'].value_counts().to_dict()
+    label_counts = df["label"].value_counts().to_dict()
 
     total = sum(label_counts.values())
 
@@ -75,10 +77,7 @@ def get_label_distribution(df: pd.DataFrame) -> Dict[str, int]:
 
 
 def map_annotations_to_phrases(
-    annotations: pd.DataFrame,
-    phrase_segments: Dict,
-    db: Dict,
-    species: str = 'marmoset'
+    annotations: pd.DataFrame, phrase_segments: Dict, db: Dict, species: str = "marmoset"
 ) -> Dict[str, List[str]]:
     """
     Map annotation labels to phrase keys based on acoustic similarity.
@@ -95,31 +94,32 @@ def map_annotations_to_phrases(
     """
     print("\n🔗 Mapping annotations to phrase keys...")
 
-    phrases = db['species_data'][species]['phrases']
+    phrases = db["species_data"][species]["phrases"]
 
     # Build phrase lookup by duration and F0
     phrase_index = {}
 
     for phrase_key, phrase_data in phrases.items():
-        af = phrase_data['acoustic_features']
+        af = phrase_data["acoustic_features"]
 
-        duration = af.get('mean_duration_ms', 0) / 1000  # Convert to seconds
-        af.get('mean_f0_hz', 0)
-        af.get('f0_range_hz', 0)
+        duration = af.get("mean_duration_ms", 0) / 1000  # Convert to seconds
+        af.get("mean_f0_hz", 0)
+        af.get("f0_range_hz", 0)
 
         # Parse phrase key components
         # Format: F0_X_DUR_Y_RANGE_Z
         import re
-        match = re.match(r'F0_(\d+)_DUR_(\d+)_RANGE_(\d+)', phrase_key)
+
+        match = re.match(r"F0_(\d+)_DUR_(\d+)_RANGE_(\d+)", phrase_key)
         if match:
             key_f0 = int(match.group(1))
             key_dur = int(match.group(2))
             key_range = int(match.group(3))
 
             phrase_index[phrase_key] = {
-                'duration': key_dur / 1000.0,  # Convert ms to seconds
-                'f0': key_f0,
-                'range': key_range
+                "duration": key_dur / 1000.0,  # Convert ms to seconds
+                "f0": key_f0,
+                "range": key_range,
             }
 
     # Map annotations to phrases
@@ -128,16 +128,16 @@ def map_annotations_to_phrases(
     mapped_count = 0
 
     for _, row in annotations.iterrows():
-        label = row['label']
-        duration = row['duration']
+        label = row["label"]
+        duration = row["duration"]
 
         # Find best matching phrase
         best_phrase = None
-        best_score = float('inf')
+        best_score = float("inf")
 
         for phrase_key, phrase_info in phrase_index.items():
             # Score based on duration similarity
-            duration_diff = abs(phrase_info['duration'] - duration)
+            duration_diff = abs(phrase_info["duration"] - duration)
 
             if duration_diff < 0.2:  # Within 200ms
                 if duration_diff < best_score:
@@ -154,10 +154,7 @@ def map_annotations_to_phrases(
 
 
 def build_context_matrix_from_annotations(
-    phrase_labels: Dict[str, List[str]],
-    db: Dict,
-    species: str,
-    persona_min_score: float = 0.3
+    phrase_labels: Dict[str, List[str]], db: Dict, species: str, persona_min_score: float = 0.3
 ) -> Tuple[np.ndarray, List[str], List[str]]:
     """
     Build persona-context matrix from annotation labels.
@@ -167,7 +164,7 @@ def build_context_matrix_from_annotations(
     """
     print("\n📊 Building persona-context matrix from annotations...")
 
-    phrases = db['species_data'][species]['phrases']
+    phrases = db["species_data"][species]["phrases"]
 
     # Get unique personas and contexts
     persona_names = list(ACOUSTIC_PERSONAS.keys())
@@ -221,22 +218,26 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Associate acoustic personas with real behavioral contexts'
+        description="Associate acoustic personas with real behavioral contexts"
     )
-    parser.add_argument('--db', type=str,
-                       default='/home/sheel/birdsong_analysis/src/vocalization_database.json',
-                       help='Path to vocalization database')
-    parser.add_argument('--annotations', type=str,
-                       default='/home/sheel/birdsong_analysis/Annotations.tsv',
-                       help='Path to annotations TSV file')
-    parser.add_argument('--species', type=str, default='marmoset',
-                       help='Species to analyze')
-    parser.add_argument('--min-score', type=float, default=0.3,
-                       help='Minimum persona score for phrase assignment')
-    parser.add_argument('--visualize', action='store_true',
-                       help='Create heatmap visualization')
-    parser.add_argument('--output', type=str,
-                       help='Output path for visualization')
+    parser.add_argument(
+        "--db",
+        type=str,
+        default="/home/sheel/birdsong_analysis/src/vocalization_database.json",
+        help="Path to vocalization database",
+    )
+    parser.add_argument(
+        "--annotations",
+        type=str,
+        default="/home/sheel/birdsong_analysis/Annotations.tsv",
+        help="Path to annotations TSV file",
+    )
+    parser.add_argument("--species", type=str, default="marmoset", help="Species to analyze")
+    parser.add_argument(
+        "--min-score", type=float, default=0.3, help="Minimum persona score for phrase assignment"
+    )
+    parser.add_argument("--visualize", action="store_true", help="Create heatmap visualization")
+    parser.add_argument("--output", type=str, help="Output path for visualization")
 
     args = parser.parse_args()
 
@@ -261,7 +262,7 @@ def main():
         print(f"\n❌ Database not found: {args.db}")
         return
 
-    with open(args.db, 'r') as f:
+    with open(args.db, "r") as f:
         db = json.load(f)
 
     print("\n✅ Loaded vocalization database")
@@ -294,15 +295,11 @@ def main():
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)
 
     # Discover persona semantics
-    discover_persona_semantics(
-        associations, residuals, min_occurrences=5
-    )
+    discover_persona_semantics(associations, residuals, min_occurrences=5)
 
     # Visualize
     if args.visualize:
-        visualize_persona_context_heatmap(
-            matrix, persona_names, context_names, args.output
-        )
+        visualize_persona_context_heatmap(matrix, persona_names, context_names, args.output)
 
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")

@@ -31,10 +31,10 @@ import soundfile as sf
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configuration
-AUDIO_INDEX_MARMOSET = '/home/sheel/birdsong_analysis/src/audio_library/audio_index.json'
-AUDIO_INDEX_BAT = '/home/sheel/birdsong_analysis/src/audio_library/bat_audio_index.json'
-OUTPUT_DIR = '/home/sheel/birdsong_analysis/src/validation_results'
-OUTPUT_PATH = '/home/sheel/birdsong_analysis/src/micro_dynamics_database.json'
+AUDIO_INDEX_MARMOSET = "/home/sheel/birdsong_analysis/src/audio_library/audio_index.json"
+AUDIO_INDEX_BAT = "/home/sheel/birdsong_analysis/src/audio_library/bat_audio_index.json"
+OUTPUT_DIR = "/home/sheel/birdsong_analysis/src/validation_results"
+OUTPUT_PATH = "/home/sheel/birdsong_analysis/src/micro_dynamics_database.json"
 
 
 def extract_attack_time(audio: np.ndarray, sr: int) -> float:
@@ -81,10 +81,12 @@ def extract_vibrato_features(audio: np.ndarray, sr: int) -> tuple:
 
     # Smooth envelope
     from scipy.ndimage import gaussian_filter1d
+
     smoothed = gaussian_filter1d(envelope, sigma=int(sr * 0.002))
 
     # Find peaks in envelope
     from scipy.signal import find_peaks
+
     peaks, _ = find_peaks(smoothed, distance=int(sr * 0.05))
 
     if len(peaks) < 2:
@@ -121,6 +123,7 @@ def extract_vibrato_features(audio: np.ndarray, sr: int) -> tuple:
 def extract_spectral_flatness(audio: np.ndarray, sr: int) -> float:
     """Extract spectral flatness (ratio of geometric to arithmetic mean)."""
     from scipy.signal import spectrogram
+
     freqs, times, Sxx = spectrogram(audio, sr)
 
     # Avoid log(0)
@@ -136,13 +139,14 @@ def extract_spectral_flatness(audio: np.ndarray, sr: int) -> float:
 def extract_hnr(audio: np.ndarray, sr: int) -> float:
     """Extract Harmonic-to-Noise Ratio (simplified)."""
     # Signal energy
-    signal_energy = np.sum(audio ** 2)
+    signal_energy = np.sum(audio**2)
 
     # Noise estimate (high-frequency component)
     from scipy.signal import butter, filtfilt
-    b, a = butter(4, 0.8, btype='high', fs=sr)
+
+    b, a = butter(4, 0.8, btype="high", fs=sr)
     high_freq = filtfilt(b, a, audio)
-    noise_energy = np.sum(high_freq ** 2)
+    noise_energy = np.sum(high_freq**2)
 
     if noise_energy > 0:
         hnr_linear = signal_energy / noise_energy
@@ -210,11 +214,7 @@ def extract_13_mfcc(audio: np.ndarray, sr: int, n_mfcc: int = 13) -> np.ndarray:
             # n_fft=2048 provides good frequency resolution
             # hop_length=512 provides good time resolution
             mfcc_frame_based = librosa.feature.mfcc(
-                y=audio.astype(np.float32),
-                sr=sr,
-                n_mfcc=n_mfcc,
-                n_fft=2048,
-                hop_length=512
+                y=audio.astype(np.float32), sr=sr, n_mfcc=n_mfcc, n_fft=2048, hop_length=512
             )
 
             # Average across time to get phrase-level features
@@ -240,6 +240,7 @@ def extract_micro_dynamics_from_file(file_path: str, phrase_key: str) -> Dict:
         # Resample to 22050 if needed
         if sr != 22050:
             from scipy import signal
+
             num_samples = int(len(audio) * 22050 / sr)
             audio = signal.resample(audio, num_samples)
             sr = 22050
@@ -260,15 +261,15 @@ def extract_micro_dynamics_from_file(file_path: str, phrase_key: str) -> Dict:
 
         # Mean F0 from phrase key (parse if available)
         f0_mean = 0.0
-        if phrase_key.startswith('F0_'):
-            parts = phrase_key.split('_')
+        if phrase_key.startswith("F0_"):
+            parts = phrase_key.split("_")
             if len(parts) > 1:
                 try:
                     f0_mean = float(parts[1])
                 except:
                     pass
-        elif phrase_key.startswith('FM_'):
-            parts = phrase_key.split('_')
+        elif phrase_key.startswith("FM_"):
+            parts = phrase_key.split("_")
             if len(parts) > 1:
                 try:
                     f0_mean = float(parts[1]) * 1000  # Convert kHz to Hz
@@ -276,17 +277,17 @@ def extract_micro_dynamics_from_file(file_path: str, phrase_key: str) -> Dict:
                     pass
 
         return {
-            'phrase_key': phrase_key,
-            'f0_mean': f0_mean,
-            'duration_ms': duration_ms,
-            'attack_ms': attack_ms,
-            'decay_ms': decay_ms,
-            'vibrato_rate_hz': vibrato_rate,
-            'vibrato_depth_cents': vibrato_depth,
-            'jitter': jitter,
-            'spectral_flatness': flatness,
-            'hnr_db': hnr,
-            'sustain_level': 0.7,  # Estimated
+            "phrase_key": phrase_key,
+            "f0_mean": f0_mean,
+            "duration_ms": duration_ms,
+            "attack_ms": attack_ms,
+            "decay_ms": decay_ms,
+            "vibrato_rate_hz": vibrato_rate,
+            "vibrato_depth_cents": vibrato_depth,
+            "jitter": jitter,
+            "spectral_flatness": flatness,
+            "hnr_db": hnr,
+            "sustain_level": 0.7,  # Estimated
         }
 
     except Exception as e:
@@ -300,33 +301,32 @@ def process_audio_library(audio_index_path: str, species: str) -> Dict:
     print(f"EXTRACTING MICRO-DYNAMICS: {species.upper()}")
     print(f"{'=' * 80}")
 
-    with open(audio_index_path, 'r') as f:
+    with open(audio_index_path, "r") as f:
         audio_index = json.load(f)
 
     micro_dynamics_db = {}
     processed_count = 0
-    total_segments = sum(len(data['segments']) for data in audio_index['phrases'].values())
+    total_segments = sum(len(data["segments"]) for data in audio_index["phrases"].values())
 
-    print(f"\n🔍 Processing {total_segments} segments from {len(audio_index['phrases'])} phrase types...")
+    print(
+        f"\n🔍 Processing {total_segments} segments from {len(audio_index['phrases'])} phrase types..."
+    )
 
-    for phrase_key, phrase_data in audio_index['phrases'].items():
-        segments = phrase_data['segments']
+    for phrase_key, phrase_data in audio_index["phrases"].items():
+        segments = phrase_data["segments"]
 
         for segment in segments:
-            relative_path = segment['relative_path']
+            relative_path = segment["relative_path"]
             file_path = Path(audio_index_path).parent / relative_path
 
             if file_path.exists():
-                micro_dynamics = extract_micro_dynamics_from_file(
-                    str(file_path),
-                    phrase_key
-                )
+                micro_dynamics = extract_micro_dynamics_from_file(str(file_path), phrase_key)
 
                 if micro_dynamics:
                     micro_dynamics_db[phrase_key] = micro_dynamics
                     processed_count += 1
 
-        if (processed_count % 500 == 0):
+        if processed_count % 500 == 0:
             print(f"  Processed {processed_count}/{total_segments} segments...")
 
     print(f"\n✅ Extracted micro-dynamics for {len(micro_dynamics_db)} segments")
@@ -348,20 +348,27 @@ def analyze_extracted_features(micro_dynamics_db: Dict):
         return
 
     # Calculate statistics
-    feature_names = ['attack_ms', 'decay_ms', 'vibrato_rate_hz',
-                     'vibrato_depth_cents', 'jitter', 'spectral_flatness', 'hnr_db']
+    feature_names = [
+        "attack_ms",
+        "decay_ms",
+        "vibrato_rate_hz",
+        "vibrato_depth_cents",
+        "jitter",
+        "spectral_flatness",
+        "hnr_db",
+    ]
 
     stats = {}
     for feature in feature_names:
         values = [f[feature] for f in features]
         stats[feature] = {
-            'mean': float(np.mean(values)),
-            'std': float(np.std(values)),
-            'min': float(np.min(values)),
-            'max': float(np.max(values)),
-            'median': float(np.median(values)),
-            'q25': float(np.percentile(values, 25)),
-            'q75': float(np.percentile(values, 75))
+            "mean": float(np.mean(values)),
+            "std": float(np.std(values)),
+            "min": float(np.min(values)),
+            "max": float(np.max(values)),
+            "median": float(np.median(values)),
+            "q25": float(np.percentile(values, 25)),
+            "q75": float(np.percentile(values, 75)),
         }
 
         print(f"\n{feature}:")
@@ -379,15 +386,12 @@ def save_micro_dynamics_database(marmoset_db: Dict, bat_db: Dict, stats: Dict):
     Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
     output_data = {
-        'extraction_date': str(Path(__file__).stat().st_mtime),
-        'species_data': {
-            'marmoset': marmoset_db,
-            'egyptian_bat': bat_db
-        },
-        'statistics': stats
+        "extraction_date": str(Path(__file__).stat().st_mtime),
+        "species_data": {"marmoset": marmoset_db, "egyptian_bat": bat_db},
+        "statistics": stats,
     }
 
-    with open(OUTPUT_PATH, 'w') as f:
+    with open(OUTPUT_PATH, "w") as f:
         json.dump(output_data, f, indent=2)
 
     print(f"\n💾 Saved micro-dynamics database to {OUTPUT_PATH}")
@@ -400,10 +404,10 @@ def main():
     print("=" * 80)
 
     # Process marmoset
-    marmoset_db = process_audio_library(AUDIO_INDEX_MARMOSET, 'marmoset')
+    marmoset_db = process_audio_library(AUDIO_INDEX_MARMOSET, "marmoset")
 
     # Process bat
-    bat_db = process_audio_library(AUDIO_INDEX_BAT, 'egyptian_bat')
+    bat_db = process_audio_library(AUDIO_INDEX_BAT, "egyptian_bat")
 
     # Analyze combined
     print(f"\n{'=' * 80}")

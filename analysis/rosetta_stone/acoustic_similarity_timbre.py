@@ -18,17 +18,17 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
-sys.path.append('/home/sheel/birdsong_analysis')
+sys.path.append("/home/sheel/birdsong_analysis")
 sys.path.append(str(Path(__file__).parent))
 
 from universal_rosetta_stone import UniversalRosettaStone
 
 # Timbre feature names we just added
 TIMBRE_FEATURES = [
-    'spectral_centroid_hz',
-    'spectral_slope',
-    'spectral_bandwidth_hz',
-    'spectral_rolloff_hz'
+    "spectral_centroid_hz",
+    "spectral_slope",
+    "spectral_bandwidth_hz",
+    "spectral_rolloff_hz",
 ]
 
 
@@ -37,7 +37,7 @@ def load_phrase_database(db_path: str, max_phrases: int = 100) -> Dict:
     print(f"Loading phrase database from {db_path}...")
 
     try:
-        with open(db_path, 'rb') as f:
+        with open(db_path, "rb") as f:
             data = pickle.load(f)
 
         print(f"✅ Loaded {len(data)} phrase types")
@@ -88,7 +88,7 @@ def compute_timbre_distance(timbre1: Dict[str, float], timbre2: Dict[str, float]
     common_features = set(timbre1.keys()) & set(timbre2.keys())
 
     if not common_features:
-        return float('inf')
+        return float("inf")
 
     # Extract values
     vals1 = []
@@ -111,10 +111,10 @@ def compute_timbre_distance(timbre1: Dict[str, float], timbre2: Dict[str, float]
     # spectral_bandwidth: typically 0-5000 Hz
     # spectral_rolloff: typically 0-10000 Hz
     feature_scales = {
-        'spectral_centroid_hz': 10000.0,
-        'spectral_slope': 2.0,
-        'spectral_bandwidth_hz': 5000.0,
-        'spectral_rolloff_hz': 10000.0
+        "spectral_centroid_hz": 10000.0,
+        "spectral_slope": 2.0,
+        "spectral_bandwidth_hz": 5000.0,
+        "spectral_rolloff_hz": 10000.0,
     }
 
     # Normalize differences
@@ -126,7 +126,7 @@ def compute_timbre_distance(timbre1: Dict[str, float], timbre2: Dict[str, float]
     normalized_diff = np.array(normalized_diff)
 
     # Euclidean distance
-    distance = np.sqrt(np.sum(normalized_diff ** 2))
+    distance = np.sqrt(np.sum(normalized_diff**2))
 
     return distance
 
@@ -167,7 +167,7 @@ def analyze_timbre_space(phrase_segments: Dict) -> Tuple[Dict, List]:
         phrase_audios.append((phrase_key, audio))
 
         if (i + 1) % 10 == 0:
-            print(f"  Processed {i+1}/{len(phrase_segments)} phrase types...")
+            print(f"  Processed {i + 1}/{len(phrase_segments)} phrase types...")
 
     elapsed = time.time() - start_time
     print(f"\n✅ Extracted timbre features for {len(phrase_timbres)} phrases in {elapsed:.1f}s")
@@ -176,9 +176,7 @@ def analyze_timbre_space(phrase_segments: Dict) -> Tuple[Dict, List]:
 
 
 def find_similar_by_timbre(
-    query_phrase_key: str,
-    phrase_timbres: Dict,
-    top_n: int = 5
+    query_phrase_key: str, phrase_timbres: Dict, top_n: int = 5
 ) -> List[Tuple[str, float]]:
     """
     Find phrases with similar timbre to a query phrase.
@@ -227,7 +225,9 @@ def analyze_timbre_clusters(phrase_timbres: Dict) -> Dict:
 
     for f in TIMBRE_FEATURES:
         values = all_values[f]
-        print(f"{f:<25} {np.min(values):>12.1f} {np.max(values):>12.1f} {np.mean(values):>12.1f} {np.std(values):>12.1f}")
+        print(
+            f"{f:<25} {np.min(values):>12.1f} {np.max(values):>12.1f} {np.mean(values):>12.1f} {np.std(values):>12.1f}"
+        )
 
     # Compute pairwise distance distribution
     print("\n📊 PAIRWISE TIMBRE DISTANCES:")
@@ -240,7 +240,7 @@ def analyze_timbre_clusters(phrase_timbres: Dict) -> Dict:
     count = 0
 
     for i in range(len(keys)):
-        for j in range(i+1, len(keys)):
+        for j in range(i + 1, len(keys)):
             dist = compute_timbre_distance(phrase_timbres[keys[i]], phrase_timbres[keys[j]])
             distances.append(dist)
             count += 1
@@ -260,16 +260,22 @@ def analyze_timbre_clusters(phrase_timbres: Dict) -> Dict:
     print(f"  Max distance: {np.max(distances):.4f}")
 
     return {
-        'feature_stats': {f: {'min': np.min(all_values[f]), 'max': np.max(all_values[f]),
-                              'mean': np.mean(all_values[f]), 'std': np.std(all_values[f])}
-                         for f in TIMBRE_FEATURES},
-        'pairwise_distances': {
-            'mean': np.mean(distances),
-            'median': np.median(distances),
-            'std': np.std(distances),
-            'min': np.min(distances),
-            'max': np.max(distances)
-        }
+        "feature_stats": {
+            f: {
+                "min": np.min(all_values[f]),
+                "max": np.max(all_values[f]),
+                "mean": np.mean(all_values[f]),
+                "std": np.std(all_values[f]),
+            }
+            for f in TIMBRE_FEATURES
+        },
+        "pairwise_distances": {
+            "mean": np.mean(distances),
+            "median": np.median(distances),
+            "std": np.std(distances),
+            "min": np.min(distances),
+            "max": np.max(distances),
+        },
     }
 
 
@@ -299,8 +305,10 @@ def demo_similarity_search(phrase_timbres: Dict):
                 other_timbre = phrase_timbres[other_key]
                 print(f"      {i}. {other_key}")
                 print(f"         Distance: {distance:.4f}")
-                print(f"         Centroid: {other_timbre['spectral_centroid_hz']:.1f} Hz, "
-                      f"Slope: {other_timbre['spectral_slope']:.4f}")
+                print(
+                    f"         Centroid: {other_timbre['spectral_centroid_hz']:.1f} Hz, "
+                    f"Slope: {other_timbre['spectral_slope']:.4f}"
+                )
 
 
 def main():
@@ -312,7 +320,7 @@ def main():
     print("by acoustic similarity, going beyond F0-based matching.")
 
     # Load phrase database
-    db_path = '/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl'
+    db_path = "/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl"
 
     if not Path(db_path).exists():
         print(f"\n❌ Phrase database not found: {db_path}")

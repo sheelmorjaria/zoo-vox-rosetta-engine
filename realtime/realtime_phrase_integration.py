@@ -34,15 +34,18 @@ from phrase_audio_library import PhraseAudioLibrary
 @dataclass
 class AudioChunk:
     """Audio chunk with metadata for processing"""
+
     audio: np.ndarray
     sr: int
     timestamp: float
     context: Optional[str] = None
     source_file: Optional[str] = None
 
+
 @dataclass
 class ProcessingResult:
     """Result from audio processing"""
+
     success: bool
     phrase_key: Optional[str] = None
     context: Optional[str] = None
@@ -50,6 +53,7 @@ class ProcessingResult:
     latency_ms: float = 0.0
     audio_data: Optional[np.ndarray] = None
     error_message: Optional[str] = None
+
 
 class RealTimePhraseIntegrator:
     """
@@ -63,12 +67,7 @@ class RealTimePhraseIntegrator:
     - Performance monitoring
     """
 
-    def __init__(
-        self,
-        species: str,
-        sr: int = 22050,
-        enable_hardware_simulation: bool = False
-    ):
+    def __init__(self, species: str, sr: int = 22050, enable_hardware_simulation: bool = False):
         """
         Initialize the real-time phrase integrator.
 
@@ -100,18 +99,16 @@ class RealTimePhraseIntegrator:
                 segments = self.library.phrase_segments.get(phrase_key, [])
                 if segments:
                     return {
-                        'phrase_key': segments[0].phrase_key,
-                        'context': segments[0].context,
-                        'quality_score': segments[0].quality_score,
-                        'individual_id': segments[0].individual_id
+                        "phrase_key": segments[0].phrase_key,
+                        "context": segments[0].context,
+                        "quality_score": segments[0].quality_score,
+                        "individual_id": segments[0].individual_id,
                     }
                 return None
 
         self.library_manager = SimplePhraseLibraryManager(self.phrase_library)
         self.synthesizer = EnhancedMicroharmonicSynthesizer(
-            phrase_library=self.library_manager,
-            species=species,
-            sample_rate=sr
+            phrase_library=self.library_manager, species=species, sample_rate=sr
         )
 
         # Threading and real-time components
@@ -122,11 +119,11 @@ class RealTimePhraseIntegrator:
 
         # Performance monitoring
         self.performance_stats = {
-            'chunks_processed': 0,
-            'avg_latency': 0.0,
-            'max_latency': 0.0,
-            'processing_errors': 0,
-            'start_time': None
+            "chunks_processed": 0,
+            "avg_latency": 0.0,
+            "max_latency": 0.0,
+            "processing_errors": 0,
+            "start_time": None,
         }
 
         # Configure logging
@@ -155,14 +152,15 @@ class RealTimePhraseIntegrator:
 
                 # Load audio file
                 import soundfile as sf
+
                 audio, sr = sf.read(file_path)
 
                 # Create phrase segment
                 segment = self.phrase_library.create_phrase_segment(
                     audio=audio,
                     phrase_key=phrase_key,
-                    context='Vocalization',  # Default context
-                    source_file=file_path
+                    context="Vocalization",  # Default context
+                    source_file=file_path,
                 )
 
                 if segment:
@@ -181,6 +179,7 @@ class RealTimePhraseIntegrator:
         Args:
             duration_seconds: Duration of simulation
         """
+
         def audio_stream_generator():
             start_time = time.time()
             sample_rate = 16000  # Standard sample rate
@@ -194,14 +193,14 @@ class RealTimePhraseIntegrator:
                 t = np.linspace(0, duration, samples)
 
                 # Species-specific characteristics
-                if self.species == 'marmoset':
+                if self.species == "marmoset":
                     # Marmoset-like harmonic vocalization
                     fundamental = np.random.uniform(400, 800)  # Hz
                     audio = np.sin(2 * np.pi * fundamental * t)
                     # Add harmonics
                     for harmonic in [2, 3, 4]:
                         audio += 0.3 * np.sin(2 * np.pi * fundamental * harmonic * t)
-                elif self.species == 'bat':
+                elif self.species == "bat":
                     # Bat-like FM sweep
                     f0_start = np.random.uniform(20000, 25000)
                     f0_end = np.random.uniform(5000, 10000)
@@ -217,10 +216,7 @@ class RealTimePhraseIntegrator:
 
                 # Create audio chunk
                 chunk = AudioChunk(
-                    audio=audio,
-                    sr=sample_rate,
-                    timestamp=time.time(),
-                    context='Vocalization'
+                    audio=audio, sr=sample_rate, timestamp=time.time(), context="Vocalization"
                 )
 
                 # Put in queue (non-blocking)
@@ -257,25 +253,23 @@ class RealTimePhraseIntegrator:
             if available_phrases:
                 # Use existing phrase
                 phrase_key = np.random.choice(available_phrases)
-                context = 'Vocalization'  # Could be enhanced with context detection
+                context = "Vocalization"  # Could be enhanced with context detection
             else:
                 # Create new phrase segment
                 segment = self.phrase_library.create_phrase_segment(
                     audio=chunk.audio,
-                    phrase_key=f'detected_phrase_{int(time.time())}',
-                    context=chunk.context or 'Vocalization'
+                    phrase_key=f"detected_phrase_{int(time.time())}",
+                    context=chunk.context or "Vocalization",
                 )
                 phrase_key = segment.phrase_key if segment else None
-                context = chunk.context or 'Vocalization'
+                context = chunk.context or "Vocalization"
 
             # Calculate confidence (simplified)
             confidence = np.random.uniform(0.7, 0.95)
 
             # Context-aware phrase selection for response
             response_phrases = self.phrase_library.select_phrases_by_context(
-                context=context,
-                min_quality=0.5,
-                max_results=3
+                context=context, min_quality=0.5, max_results=3
             )
 
             # Generate response if phrases available
@@ -283,12 +277,11 @@ class RealTimePhraseIntegrator:
             if response_phrases:
                 # Use synthesizer to generate response
                 config = SynthesisConfig(
-                    phrase_sequence=[response_phrases[0].phrase_key],
-                    encoding_mode='horizontal'
+                    phrase_sequence=[response_phrases[0].phrase_key], encoding_mode="horizontal"
                 )
                 synthesis_result = self.synthesizer.synthesize_enhanced(config)
-                if synthesis_result and synthesis_result.get('success'):
-                    response_audio = synthesis_result.get('audio')
+                if synthesis_result and synthesis_result.get("success"):
+                    response_audio = synthesis_result.get("audio")
 
             # Calculate latency
             latency_ms = (time.time() - start_time) * 1000
@@ -299,14 +292,12 @@ class RealTimePhraseIntegrator:
                 context=context,
                 confidence=confidence,
                 latency_ms=latency_ms,
-                audio_data=response_audio
+                audio_data=response_audio,
             )
 
         except Exception as e:
             return ProcessingResult(
-                success=False,
-                error_message=str(e),
-                latency_ms=(time.time() - start_time) * 1000
+                success=False, error_message=str(e), latency_ms=(time.time() - start_time) * 1000
             )
 
     def processing_loop(self) -> None:
@@ -326,14 +317,14 @@ class RealTimePhraseIntegrator:
                     self.logger.warning("Result queue full - dropping result")
 
                 # Update performance stats
-                self.performance_stats['chunks_processed'] += 1
-                self.performance_stats['avg_latency'] = (
-                    (self.performance_stats['avg_latency'] * (self.performance_stats['chunks_processed'] - 1) + result.latency_ms) /
-                    self.performance_stats['chunks_processed']
-                )
-                self.performance_stats['max_latency'] = max(
-                    self.performance_stats['max_latency'],
-                    result.latency_ms
+                self.performance_stats["chunks_processed"] += 1
+                self.performance_stats["avg_latency"] = (
+                    self.performance_stats["avg_latency"]
+                    * (self.performance_stats["chunks_processed"] - 1)
+                    + result.latency_ms
+                ) / self.performance_stats["chunks_processed"]
+                self.performance_stats["max_latency"] = max(
+                    self.performance_stats["max_latency"], result.latency_ms
                 )
 
                 # Mark task as done
@@ -343,7 +334,7 @@ class RealTimePhraseIntegrator:
                 continue
             except Exception as e:
                 self.logger.error(f"Error in processing loop: {e}")
-                self.performance_stats['processing_errors'] += 1
+                self.performance_stats["processing_errors"] += 1
 
     def start(self) -> bool:
         """Start the real-time integration system."""
@@ -352,13 +343,10 @@ class RealTimePhraseIntegrator:
             return False
 
         self.running = True
-        self.performance_stats['start_time'] = time.time()
+        self.performance_stats["start_time"] = time.time()
 
         # Start processing thread
-        self.processing_thread = threading.Thread(
-            target=self.processing_loop,
-            daemon=True
-        )
+        self.processing_thread = threading.Thread(target=self.processing_loop, daemon=True)
         self.processing_thread.start()
 
         self.logger.info("Real-time phrase integration system started")
@@ -395,8 +383,8 @@ class RealTimePhraseIntegrator:
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get performance statistics."""
         stats = self.performance_stats.copy()
-        if stats['start_time']:
-            stats['uptime_seconds'] = time.time() - stats['start_time']
+        if stats["start_time"]:
+            stats["uptime_seconds"] = time.time() - stats["start_time"]
         return stats
 
     def get_recent_results(self, count: int = 10) -> List[ProcessingResult]:
@@ -410,6 +398,7 @@ class RealTimePhraseIntegrator:
                 break
         return results
 
+
 def demo_integration():
     """Demonstrate PhraseAudioLibrary integration in real-time system."""
     print("=" * 80)
@@ -418,9 +407,7 @@ def demo_integration():
 
     # Initialize integrator
     integrator = RealTimePhraseIntegrator(
-        species='marmoset',
-        sr=22050,
-        enable_hardware_simulation=True
+        species="marmoset", sr=22050, enable_hardware_simulation=True
     )
 
     # Load some test phrases
@@ -430,9 +417,9 @@ def demo_integration():
         test_audio = np.random.randn(4410)  # 0.2 seconds
         integrator.phrase_library.create_phrase_segment(
             audio=test_audio,
-            phrase_key=f'test_phrase_{i}',
-            context='alarm' if i % 2 == 0 else 'social',
-            quality_score=0.8 + i * 0.04
+            phrase_key=f"test_phrase_{i}",
+            context="alarm" if i % 2 == 0 else "social",
+            quality_score=0.8 + i * 0.04,
         )
 
     print(f"   Loaded {len(integrator.phrase_library.get_all_phrase_keys())} phrases")
@@ -461,7 +448,7 @@ def demo_integration():
     if results:
         print(f"Processed {len(results)} audio chunks:")
         for i, result in enumerate(results[:3]):  # Show first 3
-            print(f"  {i+1}. Phrase: {result.phrase_key}")
+            print(f"  {i + 1}. Phrase: {result.phrase_key}")
             print(f"     Context: {result.context}")
             print(f"     Confidence: {result.confidence:.2f}")
             print(f"     Latency: {result.latency_ms:.1f}ms")
@@ -476,16 +463,12 @@ def demo_integration():
     # Test context-aware selection
     print("\\nContext-Aware Selection Test:")
     alarm_phrases = integrator.phrase_library.select_phrases_by_context(
-        'alarm',
-        min_quality=0.5,
-        max_results=2
+        "alarm", min_quality=0.5, max_results=2
     )
     print(f"  • Alarm phrases: {len(alarm_phrases)} selected")
 
     social_phrases = integrator.phrase_library.select_phrases_by_context(
-        'social',
-        min_quality=0.5,
-        max_results=2
+        "social", min_quality=0.5, max_results=2
     )
     print(f"  • Social phrases: {len(social_phrases)} selected")
 
@@ -500,6 +483,7 @@ def demo_integration():
     print("• Performance monitoring active")
     print("• No physical hardware required")
     print("=" * 80)
+
 
 if __name__ == "__main__":
     demo_integration()

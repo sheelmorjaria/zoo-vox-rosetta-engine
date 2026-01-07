@@ -26,8 +26,10 @@ import math
 # Phase 1: Extended Data Models with Cross-Fade Support
 # =============================================================================
 
+
 class Modality(Enum):
     """Vocalization modality types"""
+
     HARMONIC = "HARMONIC"
     TRANSIENT = "TRANSIENT"
     FM_SWEEP = "FM_SWEEP"
@@ -35,6 +37,7 @@ class Modality(Enum):
 
 class Intent(Enum):
     """Semantic intents that map to multi-modal strategies"""
+
     ALARM = "ALARM"
     AGGRESSION = "AGGRESSION"
     COURTSHIP = "COURTSHIP"
@@ -45,6 +48,7 @@ class Intent(Enum):
 @dataclass
 class ModalityDelta:
     """Delta parameters for a specific modality"""
+
     pitch_shift_ratio: float = 1.0
     roughness_amount: float = 0.0
     time_stretch_ratio: float = 1.0
@@ -55,6 +59,7 @@ class ModalityDelta:
 @dataclass
 class TimelineEvent:
     """Enhanced timeline event with cross-fade support"""
+
     start_ms: float
     duration_ms: float
     source_buffer: str
@@ -71,6 +76,7 @@ class ModalityStrategy:
 
     Example: ALARM → [Whistle (Attention) + Rattle (Urgency) + Whistle (Resolve)]
     """
+
     intent: Intent
     intensity: float
     sequence: List[TimelineEvent]
@@ -79,6 +85,7 @@ class ModalityStrategy:
 @dataclass
 class VirtualTarget:
     """17D virtual target vector (reused from Hybrid Bridge)"""
+
     mean_f0_hz: float
     duration_ms: float
     harmonic_to_noise_ratio: float
@@ -88,6 +95,7 @@ class VirtualTarget:
 # =============================================================================
 # Phase 2: Intent Decomposition Engine
 # =============================================================================
+
 
 class IntentDecomposer:
     """
@@ -102,16 +110,22 @@ class IntentDecomposer:
         # Define modality archetypes
         self.modality_profiles = {
             Modality.HARMONIC: VirtualTarget(
-                mean_f0_hz=7000.0, duration_ms=80.0,
-                harmonic_to_noise_ratio=25.0, spectral_flatness=0.05
+                mean_f0_hz=7000.0,
+                duration_ms=80.0,
+                harmonic_to_noise_ratio=25.0,
+                spectral_flatness=0.05,
             ),
             Modality.TRANSIENT: VirtualTarget(
-                mean_f0_hz=4000.0, duration_ms=30.0,
-                harmonic_to_noise_ratio=3.0, spectral_flatness=0.8
+                mean_f0_hz=4000.0,
+                duration_ms=30.0,
+                harmonic_to_noise_ratio=3.0,
+                spectral_flatness=0.8,
             ),
             Modality.FM_SWEEP: VirtualTarget(
-                mean_f0_hz=6000.0, duration_ms=60.0,
-                harmonic_to_noise_ratio=10.0, spectral_flatness=0.4
+                mean_f0_hz=6000.0,
+                duration_ms=60.0,
+                harmonic_to_noise_ratio=10.0,
+                spectral_flatness=0.4,
             ),
         }
 
@@ -148,9 +162,9 @@ class IntentDecomposer:
                     duration_ms=100.0,
                     source_buffer="neutral",
                     modality=Modality.HARMONIC,
-                    delta=ModalityDelta()
+                    delta=ModalityDelta(),
                 )
-            ]
+            ],
         )
 
     def _decompose_alarm(self, intensity: float) -> ModalityStrategy:
@@ -360,6 +374,7 @@ class IntentDecomposer:
 # Phase 3: Cognitive Synthesis Engine (Orchestrator)
 # =============================================================================
 
+
 class CognitiveSynthesisEngine:
     """
     Orchestrates cognitive multi-modal synthesis.
@@ -378,7 +393,9 @@ class CognitiveSynthesisEngine:
         """Register a source audio buffer"""
         self.source_buffers[name] = audio
 
-    def synthesize_intent(self, intent: Intent, intensity: float) -> Tuple[np.ndarray, ModalityStrategy]:
+    def synthesize_intent(
+        self, intent: Intent, intensity: float
+    ) -> Tuple[np.ndarray, ModalityStrategy]:
         """
         Synthesize a multi-modal vocalization from semantic intent.
 
@@ -446,7 +463,7 @@ class CognitiveSynthesisEngine:
 
             if warped_duration > 0:
                 # Mix with existing audio (additive for cross-fade overlap)
-                output[start_sample:start_sample + warped_duration] += warped[:warped_duration]
+                output[start_sample : start_sample + warped_duration] += warped[:warped_duration]
 
         # Normalize to prevent clipping
         if np.max(np.abs(output)) > 0:
@@ -504,6 +521,7 @@ class CognitiveSynthesisEngine:
 # Phase 1 Tests: Intent Decomposition
 # =============================================================================
 
+
 class TestIntentDecomposition(unittest.TestCase):
     """Test cognitive intent decomposition into multi-modal strategies"""
 
@@ -548,7 +566,9 @@ class TestIntentDecomposition(unittest.TestCase):
         whistle_delta_low = strategy_low.sequence[0].delta
         whistle_delta_high = strategy_high.sequence[0].delta
 
-        self.assertGreater(whistle_delta_high.pitch_shift_ratio, whistle_delta_low.pitch_shift_ratio)
+        self.assertGreater(
+            whistle_delta_high.pitch_shift_ratio, whistle_delta_low.pitch_shift_ratio
+        )
 
         # Higher intensity = more roughness on rattle
         rattle_delta_low = strategy_low.sequence[1].delta
@@ -586,6 +606,7 @@ class TestIntentDecomposition(unittest.TestCase):
 # =============================================================================
 # Phase 2 Tests: Multi-Vector Modulation
 # =============================================================================
+
 
 class TestMultiVectorModulation(unittest.TestCase):
     """Test different deltas for different modalities"""
@@ -634,6 +655,7 @@ class TestMultiVectorModulation(unittest.TestCase):
 # Phase 3 Tests: Cognitive Engine Orchestration
 # =============================================================================
 
+
 class TestCognitiveSynthesisEngine(unittest.TestCase):
     """Test the complete cognitive synthesis workflow"""
 
@@ -641,8 +663,12 @@ class TestCognitiveSynthesisEngine(unittest.TestCase):
         self.engine = CognitiveSynthesisEngine()
 
         # Register test sources
-        self.engine.register_source("corvid_whistle", np.random.randn(44100).astype(np.float32) * 0.1)
-        self.engine.register_source("corvid_rattle", np.random.randn(13230).astype(np.float32) * 0.1)
+        self.engine.register_source(
+            "corvid_whistle", np.random.randn(44100).astype(np.float32) * 0.1
+        )
+        self.engine.register_source(
+            "corvid_rattle", np.random.randn(13230).astype(np.float32) * 0.1
+        )
 
     def test_synthesize_alarm(self):
         """Test synthesizing alarm call"""
@@ -677,14 +703,17 @@ class TestCognitiveSynthesisEngine(unittest.TestCase):
         # At least one delta should be different
         differences_found = False
         for low, high in zip(low_deltas, high_deltas):
-            if (low.pitch_shift_ratio != high.pitch_shift_ratio or
-                low.roughness_amount != high.roughness_amount or
-                low.grain_size_ms != high.grain_size_ms):
+            if (
+                low.pitch_shift_ratio != high.pitch_shift_ratio
+                or low.roughness_amount != high.roughness_amount
+                or low.grain_size_ms != high.grain_size_ms
+            ):
                 differences_found = True
                 break
 
-        self.assertTrue(differences_found,
-                       "Different intensities should produce different delta parameters")
+        self.assertTrue(
+            differences_found, "Different intensities should produce different delta parameters"
+        )
 
     def test_cross_fade_smooths_transitions(self):
         """Test that cross-fade prevents audio glitches"""
@@ -697,6 +726,7 @@ class TestCognitiveSynthesisEngine(unittest.TestCase):
 # =============================================================================
 # Phase 4 Tests: Edge Cases and Safety
 # =============================================================================
+
 
 class TestCognitiveEngineSafety(unittest.TestCase):
     """Test safety mechanisms and edge cases"""
@@ -733,7 +763,13 @@ class TestCognitiveEngineSafety(unittest.TestCase):
 
     def test_all_intents_defined(self):
         """Test that all defined intents can be decomposed"""
-        intents = [Intent.ALARM, Intent.AGGRESSION, Intent.COURTSHIP, Intent.FOOD_DISCOVERY, Intent.TERRITORY]
+        intents = [
+            Intent.ALARM,
+            Intent.AGGRESSION,
+            Intent.COURTSHIP,
+            Intent.FOOD_DISCOVERY,
+            Intent.TERRITORY,
+        ]
 
         for intent in intents:
             strategy = self.engine.decomposer.decompose_intent(intent, 0.5)
@@ -741,5 +777,5 @@ class TestCognitiveEngineSafety(unittest.TestCase):
             self.assertGreater(len(strategy.sequence), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

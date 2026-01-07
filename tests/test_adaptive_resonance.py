@@ -7,7 +7,7 @@ TDD implementation for Phase IV feature
 import sys
 import unittest
 
-sys.path.append('src')
+sys.path.append("src")
 
 from realtime.adaptive_resonance import (
     AdaptiveFilter,
@@ -32,8 +32,8 @@ class TestAdaptiveResonance(unittest.TestCase):
         """Set up test environment"""
         self.ar = AdaptiveResonance()
         self.test_signal = [0.1, 0.2, 0.3, 0.4, 0.5]
-        self.test_features = {'frequency': 1000, 'amplitude': 0.5, 'duration': 0.1}
-        self.test_context = {'social': True, 'alert_level': 0.7}
+        self.test_features = {"frequency": 1000, "amplitude": 0.5, "duration": 0.1}
+        self.test_context = {"social": True, "alert_level": 0.7}
 
     def test_adaptive_resonance_creation(self):
         """Test that adaptive resonance system can be created"""
@@ -47,18 +47,14 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test resonance computation
         resonance = network.compute_resonance(
-            input_signal=self.test_signal,
-            prototype_signal=self.test_signal
+            input_signal=self.test_signal, prototype_signal=self.test_signal
         )
         self.assertIsInstance(resonance, float)
         self.assertGreaterEqual(resonance, 0.0)
         self.assertLessEqual(resonance, 1.0)
 
         # Test prototype learning
-        network.learn_prototype(
-            signal=self.test_signal,
-            context=self.test_context
-        )
+        network.learn_prototype(signal=self.test_signal, context=self.test_context)
         self.assertGreater(len(network.get_prototypes()), 0)
 
     def test_adaptive_filter(self):
@@ -67,8 +63,7 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test filtering
         filtered_signal = filter_obj.apply_filter(
-            input_signal=self.test_signal,
-            filter_type='lowpass'
+            input_signal=self.test_signal, filter_type="lowpass"
         )
         self.assertIsInstance(filtered_signal, list)
         self.assertEqual(len(filtered_signal), len(self.test_signal))
@@ -85,14 +80,13 @@ class TestAdaptiveResonance(unittest.TestCase):
         # Test feature extraction
         features = detector.extract_features(self.test_signal)
         self.assertIsInstance(features, dict)
-        self.assertIn('mean', features)
-        self.assertIn('std', features)
-        self.assertIn('energy', features)
+        self.assertIn("mean", features)
+        self.assertIn("std", features)
+        self.assertIn("energy", features)
 
         # Test feature matching
         match_score = detector.match_features(
-            features1=self.test_features,
-            features2=self.test_features
+            features1=self.test_features, features2=self.test_features
         )
         self.assertIsInstance(match_score, float)
         self.assertGreaterEqual(match_score, 0.0)
@@ -105,17 +99,14 @@ class TestAdaptiveResonance(unittest.TestCase):
         # Test resonance matching
         match = matcher.find_best_match(
             input_signal=self.test_signal,
-            prototype_signals=[self.test_signal, [0.2, 0.3, 0.4, 0.5, 0.6]]
+            prototype_signals=[self.test_signal, [0.2, 0.3, 0.4, 0.5, 0.6]],
         )
         self.assertIsInstance(match, dict)
-        self.assertIn('index', match)
-        self.assertIn('score', match)
+        self.assertIn("index", match)
+        self.assertIn("score", match)
 
         # Test threshold matching
-        threshold_match = matcher.match_with_threshold(
-            input_signal=self.test_signal,
-            threshold=0.8
-        )
+        threshold_match = matcher.match_with_threshold(input_signal=self.test_signal, threshold=0.8)
         self.assertIsInstance(threshold_match, bool)
 
     def test_stability_monitor(self):
@@ -141,18 +132,12 @@ class TestAdaptiveResonance(unittest.TestCase):
         fast_learner = FastLearning()
 
         # Test rapid learning
-        learning_rate = fast_learner.get_adaptive_learning_rate(
-            base_rate=0.1,
-            iteration=5
-        )
+        learning_rate = fast_learner.get_adaptive_learning_rate(base_rate=0.1, iteration=5)
         self.assertIsInstance(learning_rate, float)
         self.assertGreater(learning_rate, 0.0)
 
         # Test critical period detection
-        is_critical = fast_learner.is_critical_period(
-            signal_variance=0.5,
-            context_similarity=0.8
-        )
+        is_critical = fast_learner.is_critical_period(signal_variance=0.5, context_similarity=0.8)
         self.assertIsInstance(is_critical, bool)
 
     def test_noise_robustness(self):
@@ -161,8 +146,7 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test noise filtering
         clean_signal = noise_robust.denoise_signal(
-            noisy_signal=[x + 0.1 for x in self.test_signal],
-            noise_level=0.2
+            noisy_signal=[x + 0.1 for x in self.test_signal], noise_level=0.2
         )
         self.assertIsInstance(clean_signal, list)
 
@@ -177,16 +161,12 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test context influence
         modulation = context_mod.apply_context_modulation(
-            base_resonance=0.8,
-            context=self.test_context
+            base_resonance=0.8, context=self.test_context
         )
         self.assertIsInstance(modulation, float)
 
         # Test context learning
-        context_mod.learn_context_influence(
-            context=self.test_context,
-            resonance_strength=0.7
-        )
+        context_mod.learn_context_influence(context=self.test_context, resonance_strength=0.7)
 
     def test_dynamic_adaptation(self):
         """Test dynamic adaptation capabilities"""
@@ -194,8 +174,7 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test adaptation to changing conditions
         adaptation = dynamic.adapt_to_conditions(
-            signal_statistics={'mean': 0.3, 'variance': 0.1},
-            performance_metrics={'accuracy': 0.8}
+            signal_statistics={"mean": 0.3, "variance": 0.1}, performance_metrics={"accuracy": 0.8}
         )
         self.assertIsInstance(adaptation, dict)
 
@@ -209,8 +188,7 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test parameter optimization
         params = optimizer.optimize_parameters(
-            current_params={'learning_rate': 0.1},
-            performance_data=[0.7, 0.8, 0.9]
+            current_params={"learning_rate": 0.1}, performance_data=[0.7, 0.8, 0.9]
         )
         self.assertIsInstance(params, dict)
 
@@ -223,19 +201,14 @@ class TestAdaptiveResonance(unittest.TestCase):
         validator = ResonanceValidator()
 
         # Test resonance validation
-        is_valid = validator.validate_resonance(
-            resonance_value=0.8,
-            threshold=0.7
-        )
+        is_valid = validator.validate_resonance(resonance_value=0.8, threshold=0.7)
         self.assertIsInstance(is_valid, bool)
 
         # Test statistical validation
-        stats = validator.compute_resonance_statistics(
-            resonance_values=[0.7, 0.8, 0.9, 0.6]
-        )
+        stats = validator.compute_resonance_statistics(resonance_values=[0.7, 0.8, 0.9, 0.6])
         self.assertIsInstance(stats, dict)
-        self.assertIn('mean', stats)
-        self.assertIn('std', stats)
+        self.assertIn("mean", stats)
+        self.assertIn("std", stats)
 
     def test_integration_with_main_system(self):
         """Test integration with main analysis system"""
@@ -244,15 +217,15 @@ class TestAdaptiveResonance(unittest.TestCase):
 
         # Test processing pipeline
         input_data = {
-            'signal': self.test_signal,
-            'features': self.test_features,
-            'context': self.test_context
+            "signal": self.test_signal,
+            "features": self.test_features,
+            "context": self.test_context,
         }
 
         result = self.ar.process_adaptive_resonance(input_data)
         self.assertIsInstance(result, dict)
-        self.assertIn('resonance_score', result)
-        self.assertIn('adapted_features', result)
+        self.assertIn("resonance_score", result)
+        self.assertIn("adapted_features", result)
 
     def test_real_time_adaptation(self):
         """Test real-time adaptation capabilities"""
@@ -261,7 +234,7 @@ class TestAdaptiveResonance(unittest.TestCase):
         # Simulate real-time processing
         for i in range(10):
             signal = [x * (1 + 0.1 * i) for x in self.test_signal]
-            context = {'time': i, 'alert_level': 0.5 + 0.05 * i}
+            context = {"time": i, "alert_level": 0.5 + 0.05 * i}
 
             result = self.ar.real_time_process(signal, context)
             self.assertIsInstance(result, dict)
@@ -269,18 +242,16 @@ class TestAdaptiveResonance(unittest.TestCase):
         # Check adaptation progress
         progress = self.ar.get_adaptation_progress()
         self.assertIsInstance(progress, dict)
-        self.assertIn('iterations_completed', progress)
+        self.assertIn("iterations_completed", progress)
 
     def test_stability_under_change(self):
         """Test stability under changing conditions"""
         # Test with gradually changing signals
         for i in range(20):
             signal = [x * (1 + 0.05 * i) for x in self.test_signal]
-            self.ar.process_adaptive_resonance({
-                'signal': signal,
-                'features': self.test_features,
-                'context': self.test_context
-            })
+            self.ar.process_adaptive_resonance(
+                {"signal": signal, "features": self.test_features, "context": self.test_context}
+            )
 
         # Check system stability
         stability = self.ar.get_system_stability()
@@ -292,24 +263,26 @@ class TestAdaptiveResonance(unittest.TestCase):
         original_features = self.test_features.copy()
 
         # Process through adaptive resonance
-        result = self.ar.process_adaptive_resonance({
-            'signal': self.test_signal,
-            'features': original_features,
-            'context': self.test_context
-        })
+        result = self.ar.process_adaptive_resonance(
+            {
+                "signal": self.test_signal,
+                "features": original_features,
+                "context": self.test_context,
+            }
+        )
 
         # Check that key features are preserved
-        adapted_features = result['adapted_features']
+        adapted_features = result["adapted_features"]
         self.assertIsInstance(adapted_features, dict)
 
         # Important features should not change dramatically
-        for key in ['mean', 'energy']:
+        for key in ["mean", "energy"]:
             if key in original_features and key in adapted_features:
-                relative_change = abs(
-                    adapted_features[key] - original_features[key]
-                ) / (original_features[key] + 1e-8)
+                relative_change = abs(adapted_features[key] - original_features[key]) / (
+                    original_features[key] + 1e-8
+                )
                 self.assertLess(relative_change, 0.2)  # Less than 20% change
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

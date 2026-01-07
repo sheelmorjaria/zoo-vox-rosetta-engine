@@ -8,7 +8,7 @@ search, analysis, and data retrieval operations.
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import time
 
@@ -23,9 +23,9 @@ from query_interface.vocalization_query_interface import (
 
 def demo_basic_queries():
     """Demonstrate basic query operations"""
-    print("="*50)
+    print("=" * 50)
     print("BASIC QUERY DEMONSTRATION")
-    print("="*50)
+    print("=" * 50)
 
     # Get query interface
     interface = get_query_interface()
@@ -52,9 +52,9 @@ def demo_basic_queries():
 
 def demo_search_operations():
     """Demonstrate search capabilities"""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("SEARCH OPERATIONS DEMONSTRATION")
-    print("="*50)
+    print("=" * 50)
 
     interface = get_query_interface()
 
@@ -63,16 +63,20 @@ def demo_search_operations():
     f0_results = query_phrases_by_f0(5000, 10000)
     print(f"   Found {len(f0_results)} phrases")
     for i, (phrase_key, phrase) in enumerate(f0_results[:5]):  # Show first 5
-        print(f"   {i+1}. {phrase_key}: {phrase.acoustic_features.mean_f0_hz:.1f} Hz "
-              f"({phrase.species.value}, {phrase.total_occurrences} occurrences)")
+        print(
+            f"   {i + 1}. {phrase_key}: {phrase.acoustic_features.mean_f0_hz:.1f} Hz "
+            f"({phrase.species.value}, {phrase.total_occurrences} occurrences)"
+        )
 
     # Search by duration
     print("\n2. Searching phrases by duration (50-150 ms):")
     duration_results = query_phrases_by_duration(50, 150)
     print(f"   Found {len(duration_results)} phrases")
     for i, (phrase_key, phrase) in enumerate(duration_results[:5]):  # Show first 5
-        print(f"   {i+1}. {phrase_key}: {phrase.acoustic_features.mean_duration_ms:.1f} ms "
-              f"({phrase.species.value})")
+        print(
+            f"   {i + 1}. {phrase_key}: {phrase.acoustic_features.mean_duration_ms:.1f} ms "
+            f"({phrase.species.value})"
+        )
 
     # Find similar phrases
     print("\n3. Finding similar phrases:")
@@ -88,9 +92,9 @@ def demo_search_operations():
 
 def demo_statistics_analysis():
     """Demonstrate statistical analysis capabilities"""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("STATISTICAL ANALYSIS DEMONSTRATION")
-    print("="*50)
+    print("=" * 50)
 
     interface = get_query_interface()
 
@@ -98,27 +102,31 @@ def demo_statistics_analysis():
     print("\n1. Overall Database Statistics:")
     stats = interface.get_phrase_statistics()
     print(f"   Total phrases: {stats['total_phrases']}")
-    print(f"   Frequency range: {stats['frequency_distribution']['min']:.1f} - "
-          f"{stats['frequency_distribution']['max']:.1f} Hz "
-          f"(avg: {stats['frequency_distribution']['avg']:.1f} Hz)")
-    print(f"   Duration range: {stats['duration_distribution']['min']:.1f} - "
-          f"{stats['duration_distribution']['max']:.1f} ms "
-          f"(avg: {stats['duration_distribution']['avg']:.1f} ms)")
+    print(
+        f"   Frequency range: {stats['frequency_distribution']['min']:.1f} - "
+        f"{stats['frequency_distribution']['max']:.1f} Hz "
+        f"(avg: {stats['frequency_distribution']['avg']:.1f} Hz)"
+    )
+    print(
+        f"   Duration range: {stats['duration_distribution']['min']:.1f} - "
+        f"{stats['duration_distribution']['max']:.1f} ms "
+        f"(avg: {stats['duration_distribution']['avg']:.1f} ms)"
+    )
 
     print("\n   Species breakdown:")
-    for species, count in stats['species_breakdown'].items():
-        percentage = (count / stats['total_phrases']) * 100 if stats['total_phrases'] > 0 else 0
+    for species, count in stats["species_breakdown"].items():
+        percentage = (count / stats["total_phrases"]) * 100 if stats["total_phrases"] > 0 else 0
         print(f"     {species}: {count} ({percentage:.1f}%)")
 
     print("\n   Modality breakdown:")
-    for modality, count in stats['modality_breakdown'].items():
-        percentage = (count / stats['total_phrases']) * 100 if stats['total_phrases'] > 0 else 0
+    for modality, count in stats["modality_breakdown"].items():
+        percentage = (count / stats["total_phrases"]) * 100 if stats["total_phrases"] > 0 else 0
         print(f"     {modality}: {count} ({percentage:.1f}%)")
 
     # Get species-specific statistics
     print("\n2. Marmoset-specific Statistics:")
     marmoset_stats = interface.get_phrase_statistics(Species.MARMOSET)
-    if marmoset_stats['total_phrases'] > 0:
+    if marmoset_stats["total_phrases"] > 0:
         print(f"   Total phrases: {marmoset_stats['total_phrases']}")
         print(f"   Average F0: {marmoset_stats['frequency_distribution']['avg']:.1f} Hz")
         print(f"   Average duration: {marmoset_stats['duration_distribution']['avg']:.1f} ms")
@@ -129,22 +137,22 @@ def demo_statistics_analysis():
     print(f"   Nodes (phrase types): {grammar_network['nodes']}")
     print(f"   Edges (grammar rules): {grammar_network['edges']}")
 
-    if grammar_network['most_connected_phrases']:
+    if grammar_network["most_connected_phrases"]:
         print("   Most connected phrases:")
-        for phrase, connections in grammar_network['most_connected_phrases'][:5]:
+        for phrase, connections in grammar_network["most_connected_phrases"][:5]:
             print(f"     {phrase}: {connections} connections")
 
-    if grammar_network['strongest_transitions']:
+    if grammar_network["strongest_transitions"]:
         print("   Strongest transitions:")
-        for from_phrase, to_phrase, strength in grammar_network['strongest_transitions'][:5]:
+        for from_phrase, to_phrase, strength in grammar_network["strongest_transitions"][:5]:
             print(f"     {from_phrase} → {to_phrase}: {strength} occurrences")
 
 
 def demo_cross_species_analysis():
     """Demonstrate cross-species analysis capabilities"""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("CROSS-SPECIES ANALYSIS DEMONSTRATION")
-    print("="*50)
+    print("=" * 50)
 
     interface = get_query_interface()
 
@@ -152,10 +160,10 @@ def demo_cross_species_analysis():
     print("\n1. Common frequency ranges:")
     for species in Species:
         stats = interface.get_phrase_statistics(species)
-        if stats['total_phrases'] > 0:
-            f0_avg = stats['frequency_distribution']['avg']
-            f0_min = stats['frequency_distribution']['min']
-            f0_max = stats['frequency_distribution']['max']
+        if stats["total_phrases"] > 0:
+            f0_avg = stats["frequency_distribution"]["avg"]
+            f0_min = stats["frequency_distribution"]["min"]
+            f0_max = stats["frequency_distribution"]["max"]
             print(f"   {species.value}: {f0_min:.0f}-{f0_max:.0f} Hz (avg: {f0_avg:.0f} Hz)")
 
     # Compare modalities across species
@@ -174,9 +182,9 @@ def demo_cross_species_analysis():
 
 def demo_performance_benchmarks():
     """Demonstrate query performance"""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("PERFORMANCE BENCHMARKS")
-    print("="*50)
+    print("=" * 50)
 
     interface = get_query_interface()
 
@@ -222,9 +230,9 @@ def main():
         demo_cross_species_analysis()
         demo_performance_benchmarks()
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("DEMO COMPLETE")
-        print("="*50)
+        print("=" * 50)
         print("\nThe query interface is ready for use!")
         print("\nTo use in your code:")
         print("  from src.vocalization_query_interface import get_query_interface")
@@ -234,6 +242,7 @@ def main():
     except Exception as e:
         print(f"Error during demo: {e}")
         import traceback
+
         traceback.print_exc()
 
 

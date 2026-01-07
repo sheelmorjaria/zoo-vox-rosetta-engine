@@ -22,6 +22,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -46,9 +47,9 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
     """Analyze a sperm whale file (signal or noise)."""
     file_type = "SIGNAL" if is_signal else "NOISE"
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"[{file_type}] {Path(filepath).name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     audio, sr = load_wav_file(filepath)
     if audio is None:
@@ -66,18 +67,19 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
 
     # Frequency analysis
     from scipy.fft import fft, fftfreq
+
     fft_result = fft(audio)
-    freqs = fftfreq(len(audio), 1/sr)
+    freqs = fftfreq(len(audio), 1 / sr)
     magnitude = np.abs(fft_result)
 
-    pos_freqs = freqs[:len(freqs)//2]
-    pos_magnitude = magnitude[:len(magnitude)//2]
+    pos_freqs = freqs[: len(freqs) // 2]
+    pos_magnitude = magnitude[: len(magnitude) // 2]
 
     # Find dominant frequency
     dom_freq_idx = np.argmax(pos_magnitude)
     dom_freq = pos_freqs[dom_freq_idx]
 
-    print(f"Dominant frequency: {abs(dom_freq)/1000:.1f} kHz")
+    print(f"Dominant frequency: {abs(dom_freq) / 1000:.1f} kHz")
 
     # Energy in different bands (sperm whale clicks are typically 1-15 kHz)
     bands = [
@@ -86,27 +88,29 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
         ("Sperm whale range (2-8 kHz)", 2000, 8000),
         ("Mid (8-15 kHz)", 8000, 15000),
         ("High (15-30 kHz)", 15000, 30000),
-        ("Ultrasonic (>30 kHz)", 30000, sr//2)
+        ("Ultrasonic (>30 kHz)", 30000, sr // 2),
     ]
 
     print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
-        band_energy = np.sum(pos_magnitude[mask]**2)
+        band_energy = np.sum(pos_magnitude[mask] ** 2)
         total_energy = np.sum(pos_magnitude**2)
         percentage = band_energy / total_energy * 100
         if percentage > 1:
-            bar = '█' * int(percentage / 3)
+            bar = "█" * int(percentage / 3)
             print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     # Click detection (peaks in envelope)
     from scipy.signal import hilbert
+
     envelope = np.abs(hilbert(audio))
 
     # Set threshold based on RMS
     threshold = np.mean(envelope) + 2 * np.std(envelope)
     from scipy.signal import find_peaks
-    peak_indices, _ = find_peaks(envelope, height=threshold, distance=int(0.01*sr))
+
+    peak_indices, _ = find_peaks(envelope, height=threshold, distance=int(0.01 * sr))
 
     print("\n🔍 Click Detection:")
     print(f"  Detected {len(peak_indices)} potential clicks")
@@ -129,9 +133,7 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
         for min_dur in [5, 10, 20]:
             try:
                 phrases = analyzer.segment_phrases(
-                    audio,
-                    min_gap_ms=min_gap,
-                    min_phrase_duration_ms=min_dur
+                    audio, min_gap_ms=min_gap, min_phrase_duration_ms=min_dur
                 )
                 key = f"gap:{min_gap}_dur:{min_dur}"
                 results[key] = len(phrases)
@@ -143,18 +145,18 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
     # Find best parameter combination
     if results:
         best_params = max(results.items(), key=lambda x: x[1])
-        best_gap = int(best_params[0].split(':')[1].split('_')[0])
-        best_dur = int(best_params[0].split(':')[2].split('_')[0])
+        best_gap = int(best_params[0].split(":")[1].split("_")[0])
+        best_dur = int(best_params[0].split(":")[2].split("_")[0])
         max_phrases = best_params[1]
 
         if max_phrases > 0:
-            print(f"\n✓ Best parameters: gap={best_gap}ms, dur={best_dur}ms ({max_phrases} phrases)")
+            print(
+                f"\n✓ Best parameters: gap={best_gap}ms, dur={best_dur}ms ({max_phrases} phrases)"
+            )
 
             # Analyze with best parameters
             phrases = analyzer.segment_phrases(
-                audio,
-                min_gap_ms=best_gap,
-                min_phrase_duration_ms=best_dur
+                audio, min_gap_ms=best_gap, min_phrase_duration_ms=best_dur
             )
 
             # Analyze modality for phrases
@@ -169,31 +171,33 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
 
                 modality_counts[modality.name] = modality_counts.get(modality.name, 0) + 1
 
-                details.append({
-                    'index': i,
-                    'modality': modality.name,
-                    'probabilities': probabilities,
-                    'duration_ms': features.get('duration_ms', len(phrase.data) / sr * 1000),
-                })
+                details.append(
+                    {
+                        "index": i,
+                        "modality": modality.name,
+                        "probabilities": probabilities,
+                        "duration_ms": features.get("duration_ms", len(phrase.data) / sr * 1000),
+                    }
+                )
 
             # Print modality distribution
             print("\n  Modality Distribution:")
             for modality, count in sorted(modality_counts.items()):
                 percentage = count / len(phrases) * 100
-                bar = '█' * int(percentage / 10)
+                bar = "█" * int(percentage / 10)
                 expected = ""
-                if modality == 'TRANSIENT':
+                if modality == "TRANSIENT":
                     expected = " (expected for clicks)"
-                elif modality == 'RHYTHMIC':
+                elif modality == "RHYTHMIC":
                     expected = " (expected for codas)"
                 print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}{expected}")
 
             return {
-                'filepath': filepath,
-                'type': 'signal' if is_signal else 'noise',
-                'total_phrases': len(phrases),
-                'modality_counts': modality_counts,
-                'num_clicks': len(peak_indices)
+                "filepath": filepath,
+                "type": "signal" if is_signal else "noise",
+                "total_phrases": len(phrases),
+                "modality_counts": modality_counts,
+                "num_clicks": len(peak_indices),
             }
 
     # If no segmentation, analyze whole file
@@ -207,19 +211,19 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
 
         expected = ""
         if is_signal:
-            if modality == 'TRANSIENT':
+            if modality == "TRANSIENT":
                 expected = " ✓ (expected for clicks)"
-            elif modality == 'RHYTHMIC':
+            elif modality == "RHYTHMIC":
                 expected = " ✓ (expected for codas)"
 
         return {
-            'filepath': filepath,
-            'type': 'signal' if is_signal else 'noise',
-            'total_phrases': 0,
-            'full_file_modality': modality.name,
-            'probabilities': probabilities,
-            'num_clicks': len(peak_indices),
-            'expected_check': expected
+            "filepath": filepath,
+            "type": "signal" if is_signal else "noise",
+            "total_phrases": 0,
+            "full_file_modality": modality.name,
+            "probabilities": probabilities,
+            "num_clicks": len(peak_indices),
+            "expected_check": expected,
         }
     except Exception as e:
         print(f"  Error: {e}")
@@ -228,9 +232,9 @@ def analyze_sperm_whale_click(filepath, is_signal=True):
 
 def main():
     """Investigate sperm whale dataset."""
-    print("="*70)
+    print("=" * 70)
     print("SPERM WHALE DATASET INVESTIGATION (Dominica)")
-    print("="*70)
+    print("=" * 70)
 
     base_dir = Path.home() / "birdsong_analysis" / "data" / "Dominica_dataset"
 
@@ -261,61 +265,61 @@ def main():
 
     print(f"\n🎲 Testing {len(test_signals)} signal files and {len(test_noise)} noise files...\n")
 
-    all_results = {'signal': [], 'noise': []}
+    all_results = {"signal": [], "noise": []}
 
     # Analyze signals
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SIGNAL ANALYSIS (Sperm Whale Clicks/Codas)")
-    print("="*70)
+    print("=" * 70)
 
     for filepath in test_signals:
         result = analyze_sperm_whale_click(filepath, is_signal=True)
         if result:
-            all_results['signal'].append(result)
+            all_results["signal"].append(result)
 
     # Analyze noise
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("NOISE ANALYSIS (Background Recordings)")
-    print("="*70)
+    print("=" * 70)
 
     for filepath in test_noise:
         result = analyze_sperm_whale_click(filepath, is_signal=False)
         if result:
-            all_results['noise'].append(result)
+            all_results["noise"].append(result)
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("INVESTIGATION SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Signal summary
-    if all_results['signal']:
+    if all_results["signal"]:
         print(f"\n📊 SIGNAL FILES (n={len(all_results['signal'])})")
 
         # Count files with phrases
-        with_phrases = [r for r in all_results['signal'] if r['total_phrases'] > 0]
-        without_phrases = [r for r in all_results['signal'] if r['total_phrases'] == 0]
+        with_phrases = [r for r in all_results["signal"] if r["total_phrases"] > 0]
+        without_phrases = [r for r in all_results["signal"] if r["total_phrases"] == 0]
 
         print(f"  With phrase segmentation: {len(with_phrases)} files")
         print(f"  Without phrase segmentation: {len(without_phrases)} files")
 
         # Aggregate modality for segmented files
         if with_phrases:
-            total_phrases = sum(r['total_phrases'] for r in with_phrases)
+            total_phrases = sum(r["total_phrases"] for r in with_phrases)
             all_modality_counts = {}
 
             for result in with_phrases:
-                for modality, count in result['modality_counts'].items():
+                for modality, count in result["modality_counts"].items():
                     all_modality_counts[modality] = all_modality_counts.get(modality, 0) + 1
 
             print(f"\n  Modality Distribution ({total_phrases} phrases):")
             for modality, count in sorted(all_modality_counts.items()):
                 percentage = count / total_phrases * 100
-                bar = '█' * int(percentage / 10)
+                bar = "█" * int(percentage / 10)
                 expected = ""
-                if modality == 'TRANSIENT':
+                if modality == "TRANSIENT":
                     expected = " ✓ (clicks)"
-                elif modality == 'RHYTHMIC':
+                elif modality == "RHYTHMIC":
                     expected = " ✓ (codas)"
                 print(f"    {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}{expected}")
 
@@ -324,30 +328,30 @@ def main():
             print("\n  Full-file Modality (no segmentation):")
             modality_counts = {}
             for result in without_phrases:
-                m = result['full_file_modality']
+                m = result["full_file_modality"]
                 modality_counts[m] = modality_counts.get(m, 0) + 1
 
             for modality, count in sorted(modality_counts.items()):
                 percentage = count / len(without_phrases) * 100
-                bar = '█' * int(percentage / 10)
+                bar = "█" * int(percentage / 10)
                 print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}")
 
     # Noise summary
-    if all_results['noise']:
+    if all_results["noise"]:
         print(f"\n📊 NOISE FILES (n={len(all_results['noise'])})")
 
         modality_counts = {}
-        for result in all_results['noise']:
-            if result['total_phrases'] == 0:
-                m = result['full_file_modality']
+        for result in all_results["noise"]:
+            if result["total_phrases"] == 0:
+                m = result["full_file_modality"]
             else:
-                m = list(result['modality_counts'].keys())[0]  # Primary modality
+                m = list(result["modality_counts"].keys())[0]  # Primary modality
             modality_counts[m] = modality_counts.get(m, 0) + 1
 
         print("  Modality Distribution:")
         for modality, count in sorted(modality_counts.items()):
-            percentage = count / len(all_results['noise']) * 100
-            bar = '█' * int(percentage / 10)
+            percentage = count / len(all_results["noise"]) * 100
+            bar = "█" * int(percentage / 10)
             print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}")
 
     print("\n💡 Key Findings:")
@@ -355,9 +359,9 @@ def main():
     print("  - Sperm whale clicks: 1-15 kHz range")
     print("  - Expected: TRANSIENT (clicks) or RHYTHMIC (codas)")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Investigation complete!")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

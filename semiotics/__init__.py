@@ -15,9 +15,9 @@ from .semiotic_engine import (
 )
 
 __all__ = [
-    'SemioticEngine',
-    'SemioticState',
-    'SemioticRelation',
-    'SemioticContext',
-    'SemioticAnalysisResult'
+    "SemioticEngine",
+    "SemioticState",
+    "SemioticRelation",
+    "SemioticContext",
+    "SemioticAnalysisResult",
 ]

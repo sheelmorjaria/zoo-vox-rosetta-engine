@@ -55,16 +55,19 @@ import heapq
 # Data Models
 # =============================================================================
 
+
 class NavigationMode(Enum):
     """Navigation strategy for island hopping"""
+
     LINEAR_GRADIENT = "LINEAR_GRADIENT"  # Direct path (The "Road")
-    RANDOM_WALK = "RANDOM_WALK"          # Exploration (The "Drift")
+    RANDOM_WALK = "RANDOM_WALK"  # Exploration (The "Drift")
     SEMANTIC_AVOIDANCE = "SEMANTIC_AVOIDANCE"  # Safety (The "Safe Harbor")
 
 
 @dataclass
 class Vector17D:
     """17D acoustic vector representing a point in acoustic space"""
+
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
@@ -83,27 +86,53 @@ class Vector17D:
     mfcc_4: float
     spectral_contrast: float
 
-    def distance_to(self, other: 'Vector17D') -> float:
+    def distance_to(self, other: "Vector17D") -> float:
         """Calculate Euclidean distance between two vectors"""
-        v1 = np.array([
-            self.mean_f0_hz, self.duration_ms, self.f0_range_hz,
-            self.harmonic_to_noise_ratio, self.spectral_flatness,
-            self.attack_time_ms, self.decay_time_ms, self.sustain_level,
-            self.vibrato_rate_hz, self.vibrato_depth, self.jitter, self.shimmer,
-            self.mfcc_1, self.mfcc_2, self.mfcc_3, self.mfcc_4,
-            self.spectral_contrast
-        ])
-        v2 = np.array([
-            other.mean_f0_hz, other.duration_ms, other.f0_range_hz,
-            other.harmonic_to_noise_ratio, other.spectral_flatness,
-            other.attack_time_ms, other.decay_time_ms, other.sustain_level,
-            other.vibrato_rate_hz, other.vibrato_depth, other.jitter, other.shimmer,
-            other.mfcc_1, other.mfcc_2, other.mfcc_3, other.mfcc_4,
-            other.spectral_contrast
-        ])
+        v1 = np.array(
+            [
+                self.mean_f0_hz,
+                self.duration_ms,
+                self.f0_range_hz,
+                self.harmonic_to_noise_ratio,
+                self.spectral_flatness,
+                self.attack_time_ms,
+                self.decay_time_ms,
+                self.sustain_level,
+                self.vibrato_rate_hz,
+                self.vibrato_depth,
+                self.jitter,
+                self.shimmer,
+                self.mfcc_1,
+                self.mfcc_2,
+                self.mfcc_3,
+                self.mfcc_4,
+                self.spectral_contrast,
+            ]
+        )
+        v2 = np.array(
+            [
+                other.mean_f0_hz,
+                other.duration_ms,
+                other.f0_range_hz,
+                other.harmonic_to_noise_ratio,
+                other.spectral_flatness,
+                other.attack_time_ms,
+                other.decay_time_ms,
+                other.sustain_level,
+                other.vibrato_rate_hz,
+                other.vibrato_depth,
+                other.jitter,
+                other.shimmer,
+                other.mfcc_1,
+                other.mfcc_2,
+                other.mfcc_3,
+                other.mfcc_4,
+                other.spectral_contrast,
+            ]
+        )
         return float(np.linalg.norm(v1 - v2))
 
-    def __sub__(self, other: 'Vector17D') -> 'VectorDelta':
+    def __sub__(self, other: "Vector17D") -> "VectorDelta":
         """Calculate delta between two vectors"""
         return VectorDelta(
             delta_mean_f0_hz=self.mean_f0_hz - other.mean_f0_hz,
@@ -129,6 +158,7 @@ class Vector17D:
 @dataclass
 class VectorDelta:
     """17D difference vector (warp instructions)"""
+
     delta_mean_f0_hz: float
     delta_duration_ms: float
     delta_f0_range_hz: float
@@ -150,18 +180,30 @@ class VectorDelta:
     @property
     def magnitude(self) -> float:
         """Calculate the magnitude of the delta vector"""
-        arr = np.array([
-            self.delta_mean_f0_hz, self.delta_duration_ms, self.delta_f0_range_hz,
-            self.delta_hnr, self.delta_spectral_flatness,
-            self.delta_attack_time_ms, self.delta_decay_time_ms, self.delta_sustain_level,
-            self.delta_vibrato_rate_hz, self.delta_vibrato_depth,
-            self.delta_jitter, self.delta_shimmer,
-            self.delta_mfcc_1, self.delta_mfcc_2, self.delta_mfcc_3, self.delta_mfcc_4,
-            self.delta_spectral_contrast
-        ])
+        arr = np.array(
+            [
+                self.delta_mean_f0_hz,
+                self.delta_duration_ms,
+                self.delta_f0_range_hz,
+                self.delta_hnr,
+                self.delta_spectral_flatness,
+                self.delta_attack_time_ms,
+                self.delta_decay_time_ms,
+                self.delta_sustain_level,
+                self.delta_vibrato_rate_hz,
+                self.delta_vibrato_depth,
+                self.delta_jitter,
+                self.delta_shimmer,
+                self.delta_mfcc_1,
+                self.delta_mfcc_2,
+                self.delta_mfcc_3,
+                self.delta_mfcc_4,
+                self.delta_spectral_contrast,
+            ]
+        )
         return float(np.linalg.norm(arr))
 
-    def clamp(self, max_magnitude: float) -> 'VectorDelta':
+    def clamp(self, max_magnitude: float) -> "VectorDelta":
         """Clamp delta to maximum magnitude (safety)"""
         if self.magnitude <= max_magnitude:
             return self
@@ -190,6 +232,7 @@ class VectorDelta:
 @dataclass
 class Waypoint:
     """A point in the navigation route"""
+
     position: Vector17D
     target_intensity: float
     is_real_island: bool = False
@@ -199,6 +242,7 @@ class Waypoint:
 @dataclass
 class RouteSegment:
     """A segment of the journey between two islands"""
+
     start_island: str  # Real phrase ID
     end_island: Optional[str]  # Next real phrase ID (None for final)
     virtual_target: Vector17D
@@ -209,6 +253,7 @@ class RouteSegment:
 @dataclass
 class NavigationRoute:
     """Complete navigation route through the acoustic archipelago"""
+
     segments: List[RouteSegment] = field(default_factory=list)
     total_distance: float = 0.0
 
@@ -221,6 +266,7 @@ class NavigationRoute:
 @dataclass
 class AudioIsland:
     """A real audio phrase (safe island in the ocean)"""
+
     island_id: str
     vector: Vector17D
     audio_buffer: Optional[np.ndarray] = None
@@ -229,6 +275,7 @@ class AudioIsland:
 # =============================================================================
 # Island Hopping Navigator
 # =============================================================================
+
 
 class AcousticAlgebraEngine:
     """
@@ -253,16 +300,16 @@ class AcousticAlgebraEngine:
 
             return Vector17D(
                 mean_f0_hz=base_f0 + (1000.0 * intensity),  # Higher pitch = more aggressive
-                duration_ms=50.0 - (10.0 * intensity),      # Shorter = more urgent
+                duration_ms=50.0 - (10.0 * intensity),  # Shorter = more urgent
                 f0_range_hz=400.0 + (200.0 * intensity),
                 harmonic_to_noise_ratio=base_hnr - (15.0 * intensity),  # Lower HNR = rougher
                 spectral_flatness=base_roughness + (0.6 * intensity),  # Higher = noisier
-                attack_time_ms=15.0 - (12.0 * intensity),   # Sharper attack
+                attack_time_ms=15.0 - (12.0 * intensity),  # Sharper attack
                 decay_time_ms=20.0 - (10.0 * intensity),
                 sustain_level=0.6 - (0.2 * intensity),
-                vibrato_rate_hz=6.0 - (6.0 * intensity),    # Less vibrato when aggressive
+                vibrato_rate_hz=6.0 - (6.0 * intensity),  # Less vibrato when aggressive
                 vibrato_depth=0.02 - (0.02 * intensity),
-                jitter=0.03 + (0.09 * intensity),           # More jitter
+                jitter=0.03 + (0.09 * intensity),  # More jitter
                 shimmer=0.02 + (0.06 * intensity),
                 mfcc_1=1.0 + (0.8 * intensity),
                 mfcc_2=0.7 + (0.5 * intensity),
@@ -274,8 +321,8 @@ class AcousticAlgebraEngine:
             # Courtship emphasizes complexity and clarity
             return Vector17D(
                 mean_f0_hz=7000.0 + (500.0 * intensity),
-                duration_ms=50.0 + (50.0 * intensity),      # Longer calls
-                f0_range_hz=400.0 + (300.0 * intensity),    # More modulation
+                duration_ms=50.0 + (50.0 * intensity),  # Longer calls
+                f0_range_hz=400.0 + (300.0 * intensity),  # More modulation
                 harmonic_to_noise_ratio=20.0 + (5.0 * intensity),  # Clearer tone
                 spectral_flatness=0.1,
                 attack_time_ms=15.0,
@@ -337,8 +384,7 @@ class PhraseDatabase:
             return None
 
         nearest_id = min(
-            self.islands.keys(),
-            key=lambda iid: target.distance_to(self.islands[iid].vector)
+            self.islands.keys(), key=lambda iid: target.distance_to(self.islands[iid].vector)
         )
         return self.islands[nearest_id]
 
@@ -358,11 +404,7 @@ class IslandHoppingNavigator:
         self.database = database
 
     def plan_linear_gradient(
-        self,
-        intent: str,
-        start_intensity: float,
-        end_intensity: float,
-        num_waypoints: int = 10
+        self, intent: str, start_intensity: float, end_intensity: float, num_waypoints: int = 10
     ) -> NavigationRoute:
         """
         Mode A: Linear Gradient (The "Road")
@@ -401,7 +443,7 @@ class IslandHoppingNavigator:
                     end_island=nearest.island_id,
                     virtual_target=target,
                     warp_delta=delta,
-                    distance=delta.magnitude
+                    distance=delta.magnitude,
                 )
                 route.add_segment(segment)
 
@@ -411,11 +453,7 @@ class IslandHoppingNavigator:
         return route
 
     def plan_random_walk(
-        self,
-        start_intent: str,
-        start_intensity: float,
-        num_steps: int = 10,
-        step_size: float = 0.1
+        self, start_intent: str, start_intensity: float, num_steps: int = 10, step_size: float = 0.1
     ) -> NavigationRoute:
         """
         Mode B: Random Walk (The "Drift")
@@ -459,7 +497,7 @@ class IslandHoppingNavigator:
                 end_island=nearest.island_id,
                 virtual_target=target,
                 warp_delta=delta,
-                distance=delta.magnitude
+                distance=delta.magnitude,
             )
             route.add_segment(segment)
 
@@ -473,25 +511,50 @@ class IslandHoppingNavigator:
 # Phase 1 Tests: Waypoint Calculation
 # =============================================================================
 
+
 class TestVector17DCalculations(unittest.TestCase):
     """Test 17D vector operations for navigation"""
 
     def test_distance_calculation(self):
         """Test Euclidean distance between vectors"""
         v1 = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         v2 = Vector17D(
-            mean_f0_hz=8000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=8000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         distance = v1.distance_to(v2)
@@ -502,19 +565,43 @@ class TestVector17DCalculations(unittest.TestCase):
     def test_delta_calculation(self):
         """Test delta vector calculation"""
         v1 = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         v2 = Vector17D(
-            mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=15.0, spectral_flatness=0.2,
-            attack_time_ms=10.0, decay_time_ms=15.0, sustain_level=0.5,
-            vibrato_rate_hz=5.0, vibrato_depth=0.01, jitter=0.04, shimmer=0.03,
-            mfcc_1=1.2, mfcc_2=0.8, mfcc_3=-0.1, mfcc_4=0.2, spectral_contrast=12.0
+            mean_f0_hz=8000.0,
+            duration_ms=40.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=15.0,
+            spectral_flatness=0.2,
+            attack_time_ms=10.0,
+            decay_time_ms=15.0,
+            sustain_level=0.5,
+            vibrato_rate_hz=5.0,
+            vibrato_depth=0.01,
+            jitter=0.04,
+            shimmer=0.03,
+            mfcc_1=1.2,
+            mfcc_2=0.8,
+            mfcc_3=-0.1,
+            mfcc_4=0.2,
+            spectral_contrast=12.0,
         )
 
         delta = v2 - v1
@@ -526,13 +613,23 @@ class TestVector17DCalculations(unittest.TestCase):
     def test_delta_magnitude(self):
         """Test delta magnitude calculation"""
         delta = VectorDelta(
-            delta_mean_f0_hz=1000.0, delta_duration_ms=0.0, delta_f0_range_hz=0.0,
-            delta_hnr=0.0, delta_spectral_flatness=0.0,
-            delta_attack_time_ms=0.0, delta_decay_time_ms=0.0, delta_sustain_level=0.0,
-            delta_vibrato_rate_hz=0.0, delta_vibrato_depth=0.0,
-            delta_jitter=0.0, delta_shimmer=0.0,
-            delta_mfcc_1=0.0, delta_mfcc_2=0.0, delta_mfcc_3=0.0,
-            delta_mfcc_4=0.0, delta_spectral_contrast=0.0
+            delta_mean_f0_hz=1000.0,
+            delta_duration_ms=0.0,
+            delta_f0_range_hz=0.0,
+            delta_hnr=0.0,
+            delta_spectral_flatness=0.0,
+            delta_attack_time_ms=0.0,
+            delta_decay_time_ms=0.0,
+            delta_sustain_level=0.0,
+            delta_vibrato_rate_hz=0.0,
+            delta_vibrato_depth=0.0,
+            delta_jitter=0.0,
+            delta_shimmer=0.0,
+            delta_mfcc_1=0.0,
+            delta_mfcc_2=0.0,
+            delta_mfcc_3=0.0,
+            delta_mfcc_4=0.0,
+            delta_spectral_contrast=0.0,
         )
 
         magnitude = delta.magnitude
@@ -543,13 +640,23 @@ class TestVector17DCalculations(unittest.TestCase):
     def test_delta_clamping(self):
         """Test delta clamping for safety"""
         delta = VectorDelta(
-            delta_mean_f0_hz=1000.0, delta_duration_ms=0.0, delta_f0_range_hz=0.0,
-            delta_hnr=0.0, delta_spectral_flatness=0.0,
-            delta_attack_time_ms=0.0, delta_decay_time_ms=0.0, delta_sustain_level=0.0,
-            delta_vibrato_rate_hz=0.0, delta_vibrato_depth=0.0,
-            delta_jitter=0.0, delta_shimmer=0.0,
-            delta_mfcc_1=0.0, delta_mfcc_2=0.0, delta_mfcc_3=0.0,
-            delta_mfcc_4=0.0, delta_spectral_contrast=0.0
+            delta_mean_f0_hz=1000.0,
+            delta_duration_ms=0.0,
+            delta_f0_range_hz=0.0,
+            delta_hnr=0.0,
+            delta_spectral_flatness=0.0,
+            delta_attack_time_ms=0.0,
+            delta_decay_time_ms=0.0,
+            delta_sustain_level=0.0,
+            delta_vibrato_rate_hz=0.0,
+            delta_vibrato_depth=0.0,
+            delta_jitter=0.0,
+            delta_shimmer=0.0,
+            delta_mfcc_1=0.0,
+            delta_mfcc_2=0.0,
+            delta_mfcc_3=0.0,
+            delta_mfcc_4=0.0,
+            delta_spectral_contrast=0.0,
         )
 
         # Clamp to max 20% (represented as 200 for this test)
@@ -609,36 +716,76 @@ class TestPhraseDatabase(unittest.TestCase):
         self.db = PhraseDatabase()
 
         # Add test islands
-        self.db.add_island(AudioIsland(
-            island_id="neutral_001",
-            vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="neutral_001",
+                vector=Vector17D(
+                    mean_f0_hz=7000.0,
+                    duration_ms=50.0,
+                    f0_range_hz=400.0,
+                    harmonic_to_noise_ratio=20.0,
+                    spectral_flatness=0.1,
+                    attack_time_ms=15.0,
+                    decay_time_ms=20.0,
+                    sustain_level=0.6,
+                    vibrato_rate_hz=6.0,
+                    vibrato_depth=0.02,
+                    jitter=0.03,
+                    shimmer=0.02,
+                    mfcc_1=1.0,
+                    mfcc_2=0.7,
+                    mfcc_3=-0.2,
+                    mfcc_4=0.3,
+                    spectral_contrast=15.0,
+                ),
             )
-        ))
+        )
 
-        self.db.add_island(AudioIsland(
-            island_id="aggressive_001",
-            vector=Vector17D(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="aggressive_001",
+                vector=Vector17D(
+                    mean_f0_hz=8000.0,
+                    duration_ms=40.0,
+                    f0_range_hz=600.0,
+                    harmonic_to_noise_ratio=5.0,
+                    spectral_flatness=0.7,
+                    attack_time_ms=3.0,
+                    decay_time_ms=10.0,
+                    sustain_level=0.4,
+                    vibrato_rate_hz=0.0,
+                    vibrato_depth=0.0,
+                    jitter=0.12,
+                    shimmer=0.08,
+                    mfcc_1=1.8,
+                    mfcc_2=1.2,
+                    mfcc_3=0.3,
+                    mfcc_4=0.1,
+                    spectral_contrast=5.0,
+                ),
             )
-        ))
+        )
 
     def test_find_nearest_to_neutral(self):
         """Test finding nearest island to neutral target"""
         target = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         nearest = self.db.find_nearest_17d(target)
@@ -649,11 +796,23 @@ class TestPhraseDatabase(unittest.TestCase):
     def test_find_nearest_to_aggressive(self):
         """Test finding nearest island to aggressive target"""
         target = Vector17D(
-            mean_f0_hz=7800.0, duration_ms=42.0, f0_range_hz=550.0,
-            harmonic_to_noise_ratio=7.0, spectral_flatness=0.6,
-            attack_time_ms=4.0, decay_time_ms=12.0, sustain_level=0.45,
-            vibrato_rate_hz=1.0, vibrato_depth=0.01, jitter=0.1, shimmer=0.06,
-            mfcc_1=1.6, mfcc_2=1.1, mfcc_3=0.2, mfcc_4=0.15, spectral_contrast=7.0
+            mean_f0_hz=7800.0,
+            duration_ms=42.0,
+            f0_range_hz=550.0,
+            harmonic_to_noise_ratio=7.0,
+            spectral_flatness=0.6,
+            attack_time_ms=4.0,
+            decay_time_ms=12.0,
+            sustain_level=0.45,
+            vibrato_rate_hz=1.0,
+            vibrato_depth=0.01,
+            jitter=0.1,
+            shimmer=0.06,
+            mfcc_1=1.6,
+            mfcc_2=1.1,
+            mfcc_3=0.2,
+            mfcc_4=0.15,
+            spectral_contrast=7.0,
         )
 
         nearest = self.db.find_nearest_17d(target)
@@ -666,11 +825,23 @@ class TestPhraseDatabase(unittest.TestCase):
         """Test that empty database returns None"""
         empty_db = PhraseDatabase()
         target = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         nearest = empty_db.find_nearest_17d(target)
@@ -682,6 +853,7 @@ class TestPhraseDatabase(unittest.TestCase):
 # Phase 2 Tests: Navigation Planning
 # =============================================================================
 
+
 class TestIslandHoppingNavigator(unittest.TestCase):
     """Test island hopping navigation (the "Route Planner")"""
 
@@ -690,48 +862,87 @@ class TestIslandHoppingNavigator(unittest.TestCase):
         self.db = PhraseDatabase()
 
         # Add test islands spanning the aggression spectrum
-        self.db.add_island(AudioIsland(
-            island_id="neutral",
-            vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="neutral",
+                vector=Vector17D(
+                    mean_f0_hz=7000.0,
+                    duration_ms=50.0,
+                    f0_range_hz=400.0,
+                    harmonic_to_noise_ratio=20.0,
+                    spectral_flatness=0.1,
+                    attack_time_ms=15.0,
+                    decay_time_ms=20.0,
+                    sustain_level=0.6,
+                    vibrato_rate_hz=6.0,
+                    vibrato_depth=0.02,
+                    jitter=0.03,
+                    shimmer=0.02,
+                    mfcc_1=1.0,
+                    mfcc_2=0.7,
+                    mfcc_3=-0.2,
+                    mfcc_4=0.3,
+                    spectral_contrast=15.0,
+                ),
             )
-        ))
+        )
 
-        self.db.add_island(AudioIsland(
-            island_id="mild_aggression",
-            vector=Vector17D(
-                mean_f0_hz=7500.0, duration_ms=45.0, f0_range_hz=500.0,
-                harmonic_to_noise_ratio=12.0, spectral_flatness=0.4,
-                attack_time_ms=8.0, decay_time_ms=15.0, sustain_level=0.5,
-                vibrato_rate_hz=3.0, vibrato_depth=0.01, jitter=0.07, shimmer=0.05,
-                mfcc_1=1.4, mfcc_2=0.9, mfcc_3=0.1, mfcc_4=0.2, spectral_contrast=10.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="mild_aggression",
+                vector=Vector17D(
+                    mean_f0_hz=7500.0,
+                    duration_ms=45.0,
+                    f0_range_hz=500.0,
+                    harmonic_to_noise_ratio=12.0,
+                    spectral_flatness=0.4,
+                    attack_time_ms=8.0,
+                    decay_time_ms=15.0,
+                    sustain_level=0.5,
+                    vibrato_rate_hz=3.0,
+                    vibrato_depth=0.01,
+                    jitter=0.07,
+                    shimmer=0.05,
+                    mfcc_1=1.4,
+                    mfcc_2=0.9,
+                    mfcc_3=0.1,
+                    mfcc_4=0.2,
+                    spectral_contrast=10.0,
+                ),
             )
-        ))
+        )
 
-        self.db.add_island(AudioIsland(
-            island_id="full_aggression",
-            vector=Vector17D(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="full_aggression",
+                vector=Vector17D(
+                    mean_f0_hz=8000.0,
+                    duration_ms=40.0,
+                    f0_range_hz=600.0,
+                    harmonic_to_noise_ratio=5.0,
+                    spectral_flatness=0.7,
+                    attack_time_ms=3.0,
+                    decay_time_ms=10.0,
+                    sustain_level=0.4,
+                    vibrato_rate_hz=0.0,
+                    vibrato_depth=0.0,
+                    jitter=0.12,
+                    shimmer=0.08,
+                    mfcc_1=1.8,
+                    mfcc_2=1.2,
+                    mfcc_3=0.3,
+                    mfcc_4=0.1,
+                    spectral_contrast=5.0,
+                ),
             )
-        ))
+        )
 
         self.navigator = IslandHoppingNavigator(self.algebra, self.db)
 
     def test_linear_gradient_route_planning(self):
         """Test Mode A: Linear Gradient navigation"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         # Should generate a route
@@ -745,10 +956,7 @@ class TestIslandHoppingNavigator(unittest.TestCase):
     def test_linear_gradient_follows_spectrum(self):
         """Test that linear gradient follows the aggression spectrum"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=10
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=10
         )
 
         # Route should start at or near neutral
@@ -762,10 +970,7 @@ class TestIslandHoppingNavigator(unittest.TestCase):
         np.random.seed(42)  # For reproducibility
 
         route = self.navigator.plan_random_walk(
-            start_intent="aggression",
-            start_intensity=0.5,
-            num_steps=5,
-            step_size=0.1
+            start_intent="aggression", start_intensity=0.5, num_steps=5, step_size=0.1
         )
 
         # Should generate a route with one segment per step
@@ -774,10 +979,7 @@ class TestIslandHoppingNavigator(unittest.TestCase):
     def test_route_segment_distances_are_reasonable(self):
         """Test that route segments don't exceed safe warp distance"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=10
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=10
         )
 
         # All segments should have reasonable distances
@@ -789,10 +991,7 @@ class TestIslandHoppingNavigator(unittest.TestCase):
     def test_total_distance_is_calculated(self):
         """Test that route calculates total distance correctly"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         # Total distance should be sum of segment distances
@@ -803,6 +1002,7 @@ class TestIslandHoppingNavigator(unittest.TestCase):
 # =============================================================================
 # Phase 3 Tests: Safety and Edge Cases
 # =============================================================================
+
 
 class TestIslandHoppingSafety(unittest.TestCase):
     """Test safety mechanisms for island hopping"""
@@ -815,10 +1015,7 @@ class TestIslandHoppingSafety(unittest.TestCase):
     def test_navigation_with_empty_database(self):
         """Test navigation with no islands"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         # Should return empty route
@@ -826,22 +1023,33 @@ class TestIslandHoppingSafety(unittest.TestCase):
 
     def test_navigation_with_single_island(self):
         """Test navigation with only one island"""
-        self.db.add_island(AudioIsland(
-            island_id="only_island",
-            vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+        self.db.add_island(
+            AudioIsland(
+                island_id="only_island",
+                vector=Vector17D(
+                    mean_f0_hz=7000.0,
+                    duration_ms=50.0,
+                    f0_range_hz=400.0,
+                    harmonic_to_noise_ratio=20.0,
+                    spectral_flatness=0.1,
+                    attack_time_ms=15.0,
+                    decay_time_ms=20.0,
+                    sustain_level=0.6,
+                    vibrato_rate_hz=6.0,
+                    vibrato_depth=0.02,
+                    jitter=0.03,
+                    shimmer=0.02,
+                    mfcc_1=1.0,
+                    mfcc_2=0.7,
+                    mfcc_3=-0.2,
+                    mfcc_4=0.3,
+                    spectral_contrast=15.0,
+                ),
             )
-        ))
+        )
 
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         # With a single island, all segments use that same island
@@ -857,72 +1065,12 @@ class TestIslandHoppingSafety(unittest.TestCase):
 
     def test_zero_waypoints(self):
         """Test navigation with zero waypoints"""
-        self.db.add_island(AudioIsland(
-            island_id="test",
-            vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
-            )
-        ))
-
-        route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=0
-        )
-
-        # Should handle gracefully
-        # (Route might be empty or minimal)
-        self.assertIsInstance(route, NavigationRoute)
-
-    def test_extreme_intensities(self):
-        """Test navigation with extreme intensity values"""
-        self.db.add_island(AudioIsland(
-            island_id="test",
-            vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
-            )
-        ))
-
-        # Test negative intensity (should be clamped in production)
-        route = self.navigator.plan_random_walk(
-            start_intent="aggression",
-            start_intensity=-0.5,
-            num_steps=3,
-            step_size=0.1
-        )
-
-        # Should still generate a route
-        self.assertIsInstance(route, NavigationRoute)
-
-
-# =============================================================================
-# Phase 4 Tests: Integration
-# =============================================================================
-
-class TestIslandHoppingIntegration(unittest.TestCase):
-    """Test complete island hopping workflow"""
-
-    def setUp(self):
-        self.algebra = AcousticAlgebraEngine()
-        self.db = PhraseDatabase()
-
-        # Create a realistic archipelago
-        # Neutral islands
-        for i in range(3):
-            self.db.add_island(AudioIsland(
-                island_id=f"neutral_{i:03d}",
+        self.db.add_island(
+            AudioIsland(
+                island_id="test",
                 vector=Vector17D(
-                    mean_f0_hz=7000.0 + np.random.uniform(-100, 100),
-                    duration_ms=50.0 + np.random.uniform(-5, 5),
+                    mean_f0_hz=7000.0,
+                    duration_ms=50.0,
                     f0_range_hz=400.0,
                     harmonic_to_noise_ratio=20.0,
                     spectral_flatness=0.1,
@@ -937,34 +1085,121 @@ class TestIslandHoppingIntegration(unittest.TestCase):
                     mfcc_2=0.7,
                     mfcc_3=-0.2,
                     mfcc_4=0.3,
-                    spectral_contrast=15.0
+                    spectral_contrast=15.0,
+                ),
+            )
+        )
+
+        route = self.navigator.plan_linear_gradient(
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=0
+        )
+
+        # Should handle gracefully
+        # (Route might be empty or minimal)
+        self.assertIsInstance(route, NavigationRoute)
+
+    def test_extreme_intensities(self):
+        """Test navigation with extreme intensity values"""
+        self.db.add_island(
+            AudioIsland(
+                island_id="test",
+                vector=Vector17D(
+                    mean_f0_hz=7000.0,
+                    duration_ms=50.0,
+                    f0_range_hz=400.0,
+                    harmonic_to_noise_ratio=20.0,
+                    spectral_flatness=0.1,
+                    attack_time_ms=15.0,
+                    decay_time_ms=20.0,
+                    sustain_level=0.6,
+                    vibrato_rate_hz=6.0,
+                    vibrato_depth=0.02,
+                    jitter=0.03,
+                    shimmer=0.02,
+                    mfcc_1=1.0,
+                    mfcc_2=0.7,
+                    mfcc_3=-0.2,
+                    mfcc_4=0.3,
+                    spectral_contrast=15.0,
+                ),
+            )
+        )
+
+        # Test negative intensity (should be clamped in production)
+        route = self.navigator.plan_random_walk(
+            start_intent="aggression", start_intensity=-0.5, num_steps=3, step_size=0.1
+        )
+
+        # Should still generate a route
+        self.assertIsInstance(route, NavigationRoute)
+
+
+# =============================================================================
+# Phase 4 Tests: Integration
+# =============================================================================
+
+
+class TestIslandHoppingIntegration(unittest.TestCase):
+    """Test complete island hopping workflow"""
+
+    def setUp(self):
+        self.algebra = AcousticAlgebraEngine()
+        self.db = PhraseDatabase()
+
+        # Create a realistic archipelago
+        # Neutral islands
+        for i in range(3):
+            self.db.add_island(
+                AudioIsland(
+                    island_id=f"neutral_{i:03d}",
+                    vector=Vector17D(
+                        mean_f0_hz=7000.0 + np.random.uniform(-100, 100),
+                        duration_ms=50.0 + np.random.uniform(-5, 5),
+                        f0_range_hz=400.0,
+                        harmonic_to_noise_ratio=20.0,
+                        spectral_flatness=0.1,
+                        attack_time_ms=15.0,
+                        decay_time_ms=20.0,
+                        sustain_level=0.6,
+                        vibrato_rate_hz=6.0,
+                        vibrato_depth=0.02,
+                        jitter=0.03,
+                        shimmer=0.02,
+                        mfcc_1=1.0,
+                        mfcc_2=0.7,
+                        mfcc_3=-0.2,
+                        mfcc_4=0.3,
+                        spectral_contrast=15.0,
+                    ),
                 )
-            ))
+            )
 
         # Aggressive islands
         for i in range(3):
-            self.db.add_island(AudioIsland(
-                island_id=f"aggressive_{i:03d}",
-                vector=Vector17D(
-                    mean_f0_hz=8000.0 + np.random.uniform(-100, 100),
-                    duration_ms=40.0 + np.random.uniform(-5, 5),
-                    f0_range_hz=600.0,
-                    harmonic_to_noise_ratio=5.0,
-                    spectral_flatness=0.7,
-                    attack_time_ms=3.0,
-                    decay_time_ms=10.0,
-                    sustain_level=0.4,
-                    vibrato_rate_hz=0.0,
-                    vibrato_depth=0.0,
-                    jitter=0.12,
-                    shimmer=0.08,
-                    mfcc_1=1.8,
-                    mfcc_2=1.2,
-                    mfcc_3=0.3,
-                    mfcc_4=0.1,
-                    spectral_contrast=5.0
+            self.db.add_island(
+                AudioIsland(
+                    island_id=f"aggressive_{i:03d}",
+                    vector=Vector17D(
+                        mean_f0_hz=8000.0 + np.random.uniform(-100, 100),
+                        duration_ms=40.0 + np.random.uniform(-5, 5),
+                        f0_range_hz=600.0,
+                        harmonic_to_noise_ratio=5.0,
+                        spectral_flatness=0.7,
+                        attack_time_ms=3.0,
+                        decay_time_ms=10.0,
+                        sustain_level=0.4,
+                        vibrato_rate_hz=0.0,
+                        vibrato_depth=0.0,
+                        jitter=0.12,
+                        shimmer=0.08,
+                        mfcc_1=1.8,
+                        mfcc_2=1.2,
+                        mfcc_3=0.3,
+                        mfcc_4=0.1,
+                        spectral_contrast=5.0,
+                    ),
                 )
-            ))
+            )
 
         self.navigator = IslandHoppingNavigator(self.algebra, self.db)
 
@@ -972,10 +1207,7 @@ class TestIslandHoppingIntegration(unittest.TestCase):
         """Test complete workflow: Algebra → Lookup → Route → Delta"""
         # 1. Plan route
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=10
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=10
         )
 
         # 2. Verify route structure
@@ -991,25 +1223,21 @@ class TestIslandHoppingIntegration(unittest.TestCase):
     def test_route_segments_use_different_islands(self):
         """Test that route uses different islands as it progresses"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=10
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=10
         )
 
         if len(route.segments) > 1:
             # First segment should start at a neutral island
             first_segment = route.segments[0]
-            self.assertTrue(first_segment.start_island.startswith("neutral") or
-                           first_segment.start_island.startswith("aggressive"))
+            self.assertTrue(
+                first_segment.start_island.startswith("neutral")
+                or first_segment.start_island.startswith("aggressive")
+            )
 
     def test_route_total_distance_is_accumulated(self):
         """Test that total distance is the sum of all segments"""
         route = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=10
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=10
         )
 
         if len(route.segments) > 0:
@@ -1022,24 +1250,18 @@ class TestIslandHoppingIntegration(unittest.TestCase):
         np.random.seed(42)
 
         route1 = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         np.random.seed(42)
 
         route2 = self.navigator.plan_linear_gradient(
-            intent="aggression",
-            start_intensity=0.0,
-            end_intensity=1.0,
-            num_waypoints=5
+            intent="aggression", start_intensity=0.0, end_intensity=1.0, num_waypoints=5
         )
 
         # Should produce same number of segments
         self.assertEqual(len(route1.segments), len(route2.segments))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

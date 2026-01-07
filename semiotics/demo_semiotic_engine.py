@@ -8,7 +8,7 @@ the cognitive dimensions of animal communication.
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from data_models import Phrase, PhraseContext, Species, VocalizationModality
 from semiotics.semiotic_engine import (
@@ -22,9 +22,9 @@ from semiotics.semiotic_engine import (
 
 def demo_deceptive_semiotics():
     """Demonstrate deceptive semiotics detection"""
-    print("="*60)
+    print("=" * 60)
     print("DECEPTIVE SEMIOTICS DEMONSTRATION")
-    print("="*60)
+    print("=" * 60)
 
     engine = SemioticEngine()
 
@@ -45,17 +45,11 @@ def demo_deceptive_semiotics():
             f0_slope=0.0,
             modulation_rate=0.0,
             acoustic_variance=0.8,
-            mean_duration_ms=120.0
+            mean_duration_ms=120.0,
         ),
         total_occurrences=3,  # Rare usage
-        contexts=[
-            PhraseContext("predator", 2, 66.7),
-            PhraseContext("aggression", 1, 33.3)
-        ],
-        social_contexts={
-            "dominance": True,
-            "resource_competition": True
-        }
+        contexts=[PhraseContext("predator", 2, 66.7), PhraseContext("aggression", 1, 33.3)],
+        social_contexts={"dominance": True, "resource_competition": True},
     )
 
     # Create context suggesting deception
@@ -67,13 +61,13 @@ def demo_deceptive_semiotics():
             "dominance_rank": 1,
             "resource_control": "food_patch",
             "competitor_present": True,
-            "no_immediate_threat": True  # Key deception indicator
+            "no_immediate_threat": True,  # Key deception indicator
         },
         behavioral_context={
             "current_behavior": "peaceful_foraging",
             "posture": "relaxed",
-            "attention_direction": "away_from_competitor"
-        }
+            "attention_direction": "away_from_competitor",
+        },
     )
 
     # Analyze for deception
@@ -95,9 +89,9 @@ def demo_deceptive_semiotics():
 
 def demo_emergent_semiotics():
     """Demonstrate emergent semiotics detection"""
-    print("="*60)
+    print("=" * 60)
     print("EMERGENT SEMIOTICS DEMONSTRATION")
-    print("="*60)
+    print("=" * 60)
 
     engine = SemioticEngine()
 
@@ -118,14 +112,12 @@ def demo_emergent_semiotics():
             f0_slope=0.3,
             modulation_rate=25.0,
             acoustic_variance=0.6,
-            mean_duration_ms=250.0
+            mean_duration_ms=250.0,
         ),
         total_occurrences=1,  # First occurrence
-        contexts=[
-            PhraseContext("novel_situation", 1, 100.0)
-        ],
+        contexts=[PhraseContext("novel_situation", 1, 100.0)],
         is_compositional=True,
-        phrase_components=["F0_8000_COMPONENT", "F0_12000_COMPONENT"]
+        phrase_components=["F0_8000_COMPONENT", "F0_12000_COMPONENT"],
     )
 
     # Create context suggesting emergence
@@ -137,13 +129,13 @@ def demo_emergent_semiotics():
             "first_observation": True,
             "innovation_context": "problem_solving",
             "social_learning": True,
-            "observation_potential": 0.9
+            "observation_potential": 0.9,
         },
         behavioral_context={
             "current_behavior": "exploration",
             "problem_solving": True,
-            "social_experimentation": True
-        }
+            "social_experimentation": True,
+        },
     )
 
     # Analyze for emergence
@@ -166,9 +158,9 @@ def demo_emergent_semiotics():
 
 def demo_directed_communication():
     """Demonstrate directed communication detection"""
-    print("="*60)
+    print("=" * 60)
     print("DIRECTED COMMUNICATION DEMONSTRATION")
-    print("="*60)
+    print("=" * 60)
 
     engine = SemioticEngine()
 
@@ -189,17 +181,15 @@ def demo_directed_communication():
             f0_slope=0.0,
             modulation_rate=5.0,
             acoustic_variance=0.05,
-            mean_duration_ms=180.0
+            mean_duration_ms=180.0,
         ),
         total_occurrences=45,
-        contexts=[
-            PhraseContext("specific_individual", 45, 100.0)
-        ],
+        contexts=[PhraseContext("specific_individual", 45, 100.0)],
         social_contexts={
             "target_id": "dolphin_alpha",
             "social_bond": "strong",
-            "communication_type": "directed"
-        }
+            "communication_type": "directed",
+        },
     )
 
     # Create context for directed communication
@@ -209,15 +199,15 @@ def demo_directed_communication():
         social_context={
             "target_id": "dolphin_alpha",
             "social_relationship": "pod_member",
-            "communication_goal": "coordination"
+            "communication_goal": "coordination",
         },
         behavioral_context={
             "current_behavior": "cooperative_foraging",
             "attention_target": "dolphin_alpha",
             "joint_attention": True,
-            "bilateral_coordination": True
+            "bilateral_coordination": True,
         },
-        communication_target="dolphin_alpha"
+        communication_target="dolphin_alpha",
     )
 
     # Analyze for directed communication
@@ -239,9 +229,9 @@ def demo_directed_communication():
 
 def demo_cross_species_analysis():
     """Demonstrate cross-species semiotic patterns"""
-    print("="*60)
+    print("=" * 60)
     print("CROSS-SPECIES SEMIOTIC PATTERNS")
-    print("="*60)
+    print("=" * 60)
 
     engine = SemioticEngine()
 
@@ -276,9 +266,9 @@ def main():
     demo_directed_communication()
     demo_cross_species_analysis()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SEMIOTIC ENGINE ANALYSIS COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print("\nThe system now understands:")
     print("• Deceptive communication tactics")
     print("• Emergent innovative behaviors")

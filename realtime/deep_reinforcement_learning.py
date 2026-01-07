@@ -33,6 +33,7 @@ class Algorithm(Enum):
 @dataclass
 class Experience:
     """Experience for reinforcement learning"""
+
     observation: Dict[str, Any]
     action: Dict[str, Any]
     reward: float
@@ -49,14 +50,14 @@ class PolicyNetwork:
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.weights = {
-            'hidden1': np.random.randn(input_size, hidden_size) * 0.1,
-            'hidden2': np.random.randn(hidden_size, hidden_size) * 0.1,
-            'output': np.random.randn(hidden_size, output_size) * 0.1
+            "hidden1": np.random.randn(input_size, hidden_size) * 0.1,
+            "hidden2": np.random.randn(hidden_size, hidden_size) * 0.1,
+            "output": np.random.randn(hidden_size, output_size) * 0.1,
         }
         self.biases = {
-            'hidden1': np.zeros(hidden_size),
-            'hidden2': np.zeros(hidden_size),
-            'output': np.zeros(output_size)
+            "hidden1": np.zeros(hidden_size),
+            "hidden2": np.zeros(hidden_size),
+            "output": np.zeros(output_size),
         }
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -64,13 +65,13 @@ class PolicyNetwork:
         x = np.array(list(x.values())) if isinstance(x, dict) else x
 
         # Layer 1
-        hidden1 = np.maximum(0, np.dot(x, self.weights['hidden1']) + self.biases['hidden1'])
+        hidden1 = np.maximum(0, np.dot(x, self.weights["hidden1"]) + self.biases["hidden1"])
 
         # Layer 2
-        hidden2 = np.maximum(0, np.dot(hidden1, self.weights['hidden2']) + self.biases['hidden2'])
+        hidden2 = np.maximum(0, np.dot(hidden1, self.weights["hidden2"]) + self.biases["hidden2"])
 
         # Output
-        output = np.dot(hidden2, self.weights['output']) + self.biases['output']
+        output = np.dot(hidden2, self.weights["output"]) + self.biases["output"]
 
         return output
 
@@ -85,11 +86,14 @@ class PolicyNetwork:
         # Select best action
         action_idx = np.argmax(action_values)
 
-        return {'type': 'vocalization', 'parameters': {'frequency': 1000 + action_idx * 500}}
+        return {"type": "vocalization", "parameters": {"frequency": 1000 + action_idx * 500}}
 
-    def update_policy(self, observations: List[Dict[str, Any]],
-                     actions: List[Dict[str, Any]],
-                     rewards: List[float]) -> float:
+    def update_policy(
+        self,
+        observations: List[Dict[str, Any]],
+        actions: List[Dict[str, Any]],
+        rewards: List[float],
+    ) -> float:
         """Update policy using experiences"""
         # Simple policy update (mock implementation)
         # In a real implementation, this would use gradient descent
@@ -105,8 +109,14 @@ class ExperienceReplay:
         self.buffer = []
         self.position = 0
 
-    def add_experience(self, observation: Dict[str, Any], action: Dict[str, Any],
-                      reward: float, next_observation: Dict[str, Any], done: bool):
+    def add_experience(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ):
         """Add experience to buffer"""
         experience = Experience(
             observation=observation,
@@ -114,7 +124,7 @@ class ExperienceReplay:
             reward=reward,
             next_observation=next_observation,
             done=done,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         if len(self.buffer) < self.buffer_size:
@@ -159,22 +169,17 @@ class EnvironmentModel:
         """Predict next state and reward"""
         # Mock prediction
         next_observation = observation.copy()
-        next_observation['features'] = [f + 0.1 for f in observation.get('features', [0, 0, 0, 0])]
+        next_observation["features"] = [f + 0.1 for f in observation.get("features", [0, 0, 0, 0])]
 
         reward = np.random.uniform(-1, 1)
 
-        return {
-            'next_state': next_observation,
-            'reward': reward,
-            'done': False
-        }
+        return {"next_state": next_observation, "reward": reward, "done": False}
 
     def update_model(self, experiences: List[Experience]):
         """Update the environment model"""
         for exp in experiences:
             # Simple model update (mock)
-            key = (tuple(exp.observation.get('features', [0] * 4)),
-                   hash(str(exp.action)))
+            key = (tuple(exp.observation.get("features", [0] * 4)), hash(str(exp.action)))
             if key not in self.transition_model:
                 self.transition_model[key] = []
             self.transition_model[key].append(exp)
@@ -183,33 +188,32 @@ class EnvironmentModel:
 class ExplorationStrategy:
     """Strategy for exploration in reinforcement learning"""
 
-    EPSILON_GREEDY = 'epsilon_greedy'
-    BOLTZMANN = 'boltzmann'
-    UCB = 'ucb'
+    EPSILON_GREEDY = "epsilon_greedy"
+    BOLTZMANN = "boltzmann"
+    UCB = "ucb"
 
-    def __init__(self, strategy: str = 'epsilon_greedy', **kwargs):
+    def __init__(self, strategy: str = "epsilon_greedy", **kwargs):
         self.strategy = strategy
         self.params = kwargs
 
-    def get_action(self, observation: Dict[str, Any],
-                   policy_action: Callable) -> Dict[str, Any]:
+    def get_action(self, observation: Dict[str, Any], policy_action: Callable) -> Dict[str, Any]:
         """Get action with exploration"""
         if self.strategy == ExplorationStrategy.EPSILON_GREEDY:
-            epsilon = self.params.get('epsilon', 0.1)
+            epsilon = self.params.get("epsilon", 0.1)
             if random.random() < epsilon:
                 # Random action
-                return {'type': 'random', 'parameters': {'frequency': random.randint(500, 2000)}}
+                return {"type": "random", "parameters": {"frequency": random.randint(500, 2000)}}
             else:
                 # Policy action
                 return policy_action()
 
         elif self.strategy == ExplorationStrategy.BOLTZMANN:
-            self.params.get('temperature', 1.0)
+            self.params.get("temperature", 1.0)
             # In a real implementation, this would use softmax with temperature
             return policy_action()
 
         elif self.strategy == ExplorationStrategy.UCB:
-            self.params.get('c', 1.0)
+            self.params.get("c", 1.0)
             # In a real implementation, this would use UCB formula
             return policy_action()
 
@@ -222,35 +226,29 @@ class RewardFunction:
 
     def __init__(self, use_shaping: bool = False):
         self.use_shaping = use_shaping
-        self.reward_weights = {
-            'accuracy': 1.0,
-            'efficiency': 0.5,
-            'consistency': 0.3
-        }
+        self.reward_weights = {"accuracy": 1.0, "efficiency": 0.5, "consistency": 0.3}
 
-    def calculate_reward(self, observation: Dict[str, Any],
-                        action: Dict[str, Any],
-                        next_observation: Dict[str, Any]) -> float:
+    def calculate_reward(
+        self, observation: Dict[str, Any], action: Dict[str, Any], next_observation: Dict[str, Any]
+    ) -> float:
         """Calculate reward for given transition"""
         # Base reward
         base_reward = np.random.uniform(0, 1)
 
         if self.use_shaping:
             # Add reward shaping
-            shaping_reward = self._calculate_shaping_reward(
-                observation, action, next_observation
-            )
+            shaping_reward = self._calculate_shaping_reward(observation, action, next_observation)
             return base_reward + shaping_reward
 
         return base_reward
 
-    def _calculate_shaping_reward(self, observation: Dict[str, Any],
-                                 action: Dict[str, Any],
-                                 next_observation: Dict[str, Any]) -> float:
+    def _calculate_shaping_reward(
+        self, observation: Dict[str, Any], action: Dict[str, Any], next_observation: Dict[str, Any]
+    ) -> float:
         """Calculate reward shaping component"""
         # Simple shaping based on feature changes
-        obs_features = observation.get('features', [0, 0, 0, 0])
-        next_features = next_observation.get('features', [0, 0, 0, 0])
+        obs_features = observation.get("features", [0, 0, 0, 0])
+        next_features = next_observation.get("features", [0, 0, 0, 0])
 
         shaping = 0
         for i in range(len(obs_features)):
@@ -262,11 +260,11 @@ class RewardFunction:
 class ReinforcementLearner:
     """Base reinforcement learning agent"""
 
-    def __init__(self, algorithm: str = 'dqn'):
+    def __init__(self, algorithm: str = "dqn"):
         self.algorithm = algorithm
         self.policy_network = PolicyNetwork()
         self.experience_replay = ExperienceReplay()
-        self.exploration_strategy = ExplorationStrategy('epsilon_greedy', epsilon=0.1)
+        self.exploration_strategy = ExplorationStrategy("epsilon_greedy", epsilon=0.1)
         self.reward_function = RewardFunction()
         self.learning_rate = 0.001
         self.gamma = 0.99
@@ -276,20 +274,22 @@ class ReinforcementLearner:
         """Select action in the environment"""
         if explore:
             return self.exploration_strategy.get_action(
-                observation,
-                lambda: self.policy_network.select_action(observation)
+                observation, lambda: self.policy_network.select_action(observation)
             )
         else:
             return self.policy_network.select_action(observation, explore=False)
 
-    def learn(self, observation: Dict[str, Any], action: Dict[str, Any],
-              reward: float, next_observation: Dict[str, Any],
-              done: bool) -> Optional[float]:
+    def learn(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ) -> Optional[float]:
         """Learn from experience"""
         # Store experience
-        self.experience_replay.add_experience(
-            observation, action, reward, next_observation, done
-        )
+        self.experience_replay.add_experience(observation, action, reward, next_observation, done)
 
         # Learn from batch if enough experiences
         self.step_count += 1
@@ -311,14 +311,19 @@ class DQNAgent(ReinforcementLearner):
     """Deep Q-Network agent"""
 
     def __init__(self):
-        super().__init__('dqn')
+        super().__init__("dqn")
         self.target_network = PolicyNetwork()
         self.update_frequency = 100
         self.step_count = 0
 
-    def learn(self, observation: Dict[str, Any], action: Dict[str, Any],
-              reward: float, next_observation: Dict[str, Any],
-              done: bool) -> Optional[float]:
+    def learn(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ) -> Optional[float]:
         """DQN learning update"""
         loss = super().learn(observation, action, reward, next_observation, done)
 
@@ -337,12 +342,12 @@ class DQNAgent(ReinforcementLearner):
 
     def save_policy(self, filepath: str):
         """Save policy to file"""
-        with open(filepath, 'wb') as f:
+        with open(filepath, "wb") as f:
             pickle.dump(self.policy_network, f)
 
     def load_policy(self, filepath: str):
         """Load policy from file"""
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             self.policy_network = pickle.load(f)
 
 
@@ -350,7 +355,7 @@ class PPOAgent(ReinforcementLearner):
     """Proximal Policy Optimization agent"""
 
     def __init__(self):
-        super().__init__('ppo')
+        super().__init__("ppo")
         self.ppo_epochs = 4
         self.gae_lambda = 0.95
         self.clip_epsilon = 0.2
@@ -363,9 +368,9 @@ class PPOAgent(ReinforcementLearner):
 
         # Process each trajectory
         for trajectory in trajectories:
-            obs = trajectory['observations']
-            acts = trajectory['actions']
-            rewards = trajectory['rewards']
+            obs = trajectory["observations"]
+            acts = trajectory["actions"]
+            rewards = trajectory["rewards"]
 
             # Calculate advantages
             advantages = self._calculate_advantages(obs, rewards)
@@ -377,8 +382,9 @@ class PPOAgent(ReinforcementLearner):
 
         return policy_loss / len(trajectories), value_loss / len(trajectories)
 
-    def _calculate_advantages(self, observations: List[Dict[str, Any]],
-                            rewards: List[float]) -> List[float]:
+    def _calculate_advantages(
+        self, observations: List[Dict[str, Any]], rewards: List[float]
+    ) -> List[float]:
         """Calculate generalized advantage estimation"""
         # Mock GAE calculation
         advantages = []
@@ -388,14 +394,16 @@ class PPOAgent(ReinforcementLearner):
 
         return advantages
 
-    def _ppo_update(self, observations: List[Dict[str, Any]],
-                   actions: List[Dict[str, Any]],
-                   advantages: List[float]) -> float:
+    def _ppo_update(
+        self,
+        observations: List[Dict[str, Any]],
+        actions: List[Dict[str, Any]],
+        advantages: List[float],
+    ) -> float:
         """PPO policy update"""
         return np.random.uniform(0.1, 1.0)
 
-    def _value_update(self, observations: List[Dict[str, Any]],
-                     rewards: List[float]) -> float:
+    def _value_update(self, observations: List[Dict[str, Any]], rewards: List[float]) -> float:
         """Value function update"""
         return np.random.uniform(0.1, 1.0)
 
@@ -404,27 +412,26 @@ class A2CAgent(ReinforcementLearner):
     """Advantage Actor-Critic agent"""
 
     def __init__(self):
-        super().__init__('a2c')
+        super().__init__("a2c")
         self.num_workers = 4
         self.entropy_coefficient = 0.01
 
-    def step(self, observation: Dict[str, Any], action: Dict[str, Any],
-             reward: float, next_observation: Dict[str, Any],
-             done: bool) -> Dict[str, float]:
+    def step(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ) -> Dict[str, float]:
         """Single step of A2C learning"""
         # Store experience
-        self.experience_replay.add_experience(
-            observation, action, reward, next_observation, done
-        )
+        self.experience_replay.add_experience(observation, action, reward, next_observation, done)
 
         # Calculate loss
         policy_loss, value_loss, entropy_loss = self._calculate_losses()
 
-        return {
-            'policy_loss': policy_loss,
-            'value_loss': value_loss,
-            'entropy_loss': entropy_loss
-        }
+        return {"policy_loss": policy_loss, "value_loss": value_loss, "entropy_loss": entropy_loss}
 
     def _calculate_losses(self) -> Tuple[float, float, float]:
         """Calculate A2C losses"""
@@ -442,9 +449,9 @@ class A2CAgent(ReinforcementLearner):
 
         for obs in observations:
             rollout = {
-                'observations': [obs],
-                'actions': [self.act(obs)],
-                'rewards': [np.random.uniform(0, 1)]
+                "observations": [obs],
+                "actions": [self.act(obs)],
+                "rewards": [np.random.uniform(0, 1)],
             }
             rollouts.append(rollout)
 
@@ -455,19 +462,22 @@ class SACAgent(ReinforcementLearner):
     """Soft Actor-Critic agent"""
 
     def __init__(self):
-        super().__init__('sac')
+        super().__init__("sac")
         self.tau = 0.005
         self.alpha = 0.2
         self.target_entropy = -np.prod([2])  # Target entropy for action space
 
-    def train(self, observation: Dict[str, Any], action: Dict[str, Any],
-               reward: float, next_observation: Dict[str, Any],
-               done: bool) -> Tuple[float, float]:
+    def train(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ) -> Tuple[float, float]:
         """SAC training step"""
         # Store experience
-        self.experience_replay.add_experience(
-            observation, action, reward, next_observation, done
-        )
+        self.experience_replay.add_experience(observation, action, reward, next_observation, done)
 
         # Sample batch
         batch = self.experience_replay.sample_batch(32)
@@ -491,20 +501,21 @@ class HERAgent(ReinforcementLearner):
     """Hindsight Experience Replay agent"""
 
     def __init__(self):
-        super().__init__('her')
+        super().__init__("her")
         self.her_ratio = 0.8
-        self.goal_sampling_strategy = 'future'
+        self.goal_sampling_strategy = "future"
 
-    def learn_with_her(self, observation: Dict[str, Any],
-                      action: Dict[str, Any],
-                      next_observation: Dict[str, Any],
-                      goal: Dict[str, Any],
-                      achieved_goal: Dict[str, Any]) -> float:
+    def learn_with_her(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        next_observation: Dict[str, Any],
+        goal: Dict[str, Any],
+        achieved_goal: Dict[str, Any],
+    ) -> float:
         """Learn with hindsight experience replay"""
         # Store original experience
-        self.experience_replay.add_experience(
-            observation, action, 0.0, next_observation, False
-        )
+        self.experience_replay.add_experience(observation, action, 0.0, next_observation, False)
 
         # Generate hindsight experiences
         if random.random() < self.her_ratio:
@@ -514,8 +525,7 @@ class HERAgent(ReinforcementLearner):
 
             for exp in hindsight_experiences:
                 self.experience_replay.add_experience(
-                    exp.observation, exp.action, exp.reward,
-                    exp.next_observation, exp.done
+                    exp.observation, exp.action, exp.reward, exp.next_observation, exp.done
                 )
 
         # Learn from batch
@@ -525,11 +535,14 @@ class HERAgent(ReinforcementLearner):
 
         return 0.0
 
-    def _generate_hindsight_experiences(self, observation: Dict[str, Any],
-                                       action: Dict[str, Any],
-                                       next_observation: Dict[str, Any],
-                                       goal: Dict[str, Any],
-                                       achieved_goal: Dict[str, Any]) -> List[Experience]:
+    def _generate_hindsight_experiences(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        next_observation: Dict[str, Any],
+        goal: Dict[str, Any],
+        achieved_goal: Dict[str, Any],
+    ) -> List[Experience]:
         """Generate hindsight experiences"""
         # Mock HER implementation
         hindsight_experiences = []
@@ -541,7 +554,7 @@ class HERAgent(ReinforcementLearner):
             reward=1.0,  # Success with hindsight
             next_observation=next_observation.copy(),
             done=True,  # Goal achieved
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         hindsight_experiences.append(new_experience)
@@ -564,9 +577,9 @@ class MultiAgentLearner:
         for agent_id in agent_ids:
             if agent_id < len(self.agents):
                 message = {
-                    'sender': agent_id,
-                    'type': message_type,
-                    'content': {'policy_update': 'shared_weights'}
+                    "sender": agent_id,
+                    "type": message_type,
+                    "content": {"policy_update": "shared_weights"},
                 }
                 messages.append(message)
 
@@ -584,16 +597,12 @@ class MultiAgentLearner:
         # Coordinate actions (simple average)
         if agent_actions:
             avg_frequency = sum(
-                act['parameters'].get('frequency', 1000)
-                for act in agent_actions
+                act["parameters"].get("frequency", 1000) for act in agent_actions
             ) / len(agent_actions)
 
-            return {
-                'type': 'coordinated',
-                'parameters': {'frequency': avg_frequency}
-            }
+            return {"type": "coordinated", "parameters": {"frequency": avg_frequency}}
 
-        return {'type': 'default', 'parameters': {'frequency': 1000}}
+        return {"type": "default", "parameters": {"frequency": 1000}}
 
 
 class MetaLearner:
@@ -604,27 +613,27 @@ class MetaLearner:
         self.baseline_policies = {}
         self.adaptation_rate = 0.1
 
-    def update_meta_knowledge(self, task_id: str,
-                            performance_metrics: Dict[str, float]) -> Dict[str, Any]:
+    def update_meta_knowledge(
+        self, task_id: str, performance_metrics: Dict[str, float]
+    ) -> Dict[str, Any]:
         """Update meta-knowledge from task performance"""
         if task_id not in self.meta_knowledge:
-            self.meta_knowledge[task_id] = {
-                'performances': [],
-                'best_params': None
-            }
+            self.meta_knowledge[task_id] = {"performances": [], "best_params": None}
 
         # Store performance
-        self.meta_knowledge[task_id]['performances'].append(performance_metrics)
+        self.meta_knowledge[task_id]["performances"].append(performance_metrics)
 
         # Update best parameters if this is the best performance
-        if self.meta_knowledge[task_id]['best_params'] is None or \
-           performance_metrics['accuracy'] > self.meta_knowledge[task_id]['best_params'].get('accuracy', 0):
-            self.meta_knowledge[task_id]['best_params'] = performance_metrics
+        if self.meta_knowledge[task_id]["best_params"] is None or performance_metrics[
+            "accuracy"
+        ] > self.meta_knowledge[task_id]["best_params"].get("accuracy", 0):
+            self.meta_knowledge[task_id]["best_params"] = performance_metrics
 
         return self.meta_knowledge[task_id]
 
-    def fast_adapt(self, new_task_data: List[Dict[str, Any]],
-                  num_adaptation_steps: int = 10) -> Dict[str, Any]:
+    def fast_adapt(
+        self, new_task_data: List[Dict[str, Any]], num_adaptation_steps: int = 10
+    ) -> Dict[str, Any]:
         """Rapid adaptation to new task"""
         # Initialize with meta-knowledge or baseline
         adapted_policy = PolicyNetwork()
@@ -646,12 +655,11 @@ class SafetyChecker:
         self.safety_constraints = {}
         self.violation_history = []
 
-    def is_safe_action(self, observation: Dict[str, Any],
-                      action: Dict[str, Any]) -> bool:
+    def is_safe_action(self, observation: Dict[str, Any], action: Dict[str, Any]) -> bool:
         """Check if action is safe"""
         # Basic safety check
-        action_params = action.get('parameters', {})
-        frequency = action_params.get('frequency', 1000)
+        action_params = action.get("parameters", {})
+        frequency = action_params.get("frequency", 1000)
 
         # Check frequency bounds
         if frequency < 100 or frequency > 10000:
@@ -659,25 +667,24 @@ class SafetyChecker:
 
         return True
 
-    def check_constraints(self, action: Dict[str, Any],
-                         constraints: Dict[str, float]) -> List[str]:
+    def check_constraints(self, action: Dict[str, Any], constraints: Dict[str, float]) -> List[str]:
         """Check action against constraints"""
         violations = []
-        action_params = action.get('parameters', {})
+        action_params = action.get("parameters", {})
 
         # Check frequency constraint
-        if 'min_frequency' in constraints:
-            if action_params.get('frequency', 1000) < constraints['min_frequency']:
+        if "min_frequency" in constraints:
+            if action_params.get("frequency", 1000) < constraints["min_frequency"]:
                 violations.append("Frequency below minimum")
 
-        if 'max_frequency' in constraints:
-            if action_params.get('frequency', 1000) > constraints['max_frequency']:
+        if "max_frequency" in constraints:
+            if action_params.get("frequency", 1000) > constraints["max_frequency"]:
                 violations.append("Frequency above maximum")
 
-        if 'max_amplitude' in constraints:
+        if "max_amplitude" in constraints:
             # Mock amplitude check
             amplitude = np.random.uniform(0, 2)
-            if amplitude > constraints['max_amplitude']:
+            if amplitude > constraints["max_amplitude"]:
                 violations.append("Amplitude exceeds maximum")
 
         return violations
@@ -691,10 +698,11 @@ class CurriculumScheduler:
         self.performance_history = []
         self.tasks_completed = 0
 
-    def adjust_difficulty(self, performance_metrics: Dict[str, float],
-                         current_difficulty: float) -> float:
+    def adjust_difficulty(
+        self, performance_metrics: Dict[str, float], current_difficulty: float
+    ) -> float:
         """Adjust task difficulty based on performance"""
-        success_rate = performance_metrics.get('success_rate', 0.5)
+        success_rate = performance_metrics.get("success_rate", 0.5)
 
         # Adjust difficulty based on success rate
         if success_rate > 0.8:
@@ -709,8 +717,9 @@ class CurriculumScheduler:
 
         return new_difficulty
 
-    def generate_curriculum(self, num_tasks: int,
-                          complexity_range: Tuple[float, float]) -> List[Dict[str, Any]]:
+    def generate_curriculum(
+        self, num_tasks: int, complexity_range: Tuple[float, float]
+    ) -> List[Dict[str, Any]]:
         """Generate curriculum of tasks"""
         curriculum = []
         min_complexity, max_complexity = complexity_range
@@ -720,10 +729,10 @@ class CurriculumScheduler:
             complexity = min_complexity + (max_complexity - min_complexity) * (i / num_tasks)
 
             task = {
-                'task_id': f'task_{i}',
-                'complexity': complexity,
-                'difficulty': complexity,
-                'objectives': ['learn_vocalization', 'optimize_efficiency']
+                "task_id": f"task_{i}",
+                "complexity": complexity,
+                "difficulty": complexity,
+                "objectives": ["learn_vocalization", "optimize_efficiency"],
             }
 
             curriculum.append(task)
@@ -749,8 +758,9 @@ class EnsembleLearner:
 
         return predictions
 
-    def update_ensemble(self, observations: List[Dict[str, Any]],
-                      actions: List[Dict[str, Any]]) -> float:
+    def update_ensemble(
+        self, observations: List[Dict[str, Any]], actions: List[Dict[str, Any]]
+    ) -> float:
         """Update ensemble models"""
         total_loss = 0.0
 
@@ -777,9 +787,9 @@ class DeepReinforcementLearning:
         self.multi_agent_learner = MultiAgentLearner()
         self.real_time_mode = False
         self.learning_progress = {
-            'episodes_completed': 0,
-            'total_reward': 0.0,
-            'average_reward': 0.0
+            "episodes_completed": 0,
+            "total_reward": 0.0,
+            "average_reward": 0.0,
         }
 
     def initialize_environment(self):
@@ -789,7 +799,7 @@ class DeepReinforcementLearning:
 
     def reset_environment(self) -> Dict[str, Any]:
         """Reset environment to initial state"""
-        return {'features': [0.1, 0.2, 0.3, 0.4]}
+        return {"features": [0.1, 0.2, 0.3, 0.4]}
 
     def select_action(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """Select action using current policy"""
@@ -798,15 +808,20 @@ class DeepReinforcementLearning:
     def step_environment(self, action: Dict[str, Any]) -> Tuple[Dict[str, Any], float, bool]:
         """Step environment and get next state"""
         # Mock environment step
-        next_observation = {'features': [0.1, 0.2, 0.3, 0.5]}
+        next_observation = {"features": [0.1, 0.2, 0.3, 0.5]}
         reward = np.random.uniform(0, 1)
         done = False
 
         return next_observation, reward, done
 
-    def store_experience(self, observation: Dict[str, Any], action: Dict[str, Any],
-                        reward: float, next_observation: Dict[str, Any],
-                        done: bool):
+    def store_experience(
+        self,
+        observation: Dict[str, Any],
+        action: Dict[str, Any],
+        reward: float,
+        next_observation: Dict[str, Any],
+        done: bool,
+    ):
         """Store experience in replay buffer"""
         self.learner.experience_replay.add_experience(
             observation, action, reward, next_observation, done
@@ -840,9 +855,9 @@ class DeepReinforcementLearning:
             total_reward += episode_reward
 
         return {
-            'average_reward': total_reward / num_episodes,
-            'total_reward': total_reward,
-            'episodes_completed': num_episodes
+            "average_reward": total_reward / num_episodes,
+            "total_reward": total_reward,
+            "episodes_completed": num_episodes,
         }
 
     def enable_real_time_learning(self):
@@ -853,13 +868,15 @@ class DeepReinforcementLearning:
         """Select action in real-time mode"""
         return self.learner.act(observation, explore=True)
 
-    def real_time_learn(self, observation: Dict[str, Any],
-                       action: Dict[str, Any], reward: float):
+    def real_time_learn(self, observation: Dict[str, Any], action: Dict[str, Any], reward: float):
         """Learn in real-time"""
         # Store experience
         self.store_experience(
-            observation, action, reward,
-            observation, False  # Simplified next observation
+            observation,
+            action,
+            reward,
+            observation,
+            False,  # Simplified next observation
         )
 
         # Learn if enough experiences
@@ -902,10 +919,10 @@ class DeepReinforcementLearning:
 
         # Evaluate transfer
         performance = self.evaluate_policy(5)
-        improvement = performance['average_reward'] - baseline_performance
+        improvement = performance["average_reward"] - baseline_performance
 
         return {
-            'baseline_performance': baseline_performance,
-            'transferred_performance': performance['average_reward'],
-            'improvement': improvement
+            "baseline_performance": baseline_performance,
+            "transferred_performance": performance["average_reward"],
+            "improvement": improvement,
         }

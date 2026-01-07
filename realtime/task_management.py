@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 class TaskStatus(Enum):
     """Task execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -51,6 +52,7 @@ class TaskStatus(Enum):
 
 class Priority(Enum):
     """Task priority levels."""
+
     CRITICAL = 4
     HIGH = 3
     MEDIUM = 2
@@ -60,6 +62,7 @@ class Priority(Enum):
 
 class TaskType(Enum):
     """Task types for audio analysis pipeline."""
+
     AUDIO_ANALYSIS = "audio_analysis"
     FEATURE_EXTRACTION = "feature_extraction"
     VISUAL_FUSION = "visual_fusion"
@@ -72,6 +75,7 @@ class TaskType(Enum):
 
 class SchedulingPolicy(Enum):
     """Scheduling policies."""
+
     FIFO = "fifo"
     PRIORITY = "priority"
     PRIORITY_PREEMPTIVE = "priority_preemptive"
@@ -85,6 +89,7 @@ class SchedulingPolicy(Enum):
 @dataclass
 class Task:
     """Represents a task in the processing pipeline."""
+
     id: str
     type: TaskType
     priority: Priority
@@ -108,8 +113,7 @@ class Task:
     def can_execute(self, completed_tasks: Dict[str, TaskStatus]) -> bool:
         """Check if task can execute based on dependencies."""
         return all(
-            dep_id in completed_tasks and
-            completed_tasks[dep_id] == TaskStatus.COMPLETED
+            dep_id in completed_tasks and completed_tasks[dep_id] == TaskStatus.COMPLETED
             for dep_id in self.dependencies
         )
 
@@ -144,24 +148,31 @@ class Task:
     def to_dict(self) -> Dict[str, Any]:
         """Convert task to dictionary."""
         return {
-            'id': self.id,
-            'type': self.type.value,
-            'priority': self.priority.name,
-            'status': self.status.value,
-            'dependencies': self.dependencies,
-            'created_at': self.created_at.isoformat(),
-            'estimated_duration': self.estimated_duration,
-            'retry_count': self.retry_count,
-            'max_retries': self.max_retries,
-            'resources': self.resources,
-            'metadata': self.metadata
+            "id": self.id,
+            "type": self.type.value,
+            "priority": self.priority.name,
+            "status": self.status.value,
+            "dependencies": self.dependencies,
+            "created_at": self.created_at.isoformat(),
+            "estimated_duration": self.estimated_duration,
+            "retry_count": self.retry_count,
+            "max_retries": self.max_retries,
+            "resources": self.resources,
+            "metadata": self.metadata,
         }
 
 
 class ExecutionResult:
     """Result of task execution."""
-    def __init__(self, task: Task, success: bool, result: Any = None,
-                 error_message: str = None, execution_time: float = 0.0):
+
+    def __init__(
+        self,
+        task: Task,
+        success: bool,
+        result: Any = None,
+        error_message: str = None,
+        execution_time: float = 0.0,
+    ):
         self.task = task
         self.success = success
         self.result = result
@@ -175,8 +186,7 @@ class ExecutionResult:
 class ResourcePool:
     """Manages resource allocation for tasks."""
 
-    def __init__(self, total_resources: Dict[str, Any],
-                 allocation_strategy: str = "static"):
+    def __init__(self, total_resources: Dict[str, Any], allocation_strategy: str = "static"):
         self.total_resources = total_resources
         self.available_resources = total_resources.copy()
         self.allocation_strategy = allocation_strategy
@@ -184,7 +194,9 @@ class ResourcePool:
         self._lock = threading.RLock()
         self.allocation_history = deque(maxlen=100)
 
-    def allocate(self, resources: Dict[str, Any], allocation_id: str = None) -> Optional[Dict[str, Any]]:
+    def allocate(
+        self, resources: Dict[str, Any], allocation_id: str = None
+    ) -> Optional[Dict[str, Any]]:
         """Allocate resources for a task. Returns allocated resources dict or None if unavailable."""
         with self._lock:
             allocation_id = allocation_id or str(uuid.uuid4())
@@ -201,11 +213,13 @@ class ResourcePool:
                     self.available_resources[resource] -= amount
 
             self.allocations[allocation_id] = allocated
-            self.allocation_history.append({
-                'allocation_id': allocation_id,
-                'resources': allocated.copy(),
-                'timestamp': datetime.now()
-            })
+            self.allocation_history.append(
+                {
+                    "allocation_id": allocation_id,
+                    "resources": allocated.copy(),
+                    "timestamp": datetime.now(),
+                }
+            )
 
             logger.info(f"Allocated resources {allocated} for {allocation_id}")
             return allocated  # Return allocated resources instead of ID
@@ -300,10 +314,7 @@ class ResourceMonitor:
             try:
                 metrics = self._collect_metrics()
                 with self._lock:
-                    self.metrics_history.append({
-                        'timestamp': datetime.now(),
-                        'metrics': metrics
-                    })
+                    self.metrics_history.append({"timestamp": datetime.now(), "metrics": metrics})
                 time.sleep(self.sampling_interval)
             except Exception as e:
                 logger.error(f"Resource monitoring error: {e}")
@@ -311,18 +322,18 @@ class ResourceMonitor:
     def _collect_metrics(self) -> Dict[str, Any]:
         """Collect current resource metrics."""
         return {
-            'cpu_percent': psutil.cpu_percent(),
-            'memory_percent': psutil.virtual_memory().percent,
-            'disk_percent': psutil.disk_usage('/').percent,
-            'network_bytes_sent': psutil.net_io_counters().bytes_sent,
-            'network_bytes_recv': psutil.net_io_counters().bytes_recv
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": psutil.virtual_memory().percent,
+            "disk_percent": psutil.disk_usage("/").percent,
+            "network_bytes_sent": psutil.net_io_counters().bytes_sent,
+            "network_bytes_recv": psutil.net_io_counters().bytes_recv,
         }
 
     def get_current_metrics(self) -> Dict[str, Any]:
         """Get current resource metrics."""
         with self._lock:
             if self.metrics_history:
-                return self.metrics_history[-1]['metrics']
+                return self.metrics_history[-1]["metrics"]
             return {}
 
     def get_average_metrics(self, time_window: float = 60.0) -> Dict[str, float]:
@@ -331,17 +342,14 @@ class ResourceMonitor:
             current_time = datetime.now()
             window_start = current_time - timedelta(seconds=time_window)
 
-            relevant_metrics = [
-                m for m in self.metrics_history
-                if m['timestamp'] >= window_start
-            ]
+            relevant_metrics = [m for m in self.metrics_history if m["timestamp"] >= window_start]
 
             if not relevant_metrics:
                 return {}
 
             avg_metrics = {}
-            for metric_name in relevant_metrics[0]['metrics'].keys():
-                values = [m['metrics'][metric_name] for m in relevant_metrics]
+            for metric_name in relevant_metrics[0]["metrics"].keys():
+                values = [m["metrics"][metric_name] for m in relevant_metrics]
                 avg_metrics[metric_name] = sum(values) / len(values)
 
             return avg_metrics
@@ -350,8 +358,11 @@ class ResourceMonitor:
 class TaskQueue:
     """Priority queue for task scheduling."""
 
-    def __init__(self, scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY,
-                 max_capacity: int = 1000):
+    def __init__(
+        self,
+        scheduling_policy: SchedulingPolicy = SchedulingPolicy.PRIORITY,
+        max_capacity: int = 1000,
+    ):
         self.scheduling_policy = scheduling_policy
         self.max_capacity = max_capacity
         self._queue = []
@@ -560,7 +571,7 @@ class TaskDag:
 
             try:
                 # Find longest path by weight
-                longest_path = nx.dag_longest_path(edge_weighted, weight='weight')
+                longest_path = nx.dag_longest_path(edge_weighted, weight="weight")
                 return longest_path
             except nx.NetworkXError as e:
                 logger.error(f"Error calculating critical path: {e}")
@@ -710,17 +721,15 @@ class DependencyTracker:
 class TaskExecutor:
     """Executes individual tasks."""
 
-    def __init__(self, executor_id: str, max_concurrent_tasks: int = 4,
-                 timeout: float = 300.0):
+    def __init__(self, executor_id: str, max_concurrent_tasks: int = 4, timeout: float = 300.0):
         self.executor_id = executor_id
         self.max_concurrent_tasks = max_concurrent_tasks
         self.timeout = timeout
         self.running_tasks: Dict[str, Task] = {}
         self.completed_tasks: Dict[str, ExecutionResult] = {}
-        self.resource_pool = ResourcePool({
-            'cpu': psutil.cpu_count(),
-            'memory': psutil.virtual_memory().total
-        })
+        self.resource_pool = ResourcePool(
+            {"cpu": psutil.cpu_count(), "memory": psutil.virtual_memory().total}
+        )
         self.load = 0
         self._lock = threading.RLock()
         self._running = True
@@ -797,7 +806,9 @@ class TaskExecutor:
             # Retry if needed
             if task.should_retry():
                 task.increment_retry_count()
-                logger.info(f"Retrying task {task.id} (attempt {task.retry_count}/{task.max_retries})")
+                logger.info(
+                    f"Retrying task {task.id} (attempt {task.retry_count}/{task.max_retries})"
+                )
                 return self.execute_task(task)
             else:
                 task.status = TaskStatus.FAILED
@@ -870,7 +881,7 @@ class TaskExecutor:
                     raise e
 
                 # Exponential backoff
-                delay = min(2 ** retry_count, 10)  # Max 10 seconds
+                delay = min(2**retry_count, 10)  # Max 10 seconds
                 time.sleep(delay)
 
     def _default_execute(self, task: Task) -> Any:
@@ -902,11 +913,13 @@ class TaskExecutor:
         """Get executor status."""
         with self._lock:
             return {
-                'executor_id': self.executor_id,
-                'load': self.load,
-                'max_concurrent_tasks': self.max_concurrent_tasks,
-                'running_tasks': len(self.running_tasks),
-                'utilization': self.load / self.max_concurrent_tasks if self.max_concurrent_tasks > 0 else 0.0
+                "executor_id": self.executor_id,
+                "load": self.load,
+                "max_concurrent_tasks": self.max_concurrent_tasks,
+                "running_tasks": len(self.running_tasks),
+                "utilization": self.load / self.max_concurrent_tasks
+                if self.max_concurrent_tasks > 0
+                else 0.0,
             }
 
 
@@ -990,8 +1003,7 @@ class TaskScheduler:
     def should_preempt(self, current_task: Task, new_task: Task) -> bool:
         """Check if new task should preempt current task."""
         if self.scheduling_policy == SchedulingPolicy.PRIORITY_PREEMPTIVE:
-            return (new_task.get_aged_priority().value >
-                    current_task.get_aged_priority().value)
+            return new_task.get_aged_priority().value > current_task.get_aged_priority().value
         return False
 
     def get_queue_size(self) -> int:
@@ -1002,11 +1014,11 @@ class TaskScheduler:
         """Get scheduler statistics."""
         with self._lock:
             return {
-                'policy': self.scheduling_policy.value,
-                'queue_size': self.get_queue_size(),
-                'completed_tasks': len(self.completed_tasks),
-                'executors': len(self.executors),
-                'executor_status': [e.get_status() for e in self.executors]
+                "policy": self.scheduling_policy.value,
+                "queue_size": self.get_queue_size(),
+                "completed_tasks": len(self.completed_tasks),
+                "executors": len(self.executors),
+                "executor_status": [e.get_status() for e in self.executors],
             }
 
 
@@ -1020,12 +1032,12 @@ class TaskManager:
         self.executors: List[TaskExecutor] = []
         self.results: List[ExecutionResult] = []
         self.statistics = {
-            'total_tasks': 0,
-            'completed_tasks': 0,
-            'failed_tasks': 0,
-            'retry_attempts': 0,
-            'total_execution_time': 0.0,
-            'average_execution_time': 0.0
+            "total_tasks": 0,
+            "completed_tasks": 0,
+            "failed_tasks": 0,
+            "retry_attempts": 0,
+            "total_execution_time": 0.0,
+            "average_execution_time": 0.0,
         }
         self.resource_monitor = ResourceMonitor()
         self._lock = threading.RLock()
@@ -1075,7 +1087,7 @@ class TaskManager:
     def submit_task(self, task: Task) -> bool:
         """Submit task for execution."""
         with self._lock:
-            self.statistics['total_tasks'] += 1
+            self.statistics["total_tasks"] += 1
             self.scheduler.add_task(task)
             return True
 
@@ -1158,16 +1170,16 @@ class TaskManager:
             self.results.append(result)
 
             # Track retry attempts
-            self.statistics['retry_attempts'] += result.task.retry_count
+            self.statistics["retry_attempts"] += result.task.retry_count
 
             # Mark task as completed in scheduler (enables dependent tasks)
             if result.success:
                 self.scheduler.mark_task_completed(result.task.id)
-                self.statistics['completed_tasks'] += 1
+                self.statistics["completed_tasks"] += 1
             else:
-                self.statistics['failed_tasks'] += 1
+                self.statistics["failed_tasks"] += 1
 
-            self.statistics['total_execution_time'] += result.execution_time
+            self.statistics["total_execution_time"] += result.execution_time
 
             # Call result callbacks
             for callback in self.result_callbacks:
@@ -1182,10 +1194,7 @@ class TaskManager:
         cutoff_time = datetime.now() - timedelta(hours=1)
 
         with self._lock:
-            self.results = [
-                r for r in self.results
-                if r.timestamp > cutoff_time
-            ]
+            self.results = [r for r in self.results if r.timestamp > cutoff_time]
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get task manager statistics."""
@@ -1193,22 +1202,22 @@ class TaskManager:
             stats = self.statistics.copy()
 
             # Calculate average execution time
-            if stats['completed_tasks'] > 0:
-                stats['average_execution_time'] = (
-                    stats['total_execution_time'] / stats['completed_tasks']
+            if stats["completed_tasks"] > 0:
+                stats["average_execution_time"] = (
+                    stats["total_execution_time"] / stats["completed_tasks"]
                 )
             else:
-                stats['average_execution_time'] = 0.0
+                stats["average_execution_time"] = 0.0
 
             # Add total processed (alias for completed_tasks)
-            stats['total_processed'] = stats['completed_tasks']
+            stats["total_processed"] = stats["completed_tasks"]
 
             # Add current metrics
             current_metrics = self.resource_monitor.get_current_metrics()
-            stats['current_metrics'] = current_metrics
-            stats['average_metrics'] = self.resource_monitor.get_average_metrics()
-            stats['queue_size'] = self.scheduler.get_queue_size()
-            stats['scheduler_stats'] = self.scheduler.get_scheduler_stats()
+            stats["current_metrics"] = current_metrics
+            stats["average_metrics"] = self.resource_monitor.get_average_metrics()
+            stats["queue_size"] = self.scheduler.get_queue_size()
+            stats["scheduler_stats"] = self.scheduler.get_scheduler_stats()
 
             return stats
 
@@ -1220,30 +1229,31 @@ class TaskManager:
         for executor in self.executors:
             status = executor.get_status()
             resource_stats[executor.executor_id] = {
-                'load': status['load'],
-                'utilization': status['utilization'],
-                'running_tasks': status['running_tasks']
+                "load": status["load"],
+                "utilization": status["utilization"],
+                "running_tasks": status["running_tasks"],
             }
 
         # Add system resource metrics
         current_metrics = self.resource_monitor.get_current_metrics()
-        resource_stats['system'] = {
-            'current_metrics': current_metrics,
-            'average_metrics': self.resource_monitor.get_average_metrics(),
-            'resource_pool_utilization': self.scheduler.executors[0].resource_pool.get_utilization()
-            if self.scheduler.executors else {}
+        resource_stats["system"] = {
+            "current_metrics": current_metrics,
+            "average_metrics": self.resource_monitor.get_average_metrics(),
+            "resource_pool_utilization": self.scheduler.executors[0].resource_pool.get_utilization()
+            if self.scheduler.executors
+            else {},
         }
 
         # Add cpu_usage at top level for convenience
-        if 'cpu_percent' in current_metrics:
-            resource_stats['cpu_usage'] = current_metrics['cpu_percent']
+        if "cpu_percent" in current_metrics:
+            resource_stats["cpu_usage"] = current_metrics["cpu_percent"]
         else:
-            resource_stats['cpu_usage'] = 0.0
+            resource_stats["cpu_usage"] = 0.0
 
-        if 'memory_percent' in current_metrics:
-            resource_stats['memory_usage'] = current_metrics['memory_percent']
+        if "memory_percent" in current_metrics:
+            resource_stats["memory_usage"] = current_metrics["memory_percent"]
         else:
-            resource_stats['memory_usage'] = 0.0
+            resource_stats["memory_usage"] = 0.0
 
         return resource_stats
 
@@ -1262,7 +1272,7 @@ class TaskManager:
             # Remove from queue
             if self.scheduler.task_queue.remove_task(task_id):
                 # Mark as cancelled
-                self.statistics['failed_tasks'] += 1
+                self.statistics["failed_tasks"] += 1
                 return True
             return False
 
@@ -1278,6 +1288,7 @@ task_manager = TaskManager()
 
 def with_task_manager(max_workers: int = 4, scheduling_policy: SchedulingPolicy = None):
     """Decorator for using task manager."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -1289,5 +1300,7 @@ def with_task_manager(max_workers: int = 4, scheduling_policy: SchedulingPolicy 
                 return func(*args, **kwargs)
             finally:
                 manager.stop()
+
         return wrapper
+
     return decorator

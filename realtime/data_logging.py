@@ -30,6 +30,7 @@ import numpy as np
 @dataclass
 class DecisionRecord:
     """Comprehensive decision record for provenance tracking."""
+
     timestamp: str
     session_id: str
     input_features: Dict[str, Any]
@@ -53,7 +54,7 @@ class ProvenanceLogger:
     and analysis of system behavior.
     """
 
-    def __init__(self, log_file: str = 'provenance.log', database_file: str = 'experiments.db'):
+    def __init__(self, log_file: str = "provenance.log", database_file: str = "experiments.db"):
         """
         Initialize provenance logger.
 
@@ -80,7 +81,7 @@ class ProvenanceLogger:
         cursor = conn.cursor()
 
         # Create decisions table
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS decisions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT,
@@ -97,10 +98,10 @@ class ProvenanceLogger:
                 visual_context TEXT,
                 experimental_conditions TEXT
             )
-        ''')
+        """)
 
         # Create sessions table
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id TEXT PRIMARY KEY,
                 start_time TEXT,
@@ -110,7 +111,7 @@ class ProvenanceLogger:
                 species TEXT,
                 synthesis_mode TEXT
             )
-        ''')
+        """)
 
         conn.commit()
         conn.close()
@@ -125,12 +126,9 @@ class ProvenanceLogger:
         with self.lock:
             if isinstance(decision_record, dict):
                 # If timestamp already provided, use it; otherwise generate new one
-                if 'timestamp' not in decision_record:
-                    decision_record['timestamp'] = datetime.now().isoformat()
-                decision_record = DecisionRecord(
-                    session_id=self.session_id,
-                    **decision_record
-                )
+                if "timestamp" not in decision_record:
+                    decision_record["timestamp"] = datetime.now().isoformat()
+                decision_record = DecisionRecord(session_id=self.session_id, **decision_record)
             else:
                 decision_record.session_id = self.session_id
                 if not decision_record.timestamp:
@@ -148,12 +146,12 @@ class ProvenanceLogger:
     def _log_to_json(self, record: DecisionRecord):
         """Log decision to JSON file."""
         log_entry = asdict(record)
-        log_entry['output_audio'] = str(log_entry['output_audio'][:100])  # Truncate for readability
+        log_entry["output_audio"] = str(log_entry["output_audio"][:100])  # Truncate for readability
 
         try:
-            with open(self.log_file, 'a') as f:
+            with open(self.log_file, "a") as f:
                 json.dump(log_entry, f, indent=2)
-                f.write('\n')
+                f.write("\n")
         except Exception as e:
             self.logger.error(f"Failed to write to JSON log: {e}")
 
@@ -163,28 +161,33 @@ class ProvenanceLogger:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
 
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO decisions (
                     session_id, timestamp, input_features, context_probabilities,
                     phrase_selection, synthesis_method, output_audio, processing_time_ms,
                     adaptation_parameters, safety_applied, cognitive_context,
                     visual_context, experimental_conditions
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                record.session_id,
-                record.timestamp,
-                json.dumps(record.input_features),
-                json.dumps(record.context_probabilities),
-                json.dumps(record.phrase_selection),
-                record.synthesis_method,
-                np.array(record.output_audio).tobytes(),
-                record.processing_time_ms,
-                json.dumps(record.adaptation_parameters),
-                int(record.safety_applied),
-                json.dumps(record.cognitive_context) if record.cognitive_context else None,
-                json.dumps(record.visual_context) if record.visual_context else None,
-                json.dumps(record.experimental_conditions) if record.experimental_conditions else None
-            ))
+            """,
+                (
+                    record.session_id,
+                    record.timestamp,
+                    json.dumps(record.input_features),
+                    json.dumps(record.context_probabilities),
+                    json.dumps(record.phrase_selection),
+                    record.synthesis_method,
+                    np.array(record.output_audio).tobytes(),
+                    record.processing_time_ms,
+                    json.dumps(record.adaptation_parameters),
+                    int(record.safety_applied),
+                    json.dumps(record.cognitive_context) if record.cognitive_context else None,
+                    json.dumps(record.visual_context) if record.visual_context else None,
+                    json.dumps(record.experimental_conditions)
+                    if record.experimental_conditions
+                    else None,
+                ),
+            )
 
             conn.commit()
             conn.close()
@@ -204,7 +207,7 @@ class ProvenanceLogger:
         with self.lock:
             return list(self.decision_queue)[-limit:]
 
-    def export_session_data(self, session_id: str = None, format: str = 'json') -> str:
+    def export_session_data(self, session_id: str = None, format: str = "json") -> str:
         """
         Export session data.
 
@@ -221,14 +224,14 @@ class ProvenanceLogger:
         conn = sqlite3.connect(self.database_file)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM decisions WHERE session_id = ?', (session_id,))
+        cursor.execute("SELECT * FROM decisions WHERE session_id = ?", (session_id,))
         rows = cursor.fetchall()
 
-        if format == 'json':
+        if format == "json":
             columns = [desc[0] for desc in cursor.description]
             data = [dict(zip(columns, row)) for row in rows]
             return json.dumps(data, indent=2)
-        elif format == 'csv':
+        elif format == "csv":
             import csv
             import io
 
@@ -330,7 +333,7 @@ class ABTester:
     assignment based on session and experiment parameters.
     """
 
-    def __init__(self, test_ratio: float = 0.5, experiment_id: str = 'default'):
+    def __init__(self, test_ratio: float = 0.5, experiment_id: str = "default"):
         """
         Initialize A/B tester.
 
@@ -367,11 +370,13 @@ class ABTester:
 
         # Log assignment
         self.test_assignments[session_id] = {
-            'interactive': is_interactive,
-            'hash_value': normalized_value
+            "interactive": is_interactive,
+            "hash_value": normalized_value,
         }
 
-        self.logger.debug(f"Session {session_id}: Interactive={is_interactive} (value={normalized_value:.3f})")
+        self.logger.debug(
+            f"Session {session_id}: Interactive={is_interactive} (value={normalized_value:.3f})"
+        )
 
         return is_interactive
 
@@ -386,9 +391,9 @@ class ABTester:
             Test group ('A' or 'B')
         """
         if self.should_use_interactive_mode(session_id):
-            return 'A'
+            return "A"
         else:
-            return 'B'
+            return "B"
 
     def get_assignment_stats(self) -> Dict[str, Any]:
         """
@@ -398,17 +403,19 @@ class ABTester:
             Assignment statistics
         """
         if not self.test_assignments:
-            return {'total_assignments': 0}
+            return {"total_assignments": 0}
 
         total = len(self.test_assignments)
-        interactive_count = sum(1 for assignment in self.test_assignments.values() if assignment['interactive'])
+        interactive_count = sum(
+            1 for assignment in self.test_assignments.values() if assignment["interactive"]
+        )
 
         return {
-            'total_assignments': total,
-            'interactive_count': interactive_count,
-            'control_count': total - interactive_count,
-            'interactive_ratio': interactive_count / total if total > 0 else 0.0,
-            'target_ratio': self.test_ratio
+            "total_assignments": total,
+            "interactive_count": interactive_count,
+            "control_count": total - interactive_count,
+            "interactive_ratio": interactive_count / total if total > 0 else 0.0,
+            "target_ratio": self.test_ratio,
         }
 
 
@@ -453,8 +460,8 @@ class ExperimentTracker:
             trial_data: Trial data including metrics
         """
         with self.lock:
-            trial_data['timestamp'] = datetime.now().isoformat()
-            trial_data['experiment_id'] = self.experiment_id
+            trial_data["timestamp"] = datetime.now().isoformat()
+            trial_data["experiment_id"] = self.experiment_id
             self.trials.append(trial_data)
 
     def get_metric_statistics(self, metric_name: str) -> Dict[str, float]:
@@ -470,15 +477,15 @@ class ExperimentTracker:
         values = [trial.get(metric_name, 0) for trial in self.trials if metric_name in trial]
 
         if not values:
-            return {'count': 0}
+            return {"count": 0}
 
         return {
-            'count': len(values),
-            'mean': np.mean(values),
-            'std': np.std(values),
-            'min': np.min(values),
-            'max': np.max(values),
-            'median': np.median(values)
+            "count": len(values),
+            "mean": np.mean(values),
+            "std": np.std(values),
+            "min": np.min(values),
+            "max": np.max(values),
+            "median": np.median(values),
         }
 
     def compare_conditions(self, metric_name: str, condition_key: str) -> Dict[str, Any]:
@@ -506,14 +513,14 @@ class ExperimentTracker:
         comparison = {}
         for condition, values in condition_groups.items():
             comparison[condition] = {
-                'count': len(values),
-                'mean': np.mean(values),
-                'std': np.std(values)
+                "count": len(values),
+                "mean": np.mean(values),
+                "std": np.std(values),
             }
 
         return comparison
 
-    def export_experiment_data(self, format: str = 'json') -> str:
+    def export_experiment_data(self, format: str = "json") -> str:
         """
         Export experiment data.
 
@@ -525,14 +532,14 @@ class ExperimentTracker:
         """
         with self.lock:
             data = {
-                'experiment_id': self.experiment_id,
-                'conditions': self.conditions,
-                'trials': self.trials
+                "experiment_id": self.experiment_id,
+                "conditions": self.conditions,
+                "trials": self.trials,
             }
 
-            if format == 'json':
+            if format == "json":
                 return json.dumps(data, indent=2)
-            elif format == 'csv':
+            elif format == "csv":
                 import csv
                 import io
 
@@ -600,16 +607,18 @@ class DataQualityMonitor:
             quality_score *= 0.5  # Penalty for silent audio
 
         # Check metadata completeness
-        required_fields = ['timestamp', 'species', 'context']
+        required_fields = ["timestamp", "species", "context"]
         for field in required_fields:
             if field not in metadata:
                 quality_score *= 0.95  # Small penalty for missing metadata
 
-        self.quality_metrics.append({
-            'timestamp': datetime.now().isoformat(),
-            'quality_score': quality_score,
-            'metadata': metadata
-        })
+        self.quality_metrics.append(
+            {
+                "timestamp": datetime.now().isoformat(),
+                "quality_score": quality_score,
+                "metadata": metadata,
+            }
+        )
 
         if quality_score < self.alert_threshold:
             self.logger.warning(f"Low quality audio detected: {quality_score:.3f}")
@@ -624,17 +633,17 @@ class DataQualityMonitor:
             Quality statistics
         """
         if not self.quality_metrics:
-            return {'count': 0}
+            return {"count": 0}
 
-        scores = [m['quality_score'] for m in self.quality_metrics]
+        scores = [m["quality_score"] for m in self.quality_metrics]
 
         return {
-            'count': len(scores),
-            'mean_quality': np.mean(scores),
-            'min_quality': np.min(scores),
-            'max_quality': np.max(scores),
-            'below_threshold': sum(1 for s in scores if s < self.quality_threshold),
-            'below_alert': sum(1 for s in scores if s < self.alert_threshold)
+            "count": len(scores),
+            "mean_quality": np.mean(scores),
+            "min_quality": np.min(scores),
+            "max_quality": np.max(scores),
+            "below_threshold": sum(1 for s in scores if s < self.quality_threshold),
+            "below_alert": sum(1 for s in scores if s < self.alert_threshold),
         }
 
 
@@ -661,7 +670,7 @@ def get_ptp_sync() -> PTPSync:
     return _global_ptp_sync
 
 
-def get_ab_tester(experiment_id: str = 'default') -> ABTester:
+def get_ab_tester(experiment_id: str = "default") -> ABTester:
     """Get global A/B tester instance."""
     global _global_ab_tester
     if _global_ab_tester is None:

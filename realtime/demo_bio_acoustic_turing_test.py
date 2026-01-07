@@ -31,12 +31,13 @@ from bio_acoustic_turing_test import BioAcousticTuringTest
 # Import granular synthesizer
 try:
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
-        'technical_architecture',
-        '/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so'
+        "technical_architecture",
+        "/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so",
     )
     module = importlib.util.module_from_spec(spec)
-    sys.modules['technical_architecture'] = module
+    sys.modules["technical_architecture"] = module
     spec.loader.exec_module(module)
     GranularConcatenativeSynthesizer = module.GranularConcatenativeSynthesizer
     print("✅ Successfully imported GranularConcatenativeSynthesizer from Rust")
@@ -91,13 +92,11 @@ def demo_concatenative_baseline():
     # Create test instance
     output_dir = tempfile.mkdtemp()
     turing_test = BioAcousticTuringTest(
-        subject_id='demo_marmoset_001',
-        species='marmoset',
-        output_dir=output_dir
+        subject_id="demo_marmoset_001", species="marmoset", output_dir=output_dir
     )
 
     # Set phase
-    turing_test.set_phase('concatenative_baseline')
+    turing_test.set_phase("concatenative_baseline")
 
     print("\n📢 Loading natural phee calls (concatenative)...")
 
@@ -105,7 +104,7 @@ def demo_concatenative_baseline():
     sample_rates = [7800, 8200, 8500, 8800, 9100]  # Different F0 values
     for i, f0 in enumerate(sample_rates):
         audio = create_simulated_phee_call(22050, f0, 100.0)
-        turing_test.add_stimulus(f'natural_phee_{f0}', audio.tolist(), 'concatenative')
+        turing_test.add_stimulus(f"natural_phee_{f0}", audio.tolist(), "concatenative")
         print(f"   Loaded: natural_phee_{f0} (F0={f0}Hz)")
 
     print("\n🔊 Running trials with natural stimuli...")
@@ -116,7 +115,7 @@ def demo_concatenative_baseline():
         stimulus_id = f"natural_phee_{sample_rates[i % len(sample_rates)]}"
         result = turing_test.run_trial(stimulus_id)
 
-        if result['has_response']:
+        if result["has_response"]:
             response_count += 1
 
         if (i + 1) % 5 == 0:
@@ -124,9 +123,9 @@ def demo_concatenative_baseline():
 
     # Get results
     results = turing_test.get_results()
-    phase_results = results['concatenative_baseline']
+    phase_results = results["concatenative_baseline"]
 
-    response_rate = np.mean(phase_results['responses'])
+    response_rate = np.mean(phase_results["responses"])
     print("\n📊 Concatenative Baseline Results:")
     print(f"   Total trials: {len(phase_results['trials'])}")
     print(f"   Response rate: {response_rate:.1%}")
@@ -151,7 +150,7 @@ def demo_granular_synthesis(turing_test):
         print("\n⚠️  Rust synthesizer not available, using Python fallback")
 
     # Set phase
-    turing_test.set_phase('granular_synthesis')
+    turing_test.set_phase("granular_synthesis")
 
     print("\n🎛️  Generating granular-synthesized stimuli...")
 
@@ -175,8 +174,8 @@ def demo_granular_synthesis(turing_test):
             granular_audio_list = synthesizer.synthesize(100.0)
             granular_audio = np.array(granular_audio_list, dtype=np.float32)
 
-            stimulus_id = f'granular_phee_shift_{shift:.2f}'
-            turing_test.add_stimulus(stimulus_id, granular_audio.tolist(), 'granular')
+            stimulus_id = f"granular_phee_shift_{shift:.2f}"
+            turing_test.add_stimulus(stimulus_id, granular_audio.tolist(), "granular")
 
             print(f"   Generated: {stimulus_id} (pitch shift: {shift:.2f}x)")
     else:
@@ -184,24 +183,25 @@ def demo_granular_synthesis(turing_test):
         for shift in pitch_shifts:
             # Simple resampling for pitch shift
             from scipy import signal
+
             num_samples = int(len(source_audio) / shift)
             granular_audio = signal.resample(source_audio, num_samples)
 
-            stimulus_id = f'granular_phee_shift_{shift:.2f}'
-            turing_test.add_stimulus(stimulus_id, granular_audio.tolist(), 'granular')
+            stimulus_id = f"granular_phee_shift_{shift:.2f}"
+            turing_test.add_stimulus(stimulus_id, granular_audio.tolist(), "granular")
 
             print(f"   Generated: {stimulus_id} (pitch shift: {shift:.2f}x) [Python fallback]")
 
     print("\n🔊 Running trials with granular stimuli...")
 
     # Run trials
-    stimulus_ids = [f'granular_phee_shift_{shift:.2f}' for shift in pitch_shifts]
+    stimulus_ids = [f"granular_phee_shift_{shift:.2f}" for shift in pitch_shifts]
     response_count = 0
 
     for i, stimulus_id in enumerate(stimulus_ids):
         result = turing_test.run_trial(stimulus_id)
 
-        if result['has_response']:
+        if result["has_response"]:
             response_count += 1
 
         if (i + 1) % 3 == 0:
@@ -209,9 +209,9 @@ def demo_granular_synthesis(turing_test):
 
     # Get results
     results = turing_test.get_results()
-    phase_results = results['granular_synthesis']
+    phase_results = results["granular_synthesis"]
 
-    response_rate = np.mean(phase_results['responses'])
+    response_rate = np.mean(phase_results["responses"])
     print("\n📊 Granular Synthesis Results:")
     print(f"   Total trials: {len(phase_results['trials'])}")
     print(f"   Response rate: {response_rate:.1%}")
@@ -244,14 +244,14 @@ def demo_statistical_analysis(turing_test):
     print(f"   - Concatenative: {hypothesis['concatenative_response_rate']:.1%}")
     print(f"   - Granular: {hypothesis['granular_response_rate']:.1%}")
 
-    if hypothesis.get('p_value'):
+    if hypothesis.get("p_value"):
         print(f"\n   Statistical Test: {hypothesis.get('statistical_test', 'N/A')}")
         print(f"   P-value: {hypothesis['p_value']:.3f}")
         print("   Alpha: 0.05")
         print(f"   Significant at p<0.05: {hypothesis['p_value'] < 0.05}")
 
     print("\n" + "=" * 80)
-    if hypothesis.get('passed'):
+    if hypothesis.get("passed"):
         print("✅ TURING TEST PASSED!")
         print("=" * 80)
         print("\n🎉 Animals CANNOT DISTINGUISH between natural and granular!")
@@ -296,21 +296,25 @@ def main():
     hypothesis = demo_statistical_analysis(turing_test)
 
     # Save results
-    output_file = Path(turing_test.output_dir) / 'turing_test_results.json'
-    with open(output_file, 'w') as f:
-        json.dump({
-            'subject_id': turing_test.subject_id,
-            'species': turing_test.species,
-            'concatenative_response_rate': concat_rate,
-            'granular_response_rate': granular_rate,
-            'hypothesis_result': hypothesis,
-            'timestamp': str(np.datetime64('now'))
-        }, f, indent=2)
+    output_file = Path(turing_test.output_dir) / "turing_test_results.json"
+    with open(output_file, "w") as f:
+        json.dump(
+            {
+                "subject_id": turing_test.subject_id,
+                "species": turing_test.species,
+                "concatenative_response_rate": concat_rate,
+                "granular_response_rate": granular_rate,
+                "hypothesis_result": hypothesis,
+                "timestamp": str(np.datetime64("now")),
+            },
+            f,
+            indent=2,
+        )
 
     print(f"\n💾 Results saved to: {output_file}")
 
     print("\n🎯 NEXT STEPS:")
-    if hypothesis.get('passed'):
+    if hypothesis.get("passed"):
         print("   1. ✅ Granular synthesis validated with simulated data")
         print("   2. Run live animal experiment with real subjects")
         print("   3. Publish results demonstrating bio-acoustic validity")

@@ -41,23 +41,18 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.audio_aware_grammar_discovery import AudioAwareGrammarDiscovery
-from realtime.acoustic_algebra_contextual import (
-    ContextualMap,
-    GradientSynthesizer,
-    SemanticVector
-)
+from realtime.acoustic_algebra_contextual import ContextualMap, GradientSynthesizer, SemanticVector
 from realtime.phrase_audio_library import VocalizationSynthesizer
 
 import warnings
-warnings.filterwarnings('ignore')
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(message)s'
-)
+warnings.filterwarnings("ignore")
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -65,12 +60,9 @@ logger = logging.getLogger(__name__)
 # Synthetic Audio Generation with Acoustic Gradients
 # ============================================================================
 
+
 def generate_gradient_vocalization(
-    context: str,
-    intensity: float,
-    base_f0: float,
-    duration_sec: float,
-    sr: int = 22050
+    context: str, intensity: float, base_f0: float, duration_sec: float, sr: int = 22050
 ) -> np.ndarray:
     """
     Generate vocalization with context-specific intensity.
@@ -105,29 +97,29 @@ def generate_gradient_vocalization(
             "attack_mult": 0.3,
             "harmonics": 6,
             "jitter": 0.05,
-            "roughness": 0.3
+            "roughness": 0.3,
         },
         "courtship": {
             "f0_mult": 0.9,
             "attack_mult": 1.2,
             "harmonics": 4,
             "jitter": 0.0,
-            "roughness": 0.0
+            "roughness": 0.0,
         },
         "food_discovery": {
             "f0_mult": 0.8,
             "attack_mult": 0.8,
             "harmonics": 3,
             "jitter": 0.02,
-            "roughness": 0.1
+            "roughness": 0.1,
         },
         "alarm": {
             "f0_mult": 1.5,
             "attack_mult": 0.2,
             "harmonics": 5,
             "jitter": 0.08,
-            "roughness": 0.4
-        }
+            "roughness": 0.4,
+        },
     }
 
     # Get context parameters or use neutral defaults
@@ -158,7 +150,7 @@ def generate_gradient_vocalization(
     # Apply envelope
     attack_time = neutral_attack * attack_mult
     envelope = np.exp(-t / (duration_sec * 0.3))
-    envelope *= (1 - np.exp(-t / attack_time))
+    envelope *= 1 - np.exp(-t / attack_time)
 
     # Add roughness for higher intensities
     if roughness > 0:
@@ -174,9 +166,7 @@ def generate_gradient_vocalization(
 
 
 def generate_gradient_dataset(
-    output_dir: Path,
-    context: str = "aggression",
-    intensities: List[float] = None
+    output_dir: Path, context: str = "aggression", intensities: List[float] = None
 ) -> Tuple[Path, Path]:
     """
     Generate a dataset of vocalizations at different intensities.
@@ -213,7 +203,7 @@ def generate_gradient_dataset(
             intensity=intensity,
             base_f0=base_f0,
             duration_sec=duration_per_intensity,
-            sr=sr
+            sr=sr,
         )
 
         # Insert into recording
@@ -230,7 +220,7 @@ def generate_gradient_dataset(
                 "end_time_ms": (current_time + duration_per_intensity) * 1000,
                 "context": context_label,
                 "intensity": intensity,
-                "notes": f"{context} at {intensity:.0%} intensity"
+                "notes": f"{context} at {intensity:.0%} intensity",
             }
             annotations.append(annotation)
 
@@ -247,12 +237,12 @@ def generate_gradient_dataset(
             "species": "marmoset",
             "context": context,
             "intensities": intensities,
-            "type": "gradient_dataset"
+            "type": "gradient_dataset",
         },
-        "annotations": annotations
+        "annotations": annotations,
     }
 
-    with open(annotation_path, 'w') as f:
+    with open(annotation_path, "w") as f:
         json.dump(annotation_data, f, indent=2)
 
     logger.info(f"  ✓ Audio: {audio_path}")
@@ -265,11 +255,9 @@ def generate_gradient_dataset(
 # Threshold Test: Scientific Analysis
 # ============================================================================
 
+
 def run_threshold_test(
-    pipeline: AudioAwareGrammarDiscovery,
-    library,
-    output_dir: Path,
-    context: str = "aggression"
+    pipeline: AudioAwareGrammarDiscovery, library, output_dir: Path, context: str = "aggression"
 ) -> Dict:
     """
     Run the threshold test to measure semantic continuity.
@@ -286,9 +274,9 @@ def run_threshold_test(
     Returns:
         Dictionary with test results
     """
-    logger.info("\n" + "="*80)
+    logger.info("\n" + "=" * 80)
     logger.info(f"THRESHOLD TEST: {context.upper()}")
-    logger.info("="*80)
+    logger.info("=" * 80)
 
     logger.info("""
 Hypothesis: Animals perceive emotion as a continuous continuum, not discrete states.
@@ -310,7 +298,7 @@ This creates a new class of experiment: The Threshold Test.
         "intensities_tested": [],
         "virtual_vectors": [],
         "synthesis_params": [],
-        "acoustic_distances": []
+        "acoustic_distances": [],
     }
 
     # Test at multiple intensities
@@ -321,14 +309,12 @@ This creates a new class of experiment: The Threshold Test.
     baseline = pipeline.contextual_map.baseline_context
 
     for intensity in intensities:
-        logger.info(f"\n{'─'*80}")
+        logger.info(f"\n{'─' * 80}")
         logger.info(f"Intensity: {intensity:.2f} ({intensity:.0%})")
 
         # Synthesize gradient
         result = pipeline.synthesize_gradient(
-            intent=context,
-            intensity=intensity,
-            baseline_context=baseline
+            intent=context, intensity=intensity, baseline_context=baseline
         )
 
         if result:
@@ -351,9 +337,9 @@ This creates a new class of experiment: The Threshold Test.
                         logger.info(f"    {param}: {value:.3f}")
 
     # Analyze linearity
-    logger.info(f"\n{'='*80}")
+    logger.info(f"\n{'=' * 80}")
     logger.info("THRESHOLD TEST ANALYSIS")
-    logger.info(f"{'='*80}")
+    logger.info(f"{'=' * 80}")
 
     if len(results["acoustic_distances"]) > 1:
         distances = results["acoustic_distances"]
@@ -382,11 +368,12 @@ This creates a new class of experiment: The Threshold Test.
 # Demo: Semantic Gradient Synthesis
 # ============================================================================
 
+
 def demo_gradient_synthesis(
     pipeline: AudioAwareGrammarDiscovery,
     library,
     synthesizer: VocalizationSynthesizer,
-    output_dir: Path
+    output_dir: Path,
 ):
     """
     Demonstrate gradient synthesis capabilities.
@@ -396,9 +383,9 @@ def demo_gradient_synthesis(
     2. Virtual phrase generation
     3. Continuous emotional modulation
     """
-    logger.info("\n" + "="*80)
+    logger.info("\n" + "=" * 80)
     logger.info("SEMANTIC GRADIENT SYNTHESIS DEMO")
-    logger.info("="*80)
+    logger.info("=" * 80)
 
     logger.info("""
 Without Acoustic Algebra (Discrete Retrieval):
@@ -454,11 +441,12 @@ With Acoustic Algebra (Continuous Generation):
 # Main Demo
 # ============================================================================
 
+
 def main():
     """Run the complete acoustic algebra demo."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ACOUSTIC ALGEBRA: THRESHOLD TEST & GRADIENT SYNTHESIS")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 This demo demonstrates the Semantic Gradient Engine:
@@ -483,30 +471,28 @@ Scientific Impact:
     # Phase 1: Generate Gradient Dataset
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 1: GENERATE GRADIENT DATASET")
-    print("="*80)
+    print("=" * 80)
 
     audio_path, annotation_path = generate_gradient_dataset(
-        output_dir,
-        context="aggression",
-        intensities=[0.0, 0.25, 0.5, 0.75, 1.0]
+        output_dir, context="aggression", intensities=[0.0, 0.25, 0.5, 0.75, 1.0]
     )
 
     # ========================================================================
     # Phase 2: Discover Phrases with Context
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 2: DISCOVER PHRASES WITH CONTEXT")
-    print("="*80)
+    print("=" * 80)
 
     pipeline = AudioAwareGrammarDiscovery(
         grain_duration_ms=15.0,
         hop_size_ms=7.5,
         dbscan_eps=0.8,
         dbscan_min_samples=2,
-        sample_rate=22050
+        sample_rate=22050,
     )
 
     # Load audio
@@ -521,16 +507,16 @@ Scientific Impact:
     library = pipeline.build_phrase_library(
         species="marmoset",
         export_path=str(output_dir / "gradient_phrase_library.pkl"),
-        associate_context=True
+        associate_context=True,
     )
 
     # ========================================================================
     # Phase 3: Compute Semantic Gradients (Acoustic Algebra)
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 3: COMPUTE SEMANTIC GRADIENTS (ACOUSTIC ALGEBRA)")
-    print("="*80)
+    print("=" * 80)
 
     contextual_map = pipeline.compute_semantic_gradients(library)
 
@@ -538,24 +524,19 @@ Scientific Impact:
     # Phase 4: Threshold Test
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 4: THRESHOLD TEST")
-    print("="*80)
+    print("=" * 80)
 
-    results = run_threshold_test(
-        pipeline,
-        library,
-        output_dir,
-        context="aggression"
-    )
+    results = run_threshold_test(pipeline, library, output_dir, context="aggression")
 
     # ========================================================================
     # Phase 5: Gradient Synthesis Demo
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 5: GRADIENT SYNTHESIS DEMO")
-    print("="*80)
+    print("=" * 80)
 
     synthesizer = VocalizationSynthesizer(library)
     demo_gradient_synthesis(pipeline, library, synthesizer, output_dir)
@@ -564,9 +545,9 @@ Scientific Impact:
     # Summary
     # ========================================================================
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
 
     print(f"""
 ✅ Acoustic Algebra Implementation Complete

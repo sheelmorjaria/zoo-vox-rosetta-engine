@@ -66,6 +66,7 @@ logger = logging.getLogger(__name__)
 # Phrase Audio Segment Data Structure
 # ============================================================================
 
+
 @dataclass
 class PhraseAudioSegment:
     """
@@ -74,6 +75,7 @@ class PhraseAudioSegment:
     Stores the actual audio waveform along with all relevant metadata
     for synthesis and analysis, including microharmonic signature.
     """
+
     # Audio data
     audio: np.ndarray  # Audio waveform
     sr: int  # Sample rate
@@ -134,61 +136,63 @@ class PhraseAudioSegment:
     @property
     def dominant_harmonic(self) -> Optional[int]:
         """Get dominant harmonic index (1-based) if available."""
-        if self.microharmonic_signature and 'dominant_harmonic' in self.microharmonic_signature:
-            return self.microharmonic_signature['dominant_harmonic']
+        if self.microharmonic_signature and "dominant_harmonic" in self.microharmonic_signature:
+            return self.microharmonic_signature["dominant_harmonic"]
         return None
 
     @property
     def harmonic_entropy(self) -> Optional[float]:
         """Get harmonic entropy (spectral complexity) if available."""
-        if self.microharmonic_signature and 'harmonic_entropy' in self.microharmonic_signature:
-            return self.microharmonic_signature['harmonic_entropy']
+        if self.microharmonic_signature and "harmonic_entropy" in self.microharmonic_signature:
+            return self.microharmonic_signature["harmonic_entropy"]
         return None
 
     @property
     def spectral_centroid_hz(self) -> Optional[float]:
         """Get spectral centroid in Hz if available."""
-        if self.microharmonic_signature and 'spectral_centroid_hz' in self.microharmonic_signature:
-            return self.microharmonic_signature['spectral_centroid_hz']
+        if self.microharmonic_signature and "spectral_centroid_hz" in self.microharmonic_signature:
+            return self.microharmonic_signature["spectral_centroid_hz"]
         return None
 
     def get_harmonic_ratios(self) -> Optional[np.ndarray]:
         """Get harmonic amplitude ratios if available."""
-        if self.microharmonic_signature and 'harmonic_ratios' in self.microharmonic_signature:
-            return self.microharmonic_signature['harmonic_ratios']
+        if self.microharmonic_signature and "harmonic_ratios" in self.microharmonic_signature:
+            return self.microharmonic_signature["harmonic_ratios"]
         return None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         result = {
-            'phrase_key': self.phrase_key,
-            'source_file': self.source_file,
-            'start_time_ms': self.start_time_ms,
-            'end_time_ms': self.end_time_ms,
-            'mean_f0_hz': self.mean_f0_hz,
-            'std_f0_hz': self.std_f0_hz,
-            'mean_duration_ms': self.mean_duration_ms,
-            'mean_range_hz': self.mean_range_hz,
-            'encoding': self.encoding,
-            'superposed_with': self.superposed_with,
-            'occurrence_id': self.occurrence_id,
-            'context': self.context,
-            'individual_id': self.individual_id,
-            'duration_samples': self.duration_samples,
-            'duration_seconds': self.duration_seconds,
-            'snr_db': self.snr_db,
-            'quality_score': self.quality_score,
-            'has_microharmonics': self.has_microharmonics,
+            "phrase_key": self.phrase_key,
+            "source_file": self.source_file,
+            "start_time_ms": self.start_time_ms,
+            "end_time_ms": self.end_time_ms,
+            "mean_f0_hz": self.mean_f0_hz,
+            "std_f0_hz": self.std_f0_hz,
+            "mean_duration_ms": self.mean_duration_ms,
+            "mean_range_hz": self.mean_range_hz,
+            "encoding": self.encoding,
+            "superposed_with": self.superposed_with,
+            "occurrence_id": self.occurrence_id,
+            "context": self.context,
+            "individual_id": self.individual_id,
+            "duration_samples": self.duration_samples,
+            "duration_seconds": self.duration_seconds,
+            "snr_db": self.snr_db,
+            "quality_score": self.quality_score,
+            "has_microharmonics": self.has_microharmonics,
             # Note: audio data and microharmonic_signature are serialized separately
         }
 
         # Add microharmonic summary fields
         if self.has_microharmonics:
-            result.update({
-                'dominant_harmonic': self.dominant_harmonic,
-                'harmonic_entropy': self.harmonic_entropy,
-                'spectral_centroid_hz': self.spectral_centroid_hz,
-            })
+            result.update(
+                {
+                    "dominant_harmonic": self.dominant_harmonic,
+                    "harmonic_entropy": self.harmonic_entropy,
+                    "spectral_centroid_hz": self.spectral_centroid_hz,
+                }
+            )
 
         return result
 
@@ -196,6 +200,7 @@ class PhraseAudioSegment:
 # ============================================================================
 # Phrase Audio Library
 # ============================================================================
+
 
 class PhraseAudioLibrary:
     """
@@ -218,7 +223,7 @@ class PhraseAudioLibrary:
         sr: int,
         library_dir: Optional[Union[str, Path]] = None,
         max_segments_per_phrase: int = 100,
-        min_quality_score: float = 0.3
+        min_quality_score: float = 0.3,
     ):
         """
         Initialize the phrase audio library.
@@ -246,11 +251,7 @@ class PhraseAudioLibrary:
 
         logger.info(f"PhraseAudioLibrary initialized for {species} at {sr} Hz")
 
-    def add_segment(
-        self,
-        segment: PhraseAudioSegment,
-        allow_duplicate: bool = False
-    ) -> bool:
+    def add_segment(self, segment: PhraseAudioSegment, allow_duplicate: bool = False) -> bool:
         """
         Add a phrase audio segment to the library.
 
@@ -270,17 +271,16 @@ class PhraseAudioLibrary:
         # Check for duplicates
         if not allow_duplicate:
             for existing in self.phrase_segments[phrase_key]:
-                if (existing.source_file == segment.source_file and
-                    abs(existing.start_time_ms - segment.start_time_ms) < 10):
+                if (
+                    existing.source_file == segment.source_file
+                    and abs(existing.start_time_ms - segment.start_time_ms) < 10
+                ):
                     return False
 
         # Enforce maximum segments per phrase
         if len(self.phrase_segments[phrase_key]) >= self.max_segments_per_phrase:
             # Remove lowest quality segment
-            self.phrase_segments[phrase_key].sort(
-                key=lambda s: s.quality_score,
-                reverse=True
-            )
+            self.phrase_segments[phrase_key].sort(key=lambda s: s.quality_score, reverse=True)
             if segment.quality_score > self.phrase_segments[phrase_key][-1].quality_score:
                 self.phrase_segments[phrase_key].pop()
             else:
@@ -306,7 +306,7 @@ class PhraseAudioLibrary:
         superposed_with: List[str] = None,
         context: Optional[str] = None,
         individual_id: Optional[str] = None,
-        microharmonic_signature: Optional[Dict[str, Any]] = None
+        microharmonic_signature: Optional[Dict[str, Any]] = None,
     ) -> Optional[PhraseAudioSegment]:
         """
         Extract a phrase audio segment from audio and add to library.
@@ -384,7 +384,7 @@ class PhraseAudioLibrary:
                 individual_id=individual_id,
                 snr_db=snr_db,
                 quality_score=quality_score,
-                microharmonic_signature=microharmonic_signature
+                microharmonic_signature=microharmonic_signature,
             )
 
             # Add to library
@@ -403,7 +403,7 @@ class PhraseAudioLibrary:
         phrase_key: str,
         context: Optional[str] = None,
         individual_id: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Optional[PhraseAudioSegment]:
         """
         Create a phrase audio segment manually and add to library.
@@ -432,17 +432,17 @@ class PhraseAudioLibrary:
                 source_file="manual_test",
                 start_time_ms=0,
                 end_time_ms=duration_ms,
-                mean_f0_hz=kwargs.get('mean_f0_hz', 1000.0),
-                std_f0_hz=kwargs.get('std_f0_hz', 100.0),
+                mean_f0_hz=kwargs.get("mean_f0_hz", 1000.0),
+                std_f0_hz=kwargs.get("std_f0_hz", 100.0),
                 mean_duration_ms=duration_ms,
-                mean_range_hz=kwargs.get('mean_range_hz', 500.0),
-                encoding=kwargs.get('encoding', 'horizontal'),
-                superposed_with=kwargs.get('superposed_with', []),
+                mean_range_hz=kwargs.get("mean_range_hz", 500.0),
+                encoding=kwargs.get("encoding", "horizontal"),
+                superposed_with=kwargs.get("superposed_with", []),
                 context=context,
                 individual_id=individual_id,
-                snr_db=kwargs.get('snr_db', 20.0),
-                quality_score=kwargs.get('quality_score', 0.8),
-                microharmonic_signature=kwargs.get('microharmonic_signature')
+                snr_db=kwargs.get("snr_db", 20.0),
+                quality_score=kwargs.get("quality_score", 0.8),
+                microharmonic_signature=kwargs.get("microharmonic_signature"),
             )
 
             # Add to library
@@ -455,10 +455,7 @@ class PhraseAudioLibrary:
             return None
 
     def get_segment(
-        self,
-        phrase_key: str,
-        strategy: str = "random",
-        min_quality: float = 0.5
+        self, phrase_key: str, strategy: str = "random", min_quality: float = 0.5
     ) -> Optional[PhraseAudioSegment]:
         """
         Get a phrase audio segment from the library.
@@ -474,10 +471,7 @@ class PhraseAudioLibrary:
         if phrase_key not in self.phrase_segments:
             return None
 
-        candidates = [
-            s for s in self.phrase_segments[phrase_key]
-            if s.quality_score >= min_quality
-        ]
+        candidates = [s for s in self.phrase_segments[phrase_key] if s.quality_score >= min_quality]
 
         if not candidates:
             return None
@@ -500,7 +494,7 @@ class PhraseAudioLibrary:
         count: int = 1,
         strategy: str = "random",
         min_quality: float = 0.5,
-        allow_repeats: bool = False
+        allow_repeats: bool = False,
     ) -> List[PhraseAudioSegment]:
         """
         Get multiple phrase audio segments.
@@ -544,8 +538,7 @@ class PhraseAudioLibrary:
         phrase_counts = {k: len(v) for k, v in self.phrase_segments.items()}
 
         total_audio_duration = sum(
-            sum(s.duration_seconds for s in segments)
-            for segments in self.phrase_segments.values()
+            sum(s.duration_seconds for s in segments) for segments in self.phrase_segments.values()
         )
 
         encoding_counts = {"horizontal": 0, "vertical": 0}
@@ -564,16 +557,16 @@ class PhraseAudioLibrary:
                     individual_counts[segment.individual_id] += 1
 
         return {
-            'species': self.species,
-            'sr': self.sr,
-            'total_phrases': len(self.phrase_segments),
-            'total_segments': self.total_segments,
-            'total_audio_duration_seconds': total_audio_duration,
-            'phrase_counts': phrase_counts,
-            'encoding_distribution': encoding_counts,
-            'context_distribution': dict(context_counts),
-            'individual_distribution': dict(individual_counts),
-            'creation_time': self.creation_time.isoformat()
+            "species": self.species,
+            "sr": self.sr,
+            "total_phrases": len(self.phrase_segments),
+            "total_segments": self.total_segments,
+            "total_audio_duration_seconds": total_audio_duration,
+            "phrase_counts": phrase_counts,
+            "encoding_distribution": encoding_counts,
+            "context_distribution": dict(context_counts),
+            "individual_distribution": dict(individual_counts),
+            "creation_time": self.creation_time.isoformat(),
         }
 
     def get_statistics(self) -> Dict[str, Any]:
@@ -655,27 +648,29 @@ class PhraseAudioLibrary:
                 # Enrichment (how much more likely in this context)
                 enrichment = p_phrase_given_context / p_phrase if p_phrase > 0 else 0
 
-                context_phrases.append({
-                    'phrase_key': phrase_key,
-                    'count': count,
-                    'probability': p_phrase_given_context,
-                    'enrichment': enrichment
-                })
+                context_phrases.append(
+                    {
+                        "phrase_key": phrase_key,
+                        "count": count,
+                        "probability": p_phrase_given_context,
+                        "enrichment": enrichment,
+                    }
+                )
 
             # Sort by enrichment
-            context_phrases.sort(key=lambda x: x['enrichment'], reverse=True)
+            context_phrases.sort(key=lambda x: x["enrichment"], reverse=True)
 
             context_phrase_stats[context] = {
-                'total_occurrences': context_totals[context],
-                'phrases': context_phrases[:20],  # Top 20 enriched phrases
-                'num_unique_phrases': len(phrase_counts)
+                "total_occurrences": context_totals[context],
+                "phrases": context_phrases[:20],  # Top 20 enriched phrases
+                "num_unique_phrases": len(phrase_counts),
             }
 
         return {
-            'context_statistics': context_phrase_stats,
-            'total_contexts': len(context_phrase_counts),
-            'segments_with_context': sum(context_totals.values()),
-            'segments_without_context': self.total_segments - sum(context_totals.values())
+            "context_statistics": context_phrase_stats,
+            "total_contexts": len(context_phrase_counts),
+            "segments_with_context": sum(context_totals.values()),
+            "segments_without_context": self.total_segments - sum(context_totals.values()),
         }
 
     def get_all_phrase_keys(self) -> List[str]:
@@ -708,11 +703,11 @@ class PhraseAudioLibrary:
         """
         if not self.total_segments:
             return {
-                'mean_quality': 0.0,
-                'min_quality': 0.0,
-                'max_quality': 0.0,
-                'std_quality': 0.0,
-                'total_segments': 0
+                "mean_quality": 0.0,
+                "min_quality": 0.0,
+                "max_quality": 0.0,
+                "std_quality": 0.0,
+                "total_segments": 0,
             }
 
         all_qualities = []
@@ -723,27 +718,24 @@ class PhraseAudioLibrary:
 
         if not all_qualities:
             return {
-                'mean_quality': 0.0,
-                'min_quality': 0.0,
-                'max_quality': 0.0,
-                'std_quality': 0.0,
-                'total_segments': self.total_segments
+                "mean_quality": 0.0,
+                "min_quality": 0.0,
+                "max_quality": 0.0,
+                "std_quality": 0.0,
+                "total_segments": self.total_segments,
             }
 
         qualities_array = np.array(all_qualities)
         return {
-            'mean_quality': float(np.mean(qualities_array)),
-            'min_quality': float(np.min(qualities_array)),
-            'max_quality': float(np.max(qualities_array)),
-            'std_quality': float(np.std(qualities_array)),
-            'total_segments': len(all_qualities)
+            "mean_quality": float(np.mean(qualities_array)),
+            "min_quality": float(np.min(qualities_array)),
+            "max_quality": float(np.max(qualities_array)),
+            "std_quality": float(np.std(qualities_array)),
+            "total_segments": len(all_qualities),
         }
 
     def select_phrases_by_context(
-        self,
-        context: str,
-        min_quality: float = 0.5,
-        max_results: Optional[int] = None
+        self, context: str, min_quality: float = 0.5, max_results: Optional[int] = None
     ) -> List[PhraseAudioSegment]:
         """
         Select phrases by context with filtering options.
@@ -760,8 +752,7 @@ class PhraseAudioLibrary:
 
         for phrase_key, segments in self.phrase_segments.items():
             for segment in segments:
-                if (segment.context == context and
-                    segment.quality_score >= min_quality):
+                if segment.context == context and segment.quality_score >= min_quality:
                     selected_segments.append(segment)
 
         # Sort by quality score (highest first)
@@ -779,7 +770,7 @@ class PhraseAudioLibrary:
         context: Optional[str] = None,
         individual_id: Optional[str] = None,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[PhraseAudioSegment]:
         """
         Get a phrase audio segment filtered by context and/or individual.
@@ -799,7 +790,8 @@ class PhraseAudioLibrary:
 
         # Filter by context and individual
         candidates = [
-            s for s in self.phrase_segments[phrase_key]
+            s
+            for s in self.phrase_segments[phrase_key]
             if s.quality_score >= min_quality
             and (context is None or s.context == context)
             and (individual_id is None or s.individual_id == individual_id)
@@ -842,7 +834,7 @@ class PhraseAudioLibrary:
         context: Optional[str] = None,
         individual_id: Optional[str] = None,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> List[PhraseAudioSegment]:
         """
         Get multiple segments for synthesis, filtered by context.
@@ -864,12 +856,14 @@ class PhraseAudioLibrary:
                 context=context,
                 individual_id=individual_id,
                 strategy=strategy,
-                min_quality=min_quality
+                min_quality=min_quality,
             )
             if segment is not None:
                 segments.append(segment)
             else:
-                logger.warning(f"Could not find segment for phrase {phrase_key} with context={context}")
+                logger.warning(
+                    f"Could not find segment for phrase {phrase_key} with context={context}"
+                )
 
         return segments
 
@@ -885,7 +879,7 @@ class PhraseAudioLibrary:
         spectral_centroid_range: Optional[Tuple[float, float]] = None,
         harmonic_stability_min: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[PhraseAudioSegment]:
         """
         Get a phrase audio segment filtered by microharmonic signature.
@@ -921,18 +915,22 @@ class PhraseAudioLibrary:
             # Filter by harmonic entropy
             if harmonic_entropy_range is not None:
                 entropy = segment.harmonic_entropy
-                if entropy is None or not (harmonic_entropy_range[0] <= entropy <= harmonic_entropy_range[1]):
+                if entropy is None or not (
+                    harmonic_entropy_range[0] <= entropy <= harmonic_entropy_range[1]
+                ):
                     continue
 
             # Filter by spectral centroid
             if spectral_centroid_range is not None:
                 centroid = segment.spectral_centroid_hz
-                if centroid is None or not (spectral_centroid_range[0] <= centroid <= spectral_centroid_range[1]):
+                if centroid is None or not (
+                    spectral_centroid_range[0] <= centroid <= spectral_centroid_range[1]
+                ):
                     continue
 
             # Filter by harmonic stability
             if harmonic_stability_min > 0:
-                stability = segment.microharmonic_signature.get('harmonic_stability', 0)
+                stability = segment.microharmonic_signature.get("harmonic_stability", 0)
                 if stability < harmonic_stability_min:
                     continue
 
@@ -946,7 +944,9 @@ class PhraseAudioLibrary:
         elif strategy == "highest_snr":
             return max(candidates, key=lambda s: s.snr_db)
         elif strategy == "most_stable":
-            return max(candidates, key=lambda s: s.microharmonic_signature.get('harmonic_stability', 0))
+            return max(
+                candidates, key=lambda s: s.microharmonic_signature.get("harmonic_stability", 0)
+            )
         else:  # random
             return np.random.choice(candidates)
 
@@ -958,7 +958,7 @@ class PhraseAudioLibrary:
         spectral_centroid_range: Optional[Tuple[float, float]] = None,
         harmonic_stability_min: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> List[PhraseAudioSegment]:
         """
         Get multiple segments for synthesis, filtered by microharmonic signature.
@@ -984,12 +984,14 @@ class PhraseAudioLibrary:
                 spectral_centroid_range=spectral_centroid_range,
                 harmonic_stability_min=harmonic_stability_min,
                 strategy=strategy,
-                min_quality=min_quality
+                min_quality=min_quality,
             )
             if segment is not None:
                 segments.append(segment)
             else:
-                logger.warning(f"Could not find segment for phrase {phrase_key} with microharmonic filters")
+                logger.warning(
+                    f"Could not find segment for phrase {phrase_key} with microharmonic filters"
+                )
 
         return segments
 
@@ -1027,42 +1029,44 @@ class PhraseAudioLibrary:
                         spectral_centroid_values.append(segment.spectral_centroid_hz)
 
                     # Harmonic stability
-                    stability = segment.microharmonic_signature.get('harmonic_stability')
+                    stability = segment.microharmonic_signature.get("harmonic_stability")
                     if stability is not None:
                         harmonic_stability_values.append(stability)
 
         stats = {
-            'total_segments': total_segments,
-            'segments_with_microharmonics': segments_with_microharmonics,
-            'coverage_percent': (segments_with_microharmonics / total_segments * 100) if total_segments > 0 else 0,
-            'dominant_harmonic_distribution': dict(dominant_harmonic_counts),
+            "total_segments": total_segments,
+            "segments_with_microharmonics": segments_with_microharmonics,
+            "coverage_percent": (segments_with_microharmonics / total_segments * 100)
+            if total_segments > 0
+            else 0,
+            "dominant_harmonic_distribution": dict(dominant_harmonic_counts),
         }
 
         if harmonic_entropy_values:
-            stats['harmonic_entropy'] = {
-                'mean': float(np.mean(harmonic_entropy_values)),
-                'std': float(np.std(harmonic_entropy_values)),
-                'min': float(np.min(harmonic_entropy_values)),
-                'max': float(np.max(harmonic_entropy_values)),
-                'median': float(np.median(harmonic_entropy_values)),
+            stats["harmonic_entropy"] = {
+                "mean": float(np.mean(harmonic_entropy_values)),
+                "std": float(np.std(harmonic_entropy_values)),
+                "min": float(np.min(harmonic_entropy_values)),
+                "max": float(np.max(harmonic_entropy_values)),
+                "median": float(np.median(harmonic_entropy_values)),
             }
 
         if spectral_centroid_values:
-            stats['spectral_centroid_hz'] = {
-                'mean': float(np.mean(spectral_centroid_values)),
-                'std': float(np.std(spectral_centroid_values)),
-                'min': float(np.min(spectral_centroid_values)),
-                'max': float(np.max(spectral_centroid_values)),
-                'median': float(np.median(spectral_centroid_values)),
+            stats["spectral_centroid_hz"] = {
+                "mean": float(np.mean(spectral_centroid_values)),
+                "std": float(np.std(spectral_centroid_values)),
+                "min": float(np.min(spectral_centroid_values)),
+                "max": float(np.max(spectral_centroid_values)),
+                "median": float(np.median(spectral_centroid_values)),
             }
 
         if harmonic_stability_values:
-            stats['harmonic_stability'] = {
-                'mean': float(np.mean(harmonic_stability_values)),
-                'std': float(np.std(harmonic_stability_values)),
-                'min': float(np.min(harmonic_stability_values)),
-                'max': float(np.max(harmonic_stability_values)),
-                'median': float(np.median(harmonic_stability_values)),
+            stats["harmonic_stability"] = {
+                "mean": float(np.mean(harmonic_stability_values)),
+                "std": float(np.std(harmonic_stability_values)),
+                "min": float(np.min(harmonic_stability_values)),
+                "max": float(np.max(harmonic_stability_values)),
+                "median": float(np.median(harmonic_stability_values)),
             }
 
         return stats
@@ -1072,7 +1076,7 @@ class PhraseAudioLibrary:
         dominant_harmonic: Optional[int] = None,
         min_harmonic_entropy: float = 0.0,
         max_harmonic_entropy: float = 1.0,
-        min_harmonic_stability: float = 0.0
+        min_harmonic_stability: float = 0.0,
     ) -> List[str]:
         """
         Get all phrase keys matching a microharmonic profile.
@@ -1105,7 +1109,7 @@ class PhraseAudioLibrary:
                     continue
 
                 # Check harmonic stability
-                stability = segment.microharmonic_signature.get('harmonic_stability', 0)
+                stability = segment.microharmonic_signature.get("harmonic_stability", 0)
                 if stability < min_harmonic_stability:
                     continue
 
@@ -1116,9 +1120,7 @@ class PhraseAudioLibrary:
         return sorted(matching_phrases)
 
     def calculate_microharmonic_similarity(
-        self,
-        phrase_key1: str,
-        phrase_key2: str
+        self, phrase_key1: str, phrase_key2: str
     ) -> Optional[float]:
         """
         Calculate microharmonic similarity between two phrases.
@@ -1170,10 +1172,7 @@ class PhraseAudioLibrary:
         return float(dot_product / (norm1 * norm2))
 
     def get_similar_phrases_by_microharmonics(
-        self,
-        phrase_key: str,
-        top_k: int = 10,
-        min_similarity: float = 0.5
+        self, phrase_key: str, top_k: int = 10, min_similarity: float = 0.5
     ) -> List[Tuple[str, float]]:
         """
         Find phrases with similar microharmonic signatures.
@@ -1218,17 +1217,16 @@ class PhraseAudioLibrary:
 
         # Save library state
         library_data = {
-            'species': self.species,
-            'sr': self.sr,
-            'phrase_segments': {
-                k: [s.to_dict() for s in v]
-                for k, v in self.phrase_segments.items()
+            "species": self.species,
+            "sr": self.sr,
+            "phrase_segments": {
+                k: [s.to_dict() for s in v] for k, v in self.phrase_segments.items()
             },
-            'total_segments': self.total_segments,
-            'creation_time': self.creation_time.isoformat()
+            "total_segments": self.total_segments,
+            "creation_time": self.creation_time.isoformat(),
         }
 
-        with open(filepath, 'wb') as f:
+        with open(filepath, "wb") as f:
             pickle.dump(library_data, f)
 
         logger.info(f"Library metadata saved to {filepath}")
@@ -1248,38 +1246,38 @@ class PhraseAudioLibrary:
                 raise ValueError("No filepath or library_dir specified")
             filepath = self.library_dir / f"{self.species}_phrase_library.pkl"
 
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             library_data = pickle.load(f)
 
         # Load library state
-        self.species = library_data['species']
-        self.sr = library_data['sr']
-        self.total_segments = library_data['total_segments']
-        self.creation_time = datetime.fromisoformat(library_data['creation_time'])
+        self.species = library_data["species"]
+        self.sr = library_data["sr"]
+        self.total_segments = library_data["total_segments"]
+        self.creation_time = datetime.fromisoformat(library_data["creation_time"])
 
         # Reconstruct phrase_segments from loaded metadata
         self.phrase_segments = defaultdict(list)
-        for phrase_key, segment_dicts in library_data['phrase_segments'].items():
+        for phrase_key, segment_dicts in library_data["phrase_segments"].items():
             for segment_dict in segment_dicts:
                 # Create segment without audio data for memory efficiency
                 segment = PhraseAudioSegment(
                     audio=np.array([]),  # Empty audio - load on demand
                     sr=self.sr,
-                    phrase_key=segment_dict['phrase_key'],
-                    source_file=segment_dict['source_file'],
-                    start_time_ms=segment_dict['start_time_ms'],
-                    end_time_ms=segment_dict['end_time_ms'],
-                    mean_f0_hz=segment_dict['mean_f0_hz'],
-                    std_f0_hz=segment_dict['std_f0_hz'],
-                    mean_duration_ms=segment_dict['mean_duration_ms'],
-                    mean_range_hz=segment_dict['mean_range_hz'],
-                    encoding=segment_dict['encoding'],
-                    superposed_with=segment_dict['superposed_with'],
-                    context=segment_dict['context'],
-                    individual_id=segment_dict['individual_id'],
-                    snr_db=segment_dict['snr_db'],
-                    quality_score=segment_dict['quality_score'],
-                    microharmonic_signature=segment_dict.get('microharmonic_signature')
+                    phrase_key=segment_dict["phrase_key"],
+                    source_file=segment_dict["source_file"],
+                    start_time_ms=segment_dict["start_time_ms"],
+                    end_time_ms=segment_dict["end_time_ms"],
+                    mean_f0_hz=segment_dict["mean_f0_hz"],
+                    std_f0_hz=segment_dict["std_f0_hz"],
+                    mean_duration_ms=segment_dict["mean_duration_ms"],
+                    mean_range_hz=segment_dict["mean_range_hz"],
+                    encoding=segment_dict["encoding"],
+                    superposed_with=segment_dict["superposed_with"],
+                    context=segment_dict["context"],
+                    individual_id=segment_dict["individual_id"],
+                    snr_db=segment_dict["snr_db"],
+                    quality_score=segment_dict["quality_score"],
+                    microharmonic_signature=segment_dict.get("microharmonic_signature"),
                 )
                 self.phrase_segments[phrase_key].append(segment)
 
@@ -1290,12 +1288,12 @@ class PhraseAudioLibrary:
     def _calculate_snr(self, audio: np.ndarray) -> float:
         """Calculate signal-to-noise ratio."""
         # Simple SNR estimate based on energy distribution
-        energy = np.sum(audio ** 2)
+        energy = np.sum(audio**2)
 
         # Use low-energy frames as noise estimate
         frame_size = len(audio) // 10
         frame_energies = [
-            np.sum(audio[i:i+frame_size] ** 2)
+            np.sum(audio[i : i + frame_size] ** 2)
             for i in range(0, len(audio) - frame_size, frame_size)
         ]
 
@@ -1315,7 +1313,7 @@ class PhraseAudioLibrary:
         # Dynamic range component
         peak = np.max(np.abs(audio))
         if peak > 0:
-            rms = np.sqrt(np.mean(audio ** 2))
+            rms = np.sqrt(np.mean(audio**2))
             crest_factor = peak / rms if rms > 0 else 1
             dynamic_score = min(1.0, crest_factor / 10)  # Good crest factor around 3-10
         else:
@@ -1330,6 +1328,7 @@ class PhraseAudioLibrary:
 # ============================================================================
 # Vocalization Synthesizer
 # ============================================================================
+
 
 class VocalizationSynthesizer:
     """
@@ -1349,7 +1348,7 @@ class VocalizationSynthesizer:
         self,
         library: PhraseAudioLibrary,
         crossfade_ms: float = 5.0,
-        vertical_mix_mode: str = "average"
+        vertical_mix_mode: str = "average",
     ):
         """
         Initialize the synthesizer.
@@ -1373,7 +1372,7 @@ class VocalizationSynthesizer:
         phrase_sequence: List[str],
         gap_ms: float = 0.0,
         variation_strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int]]:
         """
         Synthesize vocalization using horizontal (concatenative) encoding.
@@ -1398,9 +1397,7 @@ class VocalizationSynthesizer:
 
         for phrase_key in phrase_sequence:
             segment = self.library.get_segment(
-                phrase_key,
-                strategy=variation_strategy,
-                min_quality=min_quality
+                phrase_key, strategy=variation_strategy, min_quality=min_quality
             )
 
             if segment is None:
@@ -1480,7 +1477,7 @@ class VocalizationSynthesizer:
         phrase_set: List[str],
         alignment: str = "start",
         variation_strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int]]:
         """
         Synthesize vocalization using vertical (superpositional) encoding.
@@ -1506,9 +1503,7 @@ class VocalizationSynthesizer:
 
         for phrase_key in phrase_set:
             segment = self.library.get_segment(
-                phrase_key,
-                strategy=variation_strategy,
-                min_quality=min_quality
+                phrase_key, strategy=variation_strategy, min_quality=min_quality
             )
 
             if segment is None:
@@ -1549,7 +1544,7 @@ class VocalizationSynthesizer:
             # Ensure bounds
             if end_pos > max_samples:
                 end_pos = max_samples
-                segment_audio = segment_audio[:end_pos - start_pos]
+                segment_audio = segment_audio[: end_pos - start_pos]
 
             if start_pos >= 0 and end_pos > start_pos:
                 output[start_pos:end_pos] += segment_audio
@@ -1564,7 +1559,7 @@ class VocalizationSynthesizer:
         above_threshold = np.abs(output) > trim_threshold
         if np.any(above_threshold):
             last_valid = np.where(above_threshold)[0][-1]
-            output = output[:last_valid + 1]
+            output = output[: last_valid + 1]
 
         self.synthesis_count += 1
 
@@ -1575,7 +1570,7 @@ class VocalizationSynthesizer:
         synthesis_plan: List[Tuple[str, List[str]]],
         gap_ms: float = 0.0,
         variation_strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int]]:
         """
         Synthesize vocalization using combined horizontal and vertical encoding.
@@ -1613,7 +1608,7 @@ class VocalizationSynthesizer:
                     phrases,
                     gap_ms=gap_ms,
                     variation_strategy=variation_strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             elif mode == "vertical":
                 # Simultaneous synthesis
@@ -1621,7 +1616,7 @@ class VocalizationSynthesizer:
                     phrases,
                     alignment="start",
                     variation_strategy=variation_strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             else:
                 logger.warning(f"Unknown synthesis mode: {mode}")
@@ -1649,7 +1644,7 @@ class VocalizationSynthesizer:
         self,
         num_phrases: int = 5,
         encoding_ratio: float = 0.7,  # 70% horizontal, 30% vertical
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, List]]:
         """
         Generate a random vocalization using available phrases.
@@ -1678,13 +1673,13 @@ class VocalizationSynthesizer:
                 # Horizontal: 1-3 phrases in sequence
                 n_phrases = min(np.random.randint(1, 4), num_phrases - phrases_used)
                 selected = np.random.choice(available_phrases, n_phrases).tolist()
-                synthesis_plan.append(('horizontal', selected))
+                synthesis_plan.append(("horizontal", selected))
                 phrases_used += n_phrases
             else:
                 # Vertical: 2-4 phrases superposed
                 n_phrases = min(np.random.randint(2, 5), num_phrases - phrases_used)
                 selected = np.random.choice(available_phrases, n_phrases).tolist()
-                synthesis_plan.append(('vertical', selected))
+                synthesis_plan.append(("vertical", selected))
                 phrases_used += n_phrases
 
             if phrases_used >= num_phrases:
@@ -1695,9 +1690,7 @@ class VocalizationSynthesizer:
                 break
 
         result = self.synthesize_combined(
-            synthesis_plan,
-            variation_strategy="random",
-            min_quality=min_quality
+            synthesis_plan, variation_strategy="random", min_quality=min_quality
         )
 
         if result is not None:
@@ -1716,7 +1709,7 @@ class VocalizationSynthesizer:
         individual_id: Optional[str] = None,
         gap_ms: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using horizontal encoding with context filtering.
@@ -1743,7 +1736,7 @@ class VocalizationSynthesizer:
             context=context,
             individual_id=individual_id,
             strategy=strategy,
-            min_quality=min_quality
+            min_quality=min_quality,
         )
 
         if not segments:
@@ -1793,18 +1786,18 @@ class VocalizationSynthesizer:
                 if remaining_end <= len(output):
                     output[remaining_start:remaining_end] = segment_audio[segment_end_idx:]
             else:
-                output[current_sample:current_sample + segment_length] = segment_audio
+                output[current_sample : current_sample + segment_length] = segment_audio
 
             current_sample += segment_length
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'horizontal_with_context',
-            'context': context,
-            'individual_id': individual_id,
-            'phrase_sequence': phrase_sequence,
-            'num_segments': len(segments)
+            "synthesis_type": "horizontal_with_context",
+            "context": context,
+            "individual_id": individual_id,
+            "phrase_sequence": phrase_sequence,
+            "num_segments": len(segments),
         }
 
         return output, self.library.sr, metadata
@@ -1816,7 +1809,7 @@ class VocalizationSynthesizer:
         individual_id: Optional[str] = None,
         alignment: str = "start",
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using vertical encoding with context filtering.
@@ -1843,7 +1836,7 @@ class VocalizationSynthesizer:
             context=context,
             individual_id=individual_id,
             strategy=strategy,
-            min_quality=min_quality
+            min_quality=min_quality,
         )
 
         if not segments:
@@ -1879,7 +1872,7 @@ class VocalizationSynthesizer:
             # Ensure bounds
             if end_pos > max_samples:
                 end_pos = max_samples
-                segment_audio = segment_audio[:end_pos - start_pos]
+                segment_audio = segment_audio[: end_pos - start_pos]
 
             if start_pos >= 0 and end_pos > start_pos:
                 output[start_pos:end_pos] += segment_audio
@@ -1894,17 +1887,17 @@ class VocalizationSynthesizer:
         above_threshold = np.abs(output) > trim_threshold
         if np.any(above_threshold):
             last_valid = np.where(above_threshold)[0][-1]
-            output = output[:last_valid + 1]
+            output = output[: last_valid + 1]
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'vertical_with_context',
-            'context': context,
-            'individual_id': individual_id,
-            'phrase_set': phrase_set,
-            'num_segments': len(segments),
-            'alignment': alignment
+            "synthesis_type": "vertical_with_context",
+            "context": context,
+            "individual_id": individual_id,
+            "phrase_set": phrase_set,
+            "num_segments": len(segments),
+            "alignment": alignment,
         }
 
         return output, self.library.sr, metadata
@@ -1916,7 +1909,7 @@ class VocalizationSynthesizer:
         individual_id: Optional[str] = None,
         gap_ms: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using combined encoding with context filtering.
@@ -1949,7 +1942,7 @@ class VocalizationSynthesizer:
                     individual_id=individual_id,
                     gap_ms=gap_ms,
                     strategy=strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             elif mode == "vertical":
                 result = self.synthesize_vertical_with_context(
@@ -1957,7 +1950,7 @@ class VocalizationSynthesizer:
                     context=context,
                     individual_id=individual_id,
                     strategy=strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             else:
                 logger.warning(f"Unknown synthesis mode: {mode}")
@@ -1978,7 +1971,7 @@ class VocalizationSynthesizer:
 
         for audio, metadata in output_segments:
             segment_length = len(audio)
-            output[current_sample:current_sample + segment_length] = audio
+            output[current_sample : current_sample + segment_length] = audio
             current_sample += segment_length
 
         # Trim trailing silence
@@ -1986,16 +1979,16 @@ class VocalizationSynthesizer:
         above_threshold = np.abs(output) > trim_threshold
         if np.any(above_threshold):
             last_valid = np.where(above_threshold)[0][-1]
-            output = output[:last_valid + 1]
+            output = output[: last_valid + 1]
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'combined_with_context',
-            'context': context,
-            'individual_id': individual_id,
-            'synthesis_plan': synthesis_plan,
-            'num_steps': len(output_segments)
+            "synthesis_type": "combined_with_context",
+            "context": context,
+            "individual_id": individual_id,
+            "synthesis_plan": synthesis_plan,
+            "num_steps": len(output_segments),
         }
 
         return output, self.library.sr, metadata
@@ -2006,7 +1999,7 @@ class VocalizationSynthesizer:
         context: Optional[str] = None,
         individual_id: Optional[str] = None,
         encoding_ratio: float = 0.6,
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Generate a random context-constrained vocalization.
@@ -2044,16 +2037,20 @@ class VocalizationSynthesizer:
             if use_horizontal:
                 # Horizontal: 1-3 phrases in sequence
                 n_phrases = min(np.random.randint(1, 4), num_phrases - phrases_used)
-                selected = np.random.choice(available_phrases, min(n_phrases, len(available_phrases))).tolist()
+                selected = np.random.choice(
+                    available_phrases, min(n_phrases, len(available_phrases))
+                ).tolist()
                 if selected:
-                    synthesis_plan.append(('horizontal', selected))
+                    synthesis_plan.append(("horizontal", selected))
                     phrases_used += n_phrases
             else:
                 # Vertical: 2-4 phrases superposed
                 n_phrases = min(np.random.randint(2, 5), num_phrases - phrases_used)
-                selected = np.random.choice(available_phrases, min(n_phrases, len(available_phrases))).tolist()
+                selected = np.random.choice(
+                    available_phrases, min(n_phrases, len(available_phrases))
+                ).tolist()
                 if selected:
-                    synthesis_plan.append(('vertical', selected))
+                    synthesis_plan.append(("vertical", selected))
                     phrases_used += n_phrases
 
             if phrases_used >= num_phrases:
@@ -2064,15 +2061,12 @@ class VocalizationSynthesizer:
                 break
 
         result = self.synthesize_combined_with_context(
-            synthesis_plan,
-            context=context,
-            individual_id=individual_id,
-            min_quality=min_quality
+            synthesis_plan, context=context, individual_id=individual_id, min_quality=min_quality
         )
 
         if result is not None:
             audio, sr, metadata = result
-            metadata['synthesis_plan'] = synthesis_plan
+            metadata["synthesis_plan"] = synthesis_plan
             return audio, sr, metadata
 
         return None
@@ -2090,7 +2084,7 @@ class VocalizationSynthesizer:
         harmonic_stability_min: float = 0.0,
         gap_ms: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using horizontal encoding with microharmonic filtering.
@@ -2121,7 +2115,7 @@ class VocalizationSynthesizer:
             spectral_centroid_range=spectral_centroid_range,
             harmonic_stability_min=harmonic_stability_min,
             strategy=strategy,
-            min_quality=min_quality
+            min_quality=min_quality,
         )
 
         if not segments:
@@ -2171,22 +2165,22 @@ class VocalizationSynthesizer:
                 if remaining_end <= len(output):
                     output[remaining_start:remaining_end] = segment_audio[segment_end_idx:]
             else:
-                output[current_sample:current_sample + segment_length] = segment_audio
+                output[current_sample : current_sample + segment_length] = segment_audio
 
             current_sample += segment_length
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'horizontal_with_microharmonics',
-            'phrase_sequence': phrase_sequence,
-            'num_segments': len(segments),
-            'microharmonic_filters': {
-                'dominant_harmonic': dominant_harmonic,
-                'harmonic_entropy_range': harmonic_entropy_range,
-                'spectral_centroid_range': spectral_centroid_range,
-                'harmonic_stability_min': harmonic_stability_min,
-            }
+            "synthesis_type": "horizontal_with_microharmonics",
+            "phrase_sequence": phrase_sequence,
+            "num_segments": len(segments),
+            "microharmonic_filters": {
+                "dominant_harmonic": dominant_harmonic,
+                "harmonic_entropy_range": harmonic_entropy_range,
+                "spectral_centroid_range": spectral_centroid_range,
+                "harmonic_stability_min": harmonic_stability_min,
+            },
         }
 
         return output, self.library.sr, metadata
@@ -2200,7 +2194,7 @@ class VocalizationSynthesizer:
         harmonic_stability_min: float = 0.0,
         alignment: str = "start",
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using vertical encoding with microharmonic filtering.
@@ -2231,7 +2225,7 @@ class VocalizationSynthesizer:
             spectral_centroid_range=spectral_centroid_range,
             harmonic_stability_min=harmonic_stability_min,
             strategy=strategy,
-            min_quality=min_quality
+            min_quality=min_quality,
         )
 
         if not segments:
@@ -2267,7 +2261,7 @@ class VocalizationSynthesizer:
             # Ensure bounds
             if end_pos > max_samples:
                 end_pos = max_samples
-                segment_audio = segment_audio[:end_pos - start_pos]
+                segment_audio = segment_audio[: end_pos - start_pos]
 
             if start_pos >= 0 and end_pos > start_pos:
                 output[start_pos:end_pos] += segment_audio
@@ -2282,21 +2276,21 @@ class VocalizationSynthesizer:
         above_threshold = np.abs(output) > trim_threshold
         if np.any(above_threshold):
             last_valid = np.where(above_threshold)[0][-1]
-            output = output[:last_valid + 1]
+            output = output[: last_valid + 1]
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'vertical_with_microharmonics',
-            'phrase_set': phrase_set,
-            'num_segments': len(segments),
-            'alignment': alignment,
-            'microharmonic_filters': {
-                'dominant_harmonic': dominant_harmonic,
-                'harmonic_entropy_range': harmonic_entropy_range,
-                'spectral_centroid_range': spectral_centroid_range,
-                'harmonic_stability_min': harmonic_stability_min,
-            }
+            "synthesis_type": "vertical_with_microharmonics",
+            "phrase_set": phrase_set,
+            "num_segments": len(segments),
+            "alignment": alignment,
+            "microharmonic_filters": {
+                "dominant_harmonic": dominant_harmonic,
+                "harmonic_entropy_range": harmonic_entropy_range,
+                "spectral_centroid_range": spectral_centroid_range,
+                "harmonic_stability_min": harmonic_stability_min,
+            },
         }
 
         return output, self.library.sr, metadata
@@ -2310,7 +2304,7 @@ class VocalizationSynthesizer:
         harmonic_stability_min: float = 0.0,
         gap_ms: float = 0.0,
         strategy: str = "random",
-        min_quality: float = 0.5
+        min_quality: float = 0.5,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize vocalization using combined encoding with microharmonic filtering.
@@ -2347,7 +2341,7 @@ class VocalizationSynthesizer:
                     harmonic_stability_min=harmonic_stability_min,
                     gap_ms=gap_ms,
                     strategy=strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             elif mode == "vertical":
                 result = self.synthesize_vertical_with_microharmonics(
@@ -2358,7 +2352,7 @@ class VocalizationSynthesizer:
                     harmonic_stability_min=harmonic_stability_min,
                     alignment="start",
                     strategy=strategy,
-                    min_quality=min_quality
+                    min_quality=min_quality,
                 )
             else:
                 logger.warning(f"Unknown synthesis mode: {mode}")
@@ -2379,7 +2373,7 @@ class VocalizationSynthesizer:
 
         for audio, metadata in output_segments:
             segment_length = len(audio)
-            output[current_sample:current_sample + segment_length] = audio
+            output[current_sample : current_sample + segment_length] = audio
             current_sample += segment_length
 
         # Trim trailing silence
@@ -2387,20 +2381,20 @@ class VocalizationSynthesizer:
         above_threshold = np.abs(output) > trim_threshold
         if np.any(above_threshold):
             last_valid = np.where(above_threshold)[0][-1]
-            output = output[:last_valid + 1]
+            output = output[: last_valid + 1]
 
         self.synthesis_count += 1
 
         metadata = {
-            'synthesis_type': 'combined_with_microharmonics',
-            'synthesis_plan': synthesis_plan,
-            'num_steps': len(output_segments),
-            'microharmonic_filters': {
-                'dominant_harmonic': dominant_harmonic,
-                'harmonic_entropy_range': harmonic_entropy_range,
-                'spectral_centroid_range': spectral_centroid_range,
-                'harmonic_stability_min': harmonic_stability_min,
-            }
+            "synthesis_type": "combined_with_microharmonics",
+            "synthesis_plan": synthesis_plan,
+            "num_steps": len(output_segments),
+            "microharmonic_filters": {
+                "dominant_harmonic": dominant_harmonic,
+                "harmonic_entropy_range": harmonic_entropy_range,
+                "spectral_centroid_range": spectral_centroid_range,
+                "harmonic_stability_min": harmonic_stability_min,
+            },
         }
 
         return output, self.library.sr, metadata
@@ -2410,7 +2404,7 @@ class VocalizationSynthesizer:
         phrase_sequence: List[str],
         gap_ms: float = 0.0,
         min_similarity: float = 0.7,
-        output_path: Optional[Path] = None
+        output_path: Optional[Path] = None,
     ) -> Optional[Tuple[np.ndarray, int, Dict]]:
         """
         Synthesize a harmonically compatible vocalization sequence.
@@ -2441,7 +2435,9 @@ class VocalizationSynthesizer:
             )
 
             if similarity is None:
-                logger.warning(f"No microharmonic data for phrases {phrase_sequence[i]} and {phrase_sequence[i+1]}")
+                logger.warning(
+                    f"No microharmonic data for phrases {phrase_sequence[i]} and {phrase_sequence[i + 1]}"
+                )
                 return None
 
             similarities.append(similarity)
@@ -2449,26 +2445,24 @@ class VocalizationSynthesizer:
             if similarity < min_similarity:
                 logger.warning(
                     f"Low microharmonic similarity ({similarity:.2f}) between "
-                    f"{phrase_sequence[i]} and {phrase_sequence[i+1]}"
+                    f"{phrase_sequence[i]} and {phrase_sequence[i + 1]}"
                 )
 
             compatible_sequence.append(phrase_sequence[i + 1])
 
         # Synthesize with the compatible sequence
         result = self.synthesize_horizontal(
-            phrase_sequence=compatible_sequence,
-            gap_ms=gap_ms,
-            variation_strategy="best"
+            phrase_sequence=compatible_sequence, gap_ms=gap_ms, variation_strategy="best"
         )
 
         if result is not None:
             audio, sr = result
             metadata = {
-                'synthesis_type': 'harmonically_compatible',
-                'phrase_sequence': compatible_sequence,
-                'similarities': similarities,
-                'mean_similarity': float(np.mean(similarities)) if similarities else 0.0,
-                'min_similarity': float(np.min(similarities)) if similarities else 0.0,
+                "synthesis_type": "harmonically_compatible",
+                "phrase_sequence": compatible_sequence,
+                "similarities": similarities,
+                "mean_similarity": float(np.mean(similarities)) if similarities else 0.0,
+                "min_similarity": float(np.min(similarities)) if similarities else 0.0,
             }
 
             if output_path:
@@ -2482,7 +2476,7 @@ class VocalizationSynthesizer:
         self,
         audio: np.ndarray,
         output_path: Union[str, Path],
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Save synthesized audio to file.
@@ -2500,9 +2494,10 @@ class VocalizationSynthesizer:
 
         # Save metadata if provided
         if metadata:
-            metadata_path = output_path.with_suffix('.json')
+            metadata_path = output_path.with_suffix(".json")
             import json
-            with open(metadata_path, 'w') as f:
+
+            with open(metadata_path, "w") as f:
                 json.dump(metadata, f, indent=2, default=str)
 
         logger.info(f"Synthesis saved to {output_path}")
@@ -2512,10 +2507,9 @@ class VocalizationSynthesizer:
 # Convenience Functions for Integration with Analyzers
 # ============================================================================
 
+
 def create_phrase_library_during_analysis(
-    analyzer,
-    output_dir: Optional[Union[str, Path]] = None,
-    enable_segmentation: bool = True
+    analyzer, output_dir: Optional[Union[str, Path]] = None, enable_segmentation: bool = True
 ) -> PhraseAudioLibrary:
     """
     Create and configure a phrase audio library for use during analysis.
@@ -2539,7 +2533,7 @@ def create_phrase_library_during_analysis(
     else:
         output_dir = Path(output_dir)
 
-    species = getattr(analyzer, 'species', 'unknown')
+    species = getattr(analyzer, "species", "unknown")
     sr = analyzer.config.sr
 
     library = PhraseAudioLibrary(
@@ -2547,7 +2541,7 @@ def create_phrase_library_during_analysis(
         sr=sr,
         library_dir=output_dir,
         max_segments_per_phrase=100,
-        min_quality_score=0.3
+        min_quality_score=0.3,
     )
 
     if enable_segmentation:
@@ -2561,11 +2555,7 @@ def create_phrase_library_during_analysis(
 
 
 def extract_microharmonic_signature_from_audio(
-    audio: np.ndarray,
-    sr: int,
-    start_ms: float,
-    end_ms: float,
-    species: str
+    audio: np.ndarray, sr: int, start_ms: float, end_ms: float, species: str
 ) -> Optional[Dict[str, Any]]:
     """
     Extract microharmonic signature from audio segment.
@@ -2608,14 +2598,14 @@ def extract_microharmonic_signature_from_audio(
 
         # Build microharmonic signature
         signature = {
-            'harmonic_ratios': features.get('harmonic_ratios'),
-            'dominant_harmonic': features.get('dominant_harmonic'),
-            'harmonic_entropy': features.get('harmonic_entropy'),
-            'spectral_centroid_hz': features.get('spectral_centroid_hz'),
-            'harmonic_stability': features.get('harmonic_stability'),
-            'mean_harmonics_per_frame': features.get('mean_harmonics_per_frame'),
-            'frequency_modulation_rate': features.get('frequency_modulation_rate'),
-            'amplitude_modulation_rate': features.get('amplitude_modulation_rate'),
+            "harmonic_ratios": features.get("harmonic_ratios"),
+            "dominant_harmonic": features.get("dominant_harmonic"),
+            "harmonic_entropy": features.get("harmonic_entropy"),
+            "spectral_centroid_hz": features.get("spectral_centroid_hz"),
+            "harmonic_stability": features.get("harmonic_stability"),
+            "mean_harmonics_per_frame": features.get("mean_harmonics_per_frame"),
+            "frequency_modulation_rate": features.get("frequency_modulation_rate"),
+            "amplitude_modulation_rate": features.get("amplitude_modulation_rate"),
         }
 
         return signature
@@ -2630,7 +2620,7 @@ def extract_and_store_phrases_from_analysis(
     audio_path: Path,
     phrases: List[Dict[str, Any]],
     audio: Optional[np.ndarray] = None,
-    enable_microharmonic_extraction: bool = False
+    enable_microharmonic_extraction: bool = False,
 ) -> int:
     """
     Extract and store phrase audio segments during analysis.
@@ -2653,17 +2643,18 @@ def extract_and_store_phrases_from_analysis(
             self, audio_path, result['phrases'], enable_microharmonic_extraction=True
         )
     """
-    if not hasattr(analyzer, 'phrase_audio_library'):
+    if not hasattr(analyzer, "phrase_audio_library"):
         return 0
 
     library = analyzer.phrase_audio_library
     sr = analyzer.config.sr
-    species = getattr(analyzer, 'species', 'unknown')
+    species = getattr(analyzer, "species", "unknown")
 
     # Load audio if not provided
     if audio is None:
         try:
             import librosa
+
             audio, sr_actual = librosa.load(str(audio_path), sr=sr)
         except Exception as e:
             logger.error(f"Error loading audio for segmentation: {e}")
@@ -2680,27 +2671,32 @@ def extract_and_store_phrases_from_analysis(
             microharmonic_signature = extract_microharmonic_signature_from_audio(
                 audio=audio,
                 sr=sr_actual,
-                start_ms=phrase.get('start_time_ms', 0),
-                end_ms=phrase.get('end_time_ms', phrase.get('start_time_ms', 0) + phrase.get('mean_duration_ms', 50)),
-                species=species
+                start_ms=phrase.get("start_time_ms", 0),
+                end_ms=phrase.get(
+                    "end_time_ms",
+                    phrase.get("start_time_ms", 0) + phrase.get("mean_duration_ms", 50),
+                ),
+                species=species,
             )
 
         # Extract segment
         segment = library.extract_phrase_segment(
             audio=audio,
             sr=sr_actual,
-            start_ms=phrase.get('start_time_ms', 0),
-            end_ms=phrase.get('end_time_ms', phrase.get('start_time_ms', 0) + phrase.get('mean_duration_ms', 50)),
-            phrase_key=phrase['phrase_key'],
-            source_file=phrase.get('source_file', audio_path.name),
-            mean_f0_hz=phrase.get('mean_f0_hz', 0),
-            std_f0_hz=phrase.get('std_f0_hz', 0),
-            mean_range_hz=phrase.get('mean_range_hz', 0),
-            encoding=phrase.get('encoding', 'horizontal'),
-            superposed_with=phrase.get('superposed_with', []),
-            context=phrase.get('context'),
-            individual_id=phrase.get('individual_id'),
-            microharmonic_signature=microharmonic_signature
+            start_ms=phrase.get("start_time_ms", 0),
+            end_ms=phrase.get(
+                "end_time_ms", phrase.get("start_time_ms", 0) + phrase.get("mean_duration_ms", 50)
+            ),
+            phrase_key=phrase["phrase_key"],
+            source_file=phrase.get("source_file", audio_path.name),
+            mean_f0_hz=phrase.get("mean_f0_hz", 0),
+            std_f0_hz=phrase.get("std_f0_hz", 0),
+            mean_range_hz=phrase.get("mean_range_hz", 0),
+            encoding=phrase.get("encoding", "horizontal"),
+            superposed_with=phrase.get("superposed_with", []),
+            context=phrase.get("context"),
+            individual_id=phrase.get("individual_id"),
+            microharmonic_signature=microharmonic_signature,
         )
 
         if segment is not None:

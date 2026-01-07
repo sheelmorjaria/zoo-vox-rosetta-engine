@@ -36,38 +36,38 @@ from train_asteroid_base import AnimalVocalizationDataset, AsteroidTrainer, Spec
 
 # Species configurations
 SPECIES_CONFIGS = {
-    'marmoset': {
-        'f0_min': 4000,
-        'f0_max': 8000,
-        'sample_rate': 44100,
-        'description': 'Mid-frequency primate (phee calls, trills)'
+    "marmoset": {
+        "f0_min": 4000,
+        "f0_max": 8000,
+        "sample_rate": 44100,
+        "description": "Mid-frequency primate (phee calls, trills)",
     },
-    'egyptian_bat': {
-        'f0_min': 100,
-        'f0_max': 17000,
-        'sample_rate': 44100,
-        'description': 'High-frequency (FM sweeps, echolocation)'
+    "egyptian_bat": {
+        "f0_min": 100,
+        "f0_max": 17000,
+        "sample_rate": 44100,
+        "description": "High-frequency (FM sweeps, echolocation)",
     },
-    'dolphin': {
-        'f0_min': 500,
-        'f0_max': 16000,
-        'sample_rate': 44100,
-        'description': 'Marine mammal (whistles, clicks)'
+    "dolphin": {
+        "f0_min": 500,
+        "f0_max": 16000,
+        "sample_rate": 44100,
+        "description": "Marine mammal (whistles, clicks)",
     },
-    'chimpanzee': {
-        'f0_min': 100,
-        'f0_max': 1900,
-        'sample_rate': 44100,
-        'description': 'Low-frequency primate (hoots, screams)'
+    "chimpanzee": {
+        "f0_min": 100,
+        "f0_max": 1900,
+        "sample_rate": 44100,
+        "description": "Low-frequency primate (hoots, screams)",
     },
 }
 
 
 def train_species_model(species_name):
     """Train model for a single species"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print(f"TRAINING MODEL FOR: {species_name.upper()}")
-    print("="*80)
+    print("=" * 80)
 
     if species_name not in SPECIES_CONFIGS:
         print(f"⚠️  Unknown species: {species_name}")
@@ -77,9 +77,9 @@ def train_species_model(species_name):
 
     config = SpeciesSpecificConfig(
         species_name=species_name,
-        f0_min_hz=species_config['f0_min'],
-        f0_max_hz=species_config['f0_max'],
-        sample_rate=species_config['sample_rate']
+        f0_min_hz=species_config["f0_min"],
+        f0_max_hz=species_config["f0_max"],
+        sample_rate=species_config["sample_rate"],
     )
 
     config.print_config()
@@ -95,12 +95,8 @@ def train_species_model(species_name):
 
     # Create data loader
     from torch.utils.data import DataLoader
-    train_loader = DataLoader(
-        dataset,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=0
-    )
+
+    train_loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=0)
 
     # Create trainer
     trainer = AsteroidTrainer(config)
@@ -127,26 +123,26 @@ def train_species_model(species_name):
     print(f"✅ Model saved to: {onnx_path}")
 
     return {
-        'species': species_name,
-        'checkpoint': str(checkpoint_path),
-        'onnx': str(onnx_path),
-        'f0_range': (config.f0_min_hz, config.f0_max_hz),
-        'filter_range': (config.filter_min_hz, config.filter_max_hz)
+        "species": species_name,
+        "checkpoint": str(checkpoint_path),
+        "onnx": str(onnx_path),
+        "f0_range": (config.f0_min_hz, config.f0_max_hz),
+        "filter_range": (config.filter_min_hz, config.filter_max_hz),
     }
 
 
 def train_general_model():
     """Train a general model for all species"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING GENERAL MULTI-SPECIES MODEL")
-    print("="*80)
+    print("=" * 80)
 
     # General model: wide frequency range covering all species
     config = SpeciesSpecificConfig(
         species_name="multispecies",
         f0_min_hz=100,  # Chimpanzee minimum
         f0_max_hz=17000,  # Bat maximum
-        sample_rate=44100
+        sample_rate=44100,
     )
 
     config.print_config()
@@ -165,12 +161,8 @@ def train_general_model():
 
     # Create data loader
     from torch.utils.data import DataLoader
-    train_loader = DataLoader(
-        dataset,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=0
-    )
+
+    train_loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=0)
 
     # Create trainer
     trainer = AsteroidTrainer(config)
@@ -197,33 +189,27 @@ def train_general_model():
     print(f"✅ Model saved to: {onnx_path}")
 
     return {
-        'species': 'multispecies',
-        'checkpoint': str(checkpoint_path),
-        'onnx': str(onnx_path),
-        'f0_range': (config.f0_min_hz, config.f0_max_hz),
-        'filter_range': (config.filter_min_hz, config.filter_max_hz)
+        "species": "multispecies",
+        "checkpoint": str(checkpoint_path),
+        "onnx": str(onnx_path),
+        "f0_range": (config.f0_min_hz, config.f0_max_hz),
+        "filter_range": (config.filter_min_hz, config.filter_max_hz),
     }
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Train Asteroid models for animal vocalization source separation'
+        description="Train Asteroid models for animal vocalization source separation"
+    )
+    parser.add_argument("--all", action="store_true", help="Train models for all species")
+    parser.add_argument(
+        "--general", action="store_true", help="Train a general multi-species model"
     )
     parser.add_argument(
-        '--all',
-        action='store_true',
-        help='Train models for all species'
-    )
-    parser.add_argument(
-        '--general',
-        action='store_true',
-        help='Train a general multi-species model'
-    )
-    parser.add_argument(
-        '--species',
-        nargs='+',
+        "--species",
+        nargs="+",
         choices=list(SPECIES_CONFIGS.keys()),
-        help='Specific species to train'
+        help="Specific species to train",
     )
 
     args = parser.parse_args()
@@ -253,24 +239,24 @@ def main():
                 results.append(result)
 
     # Print summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print(f"\nTrained {len(results)} models:\n")
 
     for i, result in enumerate(results, 1):
-        species = result['species']
-        f0_min, f0_max = result['f0_range']
-        filter_min, filter_max = result['filter_range']
+        species = result["species"]
+        f0_min, f0_max = result["f0_range"]
+        filter_min, filter_max = result["filter_range"]
         print(f"{i}. {species.upper()}")
         print(f"   F0 Range: {f0_min} - {f0_max} Hz")
         print(f"   Filter Range: {filter_min} - {filter_max} Hz")
         print(f"   ONNX: {result['onnx']}")
         print()
 
-    print("="*80)
+    print("=" * 80)
     print("MODEL SELECTION GUIDE")
-    print("="*80)
+    print("=" * 80)
     print("""
 1. SPECIES-SPECIFIC MODELS (best performance):
    - Use when you know the target species

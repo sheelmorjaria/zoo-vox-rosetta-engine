@@ -45,9 +45,11 @@ import soundfile as sf
 # Data Models
 # =============================================================================
 
+
 @dataclass
 class PhraseCandidate:
     """Candidate phrase from sliding window"""
+
     audio_segment: np.ndarray
     start_sample: int
     end_sample: int
@@ -59,6 +61,7 @@ class PhraseCandidate:
 @dataclass
 class AtomicPhrase:
     """Validated atomic phrase (clustered)"""
+
     phrase_id: str
     cluster_id: int
     features_29d: Dict[str, float]
@@ -71,6 +74,7 @@ class AtomicPhrase:
 @dataclass
 class Sentence:
     """Sentence (sequence of phrases)"""
+
     sentence_id: str
     audio_path: str
     start_sample: int
@@ -83,6 +87,7 @@ class Sentence:
 @dataclass
 class GrammarRule:
     """Transition rule between phrases"""
+
     from_phrase_id: str
     to_phrase_id: str
     frequency: int
@@ -93,6 +98,7 @@ class GrammarRule:
 @dataclass
 class ExtractionResult:
     """Complete extraction result"""
+
     sentences: List[Sentence]
     phrases: List[AtomicPhrase]
     grammar_rules: List[GrammarRule]
@@ -104,11 +110,9 @@ class ExtractionResult:
 # Step 1: PELT Sentence Segmentation
 # =============================================================================
 
+
 def segment_sentences_pelt(
-    audio: np.ndarray,
-    sr: int,
-    penalty: float = 10.0,
-    min_segment_length_sec: float = 0.3
+    audio: np.ndarray, sr: int, penalty: float = 10.0, min_segment_length_sec: float = 0.3
 ) -> List[int]:
     """
     Segment audio into sentences using PELT (Pruned Exact Linear Time).
@@ -167,7 +171,9 @@ def segment_sentences_pelt(
         samples_per_frame = n_samples // n_frames
 
         # Filter out endpoint
-        change_point_samples = [int(cp * samples_per_frame) for cp in change_points if cp < n_frames - 1]
+        change_point_samples = [
+            int(cp * samples_per_frame) for cp in change_points if cp < n_frames - 1
+        ]
 
         return change_point_samples
 
@@ -178,9 +184,7 @@ def segment_sentences_pelt(
 
 
 def _segment_by_energy(
-    audio: np.ndarray,
-    sr: int,
-    min_segment_length_sec: float = 0.3
+    audio: np.ndarray, sr: int, min_segment_length_sec: float = 0.3
 ) -> List[int]:
     """
     Fallback method: Segment by energy changes.
@@ -196,10 +200,12 @@ def _segment_by_energy(
 
     # Smooth
     from scipy.ndimage import gaussian_filter1d
+
     rms_smooth = gaussian_filter1d(rms, sigma=5)
 
     # Find local minima
     from scipy.signal import find_peaks
+
     minima, _ = find_peaks(-rms_smooth, distance=int(min_segment_length_sec * sr / hop_length))
 
     # Convert to samples
@@ -212,13 +218,14 @@ def _segment_by_energy(
 # Step 2: Sliding Window Phrase Extraction
 # =============================================================================
 
+
 def extract_phrase_candidates(
     audio: np.ndarray,
     sr: int,
     min_window_ms: int = 50,
     max_window_ms: int = 500,
     hop_ms: int = 25,
-    window_sizes_ms: Optional[List[int]] = None
+    window_sizes_ms: Optional[List[int]] = None,
 ) -> List[PhraseCandidate]:
     """
     Extract phrase candidates using sliding window.
@@ -275,7 +282,7 @@ def extract_phrase_candidates(
                 end_sample=end,
                 features_29d=features,
                 source_sentence_idx=-1,  # Will be assigned later
-                window_id=window_id
+                window_id=window_id,
             )
             candidates.append(candidate)
             window_id += 1
@@ -300,37 +307,39 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
             # Extract F0 using librosa
             f0, voiced_flag, voiced_probs = librosa.pyin(
                 y=audio,
-                fmin=librosa.note_to_hz('C2'),
-                fmax=librosa.note_to_hz('C7'),
+                fmin=librosa.note_to_hz("C2"),
+                fmax=librosa.note_to_hz("C7"),
                 sr=sr,
-                threshold=0.1
+                threshold=0.1,
             )
 
             # Use only voiced frames
             voiced_f0 = f0[voiced_flag]
 
             if len(voiced_f0) > 0:
-                features['mean_f0_hz'] = float(np.mean(voiced_f0))
-                features['f0_range_hz'] = float(np.max(voiced_f0) - np.min(voiced_f0))
+                features["mean_f0_hz"] = float(np.mean(voiced_f0))
+                features["f0_range_hz"] = float(np.max(voiced_f0) - np.min(voiced_f0))
             else:
-                features['mean_f0_hz'] = 0.0
-                features['f0_range_hz'] = 0.0
+                features["mean_f0_hz"] = 0.0
+                features["f0_range_hz"] = 0.0
 
-            features['duration_ms'] = len(audio) / sr * 1000.0
+            features["duration_ms"] = len(audio) / sr * 1000.0
 
             # === Grit Factors (3 features) ===
             # Harmonic-to-noise ratio
             harmonic, percussive = librosa.effects.hpss(audio)
-            energy_harmonic = np.mean(harmonic ** 2)
-            energy_total = np.mean(audio ** 2) + 1e-10
-            features['harmonic_to_noise_ratio'] = float(10 * np.log10(energy_harmonic / (energy_total - energy_harmonic + 1e-10)))
+            energy_harmonic = np.mean(harmonic**2)
+            energy_total = np.mean(audio**2) + 1e-10
+            features["harmonic_to_noise_ratio"] = float(
+                10 * np.log10(energy_harmonic / (energy_total - energy_harmonic + 1e-10))
+            )
 
             # Spectral flatness
             spectral_flatness = librosa.feature.spectral_flatness(y=audio)
-            features['spectral_flatness'] = float(np.mean(spectral_flatness))
+            features["spectral_flatness"] = float(np.mean(spectral_flatness))
 
             # Harmonicity (using harmonic/percussive separation)
-            features['harmonicity'] = float(np.clip(energy_harmonic / energy_total, 0.0, 1.0))
+            features["harmonicity"] = float(np.clip(energy_harmonic / energy_total, 0.0, 1.0))
 
             # === Motion Factors (7 features) ===
             # Envelope for attack/decay
@@ -341,51 +350,56 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
             # Attack time (to 90% of peak)
             attack_threshold = 0.9 * peak_amp
             attack_idx = np.where(envelope[:peak_idx] > attack_threshold)[0]
-            features['attack_time_ms'] = float(
-                (attack_idx[0] if len(attack_idx) > 0 else 0) / sr * 1000
-                if peak_idx > 0 else 0.0
+            features["attack_time_ms"] = float(
+                (attack_idx[0] if len(attack_idx) > 0 else 0) / sr * 1000 if peak_idx > 0 else 0.0
             )
 
             # Decay time (to 10% of peak)
             decay_threshold = 0.1 * peak_amp
             decay_idx = np.where(envelope[peak_idx:] < decay_threshold)[0]
-            features['decay_time_ms'] = float(
+            features["decay_time_ms"] = float(
                 (decay_idx[0] if len(decay_idx) > 0 else len(envelope) - peak_idx) / sr * 1000
-                if peak_idx < len(envelope) else 0.0
+                if peak_idx < len(envelope)
+                else 0.0
             )
 
             # Sustain level
-            features['sustain_level'] = float(np.mean(envelope[peak_idx:]) / (peak_amp + 1e-10))
+            features["sustain_level"] = float(np.mean(envelope[peak_idx:]) / (peak_amp + 1e-10))
 
             # Vibrato (using autocorrelation of envelope)
             if len(envelope) > 1024:
-                autocorr = np.correlate(envelope, envelope, mode='full')
-                autocorr = autocorr[len(autocorr)//2:]
+                autocorr = np.correlate(envelope, envelope, mode="full")
+                autocorr = autocorr[len(autocorr) // 2 :]
                 # Find peaks in autocorr
                 from scipy.signal import find_peaks
+
                 peaks, _ = find_peaks(autocorr, distance=int(sr * 0.05))
                 if len(peaks) >= 2:
                     # Vibrato rate from peak spacing
                     periods = np.diff(peaks)
                     if len(periods) > 0:
                         vibrato_period_samples = np.mean(periods)
-                        features['vibrato_rate_hz'] = sr / vibrato_period_samples
-                        features['vibrato_depth'] = float(np.std(envelope) / (np.mean(envelope) + 1e-10))
+                        features["vibrato_rate_hz"] = sr / vibrato_period_samples
+                        features["vibrato_depth"] = float(
+                            np.std(envelope) / (np.mean(envelope) + 1e-10)
+                        )
                     else:
-                        features['vibrato_rate_hz'] = 0.0
-                        features['vibrato_depth'] = 0.0
+                        features["vibrato_rate_hz"] = 0.0
+                        features["vibrato_depth"] = 0.0
                 else:
-                    features['vibrato_rate_hz'] = 0.0
-                    features['vibrato_depth'] = 0.0
+                    features["vibrato_rate_hz"] = 0.0
+                    features["vibrato_depth"] = 0.0
             else:
-                features['vibrato_rate_hz'] = 0.0
-                features['vibrato_depth'] = 0.0
+                features["vibrato_rate_hz"] = 0.0
+                features["vibrato_depth"] = 0.0
 
             # Jitter (frequency instability)
             if len(voiced_f0) > 1:
-                features['jitter'] = float(np.std(np.diff(voiced_f0)) / (np.mean(voiced_f0) + 1e-10))
+                features["jitter"] = float(
+                    np.std(np.diff(voiced_f0)) / (np.mean(voiced_f0) + 1e-10)
+                )
             else:
-                features['jitter'] = 0.0
+                features["jitter"] = 0.0
 
             # Shimmer (amplitude instability)
             zero_crossings = np.where(np.diff(np.sign(audio)))[0]
@@ -397,67 +411,77 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
                     if end > start:
                         peak_amps.append(np.max(np.abs(audio[start:end])))
                 if len(peak_amps) > 1:
-                    features['shimmer'] = float(np.std(peak_amps) / (np.mean(peak_amps) + 1e-10))
+                    features["shimmer"] = float(np.std(peak_amps) / (np.mean(peak_amps) + 1e-10))
                 else:
-                    features['shimmer'] = 0.0
+                    features["shimmer"] = 0.0
             else:
-                features['shimmer'] = 0.0
+                features["shimmer"] = 0.0
 
             # === MFCCs (13 features) ===
             mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
             for i in range(13):
-                features[f'mfcc_{i+1}'] = float(np.mean(mfcc[i]))
+                features[f"mfcc_{i + 1}"] = float(np.mean(mfcc[i]))
 
             # Spectral contrast
             spec_contrast = librosa.feature.spectral_contrast(y=audio, sr=sr)
-            features['spectral_contrast'] = float(np.mean(spec_contrast))
+            features["spectral_contrast"] = float(np.mean(spec_contrast))
 
             # Spectral flux
             S = np.abs(librosa.stft(audio + 1e-8))
             flux = np.linalg.norm(S[:, 1:] - S[:, :-1], axis=0)
-            features['spectral_flux'] = float(np.mean(flux) * 100)
+            features["spectral_flux"] = float(np.mean(flux) * 100)
 
             # === Rhythm Factors (3 features) ===
             # Onset detection
             onset_frames = librosa.onset.onset_detect(y=audio, sr=sr, wait=1)
-            features['onset_rate_hz'] = float(len(onset_frames) / (len(audio) / sr))
+            features["onset_rate_hz"] = float(len(onset_frames) / (len(audio) / sr))
 
             # ICI (inter-onset interval)
             if len(onset_frames) > 1:
                 onset_times = librosa.frames_to_time(onset_frames, sr=sr)
                 icis = np.diff(onset_times) * 1000  # Convert to ms
-                features['median_ici_ms'] = float(np.median(icis))
-                features['ici_coefficient_of_variation'] = float(
+                features["median_ici_ms"] = float(np.median(icis))
+                features["ici_coefficient_of_variation"] = float(
                     np.std(icis) / (np.mean(icis) + 1e-10)
                 )
             else:
-                features['median_ici_ms'] = 0.0
-                features['ici_coefficient_of_variation'] = 0.0
+                features["median_ici_ms"] = 0.0
+                features["ici_coefficient_of_variation"] = 0.0
 
         except Exception as e:
             # Fallback: return zeros for all features
             default_features = {
-                'mean_f0_hz': 0.0,
-                'duration_ms': len(audio) / sr * 1000.0,
-                'f0_range_hz': 0.0,
-                'harmonic_to_noise_ratio': 0.0,
-                'spectral_flatness': 0.0,
-                'harmonicity': 0.0,
-                'attack_time_ms': 0.0,
-                'decay_time_ms': 0.0,
-                'sustain_level': 0.0,
-                'vibrato_rate_hz': 0.0,
-                'vibrato_depth': 0.0,
-                'jitter': 0.0,
-                'shimmer': 0.0,
-                'mfcc_1': 0.0, 'mfcc_2': 0.0, 'mfcc_3': 0.0, 'mfcc_4': 0.0,
-                'mfcc_5': 0.0, 'mfcc_6': 0.0, 'mfcc_7': 0.0, 'mfcc_8': 0.0,
-                'mfcc_9': 0.0, 'mfcc_10': 0.0, 'mfcc_11': 0.0, 'mfcc_12': 0.0, 'mfcc_13': 0.0,
-                'spectral_contrast': 0.0,
-                'spectral_flux': 0.0,
-                'onset_rate_hz': 0.0,
-                'median_ici_ms': 0.0,
-                'ici_coefficient_of_variation': 0.0,
+                "mean_f0_hz": 0.0,
+                "duration_ms": len(audio) / sr * 1000.0,
+                "f0_range_hz": 0.0,
+                "harmonic_to_noise_ratio": 0.0,
+                "spectral_flatness": 0.0,
+                "harmonicity": 0.0,
+                "attack_time_ms": 0.0,
+                "decay_time_ms": 0.0,
+                "sustain_level": 0.0,
+                "vibrato_rate_hz": 0.0,
+                "vibrato_depth": 0.0,
+                "jitter": 0.0,
+                "shimmer": 0.0,
+                "mfcc_1": 0.0,
+                "mfcc_2": 0.0,
+                "mfcc_3": 0.0,
+                "mfcc_4": 0.0,
+                "mfcc_5": 0.0,
+                "mfcc_6": 0.0,
+                "mfcc_7": 0.0,
+                "mfcc_8": 0.0,
+                "mfcc_9": 0.0,
+                "mfcc_10": 0.0,
+                "mfcc_11": 0.0,
+                "mfcc_12": 0.0,
+                "mfcc_13": 0.0,
+                "spectral_contrast": 0.0,
+                "spectral_flux": 0.0,
+                "onset_rate_hz": 0.0,
+                "median_ici_ms": 0.0,
+                "ici_coefficient_of_variation": 0.0,
             }
             features = default_features
 
@@ -468,10 +492,9 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
 # Step 3: DBSCAN Phrase Clustering
 # =============================================================================
 
+
 def cluster_phrases_dbscan(
-    candidates: List[PhraseCandidate],
-    eps: float = 0.5,
-    min_samples: int = 5
+    candidates: List[PhraseCandidate], eps: float = 0.5, min_samples: int = 5
 ) -> List[AtomicPhrase]:
     """
     Cluster phrase candidates using DBSCAN.
@@ -521,12 +544,12 @@ def cluster_phrases_dbscan(
         representative_features_normalized = np.median(member_features, axis=0)
         representative_features = representative_features_normalized * X_std + X_mean
 
-        features_dict = {name: representative_features_normalized[i] for i, name in enumerate(feature_names)}
+        features_dict = {
+            name: representative_features_normalized[i] for i, name in enumerate(feature_names)
+        }
 
         # Calculate atomicity metrics
-        intra_sim, inter_sim = _calculate_cluster_similarities(
-            member_indices, labels, X_normalized
-        )
+        intra_sim, inter_sim = _calculate_cluster_similarities(member_indices, labels, X_normalized)
 
         phrase = AtomicPhrase(
             phrase_id=f"phrase_{cluster_id}",
@@ -535,7 +558,7 @@ def cluster_phrases_dbscan(
             member_candidates=member_candidates,
             intra_cluster_similarity=intra_sim,
             inter_cluster_similarity=inter_sim,
-            is_atomic=intra_sim > 0.7  # Atomic if high intra-cluster similarity
+            is_atomic=intra_sim > 0.7,  # Atomic if high intra-cluster similarity
         )
         phrases.append(phrase)
 
@@ -543,9 +566,7 @@ def cluster_phrases_dbscan(
 
 
 def _calculate_cluster_similarities(
-    member_indices: np.ndarray,
-    labels: np.ndarray,
-    X: np.ndarray
+    member_indices: np.ndarray, labels: np.ndarray, X: np.ndarray
 ) -> Tuple[float, float]:
     """Calculate intra and inter cluster similarity."""
     if len(member_indices) == 0:
@@ -554,7 +575,7 @@ def _calculate_cluster_similarities(
     # Intra-cluster similarity (1 - normalized avg distance)
     if len(member_indices) > 1:
         member_points = X[member_indices]
-        distances = pdist(member_points, metric='euclidean')
+        distances = pdist(member_points, metric="euclidean")
         intra_distance = np.mean(distances)
         intra_sim = 1.0 / (1.0 + intra_distance)  # Convert to similarity
     else:
@@ -582,9 +603,9 @@ def _calculate_cluster_similarities(
 # Step 4: Atomicity Testing
 # =============================================================================
 
+
 def calculate_phrase_atomicity(
-    candidates: List[PhraseCandidate],
-    all_candidates: List[PhraseCandidate]
+    candidates: List[PhraseCandidate], all_candidates: List[PhraseCandidate]
 ) -> Tuple[float, float, bool]:
     """
     Calculate atomicity of a phrase cluster.
@@ -617,8 +638,7 @@ def calculate_phrase_atomicity(
     for c in candidates:
         # Find matching candidate by window_id and source_sentence_idx
         for i, ac in enumerate(all_candidates):
-            if (ac.window_id == c.window_id and
-                ac.source_sentence_idx == c.source_sentence_idx):
+            if ac.window_id == c.window_id and ac.source_sentence_idx == c.source_sentence_idx:
                 member_indices.append(i)
                 break
 
@@ -634,8 +654,7 @@ def calculate_phrase_atomicity(
 
 
 def _calculate_cluster_similarities_from_indices(
-    member_indices: List[int],
-    X: np.ndarray
+    member_indices: List[int], X: np.ndarray
 ) -> Tuple[float, float]:
     """Calculate similarities from indices."""
     if len(member_indices) == 0:
@@ -645,7 +664,7 @@ def _calculate_cluster_similarities_from_indices(
 
     # Intra-cluster
     if len(member_indices) > 1:
-        distances = pdist(member_points, metric='euclidean')
+        distances = pdist(member_points, metric="euclidean")
         intra_distance = np.mean(distances)
         intra_sim = 1.0 / (1.0 + intra_distance)
     else:
@@ -671,9 +690,8 @@ def _calculate_cluster_similarities_from_indices(
 # Step 5: Compositionality Testing
 # =============================================================================
 
-def detect_compositionality(
-    sentences: List[Sentence]
-) -> Dict[str, float]:
+
+def detect_compositionality(sentences: List[Sentence]) -> Dict[str, float]:
     """
     Detect phrase reuse (compositionality) across sentences.
 
@@ -711,9 +729,8 @@ def detect_compositionality(
 # Step 6: Grammar Rule Building
 # =============================================================================
 
-def build_grammar_rules(
-    sentences: List[Sentence]
-) -> List[GrammarRule]:
+
+def build_grammar_rules(sentences: List[Sentence]) -> List[GrammarRule]:
     """
     Build grammar rules from observed phrase transitions.
 
@@ -753,7 +770,7 @@ def build_grammar_rules(
             to_phrase_id=to_phrase,
             frequency=count,
             probability=probability,
-            contexts=list(transition_contexts[(from_phrase, to_phrase)])
+            contexts=list(transition_contexts[(from_phrase, to_phrase)]),
         )
         rules.append(rule)
 
@@ -767,13 +784,14 @@ def build_grammar_rules(
 # Complete Pipeline
 # =============================================================================
 
+
 def extract_phrases_sentences_grammar(
     audio_dir: Path,
     annotations_file: Optional[Path] = None,
     output_dir: Optional[Path] = None,
     pelt_penalty: float = 10.0,
     dbscan_eps: float = 0.5,
-    dbscan_min_samples: int = 5
+    dbscan_min_samples: int = 5,
 ) -> ExtractionResult:
     """
     Complete extraction pipeline.
@@ -800,7 +818,7 @@ def extract_phrases_sentences_grammar(
     # Load annotations if provided
     annotations = {}
     if annotations_file and annotations_file.exists():
-        with open(annotations_file, 'r') as f:
+        with open(annotations_file, "r") as f:
             annotations = json.load(f)
 
     # Process each audio file
@@ -817,7 +835,7 @@ def extract_phrases_sentences_grammar(
         audio, sr = librosa.load(str(audio_file), sr=None)
 
         # Get context from annotations
-        context = annotations.get(audio_file.stem, {}).get('context', 'unknown')
+        context = annotations.get(audio_file.stem, {}).get("context", "unknown")
 
         # Step 1: Segment into sentences
         change_points = segment_sentences_pelt(audio, sr, penalty=pelt_penalty)
@@ -854,7 +872,7 @@ def extract_phrases_sentences_grammar(
                 end_sample=next_change,
                 phrases=[],
                 context=context,
-                compositionality_score=0.0
+                compositionality_score=0.0,
             )
             all_sentences.append(sentence)
             sentence_id_counter += 1
@@ -863,11 +881,7 @@ def extract_phrases_sentences_grammar(
 
     # Step 3: Cluster all candidates into atomic phrases
     print(f"Clustering {len(all_candidates)} candidates...")
-    phrases = cluster_phrases_dbscan(
-        all_candidates,
-        eps=dbscan_eps,
-        min_samples=dbscan_min_samples
-    )
+    phrases = cluster_phrases_dbscan(all_candidates, eps=dbscan_eps, min_samples=dbscan_min_samples)
 
     print(f"Found {len(phrases)} atomic phrases")
 
@@ -875,7 +889,7 @@ def extract_phrases_sentences_grammar(
     for sentence in all_sentences:
         sentence_phrases = []
         for candidate in all_candidates:
-            if candidate.source_sentence_idx == int(sentence.sentence_id.split('_')[1]):
+            if candidate.source_sentence_idx == int(sentence.sentence_id.split("_")[1]):
                 # Find which cluster this candidate belongs to
                 for phrase in phrases:
                     if candidate in phrase.member_candidates:
@@ -899,10 +913,9 @@ def extract_phrases_sentences_grammar(
     # Update sentences with compositionality scores
     for sentence in all_sentences:
         if sentence.phrases:
-            avg_score = np.mean([
-                compositionality_scores.get(p.phrase_id, 0.0)
-                for p in sentence.phrases
-            ])
+            avg_score = np.mean(
+                [compositionality_scores.get(p.phrase_id, 0.0) for p in sentence.phrases]
+            )
             sentence.compositionality_score = float(avg_score)
 
     # Step 6: Build grammar
@@ -919,34 +932,38 @@ def extract_phrases_sentences_grammar(
 
     # Create metadata
     metadata = {
-        'num_sentences': len(all_sentences),
-        'num_phrases': len(phrases),
-        'num_grammar_rules': len(grammar_rules),
-        'parameters': {
-            'pelt_penalty': pelt_penalty,
-            'dbscan_eps': dbscan_eps,
-            'dbscan_min_samples': dbscan_min_samples
-        }
+        "num_sentences": len(all_sentences),
+        "num_phrases": len(phrases),
+        "num_grammar_rules": len(grammar_rules),
+        "parameters": {
+            "pelt_penalty": pelt_penalty,
+            "dbscan_eps": dbscan_eps,
+            "dbscan_min_samples": dbscan_min_samples,
+        },
     }
 
     # Export metadata
     metadata_path = output_dir / "extraction_metadata.json"
-    with open(metadata_path, 'w') as f:
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
     # Export grammar
     grammar_path = output_dir / "grammar_rules.json"
-    with open(grammar_path, 'w') as f:
-        json.dump([
-            {
-                'from': r.from_phrase_id,
-                'to': r.to_phrase_id,
-                'frequency': r.frequency,
-                'probability': r.probability,
-                'contexts': r.contexts
-            }
-            for r in grammar_rules
-        ], f, indent=2)
+    with open(grammar_path, "w") as f:
+        json.dump(
+            [
+                {
+                    "from": r.from_phrase_id,
+                    "to": r.to_phrase_id,
+                    "frequency": r.frequency,
+                    "probability": r.probability,
+                    "contexts": r.contexts,
+                }
+                for r in grammar_rules
+            ],
+            f,
+            indent=2,
+        )
 
     print(f"\n✓ Extraction complete!")
     print(f"  Sentences: {len(all_sentences)}")
@@ -959,7 +976,7 @@ def extract_phrases_sentences_grammar(
         phrases=phrases,
         grammar_rules=grammar_rules,
         audio_segments_dir=audio_segments_dir,
-        metadata=metadata
+        metadata=metadata,
     )
 
 
@@ -976,7 +993,5 @@ if __name__ == "__main__":
     output_dir = Path(sys.argv[3]) if len(sys.argv) > 3 else None
 
     result = extract_phrases_sentences_grammar(
-        audio_dir=audio_dir,
-        annotations_file=annotations_file,
-        output_dir=output_dir
+        audio_dir=audio_dir, annotations_file=annotations_file, output_dir=output_dir
     )

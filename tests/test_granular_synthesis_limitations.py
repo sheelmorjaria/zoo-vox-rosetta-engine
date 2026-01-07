@@ -57,12 +57,12 @@ class TestFormantBarrier(unittest.TestCase):
     def calculate_hnr(self, audio, sample_rate):
         """Estimate harmonic-to-noise ratio (simplified)"""
         # Use autocorrelation to estimate harmonicity
-        autocorr = np.correlate(audio, audio, mode='full')
-        autocorr = autocorr[len(autocorr)//2:]
+        autocorr = np.correlate(audio, audio, mode="full")
+        autocorr = autocorr[len(autocorr) // 2 :]
         # Peak at lag 0 vs peak at fundamental period
         peak_0 = autocorr[0]
         # Find first significant peak (avoid DC)
-        peak_1 = np.max(autocorr[10:len(autocorr)//10])
+        peak_1 = np.max(autocorr[10 : len(autocorr) // 10])
         if peak_0 > 0:
             return 20 * np.log10(peak_1 / (peak_0 + 1e-10) + 1e-10)
         return 0.0
@@ -87,7 +87,9 @@ class TestFormantBarrier(unittest.TestCase):
         flatness = self.calculate_spectral_flatness(audio)
         # Note: Pure sine waves can have higher flatness in FFT due to windowing
         # But they should still be lower than transients
-        self.assertLess(flatness, 0.5, "Harmonic source should have relatively low spectral flatness")
+        self.assertLess(
+            flatness, 0.5, "Harmonic source should have relatively low spectral flatness"
+        )
 
     def test_transient_source_has_high_spectral_flatness(self):
         """Test that transient source has higher spectral flatness than harmonic"""
@@ -104,7 +106,7 @@ class TestFormantBarrier(unittest.TestCase):
             harmonic_flatness,
             transient_flatness,
             places=1,
-            msg="Transient should have different spectral characteristics than harmonic"
+            msg="Transient should have different spectral characteristics than harmonic",
         )
 
     def test_harmonic_preserves_spectral_flatness_after_pitch_shift(self):
@@ -133,14 +135,14 @@ class TestFormantBarrier(unittest.TestCase):
             output_flatness,
             original_flatness,
             delta=0.2,  # Increased tolerance for granular artifacts
-            msg="Pitch shift should approximately preserve spectral flatness (Formant Barrier)"
+            msg="Pitch shift should approximately preserve spectral flatness (Formant Barrier)",
         )
 
         # Assert: Output is still in the "tonal" range (not becoming fully transient)
         self.assertLess(
             output_flatness,
             0.6,  # Increased threshold to account for granular artifacts
-            "Pitch-shifted harmonic should remain predominantly tonal"
+            "Pitch-shifted harmonic should remain predominantly tonal",
         )
 
     def test_harmonic_preserves_spectral_flatness_after_time_stretch(self):
@@ -163,12 +165,12 @@ class TestFormantBarrier(unittest.TestCase):
             output_flatness,
             original_flatness,
             delta=0.25,  # Increased tolerance for time stretch artifacts
-            msg="Time stretch should approximately preserve spectral flatness"
+            msg="Time stretch should approximately preserve spectral flatness",
         )
         self.assertLess(
             output_flatness,
             0.6,  # Increased threshold to account for granular artifacts
-            "Time-stretched harmonic should remain predominantly tonal"
+            "Time-stretched harmonic should remain predominantly tonal",
         )
 
     def test_transient_preserves_spectral_flatness(self):
@@ -191,7 +193,7 @@ class TestFormantBarrier(unittest.TestCase):
         self.assertGreater(
             output_flatness,
             0.3,
-            "Transient should remain clicky (high spectral flatness) after synthesis"
+            "Transient should remain clicky (high spectral flatness) after synthesis",
         )
         # Assert: Spectral flatness is approximately preserved (Formant Barrier)
         # Note: Transients are more affected by granular processing than harmonic sounds
@@ -200,7 +202,7 @@ class TestFormantBarrier(unittest.TestCase):
             output_flatness,
             original_flatness,
             delta=0.9,  # Large tolerance because transients are heavily affected by grain boundaries
-            msg="Transient should preserve spectral flatness (Formant Barrier)"
+            msg="Transient should preserve spectral flatness (Formant Barrier)",
         )
 
     def test_harmonic_cannot_become_transient_via_granular_synthesis(self):
@@ -226,7 +228,7 @@ class TestFormantBarrier(unittest.TestCase):
         self.assertLess(
             output_flatness,
             0.35,
-            "Harmonic source CANNOT become transient via granular synthesis (Formant Barrier)"
+            "Harmonic source CANNOT become transient via granular synthesis (Formant Barrier)",
         )
 
     def test_transient_cannot_become_harmonic_via_granular_synthesis(self):
@@ -249,7 +251,7 @@ class TestFormantBarrier(unittest.TestCase):
         self.assertGreater(
             output_flatness,
             0.25,
-            "Transient source CANNOT become harmonic via granular synthesis (Formant Barrier)"
+            "Transient source CANNOT become harmonic via granular synthesis (Formant Barrier)",
         )
 
     def test_attack_time_preservation(self):
@@ -275,7 +277,7 @@ class TestFormantBarrier(unittest.TestCase):
         self.assertLess(
             transient_output_attack,
             20.0,  # Allow some granular smoothing but still relatively fast
-            "Transient should maintain sharp-ish attack"
+            "Transient should maintain sharp-ish attack",
         )
 
 
@@ -314,16 +316,14 @@ class TestAcousticAlgebraLimitations(unittest.TestCase):
         # Assert: Picks closest modality (harmonic_gritty at 0.2)
         # NOT a hybrid
         self.assertEqual(
-            nearest,
-            "harmonic_gritty",
-            "Acoustic algebra picks closest modality, not hybrid"
+            nearest, "harmonic_gritty", "Acoustic algebra picks closest modality, not hybrid"
         )
 
         # Assert: Does NOT pick the opposite modality
         self.assertNotEqual(
             nearest,
             "transient_clicky",
-            "Should not pick distant modality even if mathematically 'balanced'"
+            "Should not pick distant modality even if mathematically 'balanced'",
         )
 
 
@@ -374,11 +374,7 @@ class TestPersonaSwitchingSolution(unittest.TestCase):
         harmonic_flatness = self.calculate_spectral_flatness(harmonic_output)
 
         # Assert: Harmonic output has low flatness
-        self.assertLess(
-            harmonic_flatness,
-            0.5,
-            "Harmonic source should produce tonal output"
-        )
+        self.assertLess(harmonic_flatness, 0.5, "Harmonic source should produce tonal output")
 
         # Test: Switching to transient source produces transient output
         synth.load_source(transient_audio)
@@ -390,7 +386,7 @@ class TestPersonaSwitchingSolution(unittest.TestCase):
         self.assertGreater(
             transient_flatness,
             harmonic_flatness * 0.8,
-            "Transient source should produce clicky output"
+            "Transient source should produce clicky output",
         )
 
     def test_persona_router_logic(self):
@@ -417,22 +413,22 @@ class TestPersonaSwitchingSolution(unittest.TestCase):
         self.assertEqual(
             select_source_for_modality("HARMONIC"),
             "MARMOSET_PHEE",
-            "Should select harmonic source for harmonic target"
+            "Should select harmonic source for harmonic target",
         )
         self.assertEqual(
             select_source_for_modality("TRANSIENT"),
             "BAT_CLICK",
-            "Should select transient source for transient target"
+            "Should select transient source for transient target",
         )
         self.assertEqual(
             select_source_for_modality("FM_SWEEP"),
             "BAT_FM_SWEEP",
-            "Should select FM sweep source for FM sweep target"
+            "Should select FM sweep source for FM sweep target",
         )
         self.assertEqual(
             select_source_for_modality("RHYTHMIC"),
             "FINCH_TRILL",
-            "Should select rhythmic source for rhythmic target"
+            "Should select rhythmic source for rhythmic target",
         )
 
 
@@ -462,21 +458,19 @@ class TestGranularCloudRhythmicIllusion(unittest.TestCase):
             # Simple onset detection: count peaks in amplitude envelope
             envelope = np.abs(audio)
             threshold = 0.3 * np.max(envelope)
-            peaks = signal.find_peaks(envelope, distance=sample_rate//20, height=threshold)[0]
+            peaks = signal.find_peaks(envelope, distance=sample_rate // 20, height=threshold)[0]
             return len(peaks) / (len(audio) / sample_rate)
 
         onset_rate = calculate_onset_rate(output, sample_rate)
 
         # Assert: Small grains create temporal structure
         self.assertGreater(
-            onset_rate,
-            10.0,
-            "Granular cloud with small grains should create rhythmic texture"
+            onset_rate, 10.0, "Granular cloud with small grains should create rhythmic texture"
         )
 
         # Note: This rhythm is artificial, not biological
         # Useful for testing semiotic emergence, not mimicking natural calls
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

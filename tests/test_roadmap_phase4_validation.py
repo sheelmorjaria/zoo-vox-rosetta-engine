@@ -18,8 +18,9 @@ import unittest
 import numpy as np
 
 # Import all enhancement modules
-sys.path.append('src')
-sys.path.append('src/scientific_validation')
+sys.path.append("src")
+sys.path.append("src/scientific_validation")
+
 
 class TestProvenanceTracer(unittest.TestCase):
     """Test Suite for Provenance Tracer Implementation"""
@@ -27,7 +28,7 @@ class TestProvenanceTracer(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures for provenance tests"""
         self.temp_dir = tempfile.mkdtemp()
-        self.log_file = os.path.join(self.temp_dir, 'provenance.log')
+        self.log_file = os.path.join(self.temp_dir, "provenance.log")
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -61,15 +62,14 @@ class TestProvenanceTracer(unittest.TestCase):
             parent_trace_id=12345,
             session_id=67890,
             checksum=0,
-            padding=0
+            padding=0,
         )
 
         # 2. Serialize to binary format
         binary_data = entry.to_bytes()
 
         # 3. Verify all entries are precisely 64 bytes
-        self.assertEqual(len(binary_data), 64,
-                        f"Expected 64 bytes, got {len(binary_data)}")
+        self.assertEqual(len(binary_data), 64, f"Expected 64 bytes, got {len(binary_data)}")
 
         # 4. Verify data can be reconstructed correctly
         reconstructed = TraceEntry.from_bytes(binary_data)
@@ -86,6 +86,7 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_zero_allocation_logging(self):
         """Test that logging produces zero garbage collection allocations"""
         import gc
+
         gc.disable()  # Disable GC for testing
 
         try:
@@ -101,13 +102,13 @@ class TestProvenanceTracer(unittest.TestCase):
 
             # 1. Enable allocation tracking (approximation)
             tracer = ProvenanceTracer(
-                storage_path="./test_provenance_zero_alloc",
-                enable_high_speed_mode=True
+                storage_path="./test_provenance_zero_alloc", enable_high_speed_mode=True
             )
             tracer.start()
 
             # Get initial memory state (approximation)
             import psutil
+
             process = psutil.Process()
             initial_memory = process.memory_info().rss
 
@@ -118,11 +119,7 @@ class TestProvenanceTracer(unittest.TestCase):
 
             start_time = time.time()
             for i in range(entry_count):
-                tracer.create_trace(
-                    ContextType.EXTRACTION,
-                    decision_vector,
-                    synthesis_params
-                )
+                tracer.create_trace(ContextType.EXTRACTION, decision_vector, synthesis_params)
 
             end_time = time.time()
 
@@ -135,18 +132,27 @@ class TestProvenanceTracer(unittest.TestCase):
             # but we can verify memory growth is minimal
             entries_per_second = entry_count / (end_time - start_time)
 
-            self.assertGreater(entries_per_second, 5000,
-                             f"Should log at 5000+ entries/sec (got {entries_per_second:.0f})")
+            self.assertGreater(
+                entries_per_second,
+                5000,
+                f"Should log at 5000+ entries/sec (got {entries_per_second:.0f})",
+            )
 
             # Memory increase should be minimal (< 1MB for 1000 entries)
-            self.assertLess(memory_increase, 1024 * 1024,
-                           f"Memory increase {memory_increase / 1024:.1f}KB "
-                           f"should be <1MB for {entry_count} entries")
+            self.assertLess(
+                memory_increase,
+                1024 * 1024,
+                f"Memory increase {memory_increase / 1024:.1f}KB "
+                f"should be <1MB for {entry_count} entries",
+            )
 
             # Verify tracer is still working correctly
             stats = tracer.get_performance_stats()
-            self.assertEqual(stats['trace_manager']['total_traces'], entry_count,
-                           f"Should have logged {entry_count} traces")
+            self.assertEqual(
+                stats["trace_manager"]["total_traces"],
+                entry_count,
+                f"Should have logged {entry_count} traces",
+            )
 
             tracer.stop()
 
@@ -179,7 +185,7 @@ class TestProvenanceTracer(unittest.TestCase):
             parent_trace_id=12345,
             session_id=67890,
             checksum=0,
-            padding=0
+            padding=0,
         )
 
         # Create valid entry
@@ -196,8 +202,7 @@ class TestProvenanceTracer(unittest.TestCase):
         corrupted_data = bytes(corrupted_data)
 
         corrupted_entry = TraceEntry.from_bytes(corrupted_data)
-        self.assertFalse(corrupted_entry.validate(),
-                        "Corrupted entry should fail validation")
+        self.assertFalse(corrupted_entry.validate(), "Corrupted entry should fail validation")
 
         # Test multiple corruption scenarios - only corrupt data bytes, not padding
         # Data bytes are in positions 0-53 (first 54 bytes including padding in format)
@@ -209,20 +214,21 @@ class TestProvenanceTracer(unittest.TestCase):
             # The 54-byte block includes data + padding
             # Data bytes are 0-46 (47 bytes), padding is 47-53 (7 bytes)
             if i <= 46:  # Bytes that affect the checksum
-                self.assertFalse(test_entry.validate(),
-                               f"Corrupted byte {i} should fail validation")
+                self.assertFalse(
+                    test_entry.validate(), f"Corrupted byte {i} should fail validation"
+                )
             else:
                 # Padding bytes won't affect checksum, so validation might still pass
-                self.assertTrue(test_entry.validate(),
-                             f"Corrupted padding byte {i} might still pass validation")
+                self.assertTrue(
+                    test_entry.validate(), f"Corrupted padding byte {i} might still pass validation"
+                )
 
         # 4. Test entry with specific corruption patterns
         # Flip the context type
         context_corrupted = bytearray(valid_data)
         context_corrupted[8] ^= 0xFF
         context_entry = TraceEntry.from_bytes(bytes(context_corrupted))
-        self.assertFalse(context_entry.validate(),
-                        "Context type corruption should be detected")
+        self.assertFalse(context_entry.validate(), "Context type corruption should be detected")
 
         # Flip the checksum itself
         checksum_corrupted = bytearray(valid_data)
@@ -242,8 +248,7 @@ class TestProvenanceTracer(unittest.TestCase):
 
         # 1. Enable high-speed logging mode
         tracer = ProvenanceTracer(
-            storage_path="./test_provenance_data",
-            enable_high_speed_mode=True
+            storage_path="./test_provenance_data", enable_high_speed_mode=True
         )
         tracer.start()
 
@@ -262,11 +267,7 @@ class TestProvenanceTracer(unittest.TestCase):
 
             # Log rapidly for 1 second
             while time.time() - start_time < target_duration:
-                tracer.create_trace(
-                    ContextType.EXTRACTION,
-                    decision_vector,
-                    synthesis_params
-                )
+                tracer.create_trace(ContextType.EXTRACTION, decision_vector, synthesis_params)
                 entry_count += 1
 
             end_time = time.time()
@@ -276,14 +277,20 @@ class TestProvenanceTracer(unittest.TestCase):
             entries_per_second = entry_count / actual_duration
 
             # 4. Verify >10,000 entries/second
-            self.assertGreater(entries_per_second, 10000,
-                             f"Logged {entry_count} entries in {actual_duration:.3f}s "
-                             f"({entries_per_second:.0f} entries/second), expected >10,000")
+            self.assertGreater(
+                entries_per_second,
+                10000,
+                f"Logged {entry_count} entries in {actual_duration:.3f}s "
+                f"({entries_per_second:.0f} entries/second), expected >10,000",
+            )
 
             # Also verify the tracer is still functioning correctly
             stats = tracer.get_performance_stats()
-            self.assertGreater(stats['trace_manager']['active_traces'], 0,
-                             "Should have active traces after logging")
+            self.assertGreater(
+                stats["trace_manager"]["active_traces"],
+                0,
+                "Should have active traces after logging",
+            )
 
         finally:
             tracer.stop()
@@ -320,27 +327,29 @@ class TestProvenanceTracer(unittest.TestCase):
                 parent_trace_id=12345,
                 session_id=67890,
                 checksum=0,
-                padding=0
+                padding=0,
             )
-            test_data_list.append({
-                'timestamp': entry.timestamp,
-                'context_type': entry.context_type,
-                'decision_vector': entry.decision_vector,
-                'synthesis_params': entry.synthesis_params,
-                'parent_trace_id': entry.parent_trace_id,
-                'session_id': entry.session_id,
-                'additional_data': 'test' * 10  # Some string data
-            })
+            test_data_list.append(
+                {
+                    "timestamp": entry.timestamp,
+                    "context_type": entry.context_type,
+                    "decision_vector": entry.decision_vector,
+                    "synthesis_params": entry.synthesis_params,
+                    "parent_trace_id": entry.parent_trace_id,
+                    "session_id": entry.session_id,
+                    "additional_data": "test" * 10,  # Some string data
+                }
+            )
             binary_data_list.append(entry.to_bytes())
 
         # 1. Store test_entries in JSON format
-        json_file = os.path.join(self.temp_dir, 'test_entries.json')
-        with open(json_file, 'w') as f:
+        json_file = os.path.join(self.temp_dir, "test_entries.json")
+        with open(json_file, "w") as f:
             json.dump(test_data_list, f)
 
         # 2. Store test_entries in binary format
-        binary_file = os.path.join(self.temp_dir, 'test_entries.bin')
-        with open(binary_file, 'wb') as f:
+        binary_file = os.path.join(self.temp_dir, "test_entries.bin")
+        with open(binary_file, "wb") as f:
             for binary_data in binary_data_list:
                 f.write(binary_data)
 
@@ -350,24 +359,30 @@ class TestProvenanceTracer(unittest.TestCase):
 
         # 4. Verify binary is < 50% of JSON size
         efficiency_ratio = binary_size / json_size
-        self.assertLess(efficiency_ratio, 0.5,
-                       f"Binary format ({binary_size} bytes) should be <50% of JSON size "
-                       f"({json_size} bytes), ratio: {efficiency_ratio:.3f}")
+        self.assertLess(
+            efficiency_ratio,
+            0.5,
+            f"Binary format ({binary_size} bytes) should be <50% of JSON size "
+            f"({json_size} bytes), ratio: {efficiency_ratio:.3f}",
+        )
 
         # Verify we can read back the binary data correctly
-        with open(binary_file, 'rb') as f:
+        with open(binary_file, "rb") as f:
             read_back_data = f.read()
 
-        self.assertEqual(len(read_back_data), test_entries * 64,
-                        f"Binary file should contain exactly {test_entries * 64} bytes")
+        self.assertEqual(
+            len(read_back_data),
+            test_entries * 64,
+            f"Binary file should contain exactly {test_entries * 64} bytes",
+        )
 
         # Verify a few entries can be reconstructed
         for i in range(min(5, test_entries)):
             entry_offset = i * 64
-            entry_data = read_back_data[entry_offset:entry_offset + 64]
+            entry_data = read_back_data[entry_offset : entry_offset + 64]
             reconstructed = TraceEntry.from_bytes(entry_data)
-            self.assertEqual(reconstructed.timestamp, test_data_list[i]['timestamp'])
-            self.assertEqual(reconstructed.context_type, test_data_list[i]['context_type'])
+            self.assertEqual(reconstructed.timestamp, test_data_list[i]["timestamp"])
+            self.assertEqual(reconstructed.context_type, test_data_list[i]["context_type"])
 
     def test_real_time_logging_latency(self):
         """Test that logging adds <1ms latency to audio processing"""
@@ -402,19 +417,14 @@ class TestProvenanceTracer(unittest.TestCase):
 
         # 2. Measure audio processing latency with logging
         tracer = ProvenanceTracer(
-            storage_path="./test_provenance_data",
-            enable_high_speed_mode=True
+            storage_path="./test_provenance_data", enable_high_speed_mode=True
         )
         tracer.start()
 
         latencies_with_log = []
         for _ in range(iterations):
             # Create trace entry just before processing
-            tracer.create_trace(
-                ContextType.ANALYSIS,
-                DecisionVector(),
-                SynthesisParams()
-            )
+            tracer.create_trace(ContextType.ANALYSIS, DecisionVector(), SynthesisParams())
 
             processed, latency = process_audio_chunk(test_audio)
             latencies_with_log.append(latency)
@@ -426,14 +436,20 @@ class TestProvenanceTracer(unittest.TestCase):
         additional_latency = avg_latency_with_log - avg_latency_no_log
 
         # 4. Verify additional latency < 1ms
-        self.assertLess(additional_latency, 1.0,
-                       f"Logging adds {additional_latency:.3f}ms latency, "
-                       f"expected <1ms (baseline: {avg_latency_no_log:.3f}ms)")
+        self.assertLess(
+            additional_latency,
+            1.0,
+            f"Logging adds {additional_latency:.3f}ms latency, "
+            f"expected <1ms (baseline: {avg_latency_no_log:.3f}ms)",
+        )
 
         # Also verify that the baseline latency is reasonable
-        self.assertLess(avg_latency_no_log, 0.5,
-                       f"Baseline processing latency {avg_latency_no_log:.3f}ms "
-                       f"should be <0.5ms for audio processing")
+        self.assertLess(
+            avg_latency_no_log,
+            0.5,
+            f"Baseline processing latency {avg_latency_no_log:.3f}ms "
+            f"should be <0.5ms for audio processing",
+        )
 
     def test_large_file_handling(self):
         """Test that system can handle >1GB log files efficiently"""
@@ -450,8 +466,7 @@ class TestProvenanceTracer(unittest.TestCase):
 
         # Create tracer with small file size for quick testing
         tracer = ProvenanceTracer(
-            storage_path="./test_provenance_large_data",
-            enable_high_speed_mode=True
+            storage_path="./test_provenance_large_data", enable_high_speed_mode=True
         )
         tracer.start()
 
@@ -469,53 +484,60 @@ class TestProvenanceTracer(unittest.TestCase):
                 batch_entries = min(entries_per_batch, entries_needed - batch)
 
                 for _ in range(batch_entries):
-                    tracer.create_trace(
-                        ContextType.EXTRACTION,
-                        DecisionVector(),
-                        SynthesisParams()
-                    )
+                    tracer.create_trace(ContextType.EXTRACTION, DecisionVector(), SynthesisParams())
                     total_entries += 1
 
                 # Check file size periodically
                 stats = tracer.get_performance_stats()
-                if stats['storage_manager']['total_size_bytes'] >= target_size_bytes:
+                if stats["storage_manager"]["total_size_bytes"] >= target_size_bytes:
                     break
 
                 # Progress update
                 if total_entries % 10000 == 0:
                     elapsed = time.time() - start_time
                     rate = total_entries / elapsed if elapsed > 0 else 0
-                    print(f"Logged {total_entries} entries, "
-                          f"{stats['storage_manager']['total_size_bytes'] / (1024*1024):.1f}MB, "
-                          f"{rate:.0f} entries/sec")
+                    print(
+                        f"Logged {total_entries} entries, "
+                        f"{stats['storage_manager']['total_size_bytes'] / (1024 * 1024):.1f}MB, "
+                        f"{rate:.0f} entries/sec"
+                    )
 
             # 2. Monitor file size
             stats = tracer.get_performance_stats()
-            final_size = stats['storage_manager']['total_size_bytes']
+            final_size = stats["storage_manager"]["total_size_bytes"]
             final_mb = final_size / (1024 * 1024)
 
-            self.assertGreaterEqual(final_size, target_size_bytes,
-                                   f"Reached {final_mb:.1f}MB (target: {target_size_mb}MB)")
+            self.assertGreaterEqual(
+                final_size,
+                target_size_bytes,
+                f"Reached {final_mb:.1f}MB (target: {target_size_mb}MB)",
+            )
 
             # 3. Verify no corruption and all entries readable
-            self.assertGreater(stats['storage_manager']['total_files'], 0,
-                             "Should have created at least one file")
+            self.assertGreater(
+                stats["storage_manager"]["total_files"], 0, "Should have created at least one file"
+            )
 
             # Try to read back some entries to verify integrity
             # (This is simplified - in practice you'd read the actual files)
-            self.assertGreater(stats['trace_manager']['active_traces'], 0,
-                             "Should have active traces")
+            self.assertGreater(
+                stats["trace_manager"]["active_traces"], 0, "Should have active traces"
+            )
 
             # 4. Performance monitoring
             total_time = time.time() - start_time
             throughput_mbps = final_size / total_time / (1024 * 1024)
 
-            self.assertGreater(throughput_mbps, 1.0,
-                             f"File writing throughput {throughput_mbps:.1f}MB/s "
-                             f"should be >1MB/s")
+            self.assertGreater(
+                throughput_mbps,
+                1.0,
+                f"File writing throughput {throughput_mbps:.1f}MB/s should be >1MB/s",
+            )
 
-            print(f"Large file test completed: {final_mb:.1f}MB in {total_time:.1f}s "
-                  f"({throughput_mbps:.1f}MB/s)")
+            print(
+                f"Large file test completed: {final_mb:.1f}MB in {total_time:.1f}s "
+                f"({throughput_mbps:.1f}MB/s)"
+            )
 
         finally:
             tracer.stop()
@@ -527,7 +549,7 @@ class TestABTestingController(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures for A/B testing tests"""
         self.temp_dir = tempfile.mkdtemp()
-        self.test_log_dir = os.path.join(self.temp_dir, 'ab_logs')
+        self.test_log_dir = os.path.join(self.temp_dir, "ab_logs")
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -615,10 +637,10 @@ class TestABTestingController(unittest.TestCase):
     def test_failure_safety_mechanisms(self):
         """Test that system fails safely if blind integrity compromised"""
         failure_scenarios = [
-            'corrupted_log',
-            'missing_encryption_key',
-            'disk_full',
-            'memory_exhaustion',
+            "corrupted_log",
+            "missing_encryption_key",
+            "disk_full",
+            "memory_exhaustion",
         ]
 
         # Test to implement:
@@ -685,16 +707,12 @@ class TestIntegration(unittest.TestCase):
         self.skipTest("Awaiting implementation of large scale experiment performance")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create test suite with all test cases
     suite = unittest.TestSuite()
 
     # Add all test classes
-    test_classes = [
-        TestProvenanceTracer,
-        TestABTestingController,
-        TestIntegration
-    ]
+    test_classes = [TestProvenanceTracer, TestABTestingController, TestIntegration]
 
     for test_class in test_classes:
         tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
@@ -705,24 +723,26 @@ if __name__ == '__main__':
     result = runner.run(suite)
 
     # Print summary
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print("Phase 4 Scientific Validation Test Results:")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%")
+    print(
+        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    )
 
     if result.failures:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("FAILURES:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.failures:
             print(f"- {test}: {traceback}")
 
     if result.errors:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print("ERRORS:")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         for test, traceback in result.errors:
             print(f"- {test}: {traceback}")

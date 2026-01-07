@@ -29,7 +29,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # Import persona router (new system with persona_source_map.json)
 from .persona_router import ContextState as CommunicationContext
@@ -40,15 +40,18 @@ try:
     from technical_architecture.synthesis import (
         GranularConcatenativeSynthesizer as RustGranularSynthesizer,
     )
+
     RUST_AVAILABLE = True
 except ImportError:
     RUST_AVAILABLE = False
     import warnings
+
     warnings.warn("Rust GranularConcatenativeSynthesizer not available, using Python fallback")
 
 
 class SynthesisMode(Enum):
     """Granular synthesis modes."""
+
     CONCATENATIVE = "concatenative"  # Sequential grain placement
     SUPERPOSITIONAL = "superpositional"  # Layered/overlapping grains
     TESSELLATED = "tessellated"  # Tiled mosaic patterns
@@ -57,6 +60,7 @@ class SynthesisMode(Enum):
 @dataclass
 class GrainParameters:
     """Parameters for individual grain generation."""
+
     size_ms: float = 50.0  # Grain duration
     window: str = "hann"  # Windowing function
     pitch_shift_semitones: float = 0.0  # Pitch modulation
@@ -65,17 +69,18 @@ class GrainParameters:
 
     def to_dict(self) -> Dict:
         return {
-            'size_ms': self.size_ms,
-            'window': self.window,
-            'pitch_shift_semitones': self.pitch_shift_semitones,
-            'time_stretch_factor': self.time_stretch_factor,
-            'amplitude_db': self.amplitude_db
+            "size_ms": self.size_ms,
+            "window": self.window,
+            "pitch_shift_semitones": self.pitch_shift_semitones,
+            "time_stretch_factor": self.time_stretch_factor,
+            "amplitude_db": self.amplitude_db,
         }
 
 
 @dataclass
 class PersonaBuffer:
     """Audio buffer associated with a specific persona."""
+
     persona_id: str
     audio_data: np.ndarray  # Source audio buffer
     sample_rate: int
@@ -90,18 +95,19 @@ class PersonaBuffer:
     def __post_init__(self):
         """Compute derived statistics from audio data."""
         self.duration_ms = len(self.audio_data) / self.sample_rate * 1000
-        self.rms_level = np.sqrt(np.mean(self.audio_data ** 2))
+        self.rms_level = np.sqrt(np.mean(self.audio_data**2))
 
         # Extract metadata if provided
-        if 'mean_f0_hz' in self.metadata:
-            self.mean_f0_hz = self.metadata['mean_f0_hz']
-        if 'f0_range_hz' in self.metadata:
-            self.f0_range_hz = self.metadata['f0_range_hz']
+        if "mean_f0_hz" in self.metadata:
+            self.mean_f0_hz = self.metadata["mean_f0_hz"]
+        if "f0_range_hz" in self.metadata:
+            self.f0_range_hz = self.metadata["f0_range_hz"]
 
 
 @dataclass
 class SynthesisRequest:
     """Request for audio synthesis with persona context."""
+
     species: str
     context: CommunicationContext
     target_duration_ms: float
@@ -142,7 +148,9 @@ class PersonaBufferManager:
         """Register a persona buffer for voice switching."""
         self.buffers[buffer.persona_id] = buffer
 
-    def load_buffer_from_file(self, persona_id: str, file_path: str, metadata: Optional[Dict] = None):
+    def load_buffer_from_file(
+        self, persona_id: str, file_path: str, metadata: Optional[Dict] = None
+    ):
         """
         Load persona buffer from WAV file.
 
@@ -171,10 +179,7 @@ class PersonaBufferManager:
                 audio = np.mean(audio, axis=1)
 
             buffer = PersonaBuffer(
-                persona_id=persona_id,
-                audio_data=audio,
-                sample_rate=sr,
-                metadata=metadata or {}
+                persona_id=persona_id, audio_data=audio, sample_rate=sr, metadata=metadata or {}
             )
 
             self.register_buffer(buffer)
@@ -206,16 +211,13 @@ class PersonaBufferManager:
                 self.load_buffer_from_file(
                     persona_id=persona_id,
                     file_path=str(file_path),
-                    metadata=persona_def.acoustic_profile
+                    metadata=persona_def.acoustic_profile,
                 )
             else:
                 print(f"Warning: Buffer file not found: {file_path}")
 
     def select_buffer(
-        self,
-        species: str,
-        context: CommunicationContext,
-        **kwargs
+        self, species: str, context: CommunicationContext, **kwargs
     ) -> Optional[PersonaBuffer]:
         """Select appropriate persona buffer based on context."""
         decision = self.router.select_persona(species, context, **kwargs)
@@ -231,17 +233,14 @@ class PersonaBufferManager:
                 self.load_buffer_from_file(
                     persona_id=decision.persona_id,
                     file_path=str(file_path),
-                    metadata=persona_def.acoustic_profile
+                    metadata=persona_def.acoustic_profile,
                 )
                 return self.buffers.get(decision.persona_id)
 
         return None
 
     def get_routing_decision(
-        self,
-        species: str,
-        context: CommunicationContext,
-        **kwargs
+        self, species: str, context: CommunicationContext, **kwargs
     ) -> Optional[RoutingDecision]:
         """Get routing decision without loading buffer."""
         return self.router.select_persona(species, context, **kwargs)
@@ -273,10 +272,7 @@ class GranularVoiceSynthesizer:
         self.buffer_manager = buffer_manager
         self.sample_rate = sample_rate
 
-    def synthesize(
-        self,
-        request: SynthesisRequest
-    ) -> Tuple[np.ndarray, Dict]:
+    def synthesize(self, request: SynthesisRequest) -> Tuple[np.ndarray, Dict]:
         """
         Synthesize audio based on persona context.
 
@@ -289,11 +285,13 @@ class GranularVoiceSynthesizer:
             context=request.context,
             arousal_level=request.arousal_level,
             comm_distance=request.comm_distance,
-            social_complexity=request.social_complexity
+            social_complexity=request.social_complexity,
         )
 
         if buffer is None:
-            raise ValueError(f"No buffer available for species={request.species}, context={request.context}")
+            raise ValueError(
+                f"No buffer available for species={request.species}, context={request.context}"
+            )
 
         # Step 2: Generate grain schedule based on mode
         grain_schedule = self._generate_grain_schedule(request, buffer)
@@ -305,24 +303,22 @@ class GranularVoiceSynthesizer:
         audio_output = self._apply_post_processing(audio_output)
 
         metadata = {
-            'persona_id': buffer.persona_id,
-            'species': request.species,
-            'context': request.context.value,
-            'duration_ms': len(audio_output) / self.sample_rate * 1000,
-            'num_grains': len(grain_schedule),
-            'buffer_stats': {
-                'mean_f0_hz': buffer.mean_f0_hz,
-                'f0_range_hz': buffer.f0_range_hz,
-                'duration_ms': buffer.duration_ms
-            }
+            "persona_id": buffer.persona_id,
+            "species": request.species,
+            "context": request.context.value,
+            "duration_ms": len(audio_output) / self.sample_rate * 1000,
+            "num_grains": len(grain_schedule),
+            "buffer_stats": {
+                "mean_f0_hz": buffer.mean_f0_hz,
+                "f0_range_hz": buffer.f0_range_hz,
+                "duration_ms": buffer.duration_ms,
+            },
         }
 
         return audio_output, metadata
 
     def _generate_grain_schedule(
-        self,
-        request: SynthesisRequest,
-        buffer: PersonaBuffer
+        self, request: SynthesisRequest, buffer: PersonaBuffer
     ) -> List[Dict]:
         """Generate grain placement schedule based on synthesis mode."""
 
@@ -336,10 +332,7 @@ class GranularVoiceSynthesizer:
             return self._schedule_tessellated(request, buffer, grain_params)
 
     def _schedule_concatenative(
-        self,
-        request: SynthesisRequest,
-        buffer: PersonaBuffer,
-        grain_params: GrainParameters
+        self, request: SynthesisRequest, buffer: PersonaBuffer, grain_params: GrainParameters
     ) -> List[Dict]:
         """Schedule grains sequentially (concatenative synthesis)."""
 
@@ -363,31 +356,28 @@ class GranularVoiceSynthesizer:
 
             # Soft Variation: Random pitch shift
             pitch_shift = np.random.uniform(
-                -request.pitch_variation_semitones,
-                request.pitch_variation_semitones
+                -request.pitch_variation_semitones, request.pitch_variation_semitones
             )
 
             # Soft Variation: Random time stretch
             time_stretch = np.random.uniform(
-                1.0 - request.time_variation_factor,
-                1.0 + request.time_variation_factor
+                1.0 - request.time_variation_factor, 1.0 + request.time_variation_factor
             )
 
-            schedule.append({
-                'start_sample': start_sample,
-                'output_position': i * grain_spacing,
-                'pitch_shift_semitones': pitch_shift,
-                'time_stretch_factor': time_stretch,
-                'amplitude_db': grain_params.amplitude_db
-            })
+            schedule.append(
+                {
+                    "start_sample": start_sample,
+                    "output_position": i * grain_spacing,
+                    "pitch_shift_semitones": pitch_shift,
+                    "time_stretch_factor": time_stretch,
+                    "amplitude_db": grain_params.amplitude_db,
+                }
+            )
 
         return schedule
 
     def _schedule_superpositional(
-        self,
-        request: SynthesisRequest,
-        buffer: PersonaBuffer,
-        grain_params: GrainParameters
+        self, request: SynthesisRequest, buffer: PersonaBuffer, grain_params: GrainParameters
     ) -> List[Dict]:
         """Schedule grains with overlap (layered synthesis)."""
 
@@ -410,24 +400,23 @@ class GranularVoiceSynthesizer:
 
             pitch_shift = np.random.uniform(
                 -request.pitch_variation_semitones * 0.5,  # Less variation for layered
-                request.pitch_variation_semitones * 0.5
+                request.pitch_variation_semitones * 0.5,
             )
 
-            schedule.append({
-                'start_sample': start_sample,
-                'output_position': i * grain_spacing,
-                'pitch_shift_semitones': pitch_shift,
-                'time_stretch_factor': 1.0,  # No time stretch for layered
-                'amplitude_db': grain_params.amplitude_db - 3  # Lower amplitude per layer
-            })
+            schedule.append(
+                {
+                    "start_sample": start_sample,
+                    "output_position": i * grain_spacing,
+                    "pitch_shift_semitones": pitch_shift,
+                    "time_stretch_factor": 1.0,  # No time stretch for layered
+                    "amplitude_db": grain_params.amplitude_db - 3,  # Lower amplitude per layer
+                }
+            )
 
         return schedule
 
     def _schedule_tessellated(
-        self,
-        request: SynthesisRequest,
-        buffer: PersonaBuffer,
-        grain_params: GrainParameters
+        self, request: SynthesisRequest, buffer: PersonaBuffer, grain_params: GrainParameters
     ) -> List[Dict]:
         """Schedule grains in tessellated mosaic pattern."""
 
@@ -448,23 +437,26 @@ class GranularVoiceSynthesizer:
                 start_sample = np.random.randint(0, max_start)
 
             # Alternating pitch pattern
-            pitch_shift = request.pitch_variation_semitones if i % 2 == 0 else -request.pitch_variation_semitones
+            pitch_shift = (
+                request.pitch_variation_semitones
+                if i % 2 == 0
+                else -request.pitch_variation_semitones
+            )
 
-            schedule.append({
-                'start_sample': start_sample,
-                'output_position': i * grain_spacing,
-                'pitch_shift_semitones': pitch_shift,
-                'time_stretch_factor': 1.0,
-                'amplitude_db': grain_params.amplitude_db
-            })
+            schedule.append(
+                {
+                    "start_sample": start_sample,
+                    "output_position": i * grain_spacing,
+                    "pitch_shift_semitones": pitch_shift,
+                    "time_stretch_factor": 1.0,
+                    "amplitude_db": grain_params.amplitude_db,
+                }
+            )
 
         return schedule
 
     def _render_grains(
-        self,
-        schedule: List[Dict],
-        buffer: PersonaBuffer,
-        request: SynthesisRequest
+        self, schedule: List[Dict], buffer: PersonaBuffer, request: SynthesisRequest
     ) -> np.ndarray:
         """
         Render grain schedule to audio (Python implementation).
@@ -482,10 +474,14 @@ class GranularVoiceSynthesizer:
 
         for grain in schedule:
             # Extract grain from buffer
-            start = grain['start_sample']
-            grain_size_samples = int(request.grain_params.size_ms * self.sample_rate / 1000) if request.grain_params else int(50 * self.sample_rate / 1000)
+            start = grain["start_sample"]
+            grain_size_samples = (
+                int(request.grain_params.size_ms * self.sample_rate / 1000)
+                if request.grain_params
+                else int(50 * self.sample_rate / 1000)
+            )
 
-            grain_audio = buffer.audio_data[start:start + grain_size_samples]
+            grain_audio = buffer.audio_data[start : start + grain_size_samples]
 
             if len(grain_audio) < grain_size_samples:
                 continue  # Skip incomplete grains
@@ -495,24 +491,24 @@ class GranularVoiceSynthesizer:
             grain_audio = grain_audio * window
 
             # Simple pitch shift (resampling - NOT phase vocoder quality)
-            pitch_shift = grain['pitch_shift_semitones']
+            pitch_shift = grain["pitch_shift_semitones"]
             if abs(pitch_shift) > 0.1:
                 pitch_factor = 2 ** (pitch_shift / 12.0)
                 grain_audio = np.interp(
                     np.linspace(0, len(grain_audio), int(len(grain_audio) / pitch_factor)),
                     np.arange(len(grain_audio)),
-                    grain_audio
+                    grain_audio,
                 )
 
             # Place grain in output
-            output_pos = grain['output_position']
+            output_pos = grain["output_position"]
             grain_end = output_pos + len(grain_audio)
 
             if grain_end > len(output):
                 grain_end = len(output)
 
             # Mix with existing audio (additive for superposition)
-            output[output_pos:grain_end] += grain_audio[:grain_end - output_pos]
+            output[output_pos:grain_end] += grain_audio[: grain_end - output_pos]
 
         return output
 
@@ -544,49 +540,49 @@ def create_demo_buffers(buffer_manager: PersonaBufferManager, sample_rate: int =
     # Marmoset Phee buffer (stable 6.5kHz tone, narrow range 427 Hz)
     phee_audio = 0.5 * np.sin(2 * np.pi * 6526 * t)
     phee_buffer = PersonaBuffer(
-        persona_id='MARMOSET_PHEE',
+        persona_id="MARMOSET_PHEE",
         audio_data=phee_audio,
         sample_rate=sample_rate,
-        metadata={'mean_f0_hz': 6526.0, 'f0_range_hz': 427.0, 'harmonicity': 0.95}
+        metadata={"mean_f0_hz": 6526.0, "f0_range_hz": 427.0, "harmonicity": 0.95},
     )
 
     # Marmoset Alarm buffer (modulated 6kHz tone, wide range 3722 Hz)
     alarm_fm = 2 * np.pi * 6020 * t + 0.5 * np.sin(2 * np.pi * 50 * t)  # 50Hz modulation
     alarm_audio = 0.5 * np.sin(alarm_fm)
     alarm_buffer = PersonaBuffer(
-        persona_id='MARMOSET_ALARM',
+        persona_id="MARMOSET_ALARM",
         audio_data=alarm_audio,
         sample_rate=sample_rate,
-        metadata={'mean_f0_hz': 6020.0, 'f0_range_hz': 3722.0, 'harmonicity': 0.7}
+        metadata={"mean_f0_hz": 6020.0, "f0_range_hz": 3722.0, "harmonicity": 0.7},
     )
 
     # Bat Mid-FM buffer (frequency modulated sweep, 7.4kHz anchor)
     bat_fm_chirp = 2 * np.pi * (7437 + 5000 * np.sin(2 * np.pi * 20 * t)) * t
     bat_mid_audio = 0.5 * np.sin(bat_fm_chirp)
     bat_mid_buffer = PersonaBuffer(
-        persona_id='BAT_MID_FM',
+        persona_id="BAT_MID_FM",
         audio_data=bat_mid_audio,
         sample_rate=sample_rate,
-        metadata={'mean_f0_hz': 7437.0, 'f0_range_hz': 9755.0, 'harmonicity': 0.6}
+        metadata={"mean_f0_hz": 7437.0, "f0_range_hz": 9755.0, "harmonicity": 0.6},
     )
 
     # Bat Social Ultrasound buffer (stable 7.4kHz, very narrow range 24 Hz)
     bat_social_audio = 0.5 * np.sin(2 * np.pi * 7408 * t)
     bat_social_buffer = PersonaBuffer(
-        persona_id='BAT_SOCIAL_US',
+        persona_id="BAT_SOCIAL_US",
         audio_data=bat_social_audio,
         sample_rate=sample_rate,
-        metadata={'mean_f0_hz': 7408.0, 'f0_range_hz': 24.0, 'harmonicity': 0.85}
+        metadata={"mean_f0_hz": 7408.0, "f0_range_hz": 24.0, "harmonicity": 0.85},
     )
 
     # Bat Low Social buffer (2.9kHz, very wide FM)
     bat_low_fm = 2 * np.pi * (2884 + 6000 * np.sin(2 * np.pi * 30 * t)) * t
     bat_low_audio = 0.5 * np.sin(bat_low_fm)
     bat_low_buffer = PersonaBuffer(
-        persona_id='BAT_LOW_SOCIAL',
+        persona_id="BAT_LOW_SOCIAL",
         audio_data=bat_low_audio,
         sample_rate=sample_rate,
-        metadata={'mean_f0_hz': 2884.0, 'f0_range_hz': 11535.0, 'harmonicity': 0.5}
+        metadata={"mean_f0_hz": 2884.0, "f0_range_hz": 11535.0, "harmonicity": 0.5},
     )
 
     for buf in [phee_buffer, alarm_buffer, bat_mid_buffer, bat_social_buffer, bat_low_buffer]:
@@ -633,20 +629,36 @@ def demonstrate_voice_switching():
     # Test scenarios from persona_source_map.json routing rules
     test_scenarios = [
         # (species, context, params, description)
-        ('marmoset', CommunicationContext.CONTACT,
-         {'arousal_level': 0.3}, "Marmoset neutral phee (should use MARMOSET_PHEE)"),
-
-        ('marmoset', CommunicationContext.ALARM,
-         {'arousal_level': 0.9}, "Marmoset high-arousal alarm (should use MARMOSET_ALARM)"),
-
-        ('egyptian_bat', CommunicationContext.NEUTRAL,
-         {'comm_distance': 'navigation'}, "Bat navigation (should use BAT_MID_FM)"),
-
-        ('egyptian_bat', CommunicationContext.CONTACT,
-         {'comm_distance': 'roost'}, "Bat roost communication (should use BAT_LOW_SOCIAL)"),
-
-        ('egyptian_bat', CommunicationContext.CONTACT,
-         {'comm_distance': 'close', 'social_complexity': 'high'}, "Bat close-range social (should use BAT_SOCIAL_US)"),
+        (
+            "marmoset",
+            CommunicationContext.CONTACT,
+            {"arousal_level": 0.3},
+            "Marmoset neutral phee (should use MARMOSET_PHEE)",
+        ),
+        (
+            "marmoset",
+            CommunicationContext.ALARM,
+            {"arousal_level": 0.9},
+            "Marmoset high-arousal alarm (should use MARMOSET_ALARM)",
+        ),
+        (
+            "egyptian_bat",
+            CommunicationContext.NEUTRAL,
+            {"comm_distance": "navigation"},
+            "Bat navigation (should use BAT_MID_FM)",
+        ),
+        (
+            "egyptian_bat",
+            CommunicationContext.CONTACT,
+            {"comm_distance": "roost"},
+            "Bat roost communication (should use BAT_LOW_SOCIAL)",
+        ),
+        (
+            "egyptian_bat",
+            CommunicationContext.CONTACT,
+            {"comm_distance": "close", "social_complexity": "high"},
+            "Bat close-range social (should use BAT_SOCIAL_US)",
+        ),
     ]
 
     print("\nSynthesis Scenarios:")
@@ -659,7 +671,7 @@ def demonstrate_voice_switching():
             target_duration_ms=500.0,
             mode=SynthesisMode.CONCATENATIVE,
             grain_params=GrainParameters(size_ms=50.0),
-            **params
+            **params,
         )
 
         try:
@@ -674,7 +686,7 @@ def demonstrate_voice_switching():
             print(f"  Duration: {metadata['duration_ms']:.1f} ms")
             print(f"  Grains: {metadata['num_grains']}")
             print(f"  Buffer F0: {metadata['buffer_stats']['mean_f0_hz']:.0f} Hz")
-            print(f"  Output RMS: {np.sqrt(np.mean(audio ** 2)):.4f}")
+            print(f"  Output RMS: {np.sqrt(np.mean(audio**2)):.4f}")
 
         except ValueError as e:
             print(f"\n{description}")

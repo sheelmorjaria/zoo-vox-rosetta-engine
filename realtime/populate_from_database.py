@@ -17,7 +17,7 @@ import sys
 import numpy as np
 
 # Add parent directory to path
-sys.path.append('/home/sheel/birdsong_analysis')
+sys.path.append("/home/sheel/birdsong_analysis")
 
 # Import our frameworks
 from phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
@@ -26,19 +26,21 @@ from phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def load_phrase_database(phrase_db_path: str) -> dict:
     """Load phrase segments from pickle file."""
     try:
-        with open(phrase_db_path, 'rb') as f:
+        with open(phrase_db_path, "rb") as f:
             return pickle.load(f)
     except Exception as e:
         logger.error(f"Error loading phrase database: {e}")
         return None
 
+
 def populate_library_from_database(
     output_path: str = "populated_realtime_library.pkl",
     max_phrases: int = 100,
-    sample_rate: int = 22050
+    sample_rate: int = 22050,
 ) -> PhraseAudioLibrary:
     """
     Populate PhraseAudioLibrary with phrases from the database.
@@ -56,10 +58,10 @@ def populate_library_from_database(
     print("=" * 80)
 
     # Initialize phrase library
-    library = PhraseAudioLibrary(species='marmoset', sr=sample_rate)
+    library = PhraseAudioLibrary(species="marmoset", sr=sample_rate)
 
     # Load the phrase database
-    phrase_db_path = '/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl'
+    phrase_db_path = "/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl"
     phrase_segments = load_phrase_database(phrase_db_path)
 
     if phrase_segments is None:
@@ -71,11 +73,11 @@ def populate_library_from_database(
 
     # Parse phrase keys and categorize by F0 range for context assignment
     f0_ranges = {
-        'contact': (4000, 5000),    # Low frequency for contact
-        'neutral': (5000, 6000),    # Mid-low frequency for neutral
-        'food': (6000, 7000),       # Mid frequency for food
-        'social': (7000, 8000),     # Mid-high frequency for social
-        'alarm': (8000, 9000)       # High frequency for alarm
+        "contact": (4000, 5000),  # Low frequency for contact
+        "neutral": (5000, 6000),  # Mid-low frequency for neutral
+        "food": (6000, 7000),  # Mid frequency for food
+        "social": (7000, 8000),  # Mid-high frequency for social
+        "alarm": (8000, 9000),  # High frequency for alarm
     }
 
     # Select and convert segments
@@ -95,12 +97,12 @@ def populate_library_from_database(
 
         try:
             # Parse F0 from phrase key (e.g., 'F0_7000_DUR_5_RANGE_100')
-            parts = phrase_key.split('_')
-            if len(parts) >= 3 and parts[0] == 'F0':
+            parts = phrase_key.split("_")
+            if len(parts) >= 3 and parts[0] == "F0":
                 f0_val = float(parts[1])
 
                 # Assign context based on F0 range
-                context = 'neutral'  # Default
+                context = "neutral"  # Default
                 for ctx, (min_f0, max_f0) in f0_ranges.items():
                     if min_f0 <= f0_val < max_f0:
                         context = ctx
@@ -111,26 +113,26 @@ def populate_library_from_database(
                     audio=audio_np,
                     sr=sample_rate,
                     phrase_key=phrase_key,
-                    source_file='phrase_audio_database_full',
+                    source_file="phrase_audio_database_full",
                     start_time_ms=0,
                     end_time_ms=len(audio_np) / sample_rate * 1000,
                     mean_f0_hz=f0_val,
                     std_f0_hz=100,  # Estimate
                     mean_duration_ms=len(audio_np) / sample_rate * 1000,
                     mean_range_hz=f0_val * 0.05,  # 5% range estimate
-                    encoding='horizontal',
+                    encoding="horizontal",
                     superposed_with=[],
                     context=context,
-                    individual_id='marmoset_individual_db',
+                    individual_id="marmoset_individual_db",
                     snr_db=25.0,
                     quality_score=0.9,
                     microharmonic_signature={
-                        'dominant_harmonic': 1,
-                        'harmonic_entropy': 0.1,
-                        'spectral_centroid_hz': f0_val,
-                        'formants': [f0_val],
-                        'modulation_depth': 0.05
-                    }
+                        "dominant_harmonic": 1,
+                        "harmonic_entropy": 0.1,
+                        "spectral_centroid_hz": f0_val,
+                        "formants": [f0_val],
+                        "modulation_depth": 0.05,
+                    },
                 )
 
                 # Add to library
@@ -151,9 +153,9 @@ def populate_library_from_database(
 
     # Context distribution
     context_stats = library.get_context_statistics()
-    if 'context_statistics' in context_stats:
+    if "context_statistics" in context_stats:
         print("\n   Context distribution:")
-        for context, stats in context_stats['context_statistics'].items():
+        for context, stats in context_stats["context_statistics"].items():
             print(f"     {context}: {stats['total_occurrences']} segments")
 
     # Frequency analysis
@@ -162,7 +164,7 @@ def populate_library_from_database(
 
     for phrase_key in phrase_keys:
         segments = library.get_segment(phrase_key)
-        if segments and hasattr(segments, 'mean_f0_hz'):
+        if segments and hasattr(segments, "mean_f0_hz"):
             f0_values.append(segments.mean_f0_hz)
 
     if f0_values:
@@ -182,6 +184,7 @@ def populate_library_from_database(
 
     return library
 
+
 def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
     """Demonstrate real-time functionality with the populated library."""
     print("\n" + "=" * 80)
@@ -190,12 +193,14 @@ def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
 
     # Context-aware selection
     print("\nContext-aware phrase selection:")
-    for context in ['alarm', 'food', 'social', 'neutral', 'contact']:
+    for context in ["alarm", "food", "social", "neutral", "contact"]:
         selected = library.select_phrases_by_context(context, min_quality=0.5)
         if selected:
-            selected.sort(key=lambda x: getattr(x, 'mean_f0_hz', 0))
+            selected.sort(key=lambda x: getattr(x, "mean_f0_hz", 0))
             print(f"   {context.capitalize()}: {len(selected)} phrases")
-            print(f"     F0 range: {getattr(selected[0], 'mean_f0_hz', 0):.0f} - {getattr(selected[-1], 'mean_f0_hz', 0):.0f} Hz")
+            print(
+                f"     F0 range: {getattr(selected[0], 'mean_f0_hz', 0):.0f} - {getattr(selected[-1], 'mean_f0_hz', 0):.0f} Hz"
+            )
 
     # Synthesis preparation
     print("\nSynthesis capabilities:")
@@ -205,12 +210,13 @@ def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
     print("   Ready for vertical (superpositional) synthesis")
     print("   Ready for combined synthesis methods")
 
+
 def main():
     """Main function."""
     # Create and populate library
     library = populate_library_from_database(
         output_path="src/realtime/populated_realtime_library.pkl",
-        max_phrases=100  # Limit for demonstration
+        max_phrases=100,  # Limit for demonstration
     )
 
     # Demonstrate functionality
@@ -221,6 +227,7 @@ def main():
     print("   2. Implement context-aware synthesis strategies")
     print("   3. Add more phrases from database for full coverage")
     print("   4. Integrate with hardware acceleration if needed")
+
 
 if __name__ == "__main__":
     main()

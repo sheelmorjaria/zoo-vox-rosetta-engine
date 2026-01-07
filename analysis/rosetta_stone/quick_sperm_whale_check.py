@@ -16,6 +16,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -39,25 +40,26 @@ def quick_check(filepath, max_duration_sec=10):
 
     # Energy in bands
     from scipy.fft import fft, fftfreq
+
     fft_result = fft(audio)
-    freqs = fftfreq(len(audio), 1/sr)
+    freqs = fftfreq(len(audio), 1 / sr)
     magnitude = np.abs(fft_result)
 
-    pos_freqs = freqs[:len(freqs)//2]
-    pos_magnitude = magnitude[:len(magnitude)//2]
+    pos_freqs = freqs[: len(freqs) // 2]
+    pos_magnitude = magnitude[: len(magnitude) // 2]
 
     bands = [
         ("0-2 kHz", 0, 2000),
         ("2-8 kHz (SW clicks)", 2000, 8000),
         ("8-15 kHz", 8000, 15000),
-        (">15 kHz", 15000, sr//2)
+        (">15 kHz", 15000, sr // 2),
     ]
 
     energy_dist = {}
     total_energy = np.sum(pos_magnitude**2)
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
-        band_energy = np.sum(pos_magnitude[mask]**2)
+        band_energy = np.sum(pos_magnitude[mask] ** 2)
         energy_dist[band_name] = band_energy / total_energy * 100
 
     # Detect modality
@@ -74,32 +76,32 @@ def quick_check(filepath, max_duration_sec=10):
             m = analyzer.detect_modality(phrase.data)
             modality_counts[m.name] = modality_counts.get(m.name, 0) + 1
         return {
-            'name': Path(filepath).name,
-            'duration_ms': duration_ms,
-            'rms': rms,
-            'energy': energy_dist,
-            'phrases': len(phrases),
-            'modality_counts': modality_counts
+            "name": Path(filepath).name,
+            "duration_ms": duration_ms,
+            "rms": rms,
+            "energy": energy_dist,
+            "phrases": len(phrases),
+            "modality_counts": modality_counts,
         }
     else:
         # Analyze whole file
         m = analyzer.detect_modality(audio)
         probs = analyzer.get_modality_probabilities(audio)
         return {
-            'name': Path(filepath).name,
-            'duration_ms': duration_ms,
-            'rms': rms,
-            'energy': energy_dist,
-            'phrases': 0,
-            'modality': m.name,
-            'probabilities': probs
+            "name": Path(filepath).name,
+            "duration_ms": duration_ms,
+            "rms": rms,
+            "energy": energy_dist,
+            "phrases": 0,
+            "modality": m.name,
+            "probabilities": probs,
         }
 
 
 def main():
-    print("="*70)
+    print("=" * 70)
     print("QUICK SPERM WHALE CHECK (first 10 seconds only)")
-    print("="*70)
+    print("=" * 70)
 
     base_dir = Path.home() / "birdsong_analysis" / "data" / "Dominica_dataset"
     signal_dir = base_dir / "Signal_parts"
@@ -114,20 +116,23 @@ def main():
         r = quick_check(filepath)
         if r:
             results.append(r)
-            print(f"✓ {r['name'][:30]:30s} {r['duration_ms']:7.0f}ms  RMS:{r['rms']:.4f}  Phrases:{r['phrases']:2d}  ", end="")
+            print(
+                f"✓ {r['name'][:30]:30s} {r['duration_ms']:7.0f}ms  RMS:{r['rms']:.4f}  Phrases:{r['phrases']:2d}  ",
+                end="",
+            )
 
-            if r['phrases'] > 0:
+            if r["phrases"] > 0:
                 print(f"Modalities: {r['modality_counts']}")
             else:
                 print(f"Modality: {r['modality']}")
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
-    with_phrases = [r for r in results if r['phrases'] > 0]
-    without_phrases = [r for r in results if r['phrases'] == 0]
+    with_phrases = [r for r in results if r["phrases"] > 0]
+    without_phrases = [r for r in results if r["phrases"] == 0]
 
     print(f"\nFiles with phrase segmentation: {len(with_phrases)}/{len(results)}")
     print(f"Files without segmentation: {len(without_phrases)}/{len(results)}")
@@ -136,7 +141,7 @@ def main():
     print("\n📊 Average Energy Distribution:")
     avg_energy = {}
     for band in ["0-2 kHz", "2-8 kHz (SW clicks)", "8-15 kHz", ">15 kHz"]:
-        avg_energy[band] = np.mean([r['energy'].get(band, 0) for r in results])
+        avg_energy[band] = np.mean([r["energy"].get(band, 0) for r in results])
 
     for band, avg in avg_energy.items():
         print(f"  {band:20s}: {avg:5.1f}%")
@@ -146,7 +151,7 @@ def main():
         print("\n📊 Modality Distribution (segmented files):")
         all_counts = {}
         for r in with_phrases:
-            for m, c in r['modality_counts'].items():
+            for m, c in r["modality_counts"].items():
                 all_counts[m] = all_counts.get(m, 0) + c
 
         for m, c in sorted(all_counts.items()):
@@ -156,7 +161,7 @@ def main():
         print("\n📊 Full-file Modality (no segmentation):")
         counts = {}
         for r in without_phrases:
-            m = r['modality']
+            m = r["modality"]
             counts[m] = counts.get(m, 0) + 1
 
         for m, c in sorted(counts.items()):

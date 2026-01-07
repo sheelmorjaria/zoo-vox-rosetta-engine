@@ -20,23 +20,22 @@ import numpy as np
 import pytest
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.acoustic_algebra_contextual import (
     SemanticVector,
     ContextualAxis,
     ContextualMap,
-    GradientSynthesizer
+    GradientSynthesizer,
 )
-from realtime.phrase_audio_library import (
-    PhraseAudioLibrary,
-    PhraseAudioSegment
-)
+from realtime.phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
 
 
 # ============================================================================
 # SemanticVector Tests
 # ============================================================================
+
 
 class TestSemanticVector:
     """Test SemanticVector dataclass."""
@@ -59,14 +58,8 @@ class TestSemanticVector:
 
     def test_distance_to(self):
         """Test Euclidean distance calculation."""
-        v1 = SemanticVector(
-            vector=np.array([1.0] * 17),
-            context="aggression"
-        )
-        v2 = SemanticVector(
-            vector=np.array([2.0] * 17),
-            context="courtship"
-        )
+        v1 = SemanticVector(vector=np.array([1.0] * 17), context="aggression")
+        v2 = SemanticVector(vector=np.array([2.0] * 17), context="courtship")
 
         distance = v1.distance_to(v2)
 
@@ -75,14 +68,8 @@ class TestSemanticVector:
 
     def test_cosine_similarity(self):
         """Test cosine similarity calculation."""
-        v1 = SemanticVector(
-            vector=np.array([1.0] * 17),
-            context="aggression"
-        )
-        v2 = SemanticVector(
-            vector=np.array([2.0] * 17),
-            context="courtship"
-        )
+        v1 = SemanticVector(vector=np.array([1.0] * 17), context="aggression")
+        v2 = SemanticVector(vector=np.array([2.0] * 17), context="courtship")
 
         similarity = v1.cosine_similarity(v2)
 
@@ -96,13 +83,14 @@ class TestSemanticVector:
 
         result = sv.to_dict()
 
-        assert result['context'] == "test"
-        assert len(result['vector']) == 17
+        assert result["context"] == "test"
+        assert len(result["vector"]) == 17
 
 
 # ============================================================================
 # ContextualAxis Tests
 # ============================================================================
+
 
 class TestContextualAxis:
     """Test ContextualAxis dataclass."""
@@ -119,7 +107,7 @@ class TestContextualAxis:
             variance=variance,
             axis_direction=axis_direction,
             defining_features=[(0, "mean_f0_hz", 0.5)],
-            phrase_count=10
+            phrase_count=10,
         )
 
         assert axis.context == "aggression"
@@ -134,7 +122,7 @@ class TestContextualAxis:
             variance=np.ones(17),
             axis_direction=np.array([3.0, 4.0] + [0.0] * 15),
             defining_features=[],
-            phrase_count=5
+            phrase_count=5,
         )
 
         # Magnitude = sqrt(3^2 + 4^2) = 5
@@ -144,6 +132,7 @@ class TestContextualAxis:
 # ============================================================================
 # ContextualMap Tests
 # ============================================================================
+
 
 class TestContextualMap:
     """Test ContextualMap class."""
@@ -171,7 +160,7 @@ class TestContextualMap:
                 mean_duration_ms=200 + np.random.randn() * 20,
                 mean_range_hz=500 + np.random.randn() * 50,
                 context="aggression",
-                snr_db=20.0
+                snr_db=20.0,
             )
             library.add_segment(segment)
 
@@ -190,7 +179,7 @@ class TestContextualMap:
                 mean_duration_ms=150 + np.random.randn() * 20,
                 mean_range_hz=300 + np.random.randn() * 50,
                 context="contact_call",
-                snr_db=20.0
+                snr_db=20.0,
             )
             library.add_segment(segment)
 
@@ -199,9 +188,7 @@ class TestContextualMap:
     def test_from_phrase_library(self, sample_library):
         """Test building contextual map from library."""
         map = ContextualMap.from_phrase_library(
-            sample_library,
-            baseline_context="contact_call",
-            min_samples_per_context=2
+            sample_library, baseline_context="contact_call", min_samples_per_context=2
         )
 
         assert len(map.contexts) >= 2
@@ -233,11 +220,7 @@ class TestContextualMap:
         map = ContextualMap.from_phrase_library(sample_library)
 
         # 50% interpolation
-        result = map.interpolate_contexts(
-            "contact_call",
-            "aggression",
-            0.5
-        )
+        result = map.interpolate_contexts("contact_call", "aggression", 0.5)
 
         assert result is not None
         assert "50%" in result.context
@@ -250,7 +233,7 @@ class TestContextualMap:
         result = map.interpolate_contexts(
             "contact_call",
             "aggression",
-            1.5  # Out of bounds
+            1.5,  # Out of bounds
         )
 
         assert result is not None
@@ -264,9 +247,7 @@ class TestContextualMap:
 
         if target_vec:
             nearest = map.find_nearest_real_phrase(
-                target_vec.vector,
-                sample_library,
-                max_distance=100.0
+                target_vec.vector, sample_library, max_distance=100.0
             )
 
             # Should find something
@@ -287,6 +268,7 @@ class TestContextualMap:
 # ============================================================================
 # GradientSynthesizer Tests
 # ============================================================================
+
 
 class TestGradientSynthesizer:
     """Test GradientSynthesizer class."""
@@ -315,7 +297,7 @@ class TestGradientSynthesizer:
                     std_f0_hz=100,
                     mean_duration_ms=200 + np.random.randn() * 50,
                     mean_range_hz=400 + np.random.randn() * 100,
-                    snr_db=20.0
+                    snr_db=20.0,
                 )
                 library.add_segment(segment)
 
@@ -328,10 +310,7 @@ class TestGradientSynthesizer:
         map, library = sample_map_and_library
         synthesizer = GradientSynthesizer(map, library)
 
-        result = synthesizer.synthesize_gradient(
-            intent="aggression",
-            intensity=0.5
-        )
+        result = synthesizer.synthesize_gradient(intent="aggression", intensity=0.5)
 
         assert result is not None
         assert result["intent"] == "aggression"
@@ -359,6 +338,7 @@ class TestGradientSynthesizer:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflow."""
@@ -392,7 +372,7 @@ class TestIntegration:
                     std_f0_hz=100,
                     mean_duration_ms=base_params["dur"] + np.random.randn() * 30,
                     mean_range_hz=400 + np.random.randn() * 100,
-                    snr_db=20.0
+                    snr_db=20.0,
                 )
                 library.add_segment(segment)
 

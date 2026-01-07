@@ -23,11 +23,14 @@ from .jetson_accelerated_core import JetsonAccelerator
 try:
     from ..phrase_library_manager import PhraseLibraryManager
 except ImportError:
+
     class PhraseLibraryManager:
         def __init__(self, *args, **kwargs):
             pass
+
         def get_response_strategy(self, context):
-            return {'response_keys': [f'F0_6000_{context.upper()}']}
+            return {"response_keys": [f"F0_6000_{context.upper()}"]}
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +43,13 @@ class JetsonAgent:
     responsive and natural vocalization generation.
     """
 
-    def __init__(self, library: PhraseLibraryManager,
-                 synthesizer: Any,
-                 enable_pitch_matching: bool = True,
-                 max_spl_db: float = 80.0):
+    def __init__(
+        self,
+        library: PhraseLibraryManager,
+        synthesizer: Any,
+        enable_pitch_matching: bool = True,
+        max_spl_db: float = 80.0,
+    ):
         """
         Initialize Jetson agent.
 
@@ -64,16 +70,17 @@ class JetsonAgent:
 
         # Performance monitoring
         self.processing_stats = {
-            'total_calls': 0,
-            'successful_calls': 0,
-            'avg_latency_ms': 0.0,
-            'gpu_usage_percent': 0.0
+            "total_calls": 0,
+            "successful_calls": 0,
+            "avg_latency_ms": 0.0,
+            "gpu_usage_percent": 0.0,
         }
 
         logger.info("JetsonAgent initialized")
 
-    def process_input_gpu(self, audio_chunk: np.ndarray,
-                         target_f0: Optional[float] = None) -> Tuple[Optional[np.ndarray], Optional[int]]:
+    def process_input_gpu(
+        self, audio_chunk: np.ndarray, target_f0: Optional[float] = None
+    ) -> Tuple[Optional[np.ndarray], Optional[int]]:
         """
         Process audio input and generate response using GPU acceleration.
 
@@ -85,7 +92,7 @@ class JetsonAgent:
             Tuple of (response_audio, sample_rate) or (None, None) if no response
         """
         start_time = time.perf_counter()
-        self.processing_stats['total_calls'] += 1
+        self.processing_stats["total_calls"] += 1
 
         try:
             # Step 1: GPU-based audio analysis
@@ -101,7 +108,7 @@ class JetsonAgent:
             detected_context = self.context_agent.should_respond()[1]
 
             # Step 3: Generate base response
-            if hasattr(self.synthesizer, 'synthesize'):
+            if hasattr(self.synthesizer, "synthesize"):
                 result = self.synthesizer.synthesize(detected_context)
                 if isinstance(result, tuple) and len(result) == 2:
                     base_audio, sr = result
@@ -125,22 +132,24 @@ class JetsonAgent:
                 processing_time = (time.perf_counter() - start_time) * 1000
 
                 # Update stats
-                self.processing_stats['successful_calls'] += 1
-                self.processing_stats['avg_latency_ms'] = (
-                    (self.processing_stats['avg_latency_ms'] * (self.processing_stats['successful_calls'] - 1) + processing_time) /
-                    self.processing_stats['successful_calls']
-                )
+                self.processing_stats["successful_calls"] += 1
+                self.processing_stats["avg_latency_ms"] = (
+                    self.processing_stats["avg_latency_ms"]
+                    * (self.processing_stats["successful_calls"] - 1)
+                    + processing_time
+                ) / self.processing_stats["successful_calls"]
 
                 logger.debug(f"GPU pitch shifting completed in {processing_time:.1f}ms")
                 return modified_audio, sr
 
             elif base_audio is not None:
                 processing_time = (time.perf_counter() - start_time) * 1000
-                self.processing_stats['successful_calls'] += 1
-                self.processing_stats['avg_latency_ms'] = (
-                    (self.processing_stats['avg_latency_ms'] * (self.processing_stats['successful_calls'] - 1) + processing_time) /
-                    self.processing_stats['successful_calls']
-                )
+                self.processing_stats["successful_calls"] += 1
+                self.processing_stats["avg_latency_ms"] = (
+                    self.processing_stats["avg_latency_ms"]
+                    * (self.processing_stats["successful_calls"] - 1)
+                    + processing_time
+                ) / self.processing_stats["successful_calls"]
 
                 return base_audio, sr
 
@@ -164,22 +173,22 @@ class JetsonAgent:
 
             # Simple context probabilities (would use neural network in production)
             context_probs = {
-                'contact': max(0.0, 1.0 - abs(spectral_centroid - 6000) / 2000),
-                'alarm': max(0.0, 1.0 - abs(spectral_centroid - 7000) / 1000) * (1 + rms),
-                'food': max(0.0, 1.0 - abs(spectral_centroid - 5000) / 1500) * (0.5 + rms)
+                "contact": max(0.0, 1.0 - abs(spectral_centroid - 6000) / 2000),
+                "alarm": max(0.0, 1.0 - abs(spectral_centroid - 7000) / 1000) * (1 + rms),
+                "food": max(0.0, 1.0 - abs(spectral_centroid - 5000) / 1500) * (0.5 + rms),
             }
 
             # Normalize probabilities
             total = sum(context_probs.values())
             if total > 0:
-                context_probs = {k: v/total for k, v in context_probs.items()}
+                context_probs = {k: v / total for k, v in context_probs.items()}
 
             self.context_agent.update_context(context_probs)
             return context_probs
 
         except Exception as e:
             logger.error(f"Error in context analysis: {e}")
-            return {'contact': 0.5, 'alarm': 0.3, 'food': 0.2}
+            return {"contact": 0.5, "alarm": 0.3, "food": 0.2}
 
     def get_processing_stats(self) -> Dict[str, Any]:
         """Get processing statistics."""
@@ -187,17 +196,17 @@ class JetsonAgent:
         if self.accelerator.cuda_available:
             mem_info = self.accelerator.get_gpu_memory_info()
             if mem_info:
-                self.processing_stats['gpu_usage_percent'] = mem_info.get('used_percent', 0)
+                self.processing_stats["gpu_usage_percent"] = mem_info.get("used_percent", 0)
 
         return self.processing_stats.copy()
 
     def reset_stats(self):
         """Reset processing statistics."""
         self.processing_stats = {
-            'total_calls': 0,
-            'successful_calls': 0,
-            'avg_latency_ms': 0.0,
-            'gpu_usage_percent': 0.0
+            "total_calls": 0,
+            "successful_calls": 0,
+            "avg_latency_ms": 0.0,
+            "gpu_usage_percent": 0.0,
         }
 
     def emergency_stop(self):
@@ -205,5 +214,5 @@ class JetsonAgent:
         logger.critical("Emergency stop triggered")
         if self.vocoder:
             self.vocoder = None
-        if hasattr(self.accelerator, 'cleanup'):
+        if hasattr(self.accelerator, "cleanup"):
             self.accelerator.cleanup()

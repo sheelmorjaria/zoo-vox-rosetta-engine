@@ -23,6 +23,7 @@ import numpy as np
 # 17-Dimensional Acoustic Feature Vector
 # ============================================================================
 
+
 @dataclass
 class AcousticFeatureVector17:
     """
@@ -72,28 +73,31 @@ class AcousticFeatureVector17:
 
     def to_numpy(self) -> np.ndarray:
         """Convert to 1D numpy array (17-dim vector)."""
-        return np.array([
-            self.mean_f0_hz,
-            self.duration_ms,
-            self.attack_ms,
-            self.decay_ms,
-            self.f0_range_hz,
-            self.vibrato_rate_hz,
-            self.vibrato_depth_hz,
-            self.jitter,
-            self.shimmer,
-            self.harmonicity_hnr,
-            self.spectral_flatness,
-            self.spectral_centroid_hz,
-            self.spectral_rolloff_hz,
-            self.bandwidth_hz,
-            self.slope_db_per_octave,
-            self.rms_db,
-            self.peak_amplitude
-        ], dtype=np.float64)
+        return np.array(
+            [
+                self.mean_f0_hz,
+                self.duration_ms,
+                self.attack_ms,
+                self.decay_ms,
+                self.f0_range_hz,
+                self.vibrato_rate_hz,
+                self.vibrato_depth_hz,
+                self.jitter,
+                self.shimmer,
+                self.harmonicity_hnr,
+                self.spectral_flatness,
+                self.spectral_centroid_hz,
+                self.spectral_rolloff_hz,
+                self.bandwidth_hz,
+                self.slope_db_per_octave,
+                self.rms_db,
+                self.peak_amplitude,
+            ],
+            dtype=np.float64,
+        )
 
     @classmethod
-    def from_numpy(cls, vec: np.ndarray) -> 'AcousticFeatureVector17':
+    def from_numpy(cls, vec: np.ndarray) -> "AcousticFeatureVector17":
         """Create from 1D numpy array."""
         return cls(
             mean_f0_hz=vec[0],
@@ -112,85 +116,88 @@ class AcousticFeatureVector17:
             bandwidth_hz=vec[13],
             slope_db_per_octave=vec[14],
             rms_db=vec[15],
-            peak_amplitude=vec[16]
+            peak_amplitude=vec[16],
         )
 
     def to_dict(self) -> Dict[str, float]:
         """Convert to dictionary (for feature extraction)."""
         return {
-            'mean_f0_hz': self.mean_f0_hz,
-            'duration_ms': self.duration_ms,
-            'attack_ms': self.attack_ms,
-            'decay_ms': self.decay_ms,
-            'f0_range_hz': self.f0_range_hz,
-            'vibrato_rate_hz': self.vibrato_rate_hz,
-            'vibrato_depth_hz': self.vibrato_depth_hz,
-            'jitter': self.jitter,
-            'shimmer': self.shimmer,
-            'harmonicity_hnr': self.harmonicity_hnr,
-            'spectral_flatness': self.spectral_flatness,
-            'spectral_centroid_hz': self.spectral_centroid_hz,
-            'spectral_rolloff_hz': self.spectral_rolloff_hz,
-            'bandwidth_hz': self.bandwidth_hz,
-            'slope_db_per_octave': self.slope_db_per_octave,
-            'rms_db': self.rms_db,
-            'peak_amplitude': self.peak_amplitude
+            "mean_f0_hz": self.mean_f0_hz,
+            "duration_ms": self.duration_ms,
+            "attack_ms": self.attack_ms,
+            "decay_ms": self.decay_ms,
+            "f0_range_hz": self.f0_range_hz,
+            "vibrato_rate_hz": self.vibrato_rate_hz,
+            "vibrato_depth_hz": self.vibrato_depth_hz,
+            "jitter": self.jitter,
+            "shimmer": self.shimmer,
+            "harmonicity_hnr": self.harmonicity_hnr,
+            "spectral_flatness": self.spectral_flatness,
+            "spectral_centroid_hz": self.spectral_centroid_hz,
+            "spectral_rolloff_hz": self.spectral_rolloff_hz,
+            "bandwidth_hz": self.bandwidth_hz,
+            "slope_db_per_octave": self.slope_db_per_octave,
+            "rms_db": self.rms_db,
+            "peak_amplitude": self.peak_amplitude,
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, float]) -> 'AcousticFeatureVector17':
+    def from_dict(cls, d: Dict[str, float]) -> "AcousticFeatureVector17":
         """Create from dictionary (with defaults for missing features)."""
         return cls(
-            mean_f0_hz=d.get('mean_f0_hz', 0.0),
-            duration_ms=d.get('duration_ms', 0.0),
-            attack_ms=d.get('attack_ms', 0.01),
-            decay_ms=d.get('decay_ms', 0.05),
-            f0_range_hz=d.get('f0_range_hz', 0.0),
-            vibrato_rate_hz=d.get('vibrato_rate_hz', 0.0),
-            vibrato_depth_hz=d.get('vibrato_depth_hz', 0.0),
-            jitter=d.get('jitter', 0.01),
-            shimmer=d.get('shimmer', 0.02),
-            harmonicity_hnr=d.get('harmonicity_hnr', 10.0),
-            spectral_flatness=d.get('spectral_flatness', 0.5),
-            spectral_centroid_hz=d.get('spectral_centroid_hz', 7000.0),
-            spectral_rolloff_hz=d.get('spectral_rolloff_hz', 12000.0),
-            bandwidth_hz=d.get('bandwidth_hz', 5000.0),
-            slope_db_per_octave=d.get('slope_db_per_octave', -6.0),
-            rms_db=d.get('rms_db', -20.0),
-            peak_amplitude=d.get('peak_amplitude', 0.1)
+            mean_f0_hz=d.get("mean_f0_hz", 0.0),
+            duration_ms=d.get("duration_ms", 0.0),
+            attack_ms=d.get("attack_ms", 0.01),
+            decay_ms=d.get("decay_ms", 0.05),
+            f0_range_hz=d.get("f0_range_hz", 0.0),
+            vibrato_rate_hz=d.get("vibrato_rate_hz", 0.0),
+            vibrato_depth_hz=d.get("vibrato_depth_hz", 0.0),
+            jitter=d.get("jitter", 0.01),
+            shimmer=d.get("shimmer", 0.02),
+            harmonicity_hnr=d.get("harmonicity_hnr", 10.0),
+            spectral_flatness=d.get("spectral_flatness", 0.5),
+            spectral_centroid_hz=d.get("spectral_centroid_hz", 7000.0),
+            spectral_rolloff_hz=d.get("spectral_rolloff_hz", 12000.0),
+            bandwidth_hz=d.get("bandwidth_hz", 5000.0),
+            slope_db_per_octave=d.get("slope_db_per_octave", -6.0),
+            rms_db=d.get("rms_db", -20.0),
+            peak_amplitude=d.get("peak_amplitude", 0.1),
         )
 
     def __repr__(self) -> str:
-        return (f"AcousticFeatureVector17(F0={self.mean_f0_hz:.0f}Hz, "
-                f"Dur={self.duration_ms:.1f}ms, Attack={self.attack_ms*1000:.1f}ms, "
-                f"HNR={self.harmonicity_hnr:.1f}dB, Flatness={self.spectral_flatness:.2f})")
+        return (
+            f"AcousticFeatureVector17(F0={self.mean_f0_hz:.0f}Hz, "
+            f"Dur={self.duration_ms:.1f}ms, Attack={self.attack_ms * 1000:.1f}ms, "
+            f"HNR={self.harmonicity_hnr:.1f}dB, Flatness={self.spectral_flatness:.2f})"
+        )
 
     def feature_names(self) -> List[str]:
         """Return list of feature names (in order)."""
         return [
-            'mean_f0_hz',
-            'duration_ms',
-            'attack_ms',
-            'decay_ms',
-            'f0_range_hz',
-            'vibrato_rate_hz',
-            'vibrato_depth_hz',
-            'jitter',
-            'shimmer',
-            'harmonicity_hnr',
-            'spectral_flatness',
-            'spectral_centroid_hz',
-            'spectral_rolloff_hz',
-            'bandwidth_hz',
-            'slope_db_per_octave',
-            'rms_db',
-            'peak_amplitude'
+            "mean_f0_hz",
+            "duration_ms",
+            "attack_ms",
+            "decay_ms",
+            "f0_range_hz",
+            "vibrato_rate_hz",
+            "vibrato_depth_hz",
+            "jitter",
+            "shimmer",
+            "harmonicity_hnr",
+            "spectral_flatness",
+            "spectral_centroid_hz",
+            "spectral_rolloff_hz",
+            "bandwidth_hz",
+            "slope_db_per_octave",
+            "rms_db",
+            "peak_amplitude",
         ]
 
 
 # ============================================================================
 # Z-Score Normalization
 # ============================================================================
+
 
 class ZScoreNormalizer:
     """
@@ -204,7 +211,9 @@ class ZScoreNormalizer:
     Without normalization, small-magnitude features dominate the interpolation.
     """
 
-    def __init__(self, mean_vector: Optional[np.ndarray] = None, std_vector: Optional[np.ndarray] = None):
+    def __init__(
+        self, mean_vector: Optional[np.ndarray] = None, std_vector: Optional[np.ndarray] = None
+    ):
         """
         Initialize normalizer with corpus statistics.
 
@@ -225,47 +234,53 @@ class ZScoreNormalizer:
 
     def _default_marmoset_mean(self) -> np.ndarray:
         """Default mean vector for marmoset vocalizations."""
-        return np.array([
-            6500.0,    # mean_f0_hz
-            70.0,      # duration_ms
-            0.015,     # attack_ms (15ms)
-            0.040,     # decay_ms (40ms)
-            500.0,     # f0_range_hz
-            8.0,       # vibrato_rate_hz
-            50.0,      # vibrato_depth_hz
-            0.02,      # jitter
-            0.03,      # shimmer
-            15.0,      # harmonicity_hnr (dB)
-            0.2,       # spectral_flatness
-            7500.0,    # spectral_centroid_hz
-            13000.0,   # spectral_rolloff_hz
-            6000.0,    # bandwidth_hz
-            -8.0,      # slope_db_per_octave
-            -25.0,     # rms_db
-            0.15       # peak_amplitude
-        ], dtype=np.float64)
+        return np.array(
+            [
+                6500.0,  # mean_f0_hz
+                70.0,  # duration_ms
+                0.015,  # attack_ms (15ms)
+                0.040,  # decay_ms (40ms)
+                500.0,  # f0_range_hz
+                8.0,  # vibrato_rate_hz
+                50.0,  # vibrato_depth_hz
+                0.02,  # jitter
+                0.03,  # shimmer
+                15.0,  # harmonicity_hnr (dB)
+                0.2,  # spectral_flatness
+                7500.0,  # spectral_centroid_hz
+                13000.0,  # spectral_rolloff_hz
+                6000.0,  # bandwidth_hz
+                -8.0,  # slope_db_per_octave
+                -25.0,  # rms_db
+                0.15,  # peak_amplitude
+            ],
+            dtype=np.float64,
+        )
 
     def _default_marmoset_std(self) -> np.ndarray:
         """Default std vector for marmoset vocalizations."""
-        return np.array([
-            1000.0,    # mean_f0_hz (±1000Hz)
-            30.0,      # duration_ms (±30ms)
-            0.010,     # attack_ms (±10ms)
-            0.020,     # decay_ms (±20ms)
-            800.0,     # f0_range_hz
-            3.0,       # vibrato_rate_hz
-            30.0,      # vibrato_depth_hz
-            0.01,      # jitter
-            0.02,      # shimmer
-            8.0,       # harmonicity_hnr
-            0.15,      # spectral_flatness
-            1500.0,    # spectral_centroid_hz
-            2000.0,    # spectral_rolloff_hz
-            2000.0,    # bandwidth_hz
-            3.0,       # slope_db_per_octave
-            5.0,       # rms_db
-            0.05       # peak_amplitude
-        ], dtype=np.float64)
+        return np.array(
+            [
+                1000.0,  # mean_f0_hz (±1000Hz)
+                30.0,  # duration_ms (±30ms)
+                0.010,  # attack_ms (±10ms)
+                0.020,  # decay_ms (±20ms)
+                800.0,  # f0_range_hz
+                3.0,  # vibrato_rate_hz
+                30.0,  # vibrato_depth_hz
+                0.01,  # jitter
+                0.02,  # shimmer
+                8.0,  # harmonicity_hnr
+                0.15,  # spectral_flatness
+                1500.0,  # spectral_centroid_hz
+                2000.0,  # spectral_rolloff_hz
+                2000.0,  # bandwidth_hz
+                3.0,  # slope_db_per_octave
+                5.0,  # rms_db
+                0.05,  # peak_amplitude
+            ],
+            dtype=np.float64,
+        )
 
     def normalize(self, vector: np.ndarray) -> np.ndarray:
         """
@@ -319,6 +334,7 @@ class ZScoreNormalizer:
 # High-Dimensional Acoustic Algebra
 # ============================================================================
 
+
 class HighDimensionalAcousticAlgebra:
     """
     High-dimensional acoustic algebra using all 17 features.
@@ -337,10 +353,7 @@ class HighDimensionalAcousticAlgebra:
         self.normalizer = normalizer or ZScoreNormalizer()
 
     def interpolate(
-        self,
-        vector_a: AcousticFeatureVector17,
-        vector_b: AcousticFeatureVector17,
-        alpha: float
+        self, vector_a: AcousticFeatureVector17, vector_b: AcousticFeatureVector17, alpha: float
     ) -> AcousticFeatureVector17:
         """
         Interpolate between two 17-dimensional vectors.
@@ -385,7 +398,7 @@ class HighDimensionalAcousticAlgebra:
         self,
         vector_base: AcousticFeatureVector17,
         vector_direction: AcousticFeatureVector17,
-        alpha: float
+        alpha: float,
     ) -> AcousticFeatureVector17:
         """
         Extrapolate beyond a base vector in the direction of another.
@@ -417,9 +430,7 @@ class HighDimensionalAcousticAlgebra:
         return AcousticFeatureVector17.from_numpy(vec_target)
 
     def add(
-        self,
-        vector_a: AcousticFeatureVector17,
-        vector_b: AcousticFeatureVector17
+        self, vector_a: AcousticFeatureVector17, vector_b: AcousticFeatureVector17
     ) -> AcousticFeatureVector17:
         """
         Add two vectors (vector composition).
@@ -449,9 +460,7 @@ class HighDimensionalAcousticAlgebra:
         return AcousticFeatureVector17.from_numpy(vec_target)
 
     def subtract(
-        self,
-        vector_a: AcousticFeatureVector17,
-        vector_b: AcousticFeatureVector17
+        self, vector_a: AcousticFeatureVector17, vector_b: AcousticFeatureVector17
     ) -> AcousticFeatureVector17:
         """
         Subtract two vectors (compute difference).
@@ -481,9 +490,7 @@ class HighDimensionalAcousticAlgebra:
         return AcousticFeatureVector17.from_numpy(vec_target)
 
     def scalar_multiply(
-        self,
-        vector: AcousticFeatureVector17,
-        scalar: float
+        self, vector: AcousticFeatureVector17, scalar: float
     ) -> AcousticFeatureVector17:
         """
         Multiply vector by scalar.
@@ -531,10 +538,10 @@ class HighDimensionalAcousticAlgebra:
 
         # Check temporal features
         if vector.attack_ms < 0:
-            violations.append(f"Attack < 0 ms: {vector.attack_ms*1000:.1f} ms (Impossible)")
+            violations.append(f"Attack < 0 ms: {vector.attack_ms * 1000:.1f} ms (Impossible)")
 
         if vector.decay_ms < 0:
-            violations.append(f"Decay < 0 ms: {vector.decay_ms*1000:.1f} ms (Impossible)")
+            violations.append(f"Decay < 0 ms: {vector.decay_ms * 1000:.1f} ms (Impossible)")
 
         if vector.duration_ms <= 0:
             violations.append(f"Duration <= 0 ms: {vector.duration_ms:.1f} ms (Impossible)")
@@ -554,10 +561,7 @@ class HighDimensionalAcousticAlgebra:
         if vector.rms_db < -60:
             violations.append(f"RMS too low: {vector.rms_db:.1f} dB (Silence)")
 
-        return {
-            'valid': len(violations) == 0,
-            'violations': violations
-        }
+        return {"valid": len(violations) == 0, "violations": violations}
 
 
 # ============================================================================
@@ -565,9 +569,9 @@ class HighDimensionalAcousticAlgebra:
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("HIGH-DIMENSIONAL ACOUSTIC ALGEBRA DEMONSTRATION")
-    print("="*80)
+    print("=" * 80)
 
     # Create algebra engine
     algebra = HighDimensionalAcousticAlgebra()
@@ -590,7 +594,7 @@ if __name__ == "__main__":
         bandwidth_hz=5000.0,
         slope_db_per_octave=-8.0,
         rms_db=-20.0,
-        peak_amplitude=0.15
+        peak_amplitude=0.15,
     )
 
     alarm = AcousticFeatureVector17(
@@ -610,7 +614,7 @@ if __name__ == "__main__":
         bandwidth_hz=8000.0,
         slope_db_per_octave=-4.0,
         rms_db=-15.0,
-        peak_amplitude=0.25
+        peak_amplitude=0.25,
     )
 
     print("\n--- Vector A (Phee) ---")
@@ -627,11 +631,11 @@ if __name__ == "__main__":
     # Check constraints
     print("\n--- Phonetic Constraints ---")
     constraints = algebra.check_phonetic_constraints(midpoint)
-    if constraints['valid']:
+    if constraints["valid"]:
         print("✅ All constraints satisfied")
     else:
         print("❌ Constraint violations:")
-        for v in constraints['violations']:
+        for v in constraints["violations"]:
             print(f"  - {v}")
 
     # Extrapolate beyond alarm
@@ -640,11 +644,11 @@ if __name__ == "__main__":
     print(extreme)
 
     constraints = algebra.check_phonetic_constraints(extreme)
-    if constraints['valid']:
+    if constraints["valid"]:
         print("✅ All constraints satisfied")
     else:
         print("❌ Constraint violations:")
-        for v in constraints['violations']:
+        for v in constraints["violations"]:
             print(f"  - {v}")
 
     # Vector subtraction (context delta)
@@ -652,7 +656,7 @@ if __name__ == "__main__":
     delta = algebra.subtract(alarm, phee)
     print(delta)
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("\n🎯 High-Dimensional Acoustic Algebra enables:")
     print("   ✓ 17-dimensional interpolation (not just pitch)")
     print("   ✓ Z-score normalization (equal feature weighting)")

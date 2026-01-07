@@ -27,12 +27,15 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PersonaCluster:
     """Statistical definition of a persona's semantic zone."""
+
     persona_id: str
     species: str
     cluster_id: int
 
     # Cluster centroid (mean feature vector)
-    centroid: np.ndarray  # [f0, duration, f0_range, harmonicity, spectral_flatness, jitter, shimmer]
+    centroid: (
+        np.ndarray
+    )  # [f0, duration, f0_range, harmonicity, spectral_flatness, jitter, shimmer]
 
     # Cluster boundary (covariance matrix)
     covariance: np.ndarray
@@ -52,14 +55,20 @@ class PersonaCluster:
     def __post_init__(self):
         if len(self.feature_names) == 0:
             self.feature_names = [
-                'mean_f0_hz', 'duration_ms', 'f0_range_hz',
-                'harmonicity', 'spectral_flatness', 'jitter', 'shimmer'
+                "mean_f0_hz",
+                "duration_ms",
+                "f0_range_hz",
+                "harmonicity",
+                "spectral_flatness",
+                "jitter",
+                "shimmer",
             ]
 
 
 @dataclass
 class SemanticZoneValidationResult:
     """Result of semantic zone validation."""
+
     passed: bool
     persona_id: str
     semantic_label: str
@@ -128,20 +137,25 @@ class PersonaSemanticZoneValidator:
     def load_persona_invariants(self, json_path: str):
         """Load persona cluster definitions from JSON."""
         try:
-            with open(json_path, 'r') as f:
+            with open(json_path, "r") as f:
                 data = json.load(f)
 
-            personas = data.get('personas', {})
+            personas = data.get("personas", {})
 
             for persona_id, persona_data in personas.items():
                 # Extract mean and std for each feature
-                features = ['mean_f0_hz', 'duration_ms', 'f0_range_hz',
-                           'harmonicity', 'spectral_flatness', 'jitter', 'shimmer']
+                features = [
+                    "mean_f0_hz",
+                    "duration_ms",
+                    "f0_range_hz",
+                    "harmonicity",
+                    "spectral_flatness",
+                    "jitter",
+                    "shimmer",
+                ]
 
                 # Build centroid vector
-                centroid = np.array([
-                    persona_data['acoustic_profile'].get(f, 0) for f in features
-                ])
+                centroid = np.array([persona_data["acoustic_profile"].get(f, 0) for f in features])
 
                 # Build covariance matrix (diagonal for now, assumes feature independence)
                 # In production, this should be computed from actual data
@@ -155,13 +169,13 @@ class PersonaSemanticZoneValidator:
 
                 cluster = PersonaCluster(
                     persona_id=persona_id,
-                    species=persona_data['species'],
-                    cluster_id=persona_data['cluster_id'],
+                    species=persona_data["species"],
+                    cluster_id=persona_data["cluster_id"],
                     centroid=centroid,
                     covariance=covariance,
                     feature_names=features,
                     sample_size=100,  # Default
-                    semantic_label=persona_data.get('usage', '').split()[0].lower()
+                    semantic_label=persona_data.get("usage", "").split()[0].lower(),
                 )
 
                 self.clusters[persona_id] = cluster
@@ -186,56 +200,56 @@ class PersonaSemanticZoneValidator:
         phee_centroid = np.array([6526, 76.5, 427, 0.95, 0.1, 0.02, 0.03])
         phee_cov = np.diag([935, 57.6, 399, 0.05, 0.05, 0.01, 0.01]) ** 2
 
-        self.clusters['MARMOSET_PHEE'] = PersonaCluster(
-            persona_id='MARMOSET_PHEE',
-            species='marmoset',
+        self.clusters["MARMOSET_PHEE"] = PersonaCluster(
+            persona_id="MARMOSET_PHEE",
+            species="marmoset",
             cluster_id=0,
             centroid=phee_centroid,
             covariance=phee_cov,
             sample_size=576,
-            semantic_label='contact'
+            semantic_label="contact",
         )
 
         # Marmoset Alarm (Cluster 1)
         alarm_centroid = np.array([6020, 58.1, 3722, 0.7, 0.3, 0.08, 0.05])
         alarm_cov = np.diag([701, 0.0, 163, 0.1, 0.1, 0.02, 0.02]) ** 2
 
-        self.clusters['MARMOSET_ALARM'] = PersonaCluster(
-            persona_id='MARMOSET_ALARM',
-            species='marmoset',
+        self.clusters["MARMOSET_ALARM"] = PersonaCluster(
+            persona_id="MARMOSET_ALARM",
+            species="marmoset",
             cluster_id=1,
             centroid=alarm_centroid,
             covariance=alarm_cov,
             sample_size=22,
-            semantic_label='alarm'
+            semantic_label="alarm",
         )
 
         # Bat Mid-FM (Cluster 1)
         bat_mid_centroid = np.array([7437, 17.4, 9755, 0.6, 0.4, 0.05, 0.04])
         bat_mid_cov = np.diag([1232, 0.0, 2583, 0.15, 0.15, 0.02, 0.02]) ** 2
 
-        self.clusters['BAT_MID_FM'] = PersonaCluster(
-            persona_id='BAT_MID_FM',
-            species='egyptian_bat',
+        self.clusters["BAT_MID_FM"] = PersonaCluster(
+            persona_id="BAT_MID_FM",
+            species="egyptian_bat",
             cluster_id=1,
             centroid=bat_mid_centroid,
             covariance=bat_mid_cov,
             sample_size=233,
-            semantic_label='navigation'
+            semantic_label="navigation",
         )
 
         # Bat Social US (Cluster 2)
         bat_social_centroid = np.array([7408, 17.4, 24, 0.85, 0.1, 0.01, 0.01])
         bat_social_cov = np.diag([1383, 0.0, 22, 0.1, 0.05, 0.005, 0.005]) ** 2
 
-        self.clusters['BAT_SOCIAL_US'] = PersonaCluster(
-            persona_id='BAT_SOCIAL_US',
-            species='egyptian_bat',
+        self.clusters["BAT_SOCIAL_US"] = PersonaCluster(
+            persona_id="BAT_SOCIAL_US",
+            species="egyptian_bat",
             cluster_id=2,
             centroid=bat_social_centroid,
             covariance=bat_social_cov,
             sample_size=213,
-            semantic_label='social'
+            semantic_label="social",
         )
 
         # Build species index
@@ -246,10 +260,7 @@ class PersonaSemanticZoneValidator:
             self.species_to_personas[species].append(persona_id)
 
     def validate_vocalization(
-        self,
-        features: Dict[str, float],
-        species: Optional[str] = None,
-        strict: bool = True
+        self, features: Dict[str, float], species: Optional[str] = None, strict: bool = True
     ) -> SemanticZoneValidationResult:
         """
         Validate if a vocalization falls within a valid semantic zone.
@@ -263,17 +274,22 @@ class PersonaSemanticZoneValidator:
             SemanticZoneValidationResult with persona assignment and confidence
         """
         # Build feature vector
-        feature_names = ['mean_f0_hz', 'duration_ms', 'f0_range_hz',
-                        'harmonicity', 'spectral_flatness', 'jitter', 'shimmer']
+        feature_names = [
+            "mean_f0_hz",
+            "duration_ms",
+            "f0_range_hz",
+            "harmonicity",
+            "spectral_flatness",
+            "jitter",
+            "shimmer",
+        ]
 
         feature_vector = np.array([features.get(f, 0) for f in feature_names])
 
         # Filter clusters by species if specified
         candidate_clusters = list(self.clusters.values())
         if species:
-            candidate_clusters = [
-                c for c in candidate_clusters if c.species == species
-            ]
+            candidate_clusters = [c for c in candidate_clusters if c.species == species]
 
         if len(candidate_clusters) == 0:
             return SemanticZoneValidationResult(
@@ -281,18 +297,16 @@ class PersonaSemanticZoneValidator:
                 persona_id="UNKNOWN",
                 semantic_label="unknown",
                 confidence=0.0,
-                mahalanobis_distance=float('inf'),
+                mahalanobis_distance=float("inf"),
                 is_outlier=True,
-                warnings=["No matching persona clusters for species"]
+                warnings=["No matching persona clusters for species"],
             )
 
         # Calculate Mahalanobis distance to each cluster
         results = []
         for cluster in candidate_clusters:
             distance = self._mahalanobis_distance(
-                feature_vector,
-                cluster.centroid,
-                cluster.covariance
+                feature_vector, cluster.centroid, cluster.covariance
             )
 
             # Calculate confidence based on distance
@@ -355,14 +369,11 @@ class PersonaSemanticZoneValidator:
             feature_deviations=feature_deviations,
             feature_z_scores=feature_z_scores,
             warnings=warnings,
-            suggested_persona=suggested_persona
+            suggested_persona=suggested_persona,
         )
 
     def _mahalanobis_distance(
-        self,
-        point: np.ndarray,
-        centroid: np.ndarray,
-        covariance: np.ndarray
+        self, point: np.ndarray, centroid: np.ndarray, covariance: np.ndarray
     ) -> float:
         """
         Calculate Mahalanobis distance from point to cluster centroid.
@@ -384,9 +395,7 @@ class PersonaSemanticZoneValidator:
             return euclidean(point, centroid)
 
     def classify_vocalization(
-        self,
-        features: Dict[str, float],
-        species: Optional[str] = None
+        self, features: Dict[str, float], species: Optional[str] = None
     ) -> Tuple[str, float]:
         """
         Classify a vocalization into a persona.
@@ -400,10 +409,7 @@ class PersonaSemanticZoneValidator:
         result = self.validate_vocalization(features, species, strict=False)
         return result.persona_id, result.confidence
 
-    def get_cluster_boundaries(
-        self,
-        persona_id: str
-    ) -> Dict[str, Tuple[float, float]]:
+    def get_cluster_boundaries(self, persona_id: str) -> Dict[str, Tuple[float, float]]:
         """
         Get the statistical boundaries (±2σ) for each feature.
 
@@ -428,10 +434,7 @@ class PersonaSemanticZoneValidator:
         return boundaries
 
     def is_ghost_word(
-        self,
-        features: Dict[str, float],
-        species: str,
-        threshold: float = 1.5
+        self, features: Dict[str, float], species: str, threshold: float = 1.5
     ) -> Tuple[bool, List[Tuple[str, float]]]:
         """
         Determine if a vocalization is a "ghost word" - falls between
@@ -448,17 +451,22 @@ class PersonaSemanticZoneValidator:
             return False, []
 
         # Get all distances to clusters for this species
-        feature_names = ['mean_f0_hz', 'duration_ms', 'f0_range_hz',
-                        'harmonicity', 'spectral_flatness', 'jitter', 'shimmer']
+        feature_names = [
+            "mean_f0_hz",
+            "duration_ms",
+            "f0_range_hz",
+            "harmonicity",
+            "spectral_flatness",
+            "jitter",
+            "shimmer",
+        ]
         feature_vector = np.array([features.get(f, 0) for f in feature_names])
 
         distances = []
         for persona_id in self.species_to_personas[species]:
             cluster = self.clusters[persona_id]
             distance = self._mahalanobis_distance(
-                feature_vector,
-                cluster.centroid,
-                cluster.covariance
+                feature_vector, cluster.centroid, cluster.covariance
             )
             distances.append((persona_id, distance))
 
@@ -484,58 +492,58 @@ class PersonaSemanticZoneValidator:
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PERSONA SEMANTIC ZONE VALIDATOR DEMONSTRATION")
-    print("="*80)
+    print("=" * 80)
 
     validator = PersonaSemanticZoneValidator()
 
     # Test 1: Natural marmoset phee (should pass)
     print("\n--- Test 1: Natural Marmoset Phee Call ---")
     phee_features = {
-        'mean_f0_hz': 6526,
-        'duration_ms': 76.5,
-        'f0_range_hz': 427,
-        'harmonicity': 0.95,
-        'spectral_flatness': 0.1,
-        'jitter': 0.02,
-        'shimmer': 0.03
+        "mean_f0_hz": 6526,
+        "duration_ms": 76.5,
+        "f0_range_hz": 427,
+        "harmonicity": 0.95,
+        "spectral_flatness": 0.1,
+        "jitter": 0.02,
+        "shimmer": 0.03,
     }
 
-    result = validator.validate_vocalization(phee_features, species='marmoset')
+    result = validator.validate_vocalization(phee_features, species="marmoset")
     print(result)
 
     # Test 2: Marmoset alarm (should pass)
     print("\n--- Test 2: Marmoset Alarm Call ---")
     alarm_features = {
-        'mean_f0_hz': 6020,
-        'duration_ms': 58.1,
-        'f0_range_hz': 3722,
-        'harmonicity': 0.7,
-        'spectral_flatness': 0.3,
-        'jitter': 0.08,
-        'shimmer': 0.05
+        "mean_f0_hz": 6020,
+        "duration_ms": 58.1,
+        "f0_range_hz": 3722,
+        "harmonicity": 0.7,
+        "spectral_flatness": 0.3,
+        "jitter": 0.08,
+        "shimmer": 0.05,
     }
 
-    result = validator.validate_vocalization(alarm_features, species='marmoset')
+    result = validator.validate_vocalization(alarm_features, species="marmoset")
     print(result)
 
     # Test 3: Ghost word (interpolation)
     print("\n--- Test 3: Ghost Word (Phee + Alarm Interpolation) ---")
     ghost_features = {
-        'mean_f0_hz': 6273,  # Midpoint
-        'duration_ms': 67.3,  # Midpoint
-        'f0_range_hz': 2074,  # Midpoint
-        'harmonicity': 0.825,  # Average
-        'spectral_flatness': 0.2,
-        'jitter': 0.05,
-        'shimmer': 0.04
+        "mean_f0_hz": 6273,  # Midpoint
+        "duration_ms": 67.3,  # Midpoint
+        "f0_range_hz": 2074,  # Midpoint
+        "harmonicity": 0.825,  # Average
+        "spectral_flatness": 0.2,
+        "jitter": 0.05,
+        "shimmer": 0.04,
     }
 
-    result = validator.validate_vocalization(ghost_features, species='marmoset')
+    result = validator.validate_vocalization(ghost_features, species="marmoset")
     print(result)
 
-    is_ghost, close_clusters = validator.is_ghost_word(ghost_features, 'marmoset')
+    is_ghost, close_clusters = validator.is_ghost_word(ghost_features, "marmoset")
     print("\nGhost Word Analysis:")
     print(f"  Is Ghost Word: {is_ghost}")
     print("  Close Clusters:")
@@ -545,26 +553,26 @@ if __name__ == "__main__":
     # Test 4: Invalid vocalization (should fail)
     print("\n--- Test 4: Invalid Vocalization (Out of Range) ---")
     invalid_features = {
-        'mean_f0_hz': 10000,  # Too high for marmoset
-        'duration_ms': 200,  # Too long
-        'f0_range_hz': 100,
-        'harmonicity': 0.3,
-        'spectral_flatness': 0.8,
-        'jitter': 0.2,
-        'shimmer': 0.15
+        "mean_f0_hz": 10000,  # Too high for marmoset
+        "duration_ms": 200,  # Too long
+        "f0_range_hz": 100,
+        "harmonicity": 0.3,
+        "spectral_flatness": 0.8,
+        "jitter": 0.2,
+        "shimmer": 0.15,
     }
 
-    result = validator.validate_vocalization(invalid_features, species='marmoset')
+    result = validator.validate_vocalization(invalid_features, species="marmoset")
     print(result)
 
     # Test 5: Cluster boundaries
     print("\n--- Test 5: Cluster Boundaries (MARMOSET_PHEE) ---")
-    boundaries = validator.get_cluster_boundaries('MARMOSET_PHEE')
+    boundaries = validator.get_cluster_boundaries("MARMOSET_PHEE")
     print("  Feature Boundaries (95% confidence):")
     for fname, (lower, upper) in boundaries.items():
         print(f"    {fname}: [{lower:.1f}, {upper:.1f}]")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("\n🎯 Semantic Zone Validation ready for:")
     print("   ✓ Validating synthesized vocalizations")
     print("   ✓ Classifying natural recordings")

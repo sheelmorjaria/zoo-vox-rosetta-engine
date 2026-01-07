@@ -71,110 +71,198 @@ def create_mock_annotated_phrases():
     phrases = {}
 
     # Contact phrases (baseline)
-    phrases['contact_001'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6500, duration_ms=70, attack_ms=0.010, decay_ms=0.050,
-            f0_range_hz=400, vibrato_rate_hz=8.0, vibrato_depth_hz=50.0,
-            jitter=0.02, shimmer=0.03, harmonicity_hnr=20.0, spectral_flatness=0.1,
-            spectral_centroid_hz=7000.0, spectral_rolloff_hz=13000.0,
-            bandwidth_hz=5000.0, slope_db_per_octave=-8.0,
-            rms_db=-20.0, peak_amplitude=0.15
+    phrases["contact_001"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6500,
+            duration_ms=70,
+            attack_ms=0.010,
+            decay_ms=0.050,
+            f0_range_hz=400,
+            vibrato_rate_hz=8.0,
+            vibrato_depth_hz=50.0,
+            jitter=0.02,
+            shimmer=0.03,
+            harmonicity_hnr=20.0,
+            spectral_flatness=0.1,
+            spectral_centroid_hz=7000.0,
+            spectral_rolloff_hz=13000.0,
+            bandwidth_hz=5000.0,
+            slope_db_per_octave=-8.0,
+            rms_db=-20.0,
+            peak_amplitude=0.15,
         ),
-        'context': 'contact',
-        'audio_file': 'contact_001.wav'
+        "context": "contact",
+        "audio_file": "contact_001.wav",
     }
 
-    phrases['contact_002'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6450, duration_ms=75, attack_ms=0.012, decay_ms=0.045,
-            f0_range_hz=450, vibrato_rate_hz=7.5, vibrato_depth_hz=45.0,
-            jitter=0.018, shimmer=0.028, harmonicity_hnr=22.0, spectral_flatness=0.12,
-            spectral_centroid_hz=7200.0, spectral_rolloff_hz=12500.0,
-            bandwidth_hz=5200.0, slope_db_per_octave=-7.5,
-            rms_db=-19.0, peak_amplitude=0.14
+    phrases["contact_002"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6450,
+            duration_ms=75,
+            attack_ms=0.012,
+            decay_ms=0.045,
+            f0_range_hz=450,
+            vibrato_rate_hz=7.5,
+            vibrato_depth_hz=45.0,
+            jitter=0.018,
+            shimmer=0.028,
+            harmonicity_hnr=22.0,
+            spectral_flatness=0.12,
+            spectral_centroid_hz=7200.0,
+            spectral_rolloff_hz=12500.0,
+            bandwidth_hz=5200.0,
+            slope_db_per_octave=-7.5,
+            rms_db=-19.0,
+            peak_amplitude=0.14,
         ),
-        'context': 'contact',
-        'audio_file': 'contact_002.wav'
+        "context": "contact",
+        "audio_file": "contact_002.wav",
     }
 
-    phrases['contact_003'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6550, duration_ms=68, attack_ms=0.008, decay_ms=0.055,
-            f0_range_hz=380, vibrato_rate_hz=8.5, vibrato_depth_hz=48.0,
-            jitter=0.022, shimmer=0.032, harmonicity_hnr=18.0, spectral_flatness=0.11,
-            spectral_centroid_hz=6800.0, spectral_rolloff_hz=12800.0,
-            bandwidth_hz=4800.0, slope_db_per_octave=-8.5,
-            rms_db=-21.0, peak_amplitude=0.13
+    phrases["contact_003"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6550,
+            duration_ms=68,
+            attack_ms=0.008,
+            decay_ms=0.055,
+            f0_range_hz=380,
+            vibrato_rate_hz=8.5,
+            vibrato_depth_hz=48.0,
+            jitter=0.022,
+            shimmer=0.032,
+            harmonicity_hnr=18.0,
+            spectral_flatness=0.11,
+            spectral_centroid_hz=6800.0,
+            spectral_rolloff_hz=12800.0,
+            bandwidth_hz=4800.0,
+            slope_db_per_octave=-8.5,
+            rms_db=-21.0,
+            peak_amplitude=0.13,
         ),
-        'context': 'contact',
-        'audio_file': 'contact_003.wav'
+        "context": "contact",
+        "audio_file": "contact_003.wav",
     }
 
     # Aggression phrases (target)
-    phrases['aggression_001'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6100, duration_ms=55, attack_ms=0.005, decay_ms=0.030,
-            f0_range_hz=3500, vibrato_rate_hz=12.0, vibrato_depth_hz=150.0,
-            jitter=0.08, shimmer=0.05, harmonicity_hnr=5.0, spectral_flatness=0.3,
-            spectral_centroid_hz=8000.0, spectral_rolloff_hz=15000.0,
-            bandwidth_hz=8000.0, slope_db_per_octave=-4.0,
-            rms_db=-15.0, peak_amplitude=0.25
+    phrases["aggression_001"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6100,
+            duration_ms=55,
+            attack_ms=0.005,
+            decay_ms=0.030,
+            f0_range_hz=3500,
+            vibrato_rate_hz=12.0,
+            vibrato_depth_hz=150.0,
+            jitter=0.08,
+            shimmer=0.05,
+            harmonicity_hnr=5.0,
+            spectral_flatness=0.3,
+            spectral_centroid_hz=8000.0,
+            spectral_rolloff_hz=15000.0,
+            bandwidth_hz=8000.0,
+            slope_db_per_octave=-4.0,
+            rms_db=-15.0,
+            peak_amplitude=0.25,
         ),
-        'context': 'aggression',
-        'audio_file': 'aggression_001.wav'
+        "context": "aggression",
+        "audio_file": "aggression_001.wav",
     }
 
-    phrases['aggression_002'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6000, duration_ms=50, attack_ms=0.004, decay_ms=0.025,
-            f0_range_hz=3800, vibrato_rate_hz=11.0, vibrato_depth_hz=140.0,
-            jitter=0.075, shimmer=0.045, harmonicity_hnr=6.0, spectral_flatness=0.28,
-            spectral_centroid_hz=8200.0, spectral_rolloff_hz=14500.0,
-            bandwidth_hz=7500.0, slope_db_per_octave=-4.5,
-            rms_db=-14.0, peak_amplitude=0.23
+    phrases["aggression_002"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6000,
+            duration_ms=50,
+            attack_ms=0.004,
+            decay_ms=0.025,
+            f0_range_hz=3800,
+            vibrato_rate_hz=11.0,
+            vibrato_depth_hz=140.0,
+            jitter=0.075,
+            shimmer=0.045,
+            harmonicity_hnr=6.0,
+            spectral_flatness=0.28,
+            spectral_centroid_hz=8200.0,
+            spectral_rolloff_hz=14500.0,
+            bandwidth_hz=7500.0,
+            slope_db_per_octave=-4.5,
+            rms_db=-14.0,
+            peak_amplitude=0.23,
         ),
-        'context': 'aggression',
-        'audio_file': 'aggression_002.wav'
+        "context": "aggression",
+        "audio_file": "aggression_002.wav",
     }
 
-    phrases['aggression_003'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6050, duration_ms=58, attack_ms=0.006, decay_ms=0.035,
-            f0_range_hz=3200, vibrato_rate_hz=11.5, vibrato_depth_hz=145.0,
-            jitter=0.078, shimmer=0.048, harmonicity_hnr=5.5, spectral_flatness=0.29,
-            spectral_centroid_hz=8100.0, spectral_rolloff_hz=14800.0,
-            bandwidth_hz=7800.0, slope_db_per_octave=-4.2,
-            rms_db=-14.5, peak_amplitude=0.24
+    phrases["aggression_003"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6050,
+            duration_ms=58,
+            attack_ms=0.006,
+            decay_ms=0.035,
+            f0_range_hz=3200,
+            vibrato_rate_hz=11.5,
+            vibrato_depth_hz=145.0,
+            jitter=0.078,
+            shimmer=0.048,
+            harmonicity_hnr=5.5,
+            spectral_flatness=0.29,
+            spectral_centroid_hz=8100.0,
+            spectral_rolloff_hz=14800.0,
+            bandwidth_hz=7800.0,
+            slope_db_per_octave=-4.2,
+            rms_db=-14.5,
+            peak_amplitude=0.24,
         ),
-        'context': 'aggression',
-        'audio_file': 'aggression_003.wav'
+        "context": "aggression",
+        "audio_file": "aggression_003.wav",
     }
 
     # Food phrases
-    phrases['food_001'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6300, duration_ms=65, attack_ms=0.008, decay_ms=0.040,
-            f0_range_hz=600, vibrato_rate_hz=9.0, vibrato_depth_hz=60.0,
-            jitter=0.025, shimmer=0.035, harmonicity_hnr=15.0, spectral_flatness=0.15,
-            spectral_centroid_hz=7500.0, spectral_rolloff_hz=13500.0,
-            bandwidth_hz=6000.0, slope_db_per_octave=-6.0,
-            rms_db=-18.0, peak_amplitude=0.18
+    phrases["food_001"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6300,
+            duration_ms=65,
+            attack_ms=0.008,
+            decay_ms=0.040,
+            f0_range_hz=600,
+            vibrato_rate_hz=9.0,
+            vibrato_depth_hz=60.0,
+            jitter=0.025,
+            shimmer=0.035,
+            harmonicity_hnr=15.0,
+            spectral_flatness=0.15,
+            spectral_centroid_hz=7500.0,
+            spectral_rolloff_hz=13500.0,
+            bandwidth_hz=6000.0,
+            slope_db_per_octave=-6.0,
+            rms_db=-18.0,
+            peak_amplitude=0.18,
         ),
-        'context': 'food',
-        'audio_file': 'food_001.wav'
+        "context": "food",
+        "audio_file": "food_001.wav",
     }
 
-    phrases['food_002'] = {
-        'vector': AcousticFeatureVector17(
-            mean_f0_hz=6350, duration_ms=62, attack_ms=0.009, decay_ms=0.038,
-            f0_range_hz=580, vibrato_rate_hz=8.5, vibrato_depth_hz=55.0,
-            jitter=0.023, shimmer=0.033, harmonicity_hnr=16.0, spectral_flatness=0.14,
-            spectral_centroid_hz=7400.0, spectral_rolloff_hz=13300.0,
-            bandwidth_hz=5800.0, slope_db_per_octave=-6.5,
-            rms_db=-17.5, peak_amplitude=0.17
+    phrases["food_002"] = {
+        "vector": AcousticFeatureVector17(
+            mean_f0_hz=6350,
+            duration_ms=62,
+            attack_ms=0.009,
+            decay_ms=0.038,
+            f0_range_hz=580,
+            vibrato_rate_hz=8.5,
+            vibrato_depth_hz=55.0,
+            jitter=0.023,
+            shimmer=0.033,
+            harmonicity_hnr=16.0,
+            spectral_flatness=0.14,
+            spectral_centroid_hz=7400.0,
+            spectral_rolloff_hz=13300.0,
+            bandwidth_hz=5800.0,
+            slope_db_per_octave=-6.5,
+            rms_db=-17.5,
+            peak_amplitude=0.17,
         ),
-        'context': 'food',
-        'audio_file': 'food_002.wav'
+        "context": "food",
+        "audio_file": "food_002.wav",
     }
 
     return phrases
@@ -186,16 +274,16 @@ def demo_discovery_phase():
 
     Calculate semantic centroids from annotated phrases.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("STEP 2: DISCOVERY PHASE - Calculate Contextual Centroids")
-    print("="*80)
+    print("=" * 80)
 
     # Load annotated phrases (mock data for demo)
     phrases = create_mock_annotated_phrases()
 
     # Extract vectors and labels
-    phrase_vectors = {k: v['vector'] for k, v in phrases.items()}
-    context_labels = {k: v['context'] for k, v in phrases.items()}
+    phrase_vectors = {k: v["vector"] for k, v in phrases.items()}
+    context_labels = {k: v["context"] for k, v in phrases.items()}
 
     print(f"\n📊 Loaded {len(phrases)} annotated phrases:")
     for phrase_id, phrase_data in phrases.items():
@@ -208,11 +296,11 @@ def demo_discovery_phase():
     print(f"\n✅ Calculated {len(centroids)} contextual centroids")
 
     # Show what each centroid "means"
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("CONTEXTUAL SEMANTIC ANALYSIS")
-    print("-"*80)
+    print("-" * 80)
 
-    for ctx_name in ['contact', 'aggression', 'food']:
+    for ctx_name in ["contact", "aggression", "food"]:
         if ctx_name in centroids:
             centroid = centroids[ctx_name]
             print(f"\n{ctx_name.upper()} CONTEXT:")
@@ -242,9 +330,9 @@ def demo_synthesis_phase(map_obj, phrase_vectors):
 
     Generate "Virtual Phrases" at specified intensities.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("STEP 3: SYNTHESIS PHASE - Gradient Generation")
-    print("="*80)
+    print("=" * 80)
 
     print("\n🎯 Standard Retrieval (Without Algebra):")
     print("  Request: 'Aggressive call'")
@@ -257,15 +345,15 @@ def demo_synthesis_phase(map_obj, phrase_vectors):
     print("  Result: You get a nuanced '30% Aggressive' virtual phrase")
 
     # Generate graded phrases
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print("GENERATING GRADED PHRASES (Contact → Aggression)")
-    print("-"*80)
+    print("-" * 80)
 
     intensities = [0.0, 0.25, 0.5, 0.75, 1.0]
 
     for intensity in intensities:
         # Generate virtual phrase
-        virtual = map_obj.generate_graded_phrase('aggression', intensity)
+        virtual = map_obj.generate_graded_phrase("aggression", intensity)
 
         # Find nearest real phrase
         nearest_key, nearest_vec, distance = map_obj.find_nearest_real_phrase(
@@ -279,13 +367,15 @@ def demo_synthesis_phase(map_obj, phrase_vectors):
 
         # Show key features that differ
         feature_names = virtual.feature_names()
-        key_features = ['mean_f0_hz', 'duration_ms', 'attack_ms', 'jitter', 'harmonicity_hnr']
+        key_features = ["mean_f0_hz", "duration_ms", "attack_ms", "jitter", "harmonicity_hnr"]
 
-        print(f"\n🎯 Intensity {intensity*100:.0f}%:")
-        print(f"  Virtual:  F0={virtual.mean_f0_hz:.0f}Hz, "
-              f"Dur={virtual.duration_ms:.1f}ms, "
-              f"Attack={virtual.attack_ms*1000:.1f}ms, "
-              f"Jitter={virtual.jitter:.3f}")
+        print(f"\n🎯 Intensity {intensity * 100:.0f}%:")
+        print(
+            f"  Virtual:  F0={virtual.mean_f0_hz:.0f}Hz, "
+            f"Dur={virtual.duration_ms:.1f}ms, "
+            f"Attack={virtual.attack_ms * 1000:.1f}ms, "
+            f"Jitter={virtual.jitter:.3f}"
+        )
         print(f"  Nearest: {nearest_key} (distance: {distance:.3f})")
 
         # Show if we need to apply micro-dynamic extrapolation
@@ -304,9 +394,9 @@ def demo_threshold_test():
     Test hypothesis: Animals perceive emotion as a continuous continuum,
     not discrete states.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SCIENTIFIC APPLICATION: The Threshold Test")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 🧪 Hypothesis: Animals perceive emotion as a continuous continuum
@@ -334,26 +424,26 @@ def demo_threshold_test():
     print("\n📊 Experimental Stimuli Generated:")
 
     for intensity in [0.0, 0.25, 0.5, 0.75, 1.0]:
-        virtual = map_obj.generate_graded_phrase('aggression', intensity)
+        virtual = map_obj.generate_graded_phrase("aggression", intensity)
 
         # Calculate acoustic distance from baseline
         baseline = map_obj.centroids[map_obj.baseline_context].centroid_vector
         delta = map_obj.algebra.subtract(virtual, baseline)
 
-        print(f"\n  Intensity {intensity*100:.0f}%:")
+        print(f"\n  Intensity {intensity * 100:.0f}%:")
         print(f"    F0: {virtual.mean_f0_hz:.0f} Hz (Δ from baseline: {delta.mean_f0_hz:+.0f})")
         print(f"    Duration: {virtual.duration_ms:.1f} ms (Δ: {delta.duration_ms:+.1f})")
-        print(f"    Attack: {virtual.attack_ms*1000:.1f} ms (Δ: {delta.attack_ms*1000:+.1f})")
+        print(f"    Attack: {virtual.attack_ms * 1000:.1f} ms (Δ: {delta.attack_ms * 1000:+.1f})")
         print(f"    Jitter: {virtual.jitter:.3f} (Δ: {delta.jitter:+.3f})")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
 
 
 def main():
     """Run complete demonstration."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ACOUSTIC ALGEBRA INTEGRATION DEMO")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 🎯 Acoustic Algebra transforms the pipeline from:
@@ -370,9 +460,9 @@ def main():
     demo_synthesis_phase(map_obj, phrase_vectors)
     demo_threshold_test()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("✅ INTEGRATION COMPLETE")
-    print("="*80)
+    print("=" * 80)
 
     print("""
 📦 Files Created:

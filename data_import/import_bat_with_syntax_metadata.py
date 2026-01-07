@@ -26,18 +26,18 @@ import soundfile as sf
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Add URS path
-urs_path = str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone')
+urs_path = str(Path(__file__).parent.parent / "analysis" / "rosetta_stone")
 sys.path.insert(0, urs_path)
 
 from universal_rosetta_stone import Modality, PhraseSignature
 
 # Configuration
-ANNOTATIONS_PATH = '/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv'
-AUDIO_DIR = '/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio'
-OUTPUT_PATH = '/home/sheel/birdsong_analysis/src/bat_database_with_syntax.json'
-AUDIO_LIBRARY_DIR = '/home/sheel/birdsong_analysis/src/audio_library/bat'
-AUDIO_INDEX_PATH = '/home/sheel/birdsong_analysis/src/audio_library/bat_audio_index.json'
-CHECKPOINT_PATH = '/home/sheel/birdsong_analysis/src/bat_import_checkpoint.json'
+ANNOTATIONS_PATH = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv"
+AUDIO_DIR = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio"
+OUTPUT_PATH = "/home/sheel/birdsong_analysis/src/bat_database_with_syntax.json"
+AUDIO_LIBRARY_DIR = "/home/sheel/birdsong_analysis/src/audio_library/bat"
+AUDIO_INDEX_PATH = "/home/sheel/birdsong_analysis/src/audio_library/bat_audio_index.json"
+CHECKPOINT_PATH = "/home/sheel/birdsong_analysis/src/bat_import_checkpoint.json"
 SAMPLE_RATE = 22050
 NUM_WORKERS = max(1, cpu_count() - 1)  # Parallel processing
 BATCH_SIZE = 100  # Increased for speed
@@ -73,6 +73,7 @@ def load_and_segment_audio(file_name: str) -> Tuple[str, Dict, str, List[Tuple]]
         # Resample if needed
         if sr != SAMPLE_RATE:
             from scipy import signal
+
             num_samples = int(len(audio) * SAMPLE_RATE / sr)
             audio = signal.resample(audio, num_samples)
 
@@ -137,8 +138,8 @@ def segment_into_phrases(audio: np.ndarray) -> List[Tuple[np.ndarray, Dict]]:
         try:
             sig = PhraseSignature(modality=Modality.FM_SWEEP, data=segment, sample_rate=SAMPLE_RATE)
             features = sig.features
-            features['onset_ms'] = onset / SAMPLE_RATE * 1000
-            features['offset_ms'] = offset / SAMPLE_RATE * 1000
+            features["onset_ms"] = onset / SAMPLE_RATE * 1000
+            features["offset_ms"] = offset / SAMPLE_RATE * 1000
             segments.append((segment, features))
         except:
             continue
@@ -146,7 +147,9 @@ def segment_into_phrases(audio: np.ndarray) -> List[Tuple[np.ndarray, Dict]]:
     return segments
 
 
-def extract_syntax_metadata(segments: List[Tuple[np.ndarray, Dict]], full_audio: np.ndarray) -> Dict:
+def extract_syntax_metadata(
+    segments: List[Tuple[np.ndarray, Dict]], full_audio: np.ndarray
+) -> Dict:
     """Extract grammar/syntax metadata from segmented vocalization."""
 
     if not segments:
@@ -158,14 +161,14 @@ def extract_syntax_metadata(segments: List[Tuple[np.ndarray, Dict]], full_audio:
 
     for audio, features in segments:
         # Generate phrase key for bat (FM sweep)
-        f0_mean = int(features.get('f0_mean', 0) / 100) * 100
-        f0_range = int(features.get('f0_range', 0) / 100) * 100
-        duration_ms = int(features.get('duration_ms', 0) / 5) * 5
+        f0_mean = int(features.get("f0_mean", 0) / 100) * 100
+        f0_range = int(features.get("f0_range", 0) / 100) * 100
+        duration_ms = int(features.get("duration_ms", 0) / 5) * 5
 
-        phrase_key = f"FM_{int(f0_mean/1000)}_{int(f0_range/1000)}_DUR_{duration_ms}"
+        phrase_key = f"FM_{int(f0_mean / 1000)}_{int(f0_range / 1000)}_DUR_{duration_ms}"
 
         phrase_sequence.append(phrase_key)
-        f0_sequence.append(features.get('f0_mean', 0))
+        f0_sequence.append(features.get("f0_mean", 0))
 
     # Analyze F0 contour
     f0_contour = analyze_f0_contour(f0_sequence)
@@ -183,47 +186,49 @@ def extract_syntax_metadata(segments: List[Tuple[np.ndarray, Dict]], full_audio:
 
     # Overall vocalization features
     total_duration_ms = len(full_audio) / SAMPLE_RATE * 1000
-    overall_f0_mean = np.mean([f for f in f0_sequence if f > 0]) if any(f > 0 for f in f0_sequence) else 0
+    overall_f0_mean = (
+        np.mean([f for f in f0_sequence if f > 0]) if any(f > 0 for f in f0_sequence) else 0
+    )
     overall_f0_range = max(f0_sequence) - min(f0_sequence) if f0_sequence else 0
 
     return {
-        'phrase_sequence': phrase_sequence,
-        'num_phrases': len(phrase_sequence),
-        'f0_sequence': f0_sequence,
-        'f0_contour': f0_contour,
-        'has_repetition': has_repetition,
-        'transitions': transitions,
-        'is_compositional': is_compositional,
-        'total_duration_ms': total_duration_ms,
-        'overall_f0_mean_hz': overall_f0_mean,
-        'overall_f0_range_hz': overall_f0_range,
-        'segment_details': [
+        "phrase_sequence": phrase_sequence,
+        "num_phrases": len(phrase_sequence),
+        "f0_sequence": f0_sequence,
+        "f0_contour": f0_contour,
+        "has_repetition": has_repetition,
+        "transitions": transitions,
+        "is_compositional": is_compositional,
+        "total_duration_ms": total_duration_ms,
+        "overall_f0_mean_hz": overall_f0_mean,
+        "overall_f0_range_hz": overall_f0_range,
+        "segment_details": [
             {
-                'phrase_key': phrase_sequence[i],
-                'f0_mean': f0_sequence[i],
-                'onset_ms': seg[1]['onset_ms'],
-                'offset_ms': seg[1]['offset_ms'],
-                'duration_ms': seg[1]['duration_ms']
+                "phrase_key": phrase_sequence[i],
+                "f0_mean": f0_sequence[i],
+                "onset_ms": seg[1]["onset_ms"],
+                "offset_ms": seg[1]["offset_ms"],
+                "duration_ms": seg[1]["duration_ms"],
             }
             for i, seg in enumerate(segments)
-        ]
+        ],
     }
 
 
 def analyze_f0_contour(f0_sequence: List[float]) -> str:
     """Analyze the overall F0 contour pattern."""
     if len(f0_sequence) < 2:
-        return 'single'
+        return "single"
 
     # Filter out zero F0 values
     valid_f0 = [f for f in f0_sequence if f > 0]
 
     if len(valid_f0) < 2:
-        return 'unmeasured'
+        return "unmeasured"
 
     # Calculate trend
-    first_half = valid_f0[:len(valid_f0)//2]
-    second_half = valid_f0[len(valid_f0)//2:]
+    first_half = valid_f0[: len(valid_f0) // 2]
+    second_half = valid_f0[len(valid_f0) // 2 :]
 
     mean_first = np.mean(first_half)
     mean_second = np.mean(second_half)
@@ -232,13 +237,13 @@ def analyze_f0_contour(f0_sequence: List[float]) -> str:
     range_val = max(valid_f0) - min(valid_f0)
 
     if range_val < 200:
-        return 'flat'
+        return "flat"
     elif diff > range_val * 0.3:
-        return 'ascending'
+        return "ascending"
     elif diff < -range_val * 0.3:
-        return 'descending'
+        return "descending"
     else:
-        return 'complex'
+        return "complex"
 
 
 def process_batch(batch: List[int]) -> List[Tuple]:
@@ -267,38 +272,44 @@ def export_audio_segments(phrase_segments: Dict[str, List[Dict]]):
 
         for k, segment_data in enumerate(segments):
             # Generate filename
-            filename = f"{k+1:04d}.wav"
+            filename = f"{k + 1:04d}.wav"
             file_path = phrase_dir / filename
 
             # Save audio
-            sf.write(str(file_path), segment_data['audio'], SAMPLE_RATE)
+            sf.write(str(file_path), segment_data["audio"], SAMPLE_RATE)
 
             # Add to index
-            phrase_index.append({
-                'filename': filename,
-                'relative_path': f'bat/{phrase_key}/{filename}',
-                'vocalization_id': segment_data['vocalization_id'],
-                'context': segment_data['context'],
-                'duration_ms': segment_data['duration_ms'],
-                'f0_mean': segment_data['f0_mean'],
-                'num_samples': len(segment_data['audio'])
-            })
+            phrase_index.append(
+                {
+                    "filename": filename,
+                    "relative_path": f"bat/{phrase_key}/{filename}",
+                    "vocalization_id": segment_data["vocalization_id"],
+                    "context": segment_data["context"],
+                    "duration_ms": segment_data["duration_ms"],
+                    "f0_mean": segment_data["f0_mean"],
+                    "num_samples": len(segment_data["audio"]),
+                }
+            )
 
         audio_index[phrase_key] = {
-            'phrase_key': phrase_key,
-            'total_occurrences': len(phrase_index),
-            'segments': phrase_index
+            "phrase_key": phrase_key,
+            "total_occurrences": len(phrase_index),
+            "segments": phrase_index,
         }
 
     # Save audio index
-    with open(AUDIO_INDEX_PATH, 'w') as f:
-        json.dump({
-            'export_date': datetime.now().isoformat(),
-            'sample_rate': SAMPLE_RATE,
-            'total_phrases': len(audio_index),
-            'total_segments': sum(index['total_occurrences'] for index in audio_index.values()),
-            'phrases': audio_index
-        }, f, indent=2)
+    with open(AUDIO_INDEX_PATH, "w") as f:
+        json.dump(
+            {
+                "export_date": datetime.now().isoformat(),
+                "sample_rate": SAMPLE_RATE,
+                "total_phrases": len(audio_index),
+                "total_segments": sum(index["total_occurrences"] for index in audio_index.values()),
+                "phrases": audio_index,
+            },
+            f,
+            indent=2,
+        )
 
     print(f"✅ Exported {len(audio_index)} phrase types")
     print(f"   Total segments: {sum(index['total_occurrences'] for index in audio_index.values())}")
@@ -307,7 +318,7 @@ def export_audio_segments(phrase_segments: Dict[str, List[Dict]]):
 def save_checkpoint(checkpoint_data: Dict):
     """Save checkpoint data to file."""
     try:
-        with open(CHECKPOINT_PATH, 'w') as f:
+        with open(CHECKPOINT_PATH, "w") as f:
             json.dump(checkpoint_data, f, indent=2)
         print(f"💾 Checkpoint saved: {checkpoint_data['processed_count']} files processed")
     except Exception as e:
@@ -318,9 +329,11 @@ def load_checkpoint() -> Dict:
     """Load checkpoint data from file."""
     try:
         if Path(CHECKPOINT_PATH).exists():
-            with open(CHECKPOINT_PATH, 'r') as f:
+            with open(CHECKPOINT_PATH, "r") as f:
                 checkpoint_data = json.load(f)
-            print(f"📂 Checkpoint loaded: {checkpoint_data['processed_count']} files already processed")
+            print(
+                f"📂 Checkpoint loaded: {checkpoint_data['processed_count']} files already processed"
+            )
             return checkpoint_data
     except Exception as e:
         print(f"⚠️  Failed to load checkpoint: {e}")
@@ -340,7 +353,11 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"✅ Loaded {len(df)} annotations")
 
     # Get unique file names (column is "File Name" - values are like "0.wav", "123.wav")
-    file_names = df['File Name'].unique() if 'File Name' in df.columns else [f"{i}.wav" for i in range(max_files)]
+    file_names = (
+        df["File Name"].unique()
+        if "File Name" in df.columns
+        else [f"{i}.wav" for i in range(max_files)]
+    )
 
     # Sample
     if max_files and len(file_names) > max_files:
@@ -352,10 +369,12 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     if ENABLE_CHECKPOINTING:
         checkpoint = load_checkpoint()
         if checkpoint:
-            all_results = checkpoint['results']
-            processed_files = set(checkpoint['processed_files'])
-            start_index = checkpoint['last_batch_index']
-            print(f"📂 Resuming from batch {start_index + 1}, {len(all_results)} files already processed")
+            all_results = checkpoint["results"]
+            processed_files = set(checkpoint["processed_files"])
+            start_index = checkpoint["last_batch_index"]
+            print(
+                f"📂 Resuming from batch {start_index + 1}, {len(all_results)} files already processed"
+            )
         else:
             all_results = []
             processed_files = set()
@@ -370,7 +389,7 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
 
     for batch_idx in range(start_index, total_batches):
         i = batch_idx * BATCH_SIZE
-        batch = file_names[i:i+BATCH_SIZE]
+        batch = file_names[i : i + BATCH_SIZE]
 
         # Skip already processed files
         new_batch = [f for f in batch if f not in processed_files]
@@ -383,7 +402,9 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
         all_results.extend(batch_results)
         processed_files.update(new_batch)
 
-        print(f"  Batch {batch_idx + 1}/{total_batches}: processed {len(batch_results)} new files (total: {len(all_results)})")
+        print(
+            f"  Batch {batch_idx + 1}/{total_batches}: processed {len(batch_results)} new files (total: {len(all_results)})"
+        )
 
         # Save checkpoint periodically
         if ENABLE_CHECKPOINTING and (batch_idx + 1) % CHECKPOINT_INTERVAL == 0:
@@ -395,11 +416,11 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
                     checkpoint_results.append((audio_path, syntax_meta, file_name))
 
             checkpoint_data = {
-                'results': checkpoint_results,
-                'processed_files': list(processed_files),
-                'last_batch_index': batch_idx + 1,
-                'processed_count': len(all_results),
-                'timestamp': datetime.now().isoformat()
+                "results": checkpoint_results,
+                "processed_files": list(processed_files),
+                "last_batch_index": batch_idx + 1,
+                "processed_count": len(all_results),
+                "timestamp": datetime.now().isoformat(),
             }
             save_checkpoint(checkpoint_data)
 
@@ -428,51 +449,52 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
             audio_segments = None
 
         # Look up context from annotations (column is "File Name")
-        context_row = df[df['File Name'] == file_name]
+        context_row = df[df["File Name"] == file_name]
 
         if not context_row.empty:
-            context_code = context_row.iloc[0]['Context']
+            context_code = context_row.iloc[0]["Context"]
             context_name = f"context_{context_code}"
         else:
             context_name = "unknown"
 
-        vocalizations.append({
-            'vocalization_id': vocalization_id,
-            'file_path': audio_path,
-            'context': context_name,
-            'syntax_metadata': syntax_meta
-        })
+        vocalizations.append(
+            {
+                "vocalization_id": vocalization_id,
+                "file_path": audio_path,
+                "context": context_name,
+                "syntax_metadata": syntax_meta,
+            }
+        )
 
         # Store audio segments for export (only if not from checkpoint)
         if EXPORT_AUDIO_SEGMENTS and audio_segments is not None:
             for seg_idx, (seg_audio, seg_features) in enumerate(audio_segments):
-                if seg_idx < len(syntax_meta['segment_details']):
-                    phrase_key = syntax_meta['segment_details'][seg_idx]['phrase_key']
+                if seg_idx < len(syntax_meta["segment_details"]):
+                    phrase_key = syntax_meta["segment_details"][seg_idx]["phrase_key"]
 
-                    phrase_segments[phrase_key].append({
-                        'audio': seg_audio,
-                        'vocalization_id': vocalization_id,
-                        'context': context_name,
-                        'onset_ms': seg_features['onset_ms'],
-                        'offset_ms': seg_features['offset_ms'],
-                        'duration_ms': seg_features['duration_ms'],
-                        'f0_mean': seg_features.get('f0_mean', 0)
-                    })
+                    phrase_segments[phrase_key].append(
+                        {
+                            "audio": seg_audio,
+                            "vocalization_id": vocalization_id,
+                            "context": context_name,
+                            "onset_ms": seg_features["onset_ms"],
+                            "offset_ms": seg_features["offset_ms"],
+                            "duration_ms": seg_features["duration_ms"],
+                            "f0_mean": seg_features.get("f0_mean", 0),
+                        }
+                    )
 
     # Build phrase library
-    phrase_library = defaultdict(lambda: {
-        'contexts': Counter(),
-        'vocalization_ids': []
-    })
+    phrase_library = defaultdict(lambda: {"contexts": Counter(), "vocalization_ids": []})
 
     for vocalization in vocalizations:
-        context = vocalization['context']
-        syntax_meta = vocalization['syntax_metadata']
+        context = vocalization["context"]
+        syntax_meta = vocalization["syntax_metadata"]
 
-        for seg in syntax_meta.get('segment_details', []):
-            phrase_key = seg['phrase_key']
-            phrase_library[phrase_key]['contexts'][context] += 1
-            phrase_library[phrase_key]['vocalization_ids'].append(vocalization['vocalization_id'])
+        for seg in syntax_meta.get("segment_details", []):
+            phrase_key = seg["phrase_key"]
+            phrase_library[phrase_key]["contexts"][context] += 1
+            phrase_library[phrase_key]["vocalization_ids"].append(vocalization["vocalization_id"])
 
     # Export audio segments if enabled
     if EXPORT_AUDIO_SEGMENTS and phrase_segments:
@@ -481,18 +503,18 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
 
     # Export
     species_data = {
-        'species': 'egyptian_bat',
-        'analysis_date': datetime.now().isoformat(),
-        'total_vocalizations': len(vocalizations),
-        'total_phrases': len(phrase_library),
-        'vocalizations': vocalizations,
-        'phrases': dict(phrase_library)
+        "species": "egyptian_bat",
+        "analysis_date": datetime.now().isoformat(),
+        "total_vocalizations": len(vocalizations),
+        "total_phrases": len(phrase_library),
+        "vocalizations": vocalizations,
+        "phrases": dict(phrase_library),
     }
 
     # Save
     export_data = {
-        'export_date': datetime.now().isoformat(),
-        'species_data': {'egyptian_bat': species_data}
+        "export_date": datetime.now().isoformat(),
+        "species_data": {"egyptian_bat": species_data},
     }
 
     print(f"\n💾 Saving to {OUTPUT_PATH}...")
@@ -513,7 +535,7 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
 
     export_data = convert_numpy_types(export_data)
 
-    with open(OUTPUT_PATH, 'w') as f:
+    with open(OUTPUT_PATH, "w") as f:
         json.dump(export_data, f, indent=2)
 
     print("✅ Saved!")
@@ -528,16 +550,18 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     compositional_count = 0
 
     for vocalization in vocalizations:
-        syntax = vocalization['syntax_metadata']
-        f0_contours[syntax.get('f0_contour', 'unknown')] += 1
+        syntax = vocalization["syntax_metadata"]
+        f0_contours[syntax.get("f0_contour", "unknown")] += 1
 
-        if syntax.get('is_compositional'):
+        if syntax.get("is_compositional"):
             compositional_count += 1
 
     print("\n📊 SYNTAX STATISTICS:")
     print(f"   F0 contours: {dict(f0_contours)}")
     if len(vocalizations) > 0:
-        print(f"   Compositional (3+ phrases): {compositional_count} ({compositional_count/len(vocalizations)*100:.1f}%)")
+        print(
+            f"   Compositional (3+ phrases): {compositional_count} ({compositional_count / len(vocalizations) * 100:.1f}%)"
+        )
 
     return species_data
 

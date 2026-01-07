@@ -24,6 +24,7 @@ try:
     from asteroid import ConvTasNet
     from asteroid.losses import PITLossWrapper
     from asteroid.metrics import MetricsTracker
+
     print(f"Asteroid version: {asteroid.__version__}")
     ASTEROID_AVAILABLE = True
 except ImportError as e:
@@ -92,6 +93,7 @@ class AnimalVocalizationDataset(Dataset):
         if sr != self.sample_rate:
             # Simple resampling (for production, use librosa or similar)
             from scipy import signal
+
             num_samples = int(len(mixture) * self.sample_rate / sr)
             mixture = signal.resample(mixture, num_samples)
 
@@ -101,7 +103,7 @@ class AnimalVocalizationDataset(Dataset):
         # Take segment
         if len(mixture) > self.segment_len:
             start = np.random.randint(0, len(mixture) - self.segment_len)
-            mixture = mixture[start:start + self.segment_len]
+            mixture = mixture[start : start + self.segment_len]
         elif len(mixture) < self.segment_len:
             # Pad if too short
             mixture = np.pad(mixture, (0, self.segment_len - len(mixture)))
@@ -118,7 +120,8 @@ class AnimalVocalizationDataset(Dataset):
         """Simulate target animal source (e.g., marmoset phee call)"""
         # Bandpass filter for animal vocalization range (2-12 kHz)
         from scipy import signal
-        b, a = signal.butter(4, [2000, 12000], btype='bandpass', fs=self.sample_rate)
+
+        b, a = signal.butter(4, [2000, 12000], btype="bandpass", fs=self.sample_rate)
         target = signal.filtfilt(b, a, mixture)
         return target * 0.7  # Reduce amplitude slightly
 
@@ -126,7 +129,8 @@ class AnimalVocalizationDataset(Dataset):
         """Simulate background noise/environmental sounds"""
         # Bandpass filter for lower frequencies (< 5 kHz)
         from scipy import signal
-        b, a = signal.butter(4, [100, 5000], btype='bandpass', fs=self.sample_rate)
+
+        b, a = signal.butter(4, [100, 5000], btype="bandpass", fs=self.sample_rate)
         background = signal.filtfilt(b, a, mixture)
         return background * 0.5
 
@@ -142,6 +146,7 @@ class AsteroidTrainer:
 
     def _setup_logging(self):
         import logging
+
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
         return logger
@@ -149,13 +154,13 @@ class AsteroidTrainer:
     def create_model(self):
         """Create Conv-TasNet model with Asteroid"""
         model = ConvTasNet(
-            n_src=self.config['num_sources'],
-            sample_rate=self.config['sample_rate'],
-            n_fft=self.config['n_fft'],
-            n_freq=self.config['n_freq'],
-            n_blocks=self.config['n_blocks'],
-            n_repeats=self.config['n_repeats'],
-            mask_act=self.config['mask_act'],
+            n_src=self.config["num_sources"],
+            sample_rate=self.config["sample_rate"],
+            n_fft=self.config["n_fft"],
+            n_freq=self.config["n_freq"],
+            n_blocks=self.config["n_blocks"],
+            n_repeats=self.config["n_repeats"],
+            mask_act=self.config["mask_act"],
         )
         return model
 
@@ -165,13 +170,10 @@ class AsteroidTrainer:
 
         # Create model
         model = self.create_model()
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.config['lr'])
+        optimizer = torch.optim.Adam(model.parameters(), lr=self.config["lr"])
 
         # Loss function (Permutation Invariant Training)
-        loss_func = PITLossWrapper(
-            loss_func=self.config['loss_func'],
-            pit_from="pw_pt"
-        )
+        loss_func = PITLossWrapper(loss_func=self.config["loss_func"], pit_from="pw_pt")
 
         # Training loop
         model.train()
@@ -221,7 +223,7 @@ class AsteroidTrainer:
         self.logger.info(f"Exporting model to {output_path}")
 
         # Create dummy input
-        dummy_input = torch.randn(1, 1, self.config['sample_rate'])
+        dummy_input = torch.randn(1, 1, self.config["sample_rate"])
 
         # Export to ONNX
         torch.onnx.export(
@@ -231,18 +233,19 @@ class AsteroidTrainer:
             export_params=True,
             opset_version=12,
             do_constant_folding=True,
-            input_names=['mixture'],
-            output_names=['separated_sources'],
+            input_names=["mixture"],
+            output_names=["separated_sources"],
             dynamic_axes={
-                'mixture': {0: 'batch_size', 2: 'time'},
-                'separated_sources': {0: 'batch_size', 1: 'num_sources', 2: 'time'}
-            }
+                "mixture": {0: "batch_size", 2: "time"},
+                "separated_sources": {0: "batch_size", 1: "num_sources", 2: "time"},
+            },
         )
 
         self.logger.info(f"Model exported successfully to {output_path}")
 
         # Verify ONNX model
         import onnx
+
         onnx_model = onnx.load(output_path)
         onnx.checker.check_model(onnx_model)
         self.logger.info("ONNX model verified successfully")
@@ -255,17 +258,17 @@ def main():
 
     # Configuration
     config = {
-        'num_sources': 2,  # Target animal + background
-        'sample_rate': 44100,
-        'n_fft': 512,
-        'n_freq': 257,
-        'n_blocks': 8,
-        'n_repeats': 3,
-        'mask_act': 'relu',
-        'lr': 1e-3,
-        'loss_func': 'si_snr',  # Scale-invariant signal-to-noise ratio
-        'batch_size': 4,
-        'epochs': 50,
+        "num_sources": 2,  # Target animal + background
+        "sample_rate": 44100,
+        "n_fft": 512,
+        "n_freq": 257,
+        "n_blocks": 8,
+        "n_repeats": 3,
+        "mask_act": "relu",
+        "lr": 1e-3,
+        "loss_func": "si_snr",  # Scale-invariant signal-to-noise ratio
+        "batch_size": 4,
+        "epochs": 50,
     }
 
     # Check for data directories
@@ -284,9 +287,9 @@ def main():
 
     # Create dataset
     # Note: For this demo, we'll skip actual training since we don't have real data
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ASTEROID TRAINING WORKFLOW")
-    print("="*60)
+    print("=" * 60)
     print("""
 This script is ready to train a proper Conv-TasNet model using Asteroid.
 
@@ -310,19 +313,16 @@ The trained model will be exported to ONNX format for use in Rust.
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     checkpoint_path = checkpoint_dir / "conv_tasnet_animal.ckpt"
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'config': config
-    }, checkpoint_path)
+    torch.save({"model_state_dict": model.state_dict(), "config": config}, checkpoint_path)
     print(f"Model checkpoint saved to: {checkpoint_path}")
 
     # Export to ONNX
     onnx_path = checkpoint_dir / "conv_tasnet_animal.onnx"
     trainer.export_to_onnx(model, str(onnx_path))
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("NEXT STEPS")
-    print("="*60)
+    print("=" * 60)
     print(f"""
 1. ONNX model exported to: {onnx_path}
 2. Copy this model to your Rust project: cp {onnx_path} <rust_project>/models/

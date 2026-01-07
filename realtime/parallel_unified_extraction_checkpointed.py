@@ -11,6 +11,7 @@ License: CC BY-ND 4.0 International
 """
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from pathlib import Path
@@ -38,19 +39,30 @@ from sklearn.preprocessing import StandardScaler
 
 # Import feature extraction and other functions from the base module
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from parallel_unified_extraction import (
-    Sentence, PhraseCandidate, AtomicPhrase, GrammarRule, ExtractionResult,
-    extract_29d_features, segment_sentences_pelt, extract_phrase_candidates,
-    cluster_phrases_dbscan, detect_compositionality, extract_grammar_rules,
-    _calculate_intra_cluster_similarity, _calculate_inter_cluster_similarity
+    Sentence,
+    PhraseCandidate,
+    AtomicPhrase,
+    GrammarRule,
+    ExtractionResult,
+    extract_29d_features,
+    segment_sentences_pelt,
+    extract_phrase_candidates,
+    cluster_phrases_dbscan,
+    detect_compositionality,
+    extract_grammar_rules,
+    _calculate_intra_cluster_similarity,
+    _calculate_inter_cluster_similarity,
 )
 
 
 # =============================================================================
 # Checkpoint Manager
 # =============================================================================
+
 
 class CheckpointManager:
     """Manages incremental checkpointing for long-running pipelines."""
@@ -72,60 +84,66 @@ class CheckpointManager:
     def _load_metadata(self) -> Dict[str, Any]:
         """Load checkpoint metadata."""
         if self.metadata_file.exists():
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 return json.load(f)
         return {
-            'created_at': datetime.now().isoformat(),
-            'last_updated': None,
-            'total_files': 0,
-            'processed_files': 0,
-            'parameters': {}
+            "created_at": datetime.now().isoformat(),
+            "last_updated": None,
+            "total_files": 0,
+            "processed_files": 0,
+            "parameters": {},
         }
 
     def _load_progress(self) -> Dict[str, Any]:
         """Load processing progress."""
         if self.progress_file.exists():
-            with open(self.progress_file, 'r') as f:
+            with open(self.progress_file, "r") as f:
                 return json.load(f)
         return {
-            'processed_files': [],
-            'failed_files': [],
-            'current_batch': 0,
-            'total_candidates': 0
+            "processed_files": [],
+            "failed_files": [],
+            "current_batch": 0,
+            "total_candidates": 0,
         }
 
     def save_metadata(self, total_files: int, parameters: Dict[str, Any]):
         """Save checkpoint metadata."""
-        self.metadata['last_updated'] = datetime.now().isoformat()
-        self.metadata['total_files'] = total_files
-        self.metadata['processed_files'] = len(self.progress['processed_files'])
-        self.metadata['parameters'] = parameters
+        self.metadata["last_updated"] = datetime.now().isoformat()
+        self.metadata["total_files"] = total_files
+        self.metadata["processed_files"] = len(self.progress["processed_files"])
+        self.metadata["parameters"] = parameters
 
-        with open(self.metadata_file, 'w') as f:
+        with open(self.metadata_file, "w") as f:
             json.dump(self.metadata, f, indent=2)
 
-    def save_progress(self, processed_files: List[str], failed_files: List[str],
-                     total_candidates: int, batch_id: int):
+    def save_progress(
+        self,
+        processed_files: List[str],
+        failed_files: List[str],
+        total_candidates: int,
+        batch_id: int,
+    ):
         """Save processing progress."""
-        self.progress['processed_files'] = processed_files
-        self.progress['failed_files'] = failed_files
-        self.progress['total_candidates'] = total_candidates
-        self.progress['current_batch'] = batch_id
+        self.progress["processed_files"] = processed_files
+        self.progress["failed_files"] = failed_files
+        self.progress["total_candidates"] = total_candidates
+        self.progress["current_batch"] = batch_id
 
-        with open(self.progress_file, 'w') as f:
+        with open(self.progress_file, "w") as f:
             json.dump(self.progress, f, indent=2)
 
-    def save_batch_results(self, batch_id: int, sentences: List[Sentence],
-                          candidates_data: List[Dict[str, Any]]):
+    def save_batch_results(
+        self, batch_id: int, sentences: List[Sentence], candidates_data: List[Dict[str, Any]]
+    ):
         """Save results for a single batch."""
         # Save sentences
         sentences_file = self.results_dir / f"batch_{batch_id:04d}_sentences.pkl"
-        with open(sentences_file, 'wb') as f:
+        with open(sentences_file, "wb") as f:
             pickle.dump(sentences, f)
 
         # Save candidates (lightweight version - no audio data)
         candidates_file = self.results_dir / f"batch_{batch_id:04d}_candidates.pkl"
-        with open(candidates_file, 'wb') as f:
+        with open(candidates_file, "wb") as f:
             pickle.dump(candidates_data, f)
 
     def load_batch_results(self, batch_id: int) -> Tuple[List[Sentence], List[Dict[str, Any]]]:
@@ -137,32 +155,33 @@ class CheckpointManager:
         candidates_data = []
 
         if sentences_file.exists():
-            with open(sentences_file, 'rb') as f:
+            with open(sentences_file, "rb") as f:
                 sentences = pickle.load(f)
 
         if candidates_file.exists():
-            with open(candidates_file, 'rb') as f:
+            with open(candidates_file, "rb") as f:
                 candidates_data = pickle.load(f)
 
         return sentences, candidates_data
 
     def get_processed_files(self) -> set:
         """Get set of already processed file names."""
-        return set(self.progress['processed_files'])
+        return set(self.progress["processed_files"])
 
     def get_status_summary(self) -> Dict[str, Any]:
         """Get checkpoint status summary."""
         return {
-            'total_files': self.metadata.get('total_files', 0),
-            'processed_files': len(self.progress['processed_files']),
-            'failed_files': len(self.progress['failed_files']),
-            'total_candidates': self.progress['total_candidates'],
-            'progress_percent': (
-                len(self.progress['processed_files']) / self.metadata.get('total_files', 1) * 100
-                if self.metadata.get('total_files', 0) > 0 else 0
+            "total_files": self.metadata.get("total_files", 0),
+            "processed_files": len(self.progress["processed_files"]),
+            "failed_files": len(self.progress["failed_files"]),
+            "total_candidates": self.progress["total_candidates"],
+            "progress_percent": (
+                len(self.progress["processed_files"]) / self.metadata.get("total_files", 1) * 100
+                if self.metadata.get("total_files", 0) > 0
+                else 0
             ),
-            'last_updated': self.metadata.get('last_updated'),
-            'current_batch': self.progress['current_batch']
+            "last_updated": self.metadata.get("last_updated"),
+            "current_batch": self.progress["current_batch"],
         }
 
     def load_all_results(self) -> Tuple[List[Sentence], List[Dict[str, Any]]]:
@@ -171,7 +190,7 @@ class CheckpointManager:
         all_candidates = []
 
         for batch_file in sorted(self.results_dir.glob("batch_*_sentences.pkl")):
-            batch_id = int(batch_file.stem.split('_')[1])
+            batch_id = int(batch_file.stem.split("_")[1])
             sentences, candidates = self.load_batch_results(batch_id)
             all_sentences.extend(sentences)
             all_candidates.extend(candidates)
@@ -183,7 +202,10 @@ class CheckpointManager:
 # Batch Processing with Checkpointing
 # =============================================================================
 
-def process_single_vocalization_lightweight(args: Tuple[str, Dict[str, Any], Path, float]) -> Dict[str, Any]:
+
+def process_single_vocalization_lightweight(
+    args: Tuple[str, Dict[str, Any], Path, float],
+) -> Dict[str, Any]:
     """
     Process a single vocalization file (lightweight version for checkpointing).
 
@@ -197,61 +219,57 @@ def process_single_vocalization_lightweight(args: Tuple[str, Dict[str, Any], Pat
         audio, sr = librosa.load(str(audio_path), sr=None)
 
         # Create sentence ID
-        sentence_id = audio_filename.replace('.wav', '')
+        sentence_id = audio_filename.replace(".wav", "")
 
         # Step 1: Segment into sentences
         change_points = segment_sentences_pelt(audio, sr, penalty=penalty)
 
         # Step 2: Extract phrase candidates
         candidates = extract_phrase_candidates(
-            audio,
-            sr,
-            sentence_id=sentence_id,
-            context=annotation['context']
+            audio, sr, sentence_id=sentence_id, context=annotation["context"]
         )
 
         # Create sentence object
         sentence = Sentence(
             sentence_id=sentence_id,
             audio_file=audio_filename,
-            context=annotation['context'],
-            emitter=annotation['emitter'],
-            addressee=annotation['addressee'],
+            context=annotation["context"],
+            emitter=annotation["emitter"],
+            addressee=annotation["addressee"],
             duration_sec=len(audio) / sr,
-            change_points=change_points
+            change_points=change_points,
         )
 
         # Lightweight candidate data (no audio segments)
         candidates_lightweight = []
         for c in candidates:
-            candidates_lightweight.append({
-                'start_sample': c.start_sample,
-                'end_sample': c.end_sample,
-                'features_29d': c.features_29d,
-                'source_sentence_id': c.source_sentence_id,
-                'window_id': c.window_id,
-                'context': c.context
-            })
+            candidates_lightweight.append(
+                {
+                    "start_sample": c.start_sample,
+                    "end_sample": c.end_sample,
+                    "features_29d": c.features_29d,
+                    "source_sentence_id": c.source_sentence_id,
+                    "window_id": c.window_id,
+                    "context": c.context,
+                }
+            )
 
         return {
-            'success': True,
-            'sentence': sentence,
-            'candidates': candidates_lightweight,
-            'num_candidates': len(candidates),
-            'audio_filename': audio_filename
+            "success": True,
+            "sentence": sentence,
+            "candidates": candidates_lightweight,
+            "num_candidates": len(candidates),
+            "audio_filename": audio_filename,
         }
 
     except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'audio_filename': audio_filename
-        }
+        return {"success": False, "error": str(e), "audio_filename": audio_filename}
 
 
 # =============================================================================
 # Main Pipeline with Checkpointing
 # =============================================================================
+
 
 def extract_with_checkpointing(
     audio_dir: Path,
@@ -264,7 +282,7 @@ def extract_with_checkpointing(
     max_files: Optional[int] = None,
     batch_size: int = 1000,
     checkpoint_interval: int = 100,
-    resume: bool = True
+    resume: bool = True,
 ) -> ExtractionResult:
     """
     Parallel unified extraction pipeline with incremental checkpointing.
@@ -293,6 +311,7 @@ def extract_with_checkpointing(
         ExtractionResult with all extracted data
     """
     import time
+
     start_time = time.time()
 
     print("=" * 80)
@@ -319,13 +338,15 @@ def extract_with_checkpointing(
     # Parse annotations
     annotations = []
     for _, row in df.iterrows():
-        audio_filename = str(row['File Name'])
-        annotations.append({
-            'filename': audio_filename,
-            'context': int(row['Context']),
-            'emitter': int(row['Emitter']),
-            'addressee': int(row['Addressee'])
-        })
+        audio_filename = str(row["File Name"])
+        annotations.append(
+            {
+                "filename": audio_filename,
+                "context": int(row["Context"]),
+                "emitter": int(row["Emitter"]),
+                "addressee": int(row["Addressee"]),
+            }
+        )
 
     print(f"  Loaded {len(annotations)} vocalizations")
 
@@ -338,19 +359,21 @@ def extract_with_checkpointing(
     processed_files = checkpoint_manager.get_processed_files() if resume else set()
 
     if resume and processed_files:
-        remaining_annotations = [a for a in annotations if a['filename'] not in processed_files]
-        print(f"  Resuming: {len(annotations)} total, {len(processed_files)} already processed, {len(remaining_annotations)} remaining")
+        remaining_annotations = [a for a in annotations if a["filename"] not in processed_files]
+        print(
+            f"  Resuming: {len(annotations)} total, {len(processed_files)} already processed, {len(remaining_annotations)} remaining"
+        )
         annotations = remaining_annotations
 
     # Save initial metadata
     checkpoint_manager.save_metadata(
         total_files=max_files if max_files else len(annotations),
         parameters={
-            'pelt_penalty': pelt_penalty,
-            'dbscan_eps': dbscan_eps,
-            'dbscan_min_samples': dbscan_min_samples,
-            'num_workers': num_workers
-        }
+            "pelt_penalty": pelt_penalty,
+            "dbscan_eps": dbscan_eps,
+            "dbscan_min_samples": dbscan_min_samples,
+            "num_workers": num_workers,
+        },
     )
 
     # ========================================================================
@@ -374,8 +397,7 @@ def extract_with_checkpointing(
 
         # Prepare arguments
         process_args = [
-            (ann['filename'], ann, audio_dir, pelt_penalty)
-            for ann in batch_annotations
+            (ann["filename"], ann, audio_dir, pelt_penalty) for ann in batch_annotations
         ]
 
         batch_sentences = []
@@ -388,19 +410,22 @@ def extract_with_checkpointing(
                 for args in process_args
             }
 
-            for future in tqdm(as_completed(futures), total=len(futures),
-                              desc=f"  Batch {batch_idx + 1}"):
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc=f"  Batch {batch_idx + 1}"
+            ):
                 audio_filename = futures[future]
                 try:
                     result = future.result()
-                    if result['success']:
-                        batch_sentences.append(result['sentence'])
-                        batch_candidates.extend(result['candidates'])
-                        all_sentences.append(result['sentence'])
-                        all_candidates.extend(result['candidates'])
+                    if result["success"]:
+                        batch_sentences.append(result["sentence"])
+                        batch_candidates.extend(result["candidates"])
+                        all_sentences.append(result["sentence"])
+                        all_candidates.extend(result["candidates"])
                     else:
                         failed_files.append(audio_filename)
-                        print(f"\n  ERROR: {audio_filename} - {result.get('error', 'Unknown error')}")
+                        print(
+                            f"\n  ERROR: {audio_filename} - {result.get('error', 'Unknown error')}"
+                        )
                 except Exception as e:
                     failed_files.append(audio_filename)
                     print(f"\n  EXCEPTION: {audio_filename} - {e}")
@@ -414,20 +439,25 @@ def extract_with_checkpointing(
             processed_files=processed_filenames,
             failed_files=failed_files,
             total_candidates=len(all_candidates),
-            batch_id=batch_idx
+            batch_id=batch_idx,
         )
 
         # Print status
         status = checkpoint_manager.get_status_summary()
-        print(f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates")
-        print(f"  Progress: {status['processed_files']}/{status['total_files']} ({status['progress_percent']:.1f}%)")
+        print(
+            f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates"
+        )
+        print(
+            f"  Progress: {status['processed_files']}/{status['total_files']} ({status['progress_percent']:.1f}%)"
+        )
         print(f"  Total candidates so far: {status['total_candidates']:,}")
 
         # Preliminary analysis checkpoint
         if (batch_idx + 1) % (num_batches // 5) == 0:  # Every 20% of batches
             print(f"\n  [PRELIMINARY ANALYSIS - {status['progress_percent']:.0f}% COMPLETE]")
-            _run_preliminary_analysis(all_sentences, all_candidates, output_dir,
-                                      dbscan_eps, dbscan_min_samples, batch_idx)
+            _run_preliminary_analysis(
+                all_sentences, all_candidates, output_dir, dbscan_eps, dbscan_min_samples, batch_idx
+            )
 
     # ========================================================================
     # Step 3: Load all results from checkpoints
@@ -450,21 +480,17 @@ def extract_with_checkpointing(
     def candidate_dict_to_obj(c_dict: Dict[str, Any]) -> PhraseCandidate:
         return PhraseCandidate(
             audio_segment=np.array([]),  # Empty - we don't have audio anymore
-            start_sample=c_dict['start_sample'],
-            end_sample=c_dict['end_sample'],
-            features_29d=c_dict['features_29d'],
-            source_sentence_id=c_dict['source_sentence_id'],
-            window_id=c_dict['window_id'],
-            context=c_dict['context']
+            start_sample=c_dict["start_sample"],
+            end_sample=c_dict["end_sample"],
+            features_29d=c_dict["features_29d"],
+            source_sentence_id=c_dict["source_sentence_id"],
+            window_id=c_dict["window_id"],
+            context=c_dict["context"],
         )
 
     candidate_objs = [candidate_dict_to_obj(c) for c in all_candidates]
 
-    phrases = cluster_phrases_dbscan(
-        candidate_objs,
-        eps=dbscan_eps,
-        min_samples=dbscan_min_samples
-    )
+    phrases = cluster_phrases_dbscan(candidate_objs, eps=dbscan_eps, min_samples=dbscan_min_samples)
 
     print(f"  Found {len(phrases)} phrase clusters")
     atomic_phrases = [p for p in phrases if p.is_atomic]
@@ -478,7 +504,7 @@ def extract_with_checkpointing(
     # Build candidate lookup
     candidate_lookup = {}
     for i, c_dict in enumerate(all_candidates):
-        key = (c_dict['source_sentence_id'], c_dict['window_id'])
+        key = (c_dict["source_sentence_id"], c_dict["window_id"])
         candidate_lookup[key] = c_dict
 
     # Assign phrases to sentences
@@ -487,12 +513,14 @@ def extract_with_checkpointing(
 
         # Find candidates from this sentence
         for c_dict in all_candidates:
-            if c_dict['source_sentence_id'] == sentence.sentence_id:
+            if c_dict["source_sentence_id"] == sentence.sentence_id:
                 # Find which cluster this candidate belongs to
                 for phrase in phrases:
                     for member in phrase.member_candidates:
-                        if (member['source_sentence_id'] == c_dict['source_sentence_id'] and
-                            member['window_id'] == c_dict['window_id']):
+                        if (
+                            member["source_sentence_id"] == c_dict["source_sentence_id"]
+                            and member["window_id"] == c_dict["window_id"]
+                        ):
                             assigned_phrases.append(phrase.phrase_id)
                             break
 
@@ -515,7 +543,7 @@ def extract_with_checkpointing(
 
     # Save final results
     sentences_file = output_dir / "sentences_final.json"
-    with open(sentences_file, 'w') as f:
+    with open(sentences_file, "w") as f:
         sentences_data = []
         for s in all_sentences:
             sentence_dict = asdict(s)
@@ -524,7 +552,7 @@ def extract_with_checkpointing(
     print(f"  Saved {len(all_sentences)} sentences")
 
     phrases_file = output_dir / "phrases_final.json"
-    with open(phrases_file, 'w') as f:
+    with open(phrases_file, "w") as f:
         phrases_data = []
         for p in phrases:
             phrase_dict = asdict(p)
@@ -533,7 +561,7 @@ def extract_with_checkpointing(
     print(f"  Saved {len(phrases)} phrases")
 
     rules_file = output_dir / "grammar_rules_final.json"
-    with open(rules_file, 'w') as f:
+    with open(rules_file, "w") as f:
         rules_data = [asdict(r) for r in grammar_rules]
         json.dump(rules_data, f, indent=2)
     print(f"  Saved {len(grammar_rules)} grammar rules")
@@ -541,20 +569,20 @@ def extract_with_checkpointing(
     # Final metadata
     elapsed = time.time() - start_time
     metadata = {
-        'total_vocalizations': checkpoint_manager.metadata.get('total_files', len(annotations)),
-        'successfully_processed': len(all_sentences),
-        'failed_files': len(failed_files),
-        'total_candidates': len(all_candidates),
-        'total_phrases': len(phrases),
-        'atomic_phrases': len(atomic_phrases),
-        'grammar_rules': len(grammar_rules),
-        'compositionality_ratio': compositionality['compositionality_ratio'],
-        'processing_time_sec': elapsed,
-        'parameters': checkpoint_manager.metadata.get('parameters', {})
+        "total_vocalizations": checkpoint_manager.metadata.get("total_files", len(annotations)),
+        "successfully_processed": len(all_sentences),
+        "failed_files": len(failed_files),
+        "total_candidates": len(all_candidates),
+        "total_phrases": len(phrases),
+        "atomic_phrases": len(atomic_phrases),
+        "grammar_rules": len(grammar_rules),
+        "compositionality_ratio": compositionality["compositionality_ratio"],
+        "processing_time_sec": elapsed,
+        "parameters": checkpoint_manager.metadata.get("parameters", {}),
     }
 
     metadata_file = output_dir / "metadata_final.json"
-    with open(metadata_file, 'w') as f:
+    with open(metadata_file, "w") as f:
         json.dump(metadata, f, indent=2)
     print(f"  Saved metadata")
 
@@ -564,8 +592,8 @@ def extract_with_checkpointing(
     print("\n" + "=" * 80)
     print("PIPELINE COMPLETE")
     print("=" * 80)
-    print(f"Processing time: {elapsed:.1f} seconds ({elapsed/60:.1f} minutes)")
-    print(f"Throughput: {len(all_sentences)/elapsed:.1f} vocalizations/second")
+    print(f"Processing time: {elapsed:.1f} seconds ({elapsed / 60:.1f} minutes)")
+    print(f"Throughput: {len(all_sentences) / elapsed:.1f} vocalizations/second")
     print(f"\nResults:")
     print(f"  Sentences: {len(all_sentences)}")
     print(f"  Phrase candidates: {len(all_candidates):,}")
@@ -583,13 +611,18 @@ def extract_with_checkpointing(
         total_candidates=len(all_candidates),
         total_atomic_phrases=len(atomic_phrases),
         processing_time_sec=elapsed,
-        metadata=metadata
+        metadata=metadata,
     )
 
 
-def _run_preliminary_analysis(sentences: List[Sentence], candidates: List[Dict[str, Any]],
-                             output_dir: Path, eps: float, min_samples: int,
-                             batch_id: int):
+def _run_preliminary_analysis(
+    sentences: List[Sentence],
+    candidates: List[Dict[str, Any]],
+    output_dir: Path,
+    eps: float,
+    min_samples: int,
+    batch_id: int,
+):
     """Run preliminary analysis on partial results."""
     print(f"  Running preliminary clustering on {len(candidates):,} candidates...")
 
@@ -599,15 +632,17 @@ def _run_preliminary_analysis(sentences: List[Sentence], candidates: List[Dict[s
 
         candidate_objs = []
         for c_dict in candidates[:50000]:  # Limit for speed
-            candidate_objs.append(PhraseCandidate(
-                audio_segment=np.array([]),
-                start_sample=c_dict['start_sample'],
-                end_sample=c_dict['end_sample'],
-                features_29d=c_dict['features_29d'],
-                source_sentence_id=c_dict['source_sentence_id'],
-                window_id=c_dict['window_id'],
-                context=c_dict['context']
-            ))
+            candidate_objs.append(
+                PhraseCandidate(
+                    audio_segment=np.array([]),
+                    start_sample=c_dict["start_sample"],
+                    end_sample=c_dict["end_sample"],
+                    features_29d=c_dict["features_29d"],
+                    source_sentence_id=c_dict["source_sentence_id"],
+                    window_id=c_dict["window_id"],
+                    context=c_dict["context"],
+                )
+            )
 
         # Quick clustering
         phrases = cluster_phrases_dbscan(candidate_objs, eps=eps, min_samples=min_samples)
@@ -617,17 +652,23 @@ def _run_preliminary_analysis(sentences: List[Sentence], candidates: List[Dict[s
         prelim_dir.mkdir(exist_ok=True)
 
         prelim_file = prelim_dir / f"analysis_batch_{batch_id:04d}.json"
-        with open(prelim_file, 'w') as f:
-            json.dump({
-                'batch_id': batch_id,
-                'num_sentences': len(sentences),
-                'num_candidates': len(candidates),
-                'num_phrases': len(phrases),
-                'num_atomic': sum(1 for p in phrases if p.is_atomic),
-                'timestamp': datetime.now().isoformat()
-            }, f, indent=2)
+        with open(prelim_file, "w") as f:
+            json.dump(
+                {
+                    "batch_id": batch_id,
+                    "num_sentences": len(sentences),
+                    "num_candidates": len(candidates),
+                    "num_phrases": len(phrases),
+                    "num_atomic": sum(1 for p in phrases if p.is_atomic),
+                    "timestamp": datetime.now().isoformat(),
+                },
+                f,
+                indent=2,
+            )
 
-        print(f"  -> Found {len(phrases)} phrases ({sum(1 for p in phrases if p.is_atomic)} atomic)")
+        print(
+            f"  -> Found {len(phrases)} phrases ({sum(1 for p in phrases if p.is_atomic)} atomic)"
+        )
 
     except Exception as e:
         print(f"  -> Preliminary analysis failed: {e}")
@@ -640,12 +681,20 @@ def _run_preliminary_analysis(sentences: List[Sentence], candidates: List[Dict[s
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Parallel Unified Extraction with Checkpointing"
+    parser = argparse.ArgumentParser(description="Parallel Unified Extraction with Checkpointing")
+    parser.add_argument(
+        "--audio-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio"
     )
-    parser.add_argument("--audio-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio")
-    parser.add_argument("--annotations", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv")
-    parser.add_argument("--output-dir", type=str, default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_checkpointed")
+    parser.add_argument(
+        "--annotations",
+        type=str,
+        default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_checkpointed",
+    )
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--max-files", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=1000)
@@ -666,5 +715,5 @@ if __name__ == "__main__":
         dbscan_min_samples=args.min_samples,
         max_files=args.max_files,
         batch_size=args.batch_size,
-        resume=not args.no_resume
+        resume=not args.no_resume,
     )

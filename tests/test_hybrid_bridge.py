@@ -27,8 +27,10 @@ import numpy as np
 # Phase 1: Data Models - Virtual Target and Delta
 # =============================================================================
 
+
 class Intent(Enum):
     """Semantic intents for synthesis"""
+
     NEUTRAL = "NEUTRAL"
     AGGRESSION = "AGGRESSION"
     COURTSHIP = "COURTSHIP"
@@ -44,6 +46,7 @@ class VirtualTarget:
     This is a "Ghost Phrase" - a theoretical sound that doesn't exist
     in the database, but represents the ideal acoustic characteristics.
     """
+
     # Core frequency features (3D)
     mean_f0_hz: float
     duration_ms: float
@@ -51,7 +54,7 @@ class VirtualTarget:
 
     # Grit factors (2D)
     harmonic_to_noise_ratio: float  # HNR in dB (0-40)
-    spectral_flatness: float         # 0=tonal, 1=noise
+    spectral_flatness: float  # 0=tonal, 1=noise
 
     # ADSR envelope (3D)
     attack_time_ms: float
@@ -85,6 +88,7 @@ class AcousticDelta:
 
     This represents "Warp Instructions" for the Granular Engine.
     """
+
     delta_mean_f0_hz: float
     delta_duration_ms: float
     delta_f0_range_hz: float
@@ -109,7 +113,7 @@ class AcousticDelta:
         """Calculate Euclidean magnitude of the delta vector"""
         components = [
             self.delta_mean_f0_hz / 1000.0,  # Normalize F0 (Hz)
-            self.delta_duration_ms / 100.0,   # Normalize duration (ms)
+            self.delta_duration_ms / 100.0,  # Normalize duration (ms)
             self.delta_f0_range_hz / 500.0,
             self.delta_harmonic_to_noise_ratio / 40.0,
             self.delta_spectral_flatness,
@@ -138,17 +142,19 @@ class GranularWarpParameters:
 
     This maps abstract acoustic deltas to concrete granular controls.
     """
-    pitch_shift_ratio: float      # 0.5 to 2.0 (1.0 = no shift)
-    time_stretch_ratio: float     # 0.5 to 2.0 (1.0 = no stretch)
-    roughness_amount: float       # 0.0 to 1.0 (jitter/shimmer mix)
-    grain_size_ms: float          # Grain size in milliseconds
-    vibrato_amount: float         # Vibrato intensity
-    is_clamped: bool              # Whether delta was clamped (safety)
+
+    pitch_shift_ratio: float  # 0.5 to 2.0 (1.0 = no shift)
+    time_stretch_ratio: float  # 0.5 to 2.0 (1.0 = no stretch)
+    roughness_amount: float  # 0.0 to 1.0 (jitter/shimmer mix)
+    grain_size_ms: float  # Grain size in milliseconds
+    vibrato_amount: float  # Vibrato intensity
+    is_clamped: bool  # Whether delta was clamped (safety)
 
 
 @dataclass
 class RealPhrase:
     """A real recording from the database"""
+
     phrase_id: str
     vector: VirtualTarget  # Reuse VirtualTarget as 17D vector
     audio_buffer: np.ndarray  # Real audio samples
@@ -157,6 +163,7 @@ class RealPhrase:
 # =============================================================================
 # Phase 2: Core Components
 # =============================================================================
+
 
 class AcousticAlgebraEngine:
     """
@@ -169,28 +176,67 @@ class AcousticAlgebraEngine:
         # Archetypal vectors for different intents
         self.archetypes = {
             Intent.NEUTRAL: VirtualTarget(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.2,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0,
-                median_ici_ms=0.0, onset_rate_hz=0.0
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.2,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+                median_ici_ms=0.0,
+                onset_rate_hz=0.0,
             ),
             Intent.AGGRESSION: VirtualTarget(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,  # Gritty
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,  # Sharp
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,  # Rough
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0,
-                median_ici_ms=30.0, onset_rate_hz=15.0  # Rhythmic
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,  # Gritty
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,  # Sharp
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,  # Rough
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+                median_ici_ms=30.0,
+                onset_rate_hz=15.0,  # Rhythmic
             ),
             Intent.COURTSHIP: VirtualTarget(
-                mean_f0_hz=6500.0, duration_ms=80.0, f0_range_hz=300.0,
-                harmonic_to_noise_ratio=30.0, spectral_flatness=0.05,  # Pure
-                attack_time_ms=30.0, decay_time_ms=40.0, sustain_level=0.8,  # Smooth
-                vibrato_rate_hz=8.0, vibrato_depth=0.05, jitter=0.01, shimmer=0.005,  # Stable
-                mfcc_1=0.5, mfcc_2=0.3, mfcc_3=-0.5, mfcc_4=0.6, spectral_contrast=25.0,
-                median_ici_ms=0.0, onset_rate_hz=0.0  # Tonal
+                mean_f0_hz=6500.0,
+                duration_ms=80.0,
+                f0_range_hz=300.0,
+                harmonic_to_noise_ratio=30.0,
+                spectral_flatness=0.05,  # Pure
+                attack_time_ms=30.0,
+                decay_time_ms=40.0,
+                sustain_level=0.8,  # Smooth
+                vibrato_rate_hz=8.0,
+                vibrato_depth=0.05,
+                jitter=0.01,
+                shimmer=0.005,  # Stable
+                mfcc_1=0.5,
+                mfcc_2=0.3,
+                mfcc_3=-0.5,
+                mfcc_4=0.6,
+                spectral_contrast=25.0,
+                median_ici_ms=0.0,
+                onset_rate_hz=0.0,  # Tonal
             ),
         }
 
@@ -214,24 +260,36 @@ class AcousticAlgebraEngine:
         # Linear interpolation: Neutral + (Archetype - Neutral) * intensity
         return VirtualTarget(
             mean_f0_hz=neutral.mean_f0_hz + (archetype.mean_f0_hz - neutral.mean_f0_hz) * intensity,
-            duration_ms=neutral.duration_ms + (archetype.duration_ms - neutral.duration_ms) * intensity,
-            f0_range_hz=neutral.f0_range_hz + (archetype.f0_range_hz - neutral.f0_range_hz) * intensity,
-            harmonic_to_noise_ratio=neutral.harmonic_to_noise_ratio + (archetype.harmonic_to_noise_ratio - neutral.harmonic_to_noise_ratio) * intensity,
-            spectral_flatness=neutral.spectral_flatness + (archetype.spectral_flatness - neutral.spectral_flatness) * intensity,
-            attack_time_ms=neutral.attack_time_ms + (archetype.attack_time_ms - neutral.attack_time_ms) * intensity,
-            decay_time_ms=neutral.decay_time_ms + (archetype.decay_time_ms - neutral.decay_time_ms) * intensity,
-            sustain_level=neutral.sustain_level + (archetype.sustain_level - neutral.sustain_level) * intensity,
-            vibrato_rate_hz=neutral.vibrato_rate_hz + (archetype.vibrato_rate_hz - neutral.vibrato_rate_hz) * intensity,
-            vibrato_depth=neutral.vibrato_depth + (archetype.vibrato_depth - neutral.vibrato_depth) * intensity,
+            duration_ms=neutral.duration_ms
+            + (archetype.duration_ms - neutral.duration_ms) * intensity,
+            f0_range_hz=neutral.f0_range_hz
+            + (archetype.f0_range_hz - neutral.f0_range_hz) * intensity,
+            harmonic_to_noise_ratio=neutral.harmonic_to_noise_ratio
+            + (archetype.harmonic_to_noise_ratio - neutral.harmonic_to_noise_ratio) * intensity,
+            spectral_flatness=neutral.spectral_flatness
+            + (archetype.spectral_flatness - neutral.spectral_flatness) * intensity,
+            attack_time_ms=neutral.attack_time_ms
+            + (archetype.attack_time_ms - neutral.attack_time_ms) * intensity,
+            decay_time_ms=neutral.decay_time_ms
+            + (archetype.decay_time_ms - neutral.decay_time_ms) * intensity,
+            sustain_level=neutral.sustain_level
+            + (archetype.sustain_level - neutral.sustain_level) * intensity,
+            vibrato_rate_hz=neutral.vibrato_rate_hz
+            + (archetype.vibrato_rate_hz - neutral.vibrato_rate_hz) * intensity,
+            vibrato_depth=neutral.vibrato_depth
+            + (archetype.vibrato_depth - neutral.vibrato_depth) * intensity,
             jitter=neutral.jitter + (archetype.jitter - neutral.jitter) * intensity,
             shimmer=neutral.shimmer + (archetype.shimmer - neutral.shimmer) * intensity,
             mfcc_1=neutral.mfcc_1 + (archetype.mfcc_1 - neutral.mfcc_1) * intensity,
             mfcc_2=neutral.mfcc_2 + (archetype.mfcc_2 - neutral.mfcc_2) * intensity,
             mfcc_3=neutral.mfcc_3 + (archetype.mfcc_3 - neutral.mfcc_3) * intensity,
             mfcc_4=neutral.mfcc_4 + (archetype.mfcc_4 - neutral.mfcc_4) * intensity,
-            spectral_contrast=neutral.spectral_contrast + (archetype.spectral_contrast - neutral.spectral_contrast) * intensity,
-            median_ici_ms=neutral.median_ici_ms + (archetype.median_ici_ms - neutral.median_ici_ms) * intensity,
-            onset_rate_hz=neutral.onset_rate_hz + (archetype.onset_rate_hz - neutral.onset_rate_hz) * intensity,
+            spectral_contrast=neutral.spectral_contrast
+            + (archetype.spectral_contrast - neutral.spectral_contrast) * intensity,
+            median_ici_ms=neutral.median_ici_ms
+            + (archetype.median_ici_ms - neutral.median_ici_ms) * intensity,
+            onset_rate_hz=neutral.onset_rate_hz
+            + (archetype.onset_rate_hz - neutral.onset_rate_hz) * intensity,
         )
 
 
@@ -257,7 +315,8 @@ class DeltaCalculator:
             delta_mean_f0_hz=target.mean_f0_hz - source.mean_f0_hz,
             delta_duration_ms=target.duration_ms - source.duration_ms,
             delta_f0_range_hz=target.f0_range_hz - source.f0_range_hz,
-            delta_harmonic_to_noise_ratio=target.harmonic_to_noise_ratio - source.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio=target.harmonic_to_noise_ratio
+            - source.harmonic_to_noise_ratio,
             delta_spectral_flatness=target.spectral_flatness - source.spectral_flatness,
             delta_attack_time_ms=target.attack_time_ms - source.attack_time_ms,
             delta_decay_time_ms=target.decay_time_ms - source.decay_time_ms,
@@ -312,7 +371,9 @@ class DeltaMapper:
 
         # Calculate roughness from HNR and spectral flatness deltas
         # Lower HNR + Higher flatness = More roughness
-        hnr_impact = -delta.delta_harmonic_to_noise_ratio / 40.0  # Negative because lower HNR = rougher
+        hnr_impact = (
+            -delta.delta_harmonic_to_noise_ratio / 40.0
+        )  # Negative because lower HNR = rougher
         flatness_impact = delta.delta_spectral_flatness
         roughness = np.clip((hnr_impact + flatness_impact) / 2.0, 0.0, 1.0)
 
@@ -321,8 +382,9 @@ class DeltaMapper:
         grain_size = np.clip(grain_size, 5.0, 100.0)
 
         # Vibrato from vibrato deltas
-        vibrato_amount = (delta.delta_vibrato_rate_hz / 20.0 +
-                         delta.delta_vibrato_depth / 0.1) / 2.0
+        vibrato_amount = (
+            delta.delta_vibrato_rate_hz / 20.0 + delta.delta_vibrato_depth / 0.1
+        ) / 2.0
         vibrato_amount = np.clip(vibrato_amount, 0.0, 1.0)
 
         # DELTA CLAMPING (Safety Check)
@@ -348,7 +410,7 @@ class DeltaMapper:
             roughness_amount=roughness,
             grain_size_ms=grain_size,
             vibrato_amount=vibrato_amount,
-            is_clamped=is_clamped
+            is_clamped=is_clamped,
         )
 
 
@@ -408,11 +470,12 @@ class HybridSynthesisEngine:
             ]
             return math.sqrt(sum(d**2 for d in dims))
 
-        nearest = min(self.phrase_database.values(),
-                     key=lambda p: distance_17d(target, p.vector))
+        nearest = min(self.phrase_database.values(), key=lambda p: distance_17d(target, p.vector))
         return nearest
 
-    def synthesize(self, intent: Intent, intensity: float) -> Tuple[Optional[np.ndarray], GranularWarpParameters]:
+    def synthesize(
+        self, intent: Intent, intensity: float
+    ) -> Tuple[Optional[np.ndarray], GranularWarpParameters]:
         """
         Execute complete Hybrid workflow.
 
@@ -449,18 +512,32 @@ class HybridSynthesisEngine:
 # Phase 1 Tests: Data Models
 # =============================================================================
 
+
 class TestVirtualTarget(unittest.TestCase):
     """Test Virtual Target (Ghost Phrase) creation"""
 
     def test_create_virtual_target(self):
         """Test creating a 17D virtual target"""
         target = VirtualTarget(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.2,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0,
-            median_ici_ms=0.0, onset_rate_hz=0.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.2,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
         )
 
         self.assertEqual(target.mean_f0_hz, 7000.0)
@@ -474,21 +551,47 @@ class TestAcousticDelta(unittest.TestCase):
     def test_delta_calculation(self):
         """Test calculating delta between two vectors"""
         target = VirtualTarget(
-            mean_f0_hz=7500.0, duration_ms=60.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=15.0, spectral_flatness=0.3,
-            attack_time_ms=10.0, decay_time_ms=15.0, sustain_level=0.7,
-            vibrato_rate_hz=7.0, vibrato_depth=0.03, jitter=0.05, shimmer=0.03,
-            mfcc_1=1.2, mfcc_2=0.8, mfcc_3=-0.1, mfcc_4=0.4, spectral_contrast=12.0,
-            median_ici_ms=10.0, onset_rate_hz=5.0
+            mean_f0_hz=7500.0,
+            duration_ms=60.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=15.0,
+            spectral_flatness=0.3,
+            attack_time_ms=10.0,
+            decay_time_ms=15.0,
+            sustain_level=0.7,
+            vibrato_rate_hz=7.0,
+            vibrato_depth=0.03,
+            jitter=0.05,
+            shimmer=0.03,
+            mfcc_1=1.2,
+            mfcc_2=0.8,
+            mfcc_3=-0.1,
+            mfcc_4=0.4,
+            spectral_contrast=12.0,
+            median_ici_ms=10.0,
+            onset_rate_hz=5.0,
         )
 
         source = VirtualTarget(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.2,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0,
-            median_ici_ms=0.0, onset_rate_hz=0.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.2,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
+            median_ici_ms=0.0,
+            onset_rate_hz=0.0,
         )
 
         calc = DeltaCalculator()
@@ -502,12 +605,25 @@ class TestAcousticDelta(unittest.TestCase):
     def test_delta_magnitude(self):
         """Test calculating delta magnitude"""
         delta = AcousticDelta(
-            delta_mean_f0_hz=100.0, delta_duration_ms=10.0, delta_f0_range_hz=50.0,
-            delta_harmonic_to_noise_ratio=2.0, delta_spectral_flatness=0.05,
-            delta_attack_time_ms=5.0, delta_decay_time_ms=3.0, delta_sustain_level=0.1,
-            delta_vibrato_rate_hz=1.0, delta_vibrato_depth=0.01, delta_jitter=0.02, delta_shimmer=0.01,
-            delta_mfcc_1=0.2, delta_mfcc_2=0.1, delta_mfcc_3=0.1, delta_mfcc_4=0.1,
-            delta_spectral_contrast=2.0, delta_median_ici_ms=5.0, delta_onset_rate_hz=2.0
+            delta_mean_f0_hz=100.0,
+            delta_duration_ms=10.0,
+            delta_f0_range_hz=50.0,
+            delta_harmonic_to_noise_ratio=2.0,
+            delta_spectral_flatness=0.05,
+            delta_attack_time_ms=5.0,
+            delta_decay_time_ms=3.0,
+            delta_sustain_level=0.1,
+            delta_vibrato_rate_hz=1.0,
+            delta_vibrato_depth=0.01,
+            delta_jitter=0.02,
+            delta_shimmer=0.01,
+            delta_mfcc_1=0.2,
+            delta_mfcc_2=0.1,
+            delta_mfcc_3=0.1,
+            delta_mfcc_4=0.1,
+            delta_spectral_contrast=2.0,
+            delta_median_ici_ms=5.0,
+            delta_onset_rate_hz=2.0,
         )
 
         magnitude = delta.magnitude()
@@ -518,6 +634,7 @@ class TestAcousticDelta(unittest.TestCase):
 # =============================================================================
 # Phase 2 Tests: Acoustic Algebra Engine
 # =============================================================================
+
 
 class TestAcousticAlgebraEngine(unittest.TestCase):
     """Test Algebra Engine (The Planner)"""
@@ -530,7 +647,9 @@ class TestAcousticAlgebraEngine(unittest.TestCase):
         # At 0% intensity, should match neutral archetypes
         neutral = engine.archetypes[Intent.NEUTRAL]
         self.assertAlmostEqual(target.mean_f0_hz, neutral.mean_f0_hz, places=5)
-        self.assertAlmostEqual(target.harmonic_to_noise_ratio, neutral.harmonic_to_noise_ratio, places=5)
+        self.assertAlmostEqual(
+            target.harmonic_to_noise_ratio, neutral.harmonic_to_noise_ratio, places=5
+        )
 
     def test_calculate_full_intensity_target(self):
         """Test calculating full intensity target (100% intensity)"""
@@ -540,7 +659,9 @@ class TestAcousticAlgebraEngine(unittest.TestCase):
         # At 100% intensity, should match aggression archetype
         aggression = engine.archetypes[Intent.AGGRESSION]
         self.assertAlmostEqual(target.mean_f0_hz, aggression.mean_f0_hz, places=5)
-        self.assertAlmostEqual(target.harmonic_to_noise_ratio, aggression.harmonic_to_noise_ratio, places=5)
+        self.assertAlmostEqual(
+            target.harmonic_to_noise_ratio, aggression.harmonic_to_noise_ratio, places=5
+        )
         self.assertAlmostEqual(target.spectral_flatness, aggression.spectral_flatness, places=5)
 
     def test_calculate_partial_intensity_target(self):
@@ -568,16 +689,19 @@ class TestAcousticAlgebraEngine(unittest.TestCase):
         # Verify monotonic progression
         for i in range(1, len(targets)):
             # F0 should increase with intensity
-            self.assertGreater(targets[i].mean_f0_hz, targets[i-1].mean_f0_hz)
+            self.assertGreater(targets[i].mean_f0_hz, targets[i - 1].mean_f0_hz)
             # HNR should decrease with intensity (more aggressive = less harmonic)
-            self.assertLess(targets[i].harmonic_to_noise_ratio, targets[i-1].harmonic_to_noise_ratio)
+            self.assertLess(
+                targets[i].harmonic_to_noise_ratio, targets[i - 1].harmonic_to_noise_ratio
+            )
             # Flatness should increase (more aggressive = more noise)
-            self.assertGreater(targets[i].spectral_flatness, targets[i-1].spectral_flatness)
+            self.assertGreater(targets[i].spectral_flatness, targets[i - 1].spectral_flatness)
 
 
 # =============================================================================
 # Phase 3 Tests: Delta Mapper
 # =============================================================================
+
 
 class TestDeltaMapper(unittest.TestCase):
     """Test Delta Mapper (17D to Granular)"""
@@ -588,12 +712,25 @@ class TestDeltaMapper(unittest.TestCase):
 
         # Positive F0 delta should increase pitch
         delta_f0_positive = AcousticDelta(
-            delta_mean_f0_hz=500.0, delta_duration_ms=0.0, delta_f0_range_hz=0.0,
-            delta_harmonic_to_noise_ratio=0.0, delta_spectral_flatness=0.0,
-            delta_attack_time_ms=0.0, delta_decay_time_ms=0.0, delta_sustain_level=0.0,
-            delta_vibrato_rate_hz=0.0, delta_vibrato_depth=0.0, delta_jitter=0.0, delta_shimmer=0.0,
-            delta_mfcc_1=0.0, delta_mfcc_2=0.0, delta_mfcc_3=0.0, delta_mfcc_4=0.0,
-            delta_spectral_contrast=0.0, delta_median_ici_ms=0.0, delta_onset_rate_hz=0.0
+            delta_mean_f0_hz=500.0,
+            delta_duration_ms=0.0,
+            delta_f0_range_hz=0.0,
+            delta_harmonic_to_noise_ratio=0.0,
+            delta_spectral_flatness=0.0,
+            delta_attack_time_ms=0.0,
+            delta_decay_time_ms=0.0,
+            delta_sustain_level=0.0,
+            delta_vibrato_rate_hz=0.0,
+            delta_vibrato_depth=0.0,
+            delta_jitter=0.0,
+            delta_shimmer=0.0,
+            delta_mfcc_1=0.0,
+            delta_mfcc_2=0.0,
+            delta_mfcc_3=0.0,
+            delta_mfcc_4=0.0,
+            delta_spectral_contrast=0.0,
+            delta_median_ici_ms=0.0,
+            delta_onset_rate_hz=0.0,
         )
 
         params = mapper.map_delta_to_granular(delta_f0_positive)
@@ -605,13 +742,25 @@ class TestDeltaMapper(unittest.TestCase):
 
         # Lower HNR + higher flatness = more roughness
         delta_rough = AcousticDelta(
-            delta_mean_f0_hz=0.0, delta_duration_ms=0.0, delta_f0_range_hz=0.0,
+            delta_mean_f0_hz=0.0,
+            delta_duration_ms=0.0,
+            delta_f0_range_hz=0.0,
             delta_harmonic_to_noise_ratio=-10.0,  # Lower HNR
             delta_spectral_flatness=0.3,  # Higher flatness
-            delta_attack_time_ms=0.0, delta_decay_time_ms=0.0, delta_sustain_level=0.0,
-            delta_vibrato_rate_hz=0.0, delta_vibrato_depth=0.0, delta_jitter=0.0, delta_shimmer=0.0,
-            delta_mfcc_1=0.0, delta_mfcc_2=0.0, delta_mfcc_3=0.0, delta_mfcc_4=0.0,
-            delta_spectral_contrast=0.0, delta_median_ici_ms=0.0, delta_onset_rate_hz=0.0
+            delta_attack_time_ms=0.0,
+            delta_decay_time_ms=0.0,
+            delta_sustain_level=0.0,
+            delta_vibrato_rate_hz=0.0,
+            delta_vibrato_depth=0.0,
+            delta_jitter=0.0,
+            delta_shimmer=0.0,
+            delta_mfcc_1=0.0,
+            delta_mfcc_2=0.0,
+            delta_mfcc_3=0.0,
+            delta_mfcc_4=0.0,
+            delta_spectral_contrast=0.0,
+            delta_median_ici_ms=0.0,
+            delta_onset_rate_hz=0.0,
         )
 
         params = mapper.map_delta_to_granular(delta_rough)
@@ -624,12 +773,25 @@ class TestDeltaMapper(unittest.TestCase):
 
         # Create a huge delta (simulating 200% aggression request)
         huge_delta = AcousticDelta(
-            delta_mean_f0_hz=5000.0, delta_duration_ms=200.0, delta_f0_range_hz=1000.0,
-            delta_harmonic_to_noise_ratio=-50.0, delta_spectral_flatness=2.0,
-            delta_attack_time_ms=50.0, delta_decay_time_ms=100.0, delta_sustain_level=1.0,
-            delta_vibrato_rate_hz=20.0, delta_vibrato_depth=0.5, delta_jitter=0.5, delta_shimmer=0.5,
-            delta_mfcc_1=3.0, delta_mfcc_2=3.0, delta_mfcc_3=3.0, delta_mfcc_4=3.0,
-            delta_spectral_contrast=50.0, delta_median_ici_ms=200.0, delta_onset_rate_hz=100.0
+            delta_mean_f0_hz=5000.0,
+            delta_duration_ms=200.0,
+            delta_f0_range_hz=1000.0,
+            delta_harmonic_to_noise_ratio=-50.0,
+            delta_spectral_flatness=2.0,
+            delta_attack_time_ms=50.0,
+            delta_decay_time_ms=100.0,
+            delta_sustain_level=1.0,
+            delta_vibrato_rate_hz=20.0,
+            delta_vibrato_depth=0.5,
+            delta_jitter=0.5,
+            delta_shimmer=0.5,
+            delta_mfcc_1=3.0,
+            delta_mfcc_2=3.0,
+            delta_mfcc_3=3.0,
+            delta_mfcc_4=3.0,
+            delta_spectral_contrast=50.0,
+            delta_median_ici_ms=200.0,
+            delta_onset_rate_hz=100.0,
         )
 
         params = mapper.map_delta_to_granular(huge_delta)
@@ -645,6 +807,7 @@ class TestDeltaMapper(unittest.TestCase):
 # Phase 4 Tests: Hybrid Synthesis Engine (Integration)
 # =============================================================================
 
+
 class TestHybridSynthesisEngine(unittest.TestCase):
     """Test complete Hybrid workflow integration"""
 
@@ -656,27 +819,53 @@ class TestHybridSynthesisEngine(unittest.TestCase):
         neutral_phrase = RealPhrase(
             phrase_id="neutral_001",
             vector=VirtualTarget(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.2,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0,
-                median_ici_ms=0.0, onset_rate_hz=0.0
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.2,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+                median_ici_ms=0.0,
+                onset_rate_hz=0.0,
             ),
-            audio_buffer=np.random.randn(2205).astype(np.float32) * 0.1  # 50ms at 44.1kHz
+            audio_buffer=np.random.randn(2205).astype(np.float32) * 0.1,  # 50ms at 44.1kHz
         )
 
         aggressive_phrase = RealPhrase(
             phrase_id="aggressive_001",
             vector=VirtualTarget(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0,
-                median_ici_ms=30.0, onset_rate_hz=15.0
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+                median_ici_ms=30.0,
+                onset_rate_hz=15.0,
             ),
-            audio_buffer=np.random.randn(1764).astype(np.float32) * 0.1  # 40ms
+            audio_buffer=np.random.randn(1764).astype(np.float32) * 0.1,  # 40ms
         )
 
         self.engine.register_phrase(neutral_phrase)
@@ -703,13 +892,11 @@ class TestHybridSynthesisEngine(unittest.TestCase):
         self.assertIsNotNone(nearest)
         # Should be closer to aggressive than neutral
         dist_to_aggressive = (
-            (target.mean_f0_hz - 8000.0)**2 +
-            (target.harmonic_to_noise_ratio - 5.0)**2
+            (target.mean_f0_hz - 8000.0) ** 2 + (target.harmonic_to_noise_ratio - 5.0) ** 2
         ) ** 0.5
 
         dist_to_neutral = (
-            (target.mean_f0_hz - 7000.0)**2 +
-            (target.harmonic_to_noise_ratio - 20.0)**2
+            (target.mean_f0_hz - 7000.0) ** 2 + (target.harmonic_to_noise_ratio - 20.0) ** 2
         ) ** 0.5
 
         # Aggressive phrase should be closer
@@ -746,6 +933,7 @@ class TestHybridSynthesisEngine(unittest.TestCase):
 # Phase 5 Tests: Safety and Edge Cases
 # =============================================================================
 
+
 class TestHybridSafety(unittest.TestCase):
     """Test safety mechanisms and edge cases"""
 
@@ -757,27 +945,53 @@ class TestHybridSafety(unittest.TestCase):
         neutral_phrase = RealPhrase(
             phrase_id="neutral_001",
             vector=VirtualTarget(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.2,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0,
-                median_ici_ms=0.0, onset_rate_hz=0.0
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.2,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+                median_ici_ms=0.0,
+                onset_rate_hz=0.0,
             ),
-            audio_buffer=np.random.randn(2205).astype(np.float32) * 0.1
+            audio_buffer=np.random.randn(2205).astype(np.float32) * 0.1,
         )
 
         aggressive_phrase = RealPhrase(
             phrase_id="aggressive_001",
             vector=VirtualTarget(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0,
-                median_ici_ms=30.0, onset_rate_hz=15.0
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+                median_ici_ms=30.0,
+                onset_rate_hz=15.0,
             ),
-            audio_buffer=np.random.randn(1764).astype(np.float32) * 0.1
+            audio_buffer=np.random.randn(1764).astype(np.float32) * 0.1,
         )
 
         self.engine.register_phrase(neutral_phrase)
@@ -831,5 +1045,5 @@ class TestHybridSafety(unittest.TestCase):
         self.assertLessEqual(params.pitch_shift_ratio, 2.0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

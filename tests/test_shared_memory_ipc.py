@@ -19,7 +19,8 @@ import unittest
 import numpy as np
 
 # Import all enhancement modules
-sys.path.append('src')
+sys.path.append("src")
+
 
 class TestSharedMemoryIPC(unittest.TestCase):
     """Test Suite for Shared Memory IPC Implementation"""
@@ -31,6 +32,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         import shutil
+
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
 
@@ -38,11 +40,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         """Test that shared memory can be created and managed"""
         from realtime.shared_memory_ipc import SharedMemoryManager
 
-        manager = SharedMemoryManager(
-            segment_name="test_segment",
-            size=1024,
-            create=True
-        )
+        manager = SharedMemoryManager(segment_name="test_segment", size=1024, create=True)
 
         self.assertIsNotNone(manager)
         self.assertTrue(manager.segment_exists())
@@ -60,11 +58,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         expected_size = test_array.nbytes
 
         # Create shared memory manager
-        manager = SharedMemoryManager(
-            segment_name="test_array",
-            size=expected_size,
-            create=True
-        )
+        manager = SharedMemoryManager(segment_name="test_array", size=expected_size, create=True)
 
         # Write array to shared memory
         manager.write_numpy_array(test_array)
@@ -80,11 +74,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         """Test that command queue can be created and managed"""
         from realtime.shared_memory_ipc import CommandQueue
 
-        queue = CommandQueue(
-            queue_name="test_queue",
-            max_messages=100,
-            message_size=256
-        )
+        queue = CommandQueue(queue_name="test_queue", max_messages=100, message_size=256)
 
         self.assertIsNotNone(queue)
         self.assertEqual(queue.max_messages, 100)
@@ -95,17 +85,13 @@ class TestSharedMemoryIPC(unittest.TestCase):
         from realtime.shared_memory_ipc import CommandQueue
 
         # Create queue
-        queue = CommandQueue(
-            queue_name="test_queue",
-            max_messages=10,
-            message_size=4096
-        )
+        queue = CommandQueue(queue_name="test_queue", max_messages=10, message_size=4096)
 
         # Test command
         test_command = {
             "command": "test",
             "parameters": {"param1": "value1", "param2": 42},
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         # Send command
@@ -131,37 +117,28 @@ class TestSharedMemoryIPC(unittest.TestCase):
             array = sm.read_numpy_array(dtype=np.int32, shape=(5,))
 
             # Connect to queue
-            queue = CommandQueue(queue_name=q_name, max_messages=10, message_size=1024, create=False)
+            queue = CommandQueue(
+                queue_name=q_name, max_messages=10, message_size=1024, create=False
+            )
 
             # Send response
-            response = {
-                "worker_received": array.tolist(),
-                "worker_pid": os.getpid()
-            }
+            response = {"worker_received": array.tolist(), "worker_pid": os.getpid()}
             queue.send_command(response)
 
         # Create shared memory with test data
         test_data = np.array([10, 20, 30, 40, 50], dtype=np.int32)
         sm_manager = SharedMemoryManager(
-            segment_name="interprocess_test",
-            size=test_data.nbytes,
-            create=True
+            segment_name="interprocess_test", size=test_data.nbytes, create=True
         )
         sm_manager.write_numpy_array(test_data)
 
         # Create queue
         queue = CommandQueue(
-            queue_name="interprocess_queue",
-            max_messages=10,
-            message_size=1024,
-            create=True
+            queue_name="interprocess_queue", max_messages=10, message_size=1024, create=True
         )
 
         # Start worker process
-        p = mp.Process(
-            target=worker_process,
-            args=("interprocess_test", "interprocess_queue")
-        )
+        p = mp.Process(target=worker_process, args=("interprocess_test", "interprocess_queue"))
         p.start()
 
         # Wait for worker to complete (longer timeout for process startup)
@@ -185,11 +162,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         large_array = np.random.rand(10000).astype(np.float32)
         expected_size = large_array.nbytes
 
-        manager = SharedMemoryManager(
-            segment_name="perf_test",
-            size=expected_size,
-            create=True
-        )
+        manager = SharedMemoryManager(segment_name="perf_test", size=expected_size, create=True)
 
         # Measure write time
         start_time = time.time()
@@ -198,10 +171,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
 
         # Measure read time
         start_time = time.time()
-        retrieved_array = manager.read_numpy_array(
-            dtype=np.float32,
-            shape=(10000,)
-        )
+        retrieved_array = manager.read_numpy_array(dtype=np.float32, shape=(10000,))
         read_time = time.time() - start_time
 
         # Verify data integrity
@@ -218,11 +188,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         from realtime.shared_memory_ipc import SharedMemoryManager
 
         # Create shared memory
-        manager = SharedMemoryManager(
-            segment_name="gil_test",
-            size=8192,
-            create=True
-        )
+        manager = SharedMemoryManager(segment_name="gil_test", size=8192, create=True)
 
         results = []
 
@@ -266,11 +232,7 @@ class TestSharedMemoryIPC(unittest.TestCase):
         from realtime.shared_memory_ipc import CommandQueue
 
         # Create small queue
-        queue = CommandQueue(
-            queue_name="overflow_test",
-            max_messages=3,
-            message_size=100
-        )
+        queue = CommandQueue(queue_name="overflow_test", max_messages=3, message_size=100)
 
         # Fill queue
         for i in range(3):
@@ -283,7 +245,9 @@ class TestSharedMemoryIPC(unittest.TestCase):
         # Clean up
         queue.cleanup()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
-    sys.path.append('src/technical_architecture')
+
+    sys.path.append("src/technical_architecture")
     unittest.main()

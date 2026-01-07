@@ -37,19 +37,19 @@ from data_models import (
 )
 
 # Import URS for feature extraction
-sys.path.insert(0, str(Path(__file__).parent.parent / 'analysis' / 'rosetta_stone'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "analysis" / "rosetta_stone"))
 from universal_rosetta_stone import UniversalRosettaStone
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # Timbre feature names
 TIMBRE_FEATURES = [
-    'spectral_centroid_hz',
-    'spectral_slope',
-    'spectral_bandwidth_hz',
-    'spectral_rolloff_hz'
+    "spectral_centroid_hz",
+    "spectral_slope",
+    "spectral_bandwidth_hz",
+    "spectral_rolloff_hz",
 ]
 
 
@@ -58,7 +58,7 @@ def load_phrase_segments_pickle(pickle_path: str) -> Dict:
     logger.info(f"Loading phrase segments from {pickle_path}")
 
     try:
-        with open(pickle_path, 'rb') as f:
+        with open(pickle_path, "rb") as f:
             data = pickle.load(f)
 
         logger.info(f"✅ Loaded {len(data)} phrase types")
@@ -92,29 +92,28 @@ def extract_timbre_from_audio(audio: np.ndarray, sample_rate: int) -> Dict[str, 
 
 
 def update_acoustic_features_with_timbre(
-    old_features: Dict[str, Any],
-    timbre: Dict[str, float]
+    old_features: Dict[str, Any], timbre: Dict[str, float]
 ) -> AcousticFeatures:
     """Create updated AcousticFeatures with timbre."""
 
     # Extract existing features
-    mean_f0 = old_features.get('mean_f0_hz', 0.0)
-    std_f0 = old_features.get('std_f0_hz', 0.0)
-    min_f0 = old_features.get('min_f0_hz', 0.0)
-    max_f0 = old_features.get('max_f0_hz', 0.0)
-    f0_range = old_features.get('f0_range_hz', 0.0)
-    duration_frames = old_features.get('duration_frames', 0)
-    voiced_ratio = old_features.get('voiced_ratio', 0.0)
-    f0_slope = old_features.get('f0_slope', 0.0)
-    modulation_rate = old_features.get('modulation_rate', 0.0)
-    acoustic_variance = old_features.get('acoustic_variance', 0.0)
-    mean_duration_ms = old_features.get('mean_duration_ms', 0.0)
+    mean_f0 = old_features.get("mean_f0_hz", 0.0)
+    std_f0 = old_features.get("std_f0_hz", 0.0)
+    min_f0 = old_features.get("min_f0_hz", 0.0)
+    max_f0 = old_features.get("max_f0_hz", 0.0)
+    f0_range = old_features.get("f0_range_hz", 0.0)
+    duration_frames = old_features.get("duration_frames", 0)
+    voiced_ratio = old_features.get("voiced_ratio", 0.0)
+    f0_slope = old_features.get("f0_slope", 0.0)
+    modulation_rate = old_features.get("modulation_rate", 0.0)
+    acoustic_variance = old_features.get("acoustic_variance", 0.0)
+    mean_duration_ms = old_features.get("mean_duration_ms", 0.0)
 
     # Add NEW timbre features
-    spectral_centroid = timbre.get('spectral_centroid_hz', 0.0)
-    spectral_slope_val = timbre.get('spectral_slope', 0.0)
-    spectral_bandwidth = timbre.get('spectral_bandwidth_hz', 0.0)
-    spectral_rolloff = timbre.get('spectral_rolloff_hz', 0.0)
+    spectral_centroid = timbre.get("spectral_centroid_hz", 0.0)
+    spectral_slope_val = timbre.get("spectral_slope", 0.0)
+    spectral_bandwidth = timbre.get("spectral_bandwidth_hz", 0.0)
+    spectral_rolloff = timbre.get("spectral_rolloff_hz", 0.0)
 
     return AcousticFeatures(
         mean_f0_hz=mean_f0,
@@ -137,9 +136,7 @@ def update_acoustic_features_with_timbre(
 
 
 def reexport_marmoset_with_timbre(
-    phrase_segments: Dict,
-    old_db_path: str,
-    output_path: str
+    phrase_segments: Dict, old_db_path: str, output_path: str
 ) -> SpeciesData:
     """Re-export marmoset data with timbre features."""
     logger.info("\n" + "=" * 80)
@@ -148,11 +145,11 @@ def reexport_marmoset_with_timbre(
 
     # Load old database
     logger.info(f"Loading existing database from {old_db_path}")
-    with open(old_db_path, 'r') as f:
+    with open(old_db_path, "r") as f:
         old_db = json.load(f)
 
-    old_marmoset_data = old_db['species_data']['marmoset']
-    old_phrases = old_marmoset_data['phrases']
+    old_marmoset_data = old_db["species_data"]["marmoset"]
+    old_phrases = old_marmoset_data["phrases"]
 
     logger.info(f"Found {len(old_phrases)} phrases in existing database")
 
@@ -169,19 +166,19 @@ def reexport_marmoset_with_timbre(
         if phrase_key not in phrase_segments or not phrase_segments[phrase_key]:
             skipped_count += 1
             # Keep old features without timbre (set to 0)
-            old_acoustic = phrase_data['acoustic_features']
+            old_acoustic = phrase_data["acoustic_features"]
             acoustic_features = AcousticFeatures(
-                mean_f0_hz=old_acoustic.get('mean_f0_hz', 0.0),
-                std_f0_hz=old_acoustic.get('std_f0_hz', 0.0),
-                min_f0_hz=old_acoustic.get('min_f0_hz', 0.0),
-                max_f0_hz=old_acoustic.get('max_f0_hz', 0.0),
-                f0_range_hz=old_acoustic.get('f0_range_hz', 0.0),
-                duration_frames=old_acoustic.get('duration_frames', 0),
-                voiced_ratio=old_acoustic.get('voiced_ratio', 0.0),
-                f0_slope=old_acoustic.get('f0_slope', 0.0),
-                modulation_rate=old_acoustic.get('modulation_rate', 0.0),
-                acoustic_variance=old_acoustic.get('acoustic_variance', 0.0),
-                mean_duration_ms=old_acoustic.get('mean_duration_ms', 0.0),
+                mean_f0_hz=old_acoustic.get("mean_f0_hz", 0.0),
+                std_f0_hz=old_acoustic.get("std_f0_hz", 0.0),
+                min_f0_hz=old_acoustic.get("min_f0_hz", 0.0),
+                max_f0_hz=old_acoustic.get("max_f0_hz", 0.0),
+                f0_range_hz=old_acoustic.get("f0_range_hz", 0.0),
+                duration_frames=old_acoustic.get("duration_frames", 0),
+                voiced_ratio=old_acoustic.get("voiced_ratio", 0.0),
+                f0_slope=old_acoustic.get("f0_slope", 0.0),
+                modulation_rate=old_acoustic.get("modulation_rate", 0.0),
+                acoustic_variance=old_acoustic.get("acoustic_variance", 0.0),
+                mean_duration_ms=old_acoustic.get("mean_duration_ms", 0.0),
                 # No timbre available
                 spectral_centroid_hz=0.0,
                 spectral_slope=0.0,
@@ -200,7 +197,7 @@ def reexport_marmoset_with_timbre(
             timbre = extract_timbre_from_audio(audio, sample_rate)
 
             # Update acoustic features with timbre
-            old_acoustic = phrase_data['acoustic_features']
+            old_acoustic = phrase_data["acoustic_features"]
             acoustic_features = update_acoustic_features_with_timbre(old_acoustic, timbre)
             updated_count += 1
 
@@ -208,36 +205,33 @@ def reexport_marmoset_with_timbre(
                 logger.info(f"  Processed {updated_count} phrases...")
 
         # Parse modality
-        modality_str = phrase_data.get('modality', 'harmonic')
+        modality_str = phrase_data.get("modality", "harmonic")
         modality_map = {
-            'harmonic': VocalizationModality.HARMONIC,
-            'fm_sweep': VocalizationModality.FM_SWEEP,
-            'transient': VocalizationModality.TRANSIENT,
-            'rhythmic': VocalizationModality.RHYTHMIC,
+            "harmonic": VocalizationModality.HARMONIC,
+            "fm_sweep": VocalizationModality.FM_SWEEP,
+            "transient": VocalizationModality.TRANSIENT,
+            "rhythmic": VocalizationModality.RHYTHMIC,
         }
         modality = modality_map.get(modality_str, VocalizationModality.HARMONIC)
 
         # Parse contexts
         contexts = []
-        for ctx_data in phrase_data.get('contexts', []):
-            ctx = PhraseContext(
-                context_name=ctx_data['context_name'],
-                count=ctx_data['count']
-            )
+        for ctx_data in phrase_data.get("contexts", []):
+            ctx = PhraseContext(context_name=ctx_data["context_name"], count=ctx_data["count"])
             contexts.append(ctx)
 
         # Create phrase
         phrase = Phrase(
             phrase_key=phrase_key,
-            signature=phrase_data['signature'],
+            signature=phrase_data["signature"],
             species=Species.MARMOSET,
             modality=modality,
             acoustic_features=acoustic_features,
-            total_occurrences=phrase_data['total_occurrences'],
+            total_occurrences=phrase_data["total_occurrences"],
             contexts=contexts,
-            social_contexts=phrase_data.get('social_contexts', {}),
-            is_compositional=phrase_data.get('is_compositional', False),
-            phrase_components=phrase_data.get('phrase_components', [])
+            social_contexts=phrase_data.get("social_contexts", {}),
+            is_compositional=phrase_data.get("is_compositional", False),
+            phrase_components=phrase_data.get("phrase_components", []),
         )
 
         species_data.add_phrase(phrase)
@@ -258,8 +252,10 @@ def reexport_all_species_with_timbre(output_path: str):
     logger.info("=" * 80)
 
     # Paths
-    old_db_path = '/home/sheel/birdsong_analysis/src/vocalization_database.json'
-    phrase_segments_path = '/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl'
+    old_db_path = "/home/sheel/birdsong_analysis/src/vocalization_database.json"
+    phrase_segments_path = (
+        "/home/sheel/birdsong_analysis/phrase_audio_database_full/phrase_segments.pkl"
+    )
 
     # Load phrase segments for marmoset
     phrase_segments = load_phrase_segments_pickle(phrase_segments_path)
@@ -269,11 +265,7 @@ def reexport_all_species_with_timbre(output_path: str):
         return
 
     # Re-export marmoset
-    marmoset_data = reexport_marmoset_with_timbre(
-        phrase_segments,
-        old_db_path,
-        output_path
-    )
+    marmoset_data = reexport_marmoset_with_timbre(phrase_segments, old_db_path, output_path)
 
     # For now, only marmoset has phrase_segments.pkl
     # Other species (bat, dolphin, chimp) need to keep old features
@@ -283,78 +275,73 @@ def reexport_all_species_with_timbre(output_path: str):
     logger.info("   (phrase_segments.pkl only contains marmoset data)")
 
     # Load old database for other species
-    with open(old_db_path, 'r') as f:
+    with open(old_db_path, "r") as f:
         json.load(f)
 
-    all_species_data = {
-        'marmoset': marmoset_data
-    }
+    all_species_data = {"marmoset": marmoset_data}
 
     # TODO: Add other species when audio data is available
     # For now, they keep their old features
 
     # Create export structure
-    export_data = {
-        'export_date': datetime.now().isoformat(),
-        'species_data': {}
-    }
+    export_data = {"export_date": datetime.now().isoformat(), "species_data": {}}
 
     for species_name, species_data in all_species_data.items():
-        export_data['species_data'][species_name] = {
-            'species': species_data.species.value,
-            'analysis_date': species_data.analysis_date.isoformat(),
-            'total_phrases': species_data.total_phrases,
-            'total_sentences': species_data.total_sentences,
-            'vocabulary_size': species_data.vocabulary_size,
-            'modality_distribution': {
+        export_data["species_data"][species_name] = {
+            "species": species_data.species.value,
+            "analysis_date": species_data.analysis_date.isoformat(),
+            "total_phrases": species_data.total_phrases,
+            "total_sentences": species_data.total_sentences,
+            "vocabulary_size": species_data.vocabulary_size,
+            "modality_distribution": {
                 modality.name: count
                 for modality, count in species_data.modality_distribution.items()
             },
-            'phrases': {}
+            "phrases": {},
         }
 
         # Export phrases
         for phrase_key, phrase in species_data.phrase_library.items():
-            export_data['species_data'][species_name]['phrases'][phrase_key] = {
-                'phrase_key': phrase.phrase_key,
-                'signature': phrase.signature,
-                'species': phrase.species.value,
-                'modality': phrase.modality.value,
-                'acoustic_features': {
-                    'mean_f0_hz': phrase.acoustic_features.mean_f0_hz,
-                    'std_f0_hz': phrase.acoustic_features.std_f0_hz,
-                    'min_f0_hz': phrase.acoustic_features.min_f0_hz,
-                    'max_f0_hz': phrase.acoustic_features.max_f0_hz,
-                    'f0_range_hz': phrase.acoustic_features.f0_range_hz,
-                    'duration_frames': phrase.acoustic_features.duration_frames,
-                    'voiced_ratio': phrase.acoustic_features.voiced_ratio,
-                    'f0_slope': phrase.acoustic_features.f0_slope,
-                    'modulation_rate': phrase.acoustic_features.modulation_rate,
-                    'acoustic_variance': phrase.acoustic_features.acoustic_variance,
-                    'mean_duration_ms': phrase.acoustic_features.mean_duration_ms,
+            export_data["species_data"][species_name]["phrases"][phrase_key] = {
+                "phrase_key": phrase.phrase_key,
+                "signature": phrase.signature,
+                "species": phrase.species.value,
+                "modality": phrase.modality.value,
+                "acoustic_features": {
+                    "mean_f0_hz": phrase.acoustic_features.mean_f0_hz,
+                    "std_f0_hz": phrase.acoustic_features.std_f0_hz,
+                    "min_f0_hz": phrase.acoustic_features.min_f0_hz,
+                    "max_f0_hz": phrase.acoustic_features.max_f0_hz,
+                    "f0_range_hz": phrase.acoustic_features.f0_range_hz,
+                    "duration_frames": phrase.acoustic_features.duration_frames,
+                    "voiced_ratio": phrase.acoustic_features.voiced_ratio,
+                    "f0_slope": phrase.acoustic_features.f0_slope,
+                    "modulation_rate": phrase.acoustic_features.modulation_rate,
+                    "acoustic_variance": phrase.acoustic_features.acoustic_variance,
+                    "mean_duration_ms": phrase.acoustic_features.mean_duration_ms,
                     # NEW: Timbre features
-                    'spectral_centroid_hz': phrase.acoustic_features.spectral_centroid_hz,
-                    'spectral_slope': phrase.acoustic_features.spectral_slope,
-                    'spectral_bandwidth_hz': phrase.acoustic_features.spectral_bandwidth_hz,
-                    'spectral_rolloff_hz': phrase.acoustic_features.spectral_rolloff_hz,
+                    "spectral_centroid_hz": phrase.acoustic_features.spectral_centroid_hz,
+                    "spectral_slope": phrase.acoustic_features.spectral_slope,
+                    "spectral_bandwidth_hz": phrase.acoustic_features.spectral_bandwidth_hz,
+                    "spectral_rolloff_hz": phrase.acoustic_features.spectral_rolloff_hz,
                 },
-                'total_occurrences': phrase.total_occurrences,
-                'contexts': [
+                "total_occurrences": phrase.total_occurrences,
+                "contexts": [
                     {
-                        'context_name': ctx.context_name,
-                        'count': ctx.count,
-                        'percentage': ctx.percentage
+                        "context_name": ctx.context_name,
+                        "count": ctx.count,
+                        "percentage": ctx.percentage,
                     }
                     for ctx in phrase.contexts
                 ],
-                'social_contexts': phrase.social_contexts,
-                'is_compositional': phrase.is_compositional,
-                'phrase_components': phrase.phrase_components
+                "social_contexts": phrase.social_contexts,
+                "is_compositional": phrase.is_compositional,
+                "phrase_components": phrase.phrase_components,
             }
 
     # Save to file
     logger.info(f"\nSaving to {output_path}...")
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(export_data, f, indent=2)
 
     logger.info("✅ Saved!")
@@ -387,7 +374,7 @@ def reexport_all_species_with_timbre(output_path: str):
 
 def main():
     """Main re-export function."""
-    output_path = '/home/sheel/birdsong_analysis/src/vocalization_database_with_timbre.json'
+    output_path = "/home/sheel/birdsong_analysis/src/vocalization_database_with_timbre.json"
 
     reexport_all_species_with_timbre(output_path)
 
@@ -395,9 +382,13 @@ def main():
     logger.info(f"✅ New database saved to: {output_path}")
     logger.info("\n🎯 Next steps:")
     logger.info("  1. Backup old database:")
-    logger.info("     mv /home/sheel/birdsong_analysis/src/vocalization_database.json /home/sheel/birdsong_analysis/src/vocalization_database_old.json")
+    logger.info(
+        "     mv /home/sheel/birdsong_analysis/src/vocalization_database.json /home/sheel/birdsong_analysis/src/vocalization_database_old.json"
+    )
     logger.info("  2. Replace with new database:")
-    logger.info(f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json")
+    logger.info(
+        f"     mv {output_path} /home/sheel/birdsong_analysis/src/vocalization_database.json"
+    )
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ from sklearn.preprocessing import StandardScaler
 # Try to import librosa for advanced audio processing
 try:
     import librosa
+
     LIBROSA_AVAILABLE = True
 except ImportError:
     LIBROSA_AVAILABLE = False
@@ -42,20 +43,25 @@ except ImportError:
 # Enums from cognitive_intelligence.py
 class LearningMode(Enum):
     """Learning modes for adaptation"""
+
     NONE = "none"
     FEW_SHOT = "few_shot"
     REINFORCEMENT = "reinforcement"
     UNSUPERVISED = "unsupervised"
 
+
 class VisualAttention(Enum):
     """Visual attention levels"""
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
 
+
 class ContextType(Enum):
     """Context types for learning"""
+
     CONTACT_CALL = "contact_call"
     ALARM_CALL = "alarm_call"
     FOOD_CALL = "food_call"
@@ -63,10 +69,12 @@ class ContextType(Enum):
     PLAY = "play"
     AGGRESSIVE = "aggressive"
 
+
 # Configuration classes
 @dataclass
 class AdaptationParameters:
     """Parameters for adaptive behavior."""
+
     preferred_f0: float = 5000.0
     preferred_duration: float = 0.2
     preferred_amplitude: float = 0.5
@@ -75,9 +83,11 @@ class AdaptationParameters:
     adaptation_count: int = 0
     last_adaptation: float = 0.0
 
+
 @dataclass
 class LearningConfig:
     """Configuration for learning system"""
+
     learning_mode: LearningMode = LearningMode.FEW_SHOT
     adaptation_rate: float = 0.1
     memory_size: int = 1000
@@ -86,26 +96,32 @@ class LearningConfig:
     reinforcement_learning: bool = True
     memory_decay: float = 0.95
 
+
 @dataclass
 class VisualConfig:
     """Configuration for visual processing"""
+
     attention_model: str = "mediapipe"
     min_face_confidence: float = 0.5
     tracking_enabled: bool = True
     fusion_enabled: bool = True
     attention_boost: float = 0.2
 
+
 @dataclass
 class SourceSeparationConfig:
     """Configuration for source separation"""
+
     model_type: str = "conv_tasnet"
     model_path: Optional[str] = None
     denoising_enabled: bool = True
     enhancement_factor: float = 1.5
 
+
 @dataclass
 class MemoryEntry:
     """Memory entry for learning"""
+
     features: np.ndarray
     context: ContextType
     f0: float
@@ -114,9 +130,11 @@ class MemoryEntry:
     weight: float = 1.0
     access_count: int = 0
 
+
 @dataclass
 class VisualState:
     """Visual processing state"""
+
     attention: VisualAttention = VisualAttention.NONE
     face_detected: bool = False
     face_confidence: float = 0.0
@@ -124,9 +142,11 @@ class VisualState:
     tracking_active: bool = False
     processing_time_ms: float = 0.0
 
+
 @dataclass
 class CognitiveMetrics:
     """Cognitive performance metrics"""
+
     learning_events: int = 0
     adaptation_rate: float = 0.0
     visual_confidence: float = 0.0
@@ -157,7 +177,7 @@ class FewShotLearner:
         features = []
 
         # RMS energy
-        rms = np.sqrt(np.mean(audio ** 2))
+        rms = np.sqrt(np.mean(audio**2))
         features.append(rms)
 
         # Spectral centroid
@@ -176,8 +196,8 @@ class FewShotLearner:
 
         # F0 estimate (simplified)
         if len(audio) > 100:
-            autocorr = np.correlate(audio, audio, mode='full')
-            autocorr = autocorr[len(autocorr)//2:]
+            autocorr = np.correlate(audio, audio, mode="full")
+            autocorr = autocorr[len(autocorr) // 2 :]
             peak_idx = np.argmax(autocorr[1:]) + 1
             f0 = sample_rate / peak_idx if peak_idx > 0 else 0.0
         else:
@@ -197,8 +217,14 @@ class FewShotLearner:
 
         return np.array(features)
 
-    def add_experience(self, audio: np.ndarray, context: ContextType,
-                      f0: float, response_positive: bool, sample_rate: int = 44100):
+    def add_experience(
+        self,
+        audio: np.ndarray,
+        context: ContextType,
+        f0: float,
+        response_positive: bool,
+        sample_rate: int = 44100,
+    ):
         """Add learning experience to memory"""
         if not self.config.learning_enabled:
             return
@@ -213,7 +239,7 @@ class FewShotLearner:
             f0=f0,
             response_positive=response_positive,
             timestamp=time.time(),
-            weight=1.0
+            weight=1.0,
         )
 
         # Add to memory
@@ -226,8 +252,10 @@ class FewShotLearner:
         self.adaptation_count += 1
         self.success_history.append(response_positive)
 
-        logger.info(f"Learning experience added: {context.value}, "
-                   f"F0: {f0:.1f}Hz, Response: {'positive' if response_positive else 'negative'}")
+        logger.info(
+            f"Learning experience added: {context.value}, "
+            f"F0: {f0:.1f}Hz, Response: {'positive' if response_positive else 'negative'}"
+        )
 
     def _update_context_preferences(self, entry: MemoryEntry):
         """Update context-specific preferences based on experience"""
@@ -235,29 +263,30 @@ class FewShotLearner:
 
         if context not in self.context_preferences:
             self.context_preferences[context] = {
-                'preferred_f0': entry.f0,
-                'adaptation_count': 0,
-                'success_rate': 0.0,
-                'total_responses': 0,
-                'successful_responses': 0
+                "preferred_f0": entry.f0,
+                "adaptation_count": 0,
+                "success_rate": 0.0,
+                "total_responses": 0,
+                "successful_responses": 0,
             }
 
         prefs = self.context_preferences[context]
-        prefs['adaptation_count'] += 1
+        prefs["adaptation_count"] += 1
 
         # Update preferred F0 with adaptation
         if entry.response_positive:
-            prefs['successful_responses'] += 1
-            prefs['preferred_f0'] += (entry.f0 - prefs['preferred_f0']) * self.learning_rate
+            prefs["successful_responses"] += 1
+            prefs["preferred_f0"] += (entry.f0 - prefs["preferred_f0"]) * self.learning_rate
 
-        prefs['total_responses'] += 1
-        prefs['success_rate'] = prefs['successful_responses'] / prefs['total_responses']
+        prefs["total_responses"] += 1
+        prefs["success_rate"] = prefs["successful_responses"] / prefs["total_responses"]
 
-    def adapt_to_success(self, audio: np.ndarray, context: ContextType,
-                        sample_rate: int = 44100) -> Dict[str, Any]:
+    def adapt_to_success(
+        self, audio: np.ndarray, context: ContextType, sample_rate: int = 44100
+    ) -> Dict[str, Any]:
         """Adapt parameters based on successful interaction"""
         if not self.config.learning_enabled or len(self.memory) < 2:
-            return {'adapted': False, 'reason': 'insufficient_memory'}
+            return {"adapted": False, "reason": "insufficient_memory"}
 
         # Extract features from successful audio
         features = self.extract_features(audio, sample_rate)
@@ -266,7 +295,7 @@ class FewShotLearner:
         similar_experiences = self._find_similar_experiences(features, context)
 
         if not similar_experiences:
-            return {'adapted': False, 'reason': 'no_similar_experiences'}
+            return {"adapted": False, "reason": "no_similar_experiences"}
 
         # Adapt parameters based on similar successful experiences
         adaptation_result = self._generate_adaptation(similar_experiences)
@@ -276,8 +305,9 @@ class FewShotLearner:
 
         return adaptation_result
 
-    def _find_similar_experiences(self, features: np.ndarray,
-                                 context: ContextType) -> List[MemoryEntry]:
+    def _find_similar_experiences(
+        self, features: np.ndarray, context: ContextType
+    ) -> List[MemoryEntry]:
         """Find similar experiences in memory"""
         context_entries = [e for e in self.memory if e.context == context]
         if not context_entries:
@@ -287,8 +317,9 @@ class FewShotLearner:
         similarities = []
         for entry in context_entries:
             # Use weighted similarity based on feature importance
-            similarity = cosine_similarity(features.reshape(1, -1),
-                                         entry.features.reshape(1, -1))[0][0]
+            similarity = cosine_similarity(features.reshape(1, -1), entry.features.reshape(1, -1))[
+                0
+            ][0]
             similarities.append((similarity, entry))
 
         # Sort by similarity and return top matches
@@ -298,12 +329,12 @@ class FewShotLearner:
     def _generate_adaptation(self, experiences: List[MemoryEntry]) -> Dict[str, Any]:
         """Generate adaptation based on similar experiences"""
         if not experiences:
-            return {'adapted': False}
+            return {"adapted": False}
 
         # Calculate weighted average of successful experiences
         total_weight = sum(e.weight for e in experiences if e.response_positive)
         if total_weight == 0:
-            return {'adapted': False}
+            return {"adapted": False}
 
         # Adapt F0 based on successful experiences
         weighted_f0 = sum(e.f0 * e.weight for e in experiences if e.response_positive)
@@ -311,12 +342,12 @@ class FewShotLearner:
 
         # Generate adaptation parameters
         adaptation = {
-            'adapted': True,
-            'target_f0': adapted_f0,
-            'adaptation_strength': self.learning_rate,
-            'num_similar_experiences': len([e for e in experiences if e.response_positive]),
-            'confidence': min(len(experiences) / 5.0, 1.0),  # Normalize by expected 5
-            'timestamp': time.time()
+            "adapted": True,
+            "target_f0": adapted_f0,
+            "adaptation_strength": self.learning_rate,
+            "num_similar_experiences": len([e for e in experiences if e.response_positive]),
+            "confidence": min(len(experiences) / 5.0, 1.0),  # Normalize by expected 5
+            "timestamp": time.time(),
         }
 
         return adaptation
@@ -326,22 +357,22 @@ class FewShotLearner:
         success_rate = np.mean(self.success_history) if self.success_history else 0.0
 
         return {
-            'learning_events': self.adaptation_count,
-            'adaptation_count': self.adaptation_count,
-            'success_rate': success_rate,
-            'memory_size': len(self.memory),
-            'context_preferences': self.context_preferences,
-            'learning_enabled': self.config.learning_enabled
+            "learning_events": self.adaptation_count,
+            "adaptation_count": self.adaptation_count,
+            "success_rate": success_rate,
+            "memory_size": len(self.memory),
+            "context_preferences": self.context_preferences,
+            "learning_enabled": self.config.learning_enabled,
         }
 
     def save_learning_state(self, filepath: str):
         """Save learning state to file"""
         state = {
-            'context_preferences': self.context_preferences,
-            'adaptation_count': self.adaptation_count
+            "context_preferences": self.context_preferences,
+            "adaptation_count": self.adaptation_count,
         }
 
-        with open(filepath, 'wb') as f:
+        with open(filepath, "wb") as f:
             pickle.dump(state, f)
 
         logger.info(f"Learning state saved to {filepath}")
@@ -353,14 +384,14 @@ class FewShotLearner:
             return
 
         try:
-            with open(filepath, 'rb') as f:
+            with open(filepath, "rb") as f:
                 state = pickle.load(f)
 
             # Restore state
-            if 'context_preferences' in state:
-                self.context_preferences = state['context_preferences']
-            if 'adaptation_count' in state:
-                self.adaptation_count = state['adaptation_count']
+            if "context_preferences" in state:
+                self.context_preferences = state["context_preferences"]
+            if "adaptation_count" in state:
+                self.adaptation_count = state["adaptation_count"]
 
             logger.info(f"Learning state loaded from {filepath}")
         except Exception as e:
@@ -375,8 +406,12 @@ class OnlineLearner(FewShotLearner):
     and response patterns, extended with few-shot learning capabilities.
     """
 
-    def __init__(self, learning_rate: float = 0.01, adaptation_threshold: int = 5,
-                 config: LearningConfig = None):
+    def __init__(
+        self,
+        learning_rate: float = 0.01,
+        adaptation_threshold: int = 5,
+        config: LearningConfig = None,
+    ):
         """
         Initialize online learner.
 
@@ -398,14 +433,20 @@ class OnlineLearner(FewShotLearner):
         # Convert context_preferences from few-shot format
         for context, prefs in self.context_preferences.items():
             context_name = ContextType(context)
-            if context_name in [ContextType.CONTACT_CALL, ContextType.FOOD_CALL,
-                               ContextType.ALARM_CALL, ContextType.SOCIAL_INTERACTION]:
+            if context_name in [
+                ContextType.CONTACT_CALL,
+                ContextType.FOOD_CALL,
+                ContextType.ALARM_CALL,
+                ContextType.SOCIAL_INTERACTION,
+            ]:
                 self.context_preferences[context_name] = AdaptationParameters(
-                    preferred_f0=prefs.get('preferred_f0', 5000.0),
-                    adaptation_count=prefs.get('adaptation_count', 0)
+                    preferred_f0=prefs.get("preferred_f0", 5000.0),
+                    adaptation_count=prefs.get("adaptation_count", 0),
                 )
 
-    def process_animal_response(self, context: str, f0: float, response_positive: bool) -> Dict[str, Any]:
+    def process_animal_response(
+        self, context: str, f0: float, response_positive: bool
+    ) -> Dict[str, Any]:
         """
         Process animal response and update preferences.
 
@@ -421,44 +462,44 @@ class OnlineLearner(FewShotLearner):
             params = self.context_preferences[context]
 
             # Record response
-            self.response_history[context].append({
-                'timestamp': time.time(),
-                'f0': f0,
-                'response_positive': response_positive
-            })
+            self.response_history[context].append(
+                {"timestamp": time.time(), "f0": f0, "response_positive": response_positive}
+            )
 
             # Keep only recent responses (last 100)
             if len(self.response_history[context]) > 100:
                 self.response_history[context] = self.response_history[context][-100:]
 
             # Check if adaptation is needed
-            recent_responses = self.response_history[context][-self.adaptation_threshold:]
+            recent_responses = self.response_history[context][-self.adaptation_threshold :]
             if len(recent_responses) < self.adaptation_threshold:
-                return {'adapted': False, 'reason': 'Not enough data'}
+                return {"adapted": False, "reason": "Not enough data"}
 
             # Check if responses are consistently positive/negative
             consistent_responses = all(
-                r['response_positive'] == recent_responses[0]['response_positive']
+                r["response_positive"] == recent_responses[0]["response_positive"]
                 for r in recent_responses
             )
 
             if not consistent_responses:
-                return {'adapted': False, 'reason': 'Inconsistent responses'}
+                return {"adapted": False, "reason": "Inconsistent responses"}
 
             # Adapt preferences
-            if recent_responses[0]['response_positive']:
+            if recent_responses[0]["response_positive"]:
                 # Positive response - reinforce current parameters
                 params.preferred_f0 += (f0 - params.preferred_f0) * self.learning_rate
                 params.preferred_duration += (0.2 - params.preferred_duration) * self.learning_rate
-                params.preferred_amplitude += (0.5 - params.preferred_amplitude) * self.learning_rate
+                params.preferred_amplitude += (
+                    0.5 - params.preferred_amplitude
+                ) * self.learning_rate
                 params.adaptation_count += 1
                 params.last_adaptation = time.time()
 
             return {
-                'adapted': True,
-                'context': context,
-                'new_f0': params.preferred_f0,
-                'adaptation_count': params.adaptation_count
+                "adapted": True,
+                "context": context,
+                "new_f0": params.preferred_f0,
+                "adaptation_count": params.adaptation_count,
             }
 
     def get_adapted_parameters(self, context: str) -> Dict[str, Any]:
@@ -473,11 +514,11 @@ class OnlineLearner(FewShotLearner):
         """
         params = self.context_preferences[context]
         return {
-            'preferred_f0': params.preferred_f0,
-            'preferred_duration': params.preferred_duration,
-            'preferred_amplitude': params.preferred_amplitude,
-            'adaptation_count': params.adaptation_count,
-            'last_adaptation': params.last_adaptation
+            "preferred_f0": params.preferred_f0,
+            "preferred_duration": params.preferred_duration,
+            "preferred_amplitude": params.preferred_amplitude,
+            "adaptation_count": params.adaptation_count,
+            "last_adaptation": params.last_adaptation,
         }
 
 
@@ -489,7 +530,7 @@ class VisualFusion:
         self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
             max_num_faces=1,
             refine_landmarks=True,
-            min_detection_confidence=config.min_face_confidence
+            min_detection_confidence=config.min_face_confidence,
         )
         self.mp_drawing = mp.solutions.drawing_utils
 
@@ -560,7 +601,7 @@ class VisualFusion:
         landmarks[1]  # Nose tip
 
         # Calculate eye openness (simplified)
-        eye_distance = np.sqrt((left_eye.x - right_eye.x)**2 + (left_eye.y - right_eye.y)**2)
+        eye_distance = np.sqrt((left_eye.x - right_eye.x) ** 2 + (left_eye.y - right_eye.y) ** 2)
 
         # Simple attention estimation
         if eye_distance > 0.05:  # Threshold for "open" eyes
@@ -569,8 +610,10 @@ class VisualFusion:
                 recent_attention = list(self.attention_history)[-10:]
                 if all(att == VisualAttention.HIGH for att in recent_attention[-5:]):
                     return VisualAttention.HIGH
-                elif all(att in [VisualAttention.MEDIUM, VisualAttention.HIGH]
-                        for att in recent_attention[-5:]):
+                elif all(
+                    att in [VisualAttention.MEDIUM, VisualAttention.HIGH]
+                    for att in recent_attention[-5:]
+                ):
                     return VisualAttention.MEDIUM
             return VisualAttention.MEDIUM
         else:
@@ -602,9 +645,9 @@ class VisualFusion:
 
         # Map audio context to relevant visual contexts
         context_mapping = {
-            'contact_call': [VisualAttention.HIGH, VisualAttention.MEDIUM],
-            'alarm_call': [VisualAttention.MEDIUM],
-            'food_call': [VisualAttention.HIGH, VisualAttention.MEDIUM]
+            "contact_call": [VisualAttention.HIGH, VisualAttention.MEDIUM],
+            "alarm_call": [VisualAttention.MEDIUM],
+            "food_call": [VisualAttention.HIGH, VisualAttention.MEDIUM],
         }
 
         relevant_attentions = context_mapping.get(audio_context, [])
@@ -620,7 +663,7 @@ class VisualFusion:
 
     def shutdown(self):
         """Shutdown visual processing"""
-        if hasattr(self, 'mp_face_mesh'):
+        if hasattr(self, "mp_face_mesh"):
             self.mp_face_mesh.close()
 
 
@@ -696,13 +739,17 @@ class SourceSeparator:
         self.separation_times.append(processing_time)
 
         # Calculate quality score (simplified)
-        if 'target' in result and 'noise' in result:
-            quality = self._calculate_separation_quality(result['target'], result['noise'], mixed_audio)
+        if "target" in result and "noise" in result:
+            quality = self._calculate_separation_quality(
+                result["target"], result["noise"], mixed_audio
+            )
             self.quality_scores.append(quality)
 
         return result
 
-    def _enhanced_frequency_based_separation(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
+    def _enhanced_frequency_based_separation(
+        self, mixed_audio: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """
         Enhanced frequency-based source separation with librosa if available.
 
@@ -728,7 +775,9 @@ class SourceSeparator:
 
             # Spectral subtraction for denoising
             noise_frames = int(0.01 * len(mixed_audio))
-            noise_profile = np.mean(np.abs(librosa.stft(mixed_audio[:noise_frames])), axis=1, keepdims=True)
+            noise_profile = np.mean(
+                np.abs(librosa.stft(mixed_audio[:noise_frames])), axis=1, keepdims=True
+            )
 
             # Apply spectral subtraction
             alpha = 2.0
@@ -749,9 +798,9 @@ class SourceSeparator:
                     target_audio = target_audio / max_sample * 0.95
 
             return {
-                'target': target_audio,
-                'noise': mixed_audio - target_audio,
-                'interferer': np.zeros_like(mixed_audio)  # Placeholder
+                "target": target_audio,
+                "noise": mixed_audio - target_audio,
+                "interferer": np.zeros_like(mixed_audio),  # Placeholder
             }
 
         except Exception as e:
@@ -810,11 +859,7 @@ class SourceSeparator:
         _, noise_audio = istft(noise_component, fs=self.sample_rate)
         _, interferer_audio = istft(interferer_component, fs=self.sample_rate)
 
-        return {
-            'target': target_audio,
-            'noise': noise_audio,
-            'interferer': interferer_audio
-        }
+        return {"target": target_audio, "noise": noise_audio, "interferer": interferer_audio}
 
     def _model_separation(self, mixed_audio: np.ndarray, sample_rate: int) -> Dict[str, np.ndarray]:
         """Model-based source separation (placeholder)"""
@@ -822,12 +867,15 @@ class SourceSeparator:
         # For now, use enhanced frequency-based separation
         return self._enhanced_frequency_based_separation(mixed_audio)
 
-    def _calculate_separation_quality(self, target: np.ndarray, noise: np.ndarray,
-                                    original: np.ndarray) -> float:
+    def _calculate_separation_quality(
+        self, target: np.ndarray, noise: np.ndarray, original: np.ndarray
+    ) -> float:
         """Calculate separation quality score"""
         # Signal-to-noise ratio improvement
-        original_snr = 10 * np.log10(np.sum(target ** 2) / (np.sum(original ** 2) - np.sum(target ** 2) + 1e-10))
-        separated_snr = 10 * np.log10(np.sum(target ** 2) / (np.sum(noise ** 2) + 1e-10))
+        original_snr = 10 * np.log10(
+            np.sum(target**2) / (np.sum(original**2) - np.sum(target**2) + 1e-10)
+        )
+        separated_snr = 10 * np.log10(np.sum(target**2) / (np.sum(noise**2) + 1e-10))
 
         snr_improvement = separated_snr - original_snr
         quality = max(0.0, min(1.0, (snr_improvement + 20) / 40))  # Normalize to [0, 1]
@@ -852,13 +900,14 @@ class SourceSeparator:
     def get_performance_metrics(self) -> Dict[str, Any]:
         """Get source separation performance metrics"""
         return {
-            'model_loaded': self.is_loaded,
-            'model_type': self.config.model_type,
-            'avg_processing_time_ms': np.mean(self.separation_times) if self.separation_times else 0.0,
-            'avg_quality_score': np.mean(self.quality_scores) if self.quality_scores else 0.0,
-            'total_separations': len(self.separation_times)
+            "model_loaded": self.is_loaded,
+            "model_type": self.config.model_type,
+            "avg_processing_time_ms": np.mean(self.separation_times)
+            if self.separation_times
+            else 0.0,
+            "avg_quality_score": np.mean(self.quality_scores) if self.quality_scores else 0.0,
+            "total_separations": len(self.separation_times),
         }
-
 
     def separate_sources(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
         """
@@ -928,11 +977,7 @@ class SourceSeparator:
         _, noise_audio = istft(noise_component, fs=self.sample_rate)
         _, interferer_audio = istft(interferer_component, fs=self.sample_rate)
 
-        return {
-            'target': target_audio,
-            'noise': noise_audio,
-            'interferer': interferer_audio
-        }
+        return {"target": target_audio, "noise": noise_audio, "interferer": interferer_audio}
 
     def _ica_separation(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
         """
@@ -962,7 +1007,7 @@ class SourceSeparator:
                 mask = labels == i
                 source_segments = [segments[j] for j in range(len(segments)) if mask[j]]
                 source_audio = np.concatenate(source_segments)
-                sources[f'source_{i}'] = source_audio
+                sources[f"source_{i}"] = source_audio
 
         return sources
 
@@ -979,7 +1024,7 @@ class SourceSeparator:
         """
         segments = []
         for i in range(0, len(audio) - segment_length, segment_length // 2):
-            segments.append(audio[i:i + segment_length])
+            segments.append(audio[i : i + segment_length])
         return segments
 
     def _extract_features(self, segments: List[np.ndarray]) -> np.ndarray:
@@ -995,7 +1040,7 @@ class SourceSeparator:
         features = []
         for segment in segments:
             # Basic features: energy, spectral centroid, zero crossings
-            energy = np.sum(segment ** 2)
+            energy = np.sum(segment**2)
             spectral_centroid = self._compute_spectral_centroid(segment)
             zero_crossings = np.sum(np.diff(np.sign(segment)) != 0)
 
@@ -1026,8 +1071,13 @@ class MultiModalFuser:
     with advanced attention-based fusion capabilities.
     """
 
-    def __init__(self, audio_weight: float = 0.7, visual_weight: float = 0.3,
-                 visual_config: VisualConfig = None, learning_config: LearningConfig = None):
+    def __init__(
+        self,
+        audio_weight: float = 0.7,
+        visual_weight: float = 0.3,
+        visual_config: VisualConfig = None,
+        learning_config: LearningConfig = None,
+    ):
         """
         Initialize multi-modal fuser.
 
@@ -1048,7 +1098,9 @@ class MultiModalFuser:
         # Initialize learning system
         self.few_shot_learner = FewShotLearner(self.learning_config)
 
-    def fuse_audio_visual(self, audio_features: Dict[str, float], visual_context: Dict[str, Any]) -> Dict[str, Any]:
+    def fuse_audio_visual(
+        self, audio_features: Dict[str, float], visual_context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Fuse audio and visual features with enhanced integration.
 
@@ -1060,13 +1112,13 @@ class MultiModalFuser:
             Fused context probabilities
         """
         # Process visual frame if raw frame is provided
-        if 'frame' in visual_context:
-            visual_state = self.visual_fusion.process_visual_frame(visual_context['frame'])
+        if "frame" in visual_context:
+            visual_state = self.visual_fusion.process_visual_frame(visual_context["frame"])
             visual_context = {
-                'attention': visual_state.attention.value,
-                'face_detected': visual_state.face_detected,
-                'gaze_direction': visual_state.gaze_direction,
-                'confidence': visual_state.face_confidence
+                "attention": visual_state.attention.value,
+                "face_detected": visual_state.face_detected,
+                "gaze_direction": visual_state.gaze_direction,
+                "confidence": visual_state.face_confidence,
             }
 
         # Extract audio features
@@ -1076,17 +1128,20 @@ class MultiModalFuser:
         visual_confidence = self._compute_visual_confidence(visual_context)
 
         # Get attention boost from visual context
-        audio_context = audio_features.get('context', 'contact_call')
+        audio_context = audio_features.get("context", "contact_call")
         attention_boost = self._get_attention_boost_from_context(audio_context, visual_context)
 
         # Fuse confidences
         fused_result = {
-            'audio_confidence': audio_confidence,
-            'visual_confidence': visual_confidence,
-            'fused_confidence': self.audio_weight * audio_confidence + self.visual_weight * visual_confidence,
-            'contact_probability': self._compute_contact_probability(audio_features, visual_context),
-            'attention_boost': attention_boost,
-            'visual_state': visual_context
+            "audio_confidence": audio_confidence,
+            "visual_confidence": visual_confidence,
+            "fused_confidence": self.audio_weight * audio_confidence
+            + self.visual_weight * visual_confidence,
+            "contact_probability": self._compute_contact_probability(
+                audio_features, visual_context
+            ),
+            "attention_boost": attention_boost,
+            "visual_state": visual_context,
         }
 
         return fused_result
@@ -1101,9 +1156,9 @@ class MultiModalFuser:
         Returns:
             Confidence score (0-1)
         """
-        f0 = audio_features.get('f0', 0)
-        rms = audio_features.get('rms', 0)
-        duration = audio_features.get('duration', 0)
+        f0 = audio_features.get("f0", 0)
+        rms = audio_features.get("rms", 0)
+        duration = audio_features.get("duration", 0)
 
         # Simple scoring based on typical animal vocalizations
         f0_score = 1.0 if 1000 <= f0 <= 20000 else 0.5
@@ -1122,41 +1177,45 @@ class MultiModalFuser:
         Returns:
             Confidence score (0-1)
         """
-        gaze_direction = visual_context.get('gaze_direction', 'unknown')
-        face_detected = visual_context.get('face_detected', False)
-        confidence = visual_context.get('confidence', 0.0)
-        attention = visual_context.get('attention', 'none')
+        gaze_direction = visual_context.get("gaze_direction", "unknown")
+        face_detected = visual_context.get("face_detected", False)
+        confidence = visual_context.get("confidence", 0.0)
+        attention = visual_context.get("attention", "none")
 
         # Scoring based on visual cues
-        if gaze_direction == 'toward':
+        if gaze_direction == "toward":
             gaze_score = 1.0
-        elif gaze_direction == 'center':
+        elif gaze_direction == "center":
             gaze_score = 0.7
-        elif gaze_direction == 'neutral':
+        elif gaze_direction == "neutral":
             gaze_score = 0.5
         else:
             gaze_score = 0.1
 
         contact_score = 1.0 if face_detected else 0.1
-        attention_score = {'high': 1.0, 'medium': 0.7, 'low': 0.3, 'none': 0.1}.get(attention, 0.5)
+        attention_score = {"high": 1.0, "medium": 0.7, "low": 0.3, "none": 0.1}.get(attention, 0.5)
 
         # Combine scores with weight for confidence metric
         base_confidence = (gaze_score + contact_score + attention_score) / 3
         return base_confidence * (0.5 + 0.5 * confidence)  # Boost by confidence metric
 
-    def _get_attention_boost_from_context(self, audio_context: str, visual_context: Dict[str, Any]) -> float:
+    def _get_attention_boost_from_context(
+        self, audio_context: str, visual_context: Dict[str, Any]
+    ) -> float:
         """Get attention boost from visual context using attention boost calculator."""
         # Convert audio_context format to match the expected format
         context_mapping = {
-            'contact_call': 'contact_call',
-            'alarm_call': 'alarm_call',
-            'food_call': 'food_call'
+            "contact_call": "contact_call",
+            "alarm_call": "alarm_call",
+            "food_call": "food_call",
         }
 
-        mapped_context = context_mapping.get(audio_context, 'contact_call')
+        mapped_context = context_mapping.get(audio_context, "contact_call")
         return self.visual_fusion.get_attention_boost(mapped_context)
 
-    def _compute_contact_probability(self, audio_features: Dict[str, float], visual_context: Dict[str, Any]) -> float:
+    def _compute_contact_probability(
+        self, audio_features: Dict[str, float], visual_context: Dict[str, Any]
+    ) -> float:
         """
         Compute contact probability from audio-visual fusion.
 
@@ -1179,7 +1238,7 @@ class MultiModalFuser:
 
     def _audio_to_contact_prob(self, audio_features: Dict[str, float]) -> float:
         """Convert audio features to contact probability."""
-        f0 = audio_features.get('f0', 0)
+        f0 = audio_features.get("f0", 0)
         if 5000 <= f0 <= 8000:  # Typical contact call frequency
             return 0.8
         elif 4000 <= f0 <= 10000:
@@ -1189,12 +1248,12 @@ class MultiModalFuser:
 
     def _visual_to_contact_adjustment(self, visual_context: Dict[str, Any]) -> float:
         """Convert visual context to contact probability adjustment."""
-        eye_contact = visual_context.get('eye_contact', False)
-        gaze_direction = visual_context.get('gaze_direction', 'unknown')
+        eye_contact = visual_context.get("eye_contact", False)
+        gaze_direction = visual_context.get("gaze_direction", "unknown")
 
-        if eye_contact and gaze_direction == 'toward':
+        if eye_contact and gaze_direction == "toward":
             return 0.5  # High confidence boost
-        elif not eye_contact and gaze_direction == 'away':
+        elif not eye_contact and gaze_direction == "away":
             return -0.3  # Reduce probability
         else:
             return 0.0  # No adjustment
@@ -1208,9 +1267,14 @@ class CognitiveLayer:
     for intelligent audio processing with visual integration.
     """
 
-    def __init__(self, learning_rate: float = 0.01, adaptation_threshold: int = 5,
-                 learning_config: LearningConfig = None, visual_config: VisualConfig = None,
-                 separation_config: SourceSeparationConfig = None):
+    def __init__(
+        self,
+        learning_rate: float = 0.01,
+        adaptation_threshold: int = 5,
+        learning_config: LearningConfig = None,
+        visual_config: VisualConfig = None,
+        separation_config: SourceSeparationConfig = None,
+    ):
         """
         Initialize cognitive layer.
 
@@ -1227,11 +1291,12 @@ class CognitiveLayer:
         self.separation_config = separation_config or SourceSeparationConfig()
 
         # Initialize components with enhanced functionality
-        self.online_learner = OnlineLearner(learning_rate, adaptation_threshold, self.learning_config)
+        self.online_learner = OnlineLearner(
+            learning_rate, adaptation_threshold, self.learning_config
+        )
         self.source_separator = SourceSeparator(self.separation_config)
         self.multi_modal_fuser = MultiModalFuser(
-            visual_config=self.visual_config,
-            learning_config=self.learning_config
+            visual_config=self.visual_config, learning_config=self.learning_config
         )
 
         # Initialize cognitive metrics
@@ -1240,9 +1305,14 @@ class CognitiveLayer:
         self.is_active = True
         self.logger = logging.getLogger(__name__)
 
-    def process_audio_with_learning(self, audio: np.ndarray, context: ContextType,
-                                   f0: float, response_positive: bool = None,
-                                   sample_rate: int = 44100) -> Dict[str, Any]:
+    def process_audio_with_learning(
+        self,
+        audio: np.ndarray,
+        context: ContextType,
+        f0: float,
+        response_positive: bool = None,
+        sample_rate: int = 44100,
+    ) -> Dict[str, Any]:
         """
         Process audio with learning capabilities.
 
@@ -1260,7 +1330,7 @@ class CognitiveLayer:
 
         # Apply source separation
         separated_sources = self.source_separator.separate_sources(audio)
-        enhanced_audio = separated_sources.get('target', audio.copy())
+        enhanced_audio = separated_sources.get("target", audio.copy())
 
         # Add experience if response is provided
         if response_positive is not None and self.learning_config.learning_enabled:
@@ -1277,13 +1347,13 @@ class CognitiveLayer:
         self.cognitive_metrics.learning_events = self.online_learner.adaptation_count
 
         return {
-            'enhanced_audio': enhanced_audio,
-            'noise_estimate': separated_sources.get('noise'),
-            'interferer_estimate': separated_sources.get('interferer'),
-            'adaptation_result': adaptation_result,
-            'learning_metrics': self.online_learner.get_adaptation_status(),
-            'processing_time_ms': processing_time,
-            'sample_rate': sample_rate
+            "enhanced_audio": enhanced_audio,
+            "noise_estimate": separated_sources.get("noise"),
+            "interferer_estimate": separated_sources.get("interferer"),
+            "adaptation_result": adaptation_result,
+            "learning_metrics": self.online_learner.get_adaptation_status(),
+            "processing_time_ms": processing_time,
+            "sample_rate": sample_rate,
         }
 
     def process_visual_context(self, frame: np.ndarray) -> Dict[str, Any]:
@@ -1291,39 +1361,44 @@ class CognitiveLayer:
         visual_state = self.multi_modal_fuser.visual_fusion.process_visual_frame(frame)
 
         return {
-            'visual_state': visual_state.__dict__,
-            'attention_boost': self.multi_modal_fuser.visual_fusion.get_attention_boost('contact_call'),
-            'face_tracking': self.multi_modal_fuser.visual_fusion.face_tracking_active
+            "visual_state": visual_state.__dict__,
+            "attention_boost": self.multi_modal_fuser.visual_fusion.get_attention_boost(
+                "contact_call"
+            ),
+            "face_tracking": self.multi_modal_fuser.visual_fusion.face_tracking_active,
         }
 
-    def calculate_adaptive_response(self, audio_context: str,
-                                   visual_context: Optional[Dict] = None) -> Dict[str, Any]:
+    def calculate_adaptive_response(
+        self, audio_context: str, visual_context: Optional[Dict] = None
+    ) -> Dict[str, Any]:
         """Calculate adaptive response based on audio and visual context."""
-        base_response = {'urgency': 0.5, 'aggression': 0.2, 'playfulness': 0.5}
+        base_response = {"urgency": 0.5, "aggression": 0.2, "playfulness": 0.5}
 
         # Apply attention boost from visual context
         attention_boost = 0.0
-        if visual_context and 'attention_boost' in visual_context:
-            attention_boost = visual_context['attention_boost']
+        if visual_context and "attention_boost" in visual_context:
+            attention_boost = visual_context["attention_boost"]
             # Boost response probability for contact calls
-            if audio_context == 'contact_call':
-                base_response['urgency'] += attention_boost
-                base_response['playfulness'] += attention_boost * 0.5
+            if audio_context == "contact_call":
+                base_response["urgency"] += attention_boost
+                base_response["playfulness"] += attention_boost * 0.5
 
         # Apply adaptation from learning
         adaptation = self.online_learner.get_adaptation_status()
-        if adaptation['success_rate'] > 0.7:
-            base_response['confidence'] = adaptation['success_rate']
+        if adaptation["success_rate"] > 0.7:
+            base_response["confidence"] = adaptation["success_rate"]
 
         # Normalize values
         for key in base_response:
             base_response[key] = max(0.0, min(1.0, base_response[key]))
 
         return {
-            'adaptive_response': base_response,
-            'attention_boost': attention_boost,
-            'adaptation_confidence': adaptation['success_rate'] if adaptation['success_rate'] > 0 else 0.5,
-            'context': audio_context
+            "adaptive_response": base_response,
+            "attention_boost": attention_boost,
+            "adaptation_confidence": adaptation["success_rate"]
+            if adaptation["success_rate"] > 0
+            else 0.5,
+            "context": audio_context,
         }
 
     def get_adapted_parameters(self, context: str) -> Dict[str, Any]:
@@ -1338,7 +1413,9 @@ class CognitiveLayer:
         """
         return self.online_learner.get_adapted_parameters(context)
 
-    def process_context(self, audio_features: Dict[str, float], visual_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def process_context(
+        self, audio_features: Dict[str, float], visual_context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Process context with optional visual input.
 
@@ -1352,10 +1429,14 @@ class CognitiveLayer:
         if visual_context is None:
             # Audio-only processing
             return {
-                'context_type': 'audio_only',
-                'audio_confidence': self.multi_modal_fuser._compute_audio_confidence(audio_features),
-                'contact_probability': self.multi_modal_fuser._audio_to_contact_prob(audio_features),
-                'processing_time_ms': self.cognitive_metrics.processing_time_ms
+                "context_type": "audio_only",
+                "audio_confidence": self.multi_modal_fuser._compute_audio_confidence(
+                    audio_features
+                ),
+                "contact_probability": self.multi_modal_fuser._audio_to_contact_prob(
+                    audio_features
+                ),
+                "processing_time_ms": self.cognitive_metrics.processing_time_ms,
             }
         else:
             # Multi-modal processing
@@ -1372,22 +1453,25 @@ class CognitiveLayer:
     def get_performance_report(self) -> Dict[str, Any]:
         """Get comprehensive cognitive performance report."""
         return {
-            'learning_system': self.online_learner.get_adaptation_status(),
-            'visual_system': {
-                'current_state': self.multi_modal_fuser.visual_fusion.get_visual_state().__dict__,
-                'attention_history': [att.value for att in self.multi_modal_fuser.visual_fusion.attention_history[-10:]]
+            "learning_system": self.online_learner.get_adaptation_status(),
+            "visual_system": {
+                "current_state": self.multi_modal_fuser.visual_fusion.get_visual_state().__dict__,
+                "attention_history": [
+                    att.value
+                    for att in self.multi_modal_fuser.visual_fusion.attention_history[-10:]
+                ],
             },
-            'source_separation': self.source_separator.get_performance_metrics(),
-            'cognitive_metrics': {
-                'processing_time_ms': self.cognitive_metrics.processing_time_ms,
-                'learning_events': self.cognitive_metrics.learning_events
+            "source_separation": self.source_separator.get_performance_metrics(),
+            "cognitive_metrics": {
+                "processing_time_ms": self.cognitive_metrics.processing_time_ms,
+                "learning_events": self.cognitive_metrics.learning_events,
             },
-            'system_status': {
-                'active': self.is_active,
-                'learning_enabled': self.learning_config.learning_enabled,
-                'visual_enabled': self.visual_config.tracking_enabled,
-                'separation_enabled': self.separation_config.denoising_enabled
-            }
+            "system_status": {
+                "active": self.is_active,
+                "learning_enabled": self.learning_config.learning_enabled,
+                "visual_enabled": self.visual_config.tracking_enabled,
+                "separation_enabled": self.separation_config.denoising_enabled,
+            },
         }
 
     def shutdown(self):
@@ -1412,7 +1496,7 @@ if __name__ == "__main__":
         adaptation_threshold=5,
         learning_config=learning_config,
         visual_config=visual_config,
-        separation_config=separation_config
+        separation_config=separation_config,
     )
 
     # Generate test audio
@@ -1440,7 +1524,9 @@ if __name__ == "__main__":
     separated = system.separate_sources(mixed_audio)
     print("\nSource separation:")
     print(f"Target length: {len(separated['target'])}")
-    print(f"Separation quality: {system.source_separator.get_performance_metrics()['avg_quality_score']:.2f}")
+    print(
+        f"Separation quality: {system.source_separator.get_performance_metrics()['avg_quality_score']:.2f}"
+    )
 
     # Test visual processing (if OpenCV is available)
     try:
@@ -1454,17 +1540,12 @@ if __name__ == "__main__":
         print(f"\nVisual processing test skipped: {e}")
 
     # Test audio-visual fusion
-    audio_features = {
-        'f0': 6000.0,
-        'rms': 0.5,
-        'duration': 0.1,
-        'context': 'contact_call'
-    }
+    audio_features = {"f0": 6000.0, "rms": 0.5, "duration": 0.1, "context": "contact_call"}
     visual_context = {
-        'gaze_direction': 'toward',
-        'face_detected': True,
-        'attention': 'high',
-        'confidence': 0.8
+        "gaze_direction": "toward",
+        "face_detected": True,
+        "attention": "high",
+        "confidence": 0.8,
     }
     fusion_result = system.fuse_audio_visual(audio_features, visual_context)
     print("\nAudio-visual fusion:")

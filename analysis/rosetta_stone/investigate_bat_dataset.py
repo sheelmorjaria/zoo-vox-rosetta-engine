@@ -22,6 +22,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -44,9 +45,9 @@ def load_wav_file(filepath, target_sr=None):
 
 def analyze_single_file(filepath, params):
     """Analyze a single bat file with detailed diagnostics."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"File: {Path(filepath).name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     audio, sr = load_wav_file(filepath)
     if audio is None:
@@ -62,12 +63,13 @@ def analyze_single_file(filepath, params):
 
     # Frequency analysis
     from scipy.fft import fft, fftfreq
+
     fft_result = fft(audio)
-    freqs = fftfreq(len(audio), 1/sr)
+    freqs = fftfreq(len(audio), 1 / sr)
     magnitude = np.abs(fft_result)
 
-    pos_freqs = freqs[:len(freqs)//2]
-    pos_magnitude = magnitude[:len(magnitude)//2]
+    pos_freqs = freqs[: len(freqs) // 2]
+    pos_magnitude = magnitude[: len(magnitude) // 2]
 
     # Energy in different bands
     bands = [
@@ -75,17 +77,17 @@ def analyze_single_file(filepath, params):
         ("Bat range (10-30 kHz)", 10000, 30000),
         ("Mid (30-60 kHz)", 30000, 60000),
         ("High (60-100 kHz)", 60000, 100000),
-        ("Ultrasonic (>100 kHz)", 100000, sr//2)
+        ("Ultrasonic (>100 kHz)", 100000, sr // 2),
     ]
 
     print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
-        band_energy = np.sum(pos_magnitude[mask]**2)
+        band_energy = np.sum(pos_magnitude[mask] ** 2)
         total_energy = np.sum(pos_magnitude**2)
         percentage = band_energy / total_energy * 100
         if percentage > 1:
-            bar = '█' * int(percentage / 3)
+            bar = "█" * int(percentage / 3)
             print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     # Test multiple parameter combinations
@@ -98,9 +100,7 @@ def analyze_single_file(filepath, params):
         for min_dur in [2, 5, 10]:
             try:
                 phrases = analyzer.segment_phrases(
-                    audio,
-                    min_gap_ms=min_gap,
-                    min_phrase_duration_ms=min_dur
+                    audio, min_gap_ms=min_gap, min_phrase_duration_ms=min_dur
                 )
                 key = f"gap:{min_gap}_dur:{min_dur}"
                 results[key] = len(phrases)
@@ -111,8 +111,8 @@ def analyze_single_file(filepath, params):
 
     # Find best parameter combination
     best_params = max(results.items(), key=lambda x: x[1])
-    best_gap = int(best_params[0].split(':')[1].split('_')[0])
-    best_dur = int(best_params[0].split(':')[2].split('_')[0])
+    best_gap = int(best_params[0].split(":")[1].split("_")[0])
+    best_dur = int(best_params[0].split(":")[2].split("_")[0])
     max_phrases = best_params[1]
 
     if max_phrases == 0:
@@ -122,11 +122,7 @@ def analyze_single_file(filepath, params):
     print(f"\n✓ Best parameters: gap={best_gap}ms, dur={best_dur}ms ({max_phrases} phrases)")
 
     # Analyze with best parameters
-    phrases = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=best_gap,
-        min_phrase_duration_ms=best_dur
-    )
+    phrases = analyzer.segment_phrases(audio, min_gap_ms=best_gap, min_phrase_duration_ms=best_dur)
 
     # Analyze modality for first 20 phrases
     print("\n📊 Modality Analysis (first 20 phrases):")
@@ -140,42 +136,44 @@ def analyze_single_file(filepath, params):
 
         modality_counts[modality.name] = modality_counts.get(modality.name, 0) + 1
 
-        details.append({
-            'index': i,
-            'modality': modality.name,
-            'probabilities': probabilities,
-            'duration_ms': features.get('duration_ms', len(phrase.data) / sr * 1000),
-            'spectral_centroid': features.get('spectral_centroid', 0)
-        })
+        details.append(
+            {
+                "index": i,
+                "modality": modality.name,
+                "probabilities": probabilities,
+                "duration_ms": features.get("duration_ms", len(phrase.data) / sr * 1000),
+                "spectral_centroid": features.get("spectral_centroid", 0),
+            }
+        )
 
     # Print modality distribution
     print(f"\n  Modality Distribution ({len(phrases)} total phrases):")
     for modality, count in sorted(modality_counts.items()):
         percentage = count / len(phrases) * 100
-        bar = '█' * int(percentage / 10)
+        bar = "█" * int(percentage / 10)
         print(f"    {modality:15s}: {count:3d} ({percentage:5.1f}%) {bar}")
 
     # Print detailed analysis for first 10 phrases
     print("\n  Detailed Analysis (first 10 phrases):")
     for d in details[:10]:
-        print(f"\n    Phrase {d['index']+1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
+        print(f"\n    Phrase {d['index'] + 1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
         print(f"      Probabilities: {d['probabilities']}")
-        print(f"      Spectral centroid: {d['spectral_centroid']/1000:.1f} kHz")
+        print(f"      Spectral centroid: {d['spectral_centroid'] / 1000:.1f} kHz")
 
     return {
-        'filepath': filepath,
-        'total_phrases': len(phrases),
-        'modality_counts': modality_counts,
-        'best_params': {'gap': best_gap, 'dur': best_dur},
-        'details': details
+        "filepath": filepath,
+        "total_phrases": len(phrases),
+        "modality_counts": modality_counts,
+        "best_params": {"gap": best_gap, "dur": best_dur},
+        "details": details,
     }
 
 
 def main():
     """Investigate Egyptian fruit bat dataset."""
-    print("="*70)
+    print("=" * 70)
     print("EGYPTIAN FRUIT BAT DATASET INVESTIGATION")
-    print("="*70)
+    print("=" * 70)
 
     data_dir = Path.home() / "birdsong_analysis" / "data" / "egyptian_fruit_bat_10k" / "audio"
 
@@ -202,30 +200,32 @@ def main():
             successful += 1
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("INVESTIGATION SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     if all_results:
-        print(f"\nFiles successfully analyzed: {successful}/{len(test_files)} ({successful/len(test_files)*100:.1f}%)")
+        print(
+            f"\nFiles successfully analyzed: {successful}/{len(test_files)} ({successful / len(test_files) * 100:.1f}%)"
+        )
 
         # Aggregate modality counts
-        total_phrases = sum(r['total_phrases'] for r in all_results)
+        total_phrases = sum(r["total_phrases"] for r in all_results)
         all_modality_counts = {}
 
         for result in all_results:
-            for modality, count in result['modality_counts'].items():
+            for modality, count in result["modality_counts"].items():
                 all_modality_counts[modality] = all_modality_counts.get(modality, 0) + count
 
         print(f"\nTotal phrases across all files: {total_phrases}")
         print("\nAggregated Modality Distribution:")
         for modality, count in sorted(all_modality_counts.items()):
             percentage = count / total_phrases * 100
-            bar = '█' * int(percentage / 10)
+            bar = "█" * int(percentage / 10)
             expected = ""
-            if modality == 'FM_SWEEP':
+            if modality == "FM_SWEEP":
                 expected = " (expected for bats)"
-            elif modality == 'HARMONIC':
+            elif modality == "HARMONIC":
                 expected = " (social calls)"
             print(f"  {modality:15s}: {count:4d} ({percentage:5.1f}%) {bar}{expected}")
 
@@ -240,18 +240,18 @@ def main():
             print(f"  {params}: {count} files")
 
         print("\n💡 Key Findings:")
-        if 'FM_SWEEP' in all_modality_counts:
-            fm_pct = all_modality_counts['FM_SWEEP'] / total_phrases * 100
+        if "FM_SWEEP" in all_modality_counts:
+            fm_pct = all_modality_counts["FM_SWEEP"] / total_phrases * 100
             print(f"  ✓ FM_SWEEP detected: {fm_pct:.1f}% of phrases")
         else:
             print("  ⚠️  No FM_SWEEP detected - all TRANSIENT")
 
-        if 'HARMONIC' in all_modality_counts:
-            harm_pct = all_modality_counts['HARMONIC'] / total_phrases * 100
+        if "HARMONIC" in all_modality_counts:
+            harm_pct = all_modality_counts["HARMONIC"] / total_phrases * 100
             print(f"  ✓ HARMONIC (social calls) detected: {harm_pct:.1f}% of phrases")
 
         print("\n🔬 Interpretation:")
-        if 'FM_SWEEP' not in all_modality_counts:
+        if "FM_SWEEP" not in all_modality_counts:
             print("  Predominance of TRANSIENT suggests these may be:")
             print("  - Echolocation clicks/pulses")
             print("  - Very short FM sweeps that fall below detection threshold")
@@ -259,9 +259,9 @@ def main():
         else:
             print("  Mixed modalities detected, consistent with bat communication:")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Investigation complete!")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

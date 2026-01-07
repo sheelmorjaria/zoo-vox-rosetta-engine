@@ -40,6 +40,7 @@ from analysis.rosetta_stone.acoustic_similarity_for_atomic_phrase_candidates imp
 @dataclass
 class PersonaContextAssociation:
     """Results of persona-context association analysis."""
+
     persona_name: str
     context_name: str
     phrase_count: int
@@ -56,12 +57,11 @@ def load_vocalization_database(db_path: str) -> Dict:
     """Load vocalization database from JSON."""
     print(f"Loading database from {db_path}...")
 
-    with open(db_path, 'r') as f:
+    with open(db_path, "r") as f:
         db = json.load(f)
 
     total_phrases = sum(
-        len(species_data['phrases'])
-        for species_data in db['species_data'].values()
+        len(species_data["phrases"]) for species_data in db["species_data"].values()
     )
 
     print(f"✅ Loaded {total_phrases} phrases across {len(db['species_data'])} species")
@@ -73,25 +73,23 @@ def get_all_contexts(db: Dict, species: Optional[str] = None) -> List[str]:
     """Get all unique context names in the database."""
     contexts = set()
 
-    species_to_analyze = [species] if species else db['species_data'].keys()
+    species_to_analyze = [species] if species else db["species_data"].keys()
 
     for species_name in species_to_analyze:
-        if species_name not in db['species_data']:
+        if species_name not in db["species_data"]:
             continue
 
-        phrases = db['species_data'][species_name]['phrases']
+        phrases = db["species_data"][species_name]["phrases"]
 
         for phrase_data in phrases.values():
-            for ctx in phrase_data.get('contexts', []):
-                contexts.add(ctx['context_name'])
+            for ctx in phrase_data.get("contexts", []):
+                contexts.add(ctx["context_name"])
 
     return sorted(list(contexts))
 
 
 def build_persona_context_matrix(
-    db: Dict,
-    species: str,
-    persona_min_score: float = 0.3
+    db: Dict, species: str, persona_min_score: float = 0.3
 ) -> Tuple[np.ndarray, List[str], List[str]]:
     """
     Build a contingency matrix of personas vs contexts.
@@ -103,7 +101,7 @@ def build_persona_context_matrix(
     """
     print(f"\n📊 Building persona-context matrix for {species}...")
 
-    phrases = db['species_data'][species]['phrases']
+    phrases = db["species_data"][species]["phrases"]
 
     # Get all personas and contexts
     persona_names = list(ACOUSTIC_PERSONAS.keys())
@@ -137,11 +135,11 @@ def build_persona_context_matrix(
 
         persona_idx = persona_names.index(persona_name)
 
-        for ctx in phrase_data.get('contexts', []):
-            ctx_name = ctx['context_name']
+        for ctx in phrase_data.get("contexts", []):
+            ctx_name = ctx["context_name"]
             if ctx_name in context_names:
                 ctx_idx = context_names.index(ctx_name)
-                matrix[persona_idx, ctx_idx] += ctx['count']
+                matrix[persona_idx, ctx_idx] += ctx["count"]
 
     # Print matrix summary
     print(f"   Matrix shape: {len(persona_names)} personas x {len(context_names)} contexts")
@@ -152,9 +150,7 @@ def build_persona_context_matrix(
 
 
 def chi_square_test_of_independence(
-    matrix: np.ndarray,
-    persona_names: List[str],
-    context_names: List[str]
+    matrix: np.ndarray, persona_names: List[str], context_names: List[str]
 ) -> Tuple[float, float, Dict[str, Dict[str, float]]]:
     """
     Perform chi-square test of independence for personas vs contexts.
@@ -196,9 +192,7 @@ def chi_square_test_of_independence(
 
 
 def calculate_enrichment_scores(
-    matrix: np.ndarray,
-    persona_names: List[str],
-    context_names: List[str]
+    matrix: np.ndarray, persona_names: List[str], context_names: List[str]
 ) -> List[PersonaContextAssociation]:
     """
     Calculate enrichment scores for persona-context associations.
@@ -238,26 +232,26 @@ def calculate_enrichment_scores(
             observed_ratio = observed / row_sums[i] if row_sums[i] > 0 else 0
             expected_ratio = col_sums[j] / total if total > 0 else 0
 
-            associations.append(PersonaContextAssociation(
-                persona_name=persona,
-                context_name=ctx,
-                phrase_count=int(observed),
-                total_phrases=int(row_sums[i]),
-                expected_count=expected,
-                observed_ratio=observed_ratio,
-                expected_ratio=expected_ratio,
-                enrichment_score=enrichment,
-                p_value=0.0,  # Will be calculated separately
-                significant=False  # Will be determined separately
-            ))
+            associations.append(
+                PersonaContextAssociation(
+                    persona_name=persona,
+                    context_name=ctx,
+                    phrase_count=int(observed),
+                    total_phrases=int(row_sums[i]),
+                    expected_count=expected,
+                    observed_ratio=observed_ratio,
+                    expected_ratio=expected_ratio,
+                    enrichment_score=enrichment,
+                    p_value=0.0,  # Will be calculated separately
+                    significant=False,  # Will be determined separately
+                )
+            )
 
     return associations
 
 
 def perform_fisher_exact_tests(
-    matrix: np.ndarray,
-    persona_names: List[str],
-    context_names: List[str]
+    matrix: np.ndarray, persona_names: List[str], context_names: List[str]
 ) -> List[PersonaContextAssociation]:
     """
     Perform Fisher's exact test for each persona-context pair.
@@ -298,7 +292,7 @@ def perform_fisher_exact_tests(
 
         # Perform Fisher's exact test
         try:
-            _, p_value = fisher_exact([[a, b], [c, d]], alternative='greater')
+            _, p_value = fisher_exact([[a, b], [c, d]], alternative="greater")
             association.p_value = p_value
 
             # Bonferroni correction for multiple testing
@@ -324,7 +318,7 @@ def perform_fisher_exact_tests(
 def discover_persona_semantics(
     associations: List[PersonaContextAssociation],
     residuals: Dict[str, Dict[str, float]],
-    min_occurrences: int = 5
+    min_occurrences: int = 5,
 ) -> Dict[str, Dict]:
     """
     Discover the semantic meaning of each acoustic persona based on
@@ -339,7 +333,8 @@ def discover_persona_semantics(
     for persona_name in ACOUSTIC_PERSONAS.keys():
         # Get all associations for this persona
         persona_associations = [
-            a for a in associations
+            a
+            for a in associations
             if a.persona_name == persona_name and a.phrase_count >= min_occurrences
         ]
 
@@ -350,25 +345,20 @@ def discover_persona_semantics(
         top_contexts = persona_associations[:5]
 
         # Get significant associations
-        significant_contexts = [
-            a for a in persona_associations
-            if a.significant
-        ]
+        significant_contexts = [a for a in persona_associations if a.significant]
 
         # Get top residuals
         persona_residuals = residuals.get(persona_name, {})
-        top_residual_contexts = sorted(
-            persona_residuals.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:5]
+        top_residual_contexts = sorted(persona_residuals.items(), key=lambda x: x[1], reverse=True)[
+            :5
+        ]
 
         persona_semantics[persona_name] = {
-            'top_contexts': top_contexts,
-            'significant_contexts': significant_contexts,
-            'top_residuals': top_residual_contexts,
-            'total_phrases': sum(a.phrase_count for a in persona_associations),
-            'unique_contexts': len(set(a.context_name for a in persona_associations))
+            "top_contexts": top_contexts,
+            "significant_contexts": significant_contexts,
+            "top_residuals": top_residual_contexts,
+            "total_phrases": sum(a.phrase_count for a in persona_associations),
+            "unique_contexts": len(set(a.context_name for a in persona_associations)),
         }
 
         # Print interpretation
@@ -381,14 +371,18 @@ def discover_persona_semantics(
             print("\n   📊 TOP ENRICHED CONTEXTS:")
             for i, assoc in enumerate(top_contexts, 1):
                 significance = "✅ SIGNIFICANT" if assoc.significant else ""
-                print(f"      {i}. {assoc.context_name}: {assoc.phrase_count} phrases "
-                      f"({assoc.observed_ratio*100:.1f}%) "
-                      f"[enrichment: {assoc.enrichment_score:+.2f}] {significance}")
+                print(
+                    f"      {i}. {assoc.context_name}: {assoc.phrase_count} phrases "
+                    f"({assoc.observed_ratio * 100:.1f}%) "
+                    f"[enrichment: {assoc.enrichment_score:+.2f}] {significance}"
+                )
 
         if top_residual_contexts:
             print("\n   📊 STRONGEST ASSOCIATIONS (standardized residuals):")
             for ctx, residual in top_residual_contexts:
-                strength = "STRONG" if abs(residual) > 2 else "moderate" if abs(residual) > 1 else "weak"
+                strength = (
+                    "STRONG" if abs(residual) > 2 else "moderate" if abs(residual) > 1 else "weak"
+                )
                 direction = "POSITIVELY" if residual > 0 else "NEGATIVELY"
                 print(f"      {ctx}: {residual:+.2f} ({direction} associated, {strength})")
 
@@ -396,13 +390,21 @@ def discover_persona_semantics(
         if significant_contexts:
             top_sig = significant_contexts[0]
             print("\n   💡 SEMANTIC INTERPRETATION:")
-            print(f"      '{persona_name}' phrases are significantly associated with '{top_sig.context_name}' contexts")
-            print(f"      (p < 0.05, Bonferroni-corrected, {top_sig.phrase_count} phrases, {top_sig.observed_ratio*100:.1f}%)")
+            print(
+                f"      '{persona_name}' phrases are significantly associated with '{top_sig.context_name}' contexts"
+            )
+            print(
+                f"      (p < 0.05, Bonferroni-corrected, {top_sig.phrase_count} phrases, {top_sig.observed_ratio * 100:.1f}%)"
+            )
         elif top_contexts:
             top_ctx = top_contexts[0]
             print("\n   💡 SEMANTIC INTERPRETATION:")
-            print(f"      '{persona_name}' phrases are most enriched in '{top_ctx.context_name}' contexts")
-            print(f"      ({top_ctx.phrase_count} phrases, {top_ctx.observed_ratio*100:.1f}%, enrichment: {top_ctx.enrichment_score:+.2f})")
+            print(
+                f"      '{persona_name}' phrases are most enriched in '{top_ctx.context_name}' contexts"
+            )
+            print(
+                f"      ({top_ctx.phrase_count} phrases, {top_ctx.observed_ratio * 100:.1f}%, enrichment: {top_ctx.enrichment_score:+.2f})"
+            )
         else:
             print("\n   ⚠️  No clear context associations found")
 
@@ -434,7 +436,7 @@ def visualize_persona_context_heatmap(
     matrix: np.ndarray,
     persona_names: List[str],
     context_names: List[str],
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
 ):
     """
     Create a heatmap visualization of persona-context associations.
@@ -457,22 +459,22 @@ def visualize_persona_context_heatmap(
             normalized_matrix,
             xticklabels=context_names,
             yticklabels=persona_names,
-            cmap='YlOrRd',
+            cmap="YlOrRd",
             annot=matrix,
-            fmt='d',
-            cbar_kws={'label': 'Proportion of Phrases'},
-            ax=ax
+            fmt="d",
+            cbar_kws={"label": "Proportion of Phrases"},
+            ax=ax,
         )
 
-        ax.set_xlabel('Behavioral Context')
-        ax.set_ylabel('Acoustic Persona')
-        ax.set_title('Acoustic Persona vs Behavioral Context Association')
+        ax.set_xlabel("Behavioral Context")
+        ax.set_ylabel("Acoustic Persona")
+        ax.set_title("Acoustic Persona vs Behavioral Context Association")
 
-        plt.xticks(rotation=45, ha='right')
+        plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
 
         if output_path:
-            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            plt.savefig(output_path, dpi=150, bbox_inches="tight")
             print(f"\n📊 Saved heatmap to {output_path}")
         else:
             plt.show()
@@ -506,21 +508,26 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Associate acoustic personas with behavioral contexts'
+        description="Associate acoustic personas with behavioral contexts"
     )
-    parser.add_argument('--db', type=str,
-                       default='/home/sheel/birdsong_analysis/src/vocalization_database.json',
-                       help='Path to vocalization database')
-    parser.add_argument('--species', type=str, default='marmoset',
-                       help='Species to analyze')
-    parser.add_argument('--min-score', type=float, default=0.3,
-                       help='Minimum persona score for phrase assignment')
-    parser.add_argument('--min-occurrences', type=int, default=5,
-                       help='Minimum phrase count for context association')
-    parser.add_argument('--visualize', action='store_true',
-                       help='Create heatmap visualization')
-    parser.add_argument('--output', type=str,
-                       help='Output path for visualization')
+    parser.add_argument(
+        "--db",
+        type=str,
+        default="/home/sheel/birdsong_analysis/src/vocalization_database.json",
+        help="Path to vocalization database",
+    )
+    parser.add_argument("--species", type=str, default="marmoset", help="Species to analyze")
+    parser.add_argument(
+        "--min-score", type=float, default=0.3, help="Minimum persona score for phrase assignment"
+    )
+    parser.add_argument(
+        "--min-occurrences",
+        type=int,
+        default=5,
+        help="Minimum phrase count for context association",
+    )
+    parser.add_argument("--visualize", action="store_true", help="Create heatmap visualization")
+    parser.add_argument("--output", type=str, help="Output path for visualization")
 
     args = parser.parse_args()
 
@@ -573,15 +580,11 @@ def main():
     associations = perform_fisher_exact_tests(matrix, persona_names, context_names)
 
     # Discover persona semantics
-    discover_persona_semantics(
-        associations, residuals, args.min_occurrences
-    )
+    discover_persona_semantics(associations, residuals, args.min_occurrences)
 
     # Visualize
     if args.visualize:
-        visualize_persona_context_heatmap(
-            matrix, persona_names, context_names, args.output
-        )
+        visualize_persona_context_heatmap(matrix, persona_names, context_names, args.output)
 
     print("\n" + "=" * 80)
     print("✅ ANALYSIS COMPLETE!")

@@ -44,9 +44,11 @@ import numpy as np
 # 1. DATABASE CONFIGURATION
 # ============================================================================
 
+
 @dataclass
 class DatabaseConfig:
     """Configuration for unified database system"""
+
     # Paths
     sqlite_path: str = "realtime_system.db"
     json_path: str = "vocalization_database.json"
@@ -73,9 +75,11 @@ class DatabaseConfig:
     backup_interval: int = 86400  # 24 hours
     max_backups: int = 7
 
+
 # ============================================================================
 # 2. ABSTRACT DATABASE INTERFACES
 # ============================================================================
+
 
 class DatabaseInterface(ABC):
     """Abstract interface for database implementations"""
@@ -110,6 +114,7 @@ class DatabaseInterface(ABC):
         """Rollback transaction"""
         pass
 
+
 class CacheInterface(ABC):
     """Abstract interface for caching implementations"""
 
@@ -138,9 +143,11 @@ class CacheInterface(ABC):
         """Get cache size"""
         pass
 
+
 # ============================================================================
 # 3. SQLITE DATABASE IMPLEMENTATION
 # ============================================================================
+
 
 class SQLiteDatabase(DatabaseInterface):
     """SQLite database implementation for structured data"""
@@ -180,7 +187,7 @@ class SQLiteDatabase(DatabaseInterface):
                 cursor = self.connection.cursor()
                 cursor.execute(query, params)
 
-                if query.strip().upper().startswith('SELECT'):
+                if query.strip().upper().startswith("SELECT"):
                     return cursor.fetchall()
                 else:
                     self.connection.commit()
@@ -204,7 +211,7 @@ class SQLiteDatabase(DatabaseInterface):
     def _create_tables(self):
         """Create database tables"""
         # Decisions table for provenance logging
-        self.execute_query('''
+        self.execute_query("""
             CREATE TABLE IF NOT EXISTS decisions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT,
@@ -222,10 +229,10 @@ class SQLiteDatabase(DatabaseInterface):
                 experimental_conditions TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        """)
 
         # Experiments table for A/B testing
-        self.execute_query('''
+        self.execute_query("""
             CREATE TABLE IF NOT EXISTS experiments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 experiment_id TEXT,
@@ -238,10 +245,10 @@ class SQLiteDatabase(DatabaseInterface):
                 status TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        """)
 
         # Species data table
-        self.execute_query('''
+        self.execute_query("""
             CREATE TABLE IF NOT EXISTS species_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 species_name TEXT,
@@ -253,10 +260,10 @@ class SQLiteDatabase(DatabaseInterface):
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(species_name)
             )
-        ''')
+        """)
 
         # Phrase cache table
-        self.execute_query('''
+        self.execute_query("""
             CREATE TABLE IF NOT EXISTS phrase_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phrase_key TEXT,
@@ -270,7 +277,7 @@ class SQLiteDatabase(DatabaseInterface):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(phrase_key, species)
             )
-        ''')
+        """)
 
         # Indexes for performance
         indexes = [
@@ -285,9 +292,11 @@ class SQLiteDatabase(DatabaseInterface):
         for index in indexes:
             self.execute_query(index)
 
+
 # ============================================================================
 # 4. FILE-BASED CACHE IMPLEMENTATION
 # ============================================================================
+
 
 class FileBasedCache(CacheInterface):
     """File-based cache implementation"""
@@ -310,7 +319,7 @@ class FileBasedCache(CacheInterface):
         metadata_file = self.cache_path / "metadata.json"
         if metadata_file.exists():
             try:
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     self.metadata = json.load(f)
                 self._cleanup_expired()
             except Exception as e:
@@ -321,7 +330,7 @@ class FileBasedCache(CacheInterface):
         """Save cache metadata"""
         metadata_file = self.cache_path / "metadata.json"
         try:
-            with open(metadata_file, 'w') as f:
+            with open(metadata_file, "w") as f:
                 json.dump(self.metadata, f, indent=2)
         except Exception as e:
             logging.error(f"Failed to save cache metadata: {e}")
@@ -332,7 +341,7 @@ class FileBasedCache(CacheInterface):
         expired_keys = []
 
         for key, data in self.metadata.items():
-            if current_time - data['timestamp'] > self.ttl:
+            if current_time - data["timestamp"] > self.ttl:
                 expired_keys.append(key)
                 file_path = self.cache_path / f"{key}.cache"
                 if file_path.exists():
@@ -353,7 +362,7 @@ class FileBasedCache(CacheInterface):
             data = self.metadata[key]
 
             # Check if expired
-            if time.time() - data['timestamp'] > self.ttl:
+            if time.time() - data["timestamp"] > self.ttl:
                 self.delete(key)
                 return None
 
@@ -361,7 +370,7 @@ class FileBasedCache(CacheInterface):
             file_path = self.cache_path / f"{key}.cache"
             if file_path.exists() and file_path.stat().st_size > 0:
                 try:
-                    with open(file_path, 'rb') as f:
+                    with open(file_path, "rb") as f:
                         return pickle.load(f)
                 except Exception as e:
                     logging.error(f"Failed to load cache entry {key}: {e}")
@@ -380,7 +389,7 @@ class FileBasedCache(CacheInterface):
             # Save to file
             file_path = self.cache_path / f"{key}.cache"
             try:
-                with open(file_path, 'wb') as f:
+                with open(file_path, "wb") as f:
                     pickle.dump(value, f)
             except Exception as e:
                 logging.error(f"Failed to save cache entry {key}: {e}")
@@ -388,9 +397,9 @@ class FileBasedCache(CacheInterface):
 
             # Update metadata
             self.metadata[key] = {
-                'timestamp': time.time(),
-                'size': os.path.getsize(file_path),
-                'ttl': ttl or self.ttl
+                "timestamp": time.time(),
+                "size": os.path.getsize(file_path),
+                "ttl": ttl or self.ttl,
             }
 
             self._save_metadata()
@@ -423,19 +432,18 @@ class FileBasedCache(CacheInterface):
             return
 
         # Sort by timestamp
-        sorted_keys = sorted(
-            self.metadata.keys(),
-            key=lambda k: self.metadata[k]['timestamp']
-        )
+        sorted_keys = sorted(self.metadata.keys(), key=lambda k: self.metadata[k]["timestamp"])
 
         # Evict oldest 10%
         evict_count = max(1, len(sorted_keys) // 10)
         for key in sorted_keys[:evict_count]:
             self.delete(key)
 
+
 # ============================================================================
 # 5. CLOUD SYNC IMPLEMENTATION
 # ============================================================================
+
 
 class CloudSync:
     """Cloud synchronization for database"""
@@ -489,15 +497,15 @@ class CloudSync:
         try:
             async with aiohttp.ClientSession() as session:
                 headers = {
-                    'Authorization': f'Bearer {self.config.cloud_api_key}',
-                    'Content-Type': 'application/json'
+                    "Authorization": f"Bearer {self.config.cloud_api_key}",
+                    "Content-Type": "application/json",
                 }
 
                 async with session.post(
                     self.config.cloud_endpoint,
                     json=data,
                     headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=30)
+                    timeout=aiohttp.ClientTimeout(total=30),
                 ) as response:
                     if response.status == 200:
                         logging.info("Data synced to cloud successfully")
@@ -509,10 +517,10 @@ class CloudSync:
     def sync_data(self, table_name: str, data: Dict[str, Any]):
         """Queue data for sync"""
         sync_data = {
-            'table': table_name,
-            'data': data,
-            'timestamp': datetime.now().isoformat(),
-            'system_id': str(uuid.uuid4())
+            "table": table_name,
+            "data": data,
+            "timestamp": datetime.now().isoformat(),
+            "system_id": str(uuid.uuid4()),
         }
 
         self.sync_queue.put(sync_data)
@@ -531,16 +539,15 @@ class CloudSync:
                 pending_data.append(self.sync_queue.get())
 
             if pending_data:
-                await self._sync_to_cloud({
-                    'batch': True,
-                    'data': pending_data
-                })
+                await self._sync_to_cloud({"batch": True, "data": pending_data})
 
             self.last_sync = current_time
+
 
 # ============================================================================
 # 6. BACKUP AND RECOVERY
 # ============================================================================
+
 
 class DatabaseBackup:
     """Database backup and recovery system"""
@@ -559,8 +566,9 @@ class DatabaseBackup:
             if self.config.compress_backups:
                 backup_file = self.backup_path / f"{backup_name}.db.gz"
                 import gzip
-                with open(database_path, 'rb') as f_in:
-                    with gzip.open(backup_file, 'wb') as f_out:
+
+                with open(database_path, "rb") as f_in:
+                    with gzip.open(backup_file, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
             else:
                 backup_file = self.backup_path / f"{backup_name}.db"
@@ -579,10 +587,11 @@ class DatabaseBackup:
     def restore_backup(self, backup_file: str, target_path: str) -> bool:
         """Restore database from backup"""
         try:
-            if backup_file.endswith('.gz'):
+            if backup_file.endswith(".gz"):
                 import gzip
-                with gzip.open(backup_file, 'rb') as f_in:
-                    with open(target_path, 'wb') as f_out:
+
+                with gzip.open(backup_file, "rb") as f_in:
+                    with open(target_path, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
             else:
                 shutil.copy2(backup_file, target_path)
@@ -604,7 +613,7 @@ class DatabaseBackup:
         backup_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
 
         # Remove old backups
-        for backup_file in backup_files[self.config.max_backups:]:
+        for backup_file in backup_files[self.config.max_backups :]:
             backup_file.unlink()
 
     def get_backup_list(self) -> List[Dict[str, Any]]:
@@ -613,18 +622,22 @@ class DatabaseBackup:
 
         for backup_file in self.backup_path.glob("*.db*"):
             stat = backup_file.stat()
-            backups.append({
-                'name': backup_file.name,
-                'path': str(backup_file),
-                'size': stat.st_size,
-                'created': datetime.fromtimestamp(stat.st_mtime).isoformat()
-            })
+            backups.append(
+                {
+                    "name": backup_file.name,
+                    "path": str(backup_file),
+                    "size": stat.st_size,
+                    "created": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                }
+            )
 
-        return sorted(backups, key=lambda x: x['created'], reverse=True)
+        return sorted(backups, key=lambda x: x["created"], reverse=True)
+
 
 # ============================================================================
 # 7. UNIFIED DATABASE MANAGER
 # ============================================================================
+
 
 class UnifiedDatabaseManager:
     """Main unified database manager"""
@@ -649,9 +662,7 @@ class UnifiedDatabaseManager:
 
         # Cache
         self.cache = FileBasedCache(
-            self.config.cache_path,
-            self.config.max_cache_size,
-            self.config.cache_ttl
+            self.config.cache_path, self.config.max_cache_size, self.config.cache_ttl
         )
 
         # Cloud sync
@@ -704,34 +715,37 @@ class UnifiedDatabaseManager:
             return
 
         # Insert into database
-        self.sqlite_db.execute_query('''
+        self.sqlite_db.execute_query(
+            """
             INSERT INTO decisions (
                 session_id, timestamp, input_features, context_probabilities,
                 phrase_selection, synthesis_method, output_audio, processing_time_ms,
                 adaptation_parameters, safety_applied, cognitive_context,
                 visual_context, experimental_conditions
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            decision_record.get('session_id'),
-            decision_record.get('timestamp'),
-            json.dumps(decision_record.get('input_features', {})),
-            json.dumps(decision_record.get('context_probabilities', {})),
-            json.dumps(decision_record.get('phrase_selection', {})),
-            decision_record.get('synthesis_method'),
-            np.array(decision_record.get('output_audio', [])).tobytes(),
-            decision_record.get('processing_time_ms', 0.0),
-            json.dumps(decision_record.get('adaptation_parameters', {})),
-            int(decision_record.get('safety_applied', False)),
-            json.dumps(decision_record.get('cognitive_context')),
-            json.dumps(decision_record.get('visual_context')),
-            json.dumps(decision_record.get('experimental_conditions', {}))
-        ))
+        """,
+            (
+                decision_record.get("session_id"),
+                decision_record.get("timestamp"),
+                json.dumps(decision_record.get("input_features", {})),
+                json.dumps(decision_record.get("context_probabilities", {})),
+                json.dumps(decision_record.get("phrase_selection", {})),
+                decision_record.get("synthesis_method"),
+                np.array(decision_record.get("output_audio", [])).tobytes(),
+                decision_record.get("processing_time_ms", 0.0),
+                json.dumps(decision_record.get("adaptation_parameters", {})),
+                int(decision_record.get("safety_applied", False)),
+                json.dumps(decision_record.get("cognitive_context")),
+                json.dumps(decision_record.get("visual_context")),
+                json.dumps(decision_record.get("experimental_conditions", {})),
+            ),
+        )
 
         # Cache the decision
         self.cache.set(cache_key, decision_record, ttl=self.config.cache_ttl)
 
         # Queue for cloud sync
-        self.cloud_sync.sync_data('decisions', decision_record)
+        self.cloud_sync.sync_data("decisions", decision_record)
 
     def load_phrase_database(self, phrase_key: str, species: str) -> Optional[Dict]:
         """Load phrase from database (implementing dual_path_analyzer.py feature)"""
@@ -742,25 +756,31 @@ class UnifiedDatabaseManager:
             return cached
 
         # Query database
-        result = self.sqlite_db.execute_query('''
+        result = self.sqlite_db.execute_query(
+            """
             SELECT audio_data, acoustic_features, context_info
             FROM phrase_cache
             WHERE phrase_key = ? AND species = ?
-        ''', (phrase_key, species))
+        """,
+            (phrase_key, species),
+        )
 
         if result:
             phrase_data = {
-                'audio_data': result[0]['audio_data'],
-                'acoustic_features': json.loads(result[0]['acoustic_features'] or '{}'),
-                'context_info': json.loads(result[0]['context_info'] or '{}')
+                "audio_data": result[0]["audio_data"],
+                "acoustic_features": json.loads(result[0]["acoustic_features"] or "{}"),
+                "context_info": json.loads(result[0]["context_info"] or "{}"),
             }
 
             # Update access count
-            self.sqlite_db.execute_query('''
+            self.sqlite_db.execute_query(
+                """
                 UPDATE phrase_cache
                 SET access_count = access_count + 1, last_accessed = CURRENT_TIMESTAMP
                 WHERE phrase_key = ? AND species = ?
-            ''', (phrase_key, species))
+            """,
+                (phrase_key, species),
+            )
 
             # Cache the result
             self.cache.set(cache_key, phrase_data, ttl=self.config.cache_ttl)
@@ -769,50 +789,65 @@ class UnifiedDatabaseManager:
 
         return None
 
-    def save_phrase_to_cache(self, phrase_key: str, species: str, audio_data: bytes,
-                           acoustic_features: Dict, context_info: Dict):
+    def save_phrase_to_cache(
+        self,
+        phrase_key: str,
+        species: str,
+        audio_data: bytes,
+        acoustic_features: Dict,
+        context_info: Dict,
+    ):
         """Save phrase to cache (implementing concatenative database feature)"""
         # Check if already exists
-        existing = self.sqlite_db.execute_query('''
+        existing = self.sqlite_db.execute_query(
+            """
             SELECT id FROM phrase_cache WHERE phrase_key = ? AND species = ?
-        ''', (phrase_key, species))
+        """,
+            (phrase_key, species),
+        )
 
         if existing:
             # Update existing
-            self.sqlite_db.execute_query('''
+            self.sqlite_db.execute_query(
+                """
                 UPDATE phrase_cache SET
                     audio_data = ?,
                     acoustic_features = ?,
                     context_info = ?,
                     created_at = CURRENT_TIMESTAMP
                 WHERE phrase_key = ? AND species = ?
-            ''', (
-                audio_data,
-                json.dumps(acoustic_features),
-                json.dumps(context_info),
-                phrase_key,
-                species
-            ))
+            """,
+                (
+                    audio_data,
+                    json.dumps(acoustic_features),
+                    json.dumps(context_info),
+                    phrase_key,
+                    species,
+                ),
+            )
         else:
             # Insert new
-            self.sqlite_db.execute_query('''
+            self.sqlite_db.execute_query(
+                """
                 INSERT INTO phrase_cache (
                     phrase_key, species, audio_data, acoustic_features, context_info
                 ) VALUES (?, ?, ?, ?, ?)
-            ''', (
-                phrase_key,
-                species,
-                audio_data,
-                json.dumps(acoustic_features),
-                json.dumps(context_info)
-            ))
+            """,
+                (
+                    phrase_key,
+                    species,
+                    audio_data,
+                    json.dumps(acoustic_features),
+                    json.dumps(context_info),
+                ),
+            )
 
         # Cache the result
         cache_key = f"phrase_{phrase_key}_{species}"
         phrase_data = {
-            'audio_data': audio_data,
-            'acoustic_features': acoustic_features,
-            'context_info': context_info
+            "audio_data": audio_data,
+            "acoustic_features": acoustic_features,
+            "context_info": context_info,
         }
         self.cache.set(cache_key, phrase_data, ttl=self.config.cache_ttl)
 
@@ -823,9 +858,12 @@ class UnifiedDatabaseManager:
         if cached:
             return cached
 
-        result = self.sqlite_db.execute_query('''
+        result = self.sqlite_db.execute_query(
+            """
             SELECT * FROM experiments WHERE experiment_id = ?
-        ''', (experiment_id,))
+        """,
+            (experiment_id,),
+        )
 
         if result:
             experiment = dict(result[0])
@@ -836,21 +874,24 @@ class UnifiedDatabaseManager:
 
     def save_experiment_data(self, experiment_data: Dict):
         """Save experiment data"""
-        self.sqlite_db.execute_query('''
+        self.sqlite_db.execute_query(
+            """
             INSERT OR REPLACE INTO experiments (
                 experiment_id, name, description, start_time, end_time,
                 conditions, metrics, status
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            experiment_data.get('experiment_id'),
-            experiment_data.get('name'),
-            experiment_data.get('description'),
-            experiment_data.get('start_time'),
-            experiment_data.get('end_time'),
-            json.dumps(experiment_data.get('conditions', {})),
-            json.dumps(experiment_data.get('metrics', {})),
-            experiment_data.get('status', 'active')
-        ))
+        """,
+            (
+                experiment_data.get("experiment_id"),
+                experiment_data.get("name"),
+                experiment_data.get("description"),
+                experiment_data.get("start_time"),
+                experiment_data.get("end_time"),
+                json.dumps(experiment_data.get("conditions", {})),
+                json.dumps(experiment_data.get("metrics", {})),
+                experiment_data.get("status", "active"),
+            ),
+        )
 
         # Cache the result
         cache_key = f"experiment_{experiment_data['experiment_id']}"
@@ -863,45 +904,48 @@ class UnifiedDatabaseManager:
         # SQLite stats
         try:
             # Table counts
-            tables = ['decisions', 'experiments', 'species_data', 'phrase_cache']
+            tables = ["decisions", "experiments", "species_data", "phrase_cache"]
             for table in tables:
-                count = self.sqlite_db.execute_query(f'SELECT COUNT(*) FROM {table}')[0][0]
-                stats[f'{table}_count'] = count
+                count = self.sqlite_db.execute_query(f"SELECT COUNT(*) FROM {table}")[0][0]
+                stats[f"{table}_count"] = count
 
             # Database size
             if os.path.exists(self.config.sqlite_path):
-                stats['database_size_bytes'] = os.path.getsize(self.config.sqlite_path)
+                stats["database_size_bytes"] = os.path.getsize(self.config.sqlite_path)
 
         except Exception as e:
             self.logger.error(f"Failed to get database stats: {e}")
 
         # Cache stats
-        stats['cache_size'] = self.cache.size()
-        stats['cache_max_size'] = self.config.max_cache_size
+        stats["cache_size"] = self.cache.size()
+        stats["cache_max_size"] = self.config.max_cache_size
 
         # Cloud sync status
-        stats['cloud_sync_enabled'] = self.config.enable_cloud_sync
-        stats['sync_queue_size'] = self.cloud_sync.sync_queue.qsize()
+        stats["cloud_sync_enabled"] = self.config.enable_cloud_sync
+        stats["sync_queue_size"] = self.cloud_sync.sync_queue.qsize()
 
         # Backup status
-        stats['backups'] = self.backup.get_backup_list()
+        stats["backups"] = self.backup.get_backup_list()
 
         return stats
+
 
 # ============================================================================
 # 9. DATABASE UTILITIES
 # ============================================================================
 
+
 def create_database_manager(config_path: str = None) -> UnifiedDatabaseManager:
     """Create database manager from config file"""
     if config_path and Path(config_path).exists():
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config_data = json.load(f)
         config = DatabaseConfig(**config_data)
     else:
         config = DatabaseConfig()
 
     return UnifiedDatabaseManager(config)
+
 
 # Example usage
 if __name__ == "__main__":
@@ -913,19 +957,19 @@ if __name__ == "__main__":
 
     # Example usage
     decision_record = {
-        'session_id': str(uuid.uuid4()),
-        'timestamp': datetime.now().isoformat(),
-        'input_features': {'f0': 7400, 'duration': 0.1},
-        'context_probabilities': {'contact': 0.8, 'alarm': 0.2},
-        'phrase_selection': {'phrase_key': 'F0_7400'},
-        'synthesis_method': 'microharmonic',
-        'output_audio': [0.1, 0.2, 0.3] * 1000,
-        'processing_time_ms': 45.6,
-        'adaptation_parameters': {'learning_rate': 0.01},
-        'safety_applied': True,
-        'cognitive_context': None,
-        'visual_context': None,
-        'experimental_conditions': {}
+        "session_id": str(uuid.uuid4()),
+        "timestamp": datetime.now().isoformat(),
+        "input_features": {"f0": 7400, "duration": 0.1},
+        "context_probabilities": {"contact": 0.8, "alarm": 0.2},
+        "phrase_selection": {"phrase_key": "F0_7400"},
+        "synthesis_method": "microharmonic",
+        "output_audio": [0.1, 0.2, 0.3] * 1000,
+        "processing_time_ms": 45.6,
+        "adaptation_parameters": {"learning_rate": 0.01},
+        "safety_applied": True,
+        "cognitive_context": None,
+        "visual_context": None,
+        "experimental_conditions": {},
     }
 
     # Log decision

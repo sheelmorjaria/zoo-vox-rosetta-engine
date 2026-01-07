@@ -27,12 +27,13 @@ import soundfile as sf
 try:
     import importlib.util
     import sys
+
     spec = importlib.util.spec_from_file_location(
-        'technical_architecture',
-        '/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so'
+        "technical_architecture",
+        "/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so",
     )
     module = importlib.util.module_from_spec(spec)
-    sys.modules['technical_architecture'] = module
+    sys.modules["technical_architecture"] = module
     spec.loader.exec_module(module)
     DynamicMicroharmonicSynthesizer = module.DynamicMicroharmonicSynthesizer
 except ImportError as e:
@@ -62,10 +63,12 @@ def demo_single_phrase():
         sustain_level=0.7,
         vibrato_rate_hz=7.0,
         vibrato_depth_cents=25.0,
-        jitter_amount=0.025
+        jitter_amount=0.025,
     )
 
-    print(f"   Generated {len(audio_marmoset)} samples ({len(audio_marmoset)/22050*1000:.1f} ms)")
+    print(
+        f"   Generated {len(audio_marmoset)} samples ({len(audio_marmoset) / 22050 * 1000:.1f} ms)"
+    )
 
     # Bat-style phrase
     print("\n🎵 Synthesizing bat phrase...")
@@ -77,10 +80,10 @@ def demo_single_phrase():
         sustain_level=0.7,
         vibrato_rate_hz=7.5,
         vibrato_depth_cents=25.0,
-        jitter_amount=0.025
+        jitter_amount=0.025,
     )
 
-    print(f"   Generated {len(audio_bat)} samples ({len(audio_bat)/22050*1000:.1f} ms)")
+    print(f"   Generated {len(audio_bat)} samples ({len(audio_bat) / 22050 * 1000:.1f} ms)")
 
     # Save to files
     output_dir = Path("/home/sheel/birdsong_analysis/src/validation_results")
@@ -137,7 +140,7 @@ def demo_sequence_synthesis():
         "jitter_amount": 0.02,
         "shimmer_amount": 0.01,
         "spectral_tilt": -6.0,
-        "hnr_db": 20.0
+        "hnr_db": 20.0,
     }
 
     phrase2 = {
@@ -151,7 +154,7 @@ def demo_sequence_synthesis():
         "jitter_amount": 0.02,
         "shimmer_amount": 0.01,
         "spectral_tilt": -6.0,
-        "hnr_db": 20.0
+        "hnr_db": 20.0,
     }
 
     phrase3 = {
@@ -165,7 +168,7 @@ def demo_sequence_synthesis():
         "jitter_amount": 0.02,
         "shimmer_amount": 0.01,
         "spectral_tilt": -6.0,
-        "hnr_db": 20.0
+        "hnr_db": 20.0,
     }
 
     # Combine into sequence
@@ -173,11 +176,12 @@ def demo_sequence_synthesis():
 
     print("\n🎵 Synthesizing ascending sequence (7kHz → 8.5kHz → 10kHz)...")
     audio_sequence = synthesizer.synthesize_sequence(
-        phrase_params_json=phrase_sequence_json,
-        crossfade_ms=10.0
+        phrase_params_json=phrase_sequence_json, crossfade_ms=10.0
     )
 
-    print(f"   Generated {len(audio_sequence)} samples ({len(audio_sequence)/22050*1000:.1f} ms)")
+    print(
+        f"   Generated {len(audio_sequence)} samples ({len(audio_sequence) / 22050 * 1000:.1f} ms)"
+    )
 
     # Save to file
     output_dir = Path("/home/sheel/birdsong_analysis/src/validation_results")
@@ -224,7 +228,9 @@ def main():
         print("✅ DEMO COMPLETE!")
         print("=" * 80)
 
-        print("\n📂 Generated files saved to: /home/sheel/birdsong_analysis/src/validation_results/")
+        print(
+            "\n📂 Generated files saved to: /home/sheel/birdsong_analysis/src/validation_results/"
+        )
         print("   - marmoset_phrase_rust.wav")
         print("   - bat_phrase_rust.wav")
         print("   - ascending_sequence_rust.wav")
@@ -239,6 +245,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Error during demo: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

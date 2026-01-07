@@ -20,6 +20,7 @@ import numpy as np
 # Try to import scipy for advanced signal processing
 try:
     from scipy import signal
+
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
@@ -29,17 +30,19 @@ logger = logging.getLogger(__name__)
 
 class ContextState(Enum):
     """Context states for the state machine"""
-    SILENCE = 'silence'
-    CONTACT = 'contact'
-    ALARM = 'alarm'
-    FOOD = 'food'
-    NEUTRAL = 'neutral'
-    UNCERTAIN = 'uncertain'
+
+    SILENCE = "silence"
+    CONTACT = "contact"
+    ALARM = "alarm"
+    FOOD = "food"
+    NEUTRAL = "neutral"
+    UNCERTAIN = "uncertain"
 
 
 @dataclass
 class AudioFeatures:
     """Audio features for context detection"""
+
     rms: float
     spectral_centroid: float
     bandwidth: float
@@ -53,17 +56,19 @@ class AudioFeatures:
     @property
     def feature_vector(self) -> np.ndarray:
         """Get flattened feature vector"""
-        return np.array([
-            self.rms,
-            self.spectral_centroid,
-            self.bandwidth,
-            self.zero_crossing_rate,
-            self.harmonic_ratio,
-            self.fundamental_freq,
-            self.spectral_flatness,
-            *self.temporal_envelope,
-            *self.mfcc_features
-        ])
+        return np.array(
+            [
+                self.rms,
+                self.spectral_centroid,
+                self.bandwidth,
+                self.zero_crossing_rate,
+                self.harmonic_ratio,
+                self.fundamental_freq,
+                self.spectral_flatness,
+                *self.temporal_envelope,
+                *self.mfcc_features,
+            ]
+        )
 
 
 class ProbabilisticContextMachine:
@@ -74,11 +79,13 @@ class ProbabilisticContextMachine:
     estimation for robust context detection.
     """
 
-    def __init__(self,
-                 context_states: List[ContextState] = None,
-                 history_length: int = 5,
-                 confidence_threshold: float = 0.7,
-                 transition_memory: int = 3):
+    def __init__(
+        self,
+        context_states: List[ContextState] = None,
+        history_length: int = 5,
+        confidence_threshold: float = 0.7,
+        transition_memory: int = 3,
+    ):
         """
         Initialize the probabilistic context machine.
 
@@ -88,8 +95,13 @@ class ProbabilisticContextMachine:
             confidence_threshold: Minimum confidence for state commitment
             transition_memory: Memory for state transition modeling
         """
-        self.context_states = context_states or [ContextState.SILENCE, ContextState.CONTACT,
-                                                ContextState.ALARM, ContextState.FOOD, ContextState.NEUTRAL]
+        self.context_states = context_states or [
+            ContextState.SILENCE,
+            ContextState.CONTACT,
+            ContextState.ALARM,
+            ContextState.FOOD,
+            ContextState.NEUTRAL,
+        ]
 
         self.history_length = history_length
         self.confidence_threshold = confidence_threshold
@@ -98,7 +110,9 @@ class ProbabilisticContextMachine:
         # Initialize state tracking
         self.current_state = ContextState.SILENCE
         self.state_history = collections.deque(maxlen=history_length)
-        self.transition_matrix = np.ones((len(self.context_states), len(self.context_states))) / len(self.context_states)
+        self.transition_matrix = np.ones(
+            (len(self.context_states), len(self.context_states))
+        ) / len(self.context_states)
 
         # Feature history for temporal analysis
         self.feature_history = collections.deque(maxlen=history_length)
@@ -112,7 +126,9 @@ class ProbabilisticContextMachine:
         self.smoothing_factor = 0.7
         self.prediction_weight = 0.2
 
-        logger.info(f"ProbabilisticContextMachine initialized with {len(self.context_states)} states")
+        logger.info(
+            f"ProbabilisticContextMachine initialized with {len(self.context_states)} states"
+        )
 
     def _initialize_context_models(self):
         """Initialize statistical models for each context state."""
@@ -121,30 +137,30 @@ class ProbabilisticContextMachine:
 
         self.context_models = {
             ContextState.SILENCE: {
-                'rms_range': (0.0, 0.01),
-                'freq_range': (0, 1000),
-                'zcr_range': (0.0, 0.1)
+                "rms_range": (0.0, 0.01),
+                "freq_range": (0, 1000),
+                "zcr_range": (0.0, 0.1),
             },
             ContextState.CONTACT: {
-                'rms_range': (0.05, 0.3),
-                'freq_range': (4000, 7000),  # Extended range
-                'zcr_range': (0.01, 0.2)
+                "rms_range": (0.05, 0.3),
+                "freq_range": (4000, 7000),  # Extended range
+                "zcr_range": (0.01, 0.2),
             },
             ContextState.ALARM: {
-                'rms_range': (0.1, 0.4),
-                'freq_range': (6000, 10000),  # Extended range
-                'zcr_range': (0.01, 0.25)
+                "rms_range": (0.1, 0.4),
+                "freq_range": (6000, 10000),  # Extended range
+                "zcr_range": (0.01, 0.25),
             },
             ContextState.FOOD: {
-                'rms_range': (0.05, 0.2),
-                'freq_range': (4500, 7500),  # Extended range
-                'zcr_range': (0.01, 0.2)
+                "rms_range": (0.05, 0.2),
+                "freq_range": (4500, 7500),  # Extended range
+                "zcr_range": (0.01, 0.2),
             },
             ContextState.NEUTRAL: {
-                'rms_range': (0.02, 0.15),
-                'freq_range': (2000, 6000),
-                'zcr_range': (0.01, 0.25)
-            }
+                "rms_range": (0.02, 0.15),
+                "freq_range": (2000, 6000),
+                "zcr_range": (0.01, 0.25),
+            },
         }
 
     def extract_features(self, audio: np.ndarray, sr: int = 44100) -> AudioFeatures:
@@ -160,12 +176,12 @@ class ProbabilisticContextMachine:
         """
         try:
             # Basic features
-            rms = np.sqrt(np.mean(audio ** 2))
+            rms = np.sqrt(np.mean(audio**2))
 
             # Spectral features
             fft = np.fft.rfft(audio)
             magnitudes = np.abs(fft)
-            freqs = np.fft.rfftfreq(len(audio), 1/sr)
+            freqs = np.fft.rfftfreq(len(audio), 1 / sr)
 
             # Remove DC component
             if len(magnitudes) > 1:
@@ -173,11 +189,17 @@ class ProbabilisticContextMachine:
                 freqs = freqs[1:]
 
             # Spectral centroid
-            spectral_centroid = np.sum(freqs * magnitudes) / np.sum(magnitudes) if np.sum(magnitudes) > 0 else 0
+            spectral_centroid = (
+                np.sum(freqs * magnitudes) / np.sum(magnitudes) if np.sum(magnitudes) > 0 else 0
+            )
 
             # Spectral bandwidth
             weighted_freqs = freqs - spectral_centroid
-            bandwidth = np.sqrt(np.sum(weighted_freqs**2 * magnitudes) / np.sum(magnitudes)) if np.sum(magnitudes) > 0 else 0
+            bandwidth = (
+                np.sqrt(np.sum(weighted_freqs**2 * magnitudes) / np.sum(magnitudes))
+                if np.sum(magnitudes) > 0
+                else 0
+            )
 
             # Zero crossing rate
             zcr = np.sum(np.diff(np.sign(audio)) != 0) / (2 * len(audio))
@@ -201,12 +223,14 @@ class ProbabilisticContextMachine:
                 # Fallback to simple absolute value
                 envelope = np.abs(audio)
 
-            temporal_envelope = np.array([
-                np.mean(envelope),
-                np.std(envelope) if len(envelope) > 1 else 0,
-                np.max(envelope),
-                np.min(envelope)
-            ])
+            temporal_envelope = np.array(
+                [
+                    np.mean(envelope),
+                    np.std(envelope) if len(envelope) > 1 else 0,
+                    np.max(envelope),
+                    np.min(envelope),
+                ]
+            )
 
             # MFCC features (simplified - first 13 coefficients)
             mfcc_features = self._calculate_mfcc(audio, sr)
@@ -220,7 +244,7 @@ class ProbabilisticContextMachine:
                 fundamental_freq=fundamental_freq,
                 spectral_flatness=spectral_flatness,
                 temporal_envelope=temporal_envelope,
-                mfcc_features=mfcc_features
+                mfcc_features=mfcc_features,
             )
 
         except Exception as e:
@@ -235,8 +259,8 @@ class ProbabilisticContextMachine:
 
         # Find peaks (potential harmonics)
         peaks = []
-        for i in range(1, len(magnitudes)-1):
-            if magnitudes[i] > magnitudes[i-1] and magnitudes[i] > magnitudes[i+1]:
+        for i in range(1, len(magnitudes) - 1):
+            if magnitudes[i] > magnitudes[i - 1] and magnitudes[i] > magnitudes[i + 1]:
                 peaks.append(i)
 
         # Calculate harmonic ratio based on peak strength
@@ -256,12 +280,12 @@ class ProbabilisticContextMachine:
         segment = audio[:4096] if len(audio) >= 4096 else audio
 
         # Autocorrelation
-        correlation = np.correlate(segment, segment, mode='full')
-        correlation = correlation[len(correlation)//2:]
+        correlation = np.correlate(segment, segment, mode="full")
+        correlation = correlation[len(correlation) // 2 :]
 
         # Find first peak
-        for i in range(1, len(correlation)-1):
-            if correlation[i] > correlation[i-1] and correlation[i] > correlation[i+1]:
+        for i in range(1, len(correlation) - 1):
+            if correlation[i] > correlation[i - 1] and correlation[i] > correlation[i + 1]:
                 if correlation[i] > 0.1 * np.max(correlation):
                     return sr / i
 
@@ -289,14 +313,14 @@ class ProbabilisticContextMachine:
         frames = []
 
         for i in range(0, len(audio) - frame_length, hop_length):
-            frame = audio[i:i + frame_length]
+            frame = audio[i : i + frame_length]
             frames.append(frame)
 
         if not frames:
             return np.zeros(13)
 
         # Calculate energy in each frame
-        frame_energies = [np.mean(frame ** 2) for frame in frames]
+        frame_energies = [np.mean(frame**2) for frame in frames]
 
         # Simple MFCC approximation
         mfcc = np.array(frame_energies[:13])  # Simplified
@@ -318,7 +342,7 @@ class ProbabilisticContextMachine:
             fundamental_freq=0.0,
             spectral_flatness=1.0,
             temporal_envelope=np.zeros(4),
-            mfcc_features=np.zeros(13)
+            mfcc_features=np.zeros(13),
         )
 
     def calculate_context_probabilities(self, features: AudioFeatures) -> Dict[ContextState, float]:
@@ -349,7 +373,7 @@ class ProbabilisticContextMachine:
         # Normalize probabilities
         total = sum(probabilities.values())
         if total > 0:
-            probabilities = {state: prob/total for state, prob in probabilities.items()}
+            probabilities = {state: prob / total for state, prob in probabilities.items()}
 
         return probabilities
 
@@ -358,9 +382,9 @@ class ProbabilisticContextMachine:
         model = self.context_models.get(state, self.context_models[ContextState.NEUTRAL])
 
         # Check feature ranges
-        rms_match = self._feature_match(features.rms, model['rms_range'])
-        freq_match = self._feature_match(features.spectral_centroid, model['freq_range'])
-        zcr_match = self._feature_match(features.zero_crossing_rate, model['zcr_range'])
+        rms_match = self._feature_match(features.rms, model["rms_range"])
+        freq_match = self._feature_match(features.spectral_centroid, model["freq_range"])
+        zcr_match = self._feature_match(features.zero_crossing_rate, model["zcr_range"])
 
         # Weight frequency match more heavily for sine waves
         freq_weight = 2.0
@@ -371,7 +395,7 @@ class ProbabilisticContextMachine:
         weighted_matches = [
             np.log(rms_match + 1e-10) * rms_weight,
             np.log(freq_match + 1e-10) * freq_weight,
-            np.log(zcr_match + 1e-10) * zcr_weight
+            np.log(zcr_match + 1e-10) * zcr_weight,
         ]
         return np.exp(np.mean(weighted_matches))
 
@@ -394,7 +418,9 @@ class ProbabilisticContextMachine:
             return likelihood
 
         # Count recent occurrences of this state
-        recent_count = sum(1 for s in list(self.state_history)[-self.transition_memory:] if s == state)
+        recent_count = sum(
+            1 for s in list(self.state_history)[-self.transition_memory :] if s == state
+        )
 
         # Adjust likelihood based on temporal consistency
         temporal_factor = 1.0 + (recent_count * self.smoothing_factor / self.transition_memory)
@@ -409,7 +435,9 @@ class ProbabilisticContextMachine:
         except (ValueError, IndexError):
             return 1.0 / len(self.context_states)
 
-    def update_state_machine(self, audio: np.ndarray, sr: int = 44100) -> Tuple[ContextState, float, Dict[ContextState, float]]:
+    def update_state_machine(
+        self, audio: np.ndarray, sr: int = 44100
+    ) -> Tuple[ContextState, float, Dict[ContextState, float]]:
         """
         Update the state machine with new audio input.
 
@@ -451,7 +479,9 @@ class ProbabilisticContextMachine:
 
         # Debug logging
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Context probabilities: {[(s.value, p) for s, p in probabilities.items()]}")
+            logger.debug(
+                f"Context probabilities: {[(s.value, p) for s, p in probabilities.items()]}"
+            )
             logger.debug(f"Predicted state: {predicted_state.value}, confidence: {confidence:.3f}")
 
         return predicted_state, confidence, probabilities

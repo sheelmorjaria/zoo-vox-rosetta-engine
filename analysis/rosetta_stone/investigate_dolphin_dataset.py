@@ -22,6 +22,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -44,9 +45,9 @@ def load_wav_file(filepath, target_sr=None):
 
 def analyze_single_whistle(filepath, params):
     """Analyze a single dolphin whistle with detailed diagnostics."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"File: {Path(filepath).name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     audio, sr = load_wav_file(filepath)
     if audio is None:
@@ -62,18 +63,19 @@ def analyze_single_whistle(filepath, params):
 
     # Frequency analysis
     from scipy.fft import fft, fftfreq
+
     fft_result = fft(audio)
-    freqs = fftfreq(len(audio), 1/sr)
+    freqs = fftfreq(len(audio), 1 / sr)
     magnitude = np.abs(fft_result)
 
-    pos_freqs = freqs[:len(freqs)//2]
-    pos_magnitude = magnitude[:len(magnitude)//2]
+    pos_freqs = freqs[: len(freqs) // 2]
+    pos_magnitude = magnitude[: len(magnitude) // 2]
 
     # Find dominant frequency
     dom_freq_idx = np.argmax(pos_magnitude)
     dom_freq = pos_freqs[dom_freq_idx]
 
-    print(f"Dominant frequency: {abs(dom_freq)/1000:.1f} kHz")
+    print(f"Dominant frequency: {abs(dom_freq) / 1000:.1f} kHz")
 
     # Energy in different bands
     bands = [
@@ -81,17 +83,17 @@ def analyze_single_whistle(filepath, params):
         ("Mid (5-10 kHz)", 5000, 10000),
         ("Whistle range (10-20 kHz)", 10000, 20000),
         ("High (20-40 kHz)", 20000, 40000),
-        ("Ultrasonic (>40 kHz)", 40000, sr//2)
+        ("Ultrasonic (>40 kHz)", 40000, sr // 2),
     ]
 
     print("\n📊 Energy Distribution:")
     for band_name, low, high in bands:
         mask = (pos_freqs >= low) & (pos_freqs < high)
-        band_energy = np.sum(pos_magnitude[mask]**2)
+        band_energy = np.sum(pos_magnitude[mask] ** 2)
         total_energy = np.sum(pos_magnitude**2)
         percentage = band_energy / total_energy * 100
         if percentage > 1:
-            bar = '█' * int(percentage / 3)
+            bar = "█" * int(percentage / 3)
             print(f"  {band_name:25s}: {percentage:5.1f}% {bar}")
 
     # Test multiple parameter combinations
@@ -104,9 +106,7 @@ def analyze_single_whistle(filepath, params):
         for min_dur in [2, 5, 10]:
             try:
                 phrases = analyzer.segment_phrases(
-                    audio,
-                    min_gap_ms=min_gap,
-                    min_phrase_duration_ms=min_dur
+                    audio, min_gap_ms=min_gap, min_phrase_duration_ms=min_dur
                 )
                 key = f"gap:{min_gap}_dur:{min_dur}"
                 results[key] = len(phrases)
@@ -117,8 +117,8 @@ def analyze_single_whistle(filepath, params):
 
     # Find best parameter combination
     best_params = max(results.items(), key=lambda x: x[1])
-    best_gap = int(best_params[0].split(':')[1].split('_')[0])
-    best_dur = int(best_params[0].split(':')[2].split('_')[0])
+    best_gap = int(best_params[0].split(":")[1].split("_")[0])
+    best_dur = int(best_params[0].split(":")[2].split("_")[0])
     max_phrases = best_params[1]
 
     if max_phrases == 0:
@@ -133,10 +133,10 @@ def analyze_single_whistle(filepath, params):
             print(f"  Probabilities: {probabilities}")
 
             return {
-                'filepath': filepath,
-                'total_phrases': 0,
-                'full_file_modality': modality.name,
-                'probabilities': probabilities
+                "filepath": filepath,
+                "total_phrases": 0,
+                "full_file_modality": modality.name,
+                "probabilities": probabilities,
             }
         except Exception as e:
             print(f"  Error: {e}")
@@ -145,11 +145,7 @@ def analyze_single_whistle(filepath, params):
     print(f"\n✓ Best parameters: gap={best_gap}ms, dur={best_dur}ms ({max_phrases} phrases)")
 
     # Analyze with best parameters
-    phrases = analyzer.segment_phrases(
-        audio,
-        min_gap_ms=best_gap,
-        min_phrase_duration_ms=best_dur
-    )
+    phrases = analyzer.segment_phrases(audio, min_gap_ms=best_gap, min_phrase_duration_ms=best_dur)
 
     # Analyze modality for all phrases
     print(f"\n📊 Modality Analysis ({len(phrases)} total phrases):")
@@ -163,48 +159,50 @@ def analyze_single_whistle(filepath, params):
 
         modality_counts[modality.name] = modality_counts.get(modality.name, 0) + 1
 
-        details.append({
-            'index': i,
-            'modality': modality.name,
-            'probabilities': probabilities,
-            'duration_ms': features.get('duration_ms', len(phrase.data) / sr * 1000),
-            'spectral_centroid': features.get('spectral_centroid', 0),
-            'f0_mean': features.get('f0_mean')
-        })
+        details.append(
+            {
+                "index": i,
+                "modality": modality.name,
+                "probabilities": probabilities,
+                "duration_ms": features.get("duration_ms", len(phrase.data) / sr * 1000),
+                "spectral_centroid": features.get("spectral_centroid", 0),
+                "f0_mean": features.get("f0_mean"),
+            }
+        )
 
     # Print modality distribution
     print("\n  Modality Distribution:")
     for modality, count in sorted(modality_counts.items()):
         percentage = count / len(phrases) * 100
-        bar = '█' * int(percentage / 10)
+        bar = "█" * int(percentage / 10)
         expected = ""
-        if modality == 'HARMONIC':
+        if modality == "HARMONIC":
             expected = " (expected for whistles)"
         print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}{expected}")
 
     # Print detailed analysis for first 10 phrases
     print("\n  Detailed Analysis (first 10 phrases):")
     for d in details[:10]:
-        print(f"\n    Phrase {d['index']+1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
+        print(f"\n    Phrase {d['index'] + 1}: {d['modality']} ({d['duration_ms']:.1f} ms)")
         print(f"      Probabilities: {d['probabilities']}")
-        print(f"      Spectral centroid: {d['spectral_centroid']/1000:.1f} kHz")
-        if d['f0_mean'] and d['f0_mean'] > 0:
+        print(f"      Spectral centroid: {d['spectral_centroid'] / 1000:.1f} kHz")
+        if d["f0_mean"] and d["f0_mean"] > 0:
             print(f"      F0: {d['f0_mean']:.0f} Hz")
 
     return {
-        'filepath': filepath,
-        'total_phrases': len(phrases),
-        'modality_counts': modality_counts,
-        'best_params': {'gap': best_gap, 'dur': best_dur},
-        'details': details
+        "filepath": filepath,
+        "total_phrases": len(phrases),
+        "modality_counts": modality_counts,
+        "best_params": {"gap": best_gap, "dur": best_dur},
+        "details": details,
     }
 
 
 def main():
     """Investigate dolphin whistle dataset."""
-    print("="*70)
+    print("=" * 70)
     print("BOTTLENOSE DOLPHIN WHISTLE DATASET INVESTIGATION")
-    print("="*70)
+    print("=" * 70)
 
     data_dir = Path.home() / "birdsong_analysis" / "data" / "Whistle_Signals"
 
@@ -233,38 +231,38 @@ def main():
     for filepath in test_files:
         result = analyze_single_whistle(filepath, None)
         if result:
-            if result['total_phrases'] > 0:
+            if result["total_phrases"] > 0:
                 all_results.append(result)
                 successful += 1
-            elif 'full_file_modality' in result:
+            elif "full_file_modality" in result:
                 full_file_analyses.append(result)
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("INVESTIGATION SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Files with segmented phrases
     if all_results:
         print(f"\nFiles with phrase segmentation: {successful}/{len(test_files)}")
 
         # Aggregate modality counts
-        total_phrases = sum(r['total_phrases'] for r in all_results)
+        total_phrases = sum(r["total_phrases"] for r in all_results)
         all_modality_counts = {}
 
         for result in all_results:
-            for modality, count in result['modality_counts'].items():
+            for modality, count in result["modality_counts"].items():
                 all_modality_counts[modality] = all_modality_counts.get(modality, 0) + 1
 
         print(f"\nTotal phrases across segmented files: {total_phrases}")
         print("\nAggregated Modality Distribution (by phrase count):")
         for modality, count in sorted(all_modality_counts.items()):
             percentage = count / total_phrases * 100
-            bar = '█' * int(percentage / 10)
+            bar = "█" * int(percentage / 10)
             expected = ""
-            if modality == 'HARMONIC':
+            if modality == "HARMONIC":
                 expected = " ✓ (expected for whistles)"
-            elif modality == 'FM_SWEEP':
+            elif modality == "FM_SWEEP":
                 expected = " (whistles often have FM)"
             print(f"  {modality:15s}: {count:4d} ({percentage:5.1f}%) {bar}{expected}")
 
@@ -273,23 +271,27 @@ def main():
         print(f"\nFiles analyzed as whole (no segmentation): {len(full_file_analyses)}")
         modality_counts = {}
         for result in full_file_analyses:
-            m = result['full_file_modality']
+            m = result["full_file_modality"]
             modality_counts[m] = modality_counts.get(m, 0) + 1
 
         print("\n  Full-file Modality Distribution:")
         for modality, count in sorted(modality_counts.items()):
             percentage = count / len(full_file_analyses) * 100
-            bar = '█' * int(percentage / 10)
+            bar = "█" * int(percentage / 10)
             print(f"    {modality:15s}: {count:2d} ({percentage:5.1f}%) {bar}")
 
     print("\n💡 Key Findings:")
     total_analyzed = len(all_results) + len(full_file_analyses)
-    print(f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({total_analyzed/len(test_files)*100:.1f}%)")
+    print(
+        f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({total_analyzed / len(test_files) * 100:.1f}%)"
+    )
 
     if all_results or full_file_analyses:
         # Count HARMONIC across all
-        harmonic_count = sum(1 for r in all_results if 'HARMONIC' in r['modality_counts'])
-        harmonic_count += sum(1 for r in full_file_analyses if r['full_file_modality'] == 'HARMONIC')
+        harmonic_count = sum(1 for r in all_results if "HARMONIC" in r["modality_counts"])
+        harmonic_count += sum(
+            1 for r in full_file_analyses if r["full_file_modality"] == "HARMONIC"
+        )
 
         if harmonic_count > 0:
             print(f"  - HARMONIC detected in {harmonic_count}/{total_analyzed} files ✓")
@@ -302,9 +304,9 @@ def main():
         print("  - Whistles detected but not segmented (single continuous signal)")
         print("  - Analyzed as complete file rather than phrases")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Investigation complete!")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

@@ -626,9 +626,7 @@ class TestIntegration:
         assert interpolated.get_mean_f0_hz() < virtual_target.get_mean_f0_hz()
 
         # Apply safety clamping
-        waypoint = engine.clamp_to_safe_distance(
-            virtual_target, anchor, nearest.key
-        )
+        waypoint = engine.clamp_to_safe_distance(virtual_target, anchor, nearest.key)
 
         assert waypoint.get_distance_to_anchor() >= 0.0
         assert waypoint.get_mode() in ["Interpolation", "Extrapolation", "ExtrapolationClamped"]

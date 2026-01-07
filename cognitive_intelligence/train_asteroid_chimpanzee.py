@@ -43,7 +43,7 @@ def main():
         species_name="chimpanzee",
         f0_min_hz=100,  # Low-frequency primate
         f0_max_hz=1900,
-        sample_rate=44100
+        sample_rate=44100,
     )
 
     config.print_config()
@@ -58,12 +58,8 @@ def main():
 
     # Create data loader
     from torch.utils.data import DataLoader
-    train_loader = DataLoader(
-        dataset,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=0
-    )
+
+    train_loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=0)
 
     # Create trainer
     trainer = AsteroidTrainer(config)
@@ -72,9 +68,9 @@ def main():
     has_real_data = len(dataset.mixtures) > 0
 
     if has_real_data:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TRAINING WITH REAL DATA")
-        print("="*60)
+        print("=" * 60)
         print(f"Found {len(dataset.mixtures)} mixture files")
         print(f"Training for {config.epochs} epochs...")
 
@@ -82,9 +78,9 @@ def main():
         model = trainer.train(train_loader)
 
     else:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("NO TRAINING DATA FOUND - CREATING DEMO MODEL")
-        print("="*60)
+        print("=" * 60)
         print("\nTo train with real data:")
         print(f"1. Place mixture WAV files in: {config.data_dir / 'mixtures'}")
         print(f"2. Place source WAV files in: {config.data_dir / 'sources'}")
@@ -102,16 +98,16 @@ def main():
     onnx_path = config.checkpoint_dir / "conv_tasnet_chimpanzee.onnx"
     trainer.export_to_onnx(model, str(onnx_path))
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TRAINING COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print(f"\nModel files saved to: {config.checkpoint_dir}/")
     print(f"  - PyTorch checkpoint: {checkpoint_path}")
     print(f"  - ONNX model: {onnx_path}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("CHIMPANZEE-SPECIFIC CHARACTERISTICS")
-    print("="*60)
+    print("=" * 60)
     print(f"""
 🦧 CHIMPANZEE VOCALIZATIONS:
    - Species: Chimpanzee (Pan troglodytes)
@@ -136,9 +132,9 @@ def main():
    - Cultural transmission studies
 """)
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RUST INTEGRATION")
-    print("="*60)
+    print("=" * 60)
     print(f"""
 To use this model in Rust:
 

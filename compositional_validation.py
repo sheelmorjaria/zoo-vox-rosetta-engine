@@ -26,7 +26,7 @@ class ValidationRule:
     name: str
     description: str
     validator_func: Callable
-    severity: str = 'error'  # 'error', 'warning', 'info'
+    severity: str = "error"  # 'error', 'warning', 'info'
 
     def validate(self, data: Any) -> bool:
         """Validate data using this rule."""
@@ -50,13 +50,9 @@ class ValidationResult:
         if self.violations is None:
             self.violations = []
 
-    def add_violation(self, violation_type: str, message: str, severity: str = 'warning'):
+    def add_violation(self, violation_type: str, message: str, severity: str = "warning"):
         """Add a violation to the result."""
-        self.violations.append({
-            'type': violation_type,
-            'message': message,
-            'severity': severity
-        })
+        self.violations.append({"type": violation_type, "message": message, "severity": severity})
         self.is_valid = False
 
 
@@ -68,10 +64,12 @@ class CompositionalValidator:
     from the Rosetta Stone analysis pipeline.
     """
 
-    def __init__(self,
-                 min_transitions: int = 3,
-                 significance_threshold: float = 0.05,
-                 min_sequence_length: int = 2):
+    def __init__(
+        self,
+        min_transitions: int = 3,
+        significance_threshold: float = 0.05,
+        min_sequence_length: int = 2,
+    ):
         """
         Initialize CompositionalValidator with configuration parameters.
 
@@ -98,18 +96,18 @@ class CompositionalValidator:
         """
         if grammar is None:
             return {
-                'is_valid': False,
-                'errors': ['Grammar is None'],
-                'warnings': [],
-                'statistics': {}
+                "is_valid": False,
+                "errors": ["Grammar is None"],
+                "warnings": [],
+                "statistics": {},
             }
 
         if not grammar:
             return {
-                'is_valid': False,
-                'errors': ['Grammar is empty'],
-                'warnings': [],
-                'statistics': {}
+                "is_valid": False,
+                "errors": ["Grammar is empty"],
+                "warnings": [],
+                "statistics": {},
             }
 
         errors = []
@@ -129,26 +127,32 @@ class CompositionalValidator:
         # Check for missing transitions from some phrases
         sources_without_targets = self._find_sources_without_targets(grammar)
         if sources_without_targets:
-            warnings.append(f"Found {len(sources_without_targets)} source phrase(s) with no targets")
+            warnings.append(
+                f"Found {len(sources_without_targets)} source phrase(s) with no targets"
+            )
 
         # Check grammar completeness
-        total_transitions = statistics['total_transitions']
+        total_transitions = statistics["total_transitions"]
         if total_transitions < self.min_transitions:
-            errors.append(f"Insufficient transitions ({total_transitions} < {self.min_transitions})")
+            errors.append(
+                f"Insufficient transitions ({total_transitions} < {self.min_transitions})"
+            )
 
         # Check for balance (each phrase should have some incoming transitions)
         phrases_without_incoming = self._find_phrases_without_incoming(grammar)
         if phrases_without_incoming and len(phrases_without_incoming) < len(grammar) * 0.3:
-            warnings.append(f"Found {len(phrases_without_incoming)} phrase(s) without incoming transitions")
+            warnings.append(
+                f"Found {len(phrases_without_incoming)} phrase(s) without incoming transitions"
+            )
 
         # Add unique_phrases to statistics
-        statistics['unique_phrases'] = len(set(grammar.keys()))
+        statistics["unique_phrases"] = len(set(grammar.keys()))
 
         return {
-            'is_valid': len(errors) == 0,
-            'errors': errors,
-            'warnings': warnings,
-            'statistics': statistics
+            "is_valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings,
+            "statistics": statistics,
         }
 
     def validate_sequence(self, sequence: List[Dict], grammar: Dict) -> Dict[str, Any]:
@@ -164,18 +168,18 @@ class CompositionalValidator:
         """
         if not sequence:
             return {
-                'is_valid': True,
-                'confidence': 1.0,
-                'message': 'Empty sequence is valid',
-                'validation_details': {'transitions_analyzed': 0, 'transitions_valid': 0}
+                "is_valid": True,
+                "confidence": 1.0,
+                "message": "Empty sequence is valid",
+                "validation_details": {"transitions_analyzed": 0, "transitions_valid": 0},
             }
 
         if len(sequence) < self.min_sequence_length:
             return {
-                'is_valid': True,
-                'confidence': 0.5,
-                'message': f'Short sequence (length {len(sequence)} < {self.min_sequence_length})',
-                'validation_details': {'transitions_analyzed': 0, 'transitions_valid': 0}
+                "is_valid": True,
+                "confidence": 0.5,
+                "message": f"Short sequence (length {len(sequence)} < {self.min_sequence_length})",
+                "validation_details": {"transitions_analyzed": 0, "transitions_valid": 0},
             }
 
         # Calculate transition probabilities
@@ -188,8 +192,8 @@ class CompositionalValidator:
         confidence_scores = []
 
         for i in range(len(sequence) - 1):
-            from_phrase = sequence[i]['key']
-            to_phrase = sequence[i + 1]['key']
+            from_phrase = sequence[i]["key"]
+            to_phrase = sequence[i + 1]["key"]
 
             if from_phrase in grammar and to_phrase in grammar[from_phrase]:
                 transitions_analyzed += 1
@@ -205,20 +209,24 @@ class CompositionalValidator:
                 if prob > 0.01:  # Minimum threshold
                     transitions_valid += 1
                 else:
-                    violations.append({
-                        'type': 'low_probability_transition',
-                        'from': from_phrase,
-                        'to': to_phrase,
-                        'probability': prob
-                    })
+                    violations.append(
+                        {
+                            "type": "low_probability_transition",
+                            "from": from_phrase,
+                            "to": to_phrase,
+                            "probability": prob,
+                        }
+                    )
             else:
                 transitions_analyzed += 1
-                violations.append({
-                    'type': 'missing_transition',
-                    'from': from_phrase,
-                    'to': to_phrase,
-                    'probability': 0.0
-                })
+                violations.append(
+                    {
+                        "type": "missing_transition",
+                        "from": from_phrase,
+                        "to": to_phrase,
+                        "probability": 0.0,
+                    }
+                )
 
         # Calculate overall confidence
         avg_confidence = np.mean(confidence_scores) if confidence_scores else 0.0
@@ -231,14 +239,14 @@ class CompositionalValidator:
             confidence = 1.0  # No transitions to validate
 
         return {
-            'is_valid': transitions_valid == transitions_analyzed and len(violations) == 0,
-            'confidence': float(confidence),
-            'message': f'Sequence validation: {transitions_valid}/{transitions_analyzed} transitions valid',
-            'validation_details': {
-                'transitions_analyzed': transitions_analyzed,
-                'transitions_valid': transitions_valid,
-                'violations': violations
-            }
+            "is_valid": transitions_valid == transitions_analyzed and len(violations) == 0,
+            "confidence": float(confidence),
+            "message": f"Sequence validation: {transitions_valid}/{transitions_analyzed} transitions valid",
+            "validation_details": {
+                "transitions_analyzed": transitions_analyzed,
+                "transitions_valid": transitions_valid,
+                "violations": violations,
+            },
         }
 
     def perform_chi_squared_test(self, grammar: Dict) -> Dict[str, Any]:
@@ -253,16 +261,16 @@ class CompositionalValidator:
         """
         contingency = self._build_contingency_table(grammar)
 
-        if not contingency['observed_counts']:
+        if not contingency["observed_counts"]:
             return {
-                'chi_squared': 0.0,
-                'p_value': 1.0,
-                'degrees_of_freedom': 0,
-                'is_significant': False
+                "chi_squared": 0.0,
+                "p_value": 1.0,
+                "degrees_of_freedom": 0,
+                "is_significant": False,
             }
 
-        observed = np.array(contingency['observed_counts'])
-        expected = np.array(contingency['expected_counts'])
+        observed = np.array(contingency["observed_counts"])
+        expected = np.array(contingency["expected_counts"])
 
         # Calculate chi-squared statistic
         chi_squared = np.sum((observed - expected) ** 2 / expected)
@@ -275,10 +283,10 @@ class CompositionalValidator:
         p_value = 1.0 - self._chi2_cdf(chi_squared, df)
 
         return {
-            'chi_squared': float(chi_squared),
-            'p_value': float(p_value),
-            'degrees_of_freedom': df,
-            'is_significant': p_value < self.significance_threshold
+            "chi_squared": float(chi_squared),
+            "p_value": float(p_value),
+            "degrees_of_freedom": df,
+            "is_significant": p_value < self.significance_threshold,
         }
 
     def generate_validation_report(self, sequence: List[Dict], grammar: Dict) -> Dict[str, Any]:
@@ -303,17 +311,17 @@ class CompositionalValidator:
 
         # Generate summary
         summary_parts = []
-        if grammar_result['is_valid']:
+        if grammar_result["is_valid"]:
             summary_parts.append("Grammar structure is valid")
         else:
             summary_parts.append("Grammar structure has issues")
 
-        if chi_squared_result['is_significant']:
+        if chi_squared_result["is_significant"]:
             summary_parts.append("Transition patterns are statistically significant")
         else:
             summary_parts.append("Transition patterns appear random")
 
-        if sequence_result['is_valid']:
+        if sequence_result["is_valid"]:
             summary_parts.append("Sequence follows grammar rules")
         else:
             summary_parts.append("Sequence has violations")
@@ -323,41 +331,45 @@ class CompositionalValidator:
         # Generate recommendations
         recommendations = []
 
-        if not grammar_result['is_valid']:
+        if not grammar_result["is_valid"]:
             recommendations.append("Fix grammar structure issues first")
 
-        if chi_squared_result['p_value'] > 0.5:
-            recommendations.append("Consider collecting more training data for better grammar modeling")
+        if chi_squared_result["p_value"] > 0.5:
+            recommendations.append(
+                "Consider collecting more training data for better grammar modeling"
+            )
 
-        if sequence_result['confidence'] < 0.5:
+        if sequence_result["confidence"] < 0.5:
             recommendations.append("Sequence confidence is low - consider alternative grammars")
 
-        if grammar_result['statistics']['total_transitions'] < 10:
+        if grammar_result["statistics"]["total_transitions"] < 10:
             recommendations.append("Grammar is under-sampled; collect more data")
 
         # Metadata
         metadata = {
-            'analysis_type': 'compositional_validation',
-            'timestamp': None,  # Will be set by caller
-            'parameters': {
-                'min_transitions': self.min_transitions,
-                'significance_threshold': self.significance_threshold,
-                'min_sequence_length': self.min_sequence_length
+            "analysis_type": "compositional_validation",
+            "timestamp": None,  # Will be set by caller
+            "parameters": {
+                "min_transitions": self.min_transitions,
+                "significance_threshold": self.significance_threshold,
+                "min_sequence_length": self.min_sequence_length,
             },
-            'sequence_length': len(sequence),
-            'grammar_size': len(grammar)
+            "sequence_length": len(sequence),
+            "grammar_size": len(grammar),
         }
 
         return {
-            'summary': summary,
-            'grammar_analysis': grammar_result,
-            'statistical_analysis': chi_squared_result,
-            'sequence_validation': sequence_result,
-            'recommendations': recommendations,
-            'metadata': metadata
+            "summary": summary,
+            "grammar_analysis": grammar_result,
+            "statistical_analysis": chi_squared_result,
+            "sequence_validation": sequence_result,
+            "recommendations": recommendations,
+            "metadata": metadata,
         }
 
-    def calculate_transition_probability(self, from_phrase: str, to_phrase: str, grammar: Dict) -> float:
+    def calculate_transition_probability(
+        self, from_phrase: str, to_phrase: str, grammar: Dict
+    ) -> float:
         """
         Calculate probability of transition between phrases.
 
@@ -394,11 +406,13 @@ class CompositionalValidator:
                 in_degree_counter[target_phrase] += 1
 
         return {
-            'total_transitions': total_transitions,
-            'total_phrases': total_phrases,
-            'average_out_degree': float(avg_out_degree),
-            'max_out_degree': max(out_degrees) if out_degrees else 0,
-            'unique_transitions': sum(len(set(transitions.keys())) for transitions in grammar.values())
+            "total_transitions": total_transitions,
+            "total_phrases": total_phrases,
+            "average_out_degree": float(avg_out_degree),
+            "max_out_degree": max(out_degrees) if out_degrees else 0,
+            "unique_transitions": sum(
+                len(set(transitions.keys())) for transitions in grammar.values()
+            ),
         }
 
     def _detect_cycles(self, grammar: Dict) -> List[List[str]]:
@@ -471,8 +485,7 @@ class CompositionalValidator:
             total = sum(transitions.values())
             if total > 0:
                 normalized[from_phrase] = {
-                    to_phrase: count / total
-                    for to_phrase, count in transitions.items()
+                    to_phrase: count / total for to_phrase, count in transitions.items()
                 }
 
         return normalized
@@ -483,10 +496,10 @@ class CompositionalValidator:
         from_phrases = list(grammar.keys())
         if not from_phrases:
             return {
-                'from_phrases': [],
-                'to_phrases': [],
-                'observed_counts': [],
-                'expected_counts': []
+                "from_phrases": [],
+                "to_phrases": [],
+                "observed_counts": [],
+                "expected_counts": [],
             }
 
         # Get all unique to-phrases
@@ -507,16 +520,13 @@ class CompositionalValidator:
         total_transitions = sum(sum(row) for row in observed_counts)
         expected_count_per_cell = total_transitions / (len(from_phrases) * len(to_phrases))
 
-        expected_counts = [
-            [expected_count_per_cell for _ in to_phrases]
-            for _ in from_phrases
-        ]
+        expected_counts = [[expected_count_per_cell for _ in to_phrases] for _ in from_phrases]
 
         return {
-            'from_phrases': from_phrases,
-            'to_phrases': to_phrases,
-            'observed_counts': [sum(row) for row in observed_counts],  # Marginal totals
-            'expected_counts': [sum(row) for row in expected_counts]   # Marginal totals
+            "from_phrases": from_phrases,
+            "to_phrases": to_phrases,
+            "observed_counts": [sum(row) for row in observed_counts],  # Marginal totals
+            "expected_counts": [sum(row) for row in expected_counts],  # Marginal totals
         }
 
     def _chi2_cdf(self, x: float, k: int) -> float:
@@ -526,7 +536,7 @@ class CompositionalValidator:
         if k <= 0:
             return 0.0
 
-        z = ((x / k) ** (1/3) - 1 + 2/(9*k)) / math.sqrt(2/(9*k))
+        z = ((x / k) ** (1 / 3) - 1 + 2 / (9 * k)) / math.sqrt(2 / (9 * k))
 
         # Approximate normal CDF
         if z > 0:
@@ -539,16 +549,16 @@ class CompositionalValidator:
 if __name__ == "__main__":
     # Test data
     test_grammar = {
-        'phrase1': {'phrase2': 10, 'phrase3': 5},
-        'phrase2': {'phrase4': 8, 'phrase1': 2},
-        'phrase3': {'phrase1': 3, 'phrase4': 7},
-        'phrase4': {'phrase1': 1}
+        "phrase1": {"phrase2": 10, "phrase3": 5},
+        "phrase2": {"phrase4": 8, "phrase1": 2},
+        "phrase3": {"phrase1": 3, "phrase4": 7},
+        "phrase4": {"phrase1": 1},
     }
 
     test_sequence = [
-        {'key': 'phrase1', 'position': 0},
-        {'key': 'phrase2', 'position': 1},
-        {'key': 'phrase4', 'position': 2}
+        {"key": "phrase1", "position": 0},
+        {"key": "phrase2", "position": 1},
+        {"key": "phrase4", "position": 2},
     ]
 
     # Create validator and test

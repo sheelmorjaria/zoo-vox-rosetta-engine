@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MetadataQuery:
     """Query for the vector space."""
+
     target_f0_hz: float
     target_duration_ms: float
     f0_tolerance_hz: float = 500.0
@@ -46,13 +47,14 @@ class MetadataQuery:
 
     # Scoring weights
     acoustic_weight: float = 1.0  # F0/duration matching
-    context_weight: float = 0.5   # Context preference
-    novelty_weight: float = 0.3   # Reward exploration
+    context_weight: float = 0.5  # Context preference
+    novelty_weight: float = 0.3  # Reward exploration
 
 
 @dataclass
 class PhraseCandidate:
     """A phrase from the database with metadata and scoring."""
+
     phrase_id: str
     audio_buffer: np.ndarray
     metadata: Dict[str, Any]
@@ -60,19 +62,19 @@ class PhraseCandidate:
 
     # Computed scores
     acoustic_score: float = 0.0  # Distance from target in vector space
-    context_score: float = 0.0   # Context preference match
-    novelty_score: float = 0.0   # Exploration bonus
-    total_score: float = 0.0     # Weighted combination
+    context_score: float = 0.0  # Context preference match
+    novelty_score: float = 0.0  # Exploration bonus
+    total_score: float = 0.0  # Weighted combination
 
     def __post_init__(self):
         """Extract acoustic features from metadata."""
-        self.f0_hz = self.metadata.get('mean_f0_hz', 0.0)
-        self.duration_ms = self.metadata.get('duration_ms', 0.0)
-        self.f0_range_hz = self.metadata.get('f0_range_hz', 0.0)
-        self.harmonicity = self.metadata.get('harmonicity', 0.0)
-        self.context = self.metadata.get('context', 'unknown')
-        self.cluster_id = self.metadata.get('cluster_id', -1)
-        self.species = self.metadata.get('species', 'unknown')
+        self.f0_hz = self.metadata.get("mean_f0_hz", 0.0)
+        self.duration_ms = self.metadata.get("duration_ms", 0.0)
+        self.f0_range_hz = self.metadata.get("f0_range_hz", 0.0)
+        self.harmonicity = self.metadata.get("harmonicity", 0.0)
+        self.context = self.metadata.get("context", "unknown")
+        self.cluster_id = self.metadata.get("cluster_id", -1)
+        self.species = self.metadata.get("species", "unknown")
 
 
 @dataclass
@@ -83,6 +85,7 @@ class SynthesisRecipe:
     Unlike persona-based synthesis (single buffer), this can combine
     multiple buffers to create "Ghost Words" in the void between clusters.
     """
+
     sources: List[Tuple[PhraseCandidate, float]]  # (candidate, weight)
     target_params: Dict[str, float]  # Interpolated target parameters
     synthesis_mode: str = "morph"  # morph, crossfade, alternate
@@ -123,7 +126,7 @@ class VectorSpaceQueryEngine:
     def load_phrase_database(self, db_path: str):
         """Load phrase metadata from JSON database."""
         try:
-            with open(db_path, 'r') as f:
+            with open(db_path, "r") as f:
                 json.load(f)
 
             # For now, create synthetic candidates
@@ -211,20 +214,20 @@ class VectorSpaceQueryEngine:
 
         for phrase_data in marmoset_phrases + bat_phrases:
             # Generate synthetic audio
-            f0 = phrase_data['mean_f0_hz']
+            f0 = phrase_data["mean_f0_hz"]
             audio = 0.5 * np.sin(2 * np.pi * f0 * t)
 
             # Add F0 range modulation
-            f0_range = phrase_data['f0_range_hz']
+            f0_range = phrase_data["f0_range_hz"]
             if f0_range > 100:
                 modulation = 0.3 * np.sin(2 * np.pi * 20 * t)
                 audio = 0.5 * np.sin(2 * np.pi * f0 * t + modulation)
 
             candidate = PhraseCandidate(
-                phrase_id=phrase_data['phrase_id'],
+                phrase_id=phrase_data["phrase_id"],
                 audio_buffer=audio,
                 metadata=phrase_data,
-                sample_rate=sample_rate
+                sample_rate=sample_rate,
             )
 
             self.phrases.append(candidate)
@@ -246,10 +249,7 @@ class VectorSpaceQueryEngine:
         logger.info(f"Cluster index: {list(self.cluster_index.keys())}")
 
     def query_nearest_metadata(
-        self,
-        query: MetadataQuery,
-        species: Optional[str] = None,
-        top_k: int = 5
+        self, query: MetadataQuery, species: Optional[str] = None, top_k: int = 5
     ) -> List[PhraseCandidate]:
         """
         Query the vector space for nearest neighbors.
@@ -287,9 +287,9 @@ class VectorSpaceQueryEngine:
 
             # Total score (weighted combination)
             phrase.total_score = (
-                query.acoustic_weight * phrase.acoustic_score +
-                phrase.context_score +
-                phrase.novelty_score
+                query.acoustic_weight * phrase.acoustic_score
+                + phrase.context_score
+                + phrase.novelty_score
             )
 
             candidates.append(phrase)
@@ -299,10 +299,7 @@ class VectorSpaceQueryEngine:
         return candidates[:top_k]
 
     def query_interpolation_targets(
-        self,
-        query: MetadataQuery,
-        num_sources: int = 2,
-        species: Optional[str] = None
+        self, query: MetadataQuery, num_sources: int = 2, species: Optional[str] = None
     ) -> SynthesisRecipe:
         """
         Query for interpolation targets.
@@ -313,9 +310,7 @@ class VectorSpaceQueryEngine:
         This enables "Ghost Word" synthesis - creating sounds that
         exist between clusters in the vector space.
         """
-        candidates = self.query_nearest_metadata(
-            query, species=species, top_k=num_sources * 2
-        )
+        candidates = self.query_nearest_metadata(query, species=species, top_k=num_sources * 2)
 
         # Select diverse sources for interpolation
         sources = []
@@ -333,7 +328,7 @@ class VectorSpaceQueryEngine:
 
         # Normalize weights
         total_weight = sum(w for _, w in sources)
-        sources = [(c, w/total_weight) for c, w in sources]
+        sources = [(c, w / total_weight) for c, w in sources]
 
         # Calculate target parameters (weighted average)
         target_f0 = sum(c.f0_hz * w for c, w in sources)
@@ -363,14 +358,14 @@ class VectorSpaceQueryEngine:
         return SynthesisRecipe(
             sources=sources,
             target_params={
-                'mean_f0_hz': target_f0,
-                'duration_ms': target_duration,
-                'f0_range_hz': target_f0_range,
+                "mean_f0_hz": target_f0,
+                "duration_ms": target_duration,
+                "f0_range_hz": target_f0_range,
             },
             synthesis_mode="morph",
             is_cross_persona=is_cross_persona,
             discovery_potential=discovery_potential,
-            reasoning=reasoning
+            reasoning=reasoning,
         )
 
 
@@ -391,7 +386,7 @@ class MetadataFirstSynthesizer:
         target_duration_ms: float,
         species: Optional[str] = None,
         preferred_contexts: Optional[List[str]] = None,
-        synthesis_duration_ms: float = 200.0
+        synthesis_duration_ms: float = 200.0,
     ) -> Tuple[np.ndarray, SynthesisRecipe]:
         """
         Synthesize by targeting acoustic coordinates.
@@ -424,7 +419,7 @@ class MetadataFirstSynthesizer:
         cluster_a_id: int,
         cluster_b_id: int,
         blend_ratio: float = 0.5,
-        species: Optional[str] = None
+        species: Optional[str] = None,
     ) -> Tuple[np.ndarray, SynthesisRecipe]:
         """
         Synthesize a "Ghost Word" - a sound in the void between two clusters.
@@ -446,42 +441,34 @@ class MetadataFirstSynthesizer:
         best_b = max(phrases_b, key=lambda p: p.harmonicity)
 
         # Create recipe
-        sources = [
-            (best_a, 1.0 - blend_ratio),
-            (best_b, blend_ratio)
-        ]
+        sources = [(best_a, 1.0 - blend_ratio), (best_b, blend_ratio)]
 
         # Calculate target (interpolated between clusters)
         target_f0 = best_a.f0_hz * (1 - blend_ratio) + best_b.f0_hz * blend_ratio
         target_duration = best_a.duration_ms * (1 - blend_ratio) + best_b.duration_ms * blend_ratio
 
         reasoning = (
-            f"Ghost word: Cluster {cluster_a_id} + Cluster {cluster_b_id} "
-            f"@ {blend_ratio:.1%} ratio"
+            f"Ghost word: Cluster {cluster_a_id} + Cluster {cluster_b_id} @ {blend_ratio:.1%} ratio"
         )
 
         recipe = SynthesisRecipe(
             sources=sources,
             target_params={
-                'mean_f0_hz': target_f0,
-                'duration_ms': target_duration,
-                'f0_range_hz': 0.0,  # Will be calculated
+                "mean_f0_hz": target_f0,
+                "duration_ms": target_duration,
+                "f0_range_hz": 0.0,  # Will be calculated
             },
             synthesis_mode="morph",
             is_cross_persona=True,
             discovery_potential=1.0,  # Maximum novelty
-            reasoning=reasoning
+            reasoning=reasoning,
         )
 
         audio = self._synthesize_from_recipe(recipe, 200.0)
 
         return audio, recipe
 
-    def _synthesize_from_recipe(
-        self,
-        recipe: SynthesisRecipe,
-        duration_ms: float
-    ) -> np.ndarray:
+    def _synthesize_from_recipe(self, recipe: SynthesisRecipe, duration_ms: float) -> np.ndarray:
         """Synthesize audio from a recipe (may use multiple sources)."""
 
         if len(recipe.sources) == 1:
@@ -490,7 +477,7 @@ class MetadataFirstSynthesizer:
             return self._granular_synthesize(
                 candidate.audio_buffer,
                 duration_ms,
-                pitch_shift=recipe.target_params['mean_f0_hz'] / candidate.f0_hz
+                pitch_shift=recipe.target_params["mean_f0_hz"] / candidate.f0_hz,
             )
         else:
             # Multi-source morphing
@@ -501,7 +488,7 @@ class MetadataFirstSynthesizer:
         source_buffer: np.ndarray,
         duration_ms: float,
         pitch_shift: float = 1.0,
-        grain_size_ms: float = 50.0
+        grain_size_ms: float = 50.0,
     ) -> np.ndarray:
         """Granular synthesis from single source."""
         grain_size = int(grain_size_ms * self.sample_rate / 1000)
@@ -517,7 +504,9 @@ class MetadataFirstSynthesizer:
             pos_frac = position - int(position)
 
             if pos_int + 1 < len(source_buffer):
-                sample = source_buffer[pos_int] * (1 - pos_frac) + source_buffer[pos_int + 1] * pos_frac
+                sample = (
+                    source_buffer[pos_int] * (1 - pos_frac) + source_buffer[pos_int + 1] * pos_frac
+                )
             else:
                 sample = source_buffer[pos_int]
 
@@ -530,11 +519,7 @@ class MetadataFirstSynthesizer:
 
         return output
 
-    def _morph_sources(
-        self,
-        recipe: SynthesisRecipe,
-        duration_ms: float
-    ) -> np.ndarray:
+    def _morph_sources(self, recipe: SynthesisRecipe, duration_ms: float) -> np.ndarray:
         """Morph between multiple source buffers."""
 
         grain_size_ms = 50.0
@@ -554,8 +539,8 @@ class MetadataFirstSynthesizer:
             grain_audio = self._granular_synthesize(
                 source.audio_buffer,
                 (grain_end - grain_start) * 1000 / self.sample_rate,
-                pitch_shift=recipe.target_params['mean_f0_hz'] / source.f0_hz,
-                grain_size_ms=grain_size_ms
+                pitch_shift=recipe.target_params["mean_f0_hz"] / source.f0_hz,
+                grain_size_ms=grain_size_ms,
             )
 
             # Mix with weight
@@ -575,12 +560,13 @@ class MetadataFirstSynthesizer:
 # Demo
 # ============================================================================
 
+
 def demonstrate_metadata_first_synthesis():
     """Demonstrate metadata-first synthesis advantages."""
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("METADATA-FIRST SYNTHESIS DEMONSTRATION")
-    print("="*80)
+    print("=" * 80)
 
     synthesizer = MetadataFirstSynthesizer()
 
@@ -592,7 +578,7 @@ def demonstrate_metadata_first_synthesis():
         target_f0_hz=7000.0,
         target_duration_ms=50.0,
         species="egyptian_bat",
-        synthesis_duration_ms=200.0
+        synthesis_duration_ms=200.0,
     )
 
     print(f"Recipe: {recipe.reasoning}")
@@ -610,10 +596,7 @@ def demonstrate_metadata_first_synthesis():
     print("Synthesizing sound between Bat Cluster 1 (Mid-FM) and Cluster 2 (Social)")
 
     audio, recipe = synthesizer.synthesize_ghost_word(
-        cluster_a_id=1,
-        cluster_b_id=2,
-        blend_ratio=0.5,
-        species="egyptian_bat"
+        cluster_a_id=1, cluster_b_id=2, blend_ratio=0.5, species="egyptian_bat"
     )
 
     print(f"Recipe: {recipe.reasoning}")
@@ -629,7 +612,7 @@ def demonstrate_metadata_first_synthesis():
         target_f0_hz=6500.0,
         target_duration_ms=75.0,
         # No species filter - let it find best acoustic match
-        synthesis_duration_ms=200.0
+        synthesis_duration_ms=200.0,
     )
 
     print(f"Recipe: {recipe.reasoning}")
@@ -638,7 +621,7 @@ def demonstrate_metadata_first_synthesis():
         print(f"  - {candidate.phrase_id} ({candidate.species})")
         print(f"    F0={candidate.f0_hz:.0f}Hz (target was 6500Hz)")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("\n🎯 KEY INSIGHT:")
     print("   Metadata-First enables interpolation BETWEEN personas,")
     print("   not just within them. This discovers 'Ghost Words' that")

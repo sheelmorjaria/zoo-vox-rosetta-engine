@@ -20,6 +20,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 
 try:
     import soundfile as sf
+
     HAS_SOUNDFILE = True
 except ImportError:
     HAS_SOUNDFILE = False
@@ -48,29 +49,29 @@ def analyze_corvid_timbre(filepath, duration_sec=5):
         overall_modality = analyzer._detect_overall_modality(audio)
 
         return {
-            'filename': Path(filepath).name,
-            'duration_sec': len(audio) / sr,
-            'sample_rate': sr,
-            'overall_modality': overall_modality.name,
+            "filename": Path(filepath).name,
+            "duration_sec": len(audio) / sr,
+            "sample_rate": sr,
+            "overall_modality": overall_modality.name,
             # Timbre features (Category 1, Item 1)
-            'spectral_centroid_hz': features.get('spectral_centroid_hz', 0),
-            'spectral_slope': features.get('spectral_slope', 0),
-            'spectral_bandwidth_hz': features.get('spectral_bandwidth_hz', 0),
-            'spectral_rolloff_hz': features.get('spectral_rolloff_hz', 0),
+            "spectral_centroid_hz": features.get("spectral_centroid_hz", 0),
+            "spectral_slope": features.get("spectral_slope", 0),
+            "spectral_bandwidth_hz": features.get("spectral_bandwidth_hz", 0),
+            "spectral_rolloff_hz": features.get("spectral_rolloff_hz", 0),
             # Other features for context
-            'zcr': features.get('zcr', 0),
-            'spectral_flatness': features.get('spectral_flatness', 0),
-            'envelope_cv': features.get('envelope_cv', 0),
+            "zcr": features.get("zcr", 0),
+            "spectral_flatness": features.get("spectral_flatness", 0),
+            "envelope_cv": features.get("envelope_cv", 0),
         }
     except Exception as e:
-        return {'error': str(e), 'filename': Path(filepath).name}
+        return {"error": str(e), "filename": Path(filepath).name}
 
 
 def compare_species_timbre(species1_name, species1_dir, species2_name, species2_dir, num_files=30):
     """Compare timbre features between two corvid species."""
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print(f"TIMBRE COMPARISON: {species1_name} vs {species2_name}")
-    print(f"{'='*90}\n")
+    print(f"{'=' * 90}\n")
 
     # Load species 1
     all_files1 = sorted(list(species1_dir.glob("*.mp3")))
@@ -96,7 +97,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
     results1 = []
     for filepath in test_files1:
         result = analyze_corvid_timbre(filepath, duration_sec=5)
-        if 'error' not in result:
+        if "error" not in result:
             results1.append(result)
 
     # Analyze species 2
@@ -104,7 +105,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
     results2 = []
     for filepath in test_files2:
         result = analyze_corvid_timbre(filepath, duration_sec=5)
-        if 'error' not in result:
+        if "error" not in result:
             results2.append(result)
 
     if not results1 or not results2:
@@ -112,18 +113,20 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
         return
 
     # Comparison statistics
-    print(f"\n{'='*90}")
+    print(f"\n{'=' * 90}")
     print("TIMBRE FEATURE STATISTICS")
-    print(f"{'='*90}\n")
+    print(f"{'=' * 90}\n")
 
     timbre_features = [
-        'spectral_centroid_hz',
-        'spectral_slope',
-        'spectral_bandwidth_hz',
-        'spectral_rolloff_hz',
+        "spectral_centroid_hz",
+        "spectral_slope",
+        "spectral_bandwidth_hz",
+        "spectral_rolloff_hz",
     ]
 
-    print(f"{'Feature':<25} {species1_name:<20} {species2_name:<20} {'p-value':<12} {'Significant?':<12}")
+    print(
+        f"{'Feature':<25} {species1_name:<20} {species2_name:<20} {'p-value':<12} {'Significant?':<12}"
+    )
     print("-" * 90)
 
     significant_features = []
@@ -138,7 +141,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
         std2 = np.std(values2)
 
         # Statistical test (Mann-Whitney U test for non-normal distributions)
-        statistic, p_value = stats.mannwhitneyu(values1, values2, alternative='two-sided')
+        statistic, p_value = stats.mannwhitneyu(values1, values2, alternative="two-sided")
 
         # Significance threshold
         is_significant = p_value < 0.05
@@ -147,17 +150,23 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
 
         sig_marker = "✅ YES" if is_significant else "❌ NO"
 
-        print(f"{feature:<25} {mean1:>8.2f} ± {std1:<6.2f} {mean2:>8.2f} ± {std2:<6.2f} {p_value:<12.4f} {sig_marker:<12}")
+        print(
+            f"{feature:<25} {mean1:>8.2f} ± {std1:<6.2f} {mean2:>8.2f} ± {std2:<6.2f} {p_value:<12.4f} {sig_marker:<12}"
+        )
 
     print("\n" + "=" * 90)
     print("SUMMARY")
     print("=" * 90)
 
     if significant_features:
-        print(f"\n✅ {len(significant_features)} timbre features significantly different (p < 0.05):")
+        print(
+            f"\n✅ {len(significant_features)} timbre features significantly different (p < 0.05):"
+        )
         for feature, p_value in significant_features:
             print(f"  - {feature}: p = {p_value:.4f}")
-        print(f"\n✅ TIMBRE FEATURES CAN DISTINGUISH {species1_name.upper()} FROM {species2_name.upper()}")
+        print(
+            f"\n✅ TIMBRE FEATURES CAN DISTINGUISH {species1_name.upper()} FROM {species2_name.upper()}"
+        )
     else:
         print("\n⚠️  No timbre features significantly different")
         print("⚠️  TIMBRE FEATURES CANNOT DISTINGUISH THESE SPECIES")
@@ -168,7 +177,7 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
         values1 = [r[best_feature] for r in results1]
         values2 = [r[best_feature] for r in results2]
 
-        pooled_std = np.sqrt((np.std(values1)**2 + np.std(values2)**2) / 2)
+        pooled_std = np.sqrt((np.std(values1) ** 2 + np.std(values2) ** 2) / 2)
         cohens_d = abs(np.mean(values1) - np.mean(values2)) / pooled_std if pooled_std > 0 else 0
 
         print(f"\n📊 Effect size (Cohen's d) for {best_feature}: {cohens_d:.3f}")
@@ -186,12 +195,12 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
 
     modality_counts1 = {}
     for r in results1:
-        m = r['overall_modality']
+        m = r["overall_modality"]
         modality_counts1[m] = modality_counts1.get(m, 0) + 1
 
     modality_counts2 = {}
     for r in results2:
-        m = r['overall_modality']
+        m = r["overall_modality"]
         modality_counts2[m] = modality_counts2.get(m, 0) + 1
 
     print(f"\n  {species1_name}:")
@@ -225,11 +234,7 @@ def main():
 
     if common_raven_dir.exists() and fish_crow_dir.exists():
         compare_species_timbre(
-            "Common Raven",
-            common_raven_dir,
-            "Fish Crow",
-            fish_crow_dir,
-            num_files=30
+            "Common Raven", common_raven_dir, "Fish Crow", fish_crow_dir, num_files=30
         )
     else:
         print("⚠️  Species directories not found")

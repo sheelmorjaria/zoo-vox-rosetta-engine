@@ -59,6 +59,7 @@ try:
         RainIntensity,
         TemperatureClassification,
     )
+
     RUST_BINDINGS_AVAILABLE = True
 except ImportError as e:
     IMPORT_ERROR = str(e)
@@ -78,12 +79,13 @@ class TestVisualRecorderIntegration(unittest.TestCase):
             codec="mp4v",
             compression_quality=75,
             max_queue_size=100,
-            recording_dir=self.temp_dir
+            recording_dir=self.temp_dir,
         )
 
     def tearDown(self):
         """Clean up test fixtures"""
         import shutil
+
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
@@ -109,7 +111,7 @@ class TestVisualRecorderIntegration(unittest.TestCase):
             codec="h264",
             compression_quality=90,
             max_queue_size=200,
-            recording_dir=self.temp_dir
+            recording_dir=self.temp_dir,
         )
 
         self.assertEqual(custom_config.camera_id, 1)
@@ -143,7 +145,7 @@ class TestVisualRecorderIntegration(unittest.TestCase):
             phrase_key="test_phrase",
             context="test_context",
             individual_id="test_individual",
-            frame_index=0
+            frame_index=0,
         )
         recorder.register_audio_event(audio_event)
 
@@ -192,7 +194,7 @@ class TestVisualRecorderIntegration(unittest.TestCase):
             phrase_key="F0_6300",
             context="feeding",
             individual_id="marmoset_001",
-            frame_index=100
+            frame_index=100,
         )
 
         self.assertEqual(event.timestamp_ns, 1234567890000000)
@@ -271,17 +273,17 @@ class TestSynthesisIntegration(unittest.TestCase):
 
         # Synthesize a phrase with specific parameters
         audio = synthesizer.synthesize_phrase(
-            f0_base=6000.0,      # Base frequency in Hz
-            duration_ms=100.0,   # 100ms duration
-            attack_ms=5.0,       # 5ms attack
-            decay_ms=10.0,       # 10ms decay
-            sustain_level=0.8,   # 80% sustain
-            vibrato_rate_hz=6.0, # 6 Hz vibrato
+            f0_base=6000.0,  # Base frequency in Hz
+            duration_ms=100.0,  # 100ms duration
+            attack_ms=5.0,  # 5ms attack
+            decay_ms=10.0,  # 10ms decay
+            sustain_level=0.8,  # 80% sustain
+            vibrato_rate_hz=6.0,  # 6 Hz vibrato
             vibrato_depth_cents=25.0,  # 25 cents vibrato depth
             jitter_amount=0.001,  # Small jitter
             shimmer_amount=0.001,  # Small shimmer
-            spectral_tilt=-6.0,   # -6 dB/octave tilt
-            hnr_db=30.0          # 30 dB harmonics-to-noise ratio
+            spectral_tilt=-6.0,  # -6 dB/octave tilt
+            hnr_db=30.0,  # 30 dB harmonics-to-noise ratio
         )
 
         # Verify audio was generated
@@ -309,7 +311,7 @@ class TestSynthesisIntegration(unittest.TestCase):
             jitter_amount=0.0,
             shimmer_amount=0.0,
             spectral_tilt=0.0,
-            hnr_db=20.0
+            hnr_db=20.0,
         )
         # Should either be empty or minimal samples
         self.assertIsNotNone(audio)
@@ -344,20 +346,23 @@ class TestSynthesisIntegration(unittest.TestCase):
             jitter_amount=0.0,
             shimmer_amount=0.0,
             spectral_tilt=-3.0,
-            hnr_db=25.0
+            hnr_db=25.0,
         )
 
         # Convert to numpy for easier analysis
         import numpy as np
+
         audio_array = np.array(audio)
 
         # Check audio range (should be roughly between -1.0 and 1.0)
-        self.assertLess(np.max(np.abs(audio_array)), 10.0,  # Allow some headroom
-                        "Audio output should be in reasonable range")
+        self.assertLess(
+            np.max(np.abs(audio_array)),
+            10.0,  # Allow some headroom
+            "Audio output should be in reasonable range",
+        )
 
         # Check that audio isn't all zeros
-        self.assertGreater(np.std(audio_array), 0.001,
-                          "Audio should have non-zero variance")
+        self.assertGreater(np.std(audio_array), 0.001, "Audio should have non-zero variance")
 
 
 @unittest.skipIf(not RUST_BINDINGS_AVAILABLE, f"Rust bindings not available: {IMPORT_ERROR}")
@@ -366,25 +371,26 @@ class TestMemorySafety(unittest.TestCase):
 
     def test_visual_recorder_cleanup(self):
         """Test that resources are properly cleaned up"""
-        recorder = VisualRecorder(VisualRecorderConfig(
-            camera_id=0,
-            resolution=(640, 480),
-            fps=30.0,
-            recording_dir=tempfile.mkdtemp()
-        ))
+        recorder = VisualRecorder(
+            VisualRecorderConfig(
+                camera_id=0, resolution=(640, 480), fps=30.0, recording_dir=tempfile.mkdtemp()
+            )
+        )
 
         # Start and stop multiple sessions
         for i in range(10):
             session_id = f"cleanup_test_{i}"
             recorder.start_session(session_id)
-            recorder.register_audio_event(AudioSyncEvent(
-                timestamp_ns=time.time_ns(),
-                event_type="PhraseStart",
-                phrase_key="test",
-                context="test",
-                individual_id="test",
-                frame_index=0
-            ))
+            recorder.register_audio_event(
+                AudioSyncEvent(
+                    timestamp_ns=time.time_ns(),
+                    event_type="PhraseStart",
+                    phrase_key="test",
+                    context="test",
+                    individual_id="test",
+                    frame_index=0,
+                )
+            )
             recorder.stop_session()
 
         # Delete recorder (should trigger Rust cleanup)
@@ -409,7 +415,7 @@ class TestMemorySafety(unittest.TestCase):
             jitter_amount=0.001,
             shimmer_amount=0.001,
             spectral_tilt=-6.0,
-            hnr_db=25.0
+            hnr_db=25.0,
         )
 
         # Should have ~48000 samples
@@ -423,12 +429,11 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_visual_recorder_double_start(self):
         """Test that starting a session while recording is handled"""
-        recorder = VisualRecorder(VisualRecorderConfig(
-            camera_id=0,
-            resolution=(640, 480),
-            fps=30.0,
-            recording_dir=tempfile.mkdtemp()
-        ))
+        recorder = VisualRecorder(
+            VisualRecorderConfig(
+                camera_id=0, resolution=(640, 480), fps=30.0, recording_dir=tempfile.mkdtemp()
+            )
+        )
 
         # Start first session
         recorder.start_session("first_session")
@@ -444,12 +449,11 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_visual_recorder_stop_without_start(self):
         """Test stopping when not recording"""
-        recorder = VisualRecorder(VisualRecorderConfig(
-            camera_id=0,
-            resolution=(640, 480),
-            fps=30.0,
-            recording_dir=tempfile.mkdtemp()
-        ))
+        recorder = VisualRecorder(
+            VisualRecorderConfig(
+                camera_id=0, resolution=(640, 480), fps=30.0, recording_dir=tempfile.mkdtemp()
+            )
+        )
 
         # Stopping without starting should handle gracefully
         try:
@@ -475,12 +479,13 @@ class TestSafetyBoundaryReal(unittest.TestCase):
         """Set up test fixtures"""
         # Use unique endpoints for each test to avoid conflicts
         import uuid
+
         test_id = str(uuid.uuid4())[:8]
         self.config = PeerControllerConfig(
             heartbeat_endpoint=f"ipc:///tmp/test_safety_{test_id}.ipc",
             heartbeat_timeout_ms=100,  # 100ms timeout
             poll_interval_ms=10,
-            verbose_logging=False
+            verbose_logging=False,
         )
 
     def test_heartbeat_timeout_detection(self):
@@ -501,6 +506,7 @@ class TestSafetyBoundaryReal(unittest.TestCase):
 
         # After timeout with no heartbeats, still in Passthrough
         import time
+
         time.sleep(0.15)  # Sleep for 150ms > 100ms timeout
         mode = controller.tick()
         self.assertTrue(mode.is_passthrough(), "Should be in Passthrough after timeout")
@@ -529,7 +535,7 @@ class TestSafetyBoundaryReal(unittest.TestCase):
         short_timeout_config = PeerControllerConfig(
             heartbeat_timeout_ms=10,  # 10ms timeout
             poll_interval_ms=1,
-            verbose_logging=False
+            verbose_logging=False,
         )
         controller = PeerController(short_timeout_config)
         self.assertIsNotNone(controller)
@@ -539,7 +545,7 @@ class TestSafetyBoundaryReal(unittest.TestCase):
         long_timeout_config = PeerControllerConfig(
             heartbeat_timeout_ms=10000,  # 10 second timeout
             poll_interval_ms=100,
-            verbose_logging=False
+            verbose_logging=False,
         )
         controller = PeerController(long_timeout_config)
         self.assertIsNotNone(controller)
@@ -556,42 +562,42 @@ class TestSafetyBoundaryReal(unittest.TestCase):
         """
         # Test Normal state
         normal_state = ThermalState.normal()
-        self.assertFalse(normal_state.requires_throttling(),
-                        "Normal state should not require throttling")
-        self.assertFalse(normal_state.is_critical(),
-                        "Normal state should not be critical")
+        self.assertFalse(
+            normal_state.requires_throttling(), "Normal state should not require throttling"
+        )
+        self.assertFalse(normal_state.is_critical(), "Normal state should not be critical")
 
         # Test Warning state
         warning_state = ThermalState.warning()
-        self.assertFalse(warning_state.requires_throttling(),
-                        "Warning state should not require throttling")
-        self.assertFalse(warning_state.is_critical(),
-                        "Warning state should not be critical")
+        self.assertFalse(
+            warning_state.requires_throttling(), "Warning state should not require throttling"
+        )
+        self.assertFalse(warning_state.is_critical(), "Warning state should not be critical")
 
         # Test Throttling state - should trigger throttling
         throttling_state = ThermalState.throttling()
-        self.assertTrue(throttling_state.requires_throttling(),
-                       "Throttling state should require throttling")
-        self.assertFalse(throttling_state.is_critical(),
-                        "Throttling state should not be critical")
+        self.assertTrue(
+            throttling_state.requires_throttling(), "Throttling state should require throttling"
+        )
+        self.assertFalse(throttling_state.is_critical(), "Throttling state should not be critical")
 
         # Test Critical state - should trigger throttling AND is critical
         critical_state = ThermalState.critical()
-        self.assertTrue(critical_state.requires_throttling(),
-                       "Critical state should require throttling")
-        self.assertTrue(critical_state.is_critical(),
-                       "Critical state should be critical")
+        self.assertTrue(
+            critical_state.requires_throttling(), "Critical state should require throttling"
+        )
+        self.assertTrue(critical_state.is_critical(), "Critical state should be critical")
 
         # Verify that in critical conditions, synthesis would be blocked
         # (This simulates the MasterController's thermal constraint logic)
         synthesis_allowed = not critical_state.requires_throttling()
-        self.assertFalse(synthesis_allowed,
-                        "Synthesis should be blocked in critical thermal state")
+        self.assertFalse(synthesis_allowed, "Synthesis should be blocked in critical thermal state")
 
         # Verify that in normal conditions, synthesis is allowed
         synthesis_allowed_normal = not normal_state.requires_throttling()
-        self.assertTrue(synthesis_allowed_normal,
-                       "Synthesis should be allowed in normal thermal state")
+        self.assertTrue(
+            synthesis_allowed_normal, "Synthesis should be allowed in normal thermal state"
+        )
 
 
 @unittest.skipIf(not RUST_BINDINGS_AVAILABLE, f"Rust bindings not available: {IMPORT_ERROR}")
@@ -609,7 +615,7 @@ class TestPeerControllerSafety(unittest.TestCase):
             heartbeat_endpoint="ipc:///tmp/test_heartbeat.ipc",
             heartbeat_timeout_ms=100,  # 100ms timeout
             poll_interval_ms=10,
-            verbose_logging=False
+            verbose_logging=False,
         )
 
     def test_peer_controller_creation(self):
@@ -648,7 +654,7 @@ class TestPeerControllerSafety(unittest.TestCase):
             heartbeat_endpoint="ipc:///tmp/custom.ipc",
             heartbeat_timeout_ms=200,
             poll_interval_ms=20,
-            verbose_logging=True
+            verbose_logging=True,
         )
         self.assertEqual(custom_config.heartbeat_timeout_ms, 200)
         self.assertEqual(custom_config.poll_interval_ms, 20)
@@ -690,7 +696,7 @@ class TestEnvironmentalMonitor(unittest.TestCase):
             humidity_percent=60.0,
             light_lux=500.0,
             rain_intensity_mm_h=0.0,
-            wind_speed_m_s=2.0
+            wind_speed_m_s=2.0,
         )
         self.assertEqual(conditions.temperature_celsius, 25.0)
         self.assertEqual(conditions.rain_intensity_mm_h, 0.0)
@@ -735,8 +741,7 @@ class TestEnvironmentalMonitor(unittest.TestCase):
         """Test session viability assessment"""
         # Viable conditions
         viable_conditions = EnvironmentalConditions(
-            temperature_celsius=22.0,
-            rain_intensity_mm_h=0.0
+            temperature_celsius=22.0, rain_intensity_mm_h=0.0
         )
         viability = viable_conditions.assess_viability()
         # Check string representation since __eq__ compares by discriminant
@@ -745,7 +750,7 @@ class TestEnvironmentalMonitor(unittest.TestCase):
         # Infeasible conditions (heavy rain)
         storm_conditions = EnvironmentalConditions(
             temperature_celsius=22.0,
-            rain_intensity_mm_h=60.0  # Storm
+            rain_intensity_mm_h=60.0,  # Storm
         )
         viability = storm_conditions.assess_viability()
         self.assertEqual(str(viability), "Infeasible")
@@ -770,25 +775,23 @@ class TestEnvironmentalMonitor(unittest.TestCase):
         storm_conditions = EnvironmentalConditions(
             temperature_celsius=22.0,
             rain_intensity_mm_h=60.0,  # Storm
-            light_lux=500.0
+            light_lux=500.0,
         )
         monitor.set_conditions(storm_conditions)
 
         # Should now force passthrough
-        self.assertTrue(monitor.forces_passthrough(),
-                       "Heavy rain should force Passthrough mode")
+        self.assertTrue(monitor.forces_passthrough(), "Heavy rain should force Passthrough mode")
 
         # Set mild conditions
         mild_conditions = EnvironmentalConditions(
-            temperature_celsius=22.0,
-            rain_intensity_mm_h=0.0,
-            light_lux=500.0
+            temperature_celsius=22.0, rain_intensity_mm_h=0.0, light_lux=500.0
         )
         monitor.set_conditions(mild_conditions)
 
         # Should not force passthrough anymore
-        self.assertFalse(monitor.forces_passthrough(),
-                        "Mild conditions should not force Passthrough mode")
+        self.assertFalse(
+            monitor.forces_passthrough(), "Mild conditions should not force Passthrough mode"
+        )
 
     def test_environmental_monitor_poll_sensors(self):
         """Test polling sensors from Python"""
@@ -808,9 +811,9 @@ class TestEnvironmentalMonitor(unittest.TestCase):
 
 def print_test_summary():
     """Print summary of what was tested and what requires Rust bindings"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("RUST-PYTHON INTEGRATION TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     if RUST_BINDINGS_AVAILABLE:
         print("\n✅ Rust PyO3 bindings are AVAILABLE")
@@ -830,9 +833,9 @@ def print_test_summary():
         print("     cd technical_architecture && cargo build --release --features python-bindings")
         print("  2. Ensure the technical_architecture package is importable")
 
-    print("\n" + "-"*70)
+    print("\n" + "-" * 70)
     print("SAFETY-CRITICAL TESTS:")
-    print("-"*70)
+    print("-" * 70)
     print("\n✅ Implemented (PeerController PyO3 bindings):")
     print("  - PeerController creation and configuration")
     print("  - OperationMode enum (Passthrough/Interactive)")
@@ -849,7 +852,7 @@ def print_test_summary():
     print("")
     print("Note: PeerController is exposed but full heartbeat integration")
     print("      requires ZeroMQ IPC setup for testing.")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":

@@ -54,6 +54,7 @@ from typing import Any, Dict, List, Optional
 try:
     import flatbuffers
     from flatbuffers import Builder
+
     FLATBUFFERS_AVAILABLE = True
 except ImportError:
     FLATBUFFERS_AVAILABLE = False
@@ -62,6 +63,7 @@ except ImportError:
 
 class ContextType(Enum):
     """Context types for provenance tracking"""
+
     EXTRACTION = 1
     ANALYSIS = 2
     SYNTHESIS = 3
@@ -100,13 +102,13 @@ class SynthesisParams:
     def set_param(self, param: int, value: int):
         """Set a parameter in the synthesis params"""
         # Use 2 bits per parameter (4 possible values)
-        shift = (param * 2)
+        shift = param * 2
         mask = 0b11 << shift
         self.value = (self.value & ~mask) | ((value & 0b11) << shift)
 
     def get_param(self, param: int) -> int:
         """Get a parameter value from synthesis params"""
-        shift = (param * 2)
+        shift = param * 2
         mask = 0b11 << shift
         return (self.value & mask) >> shift
 
@@ -117,6 +119,7 @@ class SynthesisParams:
 @dataclass
 class TraceEntry:
     """Provenance trace entry (64 bytes)"""
+
     timestamp: int  # 8 bytes: Unix timestamp in milliseconds
     context_type: int  # 1 byte: ContextType enum
     decision_vector: int  # 4 bytes: DecisionVector
@@ -135,35 +138,36 @@ class TraceEntry:
         # Pack first 54 bytes: timestamp(8) + context_type(1) + decision_vector(4) +
         # parent_trace_id(8) + synthesis_params(4) + session_id(8) + padding(14)
         first_54 = struct.pack(
-            'Q B I Q I Q 14x',
-            self.timestamp,        # 8 bytes
-            self.context_type,     # 1 byte
+            "Q B I Q I Q 14x",
+            self.timestamp,  # 8 bytes
+            self.context_type,  # 1 byte
             self.decision_vector,  # 4 bytes
             self.parent_trace_id,  # 8 bytes
-            self.synthesis_params, # 4 bytes
-            self.session_id        # 8 bytes + 14 padding = 54 total
+            self.synthesis_params,  # 4 bytes
+            self.session_id,  # 8 bytes + 14 padding = 54 total
         )
 
         # Calculate checksum for first 54 bytes
         checksum = self._calculate_checksum(first_54)
 
         # Pack: first_54(54) + checksum(4) + padding(6) = exactly 64 bytes
-        packed = first_54 + struct.pack('I', checksum) + b'\x00' * 6
+        packed = first_54 + struct.pack("I", checksum) + b"\x00" * 6
 
         return packed
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> 'TraceEntry':
+    def from_bytes(cls, data: bytes) -> "TraceEntry":
         """Create TraceEntry from 64-byte binary data"""
         if len(data) != 64:
             raise ValueError(f"Expected 64 bytes, got {len(data)}")
 
         # Unpack first 54 bytes (all data except checksum and padding)
-        timestamp, context_type, decision_vector, parent_trace_id, \
-        synthesis_params, session_id = struct.unpack('Q B I Q I Q 14x', data[:54])
+        timestamp, context_type, decision_vector, parent_trace_id, synthesis_params, session_id = (
+            struct.unpack("Q B I Q I Q 14x", data[:54])
+        )
 
         # Extract checksum from bytes 54-58 (positions 54-58 in data)
-        checksum = struct.unpack('I', data[54:58])[0]
+        checksum = struct.unpack("I", data[54:58])[0]
 
         return cls(
             timestamp=timestamp,
@@ -173,7 +177,7 @@ class TraceEntry:
             parent_trace_id=parent_trace_id,
             session_id=session_id,
             checksum=checksum,
-            padding=0
+            padding=0,
         )
 
     def _calculate_checksum(self, data: bytes) -> int:
@@ -184,13 +188,13 @@ class TraceEntry:
         """Validate checksum"""
         # Pack first 54 bytes - same logic as to_bytes() but without checksum field
         first_54 = struct.pack(
-            'Q B I Q I Q 14x',
+            "Q B I Q I Q 14x",
             self.timestamp,
             self.context_type,
             self.decision_vector,
             self.parent_trace_id,
             self.synthesis_params,
-            self.session_id
+            self.session_id,
         )
 
         # Calculate checksum for first 54 bytes
@@ -249,11 +253,14 @@ class TraceManager:
         self.trace_counter = 0
         self._lock = threading.Lock()
 
-    def create_trace(self, context_type: ContextType,
-                    decision_vector: DecisionVector,
-                    synthesis_params: SynthesisParams,
-                    parent_trace_id: int = 0,
-                    session_id: int = 0) -> int:
+    def create_trace(
+        self,
+        context_type: ContextType,
+        decision_vector: DecisionVector,
+        synthesis_params: SynthesisParams,
+        parent_trace_id: int = 0,
+        session_id: int = 0,
+    ) -> int:
         """Create a new trace entry"""
         with self._lock:
             self.trace_counter += 1
@@ -267,7 +274,7 @@ class TraceManager:
                 parent_trace_id=parent_trace_id,
                 session_id=session_id or trace_id,
                 checksum=0,  # Will be calculated in to_bytes()
-                padding=0
+                padding=0,
             )
 
             # Store active trace
@@ -306,14 +313,21 @@ class TraceManager:
         """Get trace manager statistics"""
         with self._lock:
             return {
-                'active_traces': len(self.active_traces),
-                'total_traces': self.trace_counter,
-                'hierarchy_depth': self._calculate_depth(),
-                'root_traces': len([tid for tid, children in self.trace_hierarchy.items() if tid in self.active_traces and not children])
+                "active_traces": len(self.active_traces),
+                "total_traces": self.trace_counter,
+                "hierarchy_depth": self._calculate_depth(),
+                "root_traces": len(
+                    [
+                        tid
+                        for tid, children in self.trace_hierarchy.items()
+                        if tid in self.active_traces and not children
+                    ]
+                ),
             }
 
     def _calculate_depth(self) -> int:
         """Calculate maximum hierarchy depth"""
+
         def get_depth(trace_id: int, depth: int = 0) -> int:
             children = self.trace_hierarchy.get(trace_id, [])
             if not children:
@@ -377,10 +391,10 @@ class PerformanceLogger:
         """Get buffer statistics"""
         with self._lock:
             return {
-                'buffer_size': len(self.buffer),
-                'buffer_capacity': self.buffer_size,
-                'allocations_enabled': self.allocation_tracking,
-                'gc_disabled': self.gc_disable_count > 0
+                "buffer_size": len(self.buffer),
+                "buffer_capacity": self.buffer_size,
+                "allocations_enabled": self.allocation_tracking,
+                "gc_disabled": self.gc_disable_count > 0,
             }
 
 
@@ -403,7 +417,7 @@ class StorageManager:
             filename = f"provenance_{timestamp}.bin"
             filepath = self.base_path / filename
 
-            self.current_file = open(filepath, 'ab+')  # Append binary mode
+            self.current_file = open(filepath, "ab+")  # Append binary mode
             self.current_file_size = 0
 
             # Enable file locking for concurrent access
@@ -446,7 +460,7 @@ class StorageManager:
                 self.write_entry(entry)
         else:
             # Write entire batch at once
-            batch_data = b''.join(entries)
+            batch_data = b"".join(entries)
             self.current_file.write(batch_data)
             self.current_file.flush()
             self.current_file_size += batch_size
@@ -472,17 +486,18 @@ class StorageManager:
             total_size = sum(f.stat().st_size for f in files)
 
             return {
-                'current_file_size': self.current_file_size,
-                'max_file_size': self.max_file_size,
-                'total_files': len(files),
-                'total_size_bytes': total_size,
-                'total_size_mb': total_size / (1024 * 1024)
+                "current_file_size": self.current_file_size,
+                "max_file_size": self.max_file_size,
+                "total_files": len(files),
+                "total_size_bytes": total_size,
+                "total_size_mb": total_size / (1024 * 1024),
             }
 
     def cleanup_old_files(self, keep_files: int = 10):
         """Clean up old files, keeping only the most recent"""
-        files = sorted(self.base_path.glob("provenance_*.bin"),
-                      key=lambda x: x.stat().st_mtime, reverse=True)
+        files = sorted(
+            self.base_path.glob("provenance_*.bin"), key=lambda x: x.stat().st_mtime, reverse=True
+        )
 
         for old_file in files[keep_files:]:
             try:
@@ -494,8 +509,9 @@ class StorageManager:
 class ProvenanceTracer:
     """Main provenance tracking system"""
 
-    def __init__(self, storage_path: str = "./provenance_data",
-                 enable_high_speed_mode: bool = True):
+    def __init__(
+        self, storage_path: str = "./provenance_data", enable_high_speed_mode: bool = True
+    ):
         self.logger = logging.getLogger(__name__)
 
         # Initialize components
@@ -537,14 +553,16 @@ class ProvenanceTracer:
         self.storage_manager.close_current_file()
         self.logger.info("Provenance tracer stopped")
 
-    def create_trace(self, context_type: ContextType,
-                    decision_vector: DecisionVector,
-                    synthesis_params: SynthesisParams,
-                    parent_trace_id: int = 0) -> int:
+    def create_trace(
+        self,
+        context_type: ContextType,
+        decision_vector: DecisionVector,
+        synthesis_params: SynthesisParams,
+        parent_trace_id: int = 0,
+    ) -> int:
         """Create and log a new trace"""
         trace_id = self.trace_manager.create_trace(
-            context_type, decision_vector, synthesis_params,
-            parent_trace_id, self.session_id
+            context_type, decision_vector, synthesis_params, parent_trace_id, self.session_id
         )
 
         # Get the created entry and log it
@@ -554,15 +572,15 @@ class ProvenanceTracer:
 
         return trace_id
 
-    def create_child_trace(self, parent_trace_id: int,
-                          context_type: ContextType,
-                          decision_vector: DecisionVector,
-                          synthesis_params: SynthesisParams) -> int:
+    def create_child_trace(
+        self,
+        parent_trace_id: int,
+        context_type: ContextType,
+        decision_vector: DecisionVector,
+        synthesis_params: SynthesisParams,
+    ) -> int:
         """Create a child trace under a parent"""
-        return self.create_trace(
-            context_type, decision_vector, synthesis_params,
-            parent_trace_id
-        )
+        return self.create_trace(context_type, decision_vector, synthesis_params, parent_trace_id)
 
     def complete_trace(self, trace_id: int) -> bool:
         """Mark a trace as complete"""
@@ -583,10 +601,13 @@ class ProvenanceTracer:
         if entries:
             self.storage_manager.write_batch(entries)
 
-    def query_traces(self, context_type: Optional[ContextType] = None,
-                     start_time: Optional[int] = None,
-                     end_time: Optional[int] = None,
-                     session_id: Optional[int] = None) -> List[TraceEntry]:
+    def query_traces(
+        self,
+        context_type: Optional[ContextType] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        session_id: Optional[int] = None,
+    ) -> List[TraceEntry]:
         """Query traces by various criteria"""
         # This is a simplified implementation
         # In practice, you'd have an indexing system for efficient queries
@@ -609,37 +630,39 @@ class ProvenanceTracer:
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get comprehensive performance statistics"""
         return {
-            'trace_manager': self.trace_manager.get_trace_stats(),
-            'performance_logger': self.performance_logger.get_buffer_stats(),
-            'storage_manager': self.storage_manager.get_storage_stats(),
-            'high_speed_mode': self.enable_high_speed_mode,
-            'running': self.running
+            "trace_manager": self.trace_manager.get_trace_stats(),
+            "performance_logger": self.performance_logger.get_buffer_stats(),
+            "storage_manager": self.storage_manager.get_storage_stats(),
+            "high_speed_mode": self.enable_high_speed_mode,
+            "running": self.running,
         }
 
-    def export_traces(self, filepath: str, format: str = 'json'):
+    def export_traces(self, filepath: str, format: str = "json"):
         """Export traces to file"""
         traces = self.query_traces()
 
-        if format.lower() == 'json':
+        if format.lower() == "json":
             # Convert to dictionary format for JSON export
             trace_dicts = []
             for trace in traces:
-                trace_dicts.append({
-                    'timestamp': trace.timestamp,
-                    'context_type': trace.context_type,
-                    'decision_vector': trace.decision_vector,
-                    'synthesis_params': trace.synthesis_params,
-                    'parent_trace_id': trace.parent_trace_id,
-                    'session_id': trace.session_id,
-                    'checksum': trace.checksum
-                })
+                trace_dicts.append(
+                    {
+                        "timestamp": trace.timestamp,
+                        "context_type": trace.context_type,
+                        "decision_vector": trace.decision_vector,
+                        "synthesis_params": trace.synthesis_params,
+                        "parent_trace_id": trace.parent_trace_id,
+                        "session_id": trace.session_id,
+                        "checksum": trace.checksum,
+                    }
+                )
 
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(trace_dicts, f, indent=2)
 
-        elif format.lower() == 'binary':
+        elif format.lower() == "binary":
             # Export as raw binary
-            with open(filepath, 'wb') as f:
+            with open(filepath, "wb") as f:
                 for trace in traces:
                     f.write(trace.to_bytes())
 
@@ -678,11 +701,11 @@ class ProvenanceTracer:
         avg_latency_ms = (duration / num_entries) * 1000 if num_entries > 0 else 0
 
         results = {
-            'total_entries': num_entries,
-            'duration_seconds': duration,
-            'entries_per_second': entries_per_second,
-            'average_latency_ms': avg_latency_ms,
-            'storage_stats': stats['storage_manager']
+            "total_entries": num_entries,
+            "duration_seconds": duration,
+            "entries_per_second": entries_per_second,
+            "average_latency_ms": avg_latency_ms,
+            "storage_stats": stats["storage_manager"],
         }
 
         self.logger.info(f"Stress test completed: {results}")
@@ -692,10 +715,7 @@ class ProvenanceTracer:
 # Test utility function
 def create_test_provenance_tracer() -> ProvenanceTracer:
     """Create a ProvenanceTracer for testing"""
-    tracer = ProvenanceTracer(
-        storage_path="./test_provenance_data",
-        enable_high_speed_mode=True
-    )
+    tracer = ProvenanceTracer(storage_path="./test_provenance_data", enable_high_speed_mode=True)
     tracer.start()
     return tracer
 

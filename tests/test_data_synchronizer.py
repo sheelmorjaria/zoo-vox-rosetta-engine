@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 # Add path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Import Rust modules (will be implemented)
 try:
@@ -55,17 +55,18 @@ except ImportError:
 
         async def sync_data(self, data: Dict) -> bool:
             # Simulate network errors if configured
-            if getattr(self, '_should_fail', False):
+            if getattr(self, "_should_fail", False):
                 self.sync_errors.append(ConnectionError("Simulated network error"))
                 return False
 
             # Add a sync event to track the sync
             import time
+
             event = SyncEvent(
                 event_id=str(uuid.uuid4()),
                 timestamp=time.time(),
                 status="completed",
-                data_size=len(str(data))
+                data_size=len(str(data)),
             )
             # Add one event per server
             for _ in self.config.remote_servers:
@@ -74,9 +75,9 @@ except ImportError:
 
         async def get_sync_status(self) -> Dict:
             return {
-                'is_running': self.is_running,
-                'last_sync': self.sync_events[-1].timestamp if self.sync_events else None,
-                'total_synced': len(self.sync_events)
+                "is_running": self.is_running,
+                "last_sync": self.sync_events[-1].timestamp if self.sync_events else None,
+                "total_synced": len(self.sync_events),
             }
 
         def simulate_network_error(self):
@@ -92,22 +93,19 @@ class TestDataSynchronizer:
         self.sync_config = SyncConfig(
             sync_interval_secs=30,
             backup_enabled=True,
-            remote_servers=[
-                "backup-server-1.example.com",
-                "backup-server-2.example.com"
-            ]
+            remote_servers=["backup-server-1.example.com", "backup-server-2.example.com"],
         )
 
         self.sample_data = {
-            'deployment_id': str(uuid.uuid4()),
-            'timestamp': '2024-01-01T00:00:00Z',
-            'sensor_data': {
-                'temperature': 25.5,
-                'humidity': 80.2,
-                'audio_clips': [{'duration': 1.2, 'timestamp': '2024-01-01T00:00:00Z'}]
+            "deployment_id": str(uuid.uuid4()),
+            "timestamp": "2024-01-01T00:00:00Z",
+            "sensor_data": {
+                "temperature": 25.5,
+                "humidity": 80.2,
+                "audio_clips": [{"duration": 1.2, "timestamp": "2024-01-01T00:00:00Z"}],
             },
-            'wildlife_detections': [],
-            'system_status': {'battery_level': 85.0, 'cpu_usage': 45.2}
+            "wildlife_detections": [],
+            "system_status": {"battery_level": 85.0, "cpu_usage": 45.2},
         }
 
     def test_sync_config_initialization(self):
@@ -156,8 +154,8 @@ class TestDataSynchronizer:
 
         # Check sync status
         status = await synchronizer.get_sync_status()
-        assert status['is_running']
-        assert status['total_synced'] == len(self.sync_config.remote_servers)
+        assert status["is_running"]
+        assert status["total_synced"] == len(self.sync_config.remote_servers)
 
     @pytest.mark.asyncio
     async def test_data_sync_with_multiple_servers(self):
@@ -166,11 +164,7 @@ class TestDataSynchronizer:
         multi_server_config = SyncConfig(
             sync_interval_secs=30,
             backup_enabled=True,
-            remote_servers=[
-                "server1.example.com",
-                "server2.example.com",
-                "server3.example.com"
-            ]
+            remote_servers=["server1.example.com", "server2.example.com", "server3.example.com"],
         )
 
         synchronizer = DataSynchronizer(multi_server_config)
@@ -200,7 +194,9 @@ class TestDataSynchronizer:
         # Track sync calls
         sync_calls = []
 
-        with patch.object(synchronizer, 'sync_data', side_effect=lambda data: sync_calls.append(data)):
+        with patch.object(
+            synchronizer, "sync_data", side_effect=lambda data: sync_calls.append(data)
+        ):
             # Start synchronizer
             await synchronizer.start()
 
@@ -229,8 +225,8 @@ class TestDataSynchronizer:
         """Test handling of large data payloads."""
         # Create large data sample
         large_data = self.sample_data.copy()
-        large_data['sensor_data']['audio_clips'] = [
-            {'duration': 1.2, 'timestamp': '2024-01-01T00:00:00Z', 'data': 'x' * 1000000}
+        large_data["sensor_data"]["audio_clips"] = [
+            {"duration": 1.2, "timestamp": "2024-01-01T00:00:00Z", "data": "x" * 1000000}
             for _ in range(10)
         ]
 
@@ -253,7 +249,10 @@ class TestDataSynchronizer:
         # Create multiple concurrent sync tasks
         sync_tasks = []
         for i in range(5):
-            data = {**self.sample_data, 'sensor_data': {'timestamp': f'2024-01-01T00:00:0{i}Z'}}  # Unique data
+            data = {
+                **self.sample_data,
+                "sensor_data": {"timestamp": f"2024-01-01T00:00:0{i}Z"},
+            }  # Unique data
             sync_tasks.append(synchronizer.sync_data(data))
 
         # Wait for all tasks to complete
@@ -264,7 +263,7 @@ class TestDataSynchronizer:
 
         # Should have recorded all sync events (5 requests * 2 servers)
         status = await synchronizer.get_sync_status()
-        assert status['total_synced'] == 10  # 5 syncs * 2 servers
+        assert status["total_synced"] == 10  # 5 syncs * 2 servers
 
     @pytest.mark.asyncio
     async def test_sync_status_tracking(self):
@@ -273,9 +272,9 @@ class TestDataSynchronizer:
 
         # Initial status
         status = await synchronizer.get_sync_status()
-        assert not status['is_running']
-        assert status['total_synced'] == 0
-        assert status['last_sync'] is None
+        assert not status["is_running"]
+        assert status["total_synced"] == 0
+        assert status["last_sync"] is None
 
         # Start synchronizer and sync some data
         await synchronizer.start()
@@ -283,30 +282,26 @@ class TestDataSynchronizer:
 
         # Updated status
         status = await synchronizer.get_sync_status()
-        assert status['is_running']
+        assert status["is_running"]
         # Mock creates one event per server
-        assert status['total_synced'] == len(self.sync_config.remote_servers)
+        assert status["total_synced"] == len(self.sync_config.remote_servers)
 
         # Should have last_sync timestamp
-        assert status['last_sync'] is not None
+        assert status["last_sync"] is not None
 
     @pytest.mark.asyncio
     async def test_config_validation(self):
         """Test configuration validation."""
         # Valid config
         valid_config = SyncConfig(
-            sync_interval_secs=60,
-            backup_enabled=True,
-            remote_servers=["server.example.com"]
+            sync_interval_secs=60, backup_enabled=True, remote_servers=["server.example.com"]
         )
         synchronizer = DataSynchronizer(valid_config)
         assert synchronizer.config == valid_config
 
         # Config with empty server list
         empty_server_config = SyncConfig(
-            sync_interval_secs=60,
-            backup_enabled=True,
-            remote_servers=[]
+            sync_interval_secs=60, backup_enabled=True, remote_servers=[]
         )
         synchronizer = DataSynchronizer(empty_server_config)
         assert len(synchronizer.config.remote_servers) == 0
@@ -348,5 +343,5 @@ class TestDataSynchronizer:
 
         # Verify cleanup
         status = await synchronizer.get_sync_status()
-        assert not status['is_running']
+        assert not status["is_running"]
         # Resources should be properly released

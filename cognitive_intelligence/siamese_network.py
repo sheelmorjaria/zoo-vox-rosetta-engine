@@ -31,6 +31,7 @@ import torch.nn.functional as F
 @dataclass
 class SiameseConfig:
     """Configuration for Siamese Network"""
+
     input_dim: int = 64  # Feature dimension
     hidden_dim: int = 128  # Hidden layer dimension
     embedding_dim: int = 64  # Embedding dimension
@@ -38,7 +39,7 @@ class SiameseConfig:
     learning_rate: float = 0.001  # Learning rate
     memory_size: int = 1000  # Memory buffer size
     adaptation_rate: float = 0.1  # Learning rate for adaptation
-    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class Encoder(nn.Module):
@@ -100,7 +101,9 @@ class MemoryBuffer:
         self.keys.append(key)
         self.buffer.append(embedding.clone().detach())
 
-    def find_similar(self, query_embedding: torch.Tensor, top_k: int = 5) -> List[Tuple[str, torch.Tensor, float]]:
+    def find_similar(
+        self, query_embedding: torch.Tensor, top_k: int = 5
+    ) -> List[Tuple[str, torch.Tensor, float]]:
         """Find most similar patterns in memory"""
         if not self.buffer:
             return []
@@ -161,7 +164,9 @@ class SiameseNetwork:
         similarity = -distance.item()  # Convert distance to similarity
         return similarity
 
-    def learn_from_success(self, audio_features: np.ndarray, context: str, success_weight: float = 1.0):
+    def learn_from_success(
+        self, audio_features: np.ndarray, context: str, success_weight: float = 1.0
+    ):
         """Learn from successful interaction"""
         # Extract features
         embedding = self.extract_features(audio_features)
@@ -174,7 +179,9 @@ class SiameseNetwork:
         if success_weight > 0.5:
             self.best_similarity_threshold = max(0.5, self.best_similarity_threshold - 0.01)
 
-        self.logger.info(f"Learned from success: {context}, similarity threshold: {self.best_similarity_threshold:.3f}")
+        self.logger.info(
+            f"Learned from success: {context}, similarity threshold: {self.best_similarity_threshold:.3f}"
+        )
 
     def predict_response(self, audio_features: np.ndarray, context: str = None) -> Dict[str, Any]:
         """Predict response based on similarity to learned patterns"""
@@ -194,7 +201,9 @@ class SiameseNetwork:
 
         # Predict response based on similarity
         if max_similarity >= self.best_similarity_threshold:
-            response_confidence = (max_similarity - self.best_similarity_threshold) / (1.0 - self.best_similarity_threshold)
+            response_confidence = (max_similarity - self.best_similarity_threshold) / (
+                1.0 - self.best_similarity_threshold
+            )
             response_type = "adaptive"
         else:
             response_confidence = 0.0
@@ -210,7 +219,7 @@ class SiameseNetwork:
             "max_similarity": max_similarity,
             "similar_patterns": len(similar_patterns),
             "context": context,
-            "adaptation_count": len(self.memory_buffer.buffer)
+            "adaptation_count": len(self.memory_buffer.buffer),
         }
 
     def adapt_parameters(self, new_embedding: torch.Tensor, adaptation_strength: float):
@@ -228,8 +237,12 @@ class SiameseNetwork:
         emb2 = self.extract_features(features2)
         return self.compute_similarity(emb1, emb2)
 
-    def train_on_batch(self, anchor_features: np.ndarray, positive_features: np.ndarray,
-                      negative_features: np.ndarray = None) -> float:
+    def train_on_batch(
+        self,
+        anchor_features: np.ndarray,
+        positive_features: np.ndarray,
+        negative_features: np.ndarray = None,
+    ) -> float:
         """Train network with contrastive loss"""
         if not self.training:
             return 0.0
@@ -279,21 +292,24 @@ class SiameseNetwork:
 
     def save_model(self, path: str):
         """Save model state"""
-        torch.save({
-            'encoder_state_dict': self.encoder.state_dict(),
-            'distance_state_dict': self.distance_metric.state_dict(),
-            'config': self.config,
-            'similarity_threshold': self.best_similarity_threshold,
-            'memory_size': len(self.memory_buffer.buffer)
-        }, path)
+        torch.save(
+            {
+                "encoder_state_dict": self.encoder.state_dict(),
+                "distance_state_dict": self.distance_metric.state_dict(),
+                "config": self.config,
+                "similarity_threshold": self.best_similarity_threshold,
+                "memory_size": len(self.memory_buffer.buffer),
+            },
+            path,
+        )
         self.logger.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """Load model state"""
         checkpoint = torch.load(path, map_location=self.config.device)
-        self.encoder.load_state_dict(checkpoint['encoder_state_dict'])
-        self.distance_metric.load_state_dict(checkpoint['distance_state_dict'])
-        self.best_similarity_threshold = checkpoint['similarity_threshold']
+        self.encoder.load_state_dict(checkpoint["encoder_state_dict"])
+        self.distance_metric.load_state_dict(checkpoint["distance_state_dict"])
+        self.best_similarity_threshold = checkpoint["similarity_threshold"]
         self.logger.info(f"Model loaded from {path}")
 
     def get_memory_stats(self) -> Dict[str, Any]:
@@ -303,17 +319,12 @@ class SiameseNetwork:
             "max_size": self.memory_buffer.max_size,
             "similarity_threshold": self.best_similarity_threshold,
             "training_mode": self.training,
-            "device": self.config.device
+            "device": self.config.device,
         }
 
 
 # Test utility function
 def create_test_siamese_network() -> SiameseNetwork:
     """Create a SiameseNetwork for testing"""
-    config = SiameseConfig(
-        input_dim=64,
-        hidden_dim=128,
-        embedding_dim=64,
-        device='cpu'
-    )
+    config = SiameseConfig(input_dim=64, hidden_dim=128, embedding_dim=64, device="cpu")
     return SiameseNetwork(config)

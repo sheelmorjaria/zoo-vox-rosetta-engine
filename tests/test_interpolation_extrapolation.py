@@ -50,9 +50,11 @@ import math
 # Data Models (Reusing from island_hopping_navigation.py)
 # =============================================================================
 
+
 @dataclass
 class Vector17D:
     """17D acoustic vector representing a point in acoustic space"""
+
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
@@ -73,16 +75,29 @@ class Vector17D:
 
     def to_numpy(self) -> np.ndarray:
         """Convert to numpy array for calculations"""
-        return np.array([
-            self.mean_f0_hz, self.duration_ms, self.f0_range_hz,
-            self.harmonic_to_noise_ratio, self.spectral_flatness,
-            self.attack_time_ms, self.decay_time_ms, self.sustain_level,
-            self.vibrato_rate_hz, self.vibrato_depth, self.jitter, self.shimmer,
-            self.mfcc_1, self.mfcc_2, self.mfcc_3, self.mfcc_4,
-            self.spectral_contrast
-        ])
+        return np.array(
+            [
+                self.mean_f0_hz,
+                self.duration_ms,
+                self.f0_range_hz,
+                self.harmonic_to_noise_ratio,
+                self.spectral_flatness,
+                self.attack_time_ms,
+                self.decay_time_ms,
+                self.sustain_level,
+                self.vibrato_rate_hz,
+                self.vibrato_depth,
+                self.jitter,
+                self.shimmer,
+                self.mfcc_1,
+                self.mfcc_2,
+                self.mfcc_3,
+                self.mfcc_4,
+                self.spectral_contrast,
+            ]
+        )
 
-    def distance_to(self, other: 'Vector17D') -> float:
+    def distance_to(self, other: "Vector17D") -> float:
         """
         Calculate normalized Euclidean distance between two vectors.
 
@@ -93,31 +108,33 @@ class Vector17D:
         v2 = other.to_numpy()
 
         # Normalization ranges for each dimension
-        ranges = np.array([
-            2000.0,    # mean_f0_hz: 0-2000 Hz typical range
-            50.0,      # duration_ms: 0-50 ms
-            500.0,     # f0_range_hz: 0-500 Hz
-            25.0,      # harmonic_to_noise_ratio: 0-25 dB
-            1.0,       # spectral_flatness: 0-1
-            30.0,      # attack_time_ms: 0-30 ms
-            50.0,      # decay_time_ms: 0-50 ms
-            1.0,       # sustain_level: 0-1
-            10.0,      # vibrato_rate_hz: 0-10 Hz
-            0.1,       # vibrato_depth: 0-0.1
-            0.15,      # jitter: 0-0.15
-            0.15,      # shimmer: 0-0.15
-            2.0,       # mfcc_1: -1 to 1
-            2.0,       # mfcc_2: -1 to 1
-            2.0,       # mfcc_3: -1 to 1
-            2.0,       # mfcc_4: -1 to 1
-            20.0,      # spectral_contrast: 0-20 dB
-        ])
+        ranges = np.array(
+            [
+                2000.0,  # mean_f0_hz: 0-2000 Hz typical range
+                50.0,  # duration_ms: 0-50 ms
+                500.0,  # f0_range_hz: 0-500 Hz
+                25.0,  # harmonic_to_noise_ratio: 0-25 dB
+                1.0,  # spectral_flatness: 0-1
+                30.0,  # attack_time_ms: 0-30 ms
+                50.0,  # decay_time_ms: 0-50 ms
+                1.0,  # sustain_level: 0-1
+                10.0,  # vibrato_rate_hz: 0-10 Hz
+                0.1,  # vibrato_depth: 0-0.1
+                0.15,  # jitter: 0-0.15
+                0.15,  # shimmer: 0-0.15
+                2.0,  # mfcc_1: -1 to 1
+                2.0,  # mfcc_2: -1 to 1
+                2.0,  # mfcc_3: -1 to 1
+                2.0,  # mfcc_4: -1 to 1
+                20.0,  # spectral_contrast: 0-20 dB
+            ]
+        )
 
         # Normalize differences and calculate distance
         diff = (v1 - v2) / ranges
         return float(np.linalg.norm(diff))
 
-    def __add__(self, other: 'Vector17D') -> 'Vector17D':
+    def __add__(self, other: "Vector17D") -> "Vector17D":
         """Add two vectors (for interpolation)"""
         return Vector17D(
             mean_f0_hz=self.mean_f0_hz + other.mean_f0_hz,
@@ -139,7 +156,7 @@ class Vector17D:
             spectral_contrast=self.spectral_contrast + other.spectral_contrast,
         )
 
-    def __sub__(self, other: 'Vector17D') -> 'Vector17D':
+    def __sub__(self, other: "Vector17D") -> "Vector17D":
         """Subtract two vectors (for delta calculation)"""
         return Vector17D(
             mean_f0_hz=self.mean_f0_hz - other.mean_f0_hz,
@@ -161,7 +178,7 @@ class Vector17D:
             spectral_contrast=self.spectral_contrast - other.spectral_contrast,
         )
 
-    def __mul__(self, scalar: float) -> 'Vector17D':
+    def __mul__(self, scalar: float) -> "Vector17D":
         """Multiply vector by scalar (for weighting)"""
         return Vector17D(
             mean_f0_hz=self.mean_f0_hz * scalar,
@@ -183,7 +200,7 @@ class Vector17D:
             spectral_contrast=self.spectral_contrast * scalar,
         )
 
-    def normalized(self) -> 'Vector17D':
+    def normalized(self) -> "Vector17D":
         """Return normalized vector (unit length)"""
         arr = self.to_numpy()
         norm = np.linalg.norm(arr)
@@ -195,6 +212,7 @@ class Vector17D:
 @dataclass
 class NavigationWaypoint:
     """A waypoint in the navigation route"""
+
     target: Vector17D
     mode: str  # "interpolation" or "extrapolation"
     anchor_island: Optional[str]  # Nearest real island
@@ -206,6 +224,7 @@ class NavigationWaypoint:
 @dataclass
 class AudioIsland:
     """A real audio phrase (safe island in the ocean)"""
+
     island_id: str
     vector: Vector17D
 
@@ -213,6 +232,7 @@ class AudioIsland:
 # =============================================================================
 # Navigation Engine with Interpolation/Extrapolation
 # =============================================================================
+
 
 class NavigationEngine:
     """
@@ -229,12 +249,7 @@ class NavigationEngine:
         """
         self.max_safe_warp = max_safe_warp
 
-    def interpolate(
-        self,
-        start: Vector17D,
-        end: Vector17D,
-        alpha: float
-    ) -> Vector17D:
+    def interpolate(self, start: Vector17D, end: Vector17D, alpha: float) -> Vector17D:
         """
         Interpolate between two vectors (Bridge Builder).
 
@@ -253,12 +268,7 @@ class NavigationEngine:
 
         return (start * (1.0 - alpha)) + (end * alpha)
 
-    def extrapolate(
-        self,
-        origin: Vector17D,
-        direction: Vector17D,
-        factor: float
-    ) -> Vector17D:
+    def extrapolate(self, origin: Vector17D, direction: Vector17D, factor: float) -> Vector17D:
         """
         Extrapolate beyond a vector (Ocean Explorer).
 
@@ -278,11 +288,7 @@ class NavigationEngine:
         delta = direction * factor
         return origin + delta
 
-    def clamp_to_safe_distance(
-        self,
-        target: Vector17D,
-        anchor: Vector17D
-    ) -> NavigationWaypoint:
+    def clamp_to_safe_distance(self, target: Vector17D, anchor: Vector17D) -> NavigationWaypoint:
         """
         Apply "The Leash" - clamp target to safe warp distance.
 
@@ -304,7 +310,7 @@ class NavigationEngine:
                 mode="interpolation" if distance < self.max_safe_warp * 0.5 else "extrapolation",
                 anchor_island=None,  # Will be filled by caller
                 distance_to_anchor=distance,
-                was_clamped=False
+                was_clamped=False,
             )
         else:
             # Too far! Apply clamping
@@ -320,14 +326,11 @@ class NavigationEngine:
                 anchor_island=None,  # Will be filled by caller
                 distance_to_anchor=self.max_safe_warp,
                 was_clamped=True,
-                original_target=target
+                original_target=target,
             )
 
     def plan_interpolated_route(
-        self,
-        start_island: AudioIsland,
-        end_island: AudioIsland,
-        num_waypoints: int
+        self, start_island: AudioIsland, end_island: AudioIsland, num_waypoints: int
     ) -> List[NavigationWaypoint]:
         """
         Plan an interpolated route between two islands (Bridge Builder).
@@ -356,13 +359,15 @@ class NavigationEngine:
             anchor_id = anchor.island_id
             distance = min(dist_to_start, dist_to_end)
 
-            waypoints.append(NavigationWaypoint(
-                target=target,
-                mode="interpolation",
-                anchor_island=anchor_id,
-                distance_to_anchor=distance,
-                was_clamped=False
-            ))
+            waypoints.append(
+                NavigationWaypoint(
+                    target=target,
+                    mode="interpolation",
+                    anchor_island=anchor_id,
+                    distance_to_anchor=distance,
+                    was_clamped=False,
+                )
+            )
 
         return waypoints
 
@@ -371,7 +376,7 @@ class NavigationEngine:
         origin_island: AudioIsland,
         direction_island: AudioIsland,
         num_steps: int,
-        extrapolation_factor: float
+        extrapolation_factor: float,
     ) -> List[NavigationWaypoint]:
         """
         Plan an extrapolated route beyond known islands (Ocean Explorer).
@@ -410,6 +415,7 @@ class NavigationEngine:
 # Phase 1 Tests: Interpolation (Bridge Builder)
 # =============================================================================
 
+
 class TestInterpolation(unittest.TestCase):
     """Test safe interpolation between known islands"""
 
@@ -420,28 +426,54 @@ class TestInterpolation(unittest.TestCase):
         self.neutral_island = AudioIsland(
             island_id="neutral",
             vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
-            )
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.1,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+            ),
         )
 
         self.aggressive_island = AudioIsland(
             island_id="aggressive",
             vector=Vector17D(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
-            )
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+            ),
         )
 
     def test_interpolate_at_alpha_zero_returns_start(self):
         """Test that alpha=0 returns the start vector"""
-        result = self.engine.interpolate(self.neutral_island.vector, self.aggressive_island.vector, 0.0)
+        result = self.engine.interpolate(
+            self.neutral_island.vector, self.aggressive_island.vector, 0.0
+        )
 
         # Should equal neutral exactly
         self.assertAlmostEqual(result.mean_f0_hz, self.neutral_island.vector.mean_f0_hz)
@@ -449,7 +481,9 @@ class TestInterpolation(unittest.TestCase):
 
     def test_interpolate_at_alpha_one_returns_end(self):
         """Test that alpha=1 returns the end vector"""
-        result = self.engine.interpolate(self.neutral_island.vector, self.aggressive_island.vector, 1.0)
+        result = self.engine.interpolate(
+            self.neutral_island.vector, self.aggressive_island.vector, 1.0
+        )
 
         # Should equal aggressive exactly
         self.assertAlmostEqual(result.mean_f0_hz, self.aggressive_island.vector.mean_f0_hz)
@@ -457,7 +491,9 @@ class TestInterpolation(unittest.TestCase):
 
     def test_interpolate_at_alpha_half_returns_midpoint(self):
         """Test that alpha=0.5 returns the midpoint"""
-        result = self.engine.interpolate(self.neutral_island.vector, self.aggressive_island.vector, 0.5)
+        result = self.engine.interpolate(
+            self.neutral_island.vector, self.aggressive_island.vector, 0.5
+        )
 
         # Should be halfway between
         expected_f0 = (7000.0 + 8000.0) / 2.0
@@ -474,9 +510,7 @@ class TestInterpolation(unittest.TestCase):
     def test_interpolated_route_generates_waypoints(self):
         """Test that interpolated route generates correct waypoints"""
         waypoints = self.engine.plan_interpolated_route(
-            self.neutral_island,
-            self.aggressive_island,
-            num_waypoints=5
+            self.neutral_island, self.aggressive_island, num_waypoints=5
         )
 
         self.assertEqual(len(waypoints), 5)
@@ -489,9 +523,7 @@ class TestInterpolation(unittest.TestCase):
     def test_interpolated_route_waypoints_have_anchors(self):
         """Test that interpolated waypoints have anchor islands"""
         waypoints = self.engine.plan_interpolated_route(
-            self.neutral_island,
-            self.aggressive_island,
-            num_waypoints=5
+            self.neutral_island, self.aggressive_island, num_waypoints=5
         )
 
         # All waypoints should have anchors
@@ -504,6 +536,7 @@ class TestInterpolation(unittest.TestCase):
 # Phase 2 Tests: Extrapolation (Ocean Explorer)
 # =============================================================================
 
+
 class TestExtrapolation(unittest.TestCase):
     """Test risky extrapolation beyond known islands"""
 
@@ -513,23 +546,47 @@ class TestExtrapolation(unittest.TestCase):
         self.neutral_island = AudioIsland(
             island_id="neutral",
             vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
-            )
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.1,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+            ),
         )
 
         self.aggressive_island = AudioIsland(
             island_id="aggressive",
             vector=Vector17D(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
-            )
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+            ),
         )
 
     def test_extrapolate_at_factor_zero_returns_origin(self):
@@ -546,7 +603,9 @@ class TestExtrapolation(unittest.TestCase):
         result = self.engine.extrapolate(self.neutral_island.vector, direction, 1.0)
 
         # Should reach aggressive
-        self.assertAlmostEqual(result.mean_f0_hz, self.aggressive_island.vector.mean_f0_hz, places=1)
+        self.assertAlmostEqual(
+            result.mean_f0_hz, self.aggressive_island.vector.mean_f0_hz, places=1
+        )
 
     def test_extrapolate_at_factor_two_goes_beyond(self):
         """Test that factor > 1 goes beyond the target"""
@@ -566,10 +625,7 @@ class TestExtrapolation(unittest.TestCase):
     def test_extrapolated_route_generates_waypoints(self):
         """Test that extrapolated route generates waypoints"""
         waypoints = self.engine.plan_extrapolated_route(
-            self.neutral_island,
-            self.aggressive_island,
-            num_steps=3,
-            extrapolation_factor=1.5
+            self.neutral_island, self.aggressive_island, num_steps=3, extrapolation_factor=1.5
         )
 
         self.assertEqual(len(waypoints), 3)
@@ -577,10 +633,7 @@ class TestExtrapolation(unittest.TestCase):
     def test_extrapolated_waypoints_have_single_anchor(self):
         """Test that extrapolated waypoints only have one anchor"""
         waypoints = self.engine.plan_extrapolated_route(
-            self.neutral_island,
-            self.aggressive_island,
-            num_steps=3,
-            extrapolation_factor=1.5
+            self.neutral_island, self.aggressive_island, num_steps=3, extrapolation_factor=1.5
         )
 
         # All should anchor to origin (neutral)
@@ -591,6 +644,7 @@ class TestExtrapolation(unittest.TestCase):
 # =============================================================================
 # Phase 3 Tests: Delta Clamping (The Leash)
 # =============================================================================
+
 
 class TestDeltaClamping(unittest.TestCase):
     """Test delta clamping safety mechanism"""
@@ -603,11 +657,23 @@ class TestDeltaClamping(unittest.TestCase):
         self.engine_lenient = NavigationEngine(max_safe_warp=0.5)
 
         self.anchor = Vector17D(
-            mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            mean_f0_hz=7000.0,
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
     def test_safe_target_not_clamped(self):
@@ -615,11 +681,22 @@ class TestDeltaClamping(unittest.TestCase):
         # Target 5% away (within 10% limit)
         target = Vector17D(
             mean_f0_hz=7100.0,  # +100Hz (small change)
-            duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         waypoint = self.engine_strict.clamp_to_safe_distance(target, self.anchor)
@@ -633,11 +710,22 @@ class TestDeltaClamping(unittest.TestCase):
         # Create a target that's significantly different
         target = Vector17D(
             mean_f0_hz=7500.0,  # +500Hz (large change)
-            duration_ms=45.0, f0_range_hz=500.0,
-            harmonic_to_noise_ratio=15.0, spectral_flatness=0.3,
-            attack_time_ms=12.0, decay_time_ms=18.0, sustain_level=0.55,
-            vibrato_rate_hz=5.0, vibrato_depth=0.015, jitter=0.05, shimmer=0.03,
-            mfcc_1=1.3, mfcc_2=0.85, mfcc_3=-0.1, mfcc_4=0.25, spectral_contrast=12.0
+            duration_ms=45.0,
+            f0_range_hz=500.0,
+            harmonic_to_noise_ratio=15.0,
+            spectral_flatness=0.3,
+            attack_time_ms=12.0,
+            decay_time_ms=18.0,
+            sustain_level=0.55,
+            vibrato_rate_hz=5.0,
+            vibrato_depth=0.015,
+            jitter=0.05,
+            shimmer=0.03,
+            mfcc_1=1.3,
+            mfcc_2=0.85,
+            mfcc_3=-0.1,
+            mfcc_4=0.25,
+            spectral_contrast=12.0,
         )
 
         waypoint = self.engine_strict.clamp_to_safe_distance(target, self.anchor)
@@ -653,11 +741,22 @@ class TestDeltaClamping(unittest.TestCase):
         """Test that clamping preserves the direction from anchor"""
         target = Vector17D(
             mean_f0_hz=7500.0,  # Direction: +500Hz
-            duration_ms=50.0, f0_range_hz=400.0,
-            harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-            attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-            vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-            mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
+            duration_ms=50.0,
+            f0_range_hz=400.0,
+            harmonic_to_noise_ratio=20.0,
+            spectral_flatness=0.1,
+            attack_time_ms=15.0,
+            decay_time_ms=20.0,
+            sustain_level=0.6,
+            vibrato_rate_hz=6.0,
+            vibrato_depth=0.02,
+            jitter=0.03,
+            shimmer=0.02,
+            mfcc_1=1.0,
+            mfcc_2=0.7,
+            mfcc_3=-0.2,
+            mfcc_4=0.3,
+            spectral_contrast=15.0,
         )
 
         waypoint = self.engine_strict.clamp_to_safe_distance(target, self.anchor)
@@ -668,11 +767,23 @@ class TestDeltaClamping(unittest.TestCase):
     def test_extrapolation_triggers_clamping(self):
         """Test that extrapolation beyond safe limit triggers clamping"""
         aggressive = Vector17D(
-            mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-            harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-            attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-            vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-            mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
+            mean_f0_hz=8000.0,
+            duration_ms=40.0,
+            f0_range_hz=600.0,
+            harmonic_to_noise_ratio=5.0,
+            spectral_flatness=0.7,
+            attack_time_ms=3.0,
+            decay_time_ms=10.0,
+            sustain_level=0.4,
+            vibrato_rate_hz=0.0,
+            vibrato_depth=0.0,
+            jitter=0.12,
+            shimmer=0.08,
+            mfcc_1=1.8,
+            mfcc_2=1.2,
+            mfcc_3=0.3,
+            mfcc_4=0.1,
+            spectral_contrast=5.0,
         )
 
         # Distance from neutral to aggressive is > 10%
@@ -689,6 +800,7 @@ class TestDeltaClamping(unittest.TestCase):
 # Phase 4 Tests: Integration
 # =============================================================================
 
+
 class TestInterpolationExtrapolationIntegration(unittest.TestCase):
     """Test complete interpolation/extrapolation workflows"""
 
@@ -698,31 +810,53 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
         self.neutral = AudioIsland(
             island_id="neutral",
             vector=Vector17D(
-                mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-                harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-                attack_time_ms=15.0, decay_time_ms=20.0, sustain_level=0.6,
-                vibrato_rate_hz=6.0, vibrato_depth=0.02, jitter=0.03, shimmer=0.02,
-                mfcc_1=1.0, mfcc_2=0.7, mfcc_3=-0.2, mfcc_4=0.3, spectral_contrast=15.0
-            )
+                mean_f0_hz=7000.0,
+                duration_ms=50.0,
+                f0_range_hz=400.0,
+                harmonic_to_noise_ratio=20.0,
+                spectral_flatness=0.1,
+                attack_time_ms=15.0,
+                decay_time_ms=20.0,
+                sustain_level=0.6,
+                vibrato_rate_hz=6.0,
+                vibrato_depth=0.02,
+                jitter=0.03,
+                shimmer=0.02,
+                mfcc_1=1.0,
+                mfcc_2=0.7,
+                mfcc_3=-0.2,
+                mfcc_4=0.3,
+                spectral_contrast=15.0,
+            ),
         )
 
         self.aggressive = AudioIsland(
             island_id="aggressive",
             vector=Vector17D(
-                mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-                harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-                attack_time_ms=3.0, decay_time_ms=10.0, sustain_level=0.4,
-                vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.12, shimmer=0.08,
-                mfcc_1=1.8, mfcc_2=1.2, mfcc_3=0.3, mfcc_4=0.1, spectral_contrast=5.0
-            )
+                mean_f0_hz=8000.0,
+                duration_ms=40.0,
+                f0_range_hz=600.0,
+                harmonic_to_noise_ratio=5.0,
+                spectral_flatness=0.7,
+                attack_time_ms=3.0,
+                decay_time_ms=10.0,
+                sustain_level=0.4,
+                vibrato_rate_hz=0.0,
+                vibrato_depth=0.0,
+                jitter=0.12,
+                shimmer=0.08,
+                mfcc_1=1.8,
+                mfcc_2=1.2,
+                mfcc_3=0.3,
+                mfcc_4=0.1,
+                spectral_contrast=5.0,
+            ),
         )
 
     def test_interpolation_route_is_safe(self):
         """Test that interpolation routes don't trigger clamping"""
         waypoints = self.engine.plan_interpolated_route(
-            self.neutral,
-            self.aggressive,
-            num_waypoints=10
+            self.neutral, self.aggressive, num_waypoints=10
         )
 
         # None should be clamped (interpolation between islands is safe)
@@ -733,10 +867,7 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
         """Test that extrapolation routes may trigger clamping"""
         # Extrapolate 50% beyond aggressive (risky!)
         waypoints = self.engine.plan_extrapolated_route(
-            self.neutral,
-            self.aggressive,
-            num_steps=5,
-            extrapolation_factor=1.5
+            self.neutral, self.aggressive, num_steps=5, extrapolation_factor=1.5
         )
 
         # Some waypoints should be clamped
@@ -749,7 +880,7 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
             self.neutral,
             self.aggressive,
             num_steps=5,
-            extrapolation_factor=2.0  # Very far!
+            extrapolation_factor=2.0,  # Very far!
         )
 
         for wp in waypoints:
@@ -761,11 +892,22 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
         # Create a target that will be clamped
         far_target = Vector17D(
             mean_f0_hz=9000.0,  # Very far!
-            duration_ms=30.0, f0_range_hz=800.0,
-            harmonic_to_noise_ratio=0.0, spectral_flatness=1.0,
-            attack_time_ms=0.0, decay_time_ms=5.0, sustain_level=0.2,
-            vibrato_rate_hz=0.0, vibrato_depth=0.0, jitter=0.2, shimmer=0.15,
-            mfcc_1=2.5, mfcc_2=2.0, mfcc_3=1.0, mfcc_4=0.0, spectral_contrast=0.0
+            duration_ms=30.0,
+            f0_range_hz=800.0,
+            harmonic_to_noise_ratio=0.0,
+            spectral_flatness=1.0,
+            attack_time_ms=0.0,
+            decay_time_ms=5.0,
+            sustain_level=0.2,
+            vibrato_rate_hz=0.0,
+            vibrato_depth=0.0,
+            jitter=0.2,
+            shimmer=0.15,
+            mfcc_1=2.5,
+            mfcc_2=2.0,
+            mfcc_3=1.0,
+            mfcc_4=0.0,
+            spectral_contrast=0.0,
         )
 
         waypoint = self.engine.clamp_to_safe_distance(far_target, self.neutral.vector)
@@ -780,16 +922,11 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
     def test_interpolation_vs_extrapolation_distances(self):
         """Test that extrapolation triggers clamping while interpolation doesn't"""
         interpolated = self.engine.plan_interpolated_route(
-            self.neutral,
-            self.aggressive,
-            num_waypoints=5
+            self.neutral, self.aggressive, num_waypoints=5
         )
 
         extrapolated = self.engine.plan_extrapolated_route(
-            self.neutral,
-            self.aggressive,
-            num_steps=5,
-            extrapolation_factor=1.5
+            self.neutral, self.aggressive, num_steps=5, extrapolation_factor=1.5
         )
 
         # Interpolation should not trigger clamping (safe mode)
@@ -806,5 +943,5 @@ class TestInterpolationExtrapolationIntegration(unittest.TestCase):
         self.assertLessEqual(max_dist, 0.2, "Clamped extrapolation should respect safety limit")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

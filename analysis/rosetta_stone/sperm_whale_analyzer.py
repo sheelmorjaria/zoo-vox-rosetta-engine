@@ -26,6 +26,7 @@ from universal_rosetta_stone import UniversalRosettaStone
 @dataclass
 class Click:
     """Individual sperm whale click."""
+
     position_samples: int
     position_ms: float
     amplitude: float
@@ -35,6 +36,7 @@ class Click:
 @dataclass
 class Coda:
     """Sperm whale coda (discrete click pattern)."""
+
     clicks: List[Click]
     start_ms: float
     end_ms: float
@@ -46,7 +48,7 @@ class Coda:
         """Calculate inter-click intervals."""
         self.inter_click_intervals_ms = []
         for i in range(1, len(self.clicks)):
-            interval = self.clicks[i].position_ms - self.clicks[i-1].position_ms
+            interval = self.clicks[i].position_ms - self.clicks[i - 1].position_ms
             self.inter_click_intervals_ms.append(interval)
 
     @property
@@ -80,6 +82,7 @@ class Coda:
 @dataclass
 class SpermWhaleAnalysis:
     """Complete analysis of a sperm whale recording."""
+
     filepath: str
     duration_sec: float
     sample_rate: int
@@ -108,7 +111,9 @@ class SpermWhaleAnalysis:
     def __post_init__(self):
         """Calculate derived statistics."""
         self.total_clicks = len(self.clicks)
-        self.clicks_per_second = self.total_clicks / self.duration_sec if self.duration_sec > 0 else 0
+        self.clicks_per_second = (
+            self.total_clicks / self.duration_sec if self.duration_sec > 0 else 0
+        )
 
         self.total_codas = len(self.codas)
         if self.codas:
@@ -131,13 +136,13 @@ class SpermWhaleAnalyzer:
     """
 
     # Sperm whale click parameters
-    MIN_CLICK_INTERVAL_MS = 5.0      # Minimum time between clicks
-    MAX_CLICK_INTERVAL_MS = 100.0    # Maximum time to consider clicks in same coda (adaptive)
-    DEFAULT_CLICK_THRESHOLD = 2.0    # Standard deviations above mean envelope
+    MIN_CLICK_INTERVAL_MS = 5.0  # Minimum time between clicks
+    MAX_CLICK_INTERVAL_MS = 100.0  # Maximum time to consider clicks in same coda (adaptive)
+    DEFAULT_CLICK_THRESHOLD = 2.0  # Standard deviations above mean envelope
 
     # Coda classification thresholds (based on prior research)
-    SHORT_CODA_MAX_CLICKS = 10       # SHORT codas: <10 clicks
-    LONG_CODA_MIN_CLICKS = 50        # LONG codas: >=50 clicks
+    SHORT_CODA_MAX_CLICKS = 10  # SHORT codas: <10 clicks
+    LONG_CODA_MIN_CLICKS = 50  # LONG codas: >=50 clicks
 
     def __init__(self, sample_rate: int):
         self.sample_rate = sample_rate
@@ -181,15 +186,13 @@ class SpermWhaleAnalyzer:
             energy_8_15khz=energy_dist["8-15_khz"],
             energy_above_15khz=energy_dist["above_15_khz"],
             overall_modality=overall_modality,
-            coda_modalities=coda_modalities
+            coda_modalities=coda_modalities,
         )
 
         return analysis
 
     def _detect_clicks(
-        self,
-        audio: np.ndarray,
-        threshold_sd: float = DEFAULT_CLICK_THRESHOLD
+        self, audio: np.ndarray, threshold_sd: float = DEFAULT_CLICK_THRESHOLD
     ) -> List[Click]:
         """
         Detect individual clicks using envelope peak detection.
@@ -213,7 +216,7 @@ class SpermWhaleAnalyzer:
             envelope,
             height=threshold,
             distance=min_distance,
-            width=10  # Minimum peak width
+            width=10,  # Minimum peak width
         )
 
         # Create Click objects
@@ -223,16 +226,14 @@ class SpermWhaleAnalyzer:
                 position_samples=peak_idx,
                 position_ms=peak_idx / self.sample_rate * 1000,
                 amplitude=envelope[peak_idx],
-                width_samples=int(properties['widths'][idx])
+                width_samples=int(properties["widths"][idx]),
             )
             clicks.append(click)
 
         return clicks
 
     def _segment_codas(
-        self,
-        clicks: List[Click],
-        max_gap_ms: float = MAX_CLICK_INTERVAL_MS
+        self, clicks: List[Click], max_gap_ms: float = MAX_CLICK_INTERVAL_MS
     ) -> List[Coda]:
         """
         Group clicks into codas based on inter-click intervals.
@@ -251,7 +252,7 @@ class SpermWhaleAnalyzer:
         current_coda_clicks = [clicks[0]]
 
         for i in range(1, len(clicks)):
-            gap_ms = clicks[i].position_ms - clicks[i-1].position_ms
+            gap_ms = clicks[i].position_ms - clicks[i - 1].position_ms
 
             if gap_ms <= max_gap_ms:
                 # Part of same coda
@@ -281,23 +282,23 @@ class SpermWhaleAnalyzer:
             start_ms=start_ms,
             end_ms=end_ms,
             duration_ms=duration_ms,
-            num_clicks=len(clicks)
+            num_clicks=len(clicks),
         )
 
     def _analyze_energy_distribution(self, audio: np.ndarray) -> Dict[str, float]:
         """Calculate energy distribution across frequency bands."""
         fft_result = fft(audio)
-        freqs = fftfreq(len(audio), 1/self.sample_rate)
+        freqs = fftfreq(len(audio), 1 / self.sample_rate)
         magnitude = np.abs(fft_result)
 
-        pos_freqs = freqs[:len(freqs)//2]
-        pos_magnitude = magnitude[:len(magnitude)//2]
+        pos_freqs = freqs[: len(freqs) // 2]
+        pos_magnitude = magnitude[: len(magnitude) // 2]
 
         bands = [
             ("0-2_khz", 0, 2000),
             ("2-8_khz", 2000, 8000),
             ("8-15_khz", 8000, 15000),
-            ("above_15_khz", 15000, self.sample_rate//2)
+            ("above_15_khz", 15000, self.sample_rate // 2),
         ]
 
         energy_dist = {}
@@ -305,16 +306,12 @@ class SpermWhaleAnalyzer:
 
         for band_name, low, high in bands:
             mask = (pos_freqs >= low) & (pos_freqs < high)
-            band_energy = np.sum(pos_magnitude[mask]**2)
+            band_energy = np.sum(pos_magnitude[mask] ** 2)
             energy_dist[band_name] = band_energy / total_energy * 100
 
         return energy_dist
 
-    def _analyze_coda_modalities(
-        self,
-        audio: np.ndarray,
-        codas: List[Coda]
-    ) -> Dict[str, int]:
+    def _analyze_coda_modalities(self, audio: np.ndarray, codas: List[Coda]) -> Dict[str, int]:
         """
         Analyze modality for each coda.
 
@@ -342,9 +339,9 @@ class SpermWhaleAnalyzer:
 
     def print_summary(self, analysis: SpermWhaleAnalysis):
         """Print a formatted summary of the analysis."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"SPERM WHALE ANALYSIS: {Path(analysis.filepath).name}")
-        print("="*70)
+        print("=" * 70)
 
         print("\n📊 Recording Info:")
         print(f"  Duration: {analysis.duration_sec:.1f}s")
@@ -358,11 +355,17 @@ class SpermWhaleAnalyzer:
         print("\n📊 Coda Analysis:")
         print(f"  Total codas: {analysis.total_codas}")
         if analysis.total_codas > 0:
-            print(f"  Clicks per coda: {analysis.clicks_per_coda_mean:.1f} ± {analysis.clicks_per_coda_std:.1f}")
+            print(
+                f"  Clicks per coda: {analysis.clicks_per_coda_mean:.1f} ± {analysis.clicks_per_coda_std:.1f}"
+            )
 
             # Coda length distribution
             short_codas = [c for c in analysis.codas if c.num_clicks < self.SHORT_CODA_MAX_CLICKS]
-            medium_codas = [c for c in analysis.codas if self.SHORT_CODA_MAX_CLICKS <= c.num_clicks < self.LONG_CODA_MIN_CLICKS]
+            medium_codas = [
+                c
+                for c in analysis.codas
+                if self.SHORT_CODA_MAX_CLICKS <= c.num_clicks < self.LONG_CODA_MIN_CLICKS
+            ]
             long_codas = [c for c in analysis.codas if c.num_clicks >= self.LONG_CODA_MIN_CLICKS]
 
             print(f"    SHORT codas (<10 clicks): {len(short_codas)}")
@@ -385,7 +388,7 @@ class SpermWhaleAnalyzer:
                 percentage = count / analysis.total_codas * 100
                 print(f"  {modality:15s}: {count:2d} ({percentage:5.1f}%)")
 
-        print("="*70)
+        print("=" * 70)
 
 
 def demo_analysis():

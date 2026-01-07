@@ -51,43 +51,44 @@ def create_call_type_classifier():
         feature_vector = []
 
         # Pitch-based features
-        if 'pitch' in feature_dict:
-            pitch = feature_dict['pitch']
+        if "pitch" in feature_dict:
+            pitch = feature_dict["pitch"]
             valid_pitch = pitch[~np.isnan(pitch)]
             if len(valid_pitch) > 0:
-                feature_vector.extend([
-                    np.mean(valid_pitch),          # Mean pitch
-                    np.std(valid_pitch),           # Pitch variability
-                    np.max(valid_pitch) - np.min(valid_pitch),  # Pitch range
-                    len(valid_pitch) / len(pitch)  # Pitch coverage
-                ])
+                feature_vector.extend(
+                    [
+                        np.mean(valid_pitch),  # Mean pitch
+                        np.std(valid_pitch),  # Pitch variability
+                        np.max(valid_pitch) - np.min(valid_pitch),  # Pitch range
+                        len(valid_pitch) / len(pitch),  # Pitch coverage
+                    ]
+                )
             else:
                 feature_vector.extend([0, 0, 0, 0])
 
         # Spectral features
-        if 'spectral' in feature_dict:
-            spectral = feature_dict['spectral']
-            feature_vector.extend([
-                spectral.get('spectral_centroid_mean', 0),
-                spectral.get('spectral_bandwidth_mean', 0),
-                spectral.get('spectral_rolloff_mean', 0),
-                spectral.get('zero_crossing_rate_mean', 0)
-            ])
+        if "spectral" in feature_dict:
+            spectral = feature_dict["spectral"]
+            feature_vector.extend(
+                [
+                    spectral.get("spectral_centroid_mean", 0),
+                    spectral.get("spectral_bandwidth_mean", 0),
+                    spectral.get("spectral_rolloff_mean", 0),
+                    spectral.get("zero_crossing_rate_mean", 0),
+                ]
+            )
         else:
             feature_vector.extend([0, 0, 0, 0])
 
         # Temporal features
-        feature_vector.append(feature_dict.get('duration', 0))
+        feature_vector.append(feature_dict.get("duration", 0))
 
         # Add MFCC statistics
-        if 'mfcc' in feature_dict:
-            mfcc = feature_dict['mfcc']
+        if "mfcc" in feature_dict:
+            mfcc = feature_dict["mfcc"]
             # Use first 12 MFCC coefficients' statistics
             for coeff_idx in range(min(12, mfcc.shape[0])):
-                feature_vector.extend([
-                    np.mean(mfcc[coeff_idx]),
-                    np.std(mfcc[coeff_idx])
-                ])
+                feature_vector.extend([np.mean(mfcc[coeff_idx]), np.std(mfcc[coeff_idx])])
         else:
             feature_vector.extend([0] * 24)  # 12 coefficients * 2 stats
 
@@ -161,8 +162,8 @@ def create_call_type_classifier():
     print("-" * 30)
 
     classifiers = {
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
-        'SVM': SVC(kernel='rbf', random_state=42)
+        "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
+        "SVM": SVC(kernel="rbf", random_state=42),
     }
 
     results = {}
@@ -176,48 +177,60 @@ def create_call_type_classifier():
 
         # Results
         from sklearn.metrics import accuracy_score
+
         accuracy = accuracy_score(y_test, y_pred)
-        results[name] = {
-            'classifier': clf,
-            'accuracy': accuracy,
-            'predictions': y_pred
-        }
+        results[name] = {"classifier": clf, "accuracy": accuracy, "predictions": y_pred}
 
         print(f"✅ {name} Accuracy: {accuracy:.3f}")
 
     # Detailed evaluation for best model
-    best_model_name = max(results.keys(), key=lambda k: results[k]['accuracy'])
+    best_model_name = max(results.keys(), key=lambda k: results[k]["accuracy"])
     best_model = results[best_model_name]
 
     print(f"\n🏆 Best Model: {best_model_name}")
     print("-" * 30)
 
     print("📊 Classification Report:")
-    print(classification_report(y_test, best_model['predictions']))
+    print(classification_report(y_test, best_model["predictions"]))
 
     # Confusion Matrix
-    cm = confusion_matrix(y_test, best_model['predictions'])
+    cm = confusion_matrix(y_test, best_model["predictions"])
 
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=np.unique(y_aug),
-                yticklabels=np.unique(y_aug))
-    plt.title(f'Confusion Matrix - {best_model_name}')
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=np.unique(y_aug),
+        yticklabels=np.unique(y_aug),
+    )
+    plt.title(f"Confusion Matrix - {best_model_name}")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
 
     output_dir = Path("output/comprehensive_analysis")
-    plt.savefig(output_dir / "call_type_classification.png", dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "call_type_classification.png", dpi=150, bbox_inches="tight")
     plt.close()
 
     # Feature importance (for Random Forest)
-    if 'Random Forest' in results:
-        rf_model = results['Random Forest']['classifier']
-        feature_names = [
-            'mean_pitch', 'pitch_std', 'pitch_range', 'pitch_coverage',
-            'spectral_centroid', 'spectral_bandwidth', 'spectral_rolloff', 'zero_crossing',
-            'duration'
-        ] + [f'mfcc_{i}_mean' for i in range(12)] + [f'mfcc_{i}_std' for i in range(12)]
+    if "Random Forest" in results:
+        rf_model = results["Random Forest"]["classifier"]
+        feature_names = (
+            [
+                "mean_pitch",
+                "pitch_std",
+                "pitch_range",
+                "pitch_coverage",
+                "spectral_centroid",
+                "spectral_bandwidth",
+                "spectral_rolloff",
+                "zero_crossing",
+                "duration",
+            ]
+            + [f"mfcc_{i}_mean" for i in range(12)]
+            + [f"mfcc_{i}_std" for i in range(12)]
+        )
 
         importances = rf_model.feature_importances_
 
@@ -227,26 +240,31 @@ def create_call_type_classifier():
         plt.figure(figsize=(10, 6))
         plt.barh(range(10), importances[top_indices])
         plt.yticks(range(10), [feature_names[i] for i in top_indices])
-        plt.xlabel('Feature Importance')
-        plt.title('Top 10 Features for Call Type Classification')
+        plt.xlabel("Feature Importance")
+        plt.title("Top 10 Features for Call Type Classification")
         plt.tight_layout()
-        plt.savefig(output_dir / "feature_importance.png", dpi=150, bbox_inches='tight')
+        plt.savefig(output_dir / "feature_importance.png", dpi=150, bbox_inches="tight")
         plt.close()
 
     # Save classifier for future use
     import joblib
-    joblib.dump({
-        'classifier': best_model['classifier'],
-        'scaler': scaler,
-        'feature_names': feature_names,
-        'model_name': best_model_name
-    }, output_dir / "call_type_classifier.pkl")
+
+    joblib.dump(
+        {
+            "classifier": best_model["classifier"],
+            "scaler": scaler,
+            "feature_names": feature_names,
+            "model_name": best_model_name,
+        },
+        output_dir / "call_type_classifier.pkl",
+    )
 
     print(f"\n💾 Model saved: {output_dir / 'call_type_classifier.pkl'}")
     print(f"📊 Confusion matrix: {output_dir / 'call_type_classification.png'}")
     print(f"📈 Feature importance: {output_dir / 'feature_importance.png'}")
 
     return True
+
 
 def demonstrate_prediction():
     """Show how to use the trained classifier for new data."""
@@ -260,34 +278,40 @@ def demonstrate_prediction():
         return
 
     import joblib
+
     model_data = joblib.load(classifier_path)
 
-    classifier = model_data['classifier']
-    scaler = model_data['scaler']
+    classifier = model_data["classifier"]
+    scaler = model_data["scaler"]
 
     # Example prediction for new audio
     print("📝 Example: Predicting call type for new audio features")
     print("   (This would normally come from real audio analysis)")
 
     # Simulate new audio features
-    new_features = np.array([[
-        1850,    # mean_pitch (Hz)
-        120,     # pitch_std
-        400,     # pitch_range
-        0.8,     # pitch_coverage
-        2500,    # spectral_centroid
-        800,     # spectral_bandwidth
-        3000,    # spectral_rolloff
-        0.15,    # zero_crossing
-        5.2      # duration
-    ] + [0] * 24])  # MFCC features (zeros for demo)
+    new_features = np.array(
+        [
+            [
+                1850,  # mean_pitch (Hz)
+                120,  # pitch_std
+                400,  # pitch_range
+                0.8,  # pitch_coverage
+                2500,  # spectral_centroid
+                800,  # spectral_bandwidth
+                3000,  # spectral_rolloff
+                0.15,  # zero_crossing
+                5.2,  # duration
+            ]
+            + [0] * 24
+        ]
+    )  # MFCC features (zeros for demo)
 
     # Scale and predict
     new_features_scaled = scaler.transform(new_features)
     prediction = classifier.predict(new_features_scaled)
 
     # Get prediction probabilities if available
-    if hasattr(classifier, 'predict_proba'):
+    if hasattr(classifier, "predict_proba"):
         probabilities = classifier.predict_proba(new_features_scaled)
         classes = classifier.classes_
 
@@ -297,6 +321,7 @@ def demonstrate_prediction():
             print(f"   {class_name}: {prob:.3f}")
     else:
         print(f"🎯 Predicted call type: {prediction[0]}")
+
 
 if __name__ == "__main__":
     try:
@@ -324,4 +349,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Classification setup failed: {e}")
         import traceback
+
         traceback.print_exc()

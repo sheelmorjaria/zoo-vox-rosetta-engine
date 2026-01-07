@@ -57,7 +57,7 @@ def generate_unknown_species_audio():
 
     # Phrase 3: Transient click (high frequency)
     phrase3 = np.zeros(int(sample_rate * duration))
-    phrase3[len(phrase3)//2-50:len(phrase3)//2+50] = np.sin(2 * np.pi * 12000 * t[:100])
+    phrase3[len(phrase3) // 2 - 50 : len(phrase3) // 2 + 50] = np.sin(2 * np.pi * 12000 * t[:100])
     phrase3 *= np.exp(-np.linspace(0, 10, len(phrase3)))
 
     # Phrase 4: Harmonic tone (6kHz) - similar to phrase1 but different pitch
@@ -69,15 +69,21 @@ def generate_unknown_species_audio():
     phrase5 = np.sin(2 * np.pi * np.cumsum(phrase5_freq) / sample_rate)
 
     # Combine with gaps
-    audio_parts = [phrase1, np.zeros(gap_samples),
-                  phrase2, np.zeros(gap_samples),
-                  phrase3, np.zeros(gap_samples),
-                  phrase4, np.zeros(gap_samples),
-                  phrase5]
+    audio_parts = [
+        phrase1,
+        np.zeros(gap_samples),
+        phrase2,
+        np.zeros(gap_samples),
+        phrase3,
+        np.zeros(gap_samples),
+        phrase4,
+        np.zeros(gap_samples),
+        phrase5,
+    ]
 
     audio = np.concatenate(audio_parts)
 
-    print(f"   Generated {len(audio)/sample_rate:.2f}s of audio with {len(audio_parts)} phrases")
+    print(f"   Generated {len(audio) / sample_rate:.2f}s of audio with {len(audio_parts)} phrases")
     return audio
 
 
@@ -120,7 +126,9 @@ def display_analysis_results(analyzer, vocabulary, grammar):
             print(f"    F0 Mean: {phrase_sig.features['f0_mean']:.0f}Hz")
             print(f"    F0 Std: {phrase_sig.features['f0_std']:.0f}Hz")
         elif phrase_sig.modality == Modality.FM_SWEEP:
-            print(f"    Frequency Range: {phrase_sig.features['start_freq']:.0f}Hz → {phrase_sig.features['end_freq']:.0f}Hz")
+            print(
+                f"    Frequency Range: {phrase_sig.features['start_freq']:.0f}Hz → {phrase_sig.features['end_freq']:.0f}Hz"
+            )
             print(f"    Sweep Rate: {phrase_sig.features['freq_slope']:.0f}Hz/s")
         elif phrase_sig.modality == Modality.TRANSIENT:
             print(f"    Spectral Centroid: {phrase_sig.features['spectral_centroid']:.0f}Hz")
@@ -141,9 +149,9 @@ def display_analysis_results(analyzer, vocabulary, grammar):
     print("\nSystem Statistics:")
     print(f"  Total Phrases: {stats['total_phrases']}")
 
-    if stats['modality_distribution']:
+    if stats["modality_distribution"]:
         print("  Modality Distribution:")
-        for modality, count in stats['modality_distribution'].items():
+        for modality, count in stats["modality_distribution"].items():
             print(f"    {modality}: {count} phrases")
 
 
@@ -162,13 +170,10 @@ def synthesize_interactive_response(analyzer, vocabulary, grammar):
 
     # Synthesize audio
     synthesized_audio = synthesizer.synthesize_audio(
-        sequence,
-        phrase_duration_ms=50,
-        gap_ms=10,
-        sample_rate=48000
+        sequence, phrase_duration_ms=50, gap_ms=10, sample_rate=48000
     )
 
-    print(f"   Synthesized {len(synthesized_audio)/48000:.2f}s of audio")
+    print(f"   Synthesized {len(synthesized_audio) / 48000:.2f}s of audio")
 
     return synthesizer, synthesized_audio, sequence
 
@@ -182,21 +187,17 @@ def demonstrate_cross_species_learning():
 
     # Simulate different species with different characteristics
     species_data = {
-        'Marmoset-like': {
-            'type': 'harmonic',
-            'frequencies': [4000, 5000, 6000],
-            'pattern': 'A->B->C'
+        "Marmoset-like": {
+            "type": "harmonic",
+            "frequencies": [4000, 5000, 6000],
+            "pattern": "A->B->C",
         },
-        'Bat-like': {
-            'type': 'fm_sweep',
-            'frequencies': [(20000, 30000), (25000, 28000)],
-            'pattern': 'X->Y->X'
+        "Bat-like": {
+            "type": "fm_sweep",
+            "frequencies": [(20000, 30000), (25000, 28000)],
+            "pattern": "X->Y->X",
         },
-        'Whale-like': {
-            'type': 'transient',
-            'frequencies': [1000, 1500],
-            'pattern': 'P->Q->P'
-        }
+        "Whale-like": {"type": "transient", "frequencies": [1000, 1500], "pattern": "P->Q->P"},
     }
 
     # Analyze each species
@@ -212,23 +213,25 @@ def demonstrate_cross_species_learning():
 
         phrases = []
 
-        if species_info['type'] == 'harmonic':
-            for freq in species_info['frequencies']:
+        if species_info["type"] == "harmonic":
+            for freq in species_info["frequencies"]:
                 t = np.linspace(0, duration, int(sample_rate * duration))
                 phrases.append(np.sin(2 * np.pi * freq * t))
 
-        elif species_info['type'] == 'fm_sweep':
-            for start_freq, end_freq in species_info['frequencies']:
+        elif species_info["type"] == "fm_sweep":
+            for start_freq, end_freq in species_info["frequencies"]:
                 t = np.linspace(0, duration, int(sample_rate * duration))
                 instantaneous_freq = start_freq + (end_freq - start_freq) * t / duration
                 phrase = np.sin(2 * np.pi * np.cumsum(instantaneous_freq) / sample_rate)
                 phrases.append(phrase)
 
-        elif species_info['type'] == 'transient':
-            for freq in species_info['frequencies']:
+        elif species_info["type"] == "transient":
+            for freq in species_info["frequencies"]:
                 t = np.linspace(0, duration, int(sample_rate * duration))
                 phrase = np.zeros_like(t)
-                phrase[len(phrase)//2-50:len(phrase)//2+50] = np.sin(2 * np.pi * freq * t[:100])
+                phrase[len(phrase) // 2 - 50 : len(phrase) // 2 + 50] = np.sin(
+                    2 * np.pi * freq * t[:100]
+                )
                 phrase *= np.exp(-np.linspace(0, 10, len(phrase)))
                 phrases.append(phrase)
 
@@ -296,6 +299,7 @@ def main():
     # Save synthesized audio (optional)
     try:
         import soundfile as sf
+
         output_file = "unknown_species_response.wav"
         sf.write(output_file, synthesized_audio, 48000)
         print(f"\n💾 Saved synthesized response to: {output_file}")
