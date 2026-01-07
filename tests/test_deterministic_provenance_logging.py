@@ -711,9 +711,7 @@ class TestDeterministicProvenanceLogging(unittest.TestCase):
         self.assertIn("children", viz_data)
         print(f"Child depth before cleanup: {viz_data['depth']}")
         print(f"Parent ID: {viz_data['parent_id']}")
-        parent_in_hierarchy = (
-            viz_data['parent_id'] in self.logger.trace_manager.trace_hierarchy
-        )
+        parent_in_hierarchy = viz_data["parent_id"] in self.logger.trace_manager.trace_hierarchy
         print(f"Parent in hierarchy: {parent_in_hierarchy}")
         self.assertEqual(viz_data["depth"], 1)
 

@@ -79,8 +79,7 @@ def print_transition_matrix(transition_matrix, title="TRANSITION PROBABILITY MAT
 
     print(f"\n📊 {title}")
     header = (
-        f"{'FROM / TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} "
-        f"{'TRANSIENT':>12} {'RHYTHMIC':>12}"
+        f"{'FROM / TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} {'TRANSIENT':>12} {'RHYTHMIC':>12}"
     )
     print(header)
     print("-" * 70)

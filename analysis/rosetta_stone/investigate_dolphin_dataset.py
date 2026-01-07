@@ -283,9 +283,7 @@ def main():
     print("\n💡 Key Findings:")
     total_analyzed = len(all_results) + len(full_file_analyses)
     analyzed_pct = total_analyzed / len(test_files) * 100
-    print(
-        f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({analyzed_pct:.1f}%)"
-    )
+    print(f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({analyzed_pct:.1f}%)")
 
     if all_results or full_file_analyses:
         # Count HARMONIC across all

@@ -249,9 +249,7 @@ def import_marmoset_data(
 
 
 def import_bat_data(
-    annotations_path: str = (
-        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv"
-    ),
+    annotations_path: str = ("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv"),
     audio_dir: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio",
     output_path: str = (
         "/home/sheel/birdsong_analysis/src/vocalization_database_with_bat_contexts.json"

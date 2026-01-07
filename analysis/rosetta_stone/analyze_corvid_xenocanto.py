@@ -140,9 +140,7 @@ def analyze_species(species_name, species_dir, num_files=50):
         test_files = all_files
 
     test_pct = len(test_files) / len(all_files) * 100
-    print(
-        f"🎲 Testing {len(test_files)} files ({test_pct:.1f}% of dataset)\n"
-    )
+    print(f"🎲 Testing {len(test_files)} files ({test_pct:.1f}% of dataset)\n")
 
     results = []
     errors = []
@@ -187,9 +185,7 @@ def print_species_summary(species_name, results):
     print("\n📊 PHRASE DETECTION:")
     print(f"  Total phrases: {total_phrases}")
     phrase_pct = files_with_phrases / len(results) * 100
-    print(
-        f"  Files with phrases: {files_with_phrases}/{len(results)} ({phrase_pct:.1f}%)"
-    )
+    print(f"  Files with phrases: {files_with_phrases}/{len(results)} ({phrase_pct:.1f}%)")
     print(f"  Mean phrases per file: {total_phrases / len(results):.2f}")
 
     if files_with_phrases > 0:
@@ -210,9 +206,7 @@ def print_species_summary(species_name, results):
     if dom_freqs:
         mean_freq = np.mean(dom_freqs) / 1000
         std_freq = np.std(dom_freqs) / 1000
-        print(
-            f"  Dominant frequency: {mean_freq:.2f} ± {std_freq:.2f} kHz"
-        )
+        print(f"  Dominant frequency: {mean_freq:.2f} ± {std_freq:.2f} kHz")
         print(f"  Range: {np.min(dom_freqs) / 1000:.2f} - {np.max(dom_freqs) / 1000:.2f} kHz")
 
     # Energy distribution
@@ -303,9 +297,7 @@ def main():
         f_pct = f / n * 100
         t_pct = t / n * 100
         r_pct = r / n * 100
-        print(
-            f"{species:<20} {h_pct:11.1f}% {f_pct:11.1f}% {t_pct:11.1f}% {r_pct:11.1f}%"
-        )
+        print(f"{species:<20} {h_pct:11.1f}% {f_pct:11.1f}% {t_pct:11.1f}% {r_pct:11.1f}%")
 
     print("\n" + "=" * 90)
     print("✅ Corvid analysis complete!")

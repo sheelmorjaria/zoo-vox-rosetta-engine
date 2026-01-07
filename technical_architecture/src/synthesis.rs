@@ -1605,8 +1605,8 @@ impl Default for SourceMetadata {
             sustain_level: 0.7,
             vibrato_rate_hz: 8.0,
             vibrato_depth: 50.0,
-            jitter: 0.02,   // Low instability
-            shimmer: 0.03,  // Low amplitude variation
+            jitter: 0.02,  // Low instability
+            shimmer: 0.03, // Low amplitude variation
 
             // Fingerprint - neutral spectral shape
             mfcc_1: -500.0,
@@ -1622,7 +1622,7 @@ impl Default for SourceMetadata {
             mfcc_11: 0.2,
             mfcc_12: 0.3,
             mfcc_13: 0.4,
-            spectral_flux: 0.5,  // Moderate spectral change rate
+            spectral_flux: 0.5, // Moderate spectral change rate
 
             // Rhythm - not pulsed (defaults for harmonic calls)
             median_ici_ms: 0.0, // Not applicable for continuous tones
@@ -1822,10 +1822,22 @@ impl SourceMetadataBuilder {
     }
 
     /// Set MFCC coefficients (all 13)
-    pub fn mfcc(mut self, mfcc_1: f32, mfcc_2: f32, mfcc_3: f32, mfcc_4: f32,
-                mfcc_5: f32, mfcc_6: f32, mfcc_7: f32, mfcc_8: f32,
-                mfcc_9: f32, mfcc_10: f32, mfcc_11: f32, mfcc_12: f32,
-                mfcc_13: f32) -> Self {
+    pub fn mfcc(
+        mut self,
+        mfcc_1: f32,
+        mfcc_2: f32,
+        mfcc_3: f32,
+        mfcc_4: f32,
+        mfcc_5: f32,
+        mfcc_6: f32,
+        mfcc_7: f32,
+        mfcc_8: f32,
+        mfcc_9: f32,
+        mfcc_10: f32,
+        mfcc_11: f32,
+        mfcc_12: f32,
+        mfcc_13: f32,
+    ) -> Self {
         self.metadata.mfcc_1 = mfcc_1;
         self.metadata.mfcc_2 = mfcc_2;
         self.metadata.mfcc_3 = mfcc_3;
@@ -4195,7 +4207,9 @@ mod corvid_roughness_tests {
             .vibrato_depth(0.03)
             .jitter(0.02)
             .shimmer(0.03)
-            .mfcc(1.2, 0.8, -0.3, 0.5, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4)
+            .mfcc(
+                1.2, 0.8, -0.3, 0.5, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4,
+            )
             .spectral_flux(0.5)
             .rhythm(45.0, 12.0, 0.25)
             .build();
@@ -4382,7 +4396,7 @@ mod corvid_roughness_tests {
             sustain_level: 0.7,
             vibrato_rate_hz: 6.0,
             vibrato_depth: 0.02,
-            jitter: 0.01, // Low (stable)
+            jitter: 0.01,  // Low (stable)
             shimmer: 0.01, // Low (stable)
             mfcc_1: 1.2,
             mfcc_2: 0.8,
@@ -4415,7 +4429,7 @@ mod corvid_roughness_tests {
             sustain_level: 0.7,
             vibrato_rate_hz: 6.0,
             vibrato_depth: 0.02,
-            jitter: 0.15, // High (rough)
+            jitter: 0.15,  // High (rough)
             shimmer: 0.12, // High (rough)
             mfcc_1: 1.2,
             mfcc_2: 0.8,

@@ -123,9 +123,7 @@ class PhraseCandidate:
         # === Rhythm Factors (3 features) ===
         self.median_ici_ms = self.metadata.get("median_ici_ms", 0.0)
         self.onset_rate_hz = self.metadata.get("onset_rate_hz", 0.0)
-        self.ici_coefficient_of_variation = self.metadata.get(
-            "ici_coefficient_of_variation", 0.0
-        )
+        self.ici_coefficient_of_variation = self.metadata.get("ici_coefficient_of_variation", 0.0)
 
         # === Additional metadata ===
         self.context = self.metadata.get("context", "unknown")

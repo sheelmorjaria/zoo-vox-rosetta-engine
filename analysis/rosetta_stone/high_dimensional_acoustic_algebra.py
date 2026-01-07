@@ -376,40 +376,40 @@ class ZScoreNormalizer:
             [
                 # Fundamental (3)
                 7000.0,  # mean_f0_hz
-                400.0,   # f0_range_hz
-                50.0,    # duration_ms
+                400.0,  # f0_range_hz
+                50.0,  # duration_ms
                 # Grit Factors (3)
-                20.0,    # harmonic_to_noise_ratio (dB)
-                0.3,     # spectral_flatness
-                0.8,     # harmonicity
+                20.0,  # harmonic_to_noise_ratio (dB)
+                0.3,  # spectral_flatness
+                0.8,  # harmonicity
                 # Motion Factors (7)
-                5.0,     # attack_time_ms
-                20.0,    # decay_time_ms
-                0.7,     # sustain_level
-                7.0,     # vibrato_rate_hz
-                0.02,    # vibrato_depth
-                0.01,    # jitter
-                0.03,    # shimmer
+                5.0,  # attack_time_ms
+                20.0,  # decay_time_ms
+                0.7,  # sustain_level
+                7.0,  # vibrato_rate_hz
+                0.02,  # vibrato_depth
+                0.01,  # jitter
+                0.03,  # shimmer
                 # Fingerprint Factors (13 MFCCs)
-                -10.0,   # mfcc_1
-                -5.0,    # mfcc_2
-                -2.0,    # mfcc_3
-                -1.0,    # mfcc_4
-                -0.5,    # mfcc_5
-                -0.3,    # mfcc_6
-                -0.2,    # mfcc_7
-                -0.1,    # mfcc_8
-                0.0,     # mfcc_9
-                0.1,     # mfcc_10
-                0.2,     # mfcc_11
-                0.3,     # mfcc_12
-                0.4,     # mfcc_13
+                -10.0,  # mfcc_1
+                -5.0,  # mfcc_2
+                -2.0,  # mfcc_3
+                -1.0,  # mfcc_4
+                -0.5,  # mfcc_5
+                -0.3,  # mfcc_6
+                -0.2,  # mfcc_7
+                -0.1,  # mfcc_8
+                0.0,  # mfcc_9
+                0.1,  # mfcc_10
+                0.2,  # mfcc_11
+                0.3,  # mfcc_12
+                0.4,  # mfcc_13
                 # Spectral Dynamics (1)
-                0.5,     # spectral_flux
+                0.5,  # spectral_flux
                 # Rhythm Factors (3)
-                15.0,    # median_ici_ms
-                8.0,     # onset_rate_hz
-                0.3,     # ici_coefficient_of_variation
+                15.0,  # median_ici_ms
+                8.0,  # onset_rate_hz
+                0.3,  # ici_coefficient_of_variation
             ],
             dtype=np.float64,
         )
@@ -420,40 +420,40 @@ class ZScoreNormalizer:
             [
                 # Fundamental (3)
                 1500.0,  # mean_f0_hz (±1500Hz)
-                200.0,   # f0_range_hz (±200Hz)
-                30.0,    # duration_ms (±30ms)
+                200.0,  # f0_range_hz (±200Hz)
+                30.0,  # duration_ms (±30ms)
                 # Grit Factors (3)
-                10.0,    # harmonic_to_noise_ratio (±10dB)
-                0.2,     # spectral_flatness (±0.2)
-                0.15,    # harmonicity (±0.15)
+                10.0,  # harmonic_to_noise_ratio (±10dB)
+                0.2,  # spectral_flatness (±0.2)
+                0.15,  # harmonicity (±0.15)
                 # Motion Factors (7)
-                5.0,     # attack_time_ms (±5ms)
-                15.0,    # decay_time_ms (±15ms)
-                0.2,     # sustain_level (±0.2)
-                3.0,     # vibrato_rate_hz (±3Hz)
-                0.03,    # vibrato_depth
-                0.015,   # jitter
-                0.02,    # shimmer
+                5.0,  # attack_time_ms (±5ms)
+                15.0,  # decay_time_ms (±15ms)
+                0.2,  # sustain_level (±0.2)
+                3.0,  # vibrato_rate_hz (±3Hz)
+                0.03,  # vibrato_depth
+                0.015,  # jitter
+                0.02,  # shimmer
                 # Fingerprint Factors (13 MFCCs)
-                5.0,     # mfcc_1 (±5)
-                5.0,     # mfcc_2 (±5)
-                5.0,     # mfcc_3 (±5)
-                5.0,     # mfcc_4 (±5)
-                5.0,     # mfcc_5 (±5)
-                5.0,     # mfcc_6 (±5)
-                5.0,     # mfcc_7 (±5)
-                5.0,     # mfcc_8 (±5)
-                5.0,     # mfcc_9 (±5)
-                5.0,     # mfcc_10 (±5)
-                5.0,     # mfcc_11 (±5)
-                5.0,     # mfcc_12 (±5)
-                5.0,     # mfcc_13 (±5)
+                5.0,  # mfcc_1 (±5)
+                5.0,  # mfcc_2 (±5)
+                5.0,  # mfcc_3 (±5)
+                5.0,  # mfcc_4 (±5)
+                5.0,  # mfcc_5 (±5)
+                5.0,  # mfcc_6 (±5)
+                5.0,  # mfcc_7 (±5)
+                5.0,  # mfcc_8 (±5)
+                5.0,  # mfcc_9 (±5)
+                5.0,  # mfcc_10 (±5)
+                5.0,  # mfcc_11 (±5)
+                5.0,  # mfcc_12 (±5)
+                5.0,  # mfcc_13 (±5)
                 # Spectral Dynamics (1)
-                0.3,     # spectral_flux (±0.3)
+                0.3,  # spectral_flux (±0.3)
                 # Rhythm Factors (3)
-                10.0,    # median_ici_ms (±10ms)
-                5.0,     # onset_rate_hz (±5Hz)
-                0.15,    # ici_coefficient_of_variation (±0.15)
+                10.0,  # median_ici_ms (±10ms)
+                5.0,  # onset_rate_hz (±5Hz)
+                0.15,  # ici_coefficient_of_variation (±0.15)
             ],
             dtype=np.float64,
         )

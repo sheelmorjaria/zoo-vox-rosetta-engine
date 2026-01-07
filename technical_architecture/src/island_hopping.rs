@@ -296,37 +296,37 @@ impl Vector30D {
             500.0,  // f0_range_hz: 0-500 Hz
             50.0,   // duration_ms: 0-50 ms typical range
             // Grit Factors (3)
-            30.0,   // harmonic_to_noise_ratio: 0-30 dB
-            1.0,    // spectral_flatness: 0-1
-            1.0,    // harmonicity: 0-1
+            30.0, // harmonic_to_noise_ratio: 0-30 dB
+            1.0,  // spectral_flatness: 0-1
+            1.0,  // harmonicity: 0-1
             // Motion Factors (7)
-            20.0,   // attack_time_ms: 0-20 ms
-            50.0,   // decay_time_ms: 0-50 ms
-            1.0,    // sustain_level: 0-1
-            20.0,   // vibrato_rate_hz: 0-20 Hz
-            0.1,    // vibrato_depth: 0-0.1
-            0.05,   // jitter: 0-0.05
-            0.1,    // shimmer: 0-0.1
+            20.0, // attack_time_ms: 0-20 ms
+            50.0, // decay_time_ms: 0-50 ms
+            1.0,  // sustain_level: 0-1
+            20.0, // vibrato_rate_hz: 0-20 Hz
+            0.1,  // vibrato_depth: 0-0.1
+            0.05, // jitter: 0-0.05
+            0.1,  // shimmer: 0-0.1
             // Fingerprint Factors (13 MFCCs)
-            20.0,   // mfcc_1: -20 to 0
-            20.0,   // mfcc_2: -20 to 0
-            20.0,   // mfcc_3: -20 to 0
-            20.0,   // mfcc_4: -20 to 0
-            20.0,   // mfcc_5: -20 to 0
-            20.0,   // mfcc_6: -20 to 0
-            20.0,   // mfcc_7: -20 to 0
-            20.0,   // mfcc_8: -20 to 0
-            20.0,   // mfcc_9: -20 to 0
-            20.0,   // mfcc_10: -20 to 0
-            20.0,   // mfcc_11: -20 to 0
-            20.0,   // mfcc_12: -20 to 0
-            20.0,   // mfcc_13: -20 to 0
+            20.0, // mfcc_1: -20 to 0
+            20.0, // mfcc_2: -20 to 0
+            20.0, // mfcc_3: -20 to 0
+            20.0, // mfcc_4: -20 to 0
+            20.0, // mfcc_5: -20 to 0
+            20.0, // mfcc_6: -20 to 0
+            20.0, // mfcc_7: -20 to 0
+            20.0, // mfcc_8: -20 to 0
+            20.0, // mfcc_9: -20 to 0
+            20.0, // mfcc_10: -20 to 0
+            20.0, // mfcc_11: -20 to 0
+            20.0, // mfcc_12: -20 to 0
+            20.0, // mfcc_13: -20 to 0
             // Spectral Dynamics (1)
-            1.0,    // spectral_flux: 0-1
+            1.0, // spectral_flux: 0-1
             // Rhythm Factors (3)
-            200.0,  // median_ici_ms: 0-200 ms
-            20.0,   // onset_rate_hz: 0-20 Hz
-            1.0,    // ici_coefficient_of_variation: 0-1
+            200.0, // median_ici_ms: 0-200 ms
+            20.0,  // onset_rate_hz: 0-20 Hz
+            1.0,   // ici_coefficient_of_variation: 0-1
         ]
     }
 
@@ -371,7 +371,8 @@ impl Vector30D {
             duration_ms: self.duration_ms * (1.0 - alpha) + other.duration_ms * alpha,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio * (1.0 - alpha)
                 + other.harmonic_to_noise_ratio * alpha,
-            spectral_flatness: self.spectral_flatness * (1.0 - alpha) + other.spectral_flatness * alpha,
+            spectral_flatness: self.spectral_flatness * (1.0 - alpha)
+                + other.spectral_flatness * alpha,
             harmonicity: self.harmonicity * (1.0 - alpha) + other.harmonicity * alpha,
             attack_time_ms: self.attack_time_ms * (1.0 - alpha) + other.attack_time_ms * alpha,
             decay_time_ms: self.decay_time_ms * (1.0 - alpha) + other.decay_time_ms * alpha,
@@ -1366,35 +1367,8 @@ mod tests {
     #[test]
     fn test_vector30d_new() {
         let v = Vector30D::new(
-            8000.0,
-            500.0,
-            60.0,
-            25.0,
-            0.4,
-            0.9,
-            10.0,
-            25.0,
-            0.8,
-            8.0,
-            0.03,
-            0.02,
-            0.05,
-            -12.0,
-            -6.0,
-            -3.0,
-            -1.5,
-            -0.8,
-            -0.5,
-            -0.3,
-            -0.2,
-            -0.1,
-            0.0,
-            0.1,
-            0.2,
-            0.3,
-            0.6,
-            180.0,
-            10.0,
+            8000.0, 500.0, 60.0, 25.0, 0.4, 0.9, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02, 0.05, -12.0,
+            -6.0, -3.0, -1.5, -0.8, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.6, 180.0, 10.0,
             0.4,
         );
         assert_approx_eq(v.mean_f0_hz, 8000.0, 1e-5);

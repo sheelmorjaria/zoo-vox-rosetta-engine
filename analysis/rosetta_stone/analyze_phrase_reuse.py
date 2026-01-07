@@ -261,10 +261,8 @@ def print_analysis_summary(results: Dict):
     print("\n📊 OVERALL STATISTICS:")
     print(f"   Vocalizations analyzed: {results['vocalizations_analyzed']}")
     print(f"   Total phrases found: {results['total_phrases_found']}")
-    avg_phrases = results['total_phrases_found'] / results['vocalizations_analyzed']
-    print(
-        f"   Average phrases per vocalization: {avg_phrases:.2f}"
-    )
+    avg_phrases = results["total_phrases_found"] / results["vocalizations_analyzed"]
+    print(f"   Average phrases per vocalization: {avg_phrases:.2f}")
     print(
         f"   Vocalizations with phrase reuse: {results['vocalizations_with_reuse']} "
         f"({results['vocalizations_with_reuse'] / results['vocalizations_analyzed'] * 100:.1f}%)"
