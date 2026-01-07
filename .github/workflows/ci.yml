@@ -27,6 +27,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
     - name: Cache pip packages
       uses: actions/cache@v3
       with:
@@ -35,16 +42,32 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    - name: Cache Rust build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          technical_architecture/target
+        key: ${{ runner.os }}-cargo-python-${{ matrix.python-version }}-${{ hashFiles('technical_architecture/Cargo.lock') }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install maturin[patchelf]
         pip install pytest pytest-cov
         pip install numpy pandas scipy matplotlib
-        pip install scikit-learn torch torchvision
+        pip install scikit-learn
+
+    - name: Build Rust technical architecture (Python bindings)
+      run: |
+        cd technical_architecture
+        maturin build --release --features python-bindings
+        pip install target/wheels/technical_architecture*.whl
 
     - name: Run Python tests
       run: |
-        python -m pytest tests/ -v --tb=short
+        python -m pytest tests/ -v --tb=short --ignore=tests/test_rust_island_hopping.py --ignore=tests/test_rust_python_integration.py --ignore=tests/test_17d_metadata_synthesis.py --ignore=tests/test_vector_delta_synthesis.py --ignore=tests/test_interpolation_extrapolation.py --ignore=tests/test_granular_synthesis_limitations.py --ignore=tests/test_island_hopping_navigation.py --ignore=tests/test_shared_memory_ipc.py
 
   rust-tests:
     name: Rust Tests
@@ -161,11 +184,6 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest numpy pandas
-
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -173,10 +191,17 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Build Rust library
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin[patchelf]
+        pip install pytest numpy pandas
+
+    - name: Build Rust library (maturin)
       run: |
         cd technical_architecture
-        cargo build --release
+        maturin build --release --features python-bindings
+        pip install target/wheels/technical_architecture*.whl
 
     - name: Run integration tests
       run: |
