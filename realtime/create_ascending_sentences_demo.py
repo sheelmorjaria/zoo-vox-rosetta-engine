@@ -230,7 +230,7 @@ def demonstrate_phrase_selection(library: PhraseAudioLibrary):
 
             print(f"   Found {len(selected_phrases)} phrases:")
             for i, segment in enumerate(selected_phrases):
-                f0_hz = getattr(segment, 'mean_f0_hz', 0)
+                f0_hz = getattr(segment, "mean_f0_hz", 0)
                 print(
                     f"     {i + 1}. {segment.phrase_key}: {f0_hz:.0f}Hz, "
                     f"Quality: {segment.quality_score:.2f}"

@@ -66,7 +66,7 @@ jobs:
 
     - name: Run Python tests
       run: |
-        python -m pytest tests/ -v --tb=short --ignore=tests/test_rust_island_hopping.py --ignore=tests/test_rust_python_integration.py --ignore=tests/test_17d_metadata_synthesis.py --ignore=tests/test_vector_delta_synthesis.py --ignore=tests/test_interpolation_extrapolation.py --ignore=tests/test_granular_synthesis_limitations.py --ignore=tests/test_island_hopping_navigation.py --ignore=tests/test_shared_memory_ipc.py --ignore=tests/archive_experimental/ --ignore=tests/test_visual_fusion.py
+        python -m pytest tests/ -v --tb=short --ignore=tests/test_rust_island_hopping.py --ignore=tests/test_rust_python_integration.py --ignore=tests/test_17d_metadata_synthesis.py --ignore=tests/test_vector_delta_synthesis.py --ignore=tests/test_interpolation_extrapolation.py --ignore=tests/test_granular_synthesis_limitations.py --ignore=tests/test_island_hopping_navigation.py --ignore=tests/test_shared_memory_ipc.py --ignore=tests/archive_experimental/ --ignore=tests/test_visual_fusion.py --import-mode=importlib
 
   rust-tests:
     name: Rust Tests
@@ -205,7 +205,7 @@ jobs:
 
     - name: Run integration tests
       run: |
-        python -m pytest tests/test_rust_python_integration.py -v
+        python -m pytest tests/test_rust_python_integration.py -v --import-mode=importlib
 
   test-summary:
     name: Test Summary
