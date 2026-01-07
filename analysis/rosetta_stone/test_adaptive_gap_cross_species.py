@@ -108,12 +108,14 @@ def test_marmoset_files(base_dir, num_files=5):
             results.append(result)
 
             print(f"\n{result['filename'][:40]:40s}")
-            print(
-                f"  Modality: {result['overall_modality']} {'✓' if result['overall_modality'] == 'HARMONIC' else '✗'}"
-            )
+            modality = result['overall_modality']
+            check = '✓' if modality == 'HARMONIC' else '✗'
+            print(f"  Modality: {modality} {check}")
             print(f"  Adaptive threshold: {result['adaptive_threshold_ms']:6.2f} ms")
+            phrases_adaptive = result['phrases_adaptive']
+            phrases_fixed = result['phrases_fixed']
             print(
-                f"  Phrases: {result['phrases_adaptive']} (adaptive) vs {result['phrases_fixed']} (fixed)"
+                f"  Phrases: {phrases_adaptive} (adaptive) vs {phrases_fixed} (fixed)"
             )
         except Exception as e:
             print(f"  Error: {e}")
@@ -158,12 +160,14 @@ def test_bat_files(base_dir, num_files=5):
             results.append(result)
 
             print(f"\n{result['filename'][:40]:40s}")
-            print(
-                f"  Modality: {result['overall_modality']} {'✓' if result['overall_modality'] == 'TRANSIENT' else '✗'}"
-            )
+            modality = result['overall_modality']
+            check = '✓' if modality == 'TRANSIENT' else '✗'
+            print(f"  Modality: {modality} {check}")
             print(f"  Adaptive threshold: {result['adaptive_threshold_ms']:6.2f} ms")
+            phrases_adaptive = result['phrases_adaptive']
+            phrases_fixed = result['phrases_fixed']
             print(
-                f"  Phrases: {result['phrases_adaptive']} (adaptive) vs {result['phrases_fixed']} (fixed)"
+                f"  Phrases: {phrases_adaptive} (adaptive) vs {phrases_fixed} (fixed)"
             )
             if result["improvement"] > 0:
                 print(f"  Improvement: +{result['improvement']} phrases")
@@ -201,7 +205,8 @@ def test_dolphin_files(base_dir, num_files=5):
             print(f"  Modality: {result['overall_modality']}")
             print(f"  Adaptive threshold: {result['adaptive_threshold_ms']:6.2f} ms")
             print(
-                f"  Phrases: {result['phrases_adaptive']} (adaptive) vs {result['phrases_fixed']} (fixed)"
+                f"  Phrases: {result['phrases_adaptive']} (adaptive) vs "
+                f"{result['phrases_fixed']} (fixed)"
             )
             if result["modality_distribution"]:
                 print(f"  Modality distribution: {result['modality_distribution']}")
@@ -236,12 +241,14 @@ def test_sperm_whale_files(base_dir, num_files=5):
             results.append(result)
 
             print(f"\n{result['filename'][:40]:40s}")
-            print(
-                f"  Modality: {result['overall_modality']} {'✓' if result['overall_modality'] == 'TRANSIENT' else '✗'}"
-            )
+            modality = result['overall_modality']
+            check = '✓' if modality == 'TRANSIENT' else '✗'
+            print(f"  Modality: {modality} {check}")
             print(f"  Adaptive threshold: {result['adaptive_threshold_ms']:6.2f} ms")
+            phrases_adaptive = result['phrases_adaptive']
+            phrases_fixed = result['phrases_fixed']
             print(
-                f"  Phrases: {result['phrases_adaptive']} (adaptive) vs {result['phrases_fixed']} (fixed)"
+                f"  Phrases: {phrases_adaptive} (adaptive) vs {phrases_fixed} (fixed)"
             )
             if result["improvement"] > 0:
                 print(f"  Improvement: +{result['improvement']} phrases")

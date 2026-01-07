@@ -338,12 +338,12 @@ def print_ascending_syntax_summary(results: Dict):
         if stats["total"] > 0:
             print(f"\n   {context.upper()}:")
             print(f"      Total: {stats['total']}")
-            print(
-                f"      Multi-phrase: {stats['multi_phrase']} ({stats['multi_phrase'] / stats['total'] * 100:.1f}%)"
-            )
+            multi_phrase_pct = stats["multi_phrase"] / stats["total"] * 100
+            print(f"      Multi-phrase: {stats['multi_phrase']} ({multi_phrase_pct:.1f}%)")
             if stats["multi_phrase"] > 0:
+                ascending_pct = stats["ascending"] / stats["multi_phrase"] * 100
                 print(
-                    f"      Ascending: {stats['ascending']} ({stats['ascending'] / stats['multi_phrase'] * 100:.1f}% of multi-phrase)"
+                    f"      Ascending: {stats['ascending']} ({ascending_pct:.1f}% of multi-phrase)"
                 )
                 print(f"      Flat-tone ascending: {stats['flat_ascending']}")
 
@@ -358,7 +358,8 @@ def print_ascending_syntax_summary(results: Dict):
         for j, phrase in enumerate(ex["sequence"]):
             flat_marker = " [FLAT]" if phrase["is_flat_tone"] else ""
             print(
-                f"         {j + 1}. F0={phrase['f0_mean']:.0f}Hz, Range={phrase['f0_range']:.0f}Hz{flat_marker}"
+                f"         {j + 1}. F0={phrase['f0_mean']:.0f}Hz, "
+                f"Range={phrase['f0_range']:.0f}Hz{flat_marker}"
             )
 
     # Scientific interpretation
@@ -371,20 +372,20 @@ def print_ascending_syntax_summary(results: Dict):
 
     if flat_ascending_rate > 0.05:
         print("\n✅ STRONG EVIDENCE OF FLAT-TONE ASCENDING SYNTAX")
-        print(
-            f"   - {flat_ascending_rate * 100:.1f}% of vocalizations show flat-tone ascending patterns"
-        )
+        flat_ascending_pct = flat_ascending_rate * 100
+        print(f"   - {flat_ascending_pct:.1f}% of vocalizations show flat-tone ascending patterns")
         print("   - Suggests combinatorial syntax using low-modulation tones")
         print("   - Ascending F0 sequences may convey directional or increasing urgency")
     elif ascending_rate > 0.05:
         print("\n✅ MODERATE EVIDENCE OF ASCENDING SYNTAX")
-        print(f"   - {ascending_rate * 100:.1f}% of vocalizations show ascending patterns")
+        ascending_pct = ascending_rate * 100
+        print(f"   - {ascending_pct:.1f}% of vocalizations show ascending patterns")
         print("   - Some evidence of sequential phrase organization")
     else:
         print("\n⚠️  LIMITED ASCENDING SYNTAX DETECTED")
-        print(
-            f"   - {ascending_rate * 100:.1f}% ascending, {flat_ascending_rate * 100:.1f}% flat-tone ascending"
-        )
+        ascending_pct = ascending_rate * 100
+        flat_ascending_pct = flat_ascending_rate * 100
+        print(f"   - {ascending_pct:.1f}% ascending, {flat_ascending_pct:.1f}% flat-tone ascending")
         print("   - Most vocalizations are single phrases or non-ascending")
         print("   - May indicate: limited syntax OR need better segmentation")
 

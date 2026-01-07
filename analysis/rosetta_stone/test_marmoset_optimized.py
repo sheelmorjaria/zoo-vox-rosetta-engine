@@ -170,7 +170,8 @@ def main():
                 f0_values.append(result["mean_f0_hz"])
 
         print(
-            f"\nFiles successfully analyzed: {successful_files}/{num_files_to_test} ({successful_files / num_files_to_test * 100:.1f}%)"
+            f"\nFiles successfully analyzed: {successful_files}/{num_files_to_test} "
+            f"({successful_files / num_files_to_test * 100:.1f}%)"
         )
         print(f"Total phrases analyzed: {len(all_results)}")
 
@@ -190,7 +191,8 @@ def main():
             # Check if in expected range
             in_range = sum(1 for f in f0_values if 5000 <= f <= 12000)
             print(
-                f"  In expected range: {in_range}/{len(f0_values)} ({in_range / len(f0_values) * 100:.1f}%)"
+                f"  In expected range: {in_range}/{len(f0_values)} "
+                f"({in_range / len(f0_values) * 100:.1f}%)"
             )
 
         print("\n✅ Test completed!")

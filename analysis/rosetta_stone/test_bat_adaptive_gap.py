@@ -177,10 +177,12 @@ def main():
     print(f"  Total phrases (adaptive): {total_phrases_adaptive}")
     print(f"  Total phrases (fixed 50ms): {total_phrases_fixed}")
     print(
-        f"  Files with phrases (adaptive): {files_with_phrases_adaptive}/{len(results)} ({files_with_phrases_adaptive / len(results) * 100:.1f}%)"
+        f"  Files with phrases (adaptive): {files_with_phrases_adaptive}/{len(results)} "
+        f"({files_with_phrases_adaptive / len(results) * 100:.1f}%)"
     )
     print(
-        f"  Files with phrases (fixed): {files_with_phrases_fixed}/{len(results)} ({files_with_phrases_fixed / len(results) * 100:.1f}%)"
+        f"  Files with phrases (fixed): {files_with_phrases_fixed}/{len(results)} "
+        f"({files_with_phrases_fixed / len(results) * 100:.1f}%)"
     )
 
     # Improvement analysis
@@ -190,7 +192,8 @@ def main():
 
     print("\n📊 IMPROVEMENT:")
     print(
-        f"  Files with improvement: {files_with_improvement}/{len(results)} ({files_with_improvement / len(results) * 100:.1f}%)"
+        f"  Files with improvement: {files_with_improvement}/{len(results)} "
+        f"({files_with_improvement / len(results) * 100:.1f}%)"
     )
     print(f"  Total additional phrases: +{total_improvement}")
 

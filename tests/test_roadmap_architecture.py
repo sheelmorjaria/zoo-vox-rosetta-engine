@@ -397,9 +397,11 @@ if __name__ == "__main__":
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(
-        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    success_rate = (
+        (result.testsRun - len(result.failures) - len(result.errors))
+        / result.testsRun * 100
     )
+    print(f"Success rate: {success_rate:.1f}%")
 
     if result.failures:
         print(f"\n{'=' * 50}")

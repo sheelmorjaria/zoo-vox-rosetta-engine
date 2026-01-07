@@ -12,7 +12,6 @@ Test Coverage:
 """
 
 import pytest
-import numpy as np
 
 
 @pytest.mark.skip(reason="Requires maturin build of Rust module")

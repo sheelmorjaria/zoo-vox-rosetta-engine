@@ -109,13 +109,18 @@ class TestPhraseSignatureMFCCExpansion(unittest.TestCase):
 
         print(f"✓ PhraseSignature MFCC expansion test passed")
         print(f"  Total fields: {field_count} (29D vector)")
-        print(
-            f"  MFCCs 1-4: {signature.mfcc_1}, {signature.mfcc_2}, {signature.mfcc_3}, {signature.mfcc_4}"
+        mfcc_1_4 = (
+            f"  MFCCs 1-4: {signature.mfcc_1}, {signature.mfcc_2}, "
+            f"{signature.mfcc_3}, {signature.mfcc_4}"
         )
-        print(
-            f"  MFCCs 5-13: {signature.mfcc_5}, {signature.mfcc_6}, {signature.mfcc_7}, {signature.mfcc_8}, "
-            f"{signature.mfcc_9}, {signature.mfcc_10}, {signature.mfcc_11}, {signature.mfcc_12}, {signature.mfcc_13}"
+        print(mfcc_1_4)
+        mfcc_5_13 = (
+            f"  MFCCs 5-13: {signature.mfcc_5}, {signature.mfcc_6}, "
+            f"{signature.mfcc_7}, {signature.mfcc_8}, {signature.mfcc_9}, "
+            f"{signature.mfcc_10}, {signature.mfcc_11}, {signature.mfcc_12}, "
+            f"{signature.mfcc_13}"
         )
+        print(mfcc_5_13)
 
     def test_phrase_signature_backward_compatibility(self):
         """
@@ -256,13 +261,12 @@ class TestJSONSerialization13D(unittest.TestCase):
 
         print(f"✓ JSON serialization 13D test passed")
         print(
-            f"  Original MFCCs 1-4: {original.mfcc_1:.2f}, {original.mfcc_2:.2f}, "
-            f"{original.mfcc_3:.2f}, {original.mfcc_4:.2f}"
+            f"  Original MFCCs 5-9: {original.mfcc_5:.2f}, {original.mfcc_6:.2f}, "
+            f"{original.mfcc_7:.2f}, {original.mfcc_8:.2f}, {original.mfcc_9:.2f}"
         )
         print(
-            f"  Original MFCCs 5-13: {original.mfcc_5:.2f}, {original.mfcc_6:.2f}, "
-            f"{original.mfcc_7:.2f}, {original.mfcc_8:.2f}, {original.mfcc_9:.2f}, "
-            f"{original.mfcc_10:.2f}, {original.mfcc_11:.2f}, {original.mfcc_12:.2f}, {original.mfcc_13:.2f}"
+            f"  Original MFCCs 10-13: {original.mfcc_10:.2f}, {original.mfcc_11:.2f}, "
+            f"{original.mfcc_12:.2f}, {original.mfcc_13:.2f}"
         )
         print(f"  Restored MFCCs match: All within 1e-5")
 

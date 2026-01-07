@@ -13,13 +13,10 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
 import time
-import json
-from unittest.mock import Mock, MagicMock, patch
+import unittest
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
-
+from unittest.mock import Mock
 
 # =============================================================================
 # Mock Dependencies
@@ -311,11 +308,11 @@ class TestLatencyConstraints(unittest.TestCase):
         # Average should be significantly lower (ideally <50ms)
         self.assertLess(avg_latency, 50.0, f"Average latency {avg_latency:.2f}ms should be <50ms")
 
-        print(f"✓ Latency test passed")
+        print("✓ Latency test passed")
         print(f"  Average: {avg_latency:.2f}ms")
         print(f"  Min: {min_latency:.2f}ms")
         print(f"  Max: {max_latency:.2f}ms")
-        print(f"  All 10 responses <100ms ✓")
+        print("  All 10 responses <100ms ✓")
 
 
 # =============================================================================
@@ -444,7 +441,7 @@ class TestSafetyClampActivation(unittest.TestCase):
 
         print("✓ Safety clamp activation test passed")
         print(f"  Clamp activated: {result['was_clamped']}")
-        print(f"  Warning logged: True")
+        print("  Warning logged: True")
 
 
 # =============================================================================

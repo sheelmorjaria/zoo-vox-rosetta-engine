@@ -53,7 +53,19 @@ class MetadataQuery:
 
 @dataclass
 class PhraseCandidate:
-    """A phrase from the database with metadata and scoring."""
+    """
+    A phrase from the database with 30D metadata and scoring.
+
+    Supports full 30-dimensional micro-dynamics features:
+    - Fundamental (3): mean_f0_hz, f0_range_hz, duration_ms
+    - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+    - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+    - Fingerprint Factors (13 MFCCs): mfcc_1 through mfcc_13
+    - Spectral Dynamics (1): spectral_flux
+    - Rhythm Factors (3): median_ici_ms, onset_rate_hz,
+                        ici_coefficient_of_variation
+    """
 
     phrase_id: str
     audio_buffer: np.ndarray
@@ -66,15 +78,115 @@ class PhraseCandidate:
     novelty_score: float = 0.0  # Exploration bonus
     total_score: float = 0.0  # Weighted combination
 
+    # Cached feature vector (30D)
+    feature_vector: Optional[np.ndarray] = None
+
     def __post_init__(self):
-        """Extract acoustic features from metadata."""
-        self.f0_hz = self.metadata.get("mean_f0_hz", 0.0)
-        self.duration_ms = self.metadata.get("duration_ms", 0.0)
+        """Extract all 30D acoustic features from metadata."""
+        # === Fundamental (3 features) ===
+        self.mean_f0_hz = self.metadata.get("mean_f0_hz", 0.0)
         self.f0_range_hz = self.metadata.get("f0_range_hz", 0.0)
+        self.duration_ms = self.metadata.get("duration_ms", 0.0)
+
+        # === Grit Factors (3 features) ===
+        self.harmonic_to_noise_ratio = self.metadata.get("harmonic_to_noise_ratio", 0.0)
+        self.spectral_flatness = self.metadata.get("spectral_flatness", 0.0)
         self.harmonicity = self.metadata.get("harmonicity", 0.0)
+
+        # === Motion Factors (7 features) ===
+        self.attack_time_ms = self.metadata.get("attack_time_ms", 0.0)
+        self.decay_time_ms = self.metadata.get("decay_time_ms", 0.0)
+        self.sustain_level = self.metadata.get("sustain_level", 0.0)
+        self.vibrato_rate_hz = self.metadata.get("vibrato_rate_hz", 0.0)
+        self.vibrato_depth = self.metadata.get("vibrato_depth", 0.0)
+        self.jitter = self.metadata.get("jitter", 0.0)
+        self.shimmer = self.metadata.get("shimmer", 0.0)
+
+        # === Fingerprint Factors (13 MFCCs) ===
+        self.mfcc_1 = self.metadata.get("mfcc_1", 0.0)
+        self.mfcc_2 = self.metadata.get("mfcc_2", 0.0)
+        self.mfcc_3 = self.metadata.get("mfcc_3", 0.0)
+        self.mfcc_4 = self.metadata.get("mfcc_4", 0.0)
+        self.mfcc_5 = self.metadata.get("mfcc_5", 0.0)
+        self.mfcc_6 = self.metadata.get("mfcc_6", 0.0)
+        self.mfcc_7 = self.metadata.get("mfcc_7", 0.0)
+        self.mfcc_8 = self.metadata.get("mfcc_8", 0.0)
+        self.mfcc_9 = self.metadata.get("mfcc_9", 0.0)
+        self.mfcc_10 = self.metadata.get("mfcc_10", 0.0)
+        self.mfcc_11 = self.metadata.get("mfcc_11", 0.0)
+        self.mfcc_12 = self.metadata.get("mfcc_12", 0.0)
+        self.mfcc_13 = self.metadata.get("mfcc_13", 0.0)
+
+        # === Spectral Dynamics (1 feature) ===
+        self.spectral_flux = self.metadata.get("spectral_flux", 0.0)
+
+        # === Rhythm Factors (3 features) ===
+        self.median_ici_ms = self.metadata.get("median_ici_ms", 0.0)
+        self.onset_rate_hz = self.metadata.get("onset_rate_hz", 0.0)
+        self.ici_coefficient_of_variation = self.metadata.get(
+            "ici_coefficient_of_variation", 0.0
+        )
+
+        # === Additional metadata ===
         self.context = self.metadata.get("context", "unknown")
         self.cluster_id = self.metadata.get("cluster_id", -1)
         self.species = self.metadata.get("species", "unknown")
+
+        # Backward compatibility aliases
+        self.f0_hz = self.mean_f0_hz
+        self.f0_range = self.f0_range_hz
+
+    def get_feature_vector(self) -> np.ndarray:
+        """
+        Get the 30-dimensional feature vector.
+
+        Returns:
+            np.ndarray: 30D feature vector in standardized order
+        """
+        if self.feature_vector is None:
+            # Build 30D vector in standardized order
+            self.feature_vector = np.array(
+                [
+                    # Fundamental (3)
+                    self.mean_f0_hz,
+                    self.f0_range_hz,
+                    self.duration_ms,
+                    # Grit Factors (3)
+                    self.harmonic_to_noise_ratio,
+                    self.spectral_flatness,
+                    self.harmonicity,
+                    # Motion Factors (7)
+                    self.attack_time_ms,
+                    self.decay_time_ms,
+                    self.sustain_level,
+                    self.vibrato_rate_hz,
+                    self.vibrato_depth,
+                    self.jitter,
+                    self.shimmer,
+                    # Fingerprint Factors (13 MFCCs)
+                    self.mfcc_1,
+                    self.mfcc_2,
+                    self.mfcc_3,
+                    self.mfcc_4,
+                    self.mfcc_5,
+                    self.mfcc_6,
+                    self.mfcc_7,
+                    self.mfcc_8,
+                    self.mfcc_9,
+                    self.mfcc_10,
+                    self.mfcc_11,
+                    self.mfcc_12,
+                    self.mfcc_13,
+                    # Spectral Dynamics (1)
+                    self.spectral_flux,
+                    # Rhythm Factors (3)
+                    self.median_ici_ms,
+                    self.onset_rate_hz,
+                    self.ici_coefficient_of_variation,
+                ]
+            )
+
+        return self.feature_vector
 
 
 @dataclass
@@ -94,6 +206,29 @@ class SynthesisRecipe:
     is_cross_persona: bool = False
     discovery_potential: float = 0.0  # 0-1, how novel is this?
     reasoning: str = ""
+
+
+def interpolate_30d_features(
+    candidate_a: PhraseCandidate, candidate_b: PhraseCandidate, blend_ratio: float
+) -> np.ndarray:
+    """
+    Interpolate between two 30D feature vectors.
+
+    Args:
+        candidate_a: First phrase candidate
+        candidate_b: Second phrase candidate
+        blend_ratio: Blend ratio (0.0 = all A, 1.0 = all B)
+
+    Returns:
+        np.ndarray: 30D interpolated feature vector
+    """
+    vec_a = candidate_a.get_feature_vector()
+    vec_b = candidate_b.get_feature_vector()
+
+    # Linear interpolation: (1 - alpha) * A + alpha * B
+    interpolated = (1 - blend_ratio) * vec_a + blend_ratio * vec_b
+
+    return interpolated
 
 
 class VectorSpaceQueryEngine:
@@ -252,7 +387,10 @@ class VectorSpaceQueryEngine:
         self, query: MetadataQuery, species: Optional[str] = None, top_k: int = 5
     ) -> List[PhraseCandidate]:
         """
-        Query the vector space for nearest neighbors.
+        Query the 30D vector space for nearest neighbors.
+
+        Uses all 30 dimensions for distance calculation, with special
+        consideration for F0 and duration as primary constraints.
 
         Returns candidates ranked by total_score (acoustic + context + novelty).
         """
@@ -263,15 +401,51 @@ class VectorSpaceQueryEngine:
         if species:
             search_space = self.species_index.get(species, [])
 
+        # Build target vector (30D, but only F0 and duration are specified in query)
+        # For unspecified dimensions, we use the mean of available phrases
+        if search_space:
+            # Get feature vectors for normalization
+            feature_vectors = np.array([p.get_feature_vector() for p in search_space])
+
+            # Calculate mean and std for each dimension
+            feature_means = np.mean(feature_vectors, axis=0)
+            feature_stds = np.std(feature_vectors, axis=0) + 1e-6  # Avoid division by zero
+
+            # Build target vector (use query values where specified, means otherwise)
+            target_vector = feature_means.copy()
+            # Index 0: mean_f0_hz
+            target_vector[0] = query.target_f0_hz
+            # Index 2: duration_ms
+            target_vector[2] = query.target_duration_ms
+        else:
+            # No phrases available
+            return []
+
         for phrase in search_space:
-            # Calculate acoustic score (distance in vector space)
-            f0_distance = abs(phrase.f0_hz - query.target_f0_hz)
+            # Get 30D feature vector
+            phrase_vector = phrase.get_feature_vector()
+
+            # Calculate 30D Euclidean distance (normalized)
+            # This uses all 30 dimensions for matching
+            normalized_distance = np.sqrt(
+                np.sum(((phrase_vector - target_vector) / feature_stds) ** 2)
+            )
+
+            # Convert distance to score (closer = higher score)
+            # Use exponential decay for smoother scoring
+            phrase.acoustic_score = np.exp(-normalized_distance / 10.0)
+
+            # Additional scoring for F0 and duration proximity (primary constraints)
+            f0_distance = abs(phrase.mean_f0_hz - query.target_f0_hz)
             duration_distance = abs(phrase.duration_ms - query.target_duration_ms)
 
-            # Normalize distances (closer = higher score)
             f0_score = 1.0 / (1.0 + f0_distance / query.f0_tolerance_hz)
             duration_score = 1.0 / (1.0 + duration_distance / query.duration_tolerance_ms)
-            phrase.acoustic_score = (f0_score + duration_score) / 2.0
+
+            # Combine 30D score with primary constraint scores
+            phrase.acoustic_score = (
+                0.5 * phrase.acoustic_score + 0.5 * (f0_score + duration_score) / 2.0
+            )
 
             # Calculate context score (soft constraint)
             phrase.context_score = 0.0
@@ -330,10 +504,16 @@ class VectorSpaceQueryEngine:
         total_weight = sum(w for _, w in sources)
         sources = [(c, w / total_weight) for c, w in sources]
 
-        # Calculate target parameters (weighted average)
-        target_f0 = sum(c.f0_hz * w for c, w in sources)
-        target_duration = sum(c.duration_ms * w for c, w in sources)
-        target_f0_range = sum(c.f0_range_hz * w for c, w in sources)
+        # Calculate 30D target parameters (weighted average of feature vectors)
+        target_vector_30d = np.zeros(30)
+        for candidate, weight in sources:
+            vec = candidate.get_feature_vector()
+            target_vector_30d += weight * vec
+
+        # Extract key target parameters for backward compatibility
+        target_f0 = target_vector_30d[0]  # mean_f0_hz
+        target_duration = target_vector_30d[2]  # duration_ms
+        target_f0_range = target_vector_30d[1]  # f0_range_hz
 
         # Determine if this is cross-persona synthesis
         clusters_used = [c.cluster_id for c, _ in sources]
@@ -361,6 +541,7 @@ class VectorSpaceQueryEngine:
                 "mean_f0_hz": target_f0,
                 "duration_ms": target_duration,
                 "f0_range_hz": target_f0_range,
+                "target_vector_30d": target_vector_30d,  # Store full 30D vector
             },
             synthesis_mode="morph",
             is_cross_persona=is_cross_persona,

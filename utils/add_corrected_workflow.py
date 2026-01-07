@@ -18,7 +18,8 @@ CORRECTED_WORKFLOW_TEMPLATE = '''
         import json
 
         logger.info("=" * 60)
-        logger.info(f"{self.__class__.__name__.replace('RosettaStone', '').upper()} ROSETTA STONE ANALYSIS (CORRECTED WORKFLOW)")
+        species_name = self.__class__.__name__.replace("RosettaStone", "").upper()
+        logger.info(f"{species_name} ROSETTA STONE ANALYSIS (CORRECTED WORKFLOW)")
         logger.info("=" * 60)
 
         output_path = Path(output_dir or self.config.output_dir)
@@ -56,7 +57,8 @@ CORRECTED_WORKFLOW_TEMPLATE = '''
             logger.info("=" * 60)
 
             harmonic_analyzer = HarmonicAffirmationAnalyzer(config=self.config)
-            audio_files = list(self.audio_dir.rglob("*.wav"))[:max_files] if max_files else list(self.audio_dir.rglob("*.wav"))
+            all_audio_files = list(self.audio_dir.rglob("*.wav"))
+            audio_files = all_audio_files[:max_files] if max_files else all_audio_files
 
             affirmed_clusters = harmonic_analyzer.affirm_atomic_words(audio_files)
             logger.info(f"Affirmed {len(affirmed_clusters)} harmonic clusters")
@@ -76,7 +78,7 @@ CORRECTED_WORKFLOW_TEMPLATE = '''
 
             validator = CompositionalValidator(config=self.config)
             validation_report = validator.validate_sentence_dataset(
-                list(self.audio_dir.rglob("*.wav"))[:max_files] if max_files else list(self.audio_dir.rglob("*.wav")),
+                all_audio_files[:max_files] if max_files else all_audio_files,
                 phrase_library,
                 max_files=max_files
             )

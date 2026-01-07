@@ -201,7 +201,7 @@ class TestFormantBarrier(unittest.TestCase):
         self.assertAlmostEqual(
             output_flatness,
             original_flatness,
-            delta=0.9,  # Large tolerance because transients are heavily affected by grain boundaries
+            delta=0.9,  # Large tolerance: transients heavily affected by grain boundaries
             msg="Transient should preserve spectral flatness (Formant Barrier)",
         )
 

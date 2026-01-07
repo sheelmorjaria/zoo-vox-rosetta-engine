@@ -356,7 +356,8 @@ class SpermWhaleAnalyzer:
         print(f"  Total codas: {analysis.total_codas}")
         if analysis.total_codas > 0:
             print(
-                f"  Clicks per coda: {analysis.clicks_per_coda_mean:.1f} ± {analysis.clicks_per_coda_std:.1f}"
+                f"  Clicks per coda: {analysis.clicks_per_coda_mean:.1f} ± "
+                f"{analysis.clicks_per_coda_std:.1f}"
             )
 
             # Coda length distribution

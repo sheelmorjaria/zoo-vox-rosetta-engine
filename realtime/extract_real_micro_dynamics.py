@@ -309,7 +309,8 @@ def process_audio_library(audio_index_path: str, species: str) -> Dict:
     total_segments = sum(len(data["segments"]) for data in audio_index["phrases"].values())
 
     print(
-        f"\n🔍 Processing {total_segments} segments from {len(audio_index['phrases'])} phrase types..."
+        f"\n🔍 Processing {total_segments} segments from "
+        f"{len(audio_index['phrases'])} phrase types..."
     )
 
     for phrase_key, phrase_data in audio_index["phrases"].items():

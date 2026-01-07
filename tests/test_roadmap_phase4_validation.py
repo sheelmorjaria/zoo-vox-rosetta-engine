@@ -37,7 +37,8 @@ class TestProvenanceTracer(unittest.TestCase):
     def test_flatbuffers_binary_format(self):
         """Test that provenance entries are exactly 64 bytes in FlatBuffers format"""
         # Expected entry format:
-        # [Timestamp (8B) | ContextID (1B) | DecisionVector (4B) | SynthesisParams (4B) | Checksum (4B)]
+        # [Timestamp (8B) | ContextID (1B) | DecisionVector (4B) |
+        #  SynthesisParams (4B) | Checksum (4B)]
 
         # Import the provenance tracer
         from scientific_validation.provenance_tracer import (
@@ -729,9 +730,11 @@ if __name__ == "__main__":
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(
-        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    success_rate = (
+        (result.testsRun - len(result.failures) - len(result.errors))
+        / result.testsRun * 100
     )
+    print(f"Success rate: {success_rate:.1f}%")
 
     if result.failures:
         print(f"\n{'=' * 50}")

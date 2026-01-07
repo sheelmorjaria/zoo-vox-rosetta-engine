@@ -1524,9 +1524,10 @@ if __name__ == "__main__":
     separated = system.separate_sources(mixed_audio)
     print("\nSource separation:")
     print(f"Target length: {len(separated['target'])}")
-    print(
-        f"Separation quality: {system.source_separator.get_performance_metrics()['avg_quality_score']:.2f}"
+    quality_score = (
+        system.source_separator.get_performance_metrics()["avg_quality_score"]
     )
+    print(f"Separation quality: {quality_score:.2f}")
 
     # Test visual processing (if OpenCV is available)
     try:

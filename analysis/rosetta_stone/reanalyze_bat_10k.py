@@ -188,36 +188,43 @@ def main():
 
     if transients:
         print(f"\n  TRANSIENT (n={len(transients)}):")
-        print(
-            f"    ZCR:                {np.mean([r['zcr'] for r in transients]):.4f} ± {np.std([r['zcr'] for r in transients]):.4f}"
-        )
-        print(
-            f"    Spectral flatness:  {np.mean([r['spectral_flatness'] for r in transients]):.4f} ± {np.std([r['spectral_flatness'] for r in transients]):.4f}"
-        )
-        print(
-            f"    Envelope CV:        {np.mean([r['envelope_cv'] for r in transients]):.4f} ± {np.std([r['envelope_cv'] for r in transients]):.4f}"
-        )
-        print(
-            f"    Click rate:         {np.mean([r['click_rate'] for r in transients]):.1f} ± {np.std([r['click_rate'] for r in transients]):.1f} clicks/sec"
-        )
-        print(
-            f"    Mean ICI:           {np.mean([r['mean_ici_ms'] for r in transients]):.2f} ± {np.std([r['mean_ici_ms'] for r in transients]):.2f} ms"
-        )
+        zcr_mean = np.mean([r["zcr"] for r in transients])
+        zcr_std = np.std([r["zcr"] for r in transients])
+        print(f"    ZCR:                {zcr_mean:.4f} ± {zcr_std:.4f}")
+
+        sf_mean = np.mean([r["spectral_flatness"] for r in transients])
+        sf_std = np.std([r["spectral_flatness"] for r in transients])
+        print(f"    Spectral flatness:  {sf_mean:.4f} ± {sf_std:.4f}")
+
+        env_cv_mean = np.mean([r["envelope_cv"] for r in transients])
+        env_cv_std = np.std([r["envelope_cv"] for r in transients])
+        print(f"    Envelope CV:        {env_cv_mean:.4f} ± {env_cv_std:.4f}")
+
+        cr_mean = np.mean([r["click_rate"] for r in transients])
+        cr_std = np.std([r["click_rate"] for r in transients])
+        print(f"    Click rate:         {cr_mean:.1f} ± {cr_std:.1f} clicks/sec")
+
+        ici_mean = np.mean([r["mean_ici_ms"] for r in transients])
+        ici_std = np.std([r["mean_ici_ms"] for r in transients])
+        print(f"    Mean ICI:           {ici_mean:.2f} ± {ici_std:.2f} ms")
 
     if fm_sweeps:
         print(f"\n  FM_SWEEP (n={len(fm_sweeps)}):")
-        print(
-            f"    ZCR:                {np.mean([r['zcr'] for r in fm_sweeps]):.4f} ± {np.std([r['zcr'] for r in fm_sweeps]):.4f}"
-        )
-        print(
-            f"    Spectral flatness:  {np.mean([r['spectral_flatness'] for r in fm_sweeps]):.4f} ± {np.std([r['spectral_flatness'] for r in fm_sweeps]):.4f}"
-        )
-        print(
-            f"    Envelope CV:        {np.mean([r['envelope_cv'] for r in fm_sweeps]):.4f} ± {np.std([r['envelope_cv'] for r in fm_sweeps]):.4f}"
-        )
-        print(
-            f"    Click rate:         {np.mean([r['click_rate'] for r in fm_sweeps]):.1f} ± {np.std([r['click_rate'] for r in fm_sweeps]):.1f} clicks/sec"
-        )
+        zcr_mean = np.mean([r["zcr"] for r in fm_sweeps])
+        zcr_std = np.std([r["zcr"] for r in fm_sweeps])
+        print(f"    ZCR:                {zcr_mean:.4f} ± {zcr_std:.4f}")
+
+        sf_mean = np.mean([r["spectral_flatness"] for r in fm_sweeps])
+        sf_std = np.std([r["spectral_flatness"] for r in fm_sweeps])
+        print(f"    Spectral flatness:  {sf_mean:.4f} ± {sf_std:.4f}")
+
+        env_cv_mean = np.mean([r["envelope_cv"] for r in fm_sweeps])
+        env_cv_std = np.std([r["envelope_cv"] for r in fm_sweeps])
+        print(f"    Envelope CV:        {env_cv_mean:.4f} ± {env_cv_std:.4f}")
+
+        cr_mean = np.mean([r["click_rate"] for r in fm_sweeps])
+        cr_std = np.std([r["click_rate"] for r in fm_sweeps])
+        print(f"    Click rate:         {cr_mean:.1f} ± {cr_std:.1f} clicks/sec")
 
     # Energy distribution
     print("\n📊 ENERGY DISTRIBUTION (all files):")
@@ -248,39 +255,37 @@ def main():
         else:
             low_confidence += 1
 
-    print(
-        f"  High confidence (>60%): {high_confidence}/{len(results)} ({high_confidence / len(results) * 100:.1f}%)"
-    )
-    print(
-        f"  Low confidence (≤60%):  {low_confidence}/{len(results)} ({low_confidence / len(results) * 100:.1f}%)"
-    )
+    high_conf_pct = high_confidence / len(results) * 100
+    low_conf_pct = low_confidence / len(results) * 100
+    print(f"  High confidence (>60%): {high_confidence}/{len(results)} ({high_conf_pct:.1f}%)")
+    print(f"  Low confidence (≤60%):  {low_confidence}/{len(results)} ({low_conf_pct:.1f}%)")
 
     # Detailed feature thresholds
     print("\n📊 MODALITY CLASSIFICATION THRESHOLDS:")
 
     if transients:
         print("\n  TRANSIENT files show:")
-        np.mean([r["zcr"] for r in transients])
-        np.mean([r["spectral_flatness"] for r in transients])
-        np.mean([r["envelope_cv"] for r in transients])
-        print(
-            f"    ZCR < 0.1:  {sum(1 for r in transients if r['zcr'] < 0.1)}/{len(transients)} ({sum(1 for r in transients if r['zcr'] < 0.1) / len(transients) * 100:.1f}%)"
-        )
-        print(
-            f"    Flatness < 0.3: {sum(1 for r in transients if r['spectral_flatness'] < 0.3)}/{len(transients)} ({sum(1 for r in transients if r['spectral_flatness'] < 0.3) / len(transients) * 100:.1f}%)"
-        )
-        print(
-            f"    CV < 0.5: {sum(1 for r in transients if r['envelope_cv'] < 0.5)}/{len(transients)} ({sum(1 for r in transients if r['envelope_cv'] < 0.5) / len(transients) * 100:.1f}%)"
-        )
+        zcr_low = sum(1 for r in transients if r["zcr"] < 0.1)
+        zcr_low_pct = zcr_low / len(transients) * 100
+        print(f"    ZCR < 0.1:  {zcr_low}/{len(transients)} ({zcr_low_pct:.1f}%)")
+
+        flat_low = sum(1 for r in transients if r["spectral_flatness"] < 0.3)
+        flat_low_pct = flat_low / len(transients) * 100
+        print(f"    Flatness < 0.3: {flat_low}/{len(transients)} ({flat_low_pct:.1f}%)")
+
+        cv_low = sum(1 for r in transients if r["envelope_cv"] < 0.5)
+        cv_low_pct = cv_low / len(transients) * 100
+        print(f"    CV < 0.5: {cv_low}/{len(transients)} ({cv_low_pct:.1f}%)")
 
     if fm_sweeps:
         print("\n  FM_SWEEP files show:")
-        print(
-            f"    ZCR > 0.1:  {sum(1 for r in fm_sweeps if r['zcr'] > 0.1)}/{len(fm_sweeps)} ({sum(1 for r in fm_sweeps if r['zcr'] > 0.1) / len(fm_sweeps) * 100:.1f}%)"
-        )
-        print(
-            f"    Flatness < 0.6: {sum(1 for r in fm_sweeps if r['spectral_flatness'] < 0.6)}/{len(fm_sweeps)} ({sum(1 for r in fm_sweeps if r['spectral_flatness'] < 0.6) / len(fm_sweeps) * 100:.1f}%)"
-        )
+        zcr_high = sum(1 for r in fm_sweeps if r["zcr"] > 0.1)
+        zcr_high_pct = zcr_high / len(fm_sweeps) * 100
+        print(f"    ZCR > 0.1:  {zcr_high}/{len(fm_sweeps)} ({zcr_high_pct:.1f}%)")
+
+        flat_low = sum(1 for r in fm_sweeps if r["spectral_flatness"] < 0.6)
+        flat_low_pct = flat_low / len(fm_sweeps) * 100
+        print(f"    Flatness < 0.6: {flat_low}/{len(fm_sweeps)} ({flat_low_pct:.1f}%)")
 
     # Conclusion
     print("\n" + "=" * 90)

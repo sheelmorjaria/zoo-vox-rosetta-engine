@@ -197,7 +197,8 @@ class ResourcePool:
     def allocate(
         self, resources: Dict[str, Any], allocation_id: str = None
     ) -> Optional[Dict[str, Any]]:
-        """Allocate resources for a task. Returns allocated resources dict or None if unavailable."""
+        """Allocate resources for a task. Returns allocated resources dict
+        or None if unavailable."""
         with self._lock:
             allocation_id = allocation_id or str(uuid.uuid4())
 

@@ -102,7 +102,8 @@ def main():
             zcr = np.sum(np.abs(np.diff(np.sign(click)))) / (2 * len(click))
 
             print(
-                f"    Click {i + 1}: {len(click) / sr * 1000:.1f}ms, DomFreq: {abs(dom_freq) / 1000:.1f}kHz, ZCR: {zcr:.3f}"
+                f"    Click {i + 1}: {len(click) / sr * 1000:.1f}ms, DomFreq: {
+                    abs(dom_freq) / 1000:.1f}kHz, ZCR: {zcr:.3f}"
             )
 
     # Try segmentation with aggressive parameters

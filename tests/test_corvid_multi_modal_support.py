@@ -38,7 +38,8 @@ class CorvidPersona:
     Composite Persona for multi-modal species like Corvids.
 
     A Corvid "Persona" is defined as a Sequence of Textures, not a single buffer.
-    Example: "Alert Call" = [Harmonic_Start (whistle), Transient_Rattle (rattle), Harmonic_End (whistle)]
+    Example: "Alert Call" = [Harmonic_Start (whistle), Transient_Rattle (rattle),
+    Harmonic_End (whistle)]
     """
 
     species: str

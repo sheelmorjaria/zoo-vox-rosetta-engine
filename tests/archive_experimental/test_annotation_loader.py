@@ -15,28 +15,25 @@ License: CC BY-ND 4.0 International
 """
 
 import json
+import sys
 import tempfile
 from pathlib import Path
 
-import numpy as np
 import pytest
-
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.annotation_loader import (
     Annotation,
-    AnnotationTrack,
     AnnotationCollection,
-    ELANAnnotationLoader,
-    PraatTextGridLoader,
-    JSONAnnotationLoader,
-    CSVAnnotationLoader,
     AnnotationLoader,
+    AnnotationTrack,
+    CSVAnnotationLoader,
+    ELANAnnotationLoader,
+    JSONAnnotationLoader,
+    PraatTextGridLoader,
     associate_context_to_segments,
 )
-
 
 # ============================================================================
 # Test Fixtures

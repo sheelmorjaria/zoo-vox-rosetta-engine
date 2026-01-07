@@ -282,8 +282,9 @@ def main():
 
     print("\n💡 Key Findings:")
     total_analyzed = len(all_results) + len(full_file_analyses)
+    analyzed_pct = total_analyzed / len(test_files) * 100
     print(
-        f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({total_analyzed / len(test_files) * 100:.1f}%)"
+        f"  - Successfully analyzed: {total_analyzed}/{len(test_files)} ({analyzed_pct:.1f}%)"
     )
 
     if all_results or full_file_analyses:

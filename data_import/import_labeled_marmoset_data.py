@@ -6,8 +6,10 @@ This script imports labeled marmoset vocalizations and creates a phrase database
 with proper behavioral context associations.
 
 Data Sources:
-- Annotations.tsv: 871,045 labeled vocalizations (Tsik, Trill, Twitter, Phee, Seep, Infant, Vocalization)
-- ~/birdsong_analysis/data/Vocalizations/: Audio files organized by date folders
+- Annotations.tsv: 871,045 labeled vocalizations
+  (Tsik, Trill, Twitter, Phee, Seep, Infant, Vocalization)
+- ~/birdsong_analysis/data/Vocalizations/: Audio files
+  organized by date folders
 
 Process:
 1. Load annotations with behavioral context labels
@@ -317,9 +319,8 @@ def import_labeled_vocalizations(
     # Print statistics
     print("\n📊 DATABASE STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
-    print(
-        f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}"
-    )
+    total_occurrences = sum(p["total_occurrences"] for p in species_data["phrases"].values())
+    print(f"   Total occurrences: {total_occurrences}")
 
     # Show context distribution
     all_contexts = Counter()

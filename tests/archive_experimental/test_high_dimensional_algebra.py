@@ -15,31 +15,32 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import pytest
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
+import pytest
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from analysis.rosetta_stone.high_dimensional_acoustic_algebra import (
-    AcousticFeatureVector17,
-    ZScoreNormalizer,
-    HighDimensionalAcousticAlgebra,
-)
+import warnings
 
 from analysis.rosetta_stone.grain_based_grammar_discovery import (
+    AtomicPhraseDiscoverer,
     Grain,
     GrainExtractor,
-    AtomicPhraseDiscoverer,
+    GrammarDiscoveryPipeline,
     SentenceReconstructor,
     SentenceStructure,
     TransitionEntropyAnalyzer,
-    GrammarDiscoveryPipeline,
 )
 
-import warnings
+from analysis.rosetta_stone.high_dimensional_acoustic_algebra import (
+    AcousticFeatureVector17,
+    HighDimensionalAcousticAlgebra,
+    ZScoreNormalizer,
+)
 
 warnings.filterwarnings("ignore")
 

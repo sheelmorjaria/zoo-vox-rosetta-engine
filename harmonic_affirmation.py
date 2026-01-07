@@ -61,9 +61,12 @@ class HarmonicAffirmation:
         Initialize HarmonicAffirmation with configuration parameters.
 
         Args:
-            harmonic_threshold_ratio: Maximum allowed deviation for harmonic relationships (default: 20%)
-            min_harmonic_group_size: Minimum number of phrases to form a harmonic group
-            max_harmonic_deviation: Maximum allowed harmonic deviation for validation
+            harmonic_threshold_ratio: Maximum allowed deviation for harmonic
+                relationships (default: 20%)
+            min_harmonic_group_size: Minimum number of phrases to form a
+                harmonic group
+            max_harmonic_deviation: Maximum allowed harmonic deviation for
+                validation
         """
         self.harmonic_threshold_ratio = harmonic_threshold_ratio
         self.min_harmonic_group_size = min_harmonic_group_size

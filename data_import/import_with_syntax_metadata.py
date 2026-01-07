@@ -433,7 +433,8 @@ def import_with_syntax_metadata(max_files: int = MAX_FILES):
     print(f"   Ascending: {ascending_count} ({ascending_count / len(vocalizations) * 100:.1f}%)")
     print(f"   Descending: {descending_count} ({descending_count / len(vocalizations) * 100:.1f}%)")
     print(
-        f"   Compositional (3+ phrases): {compositional_count} ({compositional_count / len(vocalizations) * 100:.1f}%)"
+        f"   Compositional (3+ phrases): {compositional_count} "
+        f"({compositional_count / len(vocalizations) * 100:.1f}%)"
     )
 
     # Save

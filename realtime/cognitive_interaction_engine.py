@@ -14,9 +14,8 @@ License: CC BY-ND 4.0 International
 """
 
 import logging
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
-
+from typing import Any, Dict, Optional
 
 # =============================================================================
 # Data Models

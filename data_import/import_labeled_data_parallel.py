@@ -220,9 +220,8 @@ def import_marmoset_data(
     # Show statistics
     print("\n📊 STATISTICS:")
     print(f"   Total phrases: {len(species_data['phrases'])}")
-    print(
-        f"   Total occurrences: {sum(p['total_occurrences'] for p in species_data['phrases'].values())}"
-    )
+    total_occ = sum(p["total_occurrences"] for p in species_data["phrases"].values())
+    print(f"   Total occurrences: {total_occ}")
 
     # Context distribution
     all_contexts = Counter()
@@ -250,9 +249,13 @@ def import_marmoset_data(
 
 
 def import_bat_data(
-    annotations_path: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv",
+    annotations_path: str = (
+        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv"
+    ),
     audio_dir: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio",
-    output_path: str = "/home/sheel/birdsong_analysis/src/vocalization_database_with_bat_contexts.json",
+    output_path: str = (
+        "/home/sheel/birdsong_analysis/src/vocalization_database_with_bat_contexts.json"
+    ),
     max_files: int = 5000,
 ):
     """Import Egyptian fruit bat vocalizations with behavioral contexts."""

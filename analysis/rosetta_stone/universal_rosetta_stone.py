@@ -606,7 +606,8 @@ class PhraseSignature:
         return np.sqrt(np.sum(normalized_diff**2))
 
     def __repr__(self) -> str:
-        return f"PhraseSignature(modality={self.modality.name}, duration={self.features.get('duration_ms', 0):.1f}ms)"
+        duration = self.features.get("duration_ms", 0)
+        return f"PhraseSignature(modality={self.modality.name}, duration={duration:.1f}ms)"
 
 
 class Sentence:
@@ -1207,8 +1208,9 @@ class UniversalRosettaStone:
         # Step 2: Harmonic similarity-based merging
         merged_phrases = self._harmonic_similarity_merging(phrases, min_gap_samples)
 
+        audio_duration = len(audio) / self.sample_rate
         self.logger.info(
-            f"Segmented {len(merged_phrases)} phrases from {len(audio) / self.sample_rate:.2f}s audio "
+            f"Segmented {len(merged_phrases)} phrases from {audio_duration:.2f}s audio "
             f"(initial: {len(phrases)}, merged: {len(merged_phrases)})"
         )
         return merged_phrases
@@ -2069,7 +2071,8 @@ class UniversalRosettaStone:
             # Segment the vocalization into phrases using PYIN-based approach
             phrases = self._pyin_phrase_segmentation(audio)
 
-            # Add phrases to sentence - their timestamps are already correctly set by segment_phrases
+            # Add phrases to sentence - timestamps are already correctly set
+            # by segment_phrases
             for phrase in phrases:
                 sentence.add_phrase(phrase)
 
@@ -2271,7 +2274,8 @@ class UniversalRosettaStone:
         self, phrases: List["PhraseSignature"], species_type: str = "harmonic"
     ) -> Dict[str, Any]:
         """
-        Perform species-specific validation including harmonic affirmation and compositional validation.
+        Perform species-specific validation including harmonic affirmation
+        and compositional validation.
 
         Args:
             phrases: List of phrases to validate

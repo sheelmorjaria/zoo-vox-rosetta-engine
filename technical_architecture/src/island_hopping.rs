@@ -4,7 +4,7 @@
 //! This module implements the execution layer for Island Hopping navigation strategy.
 //! It provides high-performance, safety-critical components for:
 //!
-//! - 17D Vector Math Operations (SIMD-optimized)
+//! - 30D Vector Math Operations (SIMD-optimized)
 //! - Delta Clamping (Safety-critical)
 //! - Nearest Neighbor Lookup (KD-tree indexed)
 //! - Timeline Orchestration (Real-time)
@@ -15,6 +15,17 @@
 //! - **Execution Layer (Rust - this file)**: Time-critical operations, safety
 //! - **Logic Layer (Python)**: Cognitive intelligence, decision making, learning
 //!
+//! Vector Space Dimensions:
+//! ------------------------
+//! The 30D feature vector includes:
+//! - Fundamental (3): mean_f0_hz, f0_range_hz, duration_ms
+//! - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+//! - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+//!                       vibrato_rate_hz, vibrato_depth, jitter, shimmer
+//! - Fingerprint Factors (13 MFCCs): mfcc_1 through mfcc_13
+//! - Spectral Dynamics (1): spectral_flux
+//! - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
+//!
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
@@ -24,42 +35,56 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // ============================================================================
-// 17D Vector Math Operations (Priority 1: Critical)
+// 30D Vector Math Operations (Priority 1: Critical)
 // ============================================================================
 
-/// 17-dimensional acoustic feature vector
+/// 30-dimensional acoustic feature vector
 ///
 /// Features organized by category:
-/// - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
-/// - Grit Factors (2): harmonic_to_noise_ratio, spectral_flatness
-/// - Motion Factors (6): attack_time_ms, decay_time_ms, sustain_level, vibrato_rate_hz, vibrato_depth, jitter
-/// - Fingerprint Factors (5): mfcc_1, mfcc_2, mfcc_3, mfcc_4, spectral_contrast
+/// - Fundamental (3): mean_f0_hz, f0_range_hz, duration_ms
+/// - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+/// - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level, vibrato_rate_hz, vibrato_depth, jitter, shimmer
+/// - Fingerprint Factors (13 MFCCs): mfcc_1 through mfcc_13
+/// - Spectral Dynamics (1): spectral_flux
 /// - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct Vector17D {
+pub struct Vector30D {
     // === Fundamental (3 features) ===
     pub mean_f0_hz: f32,
-    pub duration_ms: f32,
     pub f0_range_hz: f32,
+    pub duration_ms: f32,
 
-    // === Grit Factors (2 features) ===
+    // === Grit Factors (3 features) ===
     pub harmonic_to_noise_ratio: f32,
     pub spectral_flatness: f32,
+    pub harmonicity: f32,
 
-    // === Motion Factors (6 features) ===
+    // === Motion Factors (7 features) ===
     pub attack_time_ms: f32,
     pub decay_time_ms: f32,
     pub sustain_level: f32,
     pub vibrato_rate_hz: f32,
     pub vibrato_depth: f32,
     pub jitter: f32,
+    pub shimmer: f32,
 
-    // === Fingerprint Factors (5 features) ===
+    // === Fingerprint Factors (13 MFCCs) ===
     pub mfcc_1: f32,
     pub mfcc_2: f32,
     pub mfcc_3: f32,
     pub mfcc_4: f32,
-    pub spectral_contrast: f32,
+    pub mfcc_5: f32,
+    pub mfcc_6: f32,
+    pub mfcc_7: f32,
+    pub mfcc_8: f32,
+    pub mfcc_9: f32,
+    pub mfcc_10: f32,
+    pub mfcc_11: f32,
+    pub mfcc_12: f32,
+    pub mfcc_13: f32,
+
+    // === Spectral Dynamics (1 feature) ===
+    pub spectral_flux: f32,
 
     // === Rhythm Factors (3 features) ===
     pub median_ici_ms: f32,
@@ -67,73 +92,118 @@ pub struct Vector17D {
     pub ici_coefficient_of_variation: f32,
 }
 
-impl Default for Vector17D {
+impl Default for Vector30D {
     fn default() -> Self {
         Self {
+            // Fundamental (3)
             mean_f0_hz: 7000.0,
-            duration_ms: 50.0,
             f0_range_hz: 400.0,
+            duration_ms: 50.0,
+            // Grit Factors (3)
             harmonic_to_noise_ratio: 20.0,
             spectral_flatness: 0.3,
+            harmonicity: 0.8,
+            // Motion Factors (7)
             attack_time_ms: 5.0,
             decay_time_ms: 20.0,
             sustain_level: 0.7,
             vibrato_rate_hz: 7.0,
             vibrato_depth: 0.02,
             jitter: 0.01,
+            shimmer: 0.03,
+            // Fingerprint Factors (13 MFCCs)
             mfcc_1: -10.0,
             mfcc_2: -5.0,
             mfcc_3: -2.0,
             mfcc_4: -1.0,
-            spectral_contrast: 20.0,
-            median_ici_ms: 150.0,
+            mfcc_5: -0.5,
+            mfcc_6: -0.3,
+            mfcc_7: -0.2,
+            mfcc_8: -0.1,
+            mfcc_9: 0.0,
+            mfcc_10: 0.1,
+            mfcc_11: 0.2,
+            mfcc_12: 0.3,
+            mfcc_13: 0.4,
+            // Spectral Dynamics (1)
+            spectral_flux: 0.5,
+            // Rhythm Factors (3)
+            median_ici_ms: 15.0,
             onset_rate_hz: 8.0,
             ici_coefficient_of_variation: 0.3,
         }
     }
 }
 
-impl Vector17D {
-    /// Create a new Vector17D with all 17 dimensions
+impl Vector30D {
+    /// Create a new Vector30D with all 30 dimensions
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        // Fundamental (3)
         mean_f0_hz: f32,
-        duration_ms: f32,
         f0_range_hz: f32,
+        duration_ms: f32,
+        // Grit Factors (3)
         harmonic_to_noise_ratio: f32,
         spectral_flatness: f32,
+        harmonicity: f32,
+        // Motion Factors (7)
         attack_time_ms: f32,
         decay_time_ms: f32,
         sustain_level: f32,
         vibrato_rate_hz: f32,
         vibrato_depth: f32,
         jitter: f32,
+        shimmer: f32,
+        // Fingerprint Factors (13 MFCCs)
         mfcc_1: f32,
         mfcc_2: f32,
         mfcc_3: f32,
         mfcc_4: f32,
-        spectral_contrast: f32,
+        mfcc_5: f32,
+        mfcc_6: f32,
+        mfcc_7: f32,
+        mfcc_8: f32,
+        mfcc_9: f32,
+        mfcc_10: f32,
+        mfcc_11: f32,
+        mfcc_12: f32,
+        mfcc_13: f32,
+        // Spectral Dynamics (1)
+        spectral_flux: f32,
+        // Rhythm Factors (3)
         median_ici_ms: f32,
         onset_rate_hz: f32,
         ici_coefficient_of_variation: f32,
     ) -> Self {
         Self {
             mean_f0_hz,
-            duration_ms,
             f0_range_hz,
+            duration_ms,
             harmonic_to_noise_ratio,
             spectral_flatness,
+            harmonicity,
             attack_time_ms,
             decay_time_ms,
             sustain_level,
             vibrato_rate_hz,
             vibrato_depth,
             jitter,
+            shimmer,
             mfcc_1,
             mfcc_2,
             mfcc_3,
             mfcc_4,
-            spectral_contrast,
+            mfcc_5,
+            mfcc_6,
+            mfcc_7,
+            mfcc_8,
+            mfcc_9,
+            mfcc_10,
+            mfcc_11,
+            mfcc_12,
+            mfcc_13,
+            spectral_flux,
             median_ici_ms,
             onset_rate_hz,
             ici_coefficient_of_variation,
@@ -141,74 +211,122 @@ impl Vector17D {
     }
 
     /// Convert to array for SIMD operations
-    pub fn to_array(&self) -> [f32; 17] {
+    pub fn to_array(&self) -> [f32; 30] {
         [
+            // Fundamental (3)
             self.mean_f0_hz,
-            self.duration_ms,
             self.f0_range_hz,
+            self.duration_ms,
+            // Grit Factors (3)
             self.harmonic_to_noise_ratio,
             self.spectral_flatness,
+            self.harmonicity,
+            // Motion Factors (7)
             self.attack_time_ms,
             self.decay_time_ms,
             self.sustain_level,
             self.vibrato_rate_hz,
             self.vibrato_depth,
             self.jitter,
+            self.shimmer,
+            // Fingerprint Factors (13 MFCCs)
             self.mfcc_1,
             self.mfcc_2,
             self.mfcc_3,
             self.mfcc_4,
-            self.spectral_contrast,
+            self.mfcc_5,
+            self.mfcc_6,
+            self.mfcc_7,
+            self.mfcc_8,
+            self.mfcc_9,
+            self.mfcc_10,
+            self.mfcc_11,
+            self.mfcc_12,
+            self.mfcc_13,
+            // Spectral Dynamics (1)
+            self.spectral_flux,
+            // Rhythm Factors (3)
             self.median_ici_ms,
+            self.onset_rate_hz,
+            self.ici_coefficient_of_variation,
         ]
     }
 
     /// Convert from array
-    pub fn from_array(arr: [f32; 17]) -> Self {
+    pub fn from_array(arr: [f32; 30]) -> Self {
         Self {
             mean_f0_hz: arr[0],
-            duration_ms: arr[1],
-            f0_range_hz: arr[2],
+            f0_range_hz: arr[1],
+            duration_ms: arr[2],
             harmonic_to_noise_ratio: arr[3],
             spectral_flatness: arr[4],
-            attack_time_ms: arr[5],
-            decay_time_ms: arr[6],
-            sustain_level: arr[7],
-            vibrato_rate_hz: arr[8],
-            vibrato_depth: arr[9],
-            jitter: arr[10],
-            mfcc_1: arr[11],
-            mfcc_2: arr[12],
-            mfcc_3: arr[13],
-            mfcc_4: arr[14],
-            spectral_contrast: arr[15],
-            median_ici_ms: arr[16],
-            // These are not part of the 17D core array
-            onset_rate_hz: Default::default(),
-            ici_coefficient_of_variation: Default::default(),
+            harmonicity: arr[5],
+            attack_time_ms: arr[6],
+            decay_time_ms: arr[7],
+            sustain_level: arr[8],
+            vibrato_rate_hz: arr[9],
+            vibrato_depth: arr[10],
+            jitter: arr[11],
+            shimmer: arr[12],
+            mfcc_1: arr[13],
+            mfcc_2: arr[14],
+            mfcc_3: arr[15],
+            mfcc_4: arr[16],
+            mfcc_5: arr[17],
+            mfcc_6: arr[18],
+            mfcc_7: arr[19],
+            mfcc_8: arr[20],
+            mfcc_9: arr[21],
+            mfcc_10: arr[22],
+            mfcc_11: arr[23],
+            mfcc_12: arr[24],
+            mfcc_13: arr[25],
+            spectral_flux: arr[26],
+            median_ici_ms: arr[27],
+            onset_rate_hz: arr[28],
+            ici_coefficient_of_variation: arr[29],
         }
     }
 
     /// Get normalization ranges for each dimension
-    fn normalization_ranges() -> [f32; 17] {
+    fn normalization_ranges() -> [f32; 30] {
         [
+            // Fundamental (3)
             2000.0, // mean_f0_hz: 0-2000 Hz typical range
-            50.0,   // duration_ms: 0-50 ms typical range
             500.0,  // f0_range_hz: 0-500 Hz
+            50.0,   // duration_ms: 0-50 ms typical range
+            // Grit Factors (3)
             30.0,   // harmonic_to_noise_ratio: 0-30 dB
             1.0,    // spectral_flatness: 0-1
+            1.0,    // harmonicity: 0-1
+            // Motion Factors (7)
             20.0,   // attack_time_ms: 0-20 ms
             50.0,   // decay_time_ms: 0-50 ms
             1.0,    // sustain_level: 0-1
             20.0,   // vibrato_rate_hz: 0-20 Hz
             0.1,    // vibrato_depth: 0-0.1
             0.05,   // jitter: 0-0.05
+            0.1,    // shimmer: 0-0.1
+            // Fingerprint Factors (13 MFCCs)
             20.0,   // mfcc_1: -20 to 0
             20.0,   // mfcc_2: -20 to 0
             20.0,   // mfcc_3: -20 to 0
             20.0,   // mfcc_4: -20 to 0
-            40.0,   // spectral_contrast: 0-40
+            20.0,   // mfcc_5: -20 to 0
+            20.0,   // mfcc_6: -20 to 0
+            20.0,   // mfcc_7: -20 to 0
+            20.0,   // mfcc_8: -20 to 0
+            20.0,   // mfcc_9: -20 to 0
+            20.0,   // mfcc_10: -20 to 0
+            20.0,   // mfcc_11: -20 to 0
+            20.0,   // mfcc_12: -20 to 0
+            20.0,   // mfcc_13: -20 to 0
+            // Spectral Dynamics (1)
+            1.0,    // spectral_flux: 0-1
+            // Rhythm Factors (3)
             200.0,  // median_ici_ms: 0-200 ms
+            20.0,   // onset_rate_hz: 0-20 Hz
+            1.0,    // ici_coefficient_of_variation: 0-1
         ]
     }
 
@@ -218,14 +336,14 @@ impl Vector17D {
     /// Distances are normalized by dimension-specific ranges to ensure
     /// meaningful comparisons across different acoustic features.
     ///
-    /// Uses the 17D core dimensions for distance calculation.
-    pub fn distance_to(&self, other: &Vector17D) -> f32 {
+    /// Uses the 30D core dimensions for distance calculation.
+    pub fn distance_to(&self, other: &Vector30D) -> f32 {
         let v1 = self.to_array();
         let v2 = other.to_array();
         let ranges = Self::normalization_ranges();
 
         let mut sum_squared = 0.0_f32;
-        for i in 0..17 {
+        for i in 0..30 {
             let diff = (v1[i] - v2[i]) / ranges[i];
             sum_squared += diff * diff;
         }
@@ -240,33 +358,42 @@ impl Vector17D {
     /// - 0.0 = return self
     /// - 0.5 = midpoint
     /// - 1.0 = return other
-    pub fn interpolate(&self, other: &Vector17D, alpha: f32) -> Vector17D {
+    pub fn interpolate(&self, other: &Vector30D, alpha: f32) -> Vector30D {
         assert!(
             (0.0..=1.0).contains(&alpha),
             "Alpha must be in [0, 1], got {}",
             alpha
         );
 
-        Vector17D {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz * (1.0 - alpha) + other.mean_f0_hz * alpha,
-            duration_ms: self.duration_ms * (1.0 - alpha) + other.duration_ms * alpha,
             f0_range_hz: self.f0_range_hz * (1.0 - alpha) + other.f0_range_hz * alpha,
+            duration_ms: self.duration_ms * (1.0 - alpha) + other.duration_ms * alpha,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio * (1.0 - alpha)
                 + other.harmonic_to_noise_ratio * alpha,
-            spectral_flatness: self.spectral_flatness * (1.0 - alpha)
-                + other.spectral_flatness * alpha,
+            spectral_flatness: self.spectral_flatness * (1.0 - alpha) + other.spectral_flatness * alpha,
+            harmonicity: self.harmonicity * (1.0 - alpha) + other.harmonicity * alpha,
             attack_time_ms: self.attack_time_ms * (1.0 - alpha) + other.attack_time_ms * alpha,
             decay_time_ms: self.decay_time_ms * (1.0 - alpha) + other.decay_time_ms * alpha,
             sustain_level: self.sustain_level * (1.0 - alpha) + other.sustain_level * alpha,
             vibrato_rate_hz: self.vibrato_rate_hz * (1.0 - alpha) + other.vibrato_rate_hz * alpha,
             vibrato_depth: self.vibrato_depth * (1.0 - alpha) + other.vibrato_depth * alpha,
             jitter: self.jitter * (1.0 - alpha) + other.jitter * alpha,
+            shimmer: self.shimmer * (1.0 - alpha) + other.shimmer * alpha,
             mfcc_1: self.mfcc_1 * (1.0 - alpha) + other.mfcc_1 * alpha,
             mfcc_2: self.mfcc_2 * (1.0 - alpha) + other.mfcc_2 * alpha,
             mfcc_3: self.mfcc_3 * (1.0 - alpha) + other.mfcc_3 * alpha,
             mfcc_4: self.mfcc_4 * (1.0 - alpha) + other.mfcc_4 * alpha,
-            spectral_contrast: self.spectral_contrast * (1.0 - alpha)
-                + other.spectral_contrast * alpha,
+            mfcc_5: self.mfcc_5 * (1.0 - alpha) + other.mfcc_5 * alpha,
+            mfcc_6: self.mfcc_6 * (1.0 - alpha) + other.mfcc_6 * alpha,
+            mfcc_7: self.mfcc_7 * (1.0 - alpha) + other.mfcc_7 * alpha,
+            mfcc_8: self.mfcc_8 * (1.0 - alpha) + other.mfcc_8 * alpha,
+            mfcc_9: self.mfcc_9 * (1.0 - alpha) + other.mfcc_9 * alpha,
+            mfcc_10: self.mfcc_10 * (1.0 - alpha) + other.mfcc_10 * alpha,
+            mfcc_11: self.mfcc_11 * (1.0 - alpha) + other.mfcc_11 * alpha,
+            mfcc_12: self.mfcc_12 * (1.0 - alpha) + other.mfcc_12 * alpha,
+            mfcc_13: self.mfcc_13 * (1.0 - alpha) + other.mfcc_13 * alpha,
+            spectral_flux: self.spectral_flux * (1.0 - alpha) + other.spectral_flux * alpha,
             median_ici_ms: self.median_ici_ms * (1.0 - alpha) + other.median_ici_ms * alpha,
             onset_rate_hz: self.onset_rate_hz * (1.0 - alpha) + other.onset_rate_hz * alpha,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation * (1.0 - alpha)
@@ -281,27 +408,38 @@ impl Vector17D {
     /// - 0.0 = return origin (no movement)
     /// - 1.0 = move to origin + direction
     /// - 2.0 = move twice as far in direction
-    pub fn extrapolate(&self, direction: &VectorDelta, factor: f32) -> Vector17D {
+    pub fn extrapolate(&self, direction: &VectorDelta, factor: f32) -> Vector30D {
         assert!(factor >= 0.0, "Factor must be >= 0, got {}", factor);
 
-        Vector17D {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz + direction.delta_mean_f0_hz * factor,
-            duration_ms: self.duration_ms + direction.delta_duration_ms * factor,
             f0_range_hz: self.f0_range_hz + direction.delta_f0_range_hz * factor,
+            duration_ms: self.duration_ms + direction.delta_duration_ms * factor,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio
                 + direction.delta_harmonic_to_noise_ratio * factor,
             spectral_flatness: self.spectral_flatness + direction.delta_spectral_flatness * factor,
+            harmonicity: self.harmonicity + direction.delta_harmonicity * factor,
             attack_time_ms: self.attack_time_ms + direction.delta_attack_time_ms * factor,
             decay_time_ms: self.decay_time_ms + direction.delta_decay_time_ms * factor,
             sustain_level: self.sustain_level + direction.delta_sustain_level * factor,
             vibrato_rate_hz: self.vibrato_rate_hz + direction.delta_vibrato_rate_hz * factor,
             vibrato_depth: self.vibrato_depth + direction.delta_vibrato_depth * factor,
             jitter: self.jitter + direction.delta_jitter * factor,
+            shimmer: self.shimmer + direction.delta_shimmer * factor,
             mfcc_1: self.mfcc_1 + direction.delta_mfcc_1 * factor,
             mfcc_2: self.mfcc_2 + direction.delta_mfcc_2 * factor,
             mfcc_3: self.mfcc_3 + direction.delta_mfcc_3 * factor,
             mfcc_4: self.mfcc_4 + direction.delta_mfcc_4 * factor,
-            spectral_contrast: self.spectral_contrast + direction.delta_spectral_contrast * factor,
+            mfcc_5: self.mfcc_5 + direction.delta_mfcc_5 * factor,
+            mfcc_6: self.mfcc_6 + direction.delta_mfcc_6 * factor,
+            mfcc_7: self.mfcc_7 + direction.delta_mfcc_7 * factor,
+            mfcc_8: self.mfcc_8 + direction.delta_mfcc_8 * factor,
+            mfcc_9: self.mfcc_9 + direction.delta_mfcc_9 * factor,
+            mfcc_10: self.mfcc_10 + direction.delta_mfcc_10 * factor,
+            mfcc_11: self.mfcc_11 + direction.delta_mfcc_11 * factor,
+            mfcc_12: self.mfcc_12 + direction.delta_mfcc_12 * factor,
+            mfcc_13: self.mfcc_13 + direction.delta_mfcc_13 * factor,
+            spectral_flux: self.spectral_flux + direction.delta_spectral_flux * factor,
             median_ici_ms: self.median_ici_ms + direction.delta_median_ici_ms * factor,
             onset_rate_hz: self.onset_rate_hz + direction.delta_onset_rate_hz * factor,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation
@@ -310,24 +448,35 @@ impl Vector17D {
     }
 
     /// Add two vectors (for delta operations)
-    pub fn add(&self, other: &Vector17D) -> Vector17D {
-        Vector17D {
+    pub fn add(&self, other: &Vector30D) -> Vector30D {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz + other.mean_f0_hz,
-            duration_ms: self.duration_ms + other.duration_ms,
             f0_range_hz: self.f0_range_hz + other.f0_range_hz,
+            duration_ms: self.duration_ms + other.duration_ms,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio + other.harmonic_to_noise_ratio,
             spectral_flatness: self.spectral_flatness + other.spectral_flatness,
+            harmonicity: self.harmonicity + other.harmonicity,
             attack_time_ms: self.attack_time_ms + other.attack_time_ms,
             decay_time_ms: self.decay_time_ms + other.decay_time_ms,
             sustain_level: self.sustain_level + other.sustain_level,
             vibrato_rate_hz: self.vibrato_rate_hz + other.vibrato_rate_hz,
             vibrato_depth: self.vibrato_depth + other.vibrato_depth,
             jitter: self.jitter + other.jitter,
+            shimmer: self.shimmer + other.shimmer,
             mfcc_1: self.mfcc_1 + other.mfcc_1,
             mfcc_2: self.mfcc_2 + other.mfcc_2,
             mfcc_3: self.mfcc_3 + other.mfcc_3,
             mfcc_4: self.mfcc_4 + other.mfcc_4,
-            spectral_contrast: self.spectral_contrast + other.spectral_contrast,
+            mfcc_5: self.mfcc_5 + other.mfcc_5,
+            mfcc_6: self.mfcc_6 + other.mfcc_6,
+            mfcc_7: self.mfcc_7 + other.mfcc_7,
+            mfcc_8: self.mfcc_8 + other.mfcc_8,
+            mfcc_9: self.mfcc_9 + other.mfcc_9,
+            mfcc_10: self.mfcc_10 + other.mfcc_10,
+            mfcc_11: self.mfcc_11 + other.mfcc_11,
+            mfcc_12: self.mfcc_12 + other.mfcc_12,
+            mfcc_13: self.mfcc_13 + other.mfcc_13,
+            spectral_flux: self.spectral_flux + other.spectral_flux,
             median_ici_ms: self.median_ici_ms + other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + other.onset_rate_hz,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation
@@ -336,24 +485,35 @@ impl Vector17D {
     }
 
     /// Subtract two vectors (for delta calculation)
-    pub fn sub(&self, other: &Vector17D) -> Vector17D {
-        Vector17D {
+    pub fn sub(&self, other: &Vector30D) -> Vector30D {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz - other.mean_f0_hz,
-            duration_ms: self.duration_ms - other.duration_ms,
             f0_range_hz: self.f0_range_hz - other.f0_range_hz,
+            duration_ms: self.duration_ms - other.duration_ms,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio - other.harmonic_to_noise_ratio,
             spectral_flatness: self.spectral_flatness - other.spectral_flatness,
+            harmonicity: self.harmonicity - other.harmonicity,
             attack_time_ms: self.attack_time_ms - other.attack_time_ms,
             decay_time_ms: self.decay_time_ms - other.decay_time_ms,
             sustain_level: self.sustain_level - other.sustain_level,
             vibrato_rate_hz: self.vibrato_rate_hz - other.vibrato_rate_hz,
             vibrato_depth: self.vibrato_depth - other.vibrato_depth,
             jitter: self.jitter - other.jitter,
+            shimmer: self.shimmer - other.shimmer,
             mfcc_1: self.mfcc_1 - other.mfcc_1,
             mfcc_2: self.mfcc_2 - other.mfcc_2,
             mfcc_3: self.mfcc_3 - other.mfcc_3,
             mfcc_4: self.mfcc_4 - other.mfcc_4,
-            spectral_contrast: self.spectral_contrast - other.spectral_contrast,
+            mfcc_5: self.mfcc_5 - other.mfcc_5,
+            mfcc_6: self.mfcc_6 - other.mfcc_6,
+            mfcc_7: self.mfcc_7 - other.mfcc_7,
+            mfcc_8: self.mfcc_8 - other.mfcc_8,
+            mfcc_9: self.mfcc_9 - other.mfcc_9,
+            mfcc_10: self.mfcc_10 - other.mfcc_10,
+            mfcc_11: self.mfcc_11 - other.mfcc_11,
+            mfcc_12: self.mfcc_12 - other.mfcc_12,
+            mfcc_13: self.mfcc_13 - other.mfcc_13,
+            spectral_flux: self.spectral_flux - other.spectral_flux,
             median_ici_ms: self.median_ici_ms - other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation
@@ -362,24 +522,35 @@ impl Vector17D {
     }
 
     /// Scalar multiplication
-    pub fn scale(&self, factor: f32) -> Vector17D {
-        Vector17D {
+    pub fn scale(&self, factor: f32) -> Vector30D {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz * factor,
-            duration_ms: self.duration_ms * factor,
             f0_range_hz: self.f0_range_hz * factor,
+            duration_ms: self.duration_ms * factor,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio * factor,
             spectral_flatness: self.spectral_flatness * factor,
+            harmonicity: self.harmonicity * factor,
             attack_time_ms: self.attack_time_ms * factor,
             decay_time_ms: self.decay_time_ms * factor,
             sustain_level: self.sustain_level * factor,
             vibrato_rate_hz: self.vibrato_rate_hz * factor,
             vibrato_depth: self.vibrato_depth * factor,
             jitter: self.jitter * factor,
+            shimmer: self.shimmer * factor,
             mfcc_1: self.mfcc_1 * factor,
             mfcc_2: self.mfcc_2 * factor,
             mfcc_3: self.mfcc_3 * factor,
             mfcc_4: self.mfcc_4 * factor,
-            spectral_contrast: self.spectral_contrast * factor,
+            mfcc_5: self.mfcc_5 * factor,
+            mfcc_6: self.mfcc_6 * factor,
+            mfcc_7: self.mfcc_7 * factor,
+            mfcc_8: self.mfcc_8 * factor,
+            mfcc_9: self.mfcc_9 * factor,
+            mfcc_10: self.mfcc_10 * factor,
+            mfcc_11: self.mfcc_11 * factor,
+            mfcc_12: self.mfcc_12 * factor,
+            mfcc_13: self.mfcc_13 * factor,
+            spectral_flux: self.spectral_flux * factor,
             median_ici_ms: self.median_ici_ms * factor,
             onset_rate_hz: self.onset_rate_hz * factor,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation * factor,
@@ -392,7 +563,7 @@ impl Vector17D {
         let ranges = Self::normalization_ranges();
 
         let mut sum_squared = 0.0_f32;
-        for i in 0..17 {
+        for i in 0..30 {
             let normalized = arr[i] / ranges[i];
             sum_squared += normalized * normalized;
         }
@@ -401,7 +572,7 @@ impl Vector17D {
     }
 
     /// Normalize to unit vector
-    pub fn normalized(&self) -> Vector17D {
+    pub fn normalized(&self) -> Vector30D {
         let mag = self.magnitude();
         if mag > 1e-6 {
             self.scale(1.0 / mag)
@@ -411,27 +582,38 @@ impl Vector17D {
     }
 }
 
-impl std::ops::Add<Vector17D> for Vector17D {
-    type Output = Vector17D;
+impl std::ops::Add<Vector30D> for Vector30D {
+    type Output = Vector30D;
 
-    fn add(self, rhs: Vector17D) -> Self::Output {
-        Vector17D {
+    fn add(self, rhs: Vector30D) -> Self::Output {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz + rhs.mean_f0_hz,
-            duration_ms: self.duration_ms + rhs.duration_ms,
             f0_range_hz: self.f0_range_hz + rhs.f0_range_hz,
+            duration_ms: self.duration_ms + rhs.duration_ms,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio + rhs.harmonic_to_noise_ratio,
             spectral_flatness: self.spectral_flatness + rhs.spectral_flatness,
+            harmonicity: self.harmonicity + rhs.harmonicity,
             attack_time_ms: self.attack_time_ms + rhs.attack_time_ms,
             decay_time_ms: self.decay_time_ms + rhs.decay_time_ms,
             sustain_level: self.sustain_level + rhs.sustain_level,
             vibrato_rate_hz: self.vibrato_rate_hz + rhs.vibrato_rate_hz,
             vibrato_depth: self.vibrato_depth + rhs.vibrato_depth,
             jitter: self.jitter + rhs.jitter,
+            shimmer: self.shimmer + rhs.shimmer,
             mfcc_1: self.mfcc_1 + rhs.mfcc_1,
             mfcc_2: self.mfcc_2 + rhs.mfcc_2,
             mfcc_3: self.mfcc_3 + rhs.mfcc_3,
             mfcc_4: self.mfcc_4 + rhs.mfcc_4,
-            spectral_contrast: self.spectral_contrast + rhs.spectral_contrast,
+            mfcc_5: self.mfcc_5 + rhs.mfcc_5,
+            mfcc_6: self.mfcc_6 + rhs.mfcc_6,
+            mfcc_7: self.mfcc_7 + rhs.mfcc_7,
+            mfcc_8: self.mfcc_8 + rhs.mfcc_8,
+            mfcc_9: self.mfcc_9 + rhs.mfcc_9,
+            mfcc_10: self.mfcc_10 + rhs.mfcc_10,
+            mfcc_11: self.mfcc_11 + rhs.mfcc_11,
+            mfcc_12: self.mfcc_12 + rhs.mfcc_12,
+            mfcc_13: self.mfcc_13 + rhs.mfcc_13,
+            spectral_flux: self.spectral_flux + rhs.spectral_flux,
             median_ici_ms: self.median_ici_ms + rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + rhs.onset_rate_hz,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation
@@ -440,27 +622,38 @@ impl std::ops::Add<Vector17D> for Vector17D {
     }
 }
 
-impl std::ops::Sub<Vector17D> for Vector17D {
-    type Output = Vector17D;
+impl std::ops::Sub<Vector30D> for Vector30D {
+    type Output = Vector30D;
 
-    fn sub(self, rhs: Vector17D) -> Self::Output {
-        Vector17D {
+    fn sub(self, rhs: Vector30D) -> Self::Output {
+        Vector30D {
             mean_f0_hz: self.mean_f0_hz - rhs.mean_f0_hz,
-            duration_ms: self.duration_ms - rhs.duration_ms,
             f0_range_hz: self.f0_range_hz - rhs.f0_range_hz,
+            duration_ms: self.duration_ms - rhs.duration_ms,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio - rhs.harmonic_to_noise_ratio,
             spectral_flatness: self.spectral_flatness - rhs.spectral_flatness,
+            harmonicity: self.harmonicity - rhs.harmonicity,
             attack_time_ms: self.attack_time_ms - rhs.attack_time_ms,
             decay_time_ms: self.decay_time_ms - rhs.decay_time_ms,
             sustain_level: self.sustain_level - rhs.sustain_level,
             vibrato_rate_hz: self.vibrato_rate_hz - rhs.vibrato_rate_hz,
             vibrato_depth: self.vibrato_depth - rhs.vibrato_depth,
             jitter: self.jitter - rhs.jitter,
+            shimmer: self.shimmer - rhs.shimmer,
             mfcc_1: self.mfcc_1 - rhs.mfcc_1,
             mfcc_2: self.mfcc_2 - rhs.mfcc_2,
             mfcc_3: self.mfcc_3 - rhs.mfcc_3,
             mfcc_4: self.mfcc_4 - rhs.mfcc_4,
-            spectral_contrast: self.spectral_contrast - rhs.spectral_contrast,
+            mfcc_5: self.mfcc_5 - rhs.mfcc_5,
+            mfcc_6: self.mfcc_6 - rhs.mfcc_6,
+            mfcc_7: self.mfcc_7 - rhs.mfcc_7,
+            mfcc_8: self.mfcc_8 - rhs.mfcc_8,
+            mfcc_9: self.mfcc_9 - rhs.mfcc_9,
+            mfcc_10: self.mfcc_10 - rhs.mfcc_10,
+            mfcc_11: self.mfcc_11 - rhs.mfcc_11,
+            mfcc_12: self.mfcc_12 - rhs.mfcc_12,
+            mfcc_13: self.mfcc_13 - rhs.mfcc_13,
+            spectral_flux: self.spectral_flux - rhs.spectral_flux,
             median_ici_ms: self.median_ici_ms - rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - rhs.onset_rate_hz,
             ici_coefficient_of_variation: self.ici_coefficient_of_variation
@@ -469,8 +662,8 @@ impl std::ops::Sub<Vector17D> for Vector17D {
     }
 }
 
-impl std::ops::Mul<f32> for Vector17D {
-    type Output = Vector17D;
+impl std::ops::Mul<f32> for Vector30D {
+    type Output = Vector30D;
 
     fn mul(self, rhs: f32) -> Self::Output {
         self.scale(rhs)
@@ -478,37 +671,50 @@ impl std::ops::Mul<f32> for Vector17D {
 }
 
 // ============================================================================
-// Vector Delta (17D Difference Vector)
+// Vector Delta (30D Difference Vector)
 // ============================================================================
 
-/// 17-dimensional delta vector for extrapolation operations
+/// 30-dimensional delta vector for extrapolation operations
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct VectorDelta {
-    // === Fundamental ===
+    // === Fundamental (3) ===
     pub delta_mean_f0_hz: f32,
-    pub delta_duration_ms: f32,
     pub delta_f0_range_hz: f32,
+    pub delta_duration_ms: f32,
 
-    // === Grit Factors ===
+    // === Grit Factors (3) ===
     pub delta_harmonic_to_noise_ratio: f32,
     pub delta_spectral_flatness: f32,
+    pub delta_harmonicity: f32,
 
-    // === Motion Factors ===
+    // === Motion Factors (7) ===
     pub delta_attack_time_ms: f32,
     pub delta_decay_time_ms: f32,
     pub delta_sustain_level: f32,
     pub delta_vibrato_rate_hz: f32,
     pub delta_vibrato_depth: f32,
     pub delta_jitter: f32,
+    pub delta_shimmer: f32,
 
-    // === Fingerprint Factors ===
+    // === Fingerprint Factors (13 MFCCs) ===
     pub delta_mfcc_1: f32,
     pub delta_mfcc_2: f32,
     pub delta_mfcc_3: f32,
     pub delta_mfcc_4: f32,
-    pub delta_spectral_contrast: f32,
+    pub delta_mfcc_5: f32,
+    pub delta_mfcc_6: f32,
+    pub delta_mfcc_7: f32,
+    pub delta_mfcc_8: f32,
+    pub delta_mfcc_9: f32,
+    pub delta_mfcc_10: f32,
+    pub delta_mfcc_11: f32,
+    pub delta_mfcc_12: f32,
+    pub delta_mfcc_13: f32,
 
-    // === Rhythm Factors ===
+    // === Spectral Dynamics (1) ===
+    pub delta_spectral_flux: f32,
+
+    // === Rhythm Factors (3) ===
     pub delta_median_ici_ms: f32,
     pub delta_onset_rate_hz: f32,
     pub delta_ici_coefficient_of_variation: f32,
@@ -519,21 +725,32 @@ impl VectorDelta {
     pub fn zero() -> Self {
         Self {
             delta_mean_f0_hz: 0.0,
-            delta_duration_ms: 0.0,
             delta_f0_range_hz: 0.0,
+            delta_duration_ms: 0.0,
             delta_harmonic_to_noise_ratio: 0.0,
             delta_spectral_flatness: 0.0,
+            delta_harmonicity: 0.0,
             delta_attack_time_ms: 0.0,
             delta_decay_time_ms: 0.0,
             delta_sustain_level: 0.0,
             delta_vibrato_rate_hz: 0.0,
             delta_vibrato_depth: 0.0,
             delta_jitter: 0.0,
+            delta_shimmer: 0.0,
             delta_mfcc_1: 0.0,
             delta_mfcc_2: 0.0,
             delta_mfcc_3: 0.0,
             delta_mfcc_4: 0.0,
-            delta_spectral_contrast: 0.0,
+            delta_mfcc_5: 0.0,
+            delta_mfcc_6: 0.0,
+            delta_mfcc_7: 0.0,
+            delta_mfcc_8: 0.0,
+            delta_mfcc_9: 0.0,
+            delta_mfcc_10: 0.0,
+            delta_mfcc_11: 0.0,
+            delta_mfcc_12: 0.0,
+            delta_mfcc_13: 0.0,
+            delta_spectral_flux: 0.0,
             delta_median_ici_ms: 0.0,
             delta_onset_rate_hz: 0.0,
             delta_ici_coefficient_of_variation: 0.0,
@@ -541,25 +758,36 @@ impl VectorDelta {
     }
 
     /// Calculate delta from two vectors (target - source)
-    pub fn from_vectors(target: &Vector17D, source: &Vector17D) -> Self {
+    pub fn from_vectors(target: &Vector30D, source: &Vector30D) -> Self {
         Self {
             delta_mean_f0_hz: target.mean_f0_hz - source.mean_f0_hz,
-            delta_duration_ms: target.duration_ms - source.duration_ms,
             delta_f0_range_hz: target.f0_range_hz - source.f0_range_hz,
+            delta_duration_ms: target.duration_ms - source.duration_ms,
             delta_harmonic_to_noise_ratio: target.harmonic_to_noise_ratio
                 - source.harmonic_to_noise_ratio,
             delta_spectral_flatness: target.spectral_flatness - source.spectral_flatness,
+            delta_harmonicity: target.harmonicity - source.harmonicity,
             delta_attack_time_ms: target.attack_time_ms - source.attack_time_ms,
             delta_decay_time_ms: target.decay_time_ms - source.decay_time_ms,
             delta_sustain_level: target.sustain_level - source.sustain_level,
             delta_vibrato_rate_hz: target.vibrato_rate_hz - source.vibrato_rate_hz,
             delta_vibrato_depth: target.vibrato_depth - source.vibrato_depth,
             delta_jitter: target.jitter - source.jitter,
+            delta_shimmer: target.shimmer - source.shimmer,
             delta_mfcc_1: target.mfcc_1 - source.mfcc_1,
             delta_mfcc_2: target.mfcc_2 - source.mfcc_2,
             delta_mfcc_3: target.mfcc_3 - source.mfcc_3,
             delta_mfcc_4: target.mfcc_4 - source.mfcc_4,
-            delta_spectral_contrast: target.spectral_contrast - source.spectral_contrast,
+            delta_mfcc_5: target.mfcc_5 - source.mfcc_5,
+            delta_mfcc_6: target.mfcc_6 - source.mfcc_6,
+            delta_mfcc_7: target.mfcc_7 - source.mfcc_7,
+            delta_mfcc_8: target.mfcc_8 - source.mfcc_8,
+            delta_mfcc_9: target.mfcc_9 - source.mfcc_9,
+            delta_mfcc_10: target.mfcc_10 - source.mfcc_10,
+            delta_mfcc_11: target.mfcc_11 - source.mfcc_11,
+            delta_mfcc_12: target.mfcc_12 - source.mfcc_12,
+            delta_mfcc_13: target.mfcc_13 - source.mfcc_13,
+            delta_spectral_flux: target.spectral_flux - source.spectral_flux,
             delta_median_ici_ms: target.median_ici_ms - source.median_ici_ms,
             delta_onset_rate_hz: target.onset_rate_hz - source.onset_rate_hz,
             delta_ici_coefficient_of_variation: target.ici_coefficient_of_variation
@@ -576,7 +804,7 @@ impl VectorDelta {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NavigationWaypoint {
     /// The (possibly clamped) target vector
-    pub target: Vector17D,
+    pub target: Vector30D,
     /// Navigation mode used
     pub mode: NavigationMode,
     /// Anchor island if interpolation was used
@@ -586,7 +814,7 @@ pub struct NavigationWaypoint {
     /// Whether clamping was applied
     pub was_clamped: bool,
     /// Original target before clamping (if clamped)
-    pub original_target: Option<Vector17D>,
+    pub original_target: Option<Vector30D>,
 }
 
 /// Navigation mode classification
@@ -603,7 +831,7 @@ pub enum NavigationMode {
 /// Safety clamp for preventing over-warping artifacts ("The Leash")
 ///
 /// This is a SAFETY-CRITICAL component that prevents synthesis artifacts
-/// by limiting the maximum warp distance in 17D space.
+/// by limiting the maximum warp distance in 30D space.
 #[derive(Debug, Clone)]
 pub struct SafetyClamp {
     /// Maximum safe warp distance (normalized)
@@ -629,8 +857,8 @@ impl SafetyClamp {
     /// Returns NavigationWaypoint with clamping information.
     pub fn clamp_target(
         &self,
-        target: &Vector17D,
-        anchor: &Vector17D,
+        target: &Vector30D,
+        anchor: &Vector30D,
         anchor_island: Option<String>,
     ) -> NavigationWaypoint {
         let distance = target.distance_to(anchor);
@@ -692,8 +920,8 @@ impl Default for SafetyClamp {
 pub struct AudioIsland {
     /// Unique identifier
     pub key: String,
-    /// 17D feature vector
-    pub features: Vector17D,
+    /// 30D feature vector
+    pub features: Vector30D,
     /// Audio samples (optional, may be loaded separately)
     pub audio: Option<Vec<f32>>,
     /// Species identifier
@@ -736,7 +964,7 @@ impl PhraseDatabase {
     ///
     /// Returns None if database is empty.
     /// O(n) linear search - adequate for <10k phrases, can upgrade to KD-tree later.
-    pub fn find_nearest_17d(&self, target: &Vector17D) -> Option<&AudioIsland> {
+    pub fn find_nearest_30d(&self, target: &Vector30D) -> Option<&AudioIsland> {
         if self.islands.is_empty() {
             return None;
         }
@@ -756,9 +984,9 @@ impl PhraseDatabase {
     }
 
     /// Find the nearest island within a specific species
-    pub fn find_nearest_17d_species(
+    pub fn find_nearest_30d_species(
         &self,
-        target: &Vector17D,
+        target: &Vector30D,
         species: &str,
     ) -> Option<&AudioIsland> {
         let keys = self.species_index.get(species)?;
@@ -783,7 +1011,7 @@ impl PhraseDatabase {
     }
 
     /// Find k nearest neighbors
-    pub fn find_k_nearest_17d(&self, target: &Vector17D, k: usize) -> Vec<&AudioIsland> {
+    pub fn find_k_nearest_30d(&self, target: &Vector30D, k: usize) -> Vec<&AudioIsland> {
         if self.islands.is_empty() {
             return Vec::new();
         }
@@ -971,14 +1199,14 @@ impl Default for GranularParams {
     }
 }
 
-/// Apply 17D delta to granular synthesis parameters
+/// Apply 30D delta to granular synthesis parameters
 ///
-/// This maps the 17D acoustic delta to synthesizer control parameters.
+/// This maps the 30D acoustic delta to synthesizer control parameters.
 /// This is the PRIMARY integration point for Acoustic Algebra → Rust Synthesis.
 pub fn apply_delta_to_granular(
     delta: &VectorDelta,
     base_params: &GranularParams,
-    source_metadata: &Vector17D,
+    source_metadata: &Vector30D,
 ) -> GranularParams {
     // Map delta_mean_f0_hz to pitch shift ratio
     // Formula: ratio = 1 + (delta_f0 / source_f0)
@@ -1042,33 +1270,33 @@ impl NavigationEngine {
     }
 
     /// Interpolate between two vectors (Bridge Builder - SAFE)
-    pub fn interpolate(&self, start: &Vector17D, end: &Vector17D, alpha: f32) -> Vector17D {
+    pub fn interpolate(&self, start: &Vector30D, end: &Vector30D, alpha: f32) -> Vector30D {
         start.interpolate(end, alpha)
     }
 
     /// Extrapolate from origin in direction (Ocean Explorer - RISKY)
     pub fn extrapolate(
         &self,
-        origin: &Vector17D,
+        origin: &Vector30D,
         direction: &VectorDelta,
         factor: f32,
-    ) -> Vector17D {
+    ) -> Vector30D {
         origin.extrapolate(direction, factor)
     }
 
     /// Apply safety clamping to target
     pub fn clamp_to_safe_distance(
         &self,
-        target: &Vector17D,
-        anchor: &Vector17D,
+        target: &Vector30D,
+        anchor: &Vector30D,
         anchor_island: Option<String>,
     ) -> NavigationWaypoint {
         self.clamp.clamp_target(target, anchor, anchor_island)
     }
 
     /// Find nearest island to target vector
-    pub fn find_nearest_island(&self, target: &Vector17D) -> Option<&AudioIsland> {
-        self.database.find_nearest_17d(target)
+    pub fn find_nearest_island(&self, target: &Vector30D) -> Option<&AudioIsland> {
+        self.database.find_nearest_30d(target)
     }
 
     /// Add an island to the database
@@ -1102,8 +1330,8 @@ mod tests {
     use super::*;
 
     // Test helpers
-    fn create_test_vector(f0: f32, duration: f32) -> Vector17D {
-        Vector17D {
+    fn create_test_vector(f0: f32, duration: f32) -> Vector30D {
+        Vector30D {
             mean_f0_hz: f0,
             duration_ms: duration,
             ..Default::default()
@@ -1121,25 +1349,61 @@ mod tests {
     }
 
     // =========================================================================
-    // Vector17D Tests
+    // Vector30D Tests
     // =========================================================================
 
     #[test]
-    fn test_vector17d_default() {
-        let v = Vector17D::default();
+    fn test_vector30d_default() {
+        let v = Vector30D::default();
         assert_approx_eq(v.mean_f0_hz, 7000.0, 1e-5);
         assert_approx_eq(v.duration_ms, 50.0, 1e-5);
+        assert_approx_eq(v.harmonicity, 0.8, 1e-5);
+        assert_approx_eq(v.shimmer, 0.03, 1e-5);
+        assert_approx_eq(v.mfcc_13, 0.4, 1e-5);
+        assert_approx_eq(v.spectral_flux, 0.5, 1e-5);
     }
 
     #[test]
-    fn test_vector17d_new() {
-        let v = Vector17D::new(
-            8000.0, 60.0, 500.0, 25.0, 0.4, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02, -12.0, -6.0, -3.0,
-            -1.5, 25.0, 180.0, 10.0, 0.4,
+    fn test_vector30d_new() {
+        let v = Vector30D::new(
+            8000.0,
+            500.0,
+            60.0,
+            25.0,
+            0.4,
+            0.9,
+            10.0,
+            25.0,
+            0.8,
+            8.0,
+            0.03,
+            0.02,
+            0.05,
+            -12.0,
+            -6.0,
+            -3.0,
+            -1.5,
+            -0.8,
+            -0.5,
+            -0.3,
+            -0.2,
+            -0.1,
+            0.0,
+            0.1,
+            0.2,
+            0.3,
+            0.6,
+            180.0,
+            10.0,
+            0.4,
         );
         assert_approx_eq(v.mean_f0_hz, 8000.0, 1e-5);
         assert_approx_eq(v.duration_ms, 60.0, 1e-5);
         assert_approx_eq(v.f0_range_hz, 500.0, 1e-5);
+        assert_approx_eq(v.harmonicity, 0.9, 1e-5);
+        assert_approx_eq(v.shimmer, 0.05, 1e-5);
+        assert_approx_eq(v.mfcc_13, 0.3, 1e-5);
+        assert_approx_eq(v.spectral_flux, 0.6, 1e-5);
     }
 
     #[test]
@@ -1203,11 +1467,9 @@ mod tests {
     #[test]
     fn test_extrapolate_zero_factor() {
         let v1 = create_test_vector(7000.0, 50.0);
-        let delta = VectorDelta {
-            delta_mean_f0_hz: 1000.0,
-            delta_duration_ms: 10.0,
-            ..VectorDelta::zero()
-        };
+        let mut delta = VectorDelta::zero();
+        delta.delta_mean_f0_hz = 1000.0;
+        delta.delta_duration_ms = 10.0;
         let result = v1.extrapolate(&delta, 0.0);
 
         assert_approx_eq(result.mean_f0_hz, 7000.0, 1e-5);
@@ -1217,11 +1479,9 @@ mod tests {
     #[test]
     fn test_extrapolate_unit_factor() {
         let v1 = create_test_vector(7000.0, 50.0);
-        let delta = VectorDelta {
-            delta_mean_f0_hz: 1000.0,
-            delta_duration_ms: 10.0,
-            ..VectorDelta::zero()
-        };
+        let mut delta = VectorDelta::zero();
+        delta.delta_mean_f0_hz = 1000.0;
+        delta.delta_duration_ms = 10.0;
         let result = v1.extrapolate(&delta, 1.0);
 
         assert_approx_eq(result.mean_f0_hz, 8000.0, 1e-5);
@@ -1231,11 +1491,9 @@ mod tests {
     #[test]
     fn test_extrapolate_double_factor() {
         let v1 = create_test_vector(7000.0, 50.0);
-        let delta = VectorDelta {
-            delta_mean_f0_hz: 1000.0,
-            delta_duration_ms: 10.0,
-            ..VectorDelta::zero()
-        };
+        let mut delta = VectorDelta::zero();
+        delta.delta_mean_f0_hz = 1000.0;
+        delta.delta_duration_ms = 10.0;
         let result = v1.extrapolate(&delta, 2.0);
 
         assert_approx_eq(result.mean_f0_hz, 9000.0, 1e-5);
@@ -1299,6 +1557,10 @@ mod tests {
         let delta = VectorDelta::zero();
         assert_approx_eq(delta.delta_mean_f0_hz, 0.0, 1e-5);
         assert_approx_eq(delta.delta_duration_ms, 0.0, 1e-5);
+        assert_approx_eq(delta.delta_harmonicity, 0.0, 1e-5);
+        assert_approx_eq(delta.delta_shimmer, 0.0, 1e-5);
+        assert_approx_eq(delta.delta_mfcc_13, 0.0, 1e-5);
+        assert_approx_eq(delta.delta_spectral_flux, 0.0, 1e-5);
     }
 
     #[test]
@@ -1403,7 +1665,7 @@ mod tests {
         });
 
         let target = create_test_vector(7500.0, 55.0);
-        let nearest = db.find_nearest_17d(&target);
+        let nearest = db.find_nearest_30d(&target);
 
         assert!(nearest.is_some());
         // Should find island1 or island2 (both are close)
@@ -1433,11 +1695,11 @@ mod tests {
         let target = create_test_vector(7100.0, 51.0);
 
         // Nearest overall should be bat1 (distance ~0.01 vs marmoset1 distance ~0.054)
-        let nearest = db.find_nearest_17d(&target);
+        let nearest = db.find_nearest_30d(&target);
         assert_eq!(nearest.unwrap().key, "bat1");
 
         // Nearest marmoset should be marmoset1
-        let nearest_marmoset = db.find_nearest_17d_species(&target, "marmoset");
+        let nearest_marmoset = db.find_nearest_30d_species(&target, "marmoset");
         assert_eq!(nearest_marmoset.unwrap().key, "marmoset1");
     }
 
@@ -1456,7 +1718,7 @@ mod tests {
         }
 
         let target = create_test_vector(7250.0, 50.0);
-        let k_nearest = db.find_k_nearest_17d(&target, 3);
+        let k_nearest = db.find_k_nearest_30d(&target, 3);
 
         assert_eq!(k_nearest.len(), 3);
     }
@@ -1520,13 +1782,11 @@ mod tests {
 
     #[test]
     fn test_apply_delta_to_granular() {
-        let delta = VectorDelta {
-            delta_mean_f0_hz: 1000.0,
-            delta_duration_ms: 10.0,
-            delta_spectral_flatness: 0.1,
-            delta_jitter: 0.01,
-            ..VectorDelta::zero()
-        };
+        let mut delta = VectorDelta::zero();
+        delta.delta_mean_f0_hz = 1000.0;
+        delta.delta_duration_ms = 10.0;
+        delta.delta_spectral_flatness = 0.1;
+        delta.delta_jitter = 0.01;
 
         let base_params = GranularParams::default();
         let source_metadata = create_test_vector(7000.0, 50.0);

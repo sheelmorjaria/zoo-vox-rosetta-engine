@@ -124,9 +124,11 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
         "spectral_rolloff_hz",
     ]
 
-    print(
-        f"{'Feature':<25} {species1_name:<20} {species2_name:<20} {'p-value':<12} {'Significant?':<12}"
+    header = (
+        f"{'Feature':<25} {species1_name:<20} {species2_name:<20} "
+        f"{'p-value':<12} {'Significant?':<12}"
     )
+    print(header)
     print("-" * 90)
 
     significant_features = []
@@ -150,9 +152,11 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
 
         sig_marker = "✅ YES" if is_significant else "❌ NO"
 
-        print(
-            f"{feature:<25} {mean1:>8.2f} ± {std1:<6.2f} {mean2:>8.2f} ± {std2:<6.2f} {p_value:<12.4f} {sig_marker:<12}"
+        result_line = (
+            f"{feature:<25} {mean1:>8.2f} ± {std1:<6.2f} "
+            f"{mean2:>8.2f} ± {std2:<6.2f} {p_value:<12.4f} {sig_marker:<12}"
         )
+        print(result_line)
 
     print("\n" + "=" * 90)
     print("SUMMARY")
@@ -164,9 +168,11 @@ def compare_species_timbre(species1_name, species1_dir, species2_name, species2_
         )
         for feature, p_value in significant_features:
             print(f"  - {feature}: p = {p_value:.4f}")
-        print(
-            f"\n✅ TIMBRE FEATURES CAN DISTINGUISH {species1_name.upper()} FROM {species2_name.upper()}"
+        distinction_msg = (
+            f"\n✅ TIMBRE FEATURES CAN DISTINGUISH "
+            f"{species1_name.upper()} FROM {species2_name.upper()}"
         )
+        print(distinction_msg)
     else:
         print("\n⚠️  No timbre features significantly different")
         print("⚠️  TIMBRE FEATURES CANNOT DISTINGUISH THESE SPECIES")

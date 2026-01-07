@@ -31,7 +31,8 @@ setup(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: Creative Commons Attribution No Derivatives 4.0 International (CC BY-ND 4.0)",
+        "License :: OSI Approved :: Creative Commons Attribution No "
+        "Derivatives 4.0 International (CC BY-ND 4.0)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",

@@ -330,7 +330,9 @@ class VocalizationDatabase:
                         "spectral_contrast": phrase.acoustic_features.spectral_contrast,
                         "median_ici_ms": phrase.acoustic_features.median_ici_ms,
                         "onset_rate_hz": phrase.acoustic_features.onset_rate_hz,
-                        "ici_coefficient_of_variation": phrase.acoustic_features.ici_coefficient_of_variation,
+                        "ici_coefficient_of_variation": (
+                            phrase.acoustic_features.ici_coefficient_of_variation
+                        ),
                     },
                     "total_occurrences": phrase.total_occurrences,
                     "contexts": [

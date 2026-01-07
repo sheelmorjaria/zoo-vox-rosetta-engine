@@ -390,21 +390,31 @@ def discover_persona_semantics(
         if significant_contexts:
             top_sig = significant_contexts[0]
             print("\n   💡 SEMANTIC INTERPRETATION:")
-            print(
-                f"      '{persona_name}' phrases are significantly associated with '{top_sig.context_name}' contexts"
+            association_msg = (
+                f"      '{persona_name}' phrases are significantly associated "
+                f"with '{top_sig.context_name}' contexts"
             )
-            print(
-                f"      (p < 0.05, Bonferroni-corrected, {top_sig.phrase_count} phrases, {top_sig.observed_ratio * 100:.1f}%)"
+            print(association_msg)
+            obs_ratio = top_sig.observed_ratio * 100
+            detail_msg = (
+                f"      (p < 0.05, Bonferroni-corrected, {top_sig.phrase_count} "
+                f"phrases, {obs_ratio:.1f}%)"
             )
+            print(detail_msg)
         elif top_contexts:
             top_ctx = top_contexts[0]
             print("\n   💡 SEMANTIC INTERPRETATION:")
-            print(
-                f"      '{persona_name}' phrases are most enriched in '{top_ctx.context_name}' contexts"
+            enrichment_msg = (
+                f"      '{persona_name}' phrases are most enriched "
+                f"in '{top_ctx.context_name}' contexts"
             )
-            print(
-                f"      ({top_ctx.phrase_count} phrases, {top_ctx.observed_ratio * 100:.1f}%, enrichment: {top_ctx.enrichment_score:+.2f})"
+            print(enrichment_msg)
+            obs_ratio = top_ctx.observed_ratio * 100
+            enrichment_detail = (
+                f"      ({top_ctx.phrase_count} phrases, {obs_ratio:.1f}%, "
+                f"enrichment: {top_ctx.enrichment_score:+.2f})"
             )
+            print(enrichment_detail)
         else:
             print("\n   ⚠️  No clear context associations found")
 

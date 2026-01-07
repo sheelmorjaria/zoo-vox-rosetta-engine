@@ -24,7 +24,6 @@ import threading
 import time
 import unittest
 from pathlib import Path
-from typing import Optional
 
 # Add src directory to path
 test_dir = Path(__file__).parent
@@ -37,27 +36,27 @@ IMPORT_ERROR = "Not initialized"
 
 try:
     from technical_architecture import (
-        VisualRecorder,
-        VisualRecorderConfig,
-        VisualMetadata,
-        RecordingStatistics,
         AudioSyncEvent,
         DynamicMicroharmonicSynthesizer,
+        EnvironmentalConditions,
+        # Environmental monitoring
+        EnvironmentalMonitor,
+        EnvironmentalMonitorConfig,
         GranularConcatenativeSynthesizer,
-        TechnicalArchitect,
         # Safety-critical components
         OperationMode,
         PeerController,
         PeerControllerConfig,
+        RainIntensity,
+        RecordingStatistics,
+        SessionViability,
+        TechnicalArchitect,
+        TemperatureClassification,
         # Thermal state
         ThermalState,
-        # Environmental monitoring
-        EnvironmentalMonitor,
-        EnvironmentalMonitorConfig,
-        EnvironmentalConditions,
-        SessionViability,
-        RainIntensity,
-        TemperatureClassification,
+        VisualMetadata,
+        VisualRecorder,
+        VisualRecorderConfig,
     )
 
     RUST_BINDINGS_AVAILABLE = True

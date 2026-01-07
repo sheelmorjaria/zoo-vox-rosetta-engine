@@ -1479,33 +1479,35 @@ impl GranularMorpher {
 /// This should achieve t-SNE distance < 7.0 (similar to concatenative)
 /// while providing pitch/time flexibility.
 ///
-/// 17-dimensional micro-dynamics source metadata for delta-based synthesis
+/// 30-dimensional micro-dynamics source metadata for delta-based synthesis
 ///
 /// This structure captures the full acoustic profile of a source buffer,
 /// enabling precise vector delta operations for all micro-dynamics features.
 ///
-/// **17 Micro-Dynamics Features:**
+/// **30 Micro-Dynamics Features:**
 ///
 /// 1. **Fundamental** (3 features):
 ///    - `mean_f0_hz`: Mean fundamental frequency (Hz)
 ///    - `duration_ms`: Temporal extent (ms)
 ///    - `f0_range_hz`: Pitch modulation range (Hz)
 ///
-/// 2. **Grit Factors** (2 features) - Timbre texture:
+/// 2. **Grit Factors** (3 features) - Timbre texture:
 ///    - `harmonic_to_noise_ratio`: Harmonic purity vs noise (dB)
 ///    - `spectral_flatness`: Noise-like vs tonal (0-1)
+///    - `harmonicity`: Degree of harmonic relationship (0-1)
 ///
-/// 3. **Motion Factors** (6 features) - Envelope dynamics:
+/// 3. **Motion Factors** (7 features) - Envelope dynamics:
 ///    - `attack_time_ms`: Onset speed (fast=sharp, slow=gentle)
 ///    - `decay_time_ms`: Release speed (ms)
 ///    - `sustain_level`: Steady-state amplitude (0-1)
 ///    - `vibrato_rate_hz`: Pitch modulation frequency (Hz)
 ///    - `vibrato_depth`: Pitch modulation depth (Hz)
 ///    - `jitter`: Micro-perturbations/instability (0-1)
+///    - `shimmer`: Amplitude micro-variations/breathiness (0-1)
 ///
-/// 4. **Fingerprint Factors** (5 features) - Spectral shape:
-///    - `mfcc_1` through `mfcc_4`: Mel-frequency cepstral coefficients
-///    - `spectral_contrast`: Formant structure strength
+/// 4. **Fingerprint Factors** (14 features) - Spectral shape:
+///    - `mfcc_1` through `mfcc_13`: Mel-frequency cepstral coefficients
+///    - `spectral_flux`: Rate of spectral change (0-1)
 ///
 /// 5. **Rhythm Factors** (3 features) - Temporal patterns:
 ///    - `median_ici_ms`: Inter-click interval (ms)
@@ -1521,13 +1523,15 @@ pub struct SourceMetadata {
     /// F0 range of source (Hz)
     pub f0_range_hz: f32,
 
-    // === Grit Factors (2 features) ===
+    // === Grit Factors (3 features) ===
     /// Harmonic-to-noise ratio in dB (higher = more tonal, lower = more noisy)
     pub harmonic_to_noise_ratio: f32,
     /// Spectral flatness (0 = tonal, 1 = noise-like)
     pub spectral_flatness: f32,
+    /// Harmonicity - degree of harmonic relationship (0-1, higher = more harmonic)
+    pub harmonicity: f32,
 
-    // === Motion Factors (6 features) ===
+    // === Motion Factors (7 features) ===
     /// Attack time in milliseconds (fast = sharp onset, slow = gentle)
     pub attack_time_ms: f32,
     /// Decay time in milliseconds (fast = quick release, slow = long tail)
@@ -1540,8 +1544,10 @@ pub struct SourceMetadata {
     pub vibrato_depth: f32,
     /// Jitter - micro-perturbations indicating instability (0-1)
     pub jitter: f32,
+    /// Shimmer - amplitude micro-variations indicating breathiness (0-1)
+    pub shimmer: f32,
 
-    // === Fingerprint Factors (5 features) ===
+    // === Fingerprint Factors (14 features) ===
     /// Mel-frequency cepstral coefficient 1 (spectral envelope)
     pub mfcc_1: f32,
     /// Mel-frequency cepstral coefficient 2
@@ -1550,8 +1556,26 @@ pub struct SourceMetadata {
     pub mfcc_3: f32,
     /// Mel-frequency cepstral coefficient 4
     pub mfcc_4: f32,
-    /// Spectral contrast - formant structure strength
-    pub spectral_contrast: f32,
+    /// Mel-frequency cepstral coefficient 5
+    pub mfcc_5: f32,
+    /// Mel-frequency cepstral coefficient 6
+    pub mfcc_6: f32,
+    /// Mel-frequency cepstral coefficient 7
+    pub mfcc_7: f32,
+    /// Mel-frequency cepstral coefficient 8
+    pub mfcc_8: f32,
+    /// Mel-frequency cepstral coefficient 9
+    pub mfcc_9: f32,
+    /// Mel-frequency cepstral coefficient 10
+    pub mfcc_10: f32,
+    /// Mel-frequency cepstral coefficient 11
+    pub mfcc_11: f32,
+    /// Mel-frequency cepstral coefficient 12
+    pub mfcc_12: f32,
+    /// Mel-frequency cepstral coefficient 13
+    pub mfcc_13: f32,
+    /// Spectral flux - rate of spectral change (0-1, higher = faster change)
+    pub spectral_flux: f32,
 
     // === Rhythm Factors (3 features) ===
     /// Median inter-click interval in milliseconds
@@ -1573,6 +1597,7 @@ impl Default for SourceMetadata {
             // Grit - tonal (low noise)
             harmonic_to_noise_ratio: 20.0, // 20 dB HNR
             spectral_flatness: 0.1,        // Very tonal
+            harmonicity: 0.8,              // High harmonicity
 
             // Motion - gentle attack/decay
             attack_time_ms: 10.0,
@@ -1580,14 +1605,24 @@ impl Default for SourceMetadata {
             sustain_level: 0.7,
             vibrato_rate_hz: 8.0,
             vibrato_depth: 50.0,
-            jitter: 0.02, // Low instability
+            jitter: 0.02,   // Low instability
+            shimmer: 0.03,  // Low amplitude variation
 
             // Fingerprint - neutral spectral shape
             mfcc_1: -500.0,
             mfcc_2: -100.0,
             mfcc_3: -50.0,
             mfcc_4: -20.0,
-            spectral_contrast: 20.0,
+            mfcc_5: -0.5,
+            mfcc_6: -0.3,
+            mfcc_7: -0.2,
+            mfcc_8: -0.1,
+            mfcc_9: 0.0,
+            mfcc_10: 0.1,
+            mfcc_11: 0.2,
+            mfcc_12: 0.3,
+            mfcc_13: 0.4,
+            spectral_flux: 0.5,  // Moderate spectral change rate
 
             // Rhythm - not pulsed (defaults for harmonic calls)
             median_ici_ms: 0.0, // Not applicable for continuous tones
@@ -1606,7 +1641,7 @@ impl SourceMetadata {
 
     /// Get delta vector (difference between two metadata sets)
     ///
-    /// Returns a 17D delta vector representing the difference from `other` to `self`.
+    /// Returns a 30D delta vector representing the difference from `other` to `self`.
     /// This is used for vector delta synthesis: `target = source + delta`
     #[allow(dead_code)]
     pub fn delta_from(&self, other: &SourceMetadata) -> MicroDynamicsDelta {
@@ -1618,6 +1653,7 @@ impl SourceMetadata {
             delta_harmonic_to_noise_ratio: self.harmonic_to_noise_ratio
                 - other.harmonic_to_noise_ratio,
             delta_spectral_flatness: self.spectral_flatness - other.spectral_flatness,
+            delta_harmonicity: self.harmonicity - other.harmonicity,
 
             delta_attack_time_ms: self.attack_time_ms - other.attack_time_ms,
             delta_decay_time_ms: self.decay_time_ms - other.decay_time_ms,
@@ -1625,12 +1661,22 @@ impl SourceMetadata {
             delta_vibrato_rate_hz: self.vibrato_rate_hz - other.vibrato_rate_hz,
             delta_vibrato_depth: self.vibrato_depth - other.vibrato_depth,
             delta_jitter: self.jitter - other.jitter,
+            delta_shimmer: self.shimmer - other.shimmer,
 
             delta_mfcc_1: self.mfcc_1 - other.mfcc_1,
             delta_mfcc_2: self.mfcc_2 - other.mfcc_2,
             delta_mfcc_3: self.mfcc_3 - other.mfcc_3,
             delta_mfcc_4: self.mfcc_4 - other.mfcc_4,
-            delta_spectral_contrast: self.spectral_contrast - other.spectral_contrast,
+            delta_mfcc_5: self.mfcc_5 - other.mfcc_5,
+            delta_mfcc_6: self.mfcc_6 - other.mfcc_6,
+            delta_mfcc_7: self.mfcc_7 - other.mfcc_7,
+            delta_mfcc_8: self.mfcc_8 - other.mfcc_8,
+            delta_mfcc_9: self.mfcc_9 - other.mfcc_9,
+            delta_mfcc_10: self.mfcc_10 - other.mfcc_10,
+            delta_mfcc_11: self.mfcc_11 - other.mfcc_11,
+            delta_mfcc_12: self.mfcc_12 - other.mfcc_12,
+            delta_mfcc_13: self.mfcc_13 - other.mfcc_13,
+            delta_spectral_flux: self.spectral_flux - other.spectral_flux,
 
             delta_median_ici_ms: self.median_ici_ms - other.median_ici_ms,
             delta_onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
@@ -1639,7 +1685,7 @@ impl SourceMetadata {
     }
 }
 
-/// 17-dimensional micro-dynamics delta vector
+/// 30-dimensional micro-dynamics delta vector
 ///
 /// Represents the difference between two acoustic feature vectors.
 /// Used in vector delta synthesis to calculate transformations.
@@ -1653,6 +1699,7 @@ pub struct MicroDynamicsDelta {
     // Grit factor deltas
     pub delta_harmonic_to_noise_ratio: f32,
     pub delta_spectral_flatness: f32,
+    pub delta_harmonicity: f32,
 
     // Motion factor deltas
     pub delta_attack_time_ms: f32,
@@ -1661,13 +1708,23 @@ pub struct MicroDynamicsDelta {
     pub delta_vibrato_rate_hz: f32,
     pub delta_vibrato_depth: f32,
     pub delta_jitter: f32,
+    pub delta_shimmer: f32,
 
     // Fingerprint factor deltas
     pub delta_mfcc_1: f32,
     pub delta_mfcc_2: f32,
     pub delta_mfcc_3: f32,
     pub delta_mfcc_4: f32,
-    pub delta_spectral_contrast: f32,
+    pub delta_mfcc_5: f32,
+    pub delta_mfcc_6: f32,
+    pub delta_mfcc_7: f32,
+    pub delta_mfcc_8: f32,
+    pub delta_mfcc_9: f32,
+    pub delta_mfcc_10: f32,
+    pub delta_mfcc_11: f32,
+    pub delta_mfcc_12: f32,
+    pub delta_mfcc_13: f32,
+    pub delta_spectral_flux: f32,
 
     // Rhythm factor deltas
     pub delta_median_ici_ms: f32,
@@ -1716,6 +1773,12 @@ impl SourceMetadataBuilder {
         self
     }
 
+    /// Set harmonicity
+    pub fn harmonicity(mut self, value: f32) -> Self {
+        self.metadata.harmonicity = value;
+        self
+    }
+
     /// Set attack time
     pub fn attack_time_ms(mut self, value: f32) -> Self {
         self.metadata.attack_time_ms = value;
@@ -1752,18 +1815,36 @@ impl SourceMetadataBuilder {
         self
     }
 
-    /// Set MFCC coefficients
-    pub fn mfcc(mut self, mfcc_1: f32, mfcc_2: f32, mfcc_3: f32, mfcc_4: f32) -> Self {
+    /// Set shimmer
+    pub fn shimmer(mut self, value: f32) -> Self {
+        self.metadata.shimmer = value;
+        self
+    }
+
+    /// Set MFCC coefficients (all 13)
+    pub fn mfcc(mut self, mfcc_1: f32, mfcc_2: f32, mfcc_3: f32, mfcc_4: f32,
+                mfcc_5: f32, mfcc_6: f32, mfcc_7: f32, mfcc_8: f32,
+                mfcc_9: f32, mfcc_10: f32, mfcc_11: f32, mfcc_12: f32,
+                mfcc_13: f32) -> Self {
         self.metadata.mfcc_1 = mfcc_1;
         self.metadata.mfcc_2 = mfcc_2;
         self.metadata.mfcc_3 = mfcc_3;
         self.metadata.mfcc_4 = mfcc_4;
+        self.metadata.mfcc_5 = mfcc_5;
+        self.metadata.mfcc_6 = mfcc_6;
+        self.metadata.mfcc_7 = mfcc_7;
+        self.metadata.mfcc_8 = mfcc_8;
+        self.metadata.mfcc_9 = mfcc_9;
+        self.metadata.mfcc_10 = mfcc_10;
+        self.metadata.mfcc_11 = mfcc_11;
+        self.metadata.mfcc_12 = mfcc_12;
+        self.metadata.mfcc_13 = mfcc_13;
         self
     }
 
-    /// Set spectral contrast
-    pub fn spectral_contrast(mut self, value: f32) -> Self {
-        self.metadata.spectral_contrast = value;
+    /// Set spectral flux
+    pub fn spectral_flux(mut self, value: f32) -> Self {
+        self.metadata.spectral_flux = value;
         self
     }
 
@@ -1926,16 +2007,16 @@ impl GranularConcatenativeSynthesizer {
         self.source_metadata.f0_range_hz += delta_f0_range_hz;
     }
 
-    /// Apply Complete 17D Micro-Dynamics Delta
+    /// Apply Complete 30D Micro-Dynamics Delta
     ///
-    /// Applies shifts for all 17 micro-dynamics features simultaneously.
+    /// Applies shifts for all 30 micro-dynamics features simultaneously.
     /// This enables full acoustic algebra integration with delta-based synthesis.
     ///
     /// **Note**: Only fundamental features (F0, duration) directly affect synthesis.
     /// Other features are tracked in metadata for validation and downstream processing.
     ///
     /// # Parameters
-    /// - `delta`: 17D micro-dynamics delta vector
+    /// - `delta`: 30D micro-dynamics delta vector
     ///
     /// # Example
     /// ```ignore
@@ -1959,6 +2040,7 @@ impl GranularConcatenativeSynthesizer {
 
         self.source_metadata.harmonic_to_noise_ratio += delta.delta_harmonic_to_noise_ratio;
         self.source_metadata.spectral_flatness += delta.delta_spectral_flatness;
+        self.source_metadata.harmonicity += delta.delta_harmonicity;
 
         self.source_metadata.attack_time_ms += delta.delta_attack_time_ms;
         self.source_metadata.decay_time_ms += delta.delta_decay_time_ms;
@@ -1966,12 +2048,22 @@ impl GranularConcatenativeSynthesizer {
         self.source_metadata.vibrato_rate_hz += delta.delta_vibrato_rate_hz;
         self.source_metadata.vibrato_depth += delta.delta_vibrato_depth;
         self.source_metadata.jitter += delta.delta_jitter;
+        self.source_metadata.shimmer += delta.delta_shimmer;
 
         self.source_metadata.mfcc_1 += delta.delta_mfcc_1;
         self.source_metadata.mfcc_2 += delta.delta_mfcc_2;
         self.source_metadata.mfcc_3 += delta.delta_mfcc_3;
         self.source_metadata.mfcc_4 += delta.delta_mfcc_4;
-        self.source_metadata.spectral_contrast += delta.delta_spectral_contrast;
+        self.source_metadata.mfcc_5 += delta.delta_mfcc_5;
+        self.source_metadata.mfcc_6 += delta.delta_mfcc_6;
+        self.source_metadata.mfcc_7 += delta.delta_mfcc_7;
+        self.source_metadata.mfcc_8 += delta.delta_mfcc_8;
+        self.source_metadata.mfcc_9 += delta.delta_mfcc_9;
+        self.source_metadata.mfcc_10 += delta.delta_mfcc_10;
+        self.source_metadata.mfcc_11 += delta.delta_mfcc_11;
+        self.source_metadata.mfcc_12 += delta.delta_mfcc_12;
+        self.source_metadata.mfcc_13 += delta.delta_mfcc_13;
+        self.source_metadata.spectral_flux += delta.delta_spectral_flux;
 
         self.source_metadata.median_ici_ms += delta.delta_median_ici_ms;
         self.source_metadata.onset_rate_hz += delta.delta_onset_rate_hz;
@@ -4064,7 +4156,7 @@ mod corvid_roughness_tests {
     }
 
     // ========================================================================
-    // 17D Metadata Tests (Builder Pattern and Delta Calculation)
+    // 30D Metadata Tests (Builder Pattern and Delta Calculation)
     // ========================================================================
 
     #[test]
@@ -4095,14 +4187,16 @@ mod corvid_roughness_tests {
             .f0_range_hz(400.0)
             .harmonic_to_noise_ratio(20.0)
             .spectral_flatness(0.1)
+            .harmonicity(0.8)
             .attack_time_ms(5.0)
             .decay_time_ms(10.0)
             .sustain_level(0.7)
             .vibrato_rate_hz(6.0)
             .vibrato_depth(0.03)
             .jitter(0.02)
-            .mfcc(1.2, 0.8, -0.3, 0.5)
-            .spectral_contrast(15.0)
+            .shimmer(0.03)
+            .mfcc(1.2, 0.8, -0.3, 0.5, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4)
+            .spectral_flux(0.5)
             .rhythm(45.0, 12.0, 0.25)
             .build();
 
@@ -4111,17 +4205,28 @@ mod corvid_roughness_tests {
         assert_eq!(metadata.f0_range_hz, 400.0);
         assert_eq!(metadata.harmonic_to_noise_ratio, 20.0);
         assert_eq!(metadata.spectral_flatness, 0.1);
+        assert_eq!(metadata.harmonicity, 0.8);
         assert_eq!(metadata.attack_time_ms, 5.0);
         assert_eq!(metadata.decay_time_ms, 10.0);
         assert_eq!(metadata.sustain_level, 0.7);
         assert_eq!(metadata.vibrato_rate_hz, 6.0);
         assert_eq!(metadata.vibrato_depth, 0.03);
         assert_eq!(metadata.jitter, 0.02);
+        assert_eq!(metadata.shimmer, 0.03);
         assert_eq!(metadata.mfcc_1, 1.2);
         assert_eq!(metadata.mfcc_2, 0.8);
         assert_eq!(metadata.mfcc_3, -0.3);
         assert_eq!(metadata.mfcc_4, 0.5);
-        assert_eq!(metadata.spectral_contrast, 15.0);
+        assert_eq!(metadata.mfcc_5, -0.5);
+        assert_eq!(metadata.mfcc_6, -0.3);
+        assert_eq!(metadata.mfcc_7, -0.2);
+        assert_eq!(metadata.mfcc_8, -0.1);
+        assert_eq!(metadata.mfcc_9, 0.0);
+        assert_eq!(metadata.mfcc_10, 0.1);
+        assert_eq!(metadata.mfcc_11, 0.2);
+        assert_eq!(metadata.mfcc_12, 0.3);
+        assert_eq!(metadata.mfcc_13, 0.4);
+        assert_eq!(metadata.spectral_flux, 0.5);
         assert_eq!(metadata.median_ici_ms, 45.0);
         assert_eq!(metadata.onset_rate_hz, 12.0);
         assert_eq!(metadata.ici_coefficient_of_variation, 0.25);
@@ -4159,25 +4264,36 @@ mod corvid_roughness_tests {
     }
 
     #[test]
-    fn test_source_metadata_delta_full_17d() {
-        // Test all 17 delta dimensions
+    fn test_source_metadata_delta_full_30d() {
+        // Test all 30 delta dimensions
         let source = SourceMetadata {
             mean_f0_hz: 6500.0,
             duration_ms: 50.0,
             f0_range_hz: 300.0,
             harmonic_to_noise_ratio: 20.0,
             spectral_flatness: 0.15,
+            harmonicity: 0.75,
             attack_time_ms: 8.0,
             decay_time_ms: 12.0,
             sustain_level: 0.6,
             vibrato_rate_hz: 5.0,
             vibrato_depth: 0.02,
             jitter: 0.03,
+            shimmer: 0.04,
             mfcc_1: 1.0,
             mfcc_2: 0.7,
             mfcc_3: -0.2,
             mfcc_4: 0.4,
-            spectral_contrast: 12.0,
+            mfcc_5: -0.5,
+            mfcc_6: -0.3,
+            mfcc_7: -0.2,
+            mfcc_8: -0.1,
+            mfcc_9: 0.0,
+            mfcc_10: 0.1,
+            mfcc_11: 0.2,
+            mfcc_12: 0.3,
+            mfcc_13: 0.4,
+            spectral_flux: 0.5,
             median_ici_ms: 40.0,
             onset_rate_hz: 10.0,
             ici_coefficient_of_variation: 0.3,
@@ -4189,17 +4305,28 @@ mod corvid_roughness_tests {
             f0_range_hz: 500.0,                // +200
             harmonic_to_noise_ratio: 10.0,     // -10
             spectral_flatness: 0.35,           // +0.2
+            harmonicity: 0.85,                 // +0.1
             attack_time_ms: 3.0,               // -5 (faster)
             decay_time_ms: 8.0,                // -4
             sustain_level: 0.8,                // +0.2
             vibrato_rate_hz: 7.0,              // +2
             vibrato_depth: 0.05,               // +0.03
             jitter: 0.08,                      // +0.05
+            shimmer: 0.06,                     // +0.02
             mfcc_1: 1.5,                       // +0.5
             mfcc_2: 0.9,                       // +0.2
             mfcc_3: -0.4,                      // -0.2
             mfcc_4: 0.6,                       // +0.2
-            spectral_contrast: 18.0,           // +6
+            mfcc_5: -0.3,                      // +0.2
+            mfcc_6: -0.1,                      // +0.2
+            mfcc_7: 0.0,                       // +0.2
+            mfcc_8: 0.1,                       // +0.2
+            mfcc_9: 0.2,                       // +0.2
+            mfcc_10: 0.3,                      // +0.2
+            mfcc_11: 0.4,                      // +0.2
+            mfcc_12: 0.5,                      // +0.2
+            mfcc_13: 0.6,                      // +0.2
+            spectral_flux: 0.7,                // +0.2
             median_ici_ms: 50.0,               // +10
             onset_rate_hz: 15.0,               // +5
             ici_coefficient_of_variation: 0.2, // -0.1
@@ -4207,23 +4334,34 @@ mod corvid_roughness_tests {
 
         let delta = target.delta_from(&source);
 
-        // Verify all 17 dimensions (using approximate comparison for floating point)
+        // Verify all 30 dimensions (using approximate comparison for floating point)
         assert_eq!(delta.delta_mean_f0_hz, 1000.0);
         assert_eq!(delta.delta_duration_ms, 20.0);
         assert_eq!(delta.delta_f0_range_hz, 200.0);
         assert_eq!(delta.delta_harmonic_to_noise_ratio, -10.0);
         assert!((delta.delta_spectral_flatness - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_harmonicity - 0.1).abs() < 0.0001); // FP tolerant
         assert_eq!(delta.delta_attack_time_ms, -5.0);
         assert_eq!(delta.delta_decay_time_ms, -4.0);
         assert!((delta.delta_sustain_level - 0.2).abs() < 0.0001); // FP tolerant
         assert_eq!(delta.delta_vibrato_rate_hz, 2.0);
         assert!((delta.delta_vibrato_depth - 0.03).abs() < 0.0001); // FP tolerant
         assert!((delta.delta_jitter - 0.05).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_shimmer - 0.02).abs() < 0.0001); // FP tolerant
         assert!((delta.delta_mfcc_1 - 0.5).abs() < 0.0001); // FP tolerant
         assert!((delta.delta_mfcc_2 - 0.2).abs() < 0.0001); // FP tolerant
         assert!((delta.delta_mfcc_3 - (-0.2)).abs() < 0.0001); // FP tolerant
         assert!((delta.delta_mfcc_4 - 0.2).abs() < 0.0001); // FP tolerant
-        assert_eq!(delta.delta_spectral_contrast, 6.0);
+        assert!((delta.delta_mfcc_5 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_6 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_7 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_8 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_9 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_10 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_11 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_12 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_mfcc_13 - 0.2).abs() < 0.0001); // FP tolerant
+        assert!((delta.delta_spectral_flux - 0.2).abs() < 0.0001); // FP tolerant
         assert_eq!(delta.delta_median_ici_ms, 10.0);
         assert_eq!(delta.delta_onset_rate_hz, 5.0);
         assert!((delta.delta_ici_cv - (-0.1)).abs() < 0.0001); // FP tolerant
@@ -4238,17 +4376,28 @@ mod corvid_roughness_tests {
             f0_range_hz: 400.0,
             harmonic_to_noise_ratio: 25.0, // High (pure)
             spectral_flatness: 0.05,       // Low (focused)
+            harmonicity: 0.95,             // High (pure)
             attack_time_ms: 25.0,          // Slow (smooth)
             decay_time_ms: 15.0,
             sustain_level: 0.7,
             vibrato_rate_hz: 6.0,
             vibrato_depth: 0.02,
             jitter: 0.01, // Low (stable)
+            shimmer: 0.01, // Low (stable)
             mfcc_1: 1.2,
             mfcc_2: 0.8,
             mfcc_3: -0.3,
             mfcc_4: 0.5,
-            spectral_contrast: 20.0,
+            mfcc_5: -0.5,
+            mfcc_6: -0.3,
+            mfcc_7: -0.2,
+            mfcc_8: -0.1,
+            mfcc_9: 0.0,
+            mfcc_10: 0.1,
+            mfcc_11: 0.2,
+            mfcc_12: 0.3,
+            mfcc_13: 0.4,
+            spectral_flux: 0.5,
             median_ici_ms: 0.0,
             onset_rate_hz: 0.0,
             ici_coefficient_of_variation: 0.0,
@@ -4260,17 +4409,28 @@ mod corvid_roughness_tests {
             f0_range_hz: 400.0,
             harmonic_to_noise_ratio: 2.0, // Low (gritty)
             spectral_flatness: 0.8,       // High (noise-like)
+            harmonicity: 0.4,             // Low (gritty)
             attack_time_ms: 3.0,          // Fast (sharp)
             decay_time_ms: 15.0,
             sustain_level: 0.7,
             vibrato_rate_hz: 6.0,
             vibrato_depth: 0.02,
             jitter: 0.15, // High (rough)
+            shimmer: 0.12, // High (rough)
             mfcc_1: 1.2,
             mfcc_2: 0.8,
             mfcc_3: -0.3,
             mfcc_4: 0.5,
-            spectral_contrast: 5.0,
+            mfcc_5: -0.5,
+            mfcc_6: -0.3,
+            mfcc_7: -0.2,
+            mfcc_8: -0.1,
+            mfcc_9: 0.0,
+            mfcc_10: 0.1,
+            mfcc_11: 0.2,
+            mfcc_12: 0.3,
+            mfcc_13: 0.4,
+            spectral_flux: 0.9,
             median_ici_ms: 0.0,
             onset_rate_hz: 0.0,
             ici_coefficient_of_variation: 0.0,
@@ -4281,9 +4441,11 @@ mod corvid_roughness_tests {
         // GRITTY persona should show:
         assert_eq!(delta.delta_harmonic_to_noise_ratio, -23.0); // Much less harmonic
         assert_eq!(delta.delta_spectral_flatness, 0.75); // Much more noise
+        assert!((delta.delta_harmonicity - (-0.55)).abs() < 0.0001); // Much less harmonicity
         assert_eq!(delta.delta_attack_time_ms, -22.0); // Faster attack
         assert_eq!(delta.delta_jitter, 0.14); // More jitter
-        assert_eq!(delta.delta_spectral_contrast, -15.0); // Less contrast
+        assert!((delta.delta_shimmer - 0.11).abs() < 0.0001); // More shimmer
+        assert!((delta.delta_spectral_flux - 0.4).abs() < 0.0001); // More spectral flux
     }
 
     #[test]
@@ -4292,7 +4454,7 @@ mod corvid_roughness_tests {
         let built = SourceMetadata::builder().build();
         let defaulted = SourceMetadata::default();
 
-        // All 17 fields should match
+        // All 30 fields should match
         assert_eq!(built.mean_f0_hz, defaulted.mean_f0_hz);
         assert_eq!(built.duration_ms, defaulted.duration_ms);
         assert_eq!(built.f0_range_hz, defaulted.f0_range_hz);
@@ -4301,17 +4463,28 @@ mod corvid_roughness_tests {
             defaulted.harmonic_to_noise_ratio
         );
         assert_eq!(built.spectral_flatness, defaulted.spectral_flatness);
+        assert_eq!(built.harmonicity, defaulted.harmonicity);
         assert_eq!(built.attack_time_ms, defaulted.attack_time_ms);
         assert_eq!(built.decay_time_ms, defaulted.decay_time_ms);
         assert_eq!(built.sustain_level, defaulted.sustain_level);
         assert_eq!(built.vibrato_rate_hz, defaulted.vibrato_rate_hz);
         assert_eq!(built.vibrato_depth, defaulted.vibrato_depth);
         assert_eq!(built.jitter, defaulted.jitter);
+        assert_eq!(built.shimmer, defaulted.shimmer);
         assert_eq!(built.mfcc_1, defaulted.mfcc_1);
         assert_eq!(built.mfcc_2, defaulted.mfcc_2);
         assert_eq!(built.mfcc_3, defaulted.mfcc_3);
         assert_eq!(built.mfcc_4, defaulted.mfcc_4);
-        assert_eq!(built.spectral_contrast, defaulted.spectral_contrast);
+        assert_eq!(built.mfcc_5, defaulted.mfcc_5);
+        assert_eq!(built.mfcc_6, defaulted.mfcc_6);
+        assert_eq!(built.mfcc_7, defaulted.mfcc_7);
+        assert_eq!(built.mfcc_8, defaulted.mfcc_8);
+        assert_eq!(built.mfcc_9, defaulted.mfcc_9);
+        assert_eq!(built.mfcc_10, defaulted.mfcc_10);
+        assert_eq!(built.mfcc_11, defaulted.mfcc_11);
+        assert_eq!(built.mfcc_12, defaulted.mfcc_12);
+        assert_eq!(built.mfcc_13, defaulted.mfcc_13);
+        assert_eq!(built.spectral_flux, defaulted.spectral_flux);
         assert_eq!(built.median_ici_ms, defaulted.median_ici_ms);
         assert_eq!(built.onset_rate_hz, defaulted.onset_rate_hz);
         assert_eq!(

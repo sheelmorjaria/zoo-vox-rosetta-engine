@@ -535,8 +535,12 @@ def extract_optimized(
     processed_files = checkpoint_manager.get_processed_files() if resume else set()
     if resume and processed_files:
         remaining_annotations = [a for a in annotations if a["filename"] not in processed_files]
+        total_files = len(annotations)
+        processed_count = len(processed_files)
+        remaining_count = len(remaining_annotations)
         print(
-            f"  Resuming: {len(annotations)} total, {len(processed_files)} processed, {len(remaining_annotations)} remaining"
+            f"  Resuming: {total_files} total, {processed_count} processed, "
+            f"{remaining_count} remaining"
         )
         annotations = remaining_annotations
 
@@ -624,9 +628,9 @@ def extract_optimized(
             batch_id=batch_idx,
         )
 
-        print(
-            f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates"
-        )
+        sentences_count = len(batch_sentences)
+        candidates_count = len(batch_candidates)
+        print(f"  Batch complete: {sentences_count} sentences, {candidates_count} candidates")
         print(
             f"  Progress: {len(processed_filenames)}/{checkpoint_manager.metadata['total_files']} "
             f"({len(processed_filenames) / checkpoint_manager.metadata['total_files'] * 100:.1f}%)"

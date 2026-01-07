@@ -560,7 +560,8 @@ python acoustic_similarity_for_atomic_phrase_candidates.py --persona gritty --sp
 python acoustic_similarity_for_atomic_phrase_candidates.py --persona pure --species marmoset
 
 # Find phrases similar to a specific phrase
-python acoustic_similarity_for_atomic_phrase_candidates.py --query F0_7000_DUR_5_RANGE_100 --species marmoset
+python acoustic_similarity_for_atomic_phrase_candidates.py \\
+    --query F0_7000_DUR_5_RANGE_100 --species marmoset
 
 # Analyze persona distribution
 python acoustic_similarity_for_atomic_phrase_candidates.py --analyze-distribution

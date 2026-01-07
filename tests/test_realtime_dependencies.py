@@ -161,13 +161,11 @@ def main():
     all_audio_caps_ok = all(audio_capabilities.values())
 
     print(f"Core Dependencies:         {'✅ READY' if all_core_ok else '❌ NEEDS ATTENTION'}")
-    print(
-        f"Audio Interface:          {'✅ READY' if all_audio_ok else '❌ INSTALL sounddevice/pyaudio'}"
-    )
+    audio_status = "✅ READY" if all_audio_ok else "❌ INSTALL sounddevice/pyaudio"
+    print(f"Audio Interface:          {audio_status}")
     print(f"Real-time Processing:     {'✅ READY' if all_realtime_ok else '❌ NEEDS ATTENTION'}")
-    print(
-        f"Audio Capabilities:       {'✅ READY' if all_audio_caps_ok else '❌ CONFIGURE AUDIO HARDWARE'}"
-    )
+    caps_status = "✅ READY" if all_audio_caps_ok else "❌ CONFIGURE AUDIO HARDWARE"
+    print(f"Audio Capabilities:       {caps_status}")
 
     overall_status = all_core_ok and all_realtime_ok
 

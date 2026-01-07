@@ -430,7 +430,8 @@ class DataFusionSystem:
         self.logger.info(
             f"Fusion completed: Visual attention {fusion_result['visual_attention_score']:.2f}, "
             f"Boost applied: {fusion_result['boost_applied']}, "
-            f"Response prob: {audio_features.response_probability:.2f} -> {boosted_features.response_probability:.2f}"
+            f"Response prob: {audio_features.response_probability:.2f} -> "
+            f"{boosted_features.response_probability:.2f}"
         )
 
         return fusion_result

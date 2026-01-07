@@ -331,9 +331,8 @@ def load_checkpoint() -> Dict:
         if Path(CHECKPOINT_PATH).exists():
             with open(CHECKPOINT_PATH, "r") as f:
                 checkpoint_data = json.load(f)
-            print(
-                f"📂 Checkpoint loaded: {checkpoint_data['processed_count']} files already processed"
-            )
+            processed_count = checkpoint_data["processed_count"]
+            print(f"📂 Checkpoint loaded: {processed_count} files already processed")
             return checkpoint_data
     except Exception as e:
         print(f"⚠️  Failed to load checkpoint: {e}")
@@ -372,9 +371,9 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
             all_results = checkpoint["results"]
             processed_files = set(checkpoint["processed_files"])
             start_index = checkpoint["last_batch_index"]
-            print(
-                f"📂 Resuming from batch {start_index + 1}, {len(all_results)} files already processed"
-            )
+            batch_num = start_index + 1
+            total_processed = len(all_results)
+            print(f"📂 Resuming from batch {batch_num}, {total_processed} files already processed")
         else:
             all_results = []
             processed_files = set()
@@ -402,9 +401,14 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
         all_results.extend(batch_results)
         processed_files.update(new_batch)
 
-        print(
-            f"  Batch {batch_idx + 1}/{total_batches}: processed {len(batch_results)} new files (total: {len(all_results)})"
+        batch_num = batch_idx + 1
+        new_files = len(batch_results)
+        total_files = len(all_results)
+        msg = (
+            f"  Batch {batch_num}/{total_batches}: processed {new_files} new files "
+            f"(total: {total_files})"
         )
+        print(msg)
 
         # Save checkpoint periodically
         if ENABLE_CHECKPOINTING and (batch_idx + 1) % CHECKPOINT_INTERVAL == 0:
@@ -441,7 +445,8 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
         print(f"   rm {CHECKPOINT_PATH}")
 
     for vocalization_id, result in enumerate(all_results):
-        # Handle both full results (4-tuple with audio) and checkpoint results (3-tuple without audio)
+        # Handle both full results (4-tuple with audio)
+        # and checkpoint results (3-tuple without audio)
         if len(result) == 4:
             audio_path, syntax_meta, file_name, audio_segments = result
         else:
@@ -559,9 +564,8 @@ def import_bat_with_syntax_metadata(max_files: int = MAX_FILES):
     print("\n📊 SYNTAX STATISTICS:")
     print(f"   F0 contours: {dict(f0_contours)}")
     if len(vocalizations) > 0:
-        print(
-            f"   Compositional (3+ phrases): {compositional_count} ({compositional_count / len(vocalizations) * 100:.1f}%)"
-        )
+        comp_pct = compositional_count / len(vocalizations) * 100
+        print(f"   Compositional (3+ phrases): {compositional_count} ({comp_pct:.1f}%)")
 
     return species_data
 

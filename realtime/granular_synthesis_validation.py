@@ -473,12 +473,12 @@ def calculate_congruence_metrics(projections: np.ndarray, labels: np.ndarray) ->
     # Comparison with additive synthesis
     print("\n  Comparison with Additive Synthesis (previous result):")
     print("    Additive:     Natural ↔ Dynamic distance ≈ 27.0 (POOR)")
+    quality = "GOOD" if natural_granular_dist < 7.0 else "MODERATE"
     print(
-        f"    Granular:     Natural ↔ Granular distance ≈ {natural_granular_dist:.1f} ({'GOOD' if natural_granular_dist < 7.0 else 'MODERATE'})"
+        f"    Granular:     Natural ↔ Granular distance ≈ {natural_granular_dist:.1f} ({quality})"
     )
-    print(
-        f"    Improvement:  {(27.0 - natural_granular_dist) / 27.0 * 100:.1f}% reduction in distance"
-    )
+    improvement = (27.0 - natural_granular_dist) / 27.0 * 100
+    print(f"    Improvement:  {improvement:.1f}% reduction in distance")
 
     metrics["interpretation"] = interpretation
 
@@ -537,16 +537,13 @@ def main():
     print(f"   - Results: {results_path}")
 
     print("\n📊 Summary:")
-    print(
-        f"   Natural ↔ Concatenative distance: {metrics['centroid_distances']['natural_concatenative']:.3f}"
-    )
-    print(
-        f"   Natural ↔ Granular distance:      {metrics['centroid_distances']['natural_granular']:.3f}"
-    )
+    natural_concat = metrics["centroid_distances"]["natural_concatenative"]
+    print(f"   Natural ↔ Concatenative distance: {natural_concat:.3f}")
+    natural_granular = metrics["centroid_distances"]["natural_granular"]
+    print(f"   Natural ↔ Granular distance:      {natural_granular:.3f}")
     print("   Target: < 7.0")
-    print(
-        f"   Result: {'✅ PASS' if metrics['centroid_distances']['natural_granular'] < 7.0 else '❌ FAIL'}"
-    )
+    result = "✅ PASS" if natural_granular < 7.0 else "❌ FAIL"
+    print(f"   Result: {result}")
 
     print("\n🎯 NEXT STEPS:")
     if metrics["centroid_distances"]["natural_granular"] < 7.0:

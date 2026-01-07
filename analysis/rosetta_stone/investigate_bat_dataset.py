@@ -205,8 +205,9 @@ def main():
     print(f"{'=' * 70}")
 
     if all_results:
+        success_pct = successful / len(test_files) * 100
         print(
-            f"\nFiles successfully analyzed: {successful}/{len(test_files)} ({successful / len(test_files) * 100:.1f}%)"
+            f"\nFiles successfully analyzed: {successful}/{len(test_files)} ({success_pct:.1f}%)"
         )
 
         # Aggregate modality counts

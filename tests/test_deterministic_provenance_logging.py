@@ -523,9 +523,11 @@ except ImportError:
             self.total_size_bytes = 0
             self.compression_ratio = 0.0
 
-            # Clear buffer, but keep trace_hierarchy and relationships for post-cleanup queries
+            # Clear buffer, but keep trace_hierarchy and relationships
+            # for post-cleanup queries
             self.current_buffer.clear()
-            # Note: Don't clear trace_hierarchy and relationships as tests expect to query after cleanup
+            # Note: Don't clear trace_hierarchy and relationships
+            # as tests expect to query after cleanup
 
 
 class TestDeterministicProvenanceLogging(unittest.TestCase):
@@ -709,9 +711,10 @@ class TestDeterministicProvenanceLogging(unittest.TestCase):
         self.assertIn("children", viz_data)
         print(f"Child depth before cleanup: {viz_data['depth']}")
         print(f"Parent ID: {viz_data['parent_id']}")
-        print(
-            f"Parent in hierarchy: {viz_data['parent_id'] in self.logger.trace_manager.trace_hierarchy}"
+        parent_in_hierarchy = (
+            viz_data['parent_id'] in self.logger.trace_manager.trace_hierarchy
         )
+        print(f"Parent in hierarchy: {parent_in_hierarchy}")
         self.assertEqual(viz_data["depth"], 1)
 
         # Also test root visualization

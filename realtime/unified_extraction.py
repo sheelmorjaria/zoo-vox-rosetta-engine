@@ -26,20 +26,17 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-import librosa
-from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional
-from dataclasses import dataclass, field
-from scipy import signal
-from scipy.cluster.hierarchy import fcluster
-from scipy.spatial.distance import pdist, squareform
-from sklearn.cluster import DBSCAN
-from sklearn.metrics import silhouette_score
-import warnings
 import json
-import soundfile as sf
+import warnings
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
+import librosa
+import numpy as np
+import soundfile as sf
+from scipy.spatial.distance import pdist
+from sklearn.cluster import DBSCAN
 
 # =============================================================================
 # Data Models
@@ -448,7 +445,7 @@ def extract_29d_features(audio: np.ndarray, sr: int) -> Dict[str, float]:
                 features["median_ici_ms"] = 0.0
                 features["ici_coefficient_of_variation"] = 0.0
 
-        except Exception as e:
+        except Exception:
             # Fallback: return zeros for all features
             default_features = {
                 "mean_f0_hz": 0.0,
@@ -965,7 +962,7 @@ def extract_phrases_sentences_grammar(
             indent=2,
         )
 
-    print(f"\n✓ Extraction complete!")
+    print("\n✓ Extraction complete!")
     print(f"  Sentences: {len(all_sentences)}")
     print(f"  Atomic phrases: {len(phrases)}")
     print(f"  Grammar rules: {len(grammar_rules)}")

@@ -13,24 +13,22 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import tempfile
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-import sys
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.acoustic_algebra_contextual import (
-    SemanticVector,
     ContextualAxis,
     ContextualMap,
     GradientSynthesizer,
+    SemanticVector,
 )
-from realtime.phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
 
+from realtime.phrase_audio_library import PhraseAudioLibrary, PhraseAudioSegment
 
 # ============================================================================
 # SemanticVector Tests

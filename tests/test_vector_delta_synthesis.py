@@ -16,10 +16,11 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
-import numpy as np
 import sys
+import unittest
 from pathlib import Path
+
+import numpy as np
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

@@ -17,12 +17,11 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-import numpy as np
-from pathlib import Path
-from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass
-import json
+from pathlib import Path
+from typing import Any, Dict, List
 
+import numpy as np
 
 # =============================================================================
 # Test Data Models
@@ -152,7 +151,7 @@ class TestPELTSentenceSegmentation(unittest.TestCase):
                 f"Change point at {time_sec:.2f}s should be < 2.5s",
             )
 
-        print(f"✓ PELT change point detection test passed")
+        print("✓ PELT change point detection test passed")
         print(f"  Detected change points at: {[cp / sr for cp in change_points]}")
 
     def test_pelt_with_annotations(self):
@@ -165,7 +164,6 @@ class TestPELTSentenceSegmentation(unittest.TestCase):
         Expected:
         - Change points align with annotation boundaries
         """
-        from realtime.unified_extraction import segment_sentences_pelt
 
         # This would use actual annotations - placeholder for now
         # Implementation will add annotation-guided PELT
@@ -224,7 +222,7 @@ class TestSlidingWindowPhraseExtraction(unittest.TestCase):
             expected_hop = int(0.025 * sr)  # 25ms hop
             self.assertAlmostEqual(overlap, expected_hop, delta=100, msg="Hop should be ~25ms")
 
-        print(f"✓ Sliding window extraction test passed")
+        print("✓ Sliding window extraction test passed")
         print(f"  Extracted {len(candidates)} candidates")
 
     def test_variable_window_sizes(self):
@@ -258,7 +256,7 @@ class TestSlidingWindowPhraseExtraction(unittest.TestCase):
 
         self.assertGreater(len(window_sizes), 1, "Should use multiple window sizes")
 
-        print(f"✓ Variable window size test passed")
+        print("✓ Variable window size test passed")
         print(f"  Window sizes used: {sorted(window_sizes)}ms")
 
 
@@ -332,7 +330,7 @@ class TestDBSCANPhraseClustering(unittest.TestCase):
             len(unique_clusters), 4, "Should find at most 4 clusters (including noise)"
         )
 
-        print(f"✓ DBSCAN clustering test passed")
+        print("✓ DBSCAN clustering test passed")
         print(f"  Found {len(unique_clusters)} clusters")
         print(f"  Generated {len(phrases)} atomic phrases")
 
@@ -387,7 +385,7 @@ class TestDBSCANPhraseClustering(unittest.TestCase):
             len(unique_clusters), 3, "Should have at most 3 clusters (outliers excluded)"
         )
 
-        print(f"✓ DBSCAN noise handling test passed")
+        print("✓ DBSCAN noise handling test passed")
         print(f"  Clusters: {len(unique_clusters)}")
         print(f"  Total phrases: {len(phrases)} (outliers excluded)")
 
@@ -476,7 +474,7 @@ class TestAtomicityTesting(unittest.TestCase):
         self.assertGreater(intra_sim, 0.2, "Intra-cluster similarity should be > 0.2")
         self.assertTrue(is_atomic, "Phrase should be marked as atomic")
 
-        print(f"✓ Intra-cluster similarity test passed")
+        print("✓ Intra-cluster similarity test passed")
         print(f"  Intra-cluster similarity: {intra_sim:.3f}")
         print(f"  Is atomic: {is_atomic}")
 
@@ -564,7 +562,7 @@ class TestAtomicityTesting(unittest.TestCase):
         # Assert - Low inter-cluster similarity
         self.assertLess(inter_sim1, 0.6, "Inter-cluster similarity should be < 0.6")
 
-        print(f"✓ Inter-cluster similarity test passed")
+        print("✓ Inter-cluster similarity test passed")
         print(f"  Inter-cluster similarity: {inter_sim1:.3f}")
 
 
@@ -612,7 +610,7 @@ class TestCompositionalityTesting(unittest.TestCase):
         # (Implementation will check which phrases appear across sentences)
         self.assertIsNotNone(compositionality_scores)
 
-        print(f"✓ Phrase reuse detection test passed")
+        print("✓ Phrase reuse detection test passed")
         print(f"  Sentences analyzed: {len(sentences)}")
 
     def test_builds_grammar_from_transitions(self):
@@ -650,7 +648,7 @@ class TestCompositionalityTesting(unittest.TestCase):
         self.assertIsNotNone(rule_a_to_b, "Should have A->B rule")
         self.assertEqual(rule_a_to_b.frequency, 2, "A->B should appear 2 times")
 
-        print(f"✓ Grammar rule extraction test passed")
+        print("✓ Grammar rule extraction test passed")
         print(f"  Rules extracted: {len(rules)}")
         for rule in rules[:5]:
             print(f"    {rule.from_phrase_id} -> {rule.to_phrase_id}: {rule.frequency} times")

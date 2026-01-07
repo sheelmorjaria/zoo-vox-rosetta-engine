@@ -78,9 +78,11 @@ def print_transition_matrix(transition_matrix, title="TRANSITION PROBABILITY MAT
         return
 
     print(f"\n📊 {title}")
-    print(
-        f"{'FROM \\ TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} {'TRANSIENT':>12} {'RHYTHMIC':>12}"
+    header = (
+        f"{'FROM / TO':<15} {'HARMONIC':>12} {'FM_SWEEP':>12} "
+        f"{'TRANSIENT':>12} {'RHYTHMIC':>12}"
     )
+    print(header)
     print("-" * 70)
 
     for from_mod in ["HARMONIC", "FM_SWEEP", "TRANSIENT", "RHYTHMIC"]:
@@ -146,10 +148,11 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
 
     total_phrases = sum(r["num_phrases"] for r in valid_results)
     print(f"\n📊 Total phrases analyzed: {total_phrases}")
-    print(f"📊 Mean phrases per file: {np.mean([r['num_phrases'] for r in valid_results]):.2f}")
-    print(
-        f"📊 Range: {np.min([r['num_phrases'] for r in valid_results])} - {np.max([r['num_phrases'] for r in valid_results])} phrases"
-    )
+    phrase_counts = [r["num_phrases"] for r in valid_results]
+    print(f"📊 Mean phrases per file: {np.mean(phrase_counts):.2f}")
+    min_phrases = np.min(phrase_counts)
+    max_phrases = np.max(phrase_counts)
+    print(f"📊 Range: {min_phrases} - {max_phrases} phrases")
 
     # Aggregate transition matrix
     print(f"\n{'=' * 90}")
@@ -202,7 +205,8 @@ def analyze_species_texture_grammar(species_name, species_dir, num_files=30):
     print(f"  Average alternation rate: {avg_alternation_rate:.3f} (changes per transition)")
     print(f"  Average entropy: {avg_entropy:.3f} bits")
     print(
-        f"  Average normalized entropy: {avg_normalized_entropy:.3f} (0 = uniform, 1 = maximum diversity)"
+        f"  Average normalized entropy: {avg_normalized_entropy:.3f} "
+        f"(0 = uniform, 1 = maximum diversity)"
     )
 
     # Most common sequences across all files

@@ -226,7 +226,9 @@ def analyze_timbre_clusters(phrase_timbres: Dict) -> Dict:
     for f in TIMBRE_FEATURES:
         values = all_values[f]
         print(
-            f"{f:<25} {np.min(values):>12.1f} {np.max(values):>12.1f} {np.mean(values):>12.1f} {np.std(values):>12.1f}"
+            f"{f:<25} {np.min(values):>12.1f} "
+            f"{np.max(values):>12.1f} {np.mean(values):>12.1f} "
+            f"{np.std(values):>12.1f}"
         )
 
     # Compute pairwise distance distribution

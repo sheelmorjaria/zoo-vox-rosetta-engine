@@ -28,14 +28,19 @@ def consolidate_test_files():
     exclude_files = {"__init__.py", "conftest.py", "README.md", ".gitignore"}
 
     # Files to move with special handling
+    realtime_base = "/mnt/c/Users/sheel/Desktop/src/realtime"
     special_files = {
-        "/mnt/c/Users/sheel/Desktop/src/realtime/simple_enhanced_test.py": "test_simple_enhanced.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_combined_microharmonic.py": "test_combined_microharmonic.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_enhanced_microharmonic.py": "test_enhanced_microharmonic.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_enhanced_microharmonic_fixed.py": "test_enhanced_microharmonic_fixed.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_mixed_microharmonic.py": "test_mixed_microharmonic.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_realtime_dependencies.py": "test_realtime_dependencies.py",
-        "/mnt/c/Users/sheel/Desktop/src/realtime/test_simple_mixed_microharmonic.py": "test_simple_mixed_microharmonic.py",
+        f"{realtime_base}/simple_enhanced_test.py": "test_simple_enhanced.py",
+        f"{realtime_base}/test_combined_microharmonic.py": "test_combined_microharmonic.py",
+        f"{realtime_base}/test_enhanced_microharmonic.py": "test_enhanced_microharmonic.py",
+        f"{realtime_base}/test_enhanced_microharmonic_fixed.py": (
+            "test_enhanced_microharmonic_fixed.py"
+        ),
+        f"{realtime_base}/test_mixed_microharmonic.py": "test_mixed_microharmonic.py",
+        f"{realtime_base}/test_realtime_dependencies.py": "test_realtime_dependencies.py",
+        f"{realtime_base}/test_simple_mixed_microharmonic.py": (
+            "test_simple_mixed_microharmonic.py"
+        ),
     }
 
     # Move special files first

@@ -117,7 +117,8 @@ def main():
         if r:
             results.append(r)
             print(
-                f"✓ {r['name'][:30]:30s} {r['duration_ms']:7.0f}ms  RMS:{r['rms']:.4f}  Phrases:{r['phrases']:2d}  ",
+                f"✓ {r['name'][:30]:30s} {r['duration_ms']:7.0f}ms  "
+                f"RMS:{r['rms']:.4f}  Phrases:{r['phrases']:2d}  ",
                 end="",
             )
 

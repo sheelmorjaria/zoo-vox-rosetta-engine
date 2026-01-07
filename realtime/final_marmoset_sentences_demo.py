@@ -176,9 +176,8 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
         ],
     }
 
-    print(
-        f"\n1. Creating vocabulary with {sum(len(seq) for seq in sentence_structures.values())} phrase types..."
-    )
+    phrase_types_count = sum(len(seq) for seq in sentence_structures.values())
+    print(f"\n1. Creating vocabulary with {phrase_types_count} phrase types...")
 
     total_segments = 0
 
@@ -237,9 +236,10 @@ def create_ascending_sentence_demo() -> PhraseAudioLibrary:
             # Add to library
             if library.add_segment(segment):
                 total_segments += 1
-                print(
-                    f"     ✓ {phrase_data['phrase_key']}: {phrase_data['f0_hz']}Hz - {phrase_data['meaning']}"
-                )
+                phrase_key = phrase_data["phrase_key"]
+                f0 = phrase_data["f0_hz"]
+                meaning = phrase_data["meaning"]
+                print(f"     ✓ {phrase_key}: {f0}Hz - {meaning}")
             else:
                 print(f"     ✗ Failed to add {phrase_data['phrase_key']}")
 
@@ -361,9 +361,9 @@ def show_comprehensive_statistics(library: PhraseAudioLibrary):
     print("\n   Phrase occurrence distribution:")
     print(f"   Unique phrases: {len(phrase_stats)}")
     print(f"   Mean occurrences per phrase: {np.mean(list(phrase_stats.values())):.1f}")
-    print(
-        f"   Most frequent phrase: {max(phrase_stats, key=phrase_stats.get)} ({phrase_stats[max(phrase_stats, key=phrase_stats.get)]} occurrences)"
-    )
+    most_frequent = max(phrase_stats, key=phrase_stats.get)
+    most_frequent_count = phrase_stats[most_frequent]
+    print(f"   Most frequent phrase: {most_frequent} ({most_frequent_count} occurrences)")
 
     # Quality analysis
     quality_scores = []

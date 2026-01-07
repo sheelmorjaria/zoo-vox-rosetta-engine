@@ -241,7 +241,10 @@ class CompositionalValidator:
         return {
             "is_valid": transitions_valid == transitions_analyzed and len(violations) == 0,
             "confidence": float(confidence),
-            "message": f"Sequence validation: {transitions_valid}/{transitions_analyzed} transitions valid",
+            "message": (
+                f"Sequence validation: {transitions_valid}/{transitions_analyzed} "
+                f"transitions valid"
+            ),
             "validation_details": {
                 "transitions_analyzed": transitions_analyzed,
                 "transitions_valid": transitions_valid,

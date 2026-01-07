@@ -34,21 +34,20 @@ License: CC BY-ND 4.0 International
 
 import json
 import logging
+import sys
+from pathlib import Path
+from typing import Dict, List, Tuple
+
 import numpy as np
 import soundfile as sf
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from realtime.audio_aware_grammar_discovery import AudioAwareGrammarDiscovery
-from realtime.acoustic_algebra_contextual import ContextualMap, GradientSynthesizer, SemanticVector
-from realtime.phrase_audio_library import VocalizationSynthesizer
-
 import warnings
+
+from realtime.audio_aware_grammar_discovery import AudioAwareGrammarDiscovery
+
+from realtime.phrase_audio_library import VocalizationSynthesizer
 
 warnings.filterwarnings("ignore")
 
@@ -331,7 +330,7 @@ This creates a new class of experiment: The Threshold Test.
                 results["acoustic_distances"].append(distance)
 
                 logger.info(f"  Acoustic distance from baseline: {distance:.3f}")
-                logger.info(f"  Synthesis params:")
+                logger.info("  Synthesis params:")
                 for param, value in result["synthesis_params"].items():
                     if abs(value) > 0.01:
                         logger.info(f"    {param}: {value:.3f}")
@@ -348,18 +347,18 @@ This creates a new class of experiment: The Threshold Test.
         # Check linearity (correlation between intensity and distance)
         correlation = np.corrcoef(intensities_nonzero, distances)[0, 1]
 
-        logger.info(f"\nGradient Linearity Analysis:")
+        logger.info("\nGradient Linearity Analysis:")
         logger.info(f"  Intensity-Distance Correlation: {correlation:.3f}")
 
         if correlation > 0.95:
-            logger.info(f"  Result: ✓ LINEAR (Strong gradient detected)")
-            logger.info(f"  Interpretation: Continuum perception supported")
+            logger.info("  Result: ✓ LINEAR (Strong gradient detected)")
+            logger.info("  Interpretation: Continuum perception supported")
         elif correlation > 0.7:
-            logger.info(f"  Result: ~ MOSTLY LINEAR (Moderate gradient)")
-            logger.info(f"  Interpretation: Partial continuum with some thresholds")
+            logger.info("  Result: ~ MOSTLY LINEAR (Moderate gradient)")
+            logger.info("  Interpretation: Partial continuum with some thresholds")
         else:
-            logger.info(f"  Result: ✗ NON-LINEAR (Step function)")
-            logger.info(f"  Interpretation: Discrete categories detected")
+            logger.info("  Result: ✗ NON-LINEAR (Step function)")
+            logger.info("  Interpretation: Discrete categories detected")
 
     return results
 
@@ -421,7 +420,7 @@ With Acoustic Algebra (Continuous Generation):
     logger.info(f"Target: {target}")
 
     # Generate at multiple intensities
-    logger.info(f"\nGenerating gradient continuum:")
+    logger.info("\nGenerating gradient continuum:")
 
     intensities = [0.0, 0.25, 0.5, 0.75, 1.0]
 
@@ -549,7 +548,7 @@ Scientific Impact:
     print("SUMMARY")
     print("=" * 80)
 
-    print(f"""
+    print("""
 ✅ Acoustic Algebra Implementation Complete
 
 Key Achievements:

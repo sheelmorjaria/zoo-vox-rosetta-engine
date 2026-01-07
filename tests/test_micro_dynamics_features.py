@@ -20,10 +20,8 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-import numpy as np
-from dataclasses import dataclass
-from typing import List, Tuple
 
+import numpy as np
 
 # =============================================================================
 # Test 1: Shimmer (Amplitude Instability)
@@ -75,7 +73,7 @@ class TestShimmerExtraction(unittest.TestCase):
             wobbly_shimmer / steady_shimmer, 5.0, "Wobbly shimmer should be >5x steady shimmer"
         )
 
-        print(f"✓ Shimmer test passed")
+        print("✓ Shimmer test passed")
         print(f"  Steady tone shimmer: {steady_shimmer:.4f}")
         print(f"  Wobbly tone shimmer: {wobbly_shimmer:.4f}")
         print(f"  Ratio: {wobbly_shimmer / steady_shimmer:.1f}x")
@@ -174,7 +172,7 @@ class TestSpectralFluxExtraction(unittest.TestCase):
         # Trill should be significantly higher
         self.assertGreater(trill_flux / steady_flux, 2.0, "Trill flux should be >2x steady flux")
 
-        print(f"✓ Spectral flux test passed")
+        print("✓ Spectral flux test passed")
         print(f"  Steady tone flux: {steady_flux:.4f}")
         print(f"  Trill flux: {trill_flux:.4f}")
         print(f"  Ratio: {trill_flux / steady_flux:.1f}x")
@@ -286,7 +284,7 @@ class TestHarmonicityExtraction(unittest.TestCase):
         self.assertGreater(mixed_harmonic, noise_harmonic, "Mixed harmonicity should be > noise")
         self.assertLess(mixed_harmonic, pure_harmonic, "Mixed harmonicity should be < pure")
 
-        print(f"✓ Harmonicity test passed")
+        print("✓ Harmonicity test passed")
         print(f"  Pure tone: {pure_harmonic:.4f}")
         print(f"  Mixed: {mixed_harmonic:.4f}")
         print(f"  Noise: {noise_harmonic:.4f}")
@@ -468,7 +466,7 @@ class Test20DVectorIntegration(unittest.TestCase):
         self.assertGreater(tremulous.jitter, 0.03, "Tremulous jitter should be high")
         self.assertGreater(tremulous.shimmer, 0.05, "Tremulous shimmer should be high")
 
-        print(f"✓ Nervousness 2D vector test passed")
+        print("✓ Nervousness 2D vector test passed")
         print(f"  Steady: Jitter={steady.jitter:.3f}, Shimmer={steady.shimmer:.3f}")
         print(f"  Tremulous: Jitter={tremulous.jitter:.3f}, Shimmer={tremulous.shimmer:.3f}")
 

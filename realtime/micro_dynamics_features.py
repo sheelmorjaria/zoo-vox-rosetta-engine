@@ -27,12 +27,12 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import numpy as np
-from typing import Tuple, Optional
-from dataclasses import dataclass
-import librosa
 import warnings
+from dataclasses import dataclass
+from typing import Optional, Tuple
 
+import librosa
+import numpy as np
 
 # =============================================================================
 # Data Models
@@ -157,7 +157,7 @@ def calculate_shimmer(audio: np.ndarray, sr: int, f0: Optional[np.ndarray] = Non
 
             return float(shimmer)
 
-    except Exception as e:
+    except Exception:
         # Fallback on error: return 0
         return 0.0
 
@@ -221,7 +221,7 @@ def calculate_spectral_flux(
 
             return float(mean_flux)
 
-    except Exception as e:
+    except Exception:
         return 0.0
 
 
@@ -285,7 +285,7 @@ def calculate_harmonicity(
 
         return 0.5  # Default mid value on error
 
-    except Exception as e:
+    except Exception:
         return 0.5
 
 

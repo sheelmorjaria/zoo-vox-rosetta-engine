@@ -797,7 +797,8 @@ def extract_phrases_sentences_grammar_parallel(
                     sentences.append(result["sentence"])
                 else:
                     print(
-                        f"  ERROR processing {audio_filename}: {result.get('error', 'Unknown error')}"
+                        f"  ERROR processing {audio_filename}: "
+                        f"{result.get('error', 'Unknown error')}"
                     )
             except Exception as e:
                 print(f"  EXCEPTION processing {audio_filename}: {e}")

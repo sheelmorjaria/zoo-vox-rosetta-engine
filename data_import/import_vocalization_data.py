@@ -300,7 +300,9 @@ class DataImporter:
         for cluster_id, sentences in sentences_data.items():
             for sentence_data in sentences:
                 sentence = Sentence(
-                    sentence_id=f"{species.value}_sentence_{sentence_data.get('sentence_id', cluster_id)}",
+                    sentence_id=(
+                        f"{species.value}_sentence_{sentence_data.get('sentence_id', cluster_id)}"
+                    ),
                     species=species,
                     phrase_sequence=sentence_data.get("phrase_sequence", []),
                     context=sentence_data.get("context", "unknown"),

@@ -541,7 +541,8 @@ def main():
     }
 
     print(
-        f"  ✅ Loaded {len(micro_dynamics_db)} phrase types with valid F0 (filtered from {len(all_micro_dynamics)} total)"
+        f"  ✅ Loaded {len(micro_dynamics_db)} phrase types with valid F0 "
+        f"(filtered from {len(all_micro_dynamics)} total)"
     )
 
     # Load samples

@@ -23,15 +23,13 @@ import asyncio
 import json
 import logging
 import pickle
+import threading
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-import threading
-import queue
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import soundfile as sf
@@ -799,7 +797,7 @@ if __name__ == "__main__":
 
         # Show statistics
         stats = agent.get_statistics()
-        print(f"\nStatistics:")
+        print("\nStatistics:")
         print(f"  Processed: {stats['total_processed']}")
         print(f"  Known: {stats['known_detected']}")
         print(f"  Unknown: {stats['unknown_detected']}")

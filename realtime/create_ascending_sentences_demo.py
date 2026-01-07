@@ -197,7 +197,9 @@ def create_marmoset_vocabulary_sentences() -> PhraseAudioLibrary:
         f0_sequence = [f0 for f0, _, _ in phrase_sequence]
         print(f"     Frequency sequence: {' → '.join(f'{f0}Hz' for f0 in f0_sequence)}")
         print(
-            f"     Ascending steps: {[f0_sequence[i + 1] - f0_sequence[i] for i in range(len(f0_sequence) - 1)]}Hz"
+            f"     Ascending steps: {
+                [f0_sequence[i + 1] - f0_sequence[i] for i in range(len(f0_sequence) - 1)]
+            }Hz"
         )
 
     # Save the library
@@ -232,7 +234,8 @@ def demonstrate_phrase_selection(library: PhraseAudioLibrary):
             print(f"   Found {len(selected_phrases)} phrases:")
             for i, segment in enumerate(selected_phrases):
                 print(
-                    f"     {i + 1}. {segment.phrase_key}: {getattr(segment, 'mean_f0_hz', 0):.0f}Hz, "
+                    f"     {i + 1}. {segment.phrase_key}: {
+                        getattr(segment, 'mean_f0_hz', 0):.0f}Hz, "
                     f"Quality: {segment.quality_score:.2f}"
                 )
         else:

@@ -180,7 +180,8 @@ class SiameseNetwork:
             self.best_similarity_threshold = max(0.5, self.best_similarity_threshold - 0.01)
 
         self.logger.info(
-            f"Learned from success: {context}, similarity threshold: {self.best_similarity_threshold:.3f}"
+            f"Learned from success: {context}, "
+            f"similarity threshold: {self.best_similarity_threshold:.3f}"
         )
 
     def predict_response(self, audio_features: np.ndarray, context: str = None) -> Dict[str, Any]:

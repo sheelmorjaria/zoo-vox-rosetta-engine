@@ -20,7 +20,8 @@ The Python implementation in this file is kept ONLY as:
 DO NOT use the Python Vector17D from this file in production.
 It is slower (50-100μs vs 1-5μs) and non-deterministic due to GC pauses.
 
-For migration guide, see: archive/deprecated_python_fallbacks/INTERPOLATION_EXTRAPOLATION_DEPRECATION.md
+For migration guide, see:
+archive/deprecated_python_fallbacks/INTERPOLATION_EXTRAPOLATION_DEPRECATION.md
 
 ---
 
@@ -44,12 +45,11 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-import numpy as np
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
 from enum import Enum
-import heapq
+from typing import List, Optional
 
+import numpy as np
 
 # =============================================================================
 # Data Models

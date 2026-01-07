@@ -348,9 +348,8 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print(
-            "Usage: python phrase_library_segment_extractor.py <library.pkl> [source_audio_dir] [output_dir]"
-        )
+        print("Usage: python phrase_library_segment_extractor.py")
+        print("       <library.pkl> [source_audio_dir] [output_dir]")
         sys.exit(1)
 
     library_path = sys.argv[1]

@@ -139,8 +139,9 @@ def analyze_species(species_name, species_dir, num_files=50):
     else:
         test_files = all_files
 
+    test_pct = len(test_files) / len(all_files) * 100
     print(
-        f"🎲 Testing {len(test_files)} files ({len(test_files) / len(all_files) * 100:.1f}% of dataset)\n"
+        f"🎲 Testing {len(test_files)} files ({test_pct:.1f}% of dataset)\n"
     )
 
     results = []
@@ -185,8 +186,9 @@ def print_species_summary(species_name, results):
 
     print("\n📊 PHRASE DETECTION:")
     print(f"  Total phrases: {total_phrases}")
+    phrase_pct = files_with_phrases / len(results) * 100
     print(
-        f"  Files with phrases: {files_with_phrases}/{len(results)} ({files_with_phrases / len(results) * 100:.1f}%)"
+        f"  Files with phrases: {files_with_phrases}/{len(results)} ({phrase_pct:.1f}%)"
     )
     print(f"  Mean phrases per file: {total_phrases / len(results):.2f}")
 
@@ -206,8 +208,10 @@ def print_species_summary(species_name, results):
     print("\n📊 FREQUENCY CHARACTERISTICS:")
     dom_freqs = [r["dominant_freq_hz"] for r in results if r.get("dominant_freq_hz", 0) > 0]
     if dom_freqs:
+        mean_freq = np.mean(dom_freqs) / 1000
+        std_freq = np.std(dom_freqs) / 1000
         print(
-            f"  Dominant frequency: {np.mean(dom_freqs) / 1000:.2f} ± {np.std(dom_freqs) / 1000:.2f} kHz"
+            f"  Dominant frequency: {mean_freq:.2f} ± {std_freq:.2f} kHz"
         )
         print(f"  Range: {np.min(dom_freqs) / 1000:.2f} - {np.max(dom_freqs) / 1000:.2f} kHz")
 
@@ -295,8 +299,12 @@ def main():
         t = modality_counts.get("TRANSIENT", 0)
         r = modality_counts.get("RHYTHMIC", 0)
 
+        h_pct = h / n * 100
+        f_pct = f / n * 100
+        t_pct = t / n * 100
+        r_pct = r / n * 100
         print(
-            f"{species:<20} {h / n * 100:11.1f}% {f / n * 100:11.1f}% {t / n * 100:11.1f}% {r / n * 100:11.1f}%"
+            f"{species:<20} {h_pct:11.1f}% {f_pct:11.1f}% {t_pct:11.1f}% {r_pct:11.1f}%"
         )
 
     print("\n" + "=" * 90)

@@ -219,9 +219,9 @@ def analyze_context_overlap(phrases: Dict, context_results: Dict):
         for overlap in significant_overlaps[:20]:
             print(f"      {overlap['context_pair']}:")
             print(f"         {overlap['shared_count']} shared phrases")
-            print(
-                f"         {overlap['overlap_pct']:.1f}% overlap (Jaccard: {overlap['jaccard']:.3f})"
-            )
+            overlap_pct = overlap["overlap_pct"]
+            jaccard = overlap["jaccard"]
+            print(f"         {overlap_pct:.1f}% overlap (Jaccard: {jaccard:.3f})")
     else:
         print("   No significant overlaps found")
 
@@ -388,16 +388,21 @@ def analyze_compositionality_evidence(phrases: Dict, context_results: Dict):
 
     if flexible_pct > 0.20:
         print("\n✅ STRONG EVIDENCE OF COMPOSITIONAL SYSTEM")
+        flexible_pct_value = flexible_pct * 100
         print(
-            f"   - {flexible_pct * 100:.1f}% of phrases are flexible (used across multiple contexts)"
+            f"   - {flexible_pct_value:.1f}% of phrases are flexible "
+            f"(used across multiple contexts)"
         )
-        print(f"   - {multi_context_pct * 100:.1f}% appear in multiple contexts")
+        multi_context_pct_value = multi_context_pct * 100
+        print(f"   - {multi_context_pct_value:.1f}% appear in multiple contexts")
         print("   - Suggests combinatorial grammar: flexible phrases + context-specific modifiers")
         print("   - Bat vocalizations may use combinatorial syntax for communication")
     elif flexible_pct > 0.05:
         print("\n✅ MODERATE EVIDENCE OF COMPOSITIONALITY")
-        print(f"   - {flexible_pct * 100:.1f}% of phrases are flexible")
-        print(f"   - {multi_context_pct * 100:.1f}% appear in multiple contexts")
+        flexible_pct_value = flexible_pct * 100
+        print(f"   - {flexible_pct_value:.1f}% of phrases are flexible")
+        multi_context_pct_value = multi_context_pct * 100
+        print(f"   - {multi_context_pct_value:.1f}% appear in multiple contexts")
         print("   - Some combinatorial patterns detected")
         print("   - May indicate emerging syntax or contextual flexibility")
     else:
@@ -472,9 +477,9 @@ def main():
     print("=" * 80)
 
     print("\n📊 KEY FINDINGS:")
-    print(
-        f"   - {len(context_results['multi_context_phrases'])}/{len(phrases)} phrases appear in multiple contexts"
-    )
+    multi_context_count = len(context_results["multi_context_phrases"])
+    total_phrases_count = len(phrases)
+    print(f"   - {multi_context_count}/{total_phrases_count} phrases appear in multiple contexts")
     print(f"   - {compositionality_results['flexible_percentage']:.1f}% flexible phrases")
     print(f"   - {len(overlap_results['significant_overlaps'])} significant context overlaps")
     print(f"   - {len(acoustic_results)} contexts with distinct acoustic profiles")

@@ -198,9 +198,9 @@ def demonstrate_realtime_functionality(library: PhraseAudioLibrary):
         if selected:
             selected.sort(key=lambda x: getattr(x, "mean_f0_hz", 0))
             print(f"   {context.capitalize()}: {len(selected)} phrases")
-            print(
-                f"     F0 range: {getattr(selected[0], 'mean_f0_hz', 0):.0f} - {getattr(selected[-1], 'mean_f0_hz', 0):.0f} Hz"
-            )
+            f0_min = getattr(selected[0], "mean_f0_hz", 0)
+            f0_max = getattr(selected[-1], "mean_f0_hz", 0)
+            print(f"     F0 range: {f0_min:.0f} - {f0_max:.0f} Hz")
 
     # Synthesis preparation
     print("\nSynthesis capabilities:")

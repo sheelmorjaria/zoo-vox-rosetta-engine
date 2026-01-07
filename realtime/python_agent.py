@@ -118,9 +118,9 @@ class ContextualAgent:
         # Determine most likely state
         most_likely_state = max(self.state_probabilities.items(), key=lambda x: x[1])[0]
 
-        logger.info(
-            f"Context inferred: {most_likely_state.value} (prob: {self.state_probabilities[most_likely_state]:.3f})"
-        )
+        state_value = most_likely_state.value
+        state_prob = self.state_probabilities[most_likely_state]
+        logger.info(f"Context inferred: {state_value} (prob: {state_prob:.3f})")
 
         return {
             "most_likely_state": most_likely_state.value,

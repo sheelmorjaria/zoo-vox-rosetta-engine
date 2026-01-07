@@ -76,7 +76,7 @@ src/
 │   │   ├── logging.rs                # Provenance logging
 │   │   ├── master_controller.rs     # Intent-Reality mediator
 │   │   ├── peer_controller.rs       # ZeroMQ peer controller
-│   │   ├── island_hopping.rs         # [NEW] 17D Vector Math, Navigation, Safety Clamping
+│   │   ├── island_hopping.rs         # [NEW] 30D Vector Math, Navigation, Safety Clamping
 │   │   ├── environmental_monitor.rs # Field: Rain/temp/light sensing
 │   │   ├── power_manager.rs          # Field: Battery/solar management
 │   │   ├── wildlife_sentry.rs        # Field: Background species detection
@@ -166,7 +166,7 @@ src/
 ├── tests/                              # ✅ Active (canonical versions only)
 │   ├── test_acoustic_algebra.py       # [NEW] 33/33 tests passing ✅
 │   ├── test_vector_delta_synthesis.py # [NEW] 12/12 tests passing ✅
-│   ├── test_17d_metadata_synthesis.py # [NEW] 8/8 tests passing ✅ (17D metadata)
+│   ├── test_30d_metadata_synthesis.py # [NEW] 11/11 tests passing ✅ (30D metadata)
 │   ├── test_rust_island_hopping.py    # [NEW] Python-Rust integration tests ✅
 │   ├── test_hybrid_persona_architecture.py # Hybrid persona tests
 │   ├── test_rosetta_stone_base.py
@@ -725,8 +725,8 @@ audio = synth.synthesize_phrase(
 # Granular Concatenative Synthesizer with Vector Delta Commands
 # Use this for Acoustic Algebra integration (delta-based shifts)
 
-# === 17D Micro-Dynamics Metadata ===
-# Load source audio with full 17D metadata (all micro-dynamics features)
+# === 30D Micro-Dynamics Metadata (Synthesis API) ===
+# Load source audio with 30D metadata for vector delta commands
 from technical_architecture import SourceMetadata
 
 metadata = SourceMetadata(
@@ -734,22 +734,33 @@ metadata = SourceMetadata(
     mean_f0_hz=6800.0,
     duration_ms=50.0,
     f0_range_hz=400.0,
-    # Grit Factors (2 features) - Timbre texture
+    # Grit Factors (3 features) - Timbre texture
     harmonic_to_noise_ratio=20.0,   # 20 dB HNR (tonal)
     spectral_flatness=0.1,            # 0.1 (very tonal)
-    # Motion Factors (6 features) - Envelope dynamics
+    harmonicity=0.8,                  # 0.8 (highly harmonic)
+    # Motion Factors (7 features) - Envelope dynamics
     attack_time_ms=10.0,
     decay_time_ms=15.0,
     sustain_level=0.7,
     vibrato_rate_hz=8.0,
     vibrato_depth=50.0,
     jitter=0.02,
-    # Fingerprint Factors (5 features) - Spectral shape
+    shimmer=0.03,                     # NEW: Amplitude micro-variations
+    # Fingerprint Factors (14 features) - Spectral shape
     mfcc_1=-500.0,
     mfcc_2=-100.0,
     mfcc_3=-50.0,
     mfcc_4=-20.0,
-    spectral_contrast=20.0,
+    mfcc_5=-0.5,                      # NEW
+    mfcc_6=-0.3,                      # NEW
+    mfcc_7=-0.2,                      # NEW
+    mfcc_8=-0.1,                      # NEW
+    mfcc_9=0.0,                       # NEW
+    mfcc_10=0.1,                      # NEW
+    mfcc_11=0.2,                      # NEW
+    mfcc_12=0.3,                      # NEW
+    mfcc_13=0.4,                      # NEW
+    spectral_flux=0.5,                # REPLACES spectral_contrast
     # Rhythm Factors (3 features) - Temporal patterns
     median_ici_ms=0.0,              # Not applicable for harmonic calls
     onset_rate_hz=0.0,              # Not applicable for harmonic calls
@@ -1101,7 +1112,7 @@ Result: You get a nuanced "30% Aggressive" virtual phrase
 │                                                              │
 │  🆕 ALGEBRA ROLE 1: DEFINING SEMANTIC VECTORS                │
 │  • Calculate "Context Centroids"                                  │
-│    Vector_Aggression = Mean(17D vectors for "Agg" phrases)        │
+│    Vector_Aggression = Mean(30D vectors for "Agg" phrases)        │
 │  • Calculate "Context Variance"                                    │
 │    How spread out is "Aggression?"                                 │
 └────────────────────────────┬────────────────────────────────────┘
@@ -1217,7 +1228,7 @@ Condition C (Full):       Intensity 1.0  → Full Aggression
 
 #### Files
 
-- `analysis/rosetta_stone/high_dimensional_acoustic_algebra.py` - 17D algebra engine
+- `analysis/rosetta_stone/high_dimensional_acoustic_algebra.py` - 30D algebra engine
 - `analysis/rosetta_stone/contextual_map.py` - Contextual map and gradient generation
 - `analysis/rosetta_stone/demo_acoustic_algebra_integration.py` - Full workflow demo
 - `analysis/rosetta_stone/ACOUSTIC_ALGEBRA_README.md` - Quick reference guide
@@ -1819,10 +1830,11 @@ recipe.discovery_potential  # 0.0 to 1.0
 | **Cross-Species Translation** | Match features across species | Preserve "meaning" across F0 |
 
 **Files:**
-- `realtime/metadata_synthesizer.py` - Metadata-first synthesis engine
+- `realtime/metadata_synthesizer.py` - Metadata-first synthesis engine with 30D features
 - `realtime/persona_semantic_zone_validator.py` - Persona-based validation
 - `tests/test_metadata_first_synthesis.py` - 23 tests passing ✅
 - `tests/test_persona_semantic_zone_validation.py` - 23 tests passing ✅
+- `tests/test_30d_metadata_synthesis.py` - 11/11 tests passing ✅ (30D features)
 
 **Demo Results:**
 ```
@@ -1851,6 +1863,180 @@ Validation: Within 1.5σ of BOTH clusters (Ghost Word confirmed)
 
 **Key Insight:**
 > Metadata-First enables interpolation BETWEEN personas, not just within them. This discovers 'Ghost Words' that exist theoretically but not statistically in the dataset. Personas then VALIDATE whether the output falls within acceptable "semantic zones."
+
+**Note:** This framework implements two separate vector space systems:
+- **Python 30D** (`metadata_synthesizer.py`): Logic-layer metadata synthesis with full micro-dynamics features
+- **Rust 30D** (`island_hopping.rs`): Execution-layer navigation with SIMD-optimized vector math
+
+---
+
+### STEP 1.9.1: 30D Micro-Dynamics Features [NEW]
+
+**Full 30-Dimensional Feature Space for Python Logic Layer and Rust Execution Layer**
+
+The Python metadata synthesizer and Rust island_hopping module both support **complete 30D micro-dynamics features**, enabling precise vector space queries and interpolation for synthesis target generation. The Python implementation is used for logic-layer synthesis planning, while the Rust implementation is used for execution-layer navigation with SIMD-optimized performance.
+
+#### **30D Feature Vector Composition:**
+
+```python
+# The 30 features are organized into 6 groups:
+# 1. Fundamental (3): mean_f0_hz, f0_range_hz, duration_ms
+# 2. Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+# 3. Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+#                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+# 4. Fingerprint Factors (13 MFCCs): mfcc_1 through mfcc_13
+# 5. Spectral Dynamics (1): spectral_flux
+# 6. Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
+```
+
+#### **30D Feature Extraction:**
+
+```python
+from realtime.metadata_synthesizer import PhraseCandidate
+
+# Extract all 30 features from a phrase
+candidate = PhraseCandidate(phrase_id="marmoset_phee_001")
+
+# Get the full 30D feature vector
+feature_vector = candidate.get_feature_vector()
+# Returns: np.ndarray of shape (30,)
+
+# Access individual features
+print(f"F0: {candidate.mean_f0_hz} Hz")
+print(f"Duration: {candidate.duration_ms} ms")
+print(f"HNR: {candidate.harmonic_to_noise_ratio}")
+print(f"MFCC-1: {candidate.mfcc_1}")
+print(f"Spectral Flux: {candidate.spectral_flux}")
+print(f"Onset Rate: {candidate.onset_rate_hz} Hz")
+```
+
+#### **30D Vector Space Queries:**
+
+```python
+from realtime.metadata_synthesizer import VectorSpaceQueryEngine
+
+# Create query engine with 30D distance calculation
+query_engine = VectorSpaceQueryEngine()
+
+# Define 30D target parameters
+target_params = {
+    # Fundamental (3)
+    'mean_f0_hz': 7000.0,
+    'f0_range_hz': 400.0,
+    'duration_ms': 50.0,
+    # Grit Factors (3)
+    'harmonic_to_noise_ratio': 25.0,
+    'spectral_flatness': 0.15,
+    'harmonicity': 0.9,
+    # Motion Factors (7)
+    'attack_time_ms': 10.0,
+    'decay_time_ms': 20.0,
+    'sustain_level': 0.7,
+    'vibrato_rate_hz': 8.0,
+    'vibrato_depth': 50.0,
+    'jitter': 0.02,
+    'shimmer': 0.03,
+    # Fingerprint Factors (13 MFCCs)
+    'mfcc_1': -12.5, 'mfcc_2': 3.2, 'mfcc_3': 0.8,
+    'mfcc_4': -0.5, 'mfcc_5': 1.2, 'mfcc_6': 0.3,
+    'mfcc_7': -0.8, 'mfcc_8': 0.5, 'mfcc_9': 0.1,
+    'mfcc_10': -0.3, 'mfcc_11': 0.2, 'mfcc_12': -0.1,
+    'mfcc_13': 0.05,
+    # Spectral Dynamics (1)
+    'spectral_flux': 0.5,
+    # Rhythm Factors (3)
+    'median_ici_ms': 15.0,
+    'onset_rate_hz': 8.0,
+    'ici_coefficient_of_variation': 0.3,
+}
+
+# Query nearest neighbors using 30D Euclidean distance
+candidates = query_engine.query_nearest_metadata(
+    target_params=target_params,
+    k=5,
+    species='marmoset'
+)
+
+# Results are ranked by 30D acoustic similarity
+for cand in candidates:
+    print(f"{cand.phrase_id}: {cand.acoustic_score:.3f}")
+```
+
+#### **30D Interpolation:**
+
+```python
+from realtime.metadata_synthesizer import interpolate_30d_features
+
+# Interpolate between two 30D feature vectors
+candidate_a = PhraseCandidate(phrase_id="bat_social_001")
+candidate_b = PhraseCandidate(phrase_id="bat_midfm_001")
+
+# 50/50 blend (0.5 = 50% of B, 50% of A)
+interpolated = interpolate_30d_features(
+    candidate_a, candidate_b, blend_ratio=0.5
+)
+# Returns: np.ndarray of shape (30,)
+
+# Create synthesis recipe with interpolated 30D target
+recipe = query_engine.create_synthesis_recipe(
+    target_params=interpolated,
+    num_phrases=3
+)
+```
+
+#### **30D Synthesis Recipes:**
+
+```python
+# Synthesis recipes now include 30D target parameters
+recipe = query_engine.create_synthesis_recipe(
+    target_params=target_params,  # 30D target
+    num_phrases=3
+)
+
+print(f"Target 30D Vector: {recipe.target_30d_vector}")
+print(f"Interpolation Weights: {recipe.interpolation_weights}")
+print(f"Discovery Potential: {recipe.discovery_potential:.2f}")
+
+# Use the recipe for synthesis
+synthesizer = MetadataFirstSynthesizer()
+result = synthesizer.synthesize_from_recipe(recipe)
+```
+
+#### **Scientific Applications:**
+
+| Application | 30D Advantage | Example |
+|------------|---------------|---------|
+| **Precise Interpolation** | 30 dimensions capture subtle timbral variations | Interpolate between 30 vocal qualities |
+| **Ghost Word Discovery** | Find sounds in 30D void between clusters | Discover novel vocalizations |
+| **Cross-Species Mapping** | Match 30 features across species | Preserve "meaning" across F0 range |
+| **Timbre Transfer** | Control all 30 acoustic dimensions | Apply "urgency" timbre to new context |
+
+#### **Comparison: Python 30D vs. Rust 30D:**
+
+| Aspect | Python 30D | Rust 30D |
+|--------|------------|----------|
+| **Purpose** | Logic-layer synthesis targets | Execution-layer navigation |
+| **Location** | `realtime/metadata_synthesizer.py` | `technical_architecture/src/island_hopping.rs` |
+| **Features** | 30 dimensions (full micro-dynamics) | 30 dimensions (full micro-dynamics) |
+| **Performance** | Flexible, numpy-based | SIMD-optimized, 10-100x faster |
+| **Use Case** | Query planning, recipe generation | Real-time trajectory navigation |
+| **Test Coverage** | 11/11 tests passing ✅ | 33/33 tests passing ✅ |
+
+#### **Files:**
+- `realtime/metadata_synthesizer.py` - Python 30D metadata synthesis engine
+- `tests/test_30d_metadata_synthesis.py` - 11/11 tests passing ✅
+- `technical_architecture/src/island_hopping.rs` - Rust 30D navigation (SIMD-optimized)
+
+#### **Test Coverage:**
+- ✅ 30D feature extraction from phrase metadata
+- ✅ 30D vector space queries with normalized distance
+- ✅ 30D interpolation between candidates
+- ✅ Synthesis recipe creation with 30D targets
+- ✅ Backward compatibility with 4D metadata
+- ✅ MFCC feature extraction (13 dimensions)
+- ✅ Rhythm feature extraction (3 dimensions)
+- ✅ Spectral dynamics extraction (1 dimension)
+- ✅ Complete 30D feature vector construction
 
 ---
 
@@ -2149,9 +2335,9 @@ python3 -m pytest tests/test_persona_semantic_zone_validation.py -v
 
 ### STEP 1.12: High-Dimensional Acoustic Algebra [NEW]
 
-**17-Dimensional Vector Interpolation with Z-Score Normalization**
+**30-Dimensional Vector Interpolation with Z-Score Normalization**
 
-Enhanced Acoustic Algebra that uses all 17 micro-dynamics features for true timbral interpolation, not just pitch shifting. This enables **"Phonetic Constraints"** - discovering the physical limits of vocal production.
+Enhanced Acoustic Algebra that uses all 30 micro-dynamics features for true timbral interpolation, not just pitch shifting. This enables **"Phonetic Constraints"** - discovering the physical limits of vocal production.
 
 #### **The Problem with Simple Interpolation**
 
@@ -2167,7 +2353,7 @@ Without normalization, **Attack Time** and **HNR** dominate the interpolation ma
 
 #### **The Solution: Z-Score Normalization**
 
-Normalize all 17 features to standard deviations before interpolation:
+Normalize all 30 features to standard deviations before interpolation:
 
 ```
 Z = (X - μ) / σ  (Normalize)
@@ -2175,51 +2361,71 @@ V_target = Z_A * (1-α) + Z_B * α  (Interpolate in Z-space)
 X_target = Z_target * σ + μ  (Denormalize)
 ```
 
-#### **17-Dimensional Feature Vector**
+#### **30-Dimensional Feature Vector**
 
 ```python
 from analysis.rosetta_stone.high_dimensional_acoustic_algebra import (
-    AcousticFeatureVector17,
+    AcousticFeatureVector30,
     ZScoreNormalizer,
-    HighDimensionalAcousticAlgebra
+    AcousticAlgebraEngine30D
 )
 
-# Create 17-dim vectors
-phee = AcousticFeatureVector17(
+# Create 30-dim vectors
+phee = AcousticFeatureVector30(
+    # Fundamental (3)
     mean_f0_hz=6526,
-    duration_ms=76.5,
-    attack_ms=0.010,
-    decay_ms=0.050,
     f0_range_hz=427,
+    duration_ms=76.5,
+    # Grit Factors (3)
+    harmonic_to_noise_ratio=20.0,
+    spectral_flatness=0.1,
+    harmonicity=0.8,
+    # Motion Factors (7)
+    attack_time_ms=0.010,
+    decay_time_ms=0.050,
+    sustain_level=0.7,
     vibrato_rate_hz=8.0,
-    vibrato_depth_hz=50.0,
+    vibrato_depth=0.03,
     jitter=0.02,
     shimmer=0.03,
-    harmonicity_hnr=20.0,
-    spectral_flatness=0.1,
-    spectral_centroid_hz=7000.0,
-    spectral_rolloff_hz=13000.0,
-    bandwidth_hz=5000.0,
-    slope_db_per_octave=-8.0,
-    rms_db=-20.0,
-    peak_amplitude=0.15
+    # Fingerprint Factors (13 MFCCs)
+    mfcc_1=-500.0,
+    mfcc_2=-100.0,
+    mfcc_3=-50.0,
+    mfcc_4=-20.0,
+    mfcc_5=-0.5,
+    mfcc_6=-0.3,
+    mfcc_7=-0.2,
+    mfcc_8=-0.1,
+    mfcc_9=0.0,
+    mfcc_10=0.1,
+    mfcc_11=0.2,
+    mfcc_12=0.3,
+    mfcc_13=0.4,
+    # Spectral Dynamics (1)
+    spectral_flux=0.5,
+    # Rhythm Factors (3)
+    median_ici_ms=45.0,
+    onset_rate_hz=12.0,
+    ici_coefficient_of_variation=0.25
 )
 
-algebra = HighDimensionalAcousticAlgebra()
+algebra = AcousticAlgebraEngine30D()
 
 # Interpolate ALL features simultaneously
 midpoint = algebra.interpolate(phee, alarm, alpha=0.5)
 
 # Result: True timbral morph (not just pitch shift)
 print(f"F0: {midpoint.mean_f0_hz:.0f} Hz")
-print(f"Attack: {midpoint.attack_ms*1000:.1f} ms")
-print(f"HNR: {midpoint.harmonicity_hnr:.1f} dB")
+print(f"Attack: {midpoint.attack_time_ms:.1f} ms")
+print(f"HNR: {midpoint.harmonic_to_noise_ratio:.1f} dB")
+print(f"Harmonicity: {midpoint.harmonicity:.2f}")
 print(f"Flatness: {midpoint.spectral_flatness:.2f}")
 ```
 
 #### **Phonetic Constraints**
 
-By interpolating in 17-dimensional space, you can discover **"Physical Limits"** of vocal production:
+By interpolating in 30-dimensional space (both island_hopping navigation and synthesis API), you can discover **"Physical Limits"** of vocal production:
 
 ```python
 # Check for constraint violations
@@ -2413,7 +2619,8 @@ print(f"Grammar rigidity: {grammar_stats.grammar_rigidity:.2f}")
 - `tests/test_high_dimensional_algebra.py` - 21 tests passing ✅ (includes grammar tests)
 
 **Test Coverage:**
-- ✅ 17-dimensional feature vectors (5 tests)
+- ✅ 30-dimensional feature vectors (5 tests) - island_hopping.rs
+- ✅ 17-dimensional feature vectors (8 tests) - synthesis.rs (SourceMetadata API)
 - ✅ Z-score normalization (3 tests)
 - ✅ High-dimensional interpolation (4 tests)
 - ✅ Phonetic constraints (3 tests)
@@ -3823,18 +4030,18 @@ output = synth.synthesize(duration_ms=40.0)
 - **Use Case**: Critical integration point between Acoustic Algebra and Rust synthesis
 - **Documentation**: See `analysis/rosetta_stone/VECTOR_DELTA_INTEGRATION.md` for complete guide
 
-**17D Micro-Dynamics Metadata** [NEW]:
-- **Full Feature Support**: All 17 micro-dynamics features now tracked and accessible
+**30D Micro-Dynamics Metadata (Synthesis API)** [NEW]:
+- **Full Feature Support**: All 30 micro-dynamics features now tracked and accessible
   - **Fundamental (3)**: `mean_f0_hz`, `duration_ms`, `f0_range_hz`
-  - **Grit Factors (2)**: `harmonic_to_noise_ratio`, `spectral_flatness` (timbre texture)
-  - **Motion Factors (6)**: `attack_time_ms`, `decay_time_ms`, `sustain_level`, `vibrato_rate_hz`, `vibrato_depth`, `jitter` (envelope dynamics)
-  - **Fingerprint Factors (5)**: `mfcc_1` through `mfcc_4`, `spectral_contrast` (spectral shape)
+  - **Grit Factors (3)**: `harmonic_to_noise_ratio`, `spectral_flatness`, `harmonicity` (timbre texture)
+  - **Motion Factors (7)**: `attack_time_ms`, `decay_time_ms`, `sustain_level`, `vibrato_rate_hz`, `vibrato_depth`, `jitter`, `shimmer` (envelope dynamics)
+  - **Fingerprint Factors (14)**: `mfcc_1` through `mfcc_13`, `spectral_flux` (spectral shape)
   - **Rhythm Factors (3)**: `median_ici_ms`, `onset_rate_hz`, `ici_coefficient_of_variation` (temporal patterns)
 - **Builder Pattern**: `SourceMetadata.builder()` for partial metadata construction with Rust defaults
-- **Delta Calculations**: `metadata.delta_from(other)` for 17D delta vectors
+- **Delta Calculations**: `metadata.delta_from(other)` for 30D delta vectors
 - **Acoustic Persona Examples**:
-  - **GRITTY (aggressive)**: Low HNR (2dB), high flatness (0.8), fast attack (3ms), high jitter (0.15)
-  - **PURE (contact)**: High HNR (25dB), low flatness (0.05), slow attack (25ms), low jitter (0.01)
+  - **GRITTY (aggressive)**: Low HNR (2dB), high flatness (0.8), low harmonicity (0.4), fast attack (3ms), high jitter (0.15), high shimmer (0.12)
+  - **PURE (contact)**: High HNR (25dB), low flatness (0.05), high harmonicity (0.95), slow attack (25ms), low jitter (0.01), low shimmer (0.02)
   - **Rhythmic**: High onset rate (20Hz), regular ICI (50ms), low CV (0.1)
   - **Harmonic**: Zero onset rate, zero ICI (continuous tone)
 
@@ -3845,11 +4052,12 @@ output = synth.synthesize(duration_ms=40.0)
 - **Vector Delta Integration**: 12/12 tests passing ✅
   - Validates delta-based synthesis produces valid results
   - Granular with delta shift gets 0.5% closer to ideal target than concatenative
-- **17D Metadata**: 8/8 tests passing ✅
-  - Full 17D metadata construction and access
+- **30D Metadata (Synthesis API)**: 8/8 tests passing ✅
+  - Full 30D metadata construction and access
   - Builder pattern for partial specification
   - GRITTY, PURE, rhythmic, and harmonic persona support
   - Backward compatibility with legacy 3D API
+  - All 30D features: harmonicity, shimmer, mfcc_5-13, spectral_flux
 
 **Concatenative vs Granular Comparison**:
 
@@ -3917,19 +4125,19 @@ grammar = analyzer.discover_grammar(phrases)
 
 **Core Modules:**
 - **Synthesis** (`synthesis.rs`) - Granular, concatenative, superpositional synthesis
-  - **17D Micro-Dynamics Metadata** [NEW]: Full support for all micro-dynamics features
+  - **30D Micro-Dynamics Metadata (Synthesis API)**: Full support for all micro-dynamics features
     - Fundamental (3): `mean_f0_hz`, `duration_ms`, `f0_range_hz`
-    - Grit Factors (2): `harmonic_to_noise_ratio`, `spectral_flatness`
-    - Motion Factors (6): `attack_time_ms`, `decay_time_ms`, `sustain_level`, `vibrato_rate_hz`, `vibrato_depth`, `jitter`
-    - Fingerprint Factors (5): `mfcc_1` through `mfcc_4`, `spectral_contrast`
+    - Grit Factors (3): `harmonic_to_noise_ratio`, `spectral_flatness`, `harmonicity`
+    - Motion Factors (7): `attack_time_ms`, `decay_time_ms`, `sustain_level`, `vibrato_rate_hz`, `vibrato_depth`, `jitter`, `shimmer`
+    - Fingerprint Factors (14): `mfcc_1` through `mfcc_13`, `spectral_flux`
     - Rhythm Factors (3): `median_ici_ms`, `onset_rate_hz`, `ici_coefficient_of_variation`
   - **Builder Pattern**: `SourceMetadata.builder()` for partial metadata construction
   - **Vector Delta Commands**: Relative shifts for Acoustic Algebra integration
-    - `load_source_with_metadata()` - Load audio with 17D feature tracking
+    - `load_source_with_metadata()` - Load audio with 30D feature tracking
     - `shift_pitch_by_hz()`, `shift_duration_by_ms()` - Individual delta commands
     - `apply_vector_delta()` - Legacy 3D vector delta (backward compatible)
-    - `apply_micro_dynamics_delta()` - Complete 17D delta (new primary integration point)
-    - `delta_from()` - Calculate 17D delta between two metadata sets
+    - `apply_micro_dynamics_delta()` - Complete 30D delta (new primary integration point)
+    - `delta_from()` - Calculate 30D delta between two metadata sets
   - **Documentation**: See `analysis/rosetta_stone/VECTOR_DELTA_INTEGRATION.md`
 - **Source Separation** (`source_separation.rs`) - Conv-TasNet via ONNX/Tract
 - **Thermal Management** (`thermal.rs`) - Temperature monitoring and throttling
@@ -4491,7 +4699,7 @@ Python Logic Layer: 120+ core TDD tests
 │
 ├── Island Hopping Navigation: 45 tests (NEW)
 │   ├── Waypoint Navigation: 24 tests
-│   │   ├── Vector17D Calculations: 4 tests
+│   │   ├── Vector30D Calculations: 4 tests
 │   │   ├── Acoustic Algebra Engine: 4 tests
 │   │   ├── Phrase Database: 3 tests
 │   │   ├── Island Hopping Navigator: 5 tests
@@ -4659,7 +4867,7 @@ The **Modality Gate** prevents cross-modality interpolation:
 ```python
 @dataclass
 class AcousticVector:
-    # ... all 17D features ...
+    # ... all 30D features ...
     modality: Modality  # NEW: Modality constraint
 
 def interpolate_vectors(v1: AcousticVector, v2: AcousticVector, alpha: float):
@@ -4783,7 +4991,7 @@ The **Cognitive Synthesis Engine** combines Acoustic Algebra (The Map) with Gran
 │  Intent: "Generate a 50% Aggressive call"                      │
 │  Math: Vector_Target = Vector_Neutral + (Vector_Aggressive -   │
 │         Vector_Neutral) * 0.5                                   │
-│  Result: 17D Virtual Target (a "Ghost Phrase")                  │
+│  Result: 30D Virtual Target (a "Ghost Phrase")                  │
 └─────────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -4796,11 +5004,11 @@ The **Cognitive Synthesis Engine** combines Acoustic Algebra (The Map) with Gran
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 3: Delta Calculator (The Interpreter)                     │
 │  Action: Calculate Delta = Virtual_Target - Real_Source        │
-│  Result: 17D "Warp Instructions" (+10% F0, -5dB HNR, etc.)     │
+│  Result: 30D "Warp Instructions" (+10% F0, -5dB HNR, etc.)     │
 └─────────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│  Step 4: Delta Mapper (17D → Granular)                          │
+│  Step 4: Delta Mapper (30D → Granular)                          │
 │  Map: delta_mean_f0_hz → pitch_shift_ratio                      │
 │        delta_hnr → roughness_amount                              │
 │        delta_attack_time_ms → grain_size_ms                      │
@@ -5156,7 +5364,7 @@ The **"Island Hopping"** strategy uses two mathematical engines with different r
 
 **Context:** Moving from `0% Aggression` to `50% Aggression`.
 
-**Math:** Linear (or Spherical) interpolation in 17D space.
+**Math:** Linear (or Spherical) interpolation in 30D space.
 
 ```
 Island A (Start) → Waypoint → Island B (End)
@@ -5219,52 +5427,68 @@ def navigate_waypoint(target, anchor, max_safe_warp=0.2):
 **Rust Implementation (Recommended - High Performance):**
 
 ```python
-from technical_architecture import Vector17D, NavigationEngine
+from technical_architecture import Vector30D, NavigationEngine
 
 # Create engine with safety clamp (20% max warp)
 engine = NavigationEngine.with_max_warp(0.2)
 
-# Create 17D vectors with all acoustic features
-neutral = Vector17D(
+# Create 30D vectors with all acoustic features
+neutral = Vector30D(
+    # Fundamental (3)
     mean_f0_hz=7000.0,
-    duration_ms=50.0,
     f0_range_hz=400.0,
+    duration_ms=50.0,
+    # Grit Factors (3)
     harmonic_to_noise_ratio=20.0,
     spectral_flatness=0.3,
+    harmonicity=0.8,
+    # Motion Factors (7)
     attack_time_ms=5.0,
     decay_time_ms=20.0,
     sustain_level=0.7,
     vibrato_rate_hz=7.0,
     vibrato_depth=0.02,
     jitter=0.01,
-    mfcc_1=-10.0,
-    mfcc_2=-5.0,
-    mfcc_3=-2.0,
-    mfcc_4=-1.0,
-    spectral_contrast=20.0,
-    median_ici_ms=150.0,
+    shimmer=0.03,
+    # Fingerprint Factors (13 MFCCs)
+    mfcc_1=-10.0, mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0,
+    mfcc_5=-0.5, mfcc_6=-0.3, mfcc_7=-0.2, mfcc_8=-0.1,
+    mfcc_9=0.0, mfcc_10=0.1, mfcc_11=0.2, mfcc_12=0.3,
+    mfcc_13=0.4,
+    # Spectral Dynamics (1)
+    spectral_flux=0.5,
+    # Rhythm Factors (3)
+    median_ici_ms=15.0,
     onset_rate_hz=8.0,
     ici_coefficient_of_variation=0.3,
 )
 
-aggressive = Vector17D(
+aggressive = Vector30D(
+    # Fundamental (3)
     mean_f0_hz=8000.0,
-    duration_ms=30.0,
     f0_range_hz=600.0,
+    duration_ms=30.0,
+    # Grit Factors (3)
     harmonic_to_noise_ratio=25.0,
     spectral_flatness=0.5,
+    harmonicity=0.9,
+    # Motion Factors (7)
     attack_time_ms=3.0,
     decay_time_ms=15.0,
     sustain_level=0.9,
     vibrato_rate_hz=10.0,
     vibrato_depth=0.05,
     jitter=0.03,
-    mfcc_1=-8.0,
-    mfcc_2=-3.0,
-    mfcc_3=-1.0,
-    mfcc_4=0.0,
-    spectral_contrast=30.0,
-    median_ici_ms=100.0,
+    shimmer=0.05,
+    # Fingerprint Factors (13 MFCCs)
+    mfcc_1=-8.0, mfcc_2=-3.0, mfcc_3=-1.0, mfcc_4=0.0,
+    mfcc_5=0.5, mfcc_6=0.7, mfcc_7=0.8, mfcc_8=0.9,
+    mfcc_9=1.0, mfcc_10=1.1, mfcc_11=1.2, mfcc_12=1.3,
+    mfcc_13=1.4,
+    # Spectral Dynamics (1)
+    spectral_flux=0.7,
+    # Rhythm Factors (3)
+    median_ici_ms=10.0,
     onset_rate_hz=12.0,
     ici_coefficient_of_variation=0.5,
 )
@@ -5278,7 +5502,7 @@ engine.add_island("neutral", neutral, "marmoset")
 engine.add_island("aggressive", aggressive, "marmoset")
 
 # Find nearest island
-target = Vector17D.default()
+target = Vector30D.default()
 nearest = engine.find_nearest_island(target)
 print(f"Nearest island: {nearest.key}")
 
@@ -5295,13 +5519,13 @@ print(f"Distance: {waypoint.get_distance_to_anchor():.3f}")
 **Rust Native API (Maximum Performance):**
 
 ```rust
-use technical_architecture::{Vector17D, NavigationEngine};
+use technical_architecture::{Vector30D, NavigationEngine};
 
 let engine = NavigationEngine::with_max_warp(0.2);
 
 // Create vectors
-let v1 = Vector17D::default();
-let v2 = Vector17D::new(/* 17 dimensions */);
+let v1 = Vector30D::default();
+let v2 = Vector30D::new(/* 30 dimensions */);
 
 // Interpolate (Bridge Builder)
 let result = engine.interpolate(&v1, &v2, 0.5);
@@ -5335,7 +5559,7 @@ let waypoint = engine.clamp_to_safe_distance(
 
 - **Rust Tests**: 497 tests total (464 existing + 33 new Island Hopping)
   - `island_hopping.rs`: 33 tests ✅
-  - Vector17D operations: 14 tests
+  - Vector30D operations: 14 tests
   - Delta Clamping: 3 tests
   - PhraseDatabase: 5 tests
   - NavigationEngine: 3 tests
@@ -5344,7 +5568,7 @@ let waypoint = engine.clamp_to_safe_distance(
   - Integration: 4 tests
 
 - **Python-Rust Integration Tests**: `test_rust_island_hopping.py`
-  - Vector17D PyO3 bindings: 9 tests
+  - Vector30D PyO3 bindings: 9 tests
   - NavigationEngine PyO3 bindings: 6 tests
   - NavigationWaypoint: 3 tests
   - AudioIsland: 1 test
@@ -5357,7 +5581,7 @@ let waypoint = engine.clamp_to_safe_distance(
 **Use Extrapolation ONLY for Discovery Mode** (testing boundaries) and always keep the **"Leash"** (Clamping) active to prevent generating alien artifacts.
 
 **Performance Note**: The Rust implementation provides:
-- **SIMD-optimized** 17D vector math operations
+- **SIMD-optimized** 30D vector math operations
 - **Deterministic** safety-critical clamping (no GC pauses)
 - **O(n)** nearest neighbor lookup (upgradeable to KD-tree)
 - **<100ms** real-time timeline execution
@@ -5365,13 +5589,13 @@ let waypoint = engine.clamp_to_safe_distance(
 
 ---
 
-## Island Hopping: Waypoint Navigation Through 17D Acoustic Space
+## Island Hopping: Waypoint Navigation Through 30D Acoustic Space
 
-The **"Island Hopping"** strategy extends the Cognitive Synthesis Engine with waypoint-based navigation through the 17D acoustic space. This enables real-time trajectory navigation between real audio phrases ("Safe Islands") while maintaining high fidelity.
+The **"Island Hopping"** strategy extends the Cognitive Synthesis Engine with waypoint-based navigation through the 30D acoustic space. This enables real-time trajectory navigation between real audio phrases ("Safe Islands") while maintaining high fidelity.
 
 ### The Metaphor: The Acoustic Archipelago
 
-Imagine your 17D Vector Space is an ocean:
+Imagine your 30D Vector Space is an ocean:
 
 - **The Islands (Real Audio)**: Safe, high-fidelity recordings
   - Example: `Corvid_Harmonic_Whistle.wav`, `Bat_FM_Sweep.wav`
@@ -5403,7 +5627,7 @@ Instead of flying across the open ocean, you travel along a path of calculated *
 │  For every waypoint, find the Nearest Island                   │
 │                                                                 │
 │  for point in map.waypoints:                                    │
-│      nearest_phrase = db.find_nearest_17d(point)               │
+│      nearest_phrase = db.find_nearest_30d(point)               │
 │      route_segments.append({                                    │
 │          "virtual_target": point,                               │
 │          "real_source": nearest_phrase,                         │
@@ -5496,56 +5720,93 @@ To minimize Disk Misses, the Python Agent **Pre-Fetches** based on Context:
 ### Python API
 
 ```python
-from tests.test_island_hopping_navigation import (
-    IslandHoppingNavigator, AcousticAlgebraEngine, PhraseDatabase
+from technical_architecture import Vector30D, NavigationEngine
+
+# Create engine with safety clamp
+engine = NavigationEngine.with_max_warp(0.2)
+
+# Add islands (real audio phrases) with 30D features
+engine.add_island(
+    "neutral_001",
+    Vector30D(
+        # Fundamental (3)
+        mean_f0_hz=7000.0, f0_range_hz=400.0, duration_ms=50.0,
+        # Grit Factors (3)
+        harmonic_to_noise_ratio=20.0, spectral_flatness=0.1, harmonicity=0.8,
+        # Motion Factors (7)
+        attack_time_ms=5.0, decay_time_ms=20.0, sustain_level=0.7,
+        vibrato_rate_hz=7.0, vibrato_depth=0.02, jitter=0.01, shimmer=0.03,
+        # Fingerprint Factors (13 MFCCs)
+        mfcc_1=-10.0, mfcc_2=-5.0, mfcc_3=-2.0, mfcc_4=-1.0,
+        mfcc_5=-0.5, mfcc_6=-0.3, mfcc_7=-0.2, mfcc_8=-0.1,
+        mfcc_9=0.0, mfcc_10=0.1, mfcc_11=0.2, mfcc_12=0.3, mfcc_13=0.4,
+        # Spectral Dynamics (1)
+        spectral_flux=0.5,
+        # Rhythm Factors (3)
+        median_ici_ms=15.0, onset_rate_hz=8.0, ici_coefficient_of_variation=0.3,
+    ),
+    "marmoset"
 )
 
-# Create navigator (Algebra + Database)
-algebra = AcousticAlgebraEngine()
-database = PhraseDatabase()
-navigator = IslandHoppingNavigator(algebra, database)
-
-# Add islands (real audio phrases)
-database.add_island(AudioIsland(
-    island_id="neutral_001",
-    vector=Vector17D(
-        mean_f0_hz=7000.0, duration_ms=50.0, f0_range_hz=400.0,
-        harmonic_to_noise_ratio=20.0, spectral_flatness=0.1,
-        # ... all 17 dimensions
-    )
-))
-
-database.add_island(AudioIsland(
-    island_id="aggressive_001",
-    vector=Vector17D(
-        mean_f0_hz=8000.0, duration_ms=40.0, f0_range_hz=600.0,
-        harmonic_to_noise_ratio=5.0, spectral_flatness=0.7,
-        # ... all 17 dimensions
-    )
-))
-
-# Plan route: Mode A (Linear Gradient)
-route = navigator.plan_linear_gradient(
-    intent="aggression",
-    start_intensity=0.0,
-    end_intensity=1.0,
-    num_waypoints=10
+engine.add_island(
+    "aggressive_001",
+    Vector30D(
+        # Fundamental (3)
+        mean_f0_hz=8000.0, f0_range_hz=600.0, duration_ms=40.0,
+        # Grit Factors (3)
+        harmonic_to_noise_ratio=5.0, spectral_flatness=0.7, harmonicity=0.6,
+        # Motion Factors (7)
+        attack_time_ms=3.0, decay_time_ms=15.0, sustain_level=0.9,
+        vibrato_rate_hz=10.0, vibrato_depth=0.05, jitter=0.03, shimmer=0.05,
+        # Fingerprint Factors (13 MFCCs)
+        mfcc_1=-8.0, mfcc_2=-3.0, mfcc_3=-1.0, mfcc_4=0.0,
+        mfcc_5=0.5, mfcc_6=0.7, mfcc_7=0.8, mfcc_8=0.9,
+        mfcc_9=1.0, mfcc_10=1.1, mfcc_11=1.2, mfcc_12=1.3, mfcc_13=1.4,
+        # Spectral Dynamics (1)
+        spectral_flux=0.7,
+        # Rhythm Factors (3)
+        median_ici_ms=10.0, onset_rate_hz=12.0, ici_coefficient_of_variation=0.5,
+    ),
+    "marmoset"
 )
 
-print(f"Route has {len(route.segments)} segments")
-print(f"Total distance: {route.total_distance:.2f}")
+# Interpolate between islands
+neutral = engine.find_nearest_island(Vector30D.default())
+aggressive = engine.find_nearest_island(
+    Vector30D(mean_f0_hz=7500.0, f0_range_hz=500.0, duration_ms=45.0,
+              harmonic_to_noise_ratio=15.0, spectral_flatness=0.3, harmonicity=0.7,
+              # ... remaining 24 dimensions
+              spectral_flux=0.6, median_ici_ms=12.0, onset_rate_hz=10.0,
+              ici_coefficient_of_variation=0.4)
+)
 
-# Each segment contains:
-# - start_island: Real phrase ID
-# - end_island: Next real phrase ID
-# - virtual_target: Calculated 17D waypoint
-# - warp_delta: Granular warp instructions
-# - distance: Delta magnitude
+# Apply safety clamping
+waypoint = engine.clamp_to_safe_distance(
+    Vector30D.default(), neutral.features, "neutral_001"
+)
 
-for segment in route.segments:
-    print(f"{segment.start_island} → {segment.end_island}")
-    print(f"  Distance: {segment.distance:.2f}")
-    print(f"  Warp: F0 delta = {segment.warp_delta.delta_mean_f0_hz:.1f} Hz")
+print(f"Mode: {waypoint.get_mode()}")
+print(f"Distance: {waypoint.get_distance_to_anchor():.3f}")
+
+# Each waypoint contains:
+# - target: Calculated 30D vector
+# - mode: Interpolation or Extrapolation
+# - anchor_island: Nearest real phrase
+# - distance_to_anchor: Normalized distance
+# - was_clamped: Whether safety clamp was applied
+
+# Example workflow for gradient navigation
+start_point = Vector30D.default()
+end_point = Vector30D(
+    mean_f0_hz=8000.0, f0_range_hz=600.0, duration_ms=40.0,
+    # ... remaining 27 dimensions
+)
+
+# Create gradient waypoints
+for i in range(10):
+    alpha = i / 9.0  # 0.0 to 1.0
+    waypoint_vector = engine.interpolate(start_point, end_point, alpha)
+    print(f"Waypoint {i}: F0={waypoint_vector.get_mean_f0_hz()}Hz")
 ```
 
 ### Key Design Principles
@@ -5563,7 +5824,7 @@ for segment in route.segments:
   - `test_interpolation_extrapolation.py`: 21 tests
     - ⚠️ **Contains deprecated Python fallback code** - Use Rust via PyO3 instead
     - See: `archive/deprecated_python_fallbacks/INTERPOLATION_EXTRAPOLATION_DEPRECATION.md`
-  - Vector17D Calculations: 4 tests
+  - Vector30D Calculations: 4 tests
   - Acoustic Algebra Engine: 4 tests
   - Phrase Database: 3 tests
   - Island Hopping Navigator: 5 tests
@@ -5575,11 +5836,11 @@ for segment in route.segments:
   - Integration: 5 tests
 
 - **Rust Tests**: 497 tests total (464 existing + 33 new Island Hopping)
-  - `island_hopping.rs`: 33 tests (SIMD-optimized 17D vector math, safety clamping)
+  - `island_hopping.rs`: 33 tests (SIMD-optimized 30D vector math, safety clamping)
   - All other modules: 464 tests
 
 - **Python-Rust Integration**: `test_rust_island_hopping.py`
-  - Tests PyO3 bindings for Vector17D, NavigationEngine, NavigationWaypoint
+  - Tests PyO3 bindings for Vector30D, NavigationEngine, NavigationWaypoint
 
 ### Why This Matters
 
@@ -5624,11 +5885,11 @@ The following Python components have been superseded by Rust implementations:
 
 | Component | Rust Replacement | Status | Performance |
 |-----------|------------------|---------|-------------|
-| `Vector17D` | `island_hopping.rs::Vector17D` | ⚠️ Deprecated | 10-100x faster |
-| `NavigationEngine` | `island_hopping.rs::NavigationEngine` | ⚠️ Deprecated | Deterministic |
-| `SafetyClamp` | `island_hopping.rs::SafetyClamp` | ⚠️ Deprecated | Safety-critical |
+| `Vector30D` | `island_hopping.rs::Vector30D` | ✅ Active | 10-100x faster |
+| `NavigationEngine` | `island_hopping.rs::NavigationEngine` | ✅ Active | Deterministic |
+| `SafetyClamp` | `island_hopping.rs::SafetyClamp` | ✅ Active | Safety-critical |
 
-**Migration:** Use `from technical_architecture import Vector17D, NavigationEngine` instead.
+**Migration:** Use `from technical_architecture import Vector30D, NavigationEngine` instead.
 
 See: `archive/deprecated_python_fallbacks/INTERPOLATION_EXTRAPOLATION_DEPRECATION.md`
 

@@ -86,10 +86,12 @@ def main():
         print("  Phrases detected:")
         print(f"    Adaptive (max 50ms): {result['phrases_adaptive']:3d}")
         print(
-            f"    Fixed 50ms:          {result['phrases_fixed_50']:3d}  (improvement: {result['improvement_50']:+3d})"
+            f"    Fixed 50ms:          {result['phrases_fixed_50']:3d}  "
+            f"(improvement: {result['improvement_50']:+3d})"
         )
         print(
-            f"    Fixed 100ms:         {result['phrases_fixed_100']:3d}  (improvement: {result['improvement_100']:+3d})"
+            f"    Fixed 100ms:         {result['phrases_fixed_100']:3d}  "
+            f"(improvement: {result['improvement_100']:+3d})"
         )
 
     # Summary statistics
@@ -111,10 +113,12 @@ def main():
 
     print("\nFiles with improvement:")
     print(
-        f"  vs Fixed 50ms:  {files_with_improvement_50}/{len(results)} ({files_with_improvement_50 / len(results) * 100:.1f}%)"
+        f"  vs Fixed 50ms:  {files_with_improvement_50}/{len(results)} "
+        f"({files_with_improvement_50 / len(results) * 100:.1f}%)"
     )
     print(
-        f"  vs Fixed 100ms: {files_with_improvement_100}/{len(results)} ({files_with_improvement_100 / len(results) * 100:.1f}%)"
+        f"  vs Fixed 100ms: {files_with_improvement_100}/{len(results)} "
+        f"({files_with_improvement_100 / len(results) * 100:.1f}%)"
     )
 
     if total_phrases_adaptive > 0:

@@ -383,7 +383,8 @@ def main():
     logger.info("\n🎯 Next steps:")
     logger.info("  1. Backup old database:")
     logger.info(
-        "     mv /home/sheel/birdsong_analysis/src/vocalization_database.json /home/sheel/birdsong_analysis/src/vocalization_database_old.json"
+        "     mv /home/sheel/birdsong_analysis/src/vocalization_database.json "
+        "/home/sheel/birdsong_analysis/src/vocalization_database_old.json"
     )
     logger.info("  2. Replace with new database:")
     logger.info(

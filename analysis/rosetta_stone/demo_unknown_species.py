@@ -126,8 +126,10 @@ def display_analysis_results(analyzer, vocabulary, grammar):
             print(f"    F0 Mean: {phrase_sig.features['f0_mean']:.0f}Hz")
             print(f"    F0 Std: {phrase_sig.features['f0_std']:.0f}Hz")
         elif phrase_sig.modality == Modality.FM_SWEEP:
+            start_freq = phrase_sig.features['start_freq']
+            end_freq = phrase_sig.features['end_freq']
             print(
-                f"    Frequency Range: {phrase_sig.features['start_freq']:.0f}Hz → {phrase_sig.features['end_freq']:.0f}Hz"
+                f"    Frequency Range: {start_freq:.0f}Hz → {end_freq:.0f}Hz"
             )
             print(f"    Sweep Rate: {phrase_sig.features['freq_slope']:.0f}Hz/s")
         elif phrase_sig.modality == Modality.TRANSIENT:

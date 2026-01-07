@@ -16,9 +16,8 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-import numpy as np
-from typing import Tuple
 
+import numpy as np
 
 # =============================================================================
 # Test 1.1: Full MFCC Extraction
@@ -77,7 +76,7 @@ class TestMFCCExtraction(unittest.TestCase):
             "First MFCC coefficient should be reasonable (< 100)",
         )
 
-        print(f"✓ Full 13 MFCC extraction test passed")
+        print("✓ Full 13 MFCC extraction test passed")
         print(f"  Vector shape: {mfccs.shape}")
         print(f"  MFCCs: {mfccs}")
 
@@ -132,7 +131,7 @@ class TestMFCCExtraction(unittest.TestCase):
             f"Different frequencies should produce different MFCCs (max diff: {max_diff:.4f})",
         )
 
-        print(f"✓ MFCC vector consistency test passed")
+        print("✓ MFCC vector consistency test passed")
         print(f"  Low freq MFCCs: {mfcc_low}")
         print(f"  High freq MFCCs: {mfcc_high}")
         print(f"  Max difference: {max_diff:.4f}")
@@ -194,7 +193,7 @@ class TestMFCCRealWorld(unittest.TestCase):
             "Higher MFCCs (6-13) should have non-zero values capturing fine spectral structure",
         )
 
-        print(f"✓ Real phee MFCC test passed")
+        print("✓ Real phee MFCC test passed")
         print(f"  Lower MFCCs (1-4): {mfccs[1:5]}")
         print(f"  Higher MFCCs (5-13): {mfccs[5:]}")
         print(f"  Mean abs higher MFCCs: {np.mean(np.abs(higher_mfccs)):.6f}")
@@ -257,7 +256,7 @@ class TestMFCCRealWorld(unittest.TestCase):
             f"Full 13D distance should be significant (Euclidean distance: {full_diff:.4f})",
         )
 
-        print(f"✓ Vowel quality discrimination test passed")
+        print("✓ Vowel quality discrimination test passed")
         print(f"  Vowel 1 MFCCs (1-4): {lower_mfcc1}")
         print(f"  Vowel 2 MFCCs (1-4): {lower_mfcc2}")
         print(f"  Lower MFCC diff: {lower_diff:.4f}")

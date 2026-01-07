@@ -14,12 +14,8 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock, patch, call
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
-import numpy as np
-import time
-
+from unittest.mock import Mock
 
 # =============================================================================
 # Mock Dependencies

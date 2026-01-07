@@ -3,7 +3,6 @@
 Simple test script for Universal Rosetta Stone implementation
 """
 
-import os
 import sys
 from pathlib import Path
 

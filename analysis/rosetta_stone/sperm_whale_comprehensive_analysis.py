@@ -75,7 +75,10 @@ def main():
     print("SPERM WHALE DATASET COMPREHENSIVE ANALYSIS (Adaptive Coda Detection)")
     print("=" * 100)
 
-    header = f"{'File':<20} {'Dur(s)':>7} {'Clicks':>8} {'Click/s':>8} {'Codas':>6} {'Threshold':>10}  {'Coda Size (mean±std)':>20}"
+    header = (
+        f"{'File':<20} {'Dur(s)':>7} {'Clicks':>8} {'Click/s':>8} "
+        f"{'Codas':>6} {'Threshold':>10}  {'Coda Size (mean±std)':>20}"
+    )
     print(header)
     print("-" * 100)
 
@@ -87,9 +90,13 @@ def main():
         coda_mean = np.mean(result["coda_sizes"]) if result["coda_sizes"] else 0
         coda_std = np.std(result["coda_sizes"]) if result["coda_sizes"] else 0
 
-        print(
-            f"{result['filename']:<20} {result['duration_s']:7.0f} {result['total_clicks']:8d} {result['click_rate']:8.1f} {result['num_codas']:6d} {result['coda_threshold_ms']:10.1f}  {coda_mean:6.0f}±{coda_std:5.0f}"
+        row = (
+            f"{result['filename']:<20} {result['duration_s']:7.0f} "
+            f"{result['total_clicks']:8d} {result['click_rate']:8.1f} "
+            f"{result['num_codas']:6d} {result['coda_threshold_ms']:10.1f}  "
+            f"{coda_mean:6.0f}±{coda_std:5.0f}"
         )
+        print(row)
 
     # Summary statistics
     print("=" * 100)
@@ -105,12 +112,10 @@ def main():
 
     print("\n📁 File Coverage:")
     print(f"  Total files analyzed: {len(all_results)}")
-    print(
-        f"  Files with codas: {len(files_with_codas)} ({len(files_with_codas) / len(all_results) * 100:.1f}%)"
-    )
-    print(
-        f"  Files without codas: {len(files_without_codas)} ({len(files_without_codas) / len(all_results) * 100:.1f}%)"
-    )
+    with_coda_pct = len(files_with_codas) / len(all_results) * 100
+    print(f"  Files with codas: {len(files_with_codas)} ({with_coda_pct:.1f}%)")
+    without_coda_pct = len(files_without_codas) / len(all_results) * 100
+    print(f"  Files without codas: {len(files_without_codas)} ({without_coda_pct:.1f}%)")
 
     print("\n📊 Click Statistics:")
     print(f"  Total clicks: {total_clicks:,}")
@@ -119,9 +124,9 @@ def main():
 
     print("\n📊 Coda Statistics:")
     print(f"  Total codas detected: {total_codas}")
-    print(
-        f"  Codas per file: {total_codas / len(all_results):.1f} ± {np.std([r['num_codas'] for r in all_results]):.1f}"
-    )
+    codas_per_file = total_codas / len(all_results)
+    codas_std = np.std([r["num_codas"] for r in all_results])
+    print(f"  Codas per file: {codas_per_file:.1f} ± {codas_std:.1f}")
 
     if files_with_codas:
         # Combine all coda sizes
@@ -142,13 +147,12 @@ def main():
         long_codas = sum(1 for s in all_coda_sizes if s >= 50)
 
         print("\n  Coda Length Distribution:")
-        print(
-            f"    SHORT (<10 clicks): {short_codas} ({short_codas / len(all_coda_sizes) * 100:.1f}%)"
-        )
-        print(
-            f"    MEDIUM (10-49): {medium_codas} ({medium_codas / len(all_coda_sizes) * 100:.1f}%)"
-        )
-        print(f"    LONG (50+): {long_codas} ({long_codas / len(all_coda_sizes) * 100:.1f}%)")
+        short_pct = short_codas / len(all_coda_sizes) * 100
+        print(f"    SHORT (<10 clicks): {short_codas} ({short_pct:.1f}%)")
+        medium_pct = medium_codas / len(all_coda_sizes) * 100
+        print(f"    MEDIUM (10-49): {medium_codas} ({medium_pct:.1f}%)")
+        long_pct = long_codas / len(all_coda_sizes) * 100
+        print(f"    LONG (50+): {long_codas} ({long_pct:.1f}%)")
 
         # Inter-click interval analysis
         all_intervals = []

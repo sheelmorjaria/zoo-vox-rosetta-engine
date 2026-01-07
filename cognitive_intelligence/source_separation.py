@@ -299,7 +299,8 @@ class ConvTasNetWrapper:
         # Check latency
         if processing_time * 1000 > self.config.target_latency_ms:
             self.logger.warning(
-                f"Latency target exceeded: {processing_time * 1000:.1f}ms > {self.config.target_latency_ms}ms"
+                f"Latency target exceeded: {processing_time * 1000:.1f}ms > "
+                f"{self.config.target_latency_ms}ms"
             )
 
         return sources_np

@@ -313,10 +313,10 @@ class RealtimeSystemPopulator:
             "validation_passed": self._validate_population_quality(),
         }
 
-        logger.info(
-            f"Population completed: {population_report['unique_phrases_populated']} phrases populated"
-        )
-        logger.info(f"Hierarchy completeness: {population_report['hierarchy_completeness']:.1%}")
+        phrases_populated = population_report["unique_phrases_populated"]
+        logger.info(f"Population completed: {phrases_populated} phrases populated")
+        hierarchy_complete = population_report["hierarchy_completeness"]
+        logger.info(f"Hierarchy completeness: {hierarchy_complete:.1%}")
 
         return population_report
 
@@ -342,7 +342,8 @@ class RealtimeSystemPopulator:
         )
 
         logger.info(
-            f"Validation - Unique phrases: {unique_phrases}, Hierarchy: {hierarchy_completion:.1%}, High confidence: {high_confidence}"
+            f"Validation - Unique phrases: {unique_phrases}, "
+            f"Hierarchy: {hierarchy_completion:.1%}, High confidence: {high_confidence}"
         )
 
         return validation_passed
@@ -497,19 +498,18 @@ if __name__ == "__main__":
 
                 print("\nPopulation Report:")
                 print(f"  - {population_report['unique_phrases_populated']} phrases populated")
-                print(
-                    f"  - {population_report['hierarchy_completeness']:.1%} hierarchy completeness"
-                )
-                print(
-                    f"  - Quality validation: {'PASSED' if population_report['validation_passed'] else 'FAILED'}"
-                )
+                hierarchy_pct = population_report["hierarchy_completeness"]
+                print(f"  - {hierarchy_pct:.1%} hierarchy completeness")
+                validation_status = "PASSED" if population_report["validation_passed"] else "FAILED"
+                print(f"  - Quality validation: {validation_status}")
 
                 # Example phrases
                 print("\nExample populated phrases:")
                 for i, (key, phrase) in enumerate(list(populator.phrase_database.items())[:5]):
-                    print(
-                        f"  {key}: {phrase['frequency']:.0f}Hz (count: {phrase['count']}, conf: {phrase['confidence']:.2f})"
-                    )
+                    freq = phrase["frequency"]
+                    count = phrase["count"]
+                    conf = phrase["confidence"]
+                    print(f"  {key}: {freq:.0f}Hz (count: {count}, conf: {conf:.2f})")
             else:
                 print("No JSON results found in reanalysis_results directory")
         else:

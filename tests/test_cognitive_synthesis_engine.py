@@ -15,12 +15,11 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-import numpy as np
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from dataclasses import dataclass
 from enum import Enum
-import math
+from typing import Dict, List, Tuple
 
+import numpy as np
 
 # =============================================================================
 # Phase 1: Extended Data Models with Cross-Fade Support

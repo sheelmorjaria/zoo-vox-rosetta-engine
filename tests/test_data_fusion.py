@@ -146,11 +146,13 @@ class TestDataFusion(unittest.TestCase):
             boost_amount = boost_logic.calculate_attention_boost(visual_features, audio_features)
 
             # Verify boost is correct
+            context_str = f"{visual_attention} + {vocalization_context}"
+            msg = f"Boost should be {expected_boost} for {context_str}"
             self.assertAlmostEqual(
                 boost_amount,
                 expected_boost,
                 places=2,
-                msg=f"Boost should be {expected_boost} for {visual_attention} + {vocalization_context}",
+                msg=msg,
             )
 
             # Test applying boost to features
@@ -468,9 +470,11 @@ if __name__ == "__main__":
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(
-        f"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%"
+    success_rate = (
+        (result.testsRun - len(result.failures) - len(result.errors))
+        / result.testsRun * 100
     )
+    print(f"Success rate: {success_rate:.1f}%")
 
     if result.failures:
         print(f"\n{'=' * 50}")

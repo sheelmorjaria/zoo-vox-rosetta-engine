@@ -360,9 +360,10 @@ def extract_with_checkpointing(
 
     if resume and processed_files:
         remaining_annotations = [a for a in annotations if a["filename"] not in processed_files]
-        print(
-            f"  Resuming: {len(annotations)} total, {len(processed_files)} already processed, {len(remaining_annotations)} remaining"
-        )
+        total = len(annotations)
+        processed = len(processed_files)
+        remaining = len(remaining_annotations)
+        print(f"  Resuming: {total} total, {processed} already processed, {remaining} remaining")
         annotations = remaining_annotations
 
     # Save initial metadata
@@ -444,12 +445,17 @@ def extract_with_checkpointing(
 
         # Print status
         status = checkpoint_manager.get_status_summary()
-        print(
-            f"  Batch complete: {len(batch_sentences)} sentences, {len(batch_candidates)} candidates"
+        batch_sentences_count = len(batch_sentences)
+        batch_candidates_count = len(batch_candidates)
+        msg = (
+            f"  Batch complete: {batch_sentences_count} sentences, "
+            f"{batch_candidates_count} candidates"
         )
-        print(
-            f"  Progress: {status['processed_files']}/{status['total_files']} ({status['progress_percent']:.1f}%)"
-        )
+        print(msg)
+        processed = status["processed_files"]
+        total = status["total_files"]
+        progress = status["progress_percent"]
+        print(f"  Progress: {processed}/{total} ({progress:.1f}%)")
         print(f"  Total candidates so far: {status['total_candidates']:,}")
 
         # Preliminary analysis checkpoint

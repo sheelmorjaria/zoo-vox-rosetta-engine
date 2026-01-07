@@ -73,7 +73,7 @@ pub use thermal::{TemperatureReading, ThermalGovernor, ThermalState, ThermalStat
 // Island Hopping Navigation (NEW)
 pub use island_hopping::{
     apply_delta_to_granular, AudioIsland, GranularParams, NavigationEngine, NavigationMode,
-    NavigationWaypoint, PhraseDatabase, SafetyClamp, TimelineExecutor, Vector17D, VectorDelta,
+    NavigationWaypoint, PhraseDatabase, SafetyClamp, TimelineExecutor, Vector30D, VectorDelta,
 };
 
 pub use logging::ProvenanceLogger;
@@ -793,24 +793,35 @@ pub struct PySourceMetadata {
     pub duration_ms: f32,
     pub f0_range_hz: f32,
 
-    // === Grit Factors (2 features) ===
+    // === Grit Factors (3 features) ===
     pub harmonic_to_noise_ratio: f32,
     pub spectral_flatness: f32,
+    pub harmonicity: f32,
 
-    // === Motion Factors (6 features) ===
+    // === Motion Factors (7 features) ===
     pub attack_time_ms: f32,
     pub decay_time_ms: f32,
     pub sustain_level: f32,
     pub vibrato_rate_hz: f32,
     pub vibrato_depth: f32,
     pub jitter: f32,
+    pub shimmer: f32,
 
-    // === Fingerprint Factors (5 features) ===
+    // === Fingerprint Factors (14 features) ===
     pub mfcc_1: f32,
     pub mfcc_2: f32,
     pub mfcc_3: f32,
     pub mfcc_4: f32,
-    pub spectral_contrast: f32,
+    pub mfcc_5: f32,
+    pub mfcc_6: f32,
+    pub mfcc_7: f32,
+    pub mfcc_8: f32,
+    pub mfcc_9: f32,
+    pub mfcc_10: f32,
+    pub mfcc_11: f32,
+    pub mfcc_12: f32,
+    pub mfcc_13: f32,
+    pub spectral_flux: f32,
 
     // === Rhythm Factors (3 features) ===
     pub median_ici_ms: f32,
@@ -821,27 +832,45 @@ pub struct PySourceMetadata {
 #[cfg(feature = "python-bindings")]
 #[pymethods]
 impl PySourceMetadata {
-    /// Create 17D SourceMetadata (simplified constructor for common use)
+    /// Create 30D SourceMetadata (simplified constructor for common use)
     ///
     /// For full control, use the builder() method instead.
+    #[allow(clippy::too_many_arguments)]
     #[new]
     fn new(
+        // Fundamental (3)
         mean_f0_hz: f32,
         duration_ms: f32,
         f0_range_hz: f32,
+        // Grit Factors (3)
         harmonic_to_noise_ratio: f32,
         spectral_flatness: f32,
+        harmonicity: f32,
+        // Motion Factors (7)
         attack_time_ms: f32,
         decay_time_ms: f32,
         sustain_level: f32,
         vibrato_rate_hz: f32,
         vibrato_depth: f32,
         jitter: f32,
+        shimmer: f32,
+        // Fingerprint Factors (13 MFCCs)
         mfcc_1: f32,
         mfcc_2: f32,
         mfcc_3: f32,
         mfcc_4: f32,
-        spectral_contrast: f32,
+        mfcc_5: f32,
+        mfcc_6: f32,
+        mfcc_7: f32,
+        mfcc_8: f32,
+        mfcc_9: f32,
+        mfcc_10: f32,
+        mfcc_11: f32,
+        mfcc_12: f32,
+        mfcc_13: f32,
+        // Spectral Dynamics (1)
+        spectral_flux: f32,
+        // Rhythm Factors (3)
         median_ici_ms: f32,
         onset_rate_hz: f32,
         ici_coefficient_of_variation: f32,
@@ -852,17 +881,28 @@ impl PySourceMetadata {
             f0_range_hz,
             harmonic_to_noise_ratio,
             spectral_flatness,
+            harmonicity,
             attack_time_ms,
             decay_time_ms,
             sustain_level,
             vibrato_rate_hz,
             vibrato_depth,
             jitter,
+            shimmer,
             mfcc_1,
             mfcc_2,
             mfcc_3,
             mfcc_4,
-            spectral_contrast,
+            mfcc_5,
+            mfcc_6,
+            mfcc_7,
+            mfcc_8,
+            mfcc_9,
+            mfcc_10,
+            mfcc_11,
+            mfcc_12,
+            mfcc_13,
+            spectral_flux,
             median_ici_ms,
             onset_rate_hz,
             ici_coefficient_of_variation,
@@ -967,6 +1007,21 @@ impl PySourceMetadata {
         self.jitter = value;
     }
 
+    fn get_shimmer(&self) -> f32 {
+        self.shimmer
+    }
+    fn set_shimmer(&mut self, value: f32) {
+        self.shimmer = value;
+    }
+
+    // === Grit Factor Getters/Setters (continued) ===
+    fn get_harmonicity(&self) -> f32 {
+        self.harmonicity
+    }
+    fn set_harmonicity(&mut self, value: f32) {
+        self.harmonicity = value;
+    }
+
     // === Fingerprint Factor Getters/Setters ===
     fn get_mfcc_1(&self) -> f32 {
         self.mfcc_1
@@ -996,11 +1051,74 @@ impl PySourceMetadata {
         self.mfcc_4 = value;
     }
 
-    fn get_spectral_contrast(&self) -> f32 {
-        self.spectral_contrast
+    fn get_mfcc_5(&self) -> f32 {
+        self.mfcc_5
     }
-    fn set_spectral_contrast(&mut self, value: f32) {
-        self.spectral_contrast = value;
+    fn set_mfcc_5(&mut self, value: f32) {
+        self.mfcc_5 = value;
+    }
+
+    fn get_mfcc_6(&self) -> f32 {
+        self.mfcc_6
+    }
+    fn set_mfcc_6(&mut self, value: f32) {
+        self.mfcc_6 = value;
+    }
+
+    fn get_mfcc_7(&self) -> f32 {
+        self.mfcc_7
+    }
+    fn set_mfcc_7(&mut self, value: f32) {
+        self.mfcc_7 = value;
+    }
+
+    fn get_mfcc_8(&self) -> f32 {
+        self.mfcc_8
+    }
+    fn set_mfcc_8(&mut self, value: f32) {
+        self.mfcc_8 = value;
+    }
+
+    fn get_mfcc_9(&self) -> f32 {
+        self.mfcc_9
+    }
+    fn set_mfcc_9(&mut self, value: f32) {
+        self.mfcc_9 = value;
+    }
+
+    fn get_mfcc_10(&self) -> f32 {
+        self.mfcc_10
+    }
+    fn set_mfcc_10(&mut self, value: f32) {
+        self.mfcc_10 = value;
+    }
+
+    fn get_mfcc_11(&self) -> f32 {
+        self.mfcc_11
+    }
+    fn set_mfcc_11(&mut self, value: f32) {
+        self.mfcc_11 = value;
+    }
+
+    fn get_mfcc_12(&self) -> f32 {
+        self.mfcc_12
+    }
+    fn set_mfcc_12(&mut self, value: f32) {
+        self.mfcc_12 = value;
+    }
+
+    fn get_mfcc_13(&self) -> f32 {
+        self.mfcc_13
+    }
+    fn set_mfcc_13(&mut self, value: f32) {
+        self.mfcc_13 = value;
+    }
+
+    fn get_spectral_flux(&self) -> f32 {
+        self.spectral_flux
+    }
+    fn set_spectral_flux(&mut self, value: f32) {
+        self.spectral_flux = value;
     }
 
     // === Rhythm Factor Getters/Setters ===
@@ -1047,17 +1165,28 @@ impl From<PySourceMetadata> for synthesis::SourceMetadata {
             f0_range_hz: py.f0_range_hz,
             harmonic_to_noise_ratio: py.harmonic_to_noise_ratio,
             spectral_flatness: py.spectral_flatness,
+            harmonicity: py.harmonicity,
             attack_time_ms: py.attack_time_ms,
             decay_time_ms: py.decay_time_ms,
             sustain_level: py.sustain_level,
             vibrato_rate_hz: py.vibrato_rate_hz,
             vibrato_depth: py.vibrato_depth,
             jitter: py.jitter,
+            shimmer: py.shimmer,
             mfcc_1: py.mfcc_1,
             mfcc_2: py.mfcc_2,
             mfcc_3: py.mfcc_3,
             mfcc_4: py.mfcc_4,
-            spectral_contrast: py.spectral_contrast,
+            mfcc_5: py.mfcc_5,
+            mfcc_6: py.mfcc_6,
+            mfcc_7: py.mfcc_7,
+            mfcc_8: py.mfcc_8,
+            mfcc_9: py.mfcc_9,
+            mfcc_10: py.mfcc_10,
+            mfcc_11: py.mfcc_11,
+            mfcc_12: py.mfcc_12,
+            mfcc_13: py.mfcc_13,
+            spectral_flux: py.spectral_flux,
             median_ici_ms: py.median_ici_ms,
             onset_rate_hz: py.onset_rate_hz,
             ici_coefficient_of_variation: py.ici_coefficient_of_variation,
@@ -1074,17 +1203,28 @@ impl From<synthesis::SourceMetadata> for PySourceMetadata {
             f0_range_hz: rust.f0_range_hz,
             harmonic_to_noise_ratio: rust.harmonic_to_noise_ratio,
             spectral_flatness: rust.spectral_flatness,
+            harmonicity: rust.harmonicity,
             attack_time_ms: rust.attack_time_ms,
             decay_time_ms: rust.decay_time_ms,
             sustain_level: rust.sustain_level,
             vibrato_rate_hz: rust.vibrato_rate_hz,
             vibrato_depth: rust.vibrato_depth,
             jitter: rust.jitter,
+            shimmer: rust.shimmer,
             mfcc_1: rust.mfcc_1,
             mfcc_2: rust.mfcc_2,
             mfcc_3: rust.mfcc_3,
             mfcc_4: rust.mfcc_4,
-            spectral_contrast: rust.spectral_contrast,
+            mfcc_5: rust.mfcc_5,
+            mfcc_6: rust.mfcc_6,
+            mfcc_7: rust.mfcc_7,
+            mfcc_8: rust.mfcc_8,
+            mfcc_9: rust.mfcc_9,
+            mfcc_10: rust.mfcc_10,
+            mfcc_11: rust.mfcc_11,
+            mfcc_12: rust.mfcc_12,
+            mfcc_13: rust.mfcc_13,
+            spectral_flux: rust.spectral_flux,
             median_ici_ms: rust.median_ici_ms,
             onset_rate_hz: rust.onset_rate_hz,
             ici_coefficient_of_variation: rust.ici_coefficient_of_variation,
@@ -1197,9 +1337,9 @@ impl PySourceMetadataBuilder {
         new
     }
 
-    fn spectral_contrast(&self, value: f32) -> Self {
+    fn spectral_flux(&self, value: f32) -> Self {
         let mut new = self.clone();
-        new.metadata.spectral_contrast = value;
+        new.metadata.spectral_flux = value;
         new
     }
 
@@ -2673,59 +2813,93 @@ impl PyVisualRecorder {
 // PyO3 Bindings for Island Hopping Navigation
 // ============================================================================
 
-/// Python wrapper for Vector17D
+/// Python wrapper for Vector30D
 #[cfg(feature = "python-bindings")]
-#[pyclass(name = "Vector17D")]
+#[pyclass(name = "Vector30D")]
 #[derive(Clone, Copy)]
-pub struct PyVector17D {
-    inner: island_hopping::Vector17D,
+pub struct PyVector30D {
+    inner: island_hopping::Vector30D,
 }
 
 #[cfg(feature = "python-bindings")]
 #[pymethods]
-impl PyVector17D {
-    /// Create a new Vector17D with all 17 dimensions
+impl PyVector30D {
+    /// Create a new Vector30D with all 30 dimensions
     #[allow(clippy::too_many_arguments)]
     #[new]
     fn new(
+        // Fundamental (3)
         mean_f0_hz: f32,
-        duration_ms: f32,
         f0_range_hz: f32,
+        duration_ms: f32,
+        // Grit Factors (3)
         harmonic_to_noise_ratio: f32,
         spectral_flatness: f32,
+        harmonicity: f32,
+        // Motion Factors (7)
         attack_time_ms: f32,
         decay_time_ms: f32,
         sustain_level: f32,
         vibrato_rate_hz: f32,
         vibrato_depth: f32,
         jitter: f32,
+        shimmer: f32,
+        // Fingerprint Factors (13 MFCCs)
         mfcc_1: f32,
         mfcc_2: f32,
         mfcc_3: f32,
         mfcc_4: f32,
-        spectral_contrast: f32,
+        mfcc_5: f32,
+        mfcc_6: f32,
+        mfcc_7: f32,
+        mfcc_8: f32,
+        mfcc_9: f32,
+        mfcc_10: f32,
+        mfcc_11: f32,
+        mfcc_12: f32,
+        mfcc_13: f32,
+        // Spectral Dynamics (1)
+        spectral_flux: f32,
+        // Rhythm Factors (3)
         median_ici_ms: f32,
         onset_rate_hz: f32,
         ici_coefficient_of_variation: f32,
     ) -> Self {
         Self {
-            inner: island_hopping::Vector17D::new(
+            inner: island_hopping::Vector30D::new(
+                // Fundamental
                 mean_f0_hz,
-                duration_ms,
                 f0_range_hz,
+                duration_ms,
+                // Grit Factors
                 harmonic_to_noise_ratio,
                 spectral_flatness,
+                harmonicity,
+                // Motion Factors
                 attack_time_ms,
                 decay_time_ms,
                 sustain_level,
                 vibrato_rate_hz,
                 vibrato_depth,
                 jitter,
+                shimmer,
+                // Fingerprint Factors
                 mfcc_1,
                 mfcc_2,
                 mfcc_3,
                 mfcc_4,
-                spectral_contrast,
+                mfcc_5,
+                mfcc_6,
+                mfcc_7,
+                mfcc_8,
+                mfcc_9,
+                mfcc_10,
+                mfcc_11,
+                mfcc_12,
+                mfcc_13,
+                // Spectral Dynamics
+                spectral_flux,
+                // Rhythm Factors
                 median_ici_ms,
                 onset_rate_hz,
                 ici_coefficient_of_variation,
@@ -2733,43 +2907,43 @@ impl PyVector17D {
         }
     }
 
-    /// Create a Vector17D with default values
+    /// Create a Vector30D with default values
     #[staticmethod]
     fn default() -> Self {
         Self {
-            inner: island_hopping::Vector17D::default(),
+            inner: island_hopping::Vector30D::default(),
         }
     }
 
     /// Calculate distance to another vector
-    fn distance_to(&self, other: &PyVector17D) -> f32 {
+    fn distance_to(&self, other: &PyVector30D) -> f32 {
         self.inner.distance_to(&other.inner)
     }
 
     /// Interpolate between two vectors (Bridge Builder - SAFE)
-    fn interpolate(&self, other: &PyVector17D, alpha: f32) -> PyVector17D {
-        PyVector17D {
+    fn interpolate(&self, other: &PyVector30D, alpha: f32) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.interpolate(&other.inner, alpha),
         }
     }
 
     /// Add two vectors
-    fn add(&self, other: &PyVector17D) -> PyVector17D {
-        PyVector17D {
+    fn add(&self, other: &PyVector30D) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.add(&other.inner),
         }
     }
 
     /// Subtract two vectors
-    fn sub(&self, other: &PyVector17D) -> PyVector17D {
-        PyVector17D {
+    fn sub(&self, other: &PyVector30D) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.sub(&other.inner),
         }
     }
 
     /// Scale vector by factor
-    fn scale(&self, factor: f32) -> PyVector17D {
-        PyVector17D {
+    fn scale(&self, factor: f32) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.scale(factor),
         }
     }
@@ -2780,13 +2954,13 @@ impl PyVector17D {
     }
 
     /// Normalize to unit vector
-    fn normalized(&self) -> PyVector17D {
-        PyVector17D {
+    fn normalized(&self) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.normalized(),
         }
     }
 
-    // Getters for all 17 dimensions
+    // Getters for all 30 dimensions
     fn get_mean_f0_hz(&self) -> f32 {
         self.inner.mean_f0_hz
     }
@@ -2801,6 +2975,9 @@ impl PyVector17D {
     }
     fn get_spectral_flatness(&self) -> f32 {
         self.inner.spectral_flatness
+    }
+    fn get_harmonicity(&self) -> f32 {
+        self.inner.harmonicity
     }
     fn get_attack_time_ms(&self) -> f32 {
         self.inner.attack_time_ms
@@ -2820,6 +2997,9 @@ impl PyVector17D {
     fn get_jitter(&self) -> f32 {
         self.inner.jitter
     }
+    fn get_shimmer(&self) -> f32 {
+        self.inner.shimmer
+    }
     fn get_mfcc_1(&self) -> f32 {
         self.inner.mfcc_1
     }
@@ -2832,8 +3012,35 @@ impl PyVector17D {
     fn get_mfcc_4(&self) -> f32 {
         self.inner.mfcc_4
     }
-    fn get_spectral_contrast(&self) -> f32 {
-        self.inner.spectral_contrast
+    fn get_mfcc_5(&self) -> f32 {
+        self.inner.mfcc_5
+    }
+    fn get_mfcc_6(&self) -> f32 {
+        self.inner.mfcc_6
+    }
+    fn get_mfcc_7(&self) -> f32 {
+        self.inner.mfcc_7
+    }
+    fn get_mfcc_8(&self) -> f32 {
+        self.inner.mfcc_8
+    }
+    fn get_mfcc_9(&self) -> f32 {
+        self.inner.mfcc_9
+    }
+    fn get_mfcc_10(&self) -> f32 {
+        self.inner.mfcc_10
+    }
+    fn get_mfcc_11(&self) -> f32 {
+        self.inner.mfcc_11
+    }
+    fn get_mfcc_12(&self) -> f32 {
+        self.inner.mfcc_12
+    }
+    fn get_mfcc_13(&self) -> f32 {
+        self.inner.mfcc_13
+    }
+    fn get_spectral_flux(&self) -> f32 {
+        self.inner.spectral_flux
     }
     fn get_median_ici_ms(&self) -> f32 {
         self.inner.median_ici_ms
@@ -2847,7 +3054,7 @@ impl PyVector17D {
 
     fn __repr__(&self) -> String {
         format!(
-            "Vector17D(F0={}Hz, Dur={}ms, Range={}Hz, HNR={}dB)",
+            "Vector30D(F0={}Hz, Dur={}ms, Range={}Hz, HNR={}dB)",
             self.inner.mean_f0_hz as i32,
             self.inner.duration_ms as i32,
             self.inner.f0_range_hz as i32,
@@ -2883,8 +3090,8 @@ impl PyNavigationEngine {
     }
 
     /// Interpolate between two vectors (Bridge Builder - SAFE)
-    fn interpolate(&self, start: &PyVector17D, end: &PyVector17D, alpha: f32) -> PyVector17D {
-        PyVector17D {
+    fn interpolate(&self, start: &PyVector30D, end: &PyVector30D, alpha: f32) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.interpolate(&start.inner, &end.inner, alpha),
         }
     }
@@ -2892,8 +3099,8 @@ impl PyNavigationEngine {
     /// Apply safety clamping to target
     fn clamp_to_safe_distance(
         &self,
-        target: &PyVector17D,
-        anchor: &PyVector17D,
+        target: &PyVector30D,
+        anchor: &PyVector30D,
         anchor_island: Option<String>,
     ) -> PyResult<PyNavigationWaypoint> {
         let waypoint =
@@ -2903,7 +3110,7 @@ impl PyNavigationEngine {
     }
 
     /// Add an island to the database
-    fn add_island(&mut self, key: String, features: PyVector17D, species: String) {
+    fn add_island(&mut self, key: String, features: PyVector30D, species: String) {
         let island = island_hopping::AudioIsland {
             key,
             features: features.inner,
@@ -2915,11 +3122,11 @@ impl PyNavigationEngine {
     }
 
     /// Find nearest island to target vector
-    fn find_nearest_island(&self, target: &PyVector17D) -> PyResult<Option<PyAudioIsland>> {
+    fn find_nearest_island(&self, target: &PyVector30D) -> PyResult<Option<PyAudioIsland>> {
         if let Some(island) = self.inner.find_nearest_island(&target.inner) {
             Ok(Some(PyAudioIsland {
                 key: island.key.clone(),
-                features: PyVector17D {
+                features: PyVector30D {
                     inner: island.features,
                 },
                 species: island.species.clone(),
@@ -2946,8 +3153,8 @@ pub struct PyNavigationWaypoint {
 #[pymethods]
 impl PyNavigationWaypoint {
     /// Get the (possibly clamped) target vector
-    fn get_target(&self) -> PyVector17D {
-        PyVector17D {
+    fn get_target(&self) -> PyVector30D {
+        PyVector30D {
             inner: self.inner.target,
         }
     }
@@ -2994,7 +3201,7 @@ impl PyNavigationWaypoint {
 #[derive(Clone)]
 pub struct PyAudioIsland {
     pub key: String,
-    pub features: PyVector17D,
+    pub features: PyVector30D,
     pub species: String,
 }
 
@@ -3002,7 +3209,7 @@ pub struct PyAudioIsland {
 #[pymethods]
 impl PyAudioIsland {
     #[new]
-    fn new(key: String, features: PyVector17D, species: String) -> Self {
+    fn new(key: String, features: PyVector30D, species: String) -> Self {
         Self {
             key,
             features,
@@ -3046,7 +3253,7 @@ fn technical_architecture(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyRecordingStatistics>()?;
     m.add_class::<PyAudioSyncEvent>()?;
     // Island Hopping Navigation classes (NEW)
-    m.add_class::<PyVector17D>()?;
+    m.add_class::<PyVector30D>()?;
     m.add_class::<PyNavigationEngine>()?;
     m.add_class::<PyNavigationWaypoint>()?;
     m.add_class::<PyAudioIsland>()?;

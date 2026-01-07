@@ -178,15 +178,17 @@ def analyze_micro_dynamics(features_list: List[Dict]) -> Dict:
 
         print(f"\n   {context}:")
         print(f"      Count: {len(context_df)}")
-        print(
-            f"      Attack: {context_stats[context]['attack_time_ms']['mean']:.2f} ± {context_stats[context]['attack_time_ms']['std']:.2f} ms"
-        )
-        print(
-            f"      Vibrato: {context_stats[context]['vibrato_rate_hz']['mean']:.2f} ± {context_stats[context]['vibrato_rate_hz']['std']:.2f} Hz"
-        )
-        print(
-            f"      Jitter: {context_stats[context]['jitter']['mean']:.4f} ± {context_stats[context]['jitter']['std']:.4f}"
-        )
+        attack_mean = context_stats[context]["attack_time_ms"]["mean"]
+        attack_std = context_stats[context]["attack_time_ms"]["std"]
+        print(f"      Attack: {attack_mean:.2f} ± {attack_std:.2f} ms")
+
+        vibrato_mean = context_stats[context]["vibrato_rate_hz"]["mean"]
+        vibrato_std = context_stats[context]["vibrato_rate_hz"]["std"]
+        print(f"      Vibrato: {vibrato_mean:.2f} ± {vibrato_std:.2f} Hz")
+
+        jitter_mean = context_stats[context]["jitter"]["mean"]
+        jitter_std = context_stats[context]["jitter"]["std"]
+        print(f"      Jitter: {jitter_mean:.4f} ± {jitter_std:.4f}")
 
     return {"overall": analysis, "by_context": context_stats}
 

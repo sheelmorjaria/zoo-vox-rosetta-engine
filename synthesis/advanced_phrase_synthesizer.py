@@ -780,9 +780,8 @@ class FieldReadyPlaybackSystem:
         }
 
         print(f"Calibrated {species} playback:")
-        print(
-            f"  Gain: {required_gain:.1f} dB ({self.calibration_settings[species]['gain_linear']:.2f}x)"
-        )
+        gain_linear = self.calibration_settings[species]["gain_linear"]
+        print(f"  Gain: {required_gain:.1f} dB ({gain_linear:.2f}x)")
         print(f"  Target: {target_spl} dB at {measurement_distance}m")
 
     def prepare_playback_stimuli(
@@ -1066,9 +1065,9 @@ class AdvancedPhraseSynthesizer:
 
         if validation_scores:
             print(f"  Mean sequence similarity: {np.mean(validation_scores):.3f}")
-            print(
-                f"  Validation score: {'✓ PASS' if np.mean(validation_scores) > 0.5 else '✗ NEEDS IMPROVEMENT'}"
-            )
+            mean_score = np.mean(validation_scores)
+            status = "✓ PASS" if mean_score > 0.5 else "✗ NEEDS IMPROVEMENT"
+            print(f"  Validation score: {status}")
 
     def _calculate_sequence_similarity(self, seq1: List[str], seq2: List[str]) -> float:
         """Calculate similarity between two phrase sequences."""
