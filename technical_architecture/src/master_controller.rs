@@ -1182,6 +1182,7 @@ mod tests {
         }
 
         /// Get current health context
+        #[allow(dead_code)]
         async fn get_health_context(&self) -> Option<HealthStatus> {
             self.health_context.lock().await.clone()
         }

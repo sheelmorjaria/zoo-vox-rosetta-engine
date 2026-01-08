@@ -877,7 +877,7 @@ sentences = analyzer.discover_sentences(phrases, gaps)
 | Approach | Features | Phrase Key Example | Limitation |
 |----------|----------|-------------------|------------|
 | **Traditional** | F0, Duration, Range | `F0_7400_DUR_50_RANGE_300` | Groups dissimilar sounds with same F0 |
-| **Micro-Dynamics** | 17 acoustic features | Multi-dimensional persona matching | Requires feature extraction |
+| **Micro-Dynamics** | 30 acoustic features | Multi-dimensional persona matching | Requires feature extraction |
 
 #### Micro-Dynamics Feature Categories
 
@@ -1146,13 +1146,13 @@ Result: You get a nuanced "30% Aggressive" virtual phrase
 
 ```python
 from analysis.rosetta_stone.contextual_map import ContextualMap
-from analysis.rosetta_stone.high_dimensional_acoustic_algebra import AcousticFeatureVector17
+from analysis.rosetta_stone.high_dimensional_acoustic_algebra import AcousticFeatureVector30
 
 # Load annotated phrases
 phrase_vectors = {
-    'phrase_001': AcousticFeatureVector17(
+    'phrase_001': AcousticFeatureVector30(
         mean_f0_hz=6500, duration_ms=70, attack_ms=0.010,
-        # ... 17 total features
+        # ... 30 total features
     ),
     # ...
 }
@@ -1191,7 +1191,7 @@ virtual = map_obj.generate_graded_phrase(
     target_context='aggression',
     intensity=0.3  # 30% aggression
 )
-# Returns: AcousticFeatureVector17 with interpolated features
+# Returns: AcousticFeatureVector30 with interpolated features
 
 # Find nearest real phrase (for synthesis)
 nearest_key, nearest_vec, distance = map_obj.find_nearest_real_phrase(
@@ -2453,20 +2453,18 @@ if not constraints['valid']:
 - **Timbral Continuums**: Morph between harmonic tonal and noisy sounds
 - **Physical Limits**: Find the mathematical boundaries of vocal production
 
-#### **Features (17 Dimensions)**
+#### **Features (30 Dimensions)**
 
 | Group | Features | Description |
 |-------|----------|-------------|
-| **Fundamental** | mean_f0_hz | Base frequency |
-| **Temporal** | duration_ms, attack_ms, decay_ms | Time envelope |
-| **FM** | f0_range_hz, vibrato_rate_hz, vibrato_depth_hz | Frequency modulation |
-| **Perturbation** | jitter, shimmer | Micro-variation |
-| **Harmonic/Noise** | harmonicity_hnr, spectral_flatness | Tonal vs noisy |
-| **Spectral** | centroid, rolloff, bandwidth, slope | Timbre |
-| **Energy** | rms_db, peak_amplitude | Loudness |
+| **Fundamental** | mean_f0_hz, duration_ms, f0_range_hz | Base frequency, duration, range |
+| **Grit Factors** | harmonic_to_noise_ratio, spectral_flatness, harmonicity | Timbre texture |
+| **Motion Factors** | attack_time_ms, decay_time_ms, sustain_level, vibrato_rate_hz, vibrato_depth, jitter, shimmer | Time envelope and modulation |
+| **Fingerprint Factors** | mfcc_1-13, spectral_flux | Spectral envelope (14 dimensions) |
+| **Rhythm Factors** | median_ici_ms, onset_rate_hz, ici_coefficient_of_variation | Temporal patterns |
 
 **Files:**
-- `analysis/rosetta_stone/high_dimensional_acoustic_algebra.py` - 17-dim algebra engine
+- `analysis/rosetta_stone/high_dimensional_acoustic_algebra.py` - 30-dim algebra engine
 - `tests/test_high_dimensional_algebra.py` - 21 tests passing ✅
 
 ---
@@ -2483,7 +2481,7 @@ A powerful **"Bottom-Up"** discovery approach that shifts from **Label-Based Ana
 ┌─────────────────────────────────────────────────────────────────┐
 │  1. GRAIN EXTRACTION                                            │
 │     → Chop sentence into tiny grains (e.g., 10ms)              │
-│     → Extract 17-dim feature vector per grain                    │
+│     → Extract 30-dim feature vector per grain                    │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -2515,7 +2513,7 @@ Since you don't know where the "words" are yet, chop the sentence into tiny grai
 ```python
 # Input: sentence.wav (2 seconds long)
 # Action: Slice into 200 segments of 10ms each
-# Output: 200 feature vectors (17-dim each)
+# Output: 200 feature vectors (30-dim each)
 
 from analysis.rosetta_stone.grain_based_grammar_discovery import GrainExtractor
 
@@ -2626,8 +2624,7 @@ print(f"Grammar rigidity: {grammar_stats.grammar_rigidity:.2f}")
 - `tests/test_high_dimensional_algebra.py` - 21 tests passing ✅ (includes grammar tests)
 
 **Test Coverage:**
-- ✅ 30-dimensional feature vectors (5 tests) - island_hopping.rs
-- ✅ 17-dimensional feature vectors (8 tests) - synthesis.rs (SourceMetadata API)
+- ✅ 30-dimensional feature vectors (13 tests) - island_hopping.rs, synthesis.rs (SourceMetadata API)
 - ✅ Z-score normalization (3 tests)
 - ✅ High-dimensional interpolation (4 tests)
 - ✅ Phonetic constraints (3 tests)
