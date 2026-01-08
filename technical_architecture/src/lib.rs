@@ -76,6 +76,15 @@ pub use island_hopping::{
     NavigationWaypoint, PhraseDatabase, SafetyClamp, TimelineExecutor, Vector30D, VectorDelta,
 };
 
+// Metadata-First Synthesizer (NEW - Rust implementation of Python metadata_synthesizer.py)
+pub use metadata_synthesizer::{
+    MetadataQuery, MetadataSynthesizer, PhraseCandidate, SynthesisRecipe, SynthesisTarget,
+    VectorSpaceQueryEngine,
+};
+
+#[cfg(feature = "python-bindings")]
+pub use metadata_synthesizer::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};
+
 pub use logging::ProvenanceLogger;
 pub use master_controller::{
     detect_fpga, Action, AtomicParameters, CognitiveProcessor, ExecutionReceipt, HealthStatus,
@@ -197,6 +206,9 @@ mod time_series_archive;
 mod visual_recording;
 mod web_dashboard;
 mod wildlife_sentry;
+
+// Metadata-first synthesizer (30D vector space queries)
+mod metadata_synthesizer;
 
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]

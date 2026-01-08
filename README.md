@@ -1,12 +1,16 @@
-# Animal Vocalization Analysis Framework
+# Zoo Vox Rosetta Engine
 
-A comprehensive research framework for analyzing animal vocalizations using the Universal Rosetta Stone methodology. Features advanced cognitive intelligence capabilities, cross-species analysis, and a hybrid Python/Rust architecture optimized for field deployment.
+**Universal Rosetta Stone Methodology for Cross-Species Vocalization Translation**
+
+A revolutionary bioacoustic analysis framework that decodes animal communication through advanced acoustic algebra, cognitive intelligence, and cross-species pattern discovery. The Zoo Vox Rosetta Engine enables true translation between species by mapping vocalizations to a universal 30-dimensional feature space, revealing hidden semantic structures and enabling bidirectional communication synthesis.
+
+**Core Innovation**: Beyond simple classification, Zoo Vox discovers the **grammar, syntax, and semantics** of animal languages through mathematical analysis of acoustic micro-dynamics, enabling translation between marmoset phee-calls, dolphin whistles, bat echolocation, and chimpanzee vocalizations.
 
 ## Architecture Overview
 
 ### Execution vs. Logic Split
 
-This framework follows a **hybrid architecture** combining Python and Rust:
+The Zoo Vox Rosetta Engine follows a **hybrid architecture** combining Python and Rust:
 
 - **Rust (Execution Layer)**: Time-critical operations, signal processing, hardware access, safety
   - Location: `technical_architecture/`
@@ -46,10 +50,15 @@ This framework follows a **hybrid architecture** combining Python and Rust:
 ```
 src/
 ├── __init__.py                        # Main package exports
-├── data_models.py                     # Unified data structures
+├── data_models.py                     # Unified data structures (30D features)
 ├── vocalization_database.json         # Main database (2.5MB, 2,882 phrases)
-├── persona_source_map.json            # [NEW] Persona-to-buffer mapping
-├── demo_granular_persona.py           # [NEW] Granular persona synthesis demo
+├── CLAUDE.md                          # Project instructions for Claude Code
+├── README.md                          # This file
+├── pyproject.toml                     # Python package configuration
+├── cleanup_technical_architecture.py  # Utility: Clean Rust build artifacts
+├── compositional_validation.py        # Utility: Validate composition operations
+├── consolidate_tests.py               # Utility: Consolidate duplicate tests
+├── harmonic_affirmation.py            # Utility: Harmonic analysis
 │
 ├── analysis/                          # ⭐ STEP 1: Acoustic-First Analysis
 │   ├── sweet_spot_synthesis.py        # [NEW] Cross-species sweet spot analysis
@@ -68,27 +77,7 @@ src/
 │
 ├── technical_architecture/            # ✅ STEP 6: Rust Execution Layer (Active)
 │   ├── src/
-│   │   ├── synthesis.rs              # Audio synthesis engines
-│   │   ├── source_separation.rs      # Conv-TasNet separator
-│   │   ├── thermal.rs                # Thermal management
-│   │   ├── safety.rs                 # Safety monitoring
-│   │   ├── ptp.rs                    # IEEE 1588 PTP timing
-│   │   ├── logging.rs                # Provenance logging
-│   │   ├── master_controller.rs     # Intent-Reality mediator
-│   │   ├── peer_controller.rs       # ZeroMQ peer controller
-│   │   ├── island_hopping.rs         # [NEW] 30D Vector Math, Navigation, Safety Clamping
-│   │   ├── environmental_monitor.rs # Field: Rain/temp/light sensing
-│   │   ├── power_manager.rs          # Field: Battery/solar management
-│   │   ├── wildlife_sentry.rs        # Field: Background species detection
-│   │   ├── data_synchronizer.rs      # Field: Offline black box queue
-│   │   └── acoustic_simulator.rs     # Field: TDD test fixture
-│   ├── deployment/                   # Systemd deployment files
-│   │   ├── rust-field-engine.service
-│   │   ├── python-cognitive-agent.service
-│   │   ├── python_heartbeat_client.py
-│   │   └── README.md
-│   ├── src/
-│   │   ├── synthesis.rs              # Audio synthesis (3 modes)
+│   │   ├── synthesis.rs              # Audio synthesis engines (3 modes)
 │   │   ├── source_separation.rs      # Conv-TasNet separator
 │   │   ├── thermal.rs                # Thermal management
 │   │   ├── safety.rs                 # Safety monitoring & watchdog
@@ -96,16 +85,23 @@ src/
 │   │   ├── logging.rs                # Provenance logging
 │   │   ├── master_controller.rs     # Intent-Reality mediator
 │   │   ├── peer_controller.rs       # ZeroMQ peer supervision
-│   │   ├── web_dashboard.rs          # [NEW] Remote monitoring dashboard
+│   │   ├── island_hopping.rs         # 30D Vector Math, Navigation, Safety Clamping
+│   │   ├── web_dashboard.rs          # Remote monitoring dashboard
 │   │   ├── environmental_monitor.rs # Field: Rain/temp/light sensing
 │   │   ├── power_manager.rs          # Field: Battery/solar management
 │   │   ├── wildlife_sentry.rs        # Field: Background species detection
 │   │   ├── data_synchronizer.rs      # Field: Offline black box queue
-│   │   ├── iacuc_compliance.rs       # [NEW] IACUC protocol enforcement
-│   │   ├── auto_calibration.rs       # [NEW] Auto tone calibration
-│   │   ├── shadow_model_monitor.rs   # [NEW] ML drift detection
-│   │   ├── multi_node_coordination.rs # [NEW] Multi-node clusters
-│   │   └── time_series_archive.rs    # [NEW] Parquet time-series storage
+│   │   ├── acoustic_simulator.rs     # Field: TDD test fixture
+│   │   ├── iacuc_compliance.rs       # IACUC protocol enforcement
+│   │   ├── auto_calibration.rs       # Auto tone calibration
+│   │   ├── shadow_model_monitor.rs   # ML drift detection
+│   │   ├── multi_node_coordination.rs # Multi-node clusters
+│   │   └── time_series_archive.rs    # Parquet time-series storage
+│   ├── deployment/                   # Systemd deployment files
+│   │   ├── rust-field-engine.service
+│   │   ├── python-cognitive-agent.service
+│   │   ├── python_heartbeat_client.py
+│   │   └── README.md
 │   └── Cargo.toml
 │
 ├── cognitive_intelligence/            # ✅ Python Logic Layer (Active)
@@ -168,19 +164,22 @@ src/
 │   ├── self_heal.py                    # Autonomous crash recovery
 │   └── __init__.py
 │
-├── tests/                              # ✅ Active (canonical versions only)
-│   ├── test_acoustic_algebra.py       # [NEW] 33/33 tests passing ✅
-│   ├── test_vector_delta_synthesis.py # [NEW] 12/12 tests passing ✅
-│   ├── test_30d_metadata_synthesis.py # [NEW] 11/11 tests passing ✅ (30D metadata)
-│   ├── test_rust_island_hopping.py    # [NEW] Python-Rust integration tests ✅
-│   ├── test_state_persistor.py        # [NEW] 5/5 tests passing ✅ (Checkpoint system)
-│   ├── test_self_heal.py              # [NEW] 11/11 tests passing ✅ (Self-healing)
+├── tests/                              # ✅ Active (41 test files, 500+ tests)
+│   ├── test_acoustic_algebra.py       # Acoustic algebra tests
+│   ├── test_vector_delta_synthesis.py # Vector delta synthesis tests
+│   ├── test_30d_metadata_synthesis.py # 30D metadata synthesis tests
+│   ├── test_rust_island_hopping.py    # Python-Rust integration tests
+│   ├── test_state_persistor.py        # Checkpoint/recovery system tests
+│   ├── test_self_heal.py              # Self-healing system tests
 │   ├── test_hybrid_persona_architecture.py # Hybrid persona tests
 │   ├── test_rosetta_stone_base.py
 │   ├── test_realtime_system_population.py
 │   ├── test_zero_copy_rust.py
-│   ├── test_*.py
-│   └── (28 duplicate test files with _1.py suffix archived)
+│   ├── test_visual_fusion.py          # MediaPipe + OpenCV integration
+│   ├── test_cognitive_interaction_engine.py
+│   ├── test_hybrid_cognitive_stack.py
+│   ├── test_*.py                      # 40+ additional test files
+│   └── test_island_hopping_integration.rs # Rust integration tests
 │
 ├── analysis_output/                   # [NEW] Analysis outputs & visualizations
 │   ├── persona_invariants.json        # Persona statistical profiles
@@ -193,27 +192,48 @@ src/
 │   ├── marmoset_7khz_phee.wav         # Sweet spot synthesis
 │   └── bat_7khz_call.wav              # Sweet spot synthesis
 │
-├── PERSONA_INVARIANTS_SUMMARY.md       # [NEW] Complete pipeline documentation│
 ├── archive/                            # ✅ Archived Content
-│   ├── deprecated_python_fallbacks/   # [NEW] Python code superseded by Rust
-│   │   ├── INTERPOLATION_EXTRAPOLATION_DEPRECATION.md  # Migration guide
-│   │   └── ARCHIVE.md                  # Deprecation index
+│   ├── deprecated_python_fallbacks/   # Python code superseded by Rust
+│   │   ├── INTERPOLATION_EXTRAPOLATION_DEPRECATION.md
+│   │   └── ARCHIVE.md
 │   ├── jungle-monitoring-system/      # Deprecated duplicate
 │   ├── audio_engine/                   # Unused Rust implementation
 │   ├── cognition/                      # Superseded by cognitive_intelligence
 │   ├── hybrid/                         # Unused neural bridge
 │   ├── test_cache/                     # Temporary cache files
-│   ├── duplicate_tests/                # 28 backup test files
-│   └── ARCHIVE.md                      # Archive documentation
+│   ├── duplicate_tests/                # Backup test files
+│   ├── experimental_analysis/          # Experimental analysis code
+│   ├── experimental_realtime/          # Experimental realtime code
+│   └── old_reports/                    # Archived reports
 │
-└── [other active directories...]
+├── .github/                            # GitHub CI/CD configuration
+│   └── workflows/
+│       └── ci.yml                      # Python + Rust testing pipeline
+│
+└── docs/                              # Additional documentation
+    ├── PERSONA_INVARIANTS_SUMMARY.md   # Persona pipeline documentation
+    └── VECTOR_DELTA_INTEGRATION.md    # Vector delta integration guide
 ```
 
 ---
 
-## Technical Architecture (Rust Execution Layer)
+## Technical Architecture
 
-The `technical_architecture/` directory provides the **Rust execution layer** for time-critical operations, safety monitoring, and field deployment. It follows an "Execution vs. Logic" split where Rust handles deterministic operations while Python handles cognitive decisions.
+The Zoo Vox Rosetta Engine follows a **hybrid architecture** with clear separation of concerns:
+
+### Architecture Principles
+
+| Layer | Responsibility | Technology | Performance |
+|-------|---------------|------------|-------------|
+| **Rust Execution Layer** | Time-critical operations, safety, hardware control | Rust | Deterministic, zero-copy |
+| **Python Logic Layer** | Cognitive intelligence, learning, context interpretation | Python | Rapid development, ML frameworks |
+| **Communication** | Peer-to-peer supervision via ZeroMQ heartbeats | ZeroMQ + Systemd | Fail-safe coordination |
+
+---
+
+## Rust Execution Layer (`technical_architecture/`)
+
+The Rust execution layer provides deterministic performance, memory safety, and hardware-level control for time-critical operations. It can continue operating safely even if Python crashes (Passthrough Mode).
 
 ### Core Modules
 
@@ -228,7 +248,7 @@ The `technical_architecture/` directory provides the **Rust execution layer** fo
 | **Superpositional** | Vertical layering | Complex harmonies | Variable |
 | **Combined** | Mixed horizontal/vertical | Full encoding | Flexible |
 
-**Vector Delta Commands** [NEW]:
+**Vector Delta Commands**
 
 The Rust synthesis engine now supports **Vector Delta commands** for integration with Acoustic Algebra:
 
@@ -826,6 +846,208 @@ stats = recorder.get_statistics()
 - **PeerController**: ZeroMQ heartbeat monitoring with automatic mode switching
 - **ThermalState**: Four-state thermal classification (Normal/Warning/Throttling/Critical)
 - **EnvironmentalMonitor**: Rain, temperature, and light sensing with automatic Passthrough triggering
+
+---
+
+## Python Logic Layer
+
+The Python logic layer handles cognitive intelligence, decision making, learning, and context interpretation. It can crash safely without affecting Rust operations.
+
+### Core Modules
+
+#### 1. Cognitive Intelligence (`cognitive_intelligence/`)
+
+**Multi-modal data fusion and machine learning:**
+
+| Module | Purpose | Key Features |
+|--------|---------|--------------|
+| `data_fusion.py` | Multi-modal sensor fusion | Audio + visual + contextual integration |
+| `visual_fusion.py` | Cross-modal attention | MediaPipe integration for gaze/gesture tracking |
+| `siamese_network.py` | Similarity learning | Metric learning for phrase comparison |
+| `train_asteroid_*.py` | Source separation training | Species-specific Conv-TasNet models |
+
+**Visual Fusion with MediaPipe:**
+```python
+from cognitive_intelligence.visual_fusion import VisualFusionSystem, VisualFusionConfig
+
+# Create visual fusion system
+config = VisualFusionConfig(
+    camera_resolution=(640, 480),
+    fps=30,
+    use_mediapipe=True,
+    separate_thread=True,
+)
+fusion_system = VisualFusionSystem(config)
+
+# Process frames for attention level
+visual_features = fusion_system.process_frame(frame)
+
+# Integrate with audio features
+audio_features = {"rms": 0.1, "f0": 6000.0, "context": "contact_call"}
+fused_result = fusion_system.integrate_with_audio(audio_features, visual_features)
+```
+
+#### 2. Real-time Processing (`realtime/`)
+
+**Cognitive layer and decision making:**
+
+| Module | Purpose | Key Features |
+|--------|---------|--------------|
+| `cognitive_layer.py` | Central cognitive intelligence | Decision making, intent generation |
+| `adaptive_context_switcher.py` | Context interpretation | Adaptive context-aware processing |
+| `context_aware_synthesis.py` | Phrase selection logic | Context-aware response generation |
+| `phrase_audio_library.py` | Data management | Phrase library with metadata |
+| `unified_database.py` | Data access | Unified database interface |
+| `persona_router.py` | Persona selection | JSON-based persona routing |
+| `metadata_synthesizer.py` | Metadata-first synthesis | 30D Ghost Word synthesis |
+| `hybrid_persona_synthesizer.py` | Hybrid persona generation | Multi-persona blending |
+
+**Cognitive Layer Example:**
+```python
+from realtime.cognitive_layer import CognitiveLayer
+from realtime.context_aware_synthesis import ContextAwareSynthesis
+
+# Initialize cognitive layer
+cognitive = CognitiveLayer()
+synthesizer = ContextAwareSynthesis()
+
+# Process incoming vocalization
+context = cognitive.interpret_context(audio_features, visual_context)
+
+# Generate response phrase
+response = synthesizer.generate_response(
+    context=context,
+    target_species="marmoset",
+    intent="contact_call"
+)
+```
+
+#### 3. Semiotic Analysis (`semiotics/`)
+
+**Advanced cognitive capabilities:**
+
+| Module | Purpose | Key Features |
+|--------|---------|--------------|
+| `semiotic_engine.py` | Semiotic analysis | Deception detection, innovation tracking |
+| `demo_semiotic_engine.py` | Demo & examples | Usage examples |
+
+**Semiotic Engine Capabilities:**
+```python
+from semiotics import SemioticEngine, SemioticContext
+
+# Initialize semiotic engine
+engine = SemioticEngine()
+
+# Analyze semiotics
+context = SemioticContext(
+    species=Species.MARMOSET,
+    behavioral_context="foraging",
+    social_rank="subordinate",
+)
+result = engine.analyze_semiotics(phrase, context)
+
+# Detect deception
+if result.deception_probability > 0.7:
+    print(f"Deception detected: {result.deception_type}")
+```
+
+#### 4. Query Interface (`query_interface/`)
+
+**High-performance query system:**
+
+```python
+from query_interface import get_query_interface
+
+# Get query interface (auto-initializes)
+interface = get_query_interface()
+
+# Search by F0 range
+results = interface.search_phrases_by_f0_range(5000, 10000)
+
+# Search by duration
+results = interface.search_phrases_by_duration(40, 80)
+
+# Find similar phrases
+similar = interface.find_similar_phrases(target_phrase, threshold=0.8)
+
+# Grammar network analysis
+grammar_network = interface.build_grammar_network()
+centrality = interface.calculate_centrality_measures(grammar_network)
+```
+
+#### 5. Analysis (`analysis/`)
+
+**Acoustic-first analysis and Rosetta Stone engine:**
+
+| Module | Purpose | Key Features |
+|--------|---------|--------------|
+| `rosetta_stone/universal_rosetta_stone.py` | Core acoustic analysis | Phrase segmentation, grammar discovery |
+| `rosetta_stone/acoustic_algebra.py` | Continuous acoustic field | 30D vector space operations |
+| `rosetta_stone/persona_mapping.py` | PersonaRouter system | Persona-to-phrase mapping |
+| `rosetta_stone/persona_invariants_analysis.py` | Micro-dynamics profiling | Statistical persona profiling |
+| `sweet_spot_synthesis.py` | Cross-species analysis | Sweet spot detection |
+
+**Universal Rosetta Stone:**
+```python
+from analysis.rosetta_stone import UniversalRosettaStone
+
+# Initialize analyzer
+analyzer = UniversalRosettaStone(sample_rate=48000)
+
+# Process raw audio → phrases
+phrases = analyzer.segment_phrases(audio_data)
+
+# Build vocabulary (atomic units)
+vocabulary = analyzer.build_vocabulary(phrases, f0_bin_size=200)
+
+# Discover grammar rules
+grammar = analyzer.discover_grammar(phrases)
+
+# Detect sentences (phrase sequences)
+sentences = analyzer.discover_sentences(phrases, gaps)
+```
+
+### Data Models (`data_models.py`)
+
+**Unified 30D data structures for cross-species compatibility:**
+
+```python
+from src import Species, VocalizationModality, Phrase, AcousticFeatures
+
+# Create phrase with 30D features
+phrase = Phrase(
+    phrase_key="F0_6400_DUR_50_RANGE_0",
+    species=Species.MARMOSET,
+    modality=VocalizationModality.HARMONIC,
+    features=AcousticFeatures(
+        # Fundamental (3)
+        mean_f0_hz=6400.0,
+        duration_ms=50.0,
+        f0_range_hz=0.0,
+        # Grit Factors (3)
+        harmonic_to_noise_ratio=20.0,
+        spectral_flatness=0.1,
+        harmonicity=0.8,
+        # Motion Factors (7)
+        attack_time_ms=10.0,
+        decay_time_ms=15.0,
+        sustain_level=0.7,
+        vibrato_rate_hz=8.0,
+        vibrato_depth=50.0,
+        jitter=0.02,
+        shimmer=0.03,
+        # Fingerprint Factors (14)
+        mfcc_1=-500.0,
+        mfcc_2=-100.0,
+        # ... mfcc_3 through mfcc_13
+        spectral_flux=0.5,
+        # Rhythm Factors (3)
+        median_ici_ms=0.0,
+        onset_rate_hz=0.0,
+        ici_coefficient_of_variation=0.0,
+    ),
+)
+```
 
 ---
 
