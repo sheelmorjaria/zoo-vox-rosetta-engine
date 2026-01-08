@@ -33,6 +33,47 @@ except ImportError:
     sys.exit(0)
 
 
+def create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0):
+    """Helper to create SourceMetadata with test values (30D)."""
+    return SourceMetadata(
+        # Fundamental (3)
+        mean_f0_hz=mean_f0_hz,
+        f0_range_hz=f0_range_hz,
+        duration_ms=duration_ms,
+        # Grit Factors (3)
+        harmonic_to_noise_ratio=20.0,
+        spectral_flatness=0.1,
+        harmonicity=0.8,
+        # Motion Factors (7)
+        attack_time_ms=10.0,
+        decay_time_ms=15.0,
+        sustain_level=0.7,
+        vibrato_rate_hz=8.0,
+        vibrato_depth=0.02,
+        jitter=0.02,
+        shimmer=0.03,
+        # Fingerprint Factors (14)
+        mfcc_1=-500.0,
+        mfcc_2=-100.0,
+        mfcc_3=-50.0,
+        mfcc_4=-20.0,
+        mfcc_5=-0.5,
+        mfcc_6=-0.3,
+        mfcc_7=-0.2,
+        mfcc_8=-0.1,
+        mfcc_9=0.0,
+        mfcc_10=0.1,
+        mfcc_11=0.2,
+        mfcc_12=0.3,
+        mfcc_13=0.4,
+        spectral_flux=0.5,
+        # Rhythm Factors (3)
+        median_ici_ms=0.0,
+        onset_rate_hz=0.0,
+        ici_coefficient_of_variation=0.0,
+    )
+
+
 class TestVectorDeltaCommands(unittest.TestCase):
     """Test Vector Delta command support in Rust synthesis engine."""
 
@@ -50,7 +91,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
 
     def test_source_metadata_creation(self):
         """Test SourceMetadata object creation."""
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
 
         # Use getter methods
         self.assertEqual(metadata.get_mean_f0_hz(), 6800.0)
@@ -65,7 +106,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
 
     def test_load_source_with_metadata(self):
         """Test loading source audio with metadata."""
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
 
         # Should not raise any errors
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
@@ -78,7 +119,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_shift_pitch_by_hz_positive(self):
         """Test positive pitch shift (increase F0)."""
         # Load source with known F0
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Shift pitch up by 200Hz (6800 + 200 = 7000Hz)
@@ -92,7 +133,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_shift_pitch_by_hz_negative(self):
         """Test negative pitch shift (decrease F0)."""
         # Load source with known F0
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Shift pitch down by 300Hz (6800 - 300 = 6500Hz)
@@ -106,7 +147,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_shift_pitch_by_hz_zero(self):
         """Test zero pitch shift (no change)."""
         # Load source with known F0
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Shift by 0Hz (should be same as ratio=1.0)
@@ -126,7 +167,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_shift_duration_by_ms_negative(self):
         """Test negative duration shift (shorten)."""
         # Load source with known duration
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Shorten by 10ms (50 - 10 = 40ms)
@@ -140,7 +181,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_shift_duration_by_ms_positive(self):
         """Test positive duration shift (lengthen)."""
         # Load source with known duration
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Lengthen by 20ms (50 + 20 = 70ms)
@@ -154,7 +195,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
     def test_apply_vector_delta_complete(self):
         """Test complete vector delta application (pitch + duration + range)."""
         # Load source with known metadata
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.load_source_with_metadata(self.audio_buffer, metadata)
 
         # Apply vector delta (simulating acoustic algebra output)
@@ -176,7 +217,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
         self.synth.load_source(self.audio_buffer)
 
         # Then set metadata
-        metadata = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         self.synth.set_source_metadata(metadata)
 
         # Now delta commands should work
@@ -194,7 +235,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
         - Delta: "Shift pitch by +200Hz" (GOOD - relative to source)
         """
         # Scenario 1: Source with F0=6800Hz, target=7000Hz
-        metadata_1 = SourceMetadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata_1 = create_test_metadata(mean_f0_hz=6800.0, duration_ms=50.0, f0_range_hz=400.0)
         synth_1 = GranularConcatenativeSynthesizer(sample_rate=22050)
         synth_1.load_source_with_metadata(self.audio_buffer, metadata_1)
 
@@ -207,7 +248,7 @@ class TestVectorDeltaCommands(unittest.TestCase):
 
         # Scenario 2: Source with F0=7200Hz, target=7000Hz
         # Same target (7000Hz), but different source!
-        metadata_2 = SourceMetadata(mean_f0_hz=7200.0, duration_ms=50.0, f0_range_hz=400.0)
+        metadata_2 = create_test_metadata(mean_f0_hz=7200.0, duration_ms=50.0, f0_range_hz=400.0)
         synth_2 = GranularConcatenativeSynthesizer(sample_rate=22050)
         synth_2.load_source_with_metadata(self.audio_buffer, metadata_2)
 
@@ -273,7 +314,7 @@ class TestAcousticAlgebraIntegration(unittest.TestCase):
         ]
 
         # Load with nearest phrase metadata
-        metadata = SourceMetadata(
+        metadata = create_test_metadata(
             mean_f0_hz=nearest_f0, duration_ms=nearest_dur, f0_range_hz=nearest_range
         )
         synth.load_source_with_metadata(audio_buffer, metadata)

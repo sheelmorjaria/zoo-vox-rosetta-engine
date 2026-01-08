@@ -83,7 +83,7 @@ class ModalityStrategy:
 
 @dataclass
 class VirtualTarget:
-    """17D virtual target vector (reused from Hybrid Bridge)"""
+    """30D virtual target vector (reused from Hybrid Bridge)"""
 
     mean_f0_hz: float
     duration_ms: float

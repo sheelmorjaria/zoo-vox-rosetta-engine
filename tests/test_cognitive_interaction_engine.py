@@ -23,8 +23,17 @@ from unittest.mock import Mock
 
 
 @dataclass
-class Vector17D:
-    """29D acoustic vector (expanded from 17D/20D, matches Rust implementation)"""
+class Vector30D:
+    """30-dimensional acoustic vector for micro-dynamics analysis
+
+    Complete feature space for cross-species vocalization analysis:
+    - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
+    - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+    - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+    - Fingerprint Factors (14): mfcc_1-13, spectral_flux
+    - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
+    """
 
     mean_f0_hz: float
     duration_ms: float
@@ -139,7 +148,7 @@ class AudioPhrase:
     """Audio phrase from database"""
 
     key: str
-    features: Vector17D
+    features: Vector30D
     species: str
 
 
@@ -159,7 +168,7 @@ class TestVirtualTargetCalculation(unittest.TestCase):
         Expected: Engine calls algebra.generate_graded_vector with correct parameters
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             mean_f0_hz=7500.0,
             duration_ms=40.0,
             f0_range_hz=500.0,
@@ -186,7 +195,7 @@ class TestVirtualTargetCalculation(unittest.TestCase):
 
         phrase = AudioPhrase(
             key="test_phrase",
-            features=Vector17D(
+            features=Vector30D(
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
@@ -255,7 +264,7 @@ class TestNearestNeighborLookup(unittest.TestCase):
         Expected: Engine selects Phrase A (closest distance)
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             mean_f0_hz=7500.0,
             duration_ms=40.0,
             f0_range_hz=500.0,
@@ -282,7 +291,7 @@ class TestNearestNeighborLookup(unittest.TestCase):
 
         phrase_a = AudioPhrase(
             key="neutral",
-            features=Vector17D(
+            features=Vector30D(
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
@@ -311,7 +320,7 @@ class TestNearestNeighborLookup(unittest.TestCase):
 
         _ = AudioPhrase(  # Unused: test placeholder phrase
             key="aggressive",
-            features=Vector17D(
+            features=Vector30D(
                 mean_f0_hz=9000.0,
                 duration_ms=30.0,
                 f0_range_hz=700.0,
@@ -377,7 +386,7 @@ class TestDeltaClamping(unittest.TestCase):
         Expected: Engine detects distance > 0.2 and applies clamping
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             mean_f0_hz=9000.0,
             duration_ms=20.0,
             f0_range_hz=700.0,  # Very far
@@ -404,7 +413,7 @@ class TestDeltaClamping(unittest.TestCase):
 
         nearest_phrase = AudioPhrase(
             key="neutral",
-            features=Vector17D(
+            features=Vector30D(
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
@@ -475,7 +484,7 @@ class TestDeltaConversion(unittest.TestCase):
         Expected: set_warp_delta called with pitch_shift ~5% and roughness ~10%
         """
         # Arrange
-        anchor_features = Vector17D(
+        anchor_features = Vector30D(
             mean_f0_hz=7000.0,
             duration_ms=50.0,
             f0_range_hz=400.0,
@@ -500,7 +509,7 @@ class TestDeltaConversion(unittest.TestCase):
             ici_coefficient_of_variation=0.3,
         )
 
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             mean_f0_hz=7350.0,  # +350 Hz (5% increase)
             duration_ms=50.0,  # Same
             f0_range_hz=400.0,

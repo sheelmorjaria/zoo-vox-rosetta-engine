@@ -37,18 +37,17 @@ class VocalizationModality(Enum):
 @dataclass
 class AcousticFeatures:
     """
-    29-dimensional acoustic feature vector (expanded from 17D/20D)
+    30-dimensional acoustic feature vector for micro-dynamics analysis
 
-    NOTE: Named AcousticFeatures for backwards compatibility. Now contains 29 fields:
-    - 3 Fundamental features (F0, duration)
-    - 3 Grit factors (HNR, flatness, harmonicity)
-    - 7 Motion factors (attack, decay, sustain, vibrato, jitter, shimmer)
-    - 13 MFCC coefficients (expanded from 4) for formant/timbre analysis
-    - 1 Spectral contrast
-    - 1 Spectral flux
-    - 3 Rhythm factors (ICI, onset rate)
+    Complete feature space for cross-species vocalization analysis:
+    - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
+    - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+    - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+    - Fingerprint Factors (14): mfcc_1-13, spectral_flux
+    - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
 
-    Total: 3 + 3 + 7 + 13 + 1 + 1 + 3 = 31 fields (including some legacy fields)
+    Total: 3 + 3 + 7 + 14 + 3 = 30 dimensions
     """
 
     # === Fundamental (3 features) ===

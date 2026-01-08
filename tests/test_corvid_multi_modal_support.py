@@ -371,7 +371,7 @@ class TestGranularSequencer(unittest.TestCase):
 @dataclass
 class AcousticVector:
     """
-    17D acoustic feature vector with modality constraint.
+    30D acoustic feature vector with modality constraint.
     """
 
     mean_f0_hz: float

@@ -23,11 +23,16 @@ from typing import Any, Dict, Optional
 
 
 @dataclass
-class Vector17D:
-    """30-dimensional acoustic feature vector (expanded from 17D/20D)
+class Vector30D:
+    """30-dimensional acoustic feature vector for micro-dynamics analysis
 
-    Note: Named Vector17D for backwards compatibility, now contains 30 fields.
-    Added features: harmonicity, shimmer, spectral_flux, mfcc_5-13 (9 new MFCCs)
+    Complete feature space for cross-species vocalization analysis:
+    - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
+    - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+    - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+    - Fingerprint Factors (14): mfcc_1-13, spectral_flux
+    - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
     """
 
     # === Fundamental (3 features) ===
@@ -76,7 +81,7 @@ class Vector17D:
 
 @dataclass
 class VectorDelta:
-    """Delta between two vectors (matches expanded Vector17D implementation)"""
+    """Delta between two vectors (matches expanded Vector30D implementation)"""
 
     delta_mean_f0_hz: float
     delta_duration_ms: float
@@ -116,7 +121,7 @@ class AudioPhrase:
     """Audio phrase from database"""
 
     key: str
-    features: Vector17D
+    features: Vector30D
     species: str
 
 
@@ -212,7 +217,7 @@ class CognitiveInteractionEngine:
             self.logger.error(f"Failed to generate response: {e}")
             return None
 
-    def _calculate_delta(self, target: Vector17D, anchor: Vector17D) -> VectorDelta:
+    def _calculate_delta(self, target: Vector30D, anchor: Vector30D) -> VectorDelta:
         """Calculate delta between target and anchor vectors"""
         return VectorDelta(
             delta_mean_f0_hz=target.mean_f0_hz - anchor.mean_f0_hz,
@@ -251,7 +256,7 @@ class CognitiveInteractionEngine:
         )
 
     def _apply_safety_clamp(
-        self, delta: VectorDelta, anchor: Vector17D, target: Vector17D
+        self, delta: VectorDelta, anchor: Vector30D, target: Vector30D
     ) -> VectorDelta:
         """
         Apply safety clamping to prevent over-warping.
@@ -309,7 +314,7 @@ class CognitiveInteractionEngine:
                 * clamp_factor,
             )
 
-    def _calculate_distance(self, v1: Vector17D, v2: Vector17D) -> float:
+    def _calculate_distance(self, v1: Vector30D, v2: Vector30D) -> float:
         """
         Calculate normalized Euclidean distance between two vectors.
 
@@ -332,7 +337,7 @@ class CognitiveInteractionEngine:
         # Euclidean distance
         return (f0_diff**2 + dur_diff**2 + hnr_diff**2 + flatness_diff**2) ** 0.5
 
-    def _delta_to_rust_parameters(self, delta: VectorDelta, anchor: Vector17D) -> Dict[str, float]:
+    def _delta_to_rust_parameters(self, delta: VectorDelta, anchor: Vector30D) -> Dict[str, float]:
         """
         Convert 30D delta to Rust synthesis parameters.
 

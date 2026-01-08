@@ -438,7 +438,7 @@ class VocalizationQueryInterface:
         logger.info("Database refreshed successfully")
 
     # ========================================================================
-    # 17D Metadata Queries
+    # 30D Metadata Queries
     # ========================================================================
 
     def search_by_hnr(
@@ -703,13 +703,13 @@ class VocalizationQueryInterface:
         return results
 
     # ========================================================================
-    # 17D Nearest Neighbor Search
+    # 30D Nearest Neighbor Search
     # ========================================================================
 
     def find_nearest_neighbors_17d(
         self, phrase_key: str, k: int = 5, species: Optional[Species] = None
     ) -> List[Tuple[float, str, Phrase]]:
-        """Find k nearest neighbors in 17D metadata space
+        """Find k nearest neighbors in 30D metadata space
 
         Uses Euclidean distance over all 17 micro-dynamics features:
         - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
@@ -732,7 +732,7 @@ class VocalizationQueryInterface:
         if not target_phrase:
             return []
 
-        # Extract 17D feature vector
+        # Extract 30D feature vector
         def extract_17d(phrase: Phrase) -> List[float]:
             af = phrase.acoustic_features
             return [
@@ -782,14 +782,14 @@ class VocalizationQueryInterface:
         return distances[:k]
 
     # ========================================================================
-    # 17D Delta Calculation
+    # 30D Delta Calculation
     # ========================================================================
 
     def calculate_17d_delta(self, from_phrase_key: str, to_phrase_key: str) -> Dict[str, float]:
-        """Calculate 17D delta (difference) between two phrases
+        """Calculate 30D delta (difference) between two phrases
 
         Returns the transformation needed to go from from_phrase to to_phrase
-        in the 17D micro-dynamics feature space.
+        in the 30D micro-dynamics feature space.
 
         Args:
             from_phrase_key: Source phrase key

@@ -5,10 +5,10 @@ This test suite validates the integration of Acoustic Algebra (The Map)
 with Granular Synthesis (The Vehicle) to create the "Cognitive Synthesis" Engine.
 
 The Hybrid Workflow:
-1. Algebra (Planner): Intent → Virtual Target Vector (17D)
+1. Algebra (Planner): Intent → Virtual Target Vector (30D)
 2. Database Lookup (Anchor): Virtual Target → Nearest Real Phrase
-3. Delta Calculator (Interpreter): Virtual - Real = Delta (17D difference)
-4. Delta Mapper: 17D Delta → Granular Warp Parameters
+3. Delta Calculator (Interpreter): Virtual - Real = Delta (30D difference)
+4. Delta Mapper: 30D Delta → Granular Warp Parameters
 5. Granular Engine (Mouth): Real Audio + Warp → Warped Real Audio
 
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
@@ -41,7 +41,7 @@ class Intent(Enum):
 @dataclass
 class VirtualTarget:
     """
-    A 17-dimensional virtual target calculated by Acoustic Algebra.
+    A 30-dimensional virtual target calculated by Acoustic Algebra.
 
     This is a "Ghost Phrase" - a theoretical sound that doesn't exist
     in the database, but represents the ideal acoustic characteristics.
@@ -84,7 +84,7 @@ class VirtualTarget:
 @dataclass
 class AcousticDelta:
     """
-    The difference between a Virtual Target and a Real Source (17D).
+    The difference between a Virtual Target and a Real Source (30D).
 
     This represents "Warp Instructions" for the Granular Engine.
     """
@@ -138,7 +138,7 @@ class AcousticDelta:
 @dataclass
 class GranularWarpParameters:
     """
-    Granular synthesis parameters derived from 17D Delta.
+    Granular synthesis parameters derived from 30D Delta.
 
     This maps abstract acoustic deltas to concrete granular controls.
     """
@@ -156,7 +156,7 @@ class RealPhrase:
     """A real recording from the database"""
 
     phrase_id: str
-    vector: VirtualTarget  # Reuse VirtualTarget as 17D vector
+    vector: VirtualTarget  # Reuse VirtualTarget as 30D vector
     audio_buffer: np.ndarray  # Real audio samples
 
 
@@ -167,7 +167,7 @@ class RealPhrase:
 
 class AcousticAlgebraEngine:
     """
-    The Planner: Converts semantic intents into 17D Virtual Targets.
+    The Planner: Converts semantic intents into 30D Virtual Targets.
 
     Uses linear interpolation between known archetypal vectors.
     """
@@ -249,7 +249,7 @@ class AcousticAlgebraEngine:
             intensity: Intensity from 0.0 (neutral) to 1.0 (full intent)
 
         Returns:
-            VirtualTarget: 17D virtual target vector
+            VirtualTarget: 30D virtual target vector
         """
         # Clamp intensity to [0, 1]
         intensity = max(0.0, min(1.0, intensity))
@@ -302,14 +302,14 @@ class DeltaCalculator:
 
     def calculate_delta(self, target: VirtualTarget, source: VirtualTarget) -> AcousticDelta:
         """
-        Calculate the 17D delta between target and source.
+        Calculate the 30D delta between target and source.
 
         Args:
             target: Virtual target (desired sound)
             source: Real source (nearest neighbor)
 
         Returns:
-            AcousticDelta: 17D difference vector
+            AcousticDelta: 30D difference vector
         """
         return AcousticDelta(
             delta_mean_f0_hz=target.mean_f0_hz - source.mean_f0_hz,
@@ -337,7 +337,7 @@ class DeltaCalculator:
 
 class DeltaMapper:
     """
-    Maps 17D acoustic deltas to granular synthesis parameters.
+    Maps 30D acoustic deltas to granular synthesis parameters.
 
     Converts abstract acoustic differences into concrete granular controls.
     """
@@ -351,10 +351,10 @@ class DeltaMapper:
 
     def map_delta_to_granular(self, delta: AcousticDelta) -> GranularWarpParameters:
         """
-        Map 17D delta to granular parameters with delta clamping.
+        Map 30D delta to granular parameters with delta clamping.
 
         Args:
-            delta: 17D acoustic difference
+            delta: 30D acoustic difference
 
         Returns:
             GranularWarpParameters: Concrete granular controls
@@ -422,7 +422,7 @@ class HybridSynthesisEngine:
     1. Algebra: Intent → Virtual Target
     2. Lookup: Virtual Target → Nearest Real Phrase
     3. Delta: Virtual - Real = Warp Instructions
-    4. Map: 17D Delta → Granular Parameters
+    4. Map: 30D Delta → Granular Parameters
     5. Synthesize: Real Audio + Parameters → Warped Audio
     """
 
@@ -440,13 +440,13 @@ class HybridSynthesisEngine:
         """
         Find the nearest real phrase to the virtual target.
 
-        Uses Euclidean distance in 17D space.
+        Uses Euclidean distance in 30D space.
         """
         if not self.phrase_database:
             return None
 
         def distance_17d(v1: VirtualTarget, v2: VirtualTarget) -> float:
-            """Calculate Euclidean distance in normalized 17D space"""
+            """Calculate Euclidean distance in normalized 30D space"""
             dims = [
                 (v1.mean_f0_hz - v2.mean_f0_hz) / 1000.0,
                 (v1.duration_ms - v2.duration_ms) / 100.0,
@@ -517,7 +517,7 @@ class TestVirtualTarget(unittest.TestCase):
     """Test Virtual Target (Ghost Phrase) creation"""
 
     def test_create_virtual_target(self):
-        """Test creating a 17D virtual target"""
+        """Test creating a 30D virtual target"""
         target = VirtualTarget(
             mean_f0_hz=7000.0,
             duration_ms=50.0,
@@ -704,7 +704,7 @@ class TestAcousticAlgebraEngine(unittest.TestCase):
 
 
 class TestDeltaMapper(unittest.TestCase):
-    """Test Delta Mapper (17D to Granular)"""
+    """Test Delta Mapper (30D to Granular)"""
 
     def test_map_delta_to_pitch_shift(self):
         """Test mapping F0 delta to pitch shift ratio"""

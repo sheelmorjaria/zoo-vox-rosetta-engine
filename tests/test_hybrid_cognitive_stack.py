@@ -24,8 +24,17 @@ from unittest.mock import Mock
 
 
 @dataclass
-class Vector17D:
-    """30D acoustic vector (expanded from 17D, matches Rust implementation)"""
+class Vector30D:
+    """30-dimensional acoustic vector for micro-dynamics analysis
+
+    Complete feature space for cross-species vocalization analysis:
+    - Fundamental (3): mean_f0_hz, duration_ms, f0_range_hz
+    - Grit Factors (3): harmonic_to_noise_ratio, spectral_flatness, harmonicity
+    - Motion Factors (7): attack_time_ms, decay_time_ms, sustain_level,
+                        vibrato_rate_hz, vibrato_depth, jitter, shimmer
+    - Fingerprint Factors (14): mfcc_1-13, spectral_flux
+    - Rhythm Factors (3): median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
+    """
 
     # Fundamental (3 features)
     mean_f0_hz: float
@@ -76,7 +85,7 @@ class AudioPhrase:
     """Audio phrase from database"""
 
     key: str
-    features: Vector17D
+    features: Vector30D
     species: str
 
 
@@ -101,7 +110,7 @@ class TestFullStackGradientGeneration(unittest.TestCase):
         Expected: Complete pipeline executes, correct parameters passed to Rust
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             # Fundamental (3)
             mean_f0_hz=8200.0,
             duration_ms=35.0,
@@ -143,7 +152,7 @@ class TestFullStackGradientGeneration(unittest.TestCase):
 
         nearest_phrase = AudioPhrase(
             key="neutral_001",
-            features=Vector17D(
+            features=Vector30D(
                 # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
@@ -265,7 +274,7 @@ class TestLatencyConstraints(unittest.TestCase):
         Expected: All responses complete in <100ms
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             # Fundamental (3)
             mean_f0_hz=7500.0,
             duration_ms=40.0,
@@ -307,7 +316,7 @@ class TestLatencyConstraints(unittest.TestCase):
 
         phrase = AudioPhrase(
             key="test_phrase",
-            features=Vector17D(
+            features=Vector30D(
                 # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
@@ -431,7 +440,7 @@ class TestSafetyClampActivation(unittest.TestCase):
         Expected: Clamping activates, delta is scaled to max_safe_warp
         """
         # Arrange
-        virtual_target = Vector17D(
+        virtual_target = Vector30D(
             # Fundamental (3)
             mean_f0_hz=10500.0,  # Very far from anchor
             duration_ms=10.0,
@@ -473,7 +482,7 @@ class TestSafetyClampActivation(unittest.TestCase):
 
         nearest_phrase = AudioPhrase(
             key="neutral_001",
-            features=Vector17D(
+            features=Vector30D(
                 # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
