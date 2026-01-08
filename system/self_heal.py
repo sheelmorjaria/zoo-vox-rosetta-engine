@@ -23,12 +23,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-
 logger = logging.getLogger(__name__)
 
 
 class HealthStatus(Enum):
     """Process health status."""
+
     ALIVE = "alive"
     DEAD = "dead"
 
@@ -83,6 +83,7 @@ class SelfHeal:
             # Send signal 0 to check if process exists
             # This doesn't actually kill the process
             import os
+
             os.kill(pid, 0)
             return True
         except (OSError, ProcessLookupError):
@@ -112,11 +113,13 @@ class SelfHeal:
             agent_state = {
                 "context": checkpoint_data.get("context"),
                 "history": checkpoint_data.get("history", []),
-                "dialogue_state": checkpoint_data.get("dialogue_state", {})
+                "dialogue_state": checkpoint_data.get("dialogue_state", {}),
             }
 
-            logger.info(f"Rehydrated agent: context={agent_state['context']}, "
-                       f"history_length={len(agent_state['history'])}")
+            logger.info(
+                f"Rehydrated agent: context={agent_state['context']}, "
+                f"history_length={len(agent_state['history'])}"
+            )
 
             return agent_state
 
@@ -190,10 +193,7 @@ class SelfHeal:
             return []
 
     def heal(
-        self,
-        pid: int,
-        restart_command: List[str],
-        checkpoint_path: Optional[Path] = None
+        self, pid: int, restart_command: List[str], checkpoint_path: Optional[Path] = None
     ) -> bool:
         """
         Perform complete healing workflow.
@@ -250,9 +250,7 @@ class SelfHeal:
         try:
             logger.info(f"Restarting process with command: {' '.join(restart_command)}")
             process = subprocess.Popen(
-                restart_command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                restart_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             logger.info(f"Process restarted with new PID {process.pid}")
             return True

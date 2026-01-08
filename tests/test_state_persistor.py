@@ -14,10 +14,8 @@ License: CC BY-ND 4.0 International
 """
 
 import json
-import os
 import tempfile
 import unittest
-from dataclasses import asdict
 from pathlib import Path
 
 # Import modules to test (will fail initially - RED phase)
@@ -48,7 +46,7 @@ class TestContextualAgentSerialization(unittest.TestCase):
         agent_state = {
             "context": "FOOD",
             "history": ["PheeA", "PheeB"],
-            "dialogue_state": {"turn": 3, "initiator": "human"}
+            "dialogue_state": {"turn": 3, "initiator": "human"},
         }
 
         # Act - Save checkpoint
@@ -84,7 +82,7 @@ class TestContextualAgentSerialization(unittest.TestCase):
         agent_state = {
             "context": None,  # Fresh start
             "history": [],
-            "dialogue_state": {"turn": 0, "initiator": None}
+            "dialogue_state": {"turn": 0, "initiator": None},
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -120,7 +118,7 @@ class TestRustCacheSerialization(unittest.TestCase):
         rust_state = {
             "rust_cache_keys": ["clip_A", "clip_B"],
             "cache_size_mb": 12.5,
-            "cache_hit_rate": 0.85
+            "cache_hit_rate": 0.85,
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -149,7 +147,7 @@ class TestRustCacheSerialization(unittest.TestCase):
         rust_state = {
             "rust_cache_keys": [],  # Cold start
             "cache_size_mb": 0.0,
-            "cache_hit_rate": 0.0
+            "cache_hit_rate": 0.0,
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -187,25 +185,16 @@ class TestCompleteCheckpoint(unittest.TestCase):
             "contextual_agent": {
                 "context": "AGGRESSION",
                 "history": ["ChirpA"],
-                "dialogue_state": {"turn": 1, "initiator": "marmoset"}
+                "dialogue_state": {"turn": 1, "initiator": "marmoset"},
             },
             "cognitive_engine": {
                 "current_intensity": 0.7,
                 "active_persona_id": "dominant",
-                "acoustic_vectors": {"f0_mean": 8500.0}
+                "acoustic_vectors": {"f0_mean": 8500.0},
             },
-            "rust_cache": {
-                "cache_keys": ["clip_X", "clip_Y"],
-                "cache_size_mb": 15.0
-            },
-            "semiotic_engine": {
-                "deception_accumulator": 0.0,
-                "innovation_accumulator": 1.2
-            },
-            "metadata": {
-                "timestamp": "2025-01-07T12:00:00Z",
-                "version": "1.0.0"
-            }
+            "rust_cache": {"cache_keys": ["clip_X", "clip_Y"], "cache_size_mb": 15.0},
+            "semiotic_engine": {"deception_accumulator": 0.0, "innovation_accumulator": 1.2},
+            "metadata": {"timestamp": "2025-01-07T12:00:00Z", "version": "1.0.0"},
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:

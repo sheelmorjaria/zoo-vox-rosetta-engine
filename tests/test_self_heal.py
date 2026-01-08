@@ -14,8 +14,6 @@ License: CC BY-ND 4.0 International
 """
 
 import json
-import os
-import signal
 import tempfile
 import time
 import unittest
@@ -46,10 +44,11 @@ class TestProcessHealthDetection(unittest.TestCase):
         # Create a simple long-lived Python process
         # Using sleep command as a mock process
         import subprocess
+
         proc = subprocess.Popen(
             ["python3", "-c", "import time; time.sleep(10)"],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
 
         healer = SelfHeal(checkpoint_dir=Path(tempfile.gettempdir()))
@@ -82,10 +81,9 @@ class TestProcessHealthDetection(unittest.TestCase):
         """
         # Create a short-lived process
         import subprocess
+
         proc = subprocess.Popen(
-            ["python3", "-c", "pass"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            ["python3", "-c", "pass"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
 
         # Wait for it to finish
@@ -151,7 +149,7 @@ class TestStateRehydration(unittest.TestCase):
                 "context": "FOOD",
                 "history": ["PheeA", "PheeB"],
                 "dialogue_state": {"turn": 3, "initiator": "human"},
-                "timestamp": "2025-01-07T12:00:00Z"
+                "timestamp": "2025-01-07T12:00:00Z",
             }
 
             # Write checkpoint
@@ -190,7 +188,7 @@ class TestStateRehydration(unittest.TestCase):
                     "context": f"CONTEXT_{i}",
                     "history": [],
                     "dialogue_state": {"turn": i},
-                    "timestamp": f"2025-01-07T12:00:0{i}Z"
+                    "timestamp": f"2025-01-07T12:00:0{i}Z",
                 }
                 checkpoint_path = checkpoint_dir / f"checkpoint_0{i}.json"
                 with open(checkpoint_path, "w") as f:
@@ -205,7 +203,7 @@ class TestStateRehydration(unittest.TestCase):
                 "context": "LATEST",
                 "history": ["PheeA"],
                 "dialogue_state": {"turn": 5},
-                "timestamp": "2025-01-07T12:00:05Z"
+                "timestamp": "2025-01-07T12:00:05Z",
             }
             latest_path = checkpoint_dir / "checkpoint_latest.json"
             with open(latest_path, "w") as f:
@@ -266,7 +264,7 @@ class TestRustCacheSynchronization(unittest.TestCase):
                 "rust_cache_keys": ["clip_A", "clip_B", "clip_C"],
                 "cache_size_mb": 12.5,
                 "cache_hit_rate": 0.85,
-                "timestamp": "2025-01-07T12:00:00Z"
+                "timestamp": "2025-01-07T12:00:00Z",
             }
 
             with open(checkpoint_path, "w") as f:
@@ -304,7 +302,7 @@ class TestRustCacheSynchronization(unittest.TestCase):
                 "rust_cache_keys": [],
                 "cache_size_mb": 0.0,
                 "cache_hit_rate": 0.0,
-                "timestamp": "2025-01-07T12:00:00Z"
+                "timestamp": "2025-01-07T12:00:00Z",
             }
 
             with open(checkpoint_path, "w") as f:
@@ -335,24 +333,11 @@ class TestRustCacheSynchronization(unittest.TestCase):
 
             # Create complete system checkpoint
             checkpoint_data = {
-                "contextual_agent": {
-                    "context": "FOOD",
-                    "history": []
-                },
-                "cognitive_engine": {
-                    "current_intensity": 0.7
-                },
-                "rust_cache": {
-                    "cache_keys": ["clip_X", "clip_Y"],
-                    "cache_size_mb": 15.0
-                },
-                "semiotic_engine": {
-                    "deception_accumulator": 0.0
-                },
-                "metadata": {
-                    "timestamp": "2025-01-07T12:00:00Z",
-                    "version": "1.0.0"
-                }
+                "contextual_agent": {"context": "FOOD", "history": []},
+                "cognitive_engine": {"current_intensity": 0.7},
+                "rust_cache": {"cache_keys": ["clip_X", "clip_Y"], "cache_size_mb": 15.0},
+                "semiotic_engine": {"deception_accumulator": 0.0},
+                "metadata": {"timestamp": "2025-01-07T12:00:00Z", "version": "1.0.0"},
             }
 
             with open(checkpoint_path, "w") as f:
@@ -370,7 +355,7 @@ class TestRustCacheSynchronization(unittest.TestCase):
 class TestCompleteHealingWorkflow(unittest.TestCase):
     """Test 2.4: Complete Healing Workflow - End-to-end recovery"""
 
-    @patch('subprocess.Popen')
+    @patch("subprocess.Popen")
     def test_full_recovery_workflow(self, mock_popen):
         """
         RED TEST: Complete healing workflow from detection to restart
@@ -401,7 +386,7 @@ class TestCompleteHealingWorkflow(unittest.TestCase):
                 "context": "FOOD",
                 "history": ["PheeA"],
                 "dialogue_state": {"turn": 1},
-                "timestamp": "2025-01-07T12:00:00Z"
+                "timestamp": "2025-01-07T12:00:00Z",
             }
             checkpoint_path = checkpoint_dir / "checkpoint_20250107_120000.json"
             with open(checkpoint_path, "w") as f:
@@ -437,14 +422,13 @@ class TestCompleteHealingWorkflow(unittest.TestCase):
 
             # Act - Attempt healing without checkpoint
             # Use mock restart to avoid actually starting a process
-            with patch('subprocess.Popen') as mock_popen:
+            with patch("subprocess.Popen") as mock_popen:
                 mock_proc = Mock()
                 mock_proc.pid = 12345
                 mock_popen.return_value = mock_proc
 
                 success = healer.heal(
-                    pid=99999,
-                    restart_command=["python3", "-m", "cognitive_agent"]
+                    pid=99999, restart_command=["python3", "-m", "cognitive_agent"]
                 )
 
             # Assert - Still succeeds (cold start)

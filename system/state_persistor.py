@@ -21,7 +21,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -45,9 +44,7 @@ class StatePersistor:
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    def save_contextual_agent(
-        self, agent_state: Dict[str, Any], checkpoint_path: Path
-    ) -> Path:
+    def save_contextual_agent(self, agent_state: Dict[str, Any], checkpoint_path: Path) -> Path:
         """
         Save ContextualAgent state to checkpoint file.
 
@@ -68,7 +65,7 @@ class StatePersistor:
             "context": agent_state.get("context"),
             "history": agent_state.get("history", []),
             "dialogue_state": agent_state.get("dialogue_state", {}),
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
         # Ensure parent directory exists
@@ -78,14 +75,14 @@ class StatePersistor:
         with open(checkpoint_path, "w") as f:
             json.dump(checkpoint_data, f, indent=2)
 
-        logger.info(f"Saved ContextualAgent: context={checkpoint_data['context']}, "
-                   f"history_length={len(checkpoint_data['history'])}")
+        logger.info(
+            f"Saved ContextualAgent: context={checkpoint_data['context']}, "
+            f"history_length={len(checkpoint_data['history'])}"
+        )
 
         return checkpoint_path
 
-    def save_rust_cache(
-        self, rust_state: Dict[str, Any], checkpoint_path: Path
-    ) -> Path:
+    def save_rust_cache(self, rust_state: Dict[str, Any], checkpoint_path: Path) -> Path:
         """
         Save Rust LRU cache state to checkpoint file.
 
@@ -109,7 +106,7 @@ class StatePersistor:
             "rust_cache_keys": rust_state.get("rust_cache_keys", []),
             "cache_size_mb": rust_state.get("cache_size_mb", 0.0),
             "cache_hit_rate": rust_state.get("cache_hit_rate", 0.0),
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
         # Ensure parent directory exists
@@ -119,8 +116,10 @@ class StatePersistor:
         with open(checkpoint_path, "w") as f:
             json.dump(checkpoint_data, f, indent=2)
 
-        logger.info(f"Saved Rust cache: {len(checkpoint_data['rust_cache_keys'])} keys, "
-                   f"{checkpoint_data['cache_size_mb']} MB")
+        logger.info(
+            f"Saved Rust cache: {len(checkpoint_data['rust_cache_keys'])} keys, "
+            f"{checkpoint_data['cache_size_mb']} MB"
+        )
 
         return checkpoint_path
 
@@ -159,8 +158,8 @@ class StatePersistor:
             "metadata": {
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "version": "1.0.0",
-                "components_saved": list(system_state.keys())
-            }
+                "components_saved": list(system_state.keys()),
+            },
         }
 
         # Ensure parent directory exists
@@ -170,8 +169,10 @@ class StatePersistor:
         with open(checkpoint_path, "w") as f:
             json.dump(checkpoint_data, f, indent=2)
 
-        logger.info(f"Saved complete system state: {len(system_state)} components, "
-                   f"size={checkpoint_path.stat().st_size} bytes")
+        logger.info(
+            f"Saved complete system state: {len(system_state)} components, "
+            f"size={checkpoint_path.stat().st_size} bytes"
+        )
 
         return checkpoint_path
 

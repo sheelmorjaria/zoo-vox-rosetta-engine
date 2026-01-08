@@ -9,8 +9,8 @@ License: CC BY-ND 4.0 International
 """
 
 # State persistence and recovery
-from .state_persistor import StatePersistor
 from .self_heal import HealthStatus, SelfHeal
+from .state_persistor import StatePersistor
 
 __all__ = [
     "StatePersistor",

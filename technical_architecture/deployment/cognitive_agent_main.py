@@ -24,20 +24,18 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, Optional
 
 import zmq
 
 # Add system module to path (for production deployment)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from system import StatePersistor, SelfHeal, HealthStatus
-
+from system import SelfHeal, StatePersistor
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -127,7 +125,7 @@ class CognitiveAgent:
             "dialogue_state": latest_state.get("dialogue_state", {"turn": 0, "initiator": None}),
         }
 
-        logger.info(f"✓ Recovered from checkpoint:")
+        logger.info("✓ Recovered from checkpoint:")
         logger.info(f"  Context: {self.agent_state['context']}")
         logger.info(f"  History length: {len(self.agent_state['history'])}")
         logger.info(f"  Turn: {self.agent_state['dialogue_state']['turn']}")
@@ -174,9 +172,11 @@ class CognitiveAgent:
             self.sequence += 1
 
             if self.sequence % 250 == 0:  # Log every 250 heartbeats (5 seconds)
-                logger.info(f"Heartbeat: sequence={self.sequence}, "
-                           f"context={self.agent_state['context']}, "
-                           f"turn={self.agent_state['dialogue_state']['turn']}")
+                logger.info(
+                    f"Heartbeat: sequence={self.sequence}, "
+                    f"context={self.agent_state['context']}, "
+                    f"turn={self.agent_state['dialogue_state']['turn']}"
+                )
 
         except zmq.ZMQError as e:
             logger.warning(f"Failed to send heartbeat: {e}")
@@ -291,24 +291,22 @@ def main():
     parser.add_argument(
         "--heartbeat-endpoint",
         default=os.environ.get("RUST_HEARTBEAT_ENDPOINT", DEFAULT_HEARTBEAT_ENDPOINT),
-        help="ZeroMQ endpoint for heartbeat socket"
+        help="ZeroMQ endpoint for heartbeat socket",
     )
     parser.add_argument(
         "--heartbeat-interval-ms",
         type=int,
         default=DEFAULT_HEARTBEAT_INTERVAL_MS,
-        help="Heartbeat interval in milliseconds"
+        help="Heartbeat interval in milliseconds",
     )
     parser.add_argument(
-        "--checkpoint-dir",
-        default=DEFAULT_CHECKPOINT_DIR,
-        help="Directory for checkpoint files"
+        "--checkpoint-dir", default=DEFAULT_CHECKPOINT_DIR, help="Directory for checkpoint files"
     )
     parser.add_argument(
         "--checkpoint-interval-sec",
         type=int,
         default=DEFAULT_CHECKPOINT_INTERVAL_SEC,
-        help="Interval between checkpoints in seconds"
+        help="Interval between checkpoints in seconds",
     )
 
     args = parser.parse_args()
