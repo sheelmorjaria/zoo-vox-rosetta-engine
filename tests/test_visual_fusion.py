@@ -7,19 +7,21 @@ Testing MediaPipe integration and visual-audio fusion capabilities
 import sys
 import time
 import unittest
+from importlib.util import find_spec
 from unittest.mock import Mock, patch
 
 import numpy as np
 
-# Import visual fusion module with cv2 dependency check
-sys.path.append("src")
-try:
-    import cv2
-    import cognitive_intelligence.visual_fusion as visual_fusion
-except ImportError:
+# Check if cv2 is available before importing
+if find_spec("cv2") is None:
     # Skip all tests if cv2 is not available
     import pytest
+
     pytest.skip("cv2 module not available (optional dependency)", allow_module_level=True)
+else:
+    # Import visual fusion module
+    sys.path.append("src")
+    import cognitive_intelligence.visual_fusion as visual_fusion
 
 
 class TestVisualFusion(unittest.TestCase):
