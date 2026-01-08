@@ -171,8 +171,8 @@ class ABTestingController:
         self.rebalancing_interval = 3600  # 1 hour
         self.last_rebalance_time = time.time()
 
-        # Threading
-        self._lock = threading.Lock()
+        # Threading (use RLock for reentrant locking)
+        self._lock = threading.RLock()
         self.result_buffer = deque(maxlen=1000)
 
         # Logging

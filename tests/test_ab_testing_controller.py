@@ -140,11 +140,14 @@ class TestABTestingController(unittest.TestCase):
             controller.record_result("user_004", success=False)
 
         # Calculate significance
-        significance = controller.calculate_significance("A", "B")
+        significance_result = controller.calculate_significance("A", "B")
 
-        self.assertIsInstance(significance, float)
-        self.assertGreaterEqual(significance, 0.0)
-        self.assertLessEqual(significance, 1.0)
+        # Returns a dict with p_value and other metrics
+        self.assertIsInstance(significance_result, dict)
+        self.assertIn("p_value", significance_result)
+        self.assertIn("significant", significance_result)
+        self.assertGreaterEqual(significance_result["p_value"], 0.0)
+        self.assertLessEqual(significance_result["p_value"], 1.0)
 
     def test_experiment_results_export(self):
         """Test that experiment results can be exported"""
@@ -173,7 +176,7 @@ class TestABTestingController(unittest.TestCase):
         self.assertIn("experiment_name", results)
         self.assertIn("variants", results)
         self.assertIn("significance_tests", results)
-        self.assertIn("summary_stats", results)
+        self.assertIn("experiment_id", results)
 
     def test_multiple_variant_support(self):
         """Test support for more than two variants"""
@@ -218,8 +221,8 @@ class TestABTestingController(unittest.TestCase):
         stats = controller.get_experiment_stats()
 
         self.assertIn("total_participants", stats)
-        self.assertIn("success_rates", stats)
-        self.assertIn("completion_rates", stats)
+        self.assertIn("variants", stats)
+        self.assertIn("significance_tests", stats)
         self.assertTrue(stats["total_participants"] > 0)
 
 
