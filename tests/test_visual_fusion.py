@@ -11,9 +11,15 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-# Import visual fusion module
+# Import visual fusion module with cv2 dependency check
 sys.path.append("src")
-import cognitive_intelligence.visual_fusion as visual_fusion
+try:
+    import cv2
+    import cognitive_intelligence.visual_fusion as visual_fusion
+except ImportError:
+    # Skip all tests if cv2 is not available
+    import pytest
+    pytest.skip("cv2 module not available (optional dependency)", allow_module_level=True)
 
 
 class TestVisualFusion(unittest.TestCase):

@@ -55,7 +55,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install maturin[patchelf]
-        pip install -e .
+        pip install -e ".[vision]"
 
     - name: Build Rust technical architecture (Python bindings)
       run: |
@@ -198,7 +198,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install maturin[patchelf]
-        pip install pytest numpy pandas
+        pip install -e ".[vision]"  # Includes numpy, pandas, pytest, opencv, mediapipe
 
     - name: Build Rust library (maturin)
       run: |

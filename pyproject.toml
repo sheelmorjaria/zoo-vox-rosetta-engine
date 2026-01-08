@@ -45,6 +45,10 @@ dev = [
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
 ]
+vision = [
+    "opencv-python>=4.5.0",
+    "mediapipe>=0.10.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/sheelmorjaria/animal-vocalization-analysis"
