@@ -205,21 +205,24 @@ class TestProvenanceTracer(unittest.TestCase):
         corrupted_entry = TraceEntry.from_bytes(corrupted_data)
         self.assertFalse(corrupted_entry.validate(), "Corrupted entry should fail validation")
 
-        # Test multiple corruption scenarios - only corrupt data bytes, not padding
-        # Data bytes are in positions 0-53 (first 54 bytes including padding in format)
-        for i in range(min(40, len(valid_data))):  # Only test first 40 bytes to avoid padding
+        # Test multiple corruption scenarios - corrupt data bytes
+        # With little-endian standard size, data bytes are 0-32 (33 bytes total),
+        # padding is 33-53 (21 bytes)
+        # Corrupting data bytes (0-32) should fail validation
+        # Corrupting padding bytes (33-53) might pass since they don't affect field values
+        for i in range(min(40, len(valid_data))):  # Test first 40 bytes
             test_corrupted = bytearray(valid_data)
             test_corrupted[i] ^= 0xFF
             test_corrupted = bytes(test_corrupted)
             test_entry = TraceEntry.from_bytes(test_corrupted)
-            # The 54-byte block includes data + padding
-            # Data bytes are 0-46 (47 bytes), padding is 47-53 (7 bytes)
-            if i <= 46:  # Bytes that affect the checksum
+
+            if i <= 32:  # Data bytes - should fail validation
                 self.assertFalse(
-                    test_entry.validate(), f"Corrupted byte {i} should fail validation"
+                    test_entry.validate(), f"Corrupted data byte {i} should fail validation"
                 )
-            else:
-                # Padding bytes won't affect checksum, so validation might still pass
+            else:  # Padding bytes - might still pass (not part of field values)
+                # Note: Padding IS included in checksum calculation, but corrupting it
+                # doesn't change the field values that validate() uses
                 self.assertTrue(
                     test_entry.validate(), f"Corrupted padding byte {i} might still pass validation"
                 )

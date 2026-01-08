@@ -25,27 +25,47 @@ from unittest.mock import Mock
 
 @dataclass
 class Vector17D:
-    """20D acoustic vector (expanded from 17D, matches Rust implementation)"""
+    """30D acoustic vector (expanded from 17D, matches Rust implementation)"""
 
+    # Fundamental (3 features)
     mean_f0_hz: float
     duration_ms: float
     f0_range_hz: float
+
+    # Grit Factors (3 features)
     harmonic_to_noise_ratio: float
     spectral_flatness: float
-    harmonicity: float  # NEW
+    harmonicity: float
+
+    # Motion Factors (7 features)
     attack_time_ms: float
     decay_time_ms: float
     sustain_level: float
     vibrato_rate_hz: float
     vibrato_depth: float
     jitter: float
-    shimmer: float  # NEW
+    shimmer: float
+
+    # Fingerprint Factors (13 features)
     mfcc_1: float
     mfcc_2: float
     mfcc_3: float
     mfcc_4: float
+    mfcc_5: float
+    mfcc_6: float
+    mfcc_7: float
+    mfcc_8: float
+    mfcc_9: float
+    mfcc_10: float
+    mfcc_11: float
+    mfcc_12: float
+    mfcc_13: float
     spectral_contrast: float
-    spectral_flux: float  # NEW
+
+    # Spectral Dynamics (1 feature)
+    spectral_flux: float
+
+    # Rhythm Factors (3 features)
     median_ici_ms: float
     onset_rate_hz: float
     ici_coefficient_of_variation: float
@@ -82,25 +102,40 @@ class TestFullStackGradientGeneration(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
+            # Fundamental (3)
             mean_f0_hz=8200.0,
             duration_ms=35.0,
             f0_range_hz=600.0,
+            # Grit Factors (3)
             harmonic_to_noise_ratio=26.0,
             spectral_flatness=0.5,
+            harmonicity=0.75,
+            # Motion Factors (7)
             attack_time_ms=3.0,
             decay_time_ms=15.0,
             sustain_level=0.85,
             vibrato_rate_hz=10.0,
             vibrato_depth=0.05,
             jitter=0.03,
+            shimmer=0.015,
+            # Fingerprint Factors (13)
             mfcc_1=-7.0,
             mfcc_2=-3.0,
             mfcc_3=-1.0,
             mfcc_4=-0.3,
+            mfcc_5=-0.2,
+            mfcc_6=-0.1,
+            mfcc_7=0.0,
+            mfcc_8=0.1,
+            mfcc_9=0.2,
+            mfcc_10=0.3,
+            mfcc_11=0.4,
+            mfcc_12=0.5,
+            mfcc_13=0.6,
             spectral_contrast=30.0,
-            harmonicity=0.75,
-            shimmer=0.015,
+            # Spectral Dynamics (1)
             spectral_flux=1.5,
+            # Rhythm Factors (3)
             median_ici_ms=12.0,
             onset_rate_hz=60.0,
             ici_coefficient_of_variation=0.35,
@@ -109,25 +144,40 @@ class TestFullStackGradientGeneration(unittest.TestCase):
         nearest_phrase = AudioPhrase(
             key="neutral_001",
             features=Vector17D(
+                # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
+                # Grit Factors (3)
                 harmonic_to_noise_ratio=20.0,
                 spectral_flatness=0.3,
+                harmonicity=0.75,
+                # Motion Factors (7)
                 attack_time_ms=5.0,
                 decay_time_ms=20.0,
                 sustain_level=0.7,
                 vibrato_rate_hz=7.0,
                 vibrato_depth=0.02,
                 jitter=0.01,
+                shimmer=0.015,
+                # Fingerprint Factors (13)
                 mfcc_1=-10.0,
                 mfcc_2=-5.0,
                 mfcc_3=-2.0,
                 mfcc_4=-1.0,
+                mfcc_5=-0.8,
+                mfcc_6=-0.6,
+                mfcc_7=-0.4,
+                mfcc_8=-0.2,
+                mfcc_9=0.0,
+                mfcc_10=0.2,
+                mfcc_11=0.4,
+                mfcc_12=0.6,
+                mfcc_13=0.8,
                 spectral_contrast=20.0,
-                harmonicity=0.75,
-                shimmer=0.015,
+                # Spectral Dynamics (1)
                 spectral_flux=1.5,
+                # Rhythm Factors (3)
                 median_ici_ms=15.0,
                 onset_rate_hz=50.0,
                 ici_coefficient_of_variation=0.3,
@@ -216,25 +266,40 @@ class TestLatencyConstraints(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
+            # Fundamental (3)
             mean_f0_hz=7500.0,
             duration_ms=40.0,
             f0_range_hz=500.0,
+            # Grit Factors (3)
             harmonic_to_noise_ratio=22.5,
             spectral_flatness=0.4,
+            harmonicity=0.75,
+            # Motion Factors (7)
             attack_time_ms=4.0,
             decay_time_ms=17.5,
             sustain_level=0.8,
             vibrato_rate_hz=8.5,
             vibrato_depth=0.035,
             jitter=0.02,
+            shimmer=0.015,
+            # Fingerprint Factors (13)
             mfcc_1=-9.0,
             mfcc_2=-4.0,
             mfcc_3=-1.5,
             mfcc_4=-0.5,
+            mfcc_5=-0.4,
+            mfcc_6=-0.3,
+            mfcc_7=-0.2,
+            mfcc_8=-0.1,
+            mfcc_9=0.0,
+            mfcc_10=0.1,
+            mfcc_11=0.2,
+            mfcc_12=0.3,
+            mfcc_13=0.4,
             spectral_contrast=25.0,
-            harmonicity=0.75,
-            shimmer=0.015,
+            # Spectral Dynamics (1)
             spectral_flux=1.5,
+            # Rhythm Factors (3)
             median_ici_ms=14.0,
             onset_rate_hz=55.0,
             ici_coefficient_of_variation=0.32,
@@ -243,25 +308,40 @@ class TestLatencyConstraints(unittest.TestCase):
         phrase = AudioPhrase(
             key="test_phrase",
             features=Vector17D(
+                # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
+                # Grit Factors (3)
                 harmonic_to_noise_ratio=20.0,
                 spectral_flatness=0.3,
+                harmonicity=0.75,
+                # Motion Factors (7)
                 attack_time_ms=5.0,
                 decay_time_ms=20.0,
                 sustain_level=0.7,
                 vibrato_rate_hz=7.0,
                 vibrato_depth=0.02,
                 jitter=0.01,
+                shimmer=0.015,
+                # Fingerprint Factors (13)
                 mfcc_1=-10.0,
                 mfcc_2=-5.0,
                 mfcc_3=-2.0,
                 mfcc_4=-1.0,
+                mfcc_5=-0.8,
+                mfcc_6=-0.6,
+                mfcc_7=-0.4,
+                mfcc_8=-0.2,
+                mfcc_9=0.0,
+                mfcc_10=0.2,
+                mfcc_11=0.4,
+                mfcc_12=0.6,
+                mfcc_13=0.8,
                 spectral_contrast=20.0,
-                harmonicity=0.75,
-                shimmer=0.015,
+                # Spectral Dynamics (1)
                 spectral_flux=1.5,
+                # Rhythm Factors (3)
                 median_ici_ms=15.0,
                 onset_rate_hz=50.0,
                 ici_coefficient_of_variation=0.3,
@@ -352,25 +432,40 @@ class TestSafetyClampActivation(unittest.TestCase):
         """
         # Arrange
         virtual_target = Vector17D(
+            # Fundamental (3)
             mean_f0_hz=10500.0,  # Very far from anchor
             duration_ms=10.0,
             f0_range_hz=900.0,
+            # Grit Factors (3)
             harmonic_to_noise_ratio=40.0,
             spectral_flatness=0.9,
+            harmonicity=0.75,
+            # Motion Factors (7)
             attack_time_ms=0.0,
             decay_time_ms=5.0,
             sustain_level=1.0,
             vibrato_rate_hz=20.0,
             vibrato_depth=0.1,
             jitter=0.1,
+            shimmer=0.015,
+            # Fingerprint Factors (13)
             mfcc_1=0.0,
             mfcc_2=0.0,
             mfcc_3=0.0,
             mfcc_4=0.0,
+            mfcc_5=0.0,
+            mfcc_6=0.0,
+            mfcc_7=0.0,
+            mfcc_8=0.0,
+            mfcc_9=0.0,
+            mfcc_10=0.0,
+            mfcc_11=0.0,
+            mfcc_12=0.0,
+            mfcc_13=0.0,
             spectral_contrast=50.0,
-            harmonicity=0.75,
-            shimmer=0.015,
+            # Spectral Dynamics (1)
             spectral_flux=1.5,
+            # Rhythm Factors (3)
             median_ici_ms=5.0,
             onset_rate_hz=100.0,
             ici_coefficient_of_variation=1.0,
@@ -379,25 +474,40 @@ class TestSafetyClampActivation(unittest.TestCase):
         nearest_phrase = AudioPhrase(
             key="neutral_001",
             features=Vector17D(
+                # Fundamental (3)
                 mean_f0_hz=7000.0,
                 duration_ms=50.0,
                 f0_range_hz=400.0,
+                # Grit Factors (3)
                 harmonic_to_noise_ratio=20.0,
                 spectral_flatness=0.3,
+                harmonicity=0.75,
+                # Motion Factors (7)
                 attack_time_ms=5.0,
                 decay_time_ms=20.0,
                 sustain_level=0.7,
                 vibrato_rate_hz=7.0,
                 vibrato_depth=0.02,
                 jitter=0.01,
+                shimmer=0.015,
+                # Fingerprint Factors (13)
                 mfcc_1=-10.0,
                 mfcc_2=-5.0,
                 mfcc_3=-2.0,
                 mfcc_4=-1.0,
+                mfcc_5=-0.8,
+                mfcc_6=-0.6,
+                mfcc_7=-0.4,
+                mfcc_8=-0.2,
+                mfcc_9=0.0,
+                mfcc_10=0.2,
+                mfcc_11=0.4,
+                mfcc_12=0.6,
+                mfcc_13=0.8,
                 spectral_contrast=20.0,
-                harmonicity=0.75,
-                shimmer=0.015,
+                # Spectral Dynamics (1)
                 spectral_flux=1.5,
+                # Rhythm Factors (3)
                 median_ici_ms=15.0,
                 onset_rate_hz=50.0,
                 ici_coefficient_of_variation=0.3,

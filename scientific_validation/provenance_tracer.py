@@ -136,15 +136,15 @@ class TraceEntry:
     def to_bytes(self) -> bytes:
         """Convert to 64-byte binary format"""
         # Pack first 54 bytes: timestamp(8) + context_type(1) + decision_vector(4) +
-        # parent_trace_id(8) + synthesis_params(4) + session_id(8) + padding(14)
+        # parent_trace_id(8) + synthesis_params(4) + session_id(8) + padding(21)
         first_54 = struct.pack(
-            "Q B I Q I Q 14x",
+            "<Q B I Q I Q 21x",
             self.timestamp,  # 8 bytes
             self.context_type,  # 1 byte
             self.decision_vector,  # 4 bytes
             self.parent_trace_id,  # 8 bytes
             self.synthesis_params,  # 4 bytes
-            self.session_id,  # 8 bytes + 14 padding = 54 total
+            self.session_id,  # 8 bytes + 21 padding = 54 total
         )
 
         # Calculate checksum for first 54 bytes
@@ -163,7 +163,7 @@ class TraceEntry:
 
         # Unpack first 54 bytes (all data except checksum and padding)
         timestamp, context_type, decision_vector, parent_trace_id, synthesis_params, session_id = (
-            struct.unpack("Q B I Q I Q 14x", data[:54])
+            struct.unpack("<Q B I Q I Q 21x", data[:54])
         )
 
         # Extract checksum from bytes 54-58 (positions 54-58 in data)
@@ -188,7 +188,7 @@ class TraceEntry:
         """Validate checksum"""
         # Pack first 54 bytes - same logic as to_bytes() but without checksum field
         first_54 = struct.pack(
-            "Q B I Q I Q 14x",
+            "<Q B I Q I Q 21x",
             self.timestamp,
             self.context_type,
             self.decision_vector,

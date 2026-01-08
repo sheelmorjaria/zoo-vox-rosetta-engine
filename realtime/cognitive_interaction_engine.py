@@ -24,10 +24,10 @@ from typing import Any, Dict, Optional
 
 @dataclass
 class Vector17D:
-    """29-dimensional acoustic feature vector (expanded from 17D/20D)
+    """30-dimensional acoustic feature vector (expanded from 17D/20D)
 
-    Note: Named Vector17D for backwards compatibility, now contains 29 fields.
-    Added features: shimmer, spectral_flux, harmonicity, mfcc_5-13 (9 new MFCCs)
+    Note: Named Vector17D for backwards compatibility, now contains 30 fields.
+    Added features: harmonicity, shimmer, spectral_flux, mfcc_5-13 (9 new MFCCs)
     """
 
     # === Fundamental (3 features) ===
@@ -259,7 +259,7 @@ class CognitiveInteractionEngine:
         If the delta represents a warp distance > max_safe_warp,
         scale it down to stay within safe limits.
         """
-        # Calculate normalized distance (simplified 17D distance)
+        # Calculate normalized distance (simplified metric using key dimensions)
         # Using a subset of key dimensions for distance calculation
         distance = self._calculate_distance(target, anchor)
 
@@ -313,7 +313,9 @@ class CognitiveInteractionEngine:
         """
         Calculate normalized Euclidean distance between two vectors.
 
-        Uses key dimensions: F0, duration, HNR, spectral flatness
+        Uses a subset of key dimensions for safety distance calculation:
+        F0, duration, HNR, spectral flatness. This is a simplified metric
+        for clamp activation decisions, not the full 30D distance.
         """
         # Normalization ranges
         f0_range = 2000.0
@@ -332,7 +334,7 @@ class CognitiveInteractionEngine:
 
     def _delta_to_rust_parameters(self, delta: VectorDelta, anchor: Vector17D) -> Dict[str, float]:
         """
-        Convert 17D delta to Rust synthesis parameters.
+        Convert 30D delta to Rust synthesis parameters.
 
         Maps delta values to granular synthesis parameters:
         - pitch_shift_ratio: Based on delta_mean_f0_hz
