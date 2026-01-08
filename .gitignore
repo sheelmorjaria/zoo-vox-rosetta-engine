@@ -188,6 +188,7 @@ Thumbs.db
 
 # Test data and temporary files
 test_data/
+test_provenance_large_data/
 temp/
 tmp/
 *.cache
