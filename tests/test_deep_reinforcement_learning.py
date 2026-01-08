@@ -314,8 +314,9 @@ class TestDeepReinforcementLearning(unittest.TestCase):
         for episode in range(3):
             state = self.drl.reset_environment()
             done = False
+            max_steps = 100  # Safety limit to prevent infinite loops
 
-            while not done:
+            while not done and max_steps > 0:
                 action = self.drl.select_action(state)
                 next_state, reward, done = self.drl.step_environment(action)
 
@@ -327,6 +328,7 @@ class TestDeepReinforcementLearning(unittest.TestCase):
                     self.drl.learn_from_experience()
 
                 state = next_state
+                max_steps -= 1
 
         # Test policy evaluation
         evaluated_policy = self.drl.evaluate_policy(num_episodes=5)

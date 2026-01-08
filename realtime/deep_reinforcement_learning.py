@@ -803,7 +803,8 @@ class DeepReinforcementLearning:
         # Mock environment step
         next_observation = {"features": [0.1, 0.2, 0.3, 0.5]}
         reward = np.random.uniform(0, 1)
-        done = False
+        # Randomly end episode with 10% probability to prevent infinite loops
+        done = np.random.random() < 0.1
 
         return next_observation, reward, done
 
@@ -833,17 +834,20 @@ class DeepReinforcementLearning:
     def evaluate_policy(self, num_episodes: int = 5) -> Dict[str, float]:
         """Evaluate current policy"""
         total_reward = 0.0
+        max_steps_per_episode = 100  # Safety limit to prevent infinite loops
 
         for episode in range(num_episodes):
             observation = self.reset_environment()
             episode_reward = 0.0
             done = False
+            steps = 0
 
-            while not done:
+            while not done and steps < max_steps_per_episode:
                 action = self.learner.act(observation, explore=False)
                 next_observation, reward, done = self.step_environment(action)
                 episode_reward += reward
                 observation = next_observation
+                steps += 1
 
             total_reward += episode_reward
 
