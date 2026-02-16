@@ -284,13 +284,13 @@ impl VectorSpaceQueryEngine {
             // Species index
             self.species_index
                 .entry(phrase.species.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(idx);
 
             // Cluster index
             self.cluster_index
                 .entry(phrase.cluster_id)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(idx);
         }
 

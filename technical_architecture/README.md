@@ -5,22 +5,29 @@ High-performance Rust execution layer for the animal vocalization analysis frame
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Complete Research Workflow](#complete-research-workflow)
-3. [Features](#features)
-4. [Build](#build)
-5. [Test Coverage](#test-coverage)
-6. [17D Metadata Synthesis](#17d-metadata-synthesis)
-7. [Query Interface - 17D Metadata Queries](#query-interface---17d-metadata-queries)
-8. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
-9. [Granular Synthesis Limitations: The Formant Barrier](#granular-synthesis-limitations-the-formant-barrier)
-10. [Architecture](#architecture)
-11. [Deployment](#deployment)
-12. [Performance](#performance)
-13. [Dependencies](#dependencies)
-14. [Documentation](#documentation)
-15. [License](#license)
-16. [Author](#author)
-17. [Scientific Context](#scientific-context)
+2. [Zoo Vox Rosetta Engine v2.0](#zoo-vox-rosetta-engine-v20)
+   - [Compatibility Overview](#compatibility-overview)
+   - [New Modules (v2.0)](#new-modules-v20)
+   - [Species-Specific Configurations](#species-specific-configurations)
+   - [Cross-Species Analysis Results](#cross-species-analysis-results)
+   - [Phrase Data Preparation Pipeline](#phrase-data-preparation-pipeline-v20)
+   - [Within-Call Phrase Discovery](#within-call-phrase-discovery-acoustic-similarity-engine)
+3. [Complete Research Workflow](#complete-research-workflow)
+4. [Features](#features)
+5. [Build](#build)
+6. [Test Coverage](#test-coverage)
+7. [17D Metadata Synthesis](#17d-metadata-synthesis)
+8. [Query Interface - 17D Metadata Queries](#query-interface---17d-metadata-queries)
+9. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
+10. [Granular Synthesis Limitations: The Formant Barrier](#granular-synthesis-limitations-the-formant-barrier)
+11. [Architecture](#architecture)
+12. [Deployment](#deployment)
+13. [Performance](#performance)
+14. [Dependencies](#dependencies)
+15. [Documentation](#documentation)
+16. [License](#license)
+17. [Author](#author)
+18. [Scientific Context](#scientific-context)
 
 ---
 
@@ -31,6 +38,330 @@ This is the **Rust Execution Layer** of a hybrid Python/Rust architecture where:
 - **Python** handles cognitive intelligence, decision making, and context interpretation
 
 The system follows a **"Fail Open to Safety"** design principle - if Python crashes, Rust immediately mutes audio and continues in safe Passthrough Mode.
+
+---
+
+## Zoo Vox Rosetta Engine v2.0
+
+Multi-modality species adaptation framework for cross-species vocalization analysis. The v2.0 update adds support for species with different encoding strategies beyond temporal phrase patterns.
+
+### Compatibility Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    SPECIES COMPATIBILITY WITH PHRASE-BASED TEMPORAL ANALYSIS            │
+├───────────────────┬─────────────────┬─────────────────┬─────────────────────────────────┤
+│ Species           │ Compatibility   │ Phrases/File    │ Required Adaptation             │
+├───────────────────┼─────────────────┼─────────────────┼─────────────────────────────────┤
+│ Sperm Whale       │ ✓✓✓ EXCELLENT   │ 428.9 (highest) │ None - ideal for phrase detection│
+│ Meerkat           │ ✓✓✓ EXCELLENT   │ 11.42           │ Add phrase COUNT as feature     │
+│ Zebra Finch       │ ✓✓ GOOD         │ 23.2            │ SEQUENCE MODULE (n-gram)        │
+│ Orcas             │ ✓✓ GOOD         │ 7.5             │ SEQUENCE + SPECTRAL module      │
+│ Egyptian Bat      │ ✓✓ GOOD         │ 4.72            │ DURATION feature (ANCOVA)       │
+│ Bird Songs        │ ✓✓ GOOD         │ 10.3            │ Standard phrase analysis        │
+│ Giant Otter       │ ✓ MODERATE      │ 1.4             │ Spectral features needed        │
+│ Macaque           │ ✓ MODERATE      │ 1.0 (lowest)    │ Spectral fine structure         │
+│ Marmoset          │ △ PARTIAL       │ 0.39            │ Discrete calls, not phrases     │
+│ Dolphin           │ ✗ INCOMPATIBLE  │ 0.30            │ SPECTRAL MODULE required        │
+└───────────────────┴─────────────────┴─────────────────┴─────────────────────────────────┘
+```
+
+### New Modules (v2.0)
+
+#### 1. SpectralModule (Dolphin FM Whistles)
+
+Analyzes frequency-modulated signals for species that use continuous frequency contours rather than discrete phrases.
+
+```rust
+use technical_architecture::{SpectralModule, ContourConfig, FMType};
+
+let config = ContourConfig {
+    min_sweep_range: 1000.0,  // Minimum frequency sweep in Hz
+    min_duration_ms: 100.0,   // Minimum contour duration
+    frequency_bins: 8,        // Discretization resolution
+    time_bins: 10,
+};
+let module = SpectralModule::new(config);
+
+// Analyze dolphin whistle
+let contours = module.analyze(&audio, 192000);
+
+for contour in &contours {
+    println!("FM Type: {:?}", contour.features.fm_type);
+    println!("Frequency range: {} - {} Hz",
+        contour.features.f_min, contour.features.f_max);
+}
+```
+
+**FM Classifications:**
+- `Rising` - Upsweep (increasing frequency)
+- `Falling` - Downsweep (decreasing frequency)
+- `UShaped` - Down then up
+- `InvertedU` - Up then down
+- `Complex` - Multiple inflection points
+- `Flat` - Minimal modulation
+
+#### 2. SequenceModule (Combinatorial Syntax)
+
+N-gram analysis for species with combinatorial phrase sequences (zebra finch, orcas).
+
+```rust
+use technical_architecture::SequenceModule;
+
+let module = SequenceModule::new(3);  // Max trigram analysis
+
+let sequence = vec![0, 1, 2, 3, 0, 1, 2, 4, 0, 1, 2];
+let analysis = module.analyze(&sequence);
+
+// Motif detection
+for motif in &analysis.motifs {
+    println!("Pattern {:?}: {} occurrences",
+        motif.pattern, motif.occurrences);
+}
+
+// N-gram statistics
+println!("Unique bigrams: {}", analysis.ngram_stats.unique_bigrams);
+println!("Perplexity: {:.2}", analysis.perplexity);
+```
+
+#### 3. SpeciesConfigFactory (Species Adaptation)
+
+Creates species-specific configurations with appropriate analysis modules and parameters.
+
+```rust
+use technical_architecture::{SpeciesConfigFactory, AnalysisModule, AnalysisModality};
+
+// Get configuration for a species
+let config = SpeciesConfigFactory::create("zebra_finch");
+
+// Check required modules
+if config.requires_module(AnalysisModule::Sequence) {
+    // Use SequenceModule for zebra finch
+}
+
+// Check modality
+match config.modality() {
+    AnalysisModality::Temporal => /* phrase analysis */,
+    AnalysisModality::Spectral => /* FM contour analysis */,
+    AnalysisModality::Hybrid => /* combined approach */,
+}
+```
+
+### Species-Specific Configurations
+
+| Species | Encoding Strategy | Modality | Required Modules |
+|---------|------------------|----------|------------------|
+| Sperm Whale | CodaType | Temporal | Temporal |
+| Dolphin | FrequencyModulated | Spectral | Spectral |
+| Zebra Finch | Combinatorial | Temporal | Temporal, Sequence |
+| Orca | Combinatorial | Hybrid | Temporal, Sequence, Spectral |
+| Meerkat | Quantitative | Temporal | Temporal, Count |
+| Egyptian Bat | DurationMediated | Temporal | Temporal, Duration |
+| Marmoset | PhraseType | Temporal | Temporal |
+| Macaque | Minimal | Temporal | Temporal, Spectral |
+| Giant Otter | Minimal | Temporal | Temporal, Spectral |
+
+### Cross-Species Analysis Results
+
+Based on within-call phrase discovery analysis across multiple datasets:
+
+| Dataset | Files | Phrases | Types | Entropy |
+|---------|-------|---------|-------|---------|
+| Dominica Sperm Whale | 39 | 16,729 | 5 | 0.226 bits |
+| Zebra Finch | 143 | 3,319 | 15 | 2.352 bits |
+| Bird Songs | 42 | 434 | 8 | ~1.5 bits |
+| Orcas | 25 | 187 | 6 | ~1.2 bits |
+| Giant Otter | 331 | 463 | 2 | ~0.5 bits |
+| Macaque | 999 | 999 | 1 | ~0.0 bits |
+| Dolphin Whistles | 3,215 | 965 | 2 | 0.926 bits |
+
+**Key Findings:**
+- **Sperm whale codas** are highly stereotyped (5 types, 0.226 bits entropy) - ideal for phrase detection
+- **Zebra finch songs** have combinatorial syntax (15 types, 2.352 bits) - requires sequence analysis
+- **Dolphin whistles** use FM contours, not phrases - requires spectral module
+- **Macaque calls** are nearly uniform - requires spectral fine structure for discrimination
+
+### Phrase Data Preparation Pipeline (v2.0)
+
+The phrase data preparation system provides complete 30D acoustic feature extraction and species-specific phrase segmentation for all supported species.
+
+#### Modules
+
+| Module | Purpose |
+|--------|---------|
+| `zoo_vox_data_models` | Core data structures (30D features, PhrasePrototype, libraries) |
+| `zoo_vox_features` | 30D acoustic feature extraction |
+| `zoo_vox_extraction` | Species-specific phrase segmentation |
+| `zoo_vox_library` | Phrase library building and management |
+| `zoo_vox_within_call` | Within-call phrase discovery using acoustic similarity |
+
+#### 30D Acoustic Features
+
+The 30-dimensional feature vector captures complete bioacoustic characteristics:
+
+**1. Fundamental (3 features)**
+- `mean_f0_hz` - Mean fundamental frequency
+- `duration_ms` - Phrase duration
+- `f0_range_hz` - Pitch modulation range
+
+**2. Grit Factors (3 features)**
+- `harmonic_to_noise_ratio` - Harmonic purity (dB)
+- `spectral_flatness` - Noise vs tonal quality
+- `harmonicity` - Harmonic structure strength
+
+**3. Motion Factors (7 features)**
+- `attack_time_ms` - Onset speed
+- `decay_time_ms` - Release speed
+- `sustain_level` - Steady-state amplitude
+- `vibrato_rate_hz` - Pitch modulation frequency
+- `vibrato_depth` - Pitch modulation depth
+- `jitter` - Frequency perturbation
+- `shimmer` - Amplitude perturbation
+
+**4. Fingerprint Factors (14 features)**
+- `mfcc_1` through `mfcc_13` - Mel-frequency cepstral coefficients
+- `spectral_flux` - Spectral change rate
+
+**5. Rhythm Factors (3 features)**
+- `median_ici_ms` - Inter-call interval
+- `onset_rate_hz` - Event rate
+- `ici_coefficient_of_variation` - Rhythm regularity
+
+#### Usage Example
+
+```rust
+use technical_architecture::{
+    ZooVoxFeatureExtractor, ZooVoxPhraseExtractor,
+    ZooVoxExtractionConfig, ZooVoxLibraryBuilder,
+};
+
+// Extract features from audio
+let mut extractor = ZooVoxFeatureExtractor::new(48000);
+let features = extractor.extract(&audio)?;
+
+println!("F0: {} Hz", features.mean_f0_hz);
+println!("Duration: {} ms", features.duration_ms);
+println!("HNR: {} dB", features.harmonic_to_noise_ratio);
+
+// Extract phrases with species-specific segmentation
+let config = ZooVoxExtractionConfig::for_species("zebra_finch", 48000);
+let mut phrase_extractor = ZooVoxPhraseExtractor::new(config);
+let phrases = phrase_extractor.extract_phrases(&audio, "zebra_finch", None)?;
+
+// Build phrase library
+let builder = ZooVoxLibraryBuilder::new().with_similarity_threshold(0.85);
+let library = builder.build_library(phrases, "zebra_finch", None)?;
+
+println!("Total phrases: {}", library.total_phrases);
+println!("Type entropy: {:.3} bits", library.type_entropy);
+```
+
+#### Running the Demo
+
+```bash
+cargo run --release --example zoo_vox_rosetta_phrase_data_demo
+cargo run --release --example zoo_vox_zebra_finch_extraction
+```
+
+### Within-Call Phrase Discovery (Acoustic Similarity Engine)
+
+The `zoo_vox_within_call` module implements phrase discovery within single vocalizations using acoustic similarity rather than clustering. This approach recognizes that animal vocalizations exist on **continuous acoustic manifolds**, not discrete islands.
+
+#### Key Insight
+
+```
+Animal vocalizations form continuous gradients:
+  Phee ←───────→ Trill ←───────→ Twitter ←──────→ Tsik
+     (continuous acoustic transitions, not separate clusters)
+
+HDBSCAN expects ISLANDS. You have a CONTINENT.
+```
+
+#### Components
+
+| Component | Description |
+|-----------|-------------|
+| `WithinCallAnalyzer` | Main analyzer using acoustic similarity for phrase typing |
+| `WithinCallConfig` | Species-specific configuration |
+| `DiscoveredPhraseType` | Phrase type with centroid features and instances |
+| `PhraseMotif` | Recurring patterns within calls |
+| `SimilarityBasedLibraryBuilder` | Alternative library builder using similarity grouping |
+
+#### Species-Specific Thresholds
+
+| Species | Encoding | Similarity Threshold | Rationale |
+|---------|----------|---------------------|-----------|
+| Sperm Whale | Coda-type | 0.90 | Strict for short clicks |
+| Dolphin/Orca | FM whistle | 0.80 | Loose for continuous contours |
+| Zebra Finch | Combinatorial | 0.85 | Balanced for discrete syllables |
+| Marmoset | Harmonic | 0.85 | Balanced for harmonic calls |
+
+#### Usage Example
+
+```rust
+use technical_architecture::{
+    WithinCallAnalyzer, WithinCallConfig,
+    SimilarityBasedLibraryBuilder,
+};
+
+// Create analyzer with species-specific config
+let mut analyzer = WithinCallAnalyzer::for_species("zebra_finch");
+
+// Discover phrase types within a vocalization
+let result = analyzer.discover_phrases(phrases, "call_001", "zebra_finch");
+
+// View discovered types
+for pt in &result.phrase_types {
+    println!("Type {}: {} occurrences, F0={:.0}Hz",
+        pt.type_id, pt.occurrence_count, pt.centroid_features.mean_f0_hz);
+}
+
+// Find recurring motifs
+let motifs = analyzer.find_motifs(&result, 2, 2);
+for motif in &motifs {
+    println!("Pattern {:?}: {} occurrences",
+        motif.pattern, motif.occurrence_count);
+}
+
+// Build library using similarity-based grouping
+let builder = SimilarityBasedLibraryBuilder::for_species("zebra_finch");
+let library = builder.build_library(phrases, "zebra_finch")?;
+```
+
+#### Comparison: Standard vs Similarity-Based
+
+| Aspect | Standard (Key-Based) | Similarity-Based |
+|--------|---------------------|------------------|
+| Grouping method | F0 + Duration bins | Full 30D acoustic similarity |
+| Approach | Discrete binning | Continuous acoustic manifold |
+| Thresholds | Fixed | Species-specific |
+| Variability metrics | No | Intra-type variability computed |
+| Best for | Quick typing | Detailed within-call analysis |
+
+#### Running the Demo
+
+```bash
+cargo run --release --example zoo_vox_within_call_demo
+```
+
+#### Test Coverage
+
+All 9 unit tests passing:
+
+```bash
+cargo test zoo_vox_within_call --lib
+
+# Tests:
+# - test_within_call_config_default
+# - test_within_call_config_species
+# - test_analyzer_creation
+# - test_analyzer_for_species
+# - test_discover_phrases_empty
+# - test_discover_phrases_basic
+# - test_transition_matrix
+# - test_find_motifs
+# - test_similarity_based_library_builder
+```
 
 ---
 
@@ -216,17 +547,23 @@ cargo run --example benchmark_peer_controller --release
 
 ## Test Coverage
 
-**466 tests passing** - Comprehensive coverage of all functionality
+**475+ tests passing** - Comprehensive coverage of all functionality
 
 ```
-Rust Execution Layer: 466 tests passing
-├── Rust Tests: 454 tests
+Rust Execution Layer: 475+ tests passing
+├── Rust Tests: 463+ tests
 │   ├── Core Modules: 187 tests
 │   ├── Production Deployment: 142 tests
 │   ├── Field Deployment: 187 tests
 │   ├── 17D Metadata: 6 tests
-│   └── Granular Synthesis: 5 tests
-└── Python Tests: 12 tests (NEW - Formant Barrier Validation)
+│   ├── Granular Synthesis: 5 tests
+│   ├── Zoo Vox Rosetta 2.0: 27 tests
+│   │   ├── zoo_vox_data_models: 6 tests
+│   │   ├── zoo_vox_features: 4 tests
+│   │   ├── zoo_vox_extraction: 5 tests
+│   │   ├── zoo_vox_library: 3 tests
+│   │   └── zoo_vox_within_call: 9 tests
+└── Python Tests: 12 tests (Formant Barrier Validation)
     ├── test_harmonic_cannot_become_transient ✅
     ├── test_transient_cannot_become_harmonic ✅
     ├── test_harmonic_preserves_spectral_flatness ✅
@@ -236,6 +573,22 @@ Rust Execution Layer: 466 tests passing
     ├── test_persona_switching_for_modality ✅
     ├── test_small_grains_create_temporal_artifacts ✅
     └── ...and more
+```
+
+### Zoo Vox Rosetta 2.0 Tests
+
+Run the phrase data preparation tests:
+
+```bash
+# All Zoo Vox tests
+cargo test zoo_vox --lib
+
+# Specific modules
+cargo test zoo_vox_data_models --lib
+cargo test zoo_vox_features --lib
+cargo test zoo_vox_extraction --lib
+cargo test zoo_vox_library --lib
+cargo test zoo_vox_within_call --lib
 ```
 
 ---

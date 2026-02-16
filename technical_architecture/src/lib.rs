@@ -85,6 +85,242 @@ pub use metadata_synthesizer::{
 #[cfg(feature = "python-bindings")]
 pub use metadata_synthesizer::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};
 
+// Micro-dynamics extractor exports (NEW)
+pub use micro_dynamics_extractor::{
+    FeatureDim, FeatureVector, MicroDynamicsExtractor, MicroDynamicsFeatures,
+    MicroDynamicsFeatures15D, MicroDynamicsFeatures37D, MicroDynamicsFeatures39D,
+    MicroDynamicsFeatures56D, MultiScaleValue,
+};
+
+#[cfg(feature = "python-bindings")]
+pub use micro_dynamics_extractor::{PyMicroDynamicsExtractor, PyMicroDynamicsFeatures};
+
+// Pitch detection exports (NEW - YIN and autocorrelation)
+pub use pitch::{AutocorrEstimator, F0Estimate, PitchAlgorithm, YinEstimator};
+
+// Delta features exports (NEW - Δ and ΔΔ MFCCs and temporal features)
+pub use delta::{DeltaFeatures, DeltaWidth, MfccDeltaComputer, TemporalDeltaComputer, TemporalFeatureType};
+
+// Multi-scale aggregation exports (NEW - Statistical and hierarchical aggregation)
+pub use multi_scale::{HierarchicalAggregator, HierarchicalConfig, HierarchicalFeatures, MultiScaleFeatures, StatisticalAggregator};
+
+// Psychoacoustic features exports (NEW - 37D expansion)
+pub use psychoacoustics::{PitchEntropyCalculator, RoughnessCalculator, BrightnessCalculator};
+
+// Temporal features exports (NEW - 37D expansion)
+pub use temporal::{RhythmicStabilityCalculator, TemporalCentroidCalculator};
+
+// Advanced spectral features exports (NEW - 37D expansion)
+pub use spectral_advanced::{SpectralTiltCalculator, SpectralKurtosisCalculator, SpectralFlatnessCalculator};
+
+// Harmonic analysis exports (NEW - 37D expansion)
+pub use harmonics::{HarmonicDeviationCalculator, InharmonicityCalculator};
+
+// Formant analysis exports (NEW - 37D expansion)
+pub use formants::{FormantExtractor, FormantBandwidthCalculator};
+
+// Modulation dynamics exports (NEW - 37D expansion)
+pub use modulation::{FmDepthCalculator, FmRateCalculator, AmDepthCalculator};
+
+// Benchmark and evaluation exports (NEW - Phase 5)
+pub use benchmark::{
+    ClassificationMetrics, ClassificationReport, ComparisonReport, ConfusionMatrix,
+    DatasetLoader, DatasetMetadata, DatasetType, ExtractionReport, FeatureAblationResults,
+    FeatureEvaluator, Label, MetricCalculator, Recording,
+};
+
+// Change point detection exports (NEW - Phase 3)
+pub use change_point_detection::{ChangePointError, PeltSegmenter};
+
+// Clustering exports (NEW - Phase 3)
+pub use clustering::{ClusteringError, ClusterStats, DbscanClustering, StandardScaler};
+
+// HDBSCAN exports (NEW - Hierarchical DBSCAN for variable density)
+pub use hdbscan::{DistanceMetric, HdbscanClustering, HdbscanError, HdbscanStats};
+
+// Acoustic Similarity exports (NEW - Pairwise similarity for continuous manifolds)
+pub use acoustic_similarity::{
+    AcousticSimilarityEngine, DistanceMetric as SimilarityMetric,
+    BetweenTypeDistance, ConfusionEntry, FeatureDiscrimination, FilePair,
+    KnnClassifier, KnnCvResults, KnnNeighbor, KnnResult,
+    NeighborhoodAnalysis, SearchResult, SimilarityAnalysis, SimilarityIndex,
+};
+
+#[cfg(feature = "python-bindings")]
+pub use acoustic_similarity::PyAcousticSimilarityEngine;
+
+// Adaptive Segmentation exports (NEW - Onset detection for variable-length phrases)
+pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationError};
+
+// Within-Vocalization Analysis exports (NEW - TDD-tested multi-phrase detection)
+pub use within_vocalization_analyzer::{
+    BoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary,
+    PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
+};
+
+// GMM exports (NEW - Phoneme discovery approach)
+pub use gmm::{GaussianMixtureModel, GmmError};
+
+// HMM exports (NEW - Temporal sequence modeling)
+pub use hmm::{HiddenMarkovModel, HmmError};
+
+// DTW exports (NEW - Time-aware clustering)
+pub use dtw::{DtwDbscan, DtwMetric, FastDtw, DtwError, DtwClusterStats};
+
+// Vocabulary to Synthesis exports (NEW - Mapping, segmentation, synthesis)
+pub use vocabulary_mapper::{
+    VocabularyMapper, AnnotationDataset, VocalizationContext, VocabularyItem,
+    VocabularyOccurrence, DurationStats, VocabularyStatistics, VocabularyError,
+};
+pub use audio_segmenter::{
+    AudioSegmenter, AudioSegmentForSynthesis, AudioGrain, GrainEnvelope, SegmentContext,
+    SegmenterError,
+};
+pub use synthesis_pipeline::{
+    SynthesisPipeline, SynthesisAssets, SynthesisError,
+    MetadataDrivenParams, GranularSynthesisParams, ConcatenativeParams,
+    GrainEnvelopeType,
+};
+
+// Lexicon to Syntax exports (NEW - Master pipeline)
+pub use lexicon_to_syntax::{
+    LexiconToSyntaxPipeline, LexiconToSyntaxResult, PipelineError,
+    SegmentedPhrase, PhraseFeatures, LexiconVocabularyItem, PhonemeModel,
+    LexiconStatistics, PipelineCheckpoint,
+    SegmentationConfig, VectorizationConfig, DiscoveryConfig, RefinementConfig,
+};
+
+// Parallel extraction exports (NEW - Phase 3)
+pub use parallel_extraction::{
+    AnnotationEntry, AtomicPhraseWithUsage, ClusteredPhrase, CompositionalityStats,
+    ExtractionConfig, ExtractionError, ForbiddenReason, ForbiddenTransition,
+    GapAnalysis, GrammarRule, LinguisticAnalysis, OverlapAnalysis,
+    ParallelExtractionPipeline, PhonotacticsAnalysis, PhraseUsageStats, PipelineResult,
+    PragmaticsAnalysis, ProsodyAnalysis, Rhythmicity, SentenceSegment,
+    TurnTakingPattern, VocalizationResult, ZipfAnalysis,
+    calculate_intra_cluster_similarity, calculate_inter_cluster_similarity,
+    CommunicationEfficiency,
+    // Phrase Audio Library (NEW)
+    PhraseAudioLibrary, PhraseAudioSegment, LibraryStatistics,
+    // DBSCAN Clustering for Phrase Discovery (NEW)
+    cluster_phrase_candidates, batch_process_and_cluster,
+    // Annotation and Turn-Taking Analysis (NEW)
+    EmitterAnnotation, VocalizationWithEmitter, TurnTakingAnalysis,
+    ConversationStats, ResponseTimeStats, SocialNetworkAnalysis, InteractionPair,
+    ContextAnalysis, ContextTurnStats, PragmaticsAnalysisWithEmitter,
+    load_annotations_from_csv, analyze_turn_taking, analyze_social_network, analyze_context,
+    // Synthesis Output (NEW - JSON Export & Audio Segmentation)
+    export_phrases_for_synthesis,
+    SynthesisOutput, SynthesisMetadata, SynthesisPhrase, ClusterInfo,
+};
+
+// Rename to avoid conflict with metadata_synthesizer::PhraseCandidate
+pub use parallel_extraction::PhraseCandidate as ExtractionPhraseCandidate;
+
+// Corpus Analysis exports (NEW - Phrase X discovery)
+pub use corpus_analysis::{
+    CorpusError, CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX,
+    PhraseXDiscoveryEngine, Result as CorpusResult, SuffixEntropyCalculator,
+};
+
+// Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
+pub use spectral::{
+    SpectralModule, ContourConfig, ContourFeatures, FrequencyContour, FMType,
+};
+pub use sequence::{
+    SequenceModule, SequenceAnalysis, Motif, NgramStats,
+};
+pub use species::{
+    SpeciesConfig, SpeciesConfigFactory, EncodingStrategy, AnalysisModality, AnalysisModule,
+    FeatureParams, ContextRules, DecodingMethod,
+};
+
+// Zoo Vox Rosetta v2.0 - Phrase Data Preparation System exports
+pub use zoo_vox_data_models::{
+    AcousticFeatures30D, AcousticFeatures45D, ContextAssociation, PhrasePrototype,
+    SpeciesPhraseLibrary, CrossSpeciesPhraseDatabase, BehaviorAnnotation,
+};
+pub use zoo_vox_features::{ZooVoxFeatureExtractor, FeatureError};
+
+#[cfg(feature = "python-bindings")]
+pub use zoo_vox_features::PyZooVoxFeatureExtractor;
+
+pub use zoo_vox_extraction::{
+    ZooVoxPhraseExtractor, ZooVoxExtractionConfig, ZooVoxExtractionError,
+};
+pub use zoo_vox_library::{
+    ZooVoxLibraryBuilder, LibraryError, create_sample_libraries,
+};
+
+// Zoo Vox Rosetta v2.0 - Within-Call Phrase Discovery (Acoustic Similarity)
+pub use zoo_vox_within_call::{
+    WithinCallAnalyzer, WithinCallConfig, WithinCallAnalysisResult,
+    DiscoveredPhraseType, PhraseInstance, PhraseMotif,
+    SimilarityBasedLibraryBuilder,
+};
+
+/// Zoo Vox Rosetta result type
+pub type ZooVoxResult<T> = std::result::Result<T, ZooVoxError>;
+
+/// Zoo Vox Rosetta error type
+#[derive(Debug)]
+pub enum ZooVoxError {
+    /// IO error
+    Io(std::io::Error),
+    /// JSON serialization error
+    Json(serde_json::Error),
+    /// Feature extraction error
+    Feature(FeatureError),
+    /// Extraction error
+    Extraction(ZooVoxExtractionError),
+    /// Library error
+    Library(LibraryError),
+}
+
+impl From<std::io::Error> for ZooVoxError {
+    fn from(e: std::io::Error) -> Self {
+        ZooVoxError::Io(e)
+    }
+}
+
+impl From<serde_json::Error> for ZooVoxError {
+    fn from(e: serde_json::Error) -> Self {
+        ZooVoxError::Json(e)
+    }
+}
+
+impl From<FeatureError> for ZooVoxError {
+    fn from(e: FeatureError) -> Self {
+        ZooVoxError::Feature(e)
+    }
+}
+
+impl From<ZooVoxExtractionError> for ZooVoxError {
+    fn from(e: ZooVoxExtractionError) -> Self {
+        ZooVoxError::Extraction(e)
+    }
+}
+
+impl From<LibraryError> for ZooVoxError {
+    fn from(e: LibraryError) -> Self {
+        ZooVoxError::Library(e)
+    }
+}
+
+impl std::fmt::Display for ZooVoxError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ZooVoxError::Io(e) => write!(f, "IO error: {}", e),
+            ZooVoxError::Json(e) => write!(f, "JSON error: {}", e),
+            ZooVoxError::Feature(e) => write!(f, "Feature error: {}", e),
+            ZooVoxError::Extraction(e) => write!(f, "Extraction error: {}", e),
+            ZooVoxError::Library(e) => write!(f, "Library error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for ZooVoxError {}
+
 pub use logging::ProvenanceLogger;
 pub use master_controller::{
     detect_fpga, Action, AtomicParameters, CognitiveProcessor, ExecutionReceipt, HealthStatus,
@@ -209,6 +445,116 @@ mod wildlife_sentry;
 
 // Metadata-first synthesizer (30D vector space queries)
 mod metadata_synthesizer;
+
+// Micro-dynamics extractor (NEW - 30D feature extraction)
+pub mod micro_dynamics_extractor;
+
+// Pitch detection (NEW - YIN and autocorrelation algorithms)
+pub mod pitch;
+
+// Delta features (NEW - Δ and ΔΔ MFCCs and temporal features)
+pub mod delta;
+
+// Multi-scale aggregation (NEW - Statistical and hierarchical aggregation)
+pub mod multi_scale;
+
+// Benchmark and evaluation (NEW - Phase 5)
+pub mod benchmark;
+
+// Change point detection (NEW - PELT algorithm for Phase 3)
+mod change_point_detection;
+
+// Clustering (NEW - DBSCAN algorithm for Phase 3)
+pub mod clustering;
+
+// HDBSCAN (NEW - Hierarchical DBSCAN for variable-density clustering)
+pub mod hdbscan;
+
+// Adaptive Segmentation (NEW - Onset detection for variable-length phrases)
+mod adaptive_segmentation;
+
+// GMM + HMM (NEW - Phoneme discovery approach)
+mod gmm;
+mod hmm;
+
+// DTW (NEW - Dynamic Time Warping for time-aware clustering)
+mod dtw;
+
+// Vocabulary to Synthesis (NEW - Mapping, segmentation, and synthesis)
+mod vocabulary_mapper;
+mod audio_segmenter;
+mod synthesis_pipeline;
+
+// Lexicon to Syntax (NEW - Master pipeline: Segmentation → Vectorization → Discovery → Refinement)
+pub mod lexicon_to_syntax;
+
+// Parallel extraction (NEW - Main pipeline for Phase 3)
+mod parallel_extraction;
+
+// Corpus Analysis (NEW - Phrase X discovery for corpus analysis)
+mod corpus_analysis;
+
+// Within-Vocalization Analysis (NEW - Multi-phrase detection within vocalizations)
+pub mod within_vocalization_analyzer;
+
+// Phrase Sequence Analysis (NEW - Syntactic structure discovery)
+pub mod phrase_sequence_analyzer;
+
+// Spectral Analysis (NEW - Zoo Vox Rosetta v2.0: FM whistle analysis for dolphins)
+pub mod spectral;
+
+// Sequence Analysis (NEW - Zoo Vox Rosetta v2.0: N-gram analysis for combinatorial syntax)
+pub mod sequence;
+
+// Species Configuration (NEW - Zoo Vox Rosetta v2.0: Species-specific adaptation layer)
+pub mod species;
+
+// Zoo Vox Rosetta v2.0 - Phrase Data Preparation System
+// 30D/45D acoustic feature extraction, phrase segmentation, and library management
+pub mod zoo_vox_data_models;
+pub mod zoo_vox_features;
+pub mod zoo_vox_extraction;
+pub mod zoo_vox_library;
+pub mod zoo_vox_within_call;
+
+// Trajectory Analysis Module (NEW - Continuous manifold analysis)
+pub mod trajectory_analysis;
+
+// Synthetic Gap Analysis (NEW - Inter-type discriminability)
+pub mod synthetic_gap_analysis;
+
+// Arousal-Based Source Selection (NEW - Match synthesis to emotional intensity)
+pub mod arousal_based_selection;
+
+// Rhythm Sequencer (NEW - IPIs as first-class objects for species-typical timing)
+pub mod rhythm_sequencer;
+
+// Species-Specific Deep Dive Modules (NEW - Macaque spectral derivative, Dolphin bispectrum)
+pub mod species_deep_dive;
+
+// Psychoacoustic features (NEW - 37D expansion: pitch_entropy, roughness, brightness)
+pub mod psychoacoustics;
+
+// Temporal features (NEW - 37D expansion: rhythmic_stability)
+pub mod temporal;
+
+// Advanced spectral features (NEW - 37D expansion: spectral_tilt)
+pub mod spectral_advanced;
+
+// Harmonic analysis (NEW - 37D expansion: harmonic_deviation)
+pub mod harmonics;
+
+// Formant analysis (NEW - 37D expansion: formant_freqs)
+pub mod formants;
+
+// Modulation dynamics (NEW - 37D expansion: fm_depth, fm_rate)
+pub mod modulation;
+
+// Sequence analysis for combinatorial syntax testing
+pub mod sequence_analysis;
+
+// Acoustic Similarity Engine (NEW - Pairwise similarity instead of clustering)
+pub mod acoustic_similarity;
 
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -839,16 +1185,66 @@ pub struct PySourceMetadata {
     pub median_ici_ms: f32,
     pub onset_rate_hz: f32,
     pub ici_coefficient_of_variation: f32,
+
+    // === Resonance Factors (6 features) - 45D Expansion ===
+    pub formant_1_hz: f32,
+    pub formant_2_hz: f32,
+    pub formant_3_hz: f32,
+    pub formant_1_bandwidth: f32,
+    pub formant_2_bandwidth: f32,
+    pub formant_dispersion: f32,
+
+    // === Spectral Shape Factors (4 features) - 45D Expansion ===
+    pub spectral_centroid: f32,
+    pub spectral_spread: f32,
+    pub spectral_skewness: f32,
+    pub spectral_kurtosis: f32,
+
+    // === Modulation Factors (3 features) - 45D Expansion ===
+    pub spectral_tilt: f32,
+    pub fm_slope: f32,
+    pub am_depth: f32,
+
+    // === Non-Linear Factors (2 features) - 45D Expansion ===
+    pub subharmonic_ratio: f32,
+    pub spectral_entropy: f32,
 }
 
 #[cfg(feature = "python-bindings")]
 #[pymethods]
 impl PySourceMetadata {
-    /// Create 30D SourceMetadata (simplified constructor for common use)
+    /// Create 45D SourceMetadata (simplified constructor for common use)
     ///
     /// For full control, use the builder() method instead.
+    /// The 45D expansion fields use sensible defaults if not specified.
     #[allow(clippy::too_many_arguments)]
     #[new]
+    #[pyo3(signature = (
+        // Fundamental (3)
+        mean_f0_hz, duration_ms, f0_range_hz,
+        // Grit Factors (3)
+        harmonic_to_noise_ratio=20.0, spectral_flatness=0.3, harmonicity=0.8,
+        // Motion Factors (7)
+        attack_time_ms=5.0, decay_time_ms=20.0, sustain_level=0.7,
+        vibrato_rate_hz=7.0, vibrato_depth=50.0, jitter=0.01, shimmer=0.03,
+        // Fingerprint Factors (13 MFCCs)
+        mfcc_1=0.0, mfcc_2=0.0, mfcc_3=0.0, mfcc_4=0.0, mfcc_5=0.0,
+        mfcc_6=0.0, mfcc_7=0.0, mfcc_8=0.0, mfcc_9=0.0, mfcc_10=0.0,
+        mfcc_11=0.0, mfcc_12=0.0, mfcc_13=0.0,
+        // Spectral Dynamics (1)
+        spectral_flux=0.5,
+        // Rhythm Factors (3)
+        median_ici_ms=15.0, onset_rate_hz=8.0, ici_coefficient_of_variation=0.3,
+        // 45D Expansion - Resonance (6)
+        formant_1_hz=1000.0, formant_2_hz=2000.0, formant_3_hz=3000.0,
+        formant_1_bandwidth=150.0, formant_2_bandwidth=240.0, formant_dispersion=1000.0,
+        // 45D Expansion - Spectral Shape (4)
+        spectral_centroid=5000.0, spectral_spread=2000.0, spectral_skewness=0.0, spectral_kurtosis=3.0,
+        // 45D Expansion - Modulation (3)
+        spectral_tilt=-6.0, fm_slope=0.0, am_depth=0.0,
+        // 45D Expansion - Non-Linear (2)
+        subharmonic_ratio=0.0, spectral_entropy=0.3
+    ))]
     fn new(
         // Fundamental (3)
         mean_f0_hz: f32,
@@ -886,6 +1282,25 @@ impl PySourceMetadata {
         median_ici_ms: f32,
         onset_rate_hz: f32,
         ici_coefficient_of_variation: f32,
+        // 45D Expansion - Resonance (6)
+        formant_1_hz: f32,
+        formant_2_hz: f32,
+        formant_3_hz: f32,
+        formant_1_bandwidth: f32,
+        formant_2_bandwidth: f32,
+        formant_dispersion: f32,
+        // 45D Expansion - Spectral Shape (4)
+        spectral_centroid: f32,
+        spectral_spread: f32,
+        spectral_skewness: f32,
+        spectral_kurtosis: f32,
+        // 45D Expansion - Modulation (3)
+        spectral_tilt: f32,
+        fm_slope: f32,
+        am_depth: f32,
+        // 45D Expansion - Non-Linear (2)
+        subharmonic_ratio: f32,
+        spectral_entropy: f32,
     ) -> Self {
         Self {
             mean_f0_hz,
@@ -918,6 +1333,21 @@ impl PySourceMetadata {
             median_ici_ms,
             onset_rate_hz,
             ici_coefficient_of_variation,
+            formant_1_hz,
+            formant_2_hz,
+            formant_3_hz,
+            formant_1_bandwidth,
+            formant_2_bandwidth,
+            formant_dispersion,
+            spectral_centroid,
+            spectral_spread,
+            spectral_skewness,
+            spectral_kurtosis,
+            spectral_tilt,
+            fm_slope,
+            am_depth,
+            subharmonic_ratio,
+            spectral_entropy,
         }
     }
 
@@ -1202,6 +1632,25 @@ impl From<PySourceMetadata> for synthesis::SourceMetadata {
             median_ici_ms: py.median_ici_ms,
             onset_rate_hz: py.onset_rate_hz,
             ici_coefficient_of_variation: py.ici_coefficient_of_variation,
+            // 45D Expansion - Resonance
+            formant_1_hz: py.formant_1_hz,
+            formant_2_hz: py.formant_2_hz,
+            formant_3_hz: py.formant_3_hz,
+            formant_1_bandwidth: py.formant_1_bandwidth,
+            formant_2_bandwidth: py.formant_2_bandwidth,
+            formant_dispersion: py.formant_dispersion,
+            // 45D Expansion - Spectral Shape
+            spectral_centroid: py.spectral_centroid,
+            spectral_spread: py.spectral_spread,
+            spectral_skewness: py.spectral_skewness,
+            spectral_kurtosis: py.spectral_kurtosis,
+            // 45D Expansion - Modulation
+            spectral_tilt: py.spectral_tilt,
+            fm_slope: py.fm_slope,
+            am_depth: py.am_depth,
+            // 45D Expansion - Non-Linear
+            subharmonic_ratio: py.subharmonic_ratio,
+            spectral_entropy: py.spectral_entropy,
         }
     }
 }
@@ -1240,6 +1689,25 @@ impl From<synthesis::SourceMetadata> for PySourceMetadata {
             median_ici_ms: rust.median_ici_ms,
             onset_rate_hz: rust.onset_rate_hz,
             ici_coefficient_of_variation: rust.ici_coefficient_of_variation,
+            // 45D Expansion - Resonance
+            formant_1_hz: rust.formant_1_hz,
+            formant_2_hz: rust.formant_2_hz,
+            formant_3_hz: rust.formant_3_hz,
+            formant_1_bandwidth: rust.formant_1_bandwidth,
+            formant_2_bandwidth: rust.formant_2_bandwidth,
+            formant_dispersion: rust.formant_dispersion,
+            // 45D Expansion - Spectral Shape
+            spectral_centroid: rust.spectral_centroid,
+            spectral_spread: rust.spectral_spread,
+            spectral_skewness: rust.spectral_skewness,
+            spectral_kurtosis: rust.spectral_kurtosis,
+            // 45D Expansion - Modulation
+            spectral_tilt: rust.spectral_tilt,
+            fm_slope: rust.fm_slope,
+            am_depth: rust.am_depth,
+            // 45D Expansion - Non-Linear
+            subharmonic_ratio: rust.subharmonic_ratio,
+            spectral_entropy: rust.spectral_entropy,
         }
     }
 }
@@ -1361,6 +1829,100 @@ impl PySourceMetadataBuilder {
         new.metadata.median_ici_ms = median_ici_ms;
         new.metadata.onset_rate_hz = onset_rate_hz;
         new.metadata.ici_coefficient_of_variation = ici_cv;
+        new
+    }
+
+    // === 45D Expansion - Resonance Factors ===
+    fn formant_1_hz(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_1_hz = value;
+        new
+    }
+
+    fn formant_2_hz(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_2_hz = value;
+        new
+    }
+
+    fn formant_3_hz(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_3_hz = value;
+        new
+    }
+
+    fn formant_1_bandwidth(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_1_bandwidth = value;
+        new
+    }
+
+    fn formant_2_bandwidth(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_2_bandwidth = value;
+        new
+    }
+
+    fn formant_dispersion(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.formant_dispersion = value;
+        new
+    }
+
+    // === 45D Expansion - Spectral Shape Factors ===
+    fn spectral_centroid(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_centroid = value;
+        new
+    }
+
+    fn spectral_spread(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_spread = value;
+        new
+    }
+
+    fn spectral_skewness(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_skewness = value;
+        new
+    }
+
+    fn spectral_kurtosis(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_kurtosis = value;
+        new
+    }
+
+    // === 45D Expansion - Modulation Factors ===
+    fn spectral_tilt(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_tilt = value;
+        new
+    }
+
+    fn fm_slope(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.fm_slope = value;
+        new
+    }
+
+    fn am_depth(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.am_depth = value;
+        new
+    }
+
+    // === 45D Expansion - Non-Linear Factors ===
+    fn subharmonic_ratio(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.subharmonic_ratio = value;
+        new
+    }
+
+    fn spectral_entropy(&self, value: f32) -> Self {
+        let mut new = self.clone();
+        new.metadata.spectral_entropy = value;
         new
     }
 
@@ -3269,6 +3831,12 @@ fn technical_architecture(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyNavigationEngine>()?;
     m.add_class::<PyNavigationWaypoint>()?;
     m.add_class::<PyAudioIsland>()?;
+    // Micro-dynamics extractor classes (NEW - 30D feature extraction for BEANS)
+    m.add_class::<PyMicroDynamicsExtractor>()?;
+    m.add_class::<PyMicroDynamicsFeatures>()?;
+    // ZooVox 45D feature extractor and Acoustic Similarity Engine (NEW - BEANS benchmark integration)
+    m.add_class::<PyZooVoxFeatureExtractor>()?;
+    m.add_class::<PyAcousticSimilarityEngine>()?;
     Ok(())
 }
 

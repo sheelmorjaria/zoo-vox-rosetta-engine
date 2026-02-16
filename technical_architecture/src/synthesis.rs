@@ -1584,6 +1584,48 @@ pub struct SourceMetadata {
     pub onset_rate_hz: f32,
     /// ICI coefficient of variation - rhythm regularity (0 = perfectly regular, 1 = irregular)
     pub ici_coefficient_of_variation: f32,
+
+    // ============================================================================
+    // === 30D → 45D EXPANSION (15 NEW FEATURES) ===
+    // ============================================================================
+
+    // === Resonance Factors (6 features) ===
+    /// First formant frequency (Hz) - vocal tract resonance
+    pub formant_1_hz: f32,
+    /// Second formant frequency (Hz) - vocal tract resonance
+    pub formant_2_hz: f32,
+    /// Third formant frequency (Hz) - vocal tract resonance
+    pub formant_3_hz: f32,
+    /// First formant bandwidth (Hz) - resonance sharpness
+    pub formant_1_bandwidth: f32,
+    /// Second formant bandwidth (Hz) - resonance sharpness
+    pub formant_2_bandwidth: f32,
+    /// Formant dispersion (Hz) - average spacing between formants
+    pub formant_dispersion: f32,
+
+    // === Spectral Shape Factors (4 features) ===
+    /// Spectral centroid (Hz) - brightness, "center of mass" of spectrum
+    pub spectral_centroid: f32,
+    /// Spectral spread (Hz) - bandwidth around centroid
+    pub spectral_spread: f32,
+    /// Spectral skewness - asymmetry of spectral distribution
+    pub spectral_skewness: f32,
+    /// Spectral kurtosis - peakedness of spectral distribution
+    pub spectral_kurtosis: f32,
+
+    // === Modulation Factors (3 features) ===
+    /// Spectral tilt (dB/octave) - spectral slope, brightness vs frequency
+    pub spectral_tilt: f32,
+    /// FM slope (Hz/ms) - frequency modulation rate
+    pub fm_slope: f32,
+    /// AM depth (0-1) - amplitude modulation depth
+    pub am_depth: f32,
+
+    // === Non-Linear Factors (2 features) ===
+    /// Subharmonic ratio (0-1) - presence of subharmonics (creaky voice indicator)
+    pub subharmonic_ratio: f32,
+    /// Spectral entropy (0-1) - randomness of spectral distribution
+    pub spectral_entropy: f32,
 }
 
 impl Default for SourceMetadata {
@@ -1628,6 +1670,31 @@ impl Default for SourceMetadata {
             median_ici_ms: 0.0, // Not applicable for continuous tones
             onset_rate_hz: 0.0, // Not applicable for continuous tones
             ici_coefficient_of_variation: 0.0, // Not applicable for continuous tones
+
+            // === 30D → 45D Expansion Defaults ===
+
+            // Resonance - typical marmoset-like formants
+            formant_1_hz: 1000.0,        // F1 around 1kHz
+            formant_2_hz: 2500.0,        // F2 around 2.5kHz
+            formant_3_hz: 4000.0,        // F3 around 4kHz
+            formant_1_bandwidth: 150.0,  // ~150Hz bandwidth
+            formant_2_bandwidth: 200.0,  // ~200Hz bandwidth
+            formant_dispersion: 1500.0,  // ~1.5kHz between formants
+
+            // Spectral Shape - neutral spectral distribution
+            spectral_centroid: 5000.0,   // ~5kHz centroid
+            spectral_spread: 2000.0,     // ~2kHz spread
+            spectral_skewness: 0.0,      // Symmetric distribution
+            spectral_kurtosis: 3.0,      // Normal distribution kurtosis
+
+            // Modulation - minimal modulation
+            spectral_tilt: -6.0,         // -6dB/octave (natural roll-off)
+            fm_slope: 0.0,               // No FM
+            am_depth: 0.0,               // No AM
+
+            // Non-Linear - minimal non-linear content
+            subharmonic_ratio: 0.0,      // No subharmonics
+            spectral_entropy: 0.3,       // Moderate entropy (tonal signal)
         }
     }
 }
@@ -1681,7 +1748,92 @@ impl SourceMetadata {
             delta_median_ici_ms: self.median_ici_ms - other.median_ici_ms,
             delta_onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
             delta_ici_cv: self.ici_coefficient_of_variation - other.ici_coefficient_of_variation,
+
+            // Resonance deltas
+            delta_formant_1_hz: self.formant_1_hz - other.formant_1_hz,
+            delta_formant_2_hz: self.formant_2_hz - other.formant_2_hz,
+            delta_formant_3_hz: self.formant_3_hz - other.formant_3_hz,
+            delta_formant_1_bandwidth: self.formant_1_bandwidth - other.formant_1_bandwidth,
+            delta_formant_2_bandwidth: self.formant_2_bandwidth - other.formant_2_bandwidth,
+            delta_formant_dispersion: self.formant_dispersion - other.formant_dispersion,
+
+            // Spectral Shape deltas
+            delta_spectral_centroid: self.spectral_centroid - other.spectral_centroid,
+            delta_spectral_spread: self.spectral_spread - other.spectral_spread,
+            delta_spectral_skewness: self.spectral_skewness - other.spectral_skewness,
+            delta_spectral_kurtosis: self.spectral_kurtosis - other.spectral_kurtosis,
+
+            // Modulation deltas
+            delta_spectral_tilt: self.spectral_tilt - other.spectral_tilt,
+            delta_fm_slope: self.fm_slope - other.fm_slope,
+            delta_am_depth: self.am_depth - other.am_depth,
+
+            // Non-Linear deltas
+            delta_subharmonic_ratio: self.subharmonic_ratio - other.subharmonic_ratio,
+            delta_spectral_entropy: self.spectral_entropy - other.spectral_entropy,
         }
+    }
+
+    /// Convert metadata to 45D feature vector
+    ///
+    /// Returns a vector of 45 acoustic features for machine learning and similarity search.
+    pub fn to_vector_45d(&self) -> Vec<f64> {
+        vec![
+            // Fundamental (3)
+            self.mean_f0_hz as f64,
+            self.duration_ms as f64,
+            self.f0_range_hz as f64,
+            // Grit (3)
+            self.harmonic_to_noise_ratio as f64,
+            self.spectral_flatness as f64,
+            self.harmonicity as f64,
+            // Motion (7)
+            self.attack_time_ms as f64,
+            self.decay_time_ms as f64,
+            self.sustain_level as f64,
+            self.vibrato_rate_hz as f64,
+            self.vibrato_depth as f64,
+            self.jitter as f64,
+            self.shimmer as f64,
+            // Fingerprint (14)
+            self.mfcc_1 as f64,
+            self.mfcc_2 as f64,
+            self.mfcc_3 as f64,
+            self.mfcc_4 as f64,
+            self.mfcc_5 as f64,
+            self.mfcc_6 as f64,
+            self.mfcc_7 as f64,
+            self.mfcc_8 as f64,
+            self.mfcc_9 as f64,
+            self.mfcc_10 as f64,
+            self.mfcc_11 as f64,
+            self.mfcc_12 as f64,
+            self.mfcc_13 as f64,
+            self.spectral_flux as f64,
+            // Rhythm (3)
+            self.median_ici_ms as f64,
+            self.onset_rate_hz as f64,
+            self.ici_coefficient_of_variation as f64,
+            // Resonance (6)
+            self.formant_1_hz as f64,
+            self.formant_2_hz as f64,
+            self.formant_3_hz as f64,
+            self.formant_1_bandwidth as f64,
+            self.formant_2_bandwidth as f64,
+            self.formant_dispersion as f64,
+            // Spectral Shape (4)
+            self.spectral_centroid as f64,
+            self.spectral_spread as f64,
+            self.spectral_skewness as f64,
+            self.spectral_kurtosis as f64,
+            // Modulation (3)
+            self.spectral_tilt as f64,
+            self.fm_slope as f64,
+            self.am_depth as f64,
+            // Non-Linear (2)
+            self.subharmonic_ratio as f64,
+            self.spectral_entropy as f64,
+        ]
     }
 }
 
@@ -1730,6 +1882,33 @@ pub struct MicroDynamicsDelta {
     pub delta_median_ici_ms: f32,
     pub delta_onset_rate_hz: f32,
     pub delta_ici_cv: f32,
+
+    // ============================================================================
+    // === 30D → 45D EXPANSION (15 NEW DELTAS) ===
+    // ============================================================================
+
+    // Resonance factor deltas
+    pub delta_formant_1_hz: f32,
+    pub delta_formant_2_hz: f32,
+    pub delta_formant_3_hz: f32,
+    pub delta_formant_1_bandwidth: f32,
+    pub delta_formant_2_bandwidth: f32,
+    pub delta_formant_dispersion: f32,
+
+    // Spectral Shape factor deltas
+    pub delta_spectral_centroid: f32,
+    pub delta_spectral_spread: f32,
+    pub delta_spectral_skewness: f32,
+    pub delta_spectral_kurtosis: f32,
+
+    // Modulation factor deltas
+    pub delta_spectral_tilt: f32,
+    pub delta_fm_slope: f32,
+    pub delta_am_depth: f32,
+
+    // Non-Linear factor deltas
+    pub delta_subharmonic_ratio: f32,
+    pub delta_spectral_entropy: f32,
 }
 
 /// Builder for partial SourceMetadata construction
@@ -1866,6 +2045,108 @@ impl SourceMetadataBuilder {
         self.metadata.median_ici_ms = median_ici_ms;
         self.metadata.onset_rate_hz = onset_rate_hz;
         self.metadata.ici_coefficient_of_variation = ici_cv;
+        self
+    }
+
+    // ============================================================================
+    // === 30D → 45D EXPANSION (15 NEW BUILDERS) ===
+    // ============================================================================
+
+    // --- Resonance Factor Builders ---
+
+    /// Set first formant frequency
+    pub fn formant_1_hz(mut self, value: f32) -> Self {
+        self.metadata.formant_1_hz = value;
+        self
+    }
+
+    /// Set second formant frequency
+    pub fn formant_2_hz(mut self, value: f32) -> Self {
+        self.metadata.formant_2_hz = value;
+        self
+    }
+
+    /// Set third formant frequency
+    pub fn formant_3_hz(mut self, value: f32) -> Self {
+        self.metadata.formant_3_hz = value;
+        self
+    }
+
+    /// Set first formant bandwidth
+    pub fn formant_1_bandwidth(mut self, value: f32) -> Self {
+        self.metadata.formant_1_bandwidth = value;
+        self
+    }
+
+    /// Set second formant bandwidth
+    pub fn formant_2_bandwidth(mut self, value: f32) -> Self {
+        self.metadata.formant_2_bandwidth = value;
+        self
+    }
+
+    /// Set formant dispersion
+    pub fn formant_dispersion(mut self, value: f32) -> Self {
+        self.metadata.formant_dispersion = value;
+        self
+    }
+
+    // --- Spectral Shape Factor Builders ---
+
+    /// Set spectral centroid
+    pub fn spectral_centroid(mut self, value: f32) -> Self {
+        self.metadata.spectral_centroid = value;
+        self
+    }
+
+    /// Set spectral spread
+    pub fn spectral_spread(mut self, value: f32) -> Self {
+        self.metadata.spectral_spread = value;
+        self
+    }
+
+    /// Set spectral skewness
+    pub fn spectral_skewness(mut self, value: f32) -> Self {
+        self.metadata.spectral_skewness = value;
+        self
+    }
+
+    /// Set spectral kurtosis
+    pub fn spectral_kurtosis(mut self, value: f32) -> Self {
+        self.metadata.spectral_kurtosis = value;
+        self
+    }
+
+    // --- Modulation Factor Builders ---
+
+    /// Set spectral tilt
+    pub fn spectral_tilt(mut self, value: f32) -> Self {
+        self.metadata.spectral_tilt = value;
+        self
+    }
+
+    /// Set FM slope
+    pub fn fm_slope(mut self, value: f32) -> Self {
+        self.metadata.fm_slope = value;
+        self
+    }
+
+    /// Set AM depth
+    pub fn am_depth(mut self, value: f32) -> Self {
+        self.metadata.am_depth = value;
+        self
+    }
+
+    // --- Non-Linear Factor Builders ---
+
+    /// Set subharmonic ratio
+    pub fn subharmonic_ratio(mut self, value: f32) -> Self {
+        self.metadata.subharmonic_ratio = value;
+        self
+    }
+
+    /// Set spectral entropy
+    pub fn spectral_entropy(mut self, value: f32) -> Self {
+        self.metadata.spectral_entropy = value;
         self
     }
 
@@ -4280,7 +4561,7 @@ mod corvid_roughness_tests {
 
     #[test]
     fn test_source_metadata_delta_full_30d() {
-        // Test all 30 delta dimensions
+        // Test all 30 delta dimensions (now 45D with expansion)
         let source = SourceMetadata {
             mean_f0_hz: 6500.0,
             duration_ms: 50.0,
@@ -4312,6 +4593,8 @@ mod corvid_roughness_tests {
             median_ici_ms: 40.0,
             onset_rate_hz: 10.0,
             ici_coefficient_of_variation: 0.3,
+            // 45D expansion fields (use defaults)
+            ..Default::default()
         };
 
         let target = SourceMetadata {
@@ -4345,6 +4628,8 @@ mod corvid_roughness_tests {
             median_ici_ms: 50.0,               // +10
             onset_rate_hz: 15.0,               // +5
             ici_coefficient_of_variation: 0.2, // -0.1
+            // 45D expansion fields (use defaults)
+            ..Default::default()
         };
 
         let delta = target.delta_from(&source);
@@ -4416,6 +4701,8 @@ mod corvid_roughness_tests {
             median_ici_ms: 0.0,
             onset_rate_hz: 0.0,
             ici_coefficient_of_variation: 0.0,
+            // 45D expansion fields (use defaults)
+            ..Default::default()
         };
 
         let gritty_metadata = SourceMetadata {
@@ -4449,6 +4736,8 @@ mod corvid_roughness_tests {
             median_ici_ms: 0.0,
             onset_rate_hz: 0.0,
             ici_coefficient_of_variation: 0.0,
+            // 45D expansion fields (use defaults)
+            ..Default::default()
         };
 
         let delta = gritty_metadata.delta_from(&pure_metadata);
@@ -4506,6 +4795,67 @@ mod corvid_roughness_tests {
             built.ici_coefficient_of_variation,
             defaulted.ici_coefficient_of_variation
         );
+
+        // 45D expansion fields should also match
+        assert_eq!(built.formant_1_hz, defaulted.formant_1_hz);
+        assert_eq!(built.formant_2_hz, defaulted.formant_2_hz);
+        assert_eq!(built.spectral_centroid, defaulted.spectral_centroid);
+        assert_eq!(built.spectral_tilt, defaulted.spectral_tilt);
+        assert_eq!(built.subharmonic_ratio, defaulted.subharmonic_ratio);
+        assert_eq!(built.spectral_entropy, defaulted.spectral_entropy);
+    }
+
+    #[test]
+    fn test_source_metadata_to_vector_45d() {
+        // Test that to_vector_45d returns exactly 45 features
+        let metadata = SourceMetadata::default();
+        let vector = metadata.to_vector_45d();
+
+        // Verify dimension count
+        assert_eq!(vector.len(), 45, "to_vector_45d should return exactly 45 features");
+
+        // Verify ordering matches documented structure
+        // Fundamental (3): indices 0-2
+        assert_eq!(vector[0], metadata.mean_f0_hz as f64);
+        assert_eq!(vector[1], metadata.duration_ms as f64);
+        assert_eq!(vector[2], metadata.f0_range_hz as f64);
+
+        // Grit (3): indices 3-5
+        assert_eq!(vector[3], metadata.harmonic_to_noise_ratio as f64);
+        assert_eq!(vector[4], metadata.spectral_flatness as f64);
+        assert_eq!(vector[5], metadata.harmonicity as f64);
+
+        // Motion (7): indices 6-12
+        assert_eq!(vector[6], metadata.attack_time_ms as f64);
+
+        // Fingerprint (14): indices 13-26
+        assert_eq!(vector[13], metadata.mfcc_1 as f64);
+
+        // Rhythm (3): indices 27-29
+        assert_eq!(vector[27], metadata.median_ici_ms as f64);
+
+        // Resonance (6): indices 30-35
+        assert_eq!(vector[30], metadata.formant_1_hz as f64);
+        assert_eq!(vector[31], metadata.formant_2_hz as f64);
+        assert_eq!(vector[32], metadata.formant_3_hz as f64);
+        assert_eq!(vector[33], metadata.formant_1_bandwidth as f64);
+        assert_eq!(vector[34], metadata.formant_2_bandwidth as f64);
+        assert_eq!(vector[35], metadata.formant_dispersion as f64);
+
+        // Spectral Shape (4): indices 36-39
+        assert_eq!(vector[36], metadata.spectral_centroid as f64);
+        assert_eq!(vector[37], metadata.spectral_spread as f64);
+        assert_eq!(vector[38], metadata.spectral_skewness as f64);
+        assert_eq!(vector[39], metadata.spectral_kurtosis as f64);
+
+        // Modulation (3): indices 40-42
+        assert_eq!(vector[40], metadata.spectral_tilt as f64);
+        assert_eq!(vector[41], metadata.fm_slope as f64);
+        assert_eq!(vector[42], metadata.am_depth as f64);
+
+        // Non-Linear (2): indices 43-44
+        assert_eq!(vector[43], metadata.subharmonic_ratio as f64);
+        assert_eq!(vector[44], metadata.spectral_entropy as f64);
     }
 
     // Multi-Buffer Sequencer Tests for Corvid Multi-Modal Support
