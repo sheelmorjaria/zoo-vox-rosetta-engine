@@ -60,11 +60,18 @@ linfa-preprocessing = { version = "0.7", optional = true }
 linfa-nn = { version = "0.7", optional = true }
 # Audio loading and resampling (Phase 3: Parallel Extraction)
 # hound is required by audio_segmenter for WAV export in synthesis pipeline
+# Kept as required dependency since synthesis pipeline needs WAV export
 hound = { version = "3.5" }
 rubato = { version = "0.14", optional = true }
 # Symphonia - modern multi-format audio decoder (supports FLAC, MP3, AAC, OGG, etc.)
 # Note: Use hound for WAV (faster, simpler) and symphonia for other formats
 symphonia = { version = "0.5", features = ["flac", "mp3", "aac", "ogg", "isomp4"], optional = true }
+# Directory walking for file discovery
+walkdir = "2.4"
+# Home directory discovery
+dirs = "5.0"
+# Zstd compression for bundle serialization
+zstd = "0.13"
 # Scientific computing extensions (Phase 3: Parallel Extraction)
 ndarray-stats = "0.5"
 ndarray-linalg = { version = "0.16", optional = true }
@@ -74,7 +81,9 @@ pyo3-asyncio = { version = "0.19", features = ["tokio-runtime"], optional = true
 numpy = { version = "0.19", optional = true }
 
 [features]
-default = ["symphonia"]
+default = ["hound", "symphonia"]
+# hound is always available (required for WAV export in synthesis)
+hound = []
 python-bindings = ["pyo3", "pyo3-asyncio", "numpy"]
 gpu-acceleration = []
 fpga-integration = []

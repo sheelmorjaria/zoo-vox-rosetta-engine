@@ -149,6 +149,13 @@ pub use acoustic_similarity::{
 #[cfg(feature = "python-bindings")]
 pub use acoustic_similarity::PyAcousticSimilarityEngine;
 
+// Dynamic Segmenter exports (NEW - Change Point Detection for atomic phrase discovery)
+pub use dynamic_segmenter::{
+    AtomicPhraseAnalyzer, AtomicPhraseType, ChangePoint, DynamicPhraseCandidate,
+    DynamicSegmenter, DynamicSegmenterConfig, EmissionStrategy, SegmentationResult,
+    TypedPhraseCandidate,
+};
+
 // Adaptive Segmentation exports (NEW - Onset detection for variable-length phrases)
 pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationError};
 
@@ -232,7 +239,7 @@ pub use sequence::{
 };
 pub use species::{
     SpeciesConfig, SpeciesConfigFactory, EncodingStrategy, AnalysisModality, AnalysisModule,
-    FeatureParams, ContextRules, DecodingMethod,
+    FeatureParams, ContextRules, DecodingMethod, AtomicGranularity, HierarchicalThresholds,
 };
 
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System exports
@@ -257,6 +264,12 @@ pub use zoo_vox_within_call::{
     WithinCallAnalyzer, WithinCallConfig, WithinCallAnalysisResult,
     DiscoveredPhraseType, PhraseInstance, PhraseMotif,
     SimilarityBasedLibraryBuilder,
+};
+
+// Phrase Discovery Pipeline (Unified Segmentation + Similarity)
+pub use phrase_discovery::{
+    PhraseDiscoveryPipeline, PhraseDiscoveryConfig, PhraseDiscoveryResult,
+    PipelinePhraseType, PipelineStats,
 };
 
 /// Zoo Vox Rosetta result type
@@ -517,6 +530,9 @@ pub mod zoo_vox_extraction;
 pub mod zoo_vox_library;
 pub mod zoo_vox_within_call;
 
+// Phrase Discovery Pipeline (NEW - Unified segmentation + similarity pipeline)
+pub mod phrase_discovery;
+
 // Trajectory Analysis Module (NEW - Continuous manifold analysis)
 pub mod trajectory_analysis;
 
@@ -555,6 +571,15 @@ pub mod sequence_analysis;
 
 // Acoustic Similarity Engine (NEW - Pairwise similarity instead of clustering)
 pub mod acoustic_similarity;
+
+// Dynamic Phrase Segmentation (NEW - Change Point Detection for atomic phrase discovery)
+pub mod dynamic_segmenter;
+
+// Human-Guided Context Discovery (Annotation Alignment for semantic grounding)
+pub mod annotation_aligner;
+
+// Rosetta Pipeline (Integrated Zoo Vox Rosetta Engine)
+pub mod rosetta_pipeline;
 
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]

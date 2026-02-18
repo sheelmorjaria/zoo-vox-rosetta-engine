@@ -1,0 +1,2704 @@
+{
+  "Type_568": {
+    "Grooming": 1.0
+  },
+  "Type_134": {
+    "Unknown": 0.33333334,
+    "Fighting": 0.33333334,
+    "Background": 0.33333334
+  },
+  "Type_42": {
+    "Fighting": 0.2,
+    "Unknown": 0.4,
+    "Background": 0.4
+  },
+  "Type_661": {
+    "Unknown": 1.0
+  },
+  "Type_530": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_96": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_730": {
+    "Grooming": 1.0
+  },
+  "Type_457": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_736": {
+    "Background": 1.0
+  },
+  "Type_188": {
+    "Unknown": 0.6,
+    "Background": 0.2,
+    "Grooming": 0.2
+  },
+  "Type_309": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_569": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_411": {
+    "Protest": 1.0
+  },
+  "Type_329": {
+    "Unknown": 1.0
+  },
+  "Type_710": {
+    "Grooming": 1.0
+  },
+  "Type_588": {
+    "Unknown": 1.0
+  },
+  "Type_179": {
+    "Unknown": 1.0
+  },
+  "Type_746": {
+    "Unknown": 1.0
+  },
+  "Type_728": {
+    "Grooming": 1.0
+  },
+  "Type_135": {
+    "Background": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_389": {
+    "Grooming": 1.0
+  },
+  "Type_123": {
+    "Fighting": 0.45454547,
+    "Unknown": 0.54545456
+  },
+  "Type_51": {
+    "Background": 0.25,
+    "Unknown": 0.625,
+    "Fighting": 0.125
+  },
+  "Type_517": {
+    "Unknown": 1.0
+  },
+  "Type_606": {
+    "Background": 1.0
+  },
+  "Type_276": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_406": {
+    "Grooming": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_532": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_172": {
+    "Unknown": 0.6666667,
+    "Grooming": 0.33333334
+  },
+  "Type_509": {
+    "Unknown": 1.0
+  },
+  "Type_400": {
+    "Background": 1.0
+  },
+  "Type_228": {
+    "Unknown": 1.0
+  },
+  "Type_124": {
+    "Fighting": 0.33333334,
+    "Background": 0.33333334,
+    "Sleeping": 0.33333334
+  },
+  "Type_512": {
+    "Unknown": 1.0
+  },
+  "Type_731": {
+    "Grooming": 1.0
+  },
+  "Type_416": {
+    "Fighting": 1.0
+  },
+  "Type_201": {
+    "Fighting": 1.0
+  },
+  "Type_322": {
+    "Fighting": 1.0
+  },
+  "Type_250": {
+    "Fighting": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_632": {
+    "Unknown": 1.0
+  },
+  "Type_422": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_653": {
+    "Background": 1.0
+  },
+  "Type_488": {
+    "Unknown": 1.0
+  },
+  "Type_6": {
+    "Background": 0.5,
+    "Sleeping": 0.5
+  },
+  "Type_535": {
+    "Background": 0.33333334,
+    "Unknown": 0.33333334,
+    "Grooming": 0.33333334
+  },
+  "Type_121": {
+    "Unknown": 1.0
+  },
+  "Type_268": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_111": {
+    "Grooming": 0.25,
+    "Background": 0.5,
+    "Unknown": 0.25
+  },
+  "Type_259": {
+    "Unknown": 1.0
+  },
+  "Type_168": {
+    "Unknown": 1.0
+  },
+  "Type_633": {
+    "Unknown": 1.0
+  },
+  "Type_233": {
+    "Unknown": 1.0
+  },
+  "Type_649": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_444": {
+    "Unknown": 1.0
+  },
+  "Type_476": {
+    "Unknown": 1.0
+  },
+  "Type_721": {
+    "Unknown": 1.0
+  },
+  "Type_401": {
+    "Background": 1.0
+  },
+  "Type_161": {
+    "Background": 1.0
+  },
+  "Type_733": {
+    "Background": 1.0
+  },
+  "Type_109": {
+    "Background": 0.11111111,
+    "Unknown": 0.8888889
+  },
+  "Type_754": {
+    "Unknown": 1.0
+  },
+  "Type_685": {
+    "Background": 1.0
+  },
+  "Type_36": {
+    "Background": 0.1875,
+    "Unknown": 0.625,
+    "Grooming": 0.125,
+    "Fighting": 0.0625
+  },
+  "Type_103": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_166": {
+    "Unknown": 1.0
+  },
+  "Type_100": {
+    "Unknown": 0.33333334,
+    "Background": 0.6666667
+  },
+  "Type_70": {
+    "Background": 1.0
+  },
+  "Type_516": {
+    "Background": 1.0
+  },
+  "Type_701": {
+    "Unknown": 1.0
+  },
+  "Type_448": {
+    "Unknown": 1.0
+  },
+  "Type_212": {
+    "Unknown": 1.0
+  },
+  "Type_79": {
+    "Unknown": 1.0
+  },
+  "Type_442": {
+    "Unknown": 1.0
+  },
+  "Type_254": {
+    "Unknown": 1.0
+  },
+  "Type_171": {
+    "Unknown": 1.0
+  },
+  "Type_409": {
+    "Unknown": 1.0
+  },
+  "Type_358": {
+    "Unknown": 1.0
+  },
+  "Type_26": {
+    "Unknown": 0.8,
+    "Background": 0.2
+  },
+  "Type_612": {
+    "Unknown": 1.0
+  },
+  "Type_741": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_118": {
+    "Unknown": 0.75,
+    "Sleeping": 0.25
+  },
+  "Type_20": {
+    "Background": 1.0
+  },
+  "Type_232": {
+    "Background": 1.0
+  },
+  "Type_756": {
+    "Unknown": 1.0
+  },
+  "Type_363": {
+    "Unknown": 1.0
+  },
+  "Type_594": {
+    "Background": 1.0
+  },
+  "Type_206": {
+    "Fighting": 1.0
+  },
+  "Type_693": {
+    "Grooming": 1.0
+  },
+  "Type_527": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_540": {
+    "Unknown": 1.0
+  },
+  "Type_404": {
+    "Unknown": 0.2,
+    "Fighting": 0.2,
+    "Background": 0.4,
+    "Grooming": 0.2
+  },
+  "Type_173": {
+    "Background": 0.11764706,
+    "Grooming": 0.23529412,
+    "Fighting": 0.05882353,
+    "Unknown": 0.5882353
+  },
+  "Type_300": {
+    "Grooming": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_253": {
+    "Unknown": 1.0
+  },
+  "Type_657": {
+    "Background": 1.0
+  },
+  "Type_537": {
+    "Unknown": 1.0
+  },
+  "Type_572": {
+    "Unknown": 1.0
+  },
+  "Type_739": {
+    "Unknown": 1.0
+  },
+  "Type_573": {
+    "Unknown": 1.0
+  },
+  "Type_482": {
+    "Unknown": 1.0
+  },
+  "Type_758": {
+    "Unknown": 1.0
+  },
+  "Type_318": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_729": {
+    "Background": 1.0
+  },
+  "Type_387": {
+    "Background": 1.0
+  },
+  "Type_575": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_182": {
+    "Grooming": 0.5,
+    "Unknown": 0.25,
+    "Background": 0.25
+  },
+  "Type_334": {
+    "Grooming": 0.125,
+    "Fighting": 0.0625,
+    "Unknown": 0.625,
+    "Background": 0.1875
+  },
+  "Type_262": {
+    "Unknown": 0.5,
+    "Protest": 0.25,
+    "Background": 0.25
+  },
+  "Type_8": {
+    "Protest": 0.25,
+    "Grooming": 0.25,
+    "Unknown": 0.25,
+    "Background": 0.25
+  },
+  "Type_584": {
+    "Unknown": 1.0
+  },
+  "Type_467": {
+    "Fighting": 1.0
+  },
+  "Type_629": {
+    "Unknown": 1.0
+  },
+  "Type_221": {
+    "Background": 1.0
+  },
+  "Type_271": {
+    "Grooming": 1.0
+  },
+  "Type_760": {
+    "Unknown": 1.0
+  },
+  "Type_1": {
+    "Unknown": 0.33333334,
+    "Background": 0.33333334,
+    "Grooming": 0.33333334
+  },
+  "Type_456": {
+    "Unknown": 1.0
+  },
+  "Type_388": {
+    "Unknown": 1.0
+  },
+  "Type_281": {
+    "Background": 1.0
+  },
+  "Type_753": {
+    "Unknown": 1.0
+  },
+  "Type_622": {
+    "Unknown": 1.0
+  },
+  "Type_196": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_543": {
+    "Unknown": 0.6,
+    "Background": 0.4
+  },
+  "Type_656": {
+    "Grooming": 1.0
+  },
+  "Type_585": {
+    "Grooming": 1.0
+  },
+  "Type_25": {
+    "Fighting": 0.44444445,
+    "Unknown": 0.44444445,
+    "Grooming": 0.11111111
+  },
+  "Type_332": {
+    "Unknown": 1.0
+  },
+  "Type_418": {
+    "Grooming": 1.0
+  },
+  "Type_290": {
+    "Background": 1.0
+  },
+  "Type_270": {
+    "Unknown": 0.5,
+    "Fighting": 0.25,
+    "Grooming": 0.25
+  },
+  "Type_299": {
+    "Grooming": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_636": {
+    "Unknown": 1.0
+  },
+  "Type_72": {
+    "Fighting": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_503": {
+    "Unknown": 1.0
+  },
+  "Type_184": {
+    "Background": 0.6,
+    "Unknown": 0.4
+  },
+  "Type_608": {
+    "Unknown": 1.0
+  },
+  "Type_726": {
+    "Grooming": 1.0
+  },
+  "Type_199": {
+    "Grooming": 0.14285715,
+    "Background": 0.14285715,
+    "Unknown": 0.71428573
+  },
+  "Type_141": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_376": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_0": {
+    "Unknown": 0.54545456,
+    "Background": 0.22727273,
+    "Mating": 0.045454547,
+    "Fighting": 0.18181819
+  },
+  "Type_715": {
+    "Unknown": 1.0
+  },
+  "Type_417": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_436": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_320": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_158": {
+    "Fighting": 0.11111111,
+    "Unknown": 0.6666667,
+    "Background": 0.22222222
+  },
+  "Type_80": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_350": {
+    "Unknown": 0.33333334,
+    "Grooming": 0.33333334,
+    "Background": 0.33333334
+  },
+  "Type_107": {
+    "Background": 1.0
+  },
+  "Type_126": {
+    "Grooming": 1.0
+  },
+  "Type_102": {
+    "Background": 1.0
+  },
+  "Type_590": {
+    "Unknown": 1.0
+  },
+  "Type_684": {
+    "Background": 1.0
+  },
+  "Type_62": {
+    "Unknown": 1.0
+  },
+  "Type_713": {
+    "Unknown": 1.0
+  },
+  "Type_427": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_208": {
+    "Fighting": 1.0
+  },
+  "Type_10": {
+    "Background": 1.0
+  },
+  "Type_44": {
+    "Unknown": 0.25,
+    "Grooming": 0.25,
+    "Background": 0.5
+  },
+  "Type_703": {
+    "Unknown": 1.0
+  },
+  "Type_767": {
+    "Unknown": 1.0
+  },
+  "Type_328": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_237": {
+    "Background": 1.0
+  },
+  "Type_57": {
+    "Unknown": 1.0
+  },
+  "Type_348": {
+    "Fighting": 1.0
+  },
+  "Type_492": {
+    "Unknown": 1.0
+  },
+  "Type_99": {
+    "Background": 0.33333334,
+    "Unknown": 0.16666667,
+    "Fighting": 0.5
+  },
+  "Type_112": {
+    "Background": 1.0
+  },
+  "Type_296": {
+    "Unknown": 1.0
+  },
+  "Type_452": {
+    "Unknown": 1.0
+  },
+  "Type_431": {
+    "Unknown": 0.6666667,
+    "Fighting": 0.33333334
+  },
+  "Type_86": {
+    "Grooming": 0.25,
+    "Background": 0.5,
+    "Unknown": 0.25
+  },
+  "Type_295": {
+    "Grooming": 0.4,
+    "Unknown": 0.6
+  },
+  "Type_29": {
+    "Background": 0.75,
+    "Unknown": 0.25
+  },
+  "Type_700": {
+    "Unknown": 1.0
+  },
+  "Type_110": {
+    "Background": 0.25,
+    "Grooming": 0.25,
+    "Unknown": 0.5
+  },
+  "Type_650": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_368": {
+    "Unknown": 1.0
+  },
+  "Type_277": {
+    "Unknown": 1.0
+  },
+  "Type_213": {
+    "Unknown": 1.0
+  },
+  "Type_479": {
+    "Unknown": 0.75,
+    "Grooming": 0.25
+  },
+  "Type_367": {
+    "Grooming": 0.2,
+    "Unknown": 0.8
+  },
+  "Type_546": {
+    "Grooming": 1.0
+  },
+  "Type_627": {
+    "Unknown": 1.0
+  },
+  "Type_143": {
+    "Background": 0.30769232,
+    "Fighting": 0.15384616,
+    "Unknown": 0.53846157
+  },
+  "Type_180": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_267": {
+    "Protest": 1.0
+  },
+  "Type_258": {
+    "Unknown": 1.0
+  },
+  "Type_133": {
+    "Unknown": 0.375,
+    "Fighting": 0.375,
+    "Background": 0.25
+  },
+  "Type_240": {
+    "Background": 1.0
+  },
+  "Type_541": {
+    "Unknown": 1.0
+  },
+  "Type_455": {
+    "Unknown": 1.0
+  },
+  "Type_539": {
+    "Unknown": 1.0
+  },
+  "Type_714": {
+    "Unknown": 1.0
+  },
+  "Type_589": {
+    "Unknown": 1.0
+  },
+  "Type_150": {
+    "Fighting": 1.0
+  },
+  "Type_248": {
+    "Background": 1.0
+  },
+  "Type_2": {
+    "Background": 0.4,
+    "Unknown": 0.6
+  },
+  "Type_716": {
+    "Unknown": 1.0
+  },
+  "Type_39": {
+    "Unknown": 0.33333334,
+    "Protest": 0.6666667
+  },
+  "Type_558": {
+    "Background": 1.0
+  },
+  "Type_223": {
+    "Unknown": 1.0
+  },
+  "Type_202": {
+    "Unknown": 0.5,
+    "Background": 0.25,
+    "Fighting": 0.25
+  },
+  "Type_432": {
+    "Unknown": 1.0
+  },
+  "Type_478": {
+    "Unknown": 1.0
+  },
+  "Type_391": {
+    "Unknown": 0.8,
+    "Fighting": 0.2
+  },
+  "Type_27": {
+    "Background": 1.0
+  },
+  "Type_60": {
+    "Grooming": 0.16666667,
+    "Unknown": 0.75,
+    "Background": 0.083333336
+  },
+  "Type_336": {
+    "Fighting": 0.14285715,
+    "Grooming": 0.14285715,
+    "Background": 0.14285715,
+    "Unknown": 0.5714286
+  },
+  "Type_66": {
+    "Background": 0.16666667,
+    "Unknown": 0.8333333
+  },
+  "Type_198": {
+    "Background": 1.0
+  },
+  "Type_46": {
+    "Background": 0.4,
+    "Unknown": 0.6
+  },
+  "Type_461": {
+    "Unknown": 0.6666667,
+    "Grooming": 0.33333334
+  },
+  "Type_127": {
+    "Unknown": 0.6666667,
+    "Fighting": 0.16666667,
+    "Background": 0.16666667
+  },
+  "Type_162": {
+    "Background": 0.16666667,
+    "Fighting": 0.33333334,
+    "Unknown": 0.5
+  },
+  "Type_510": {
+    "Grooming": 1.0
+  },
+  "Type_131": {
+    "Unknown": 0.6666667,
+    "Fighting": 0.33333334
+  },
+  "Type_405": {
+    "Grooming": 1.0
+  },
+  "Type_178": {
+    "Unknown": 1.0
+  },
+  "Type_82": {
+    "Background": 1.0
+  },
+  "Type_617": {
+    "Unknown": 1.0
+  },
+  "Type_723": {
+    "Unknown": 1.0
+  },
+  "Type_453": {
+    "Fighting": 1.0
+  },
+  "Type_37": {
+    "Background": 0.35714287,
+    "Grooming": 0.21428572,
+    "Unknown": 0.42857143
+  },
+  "Type_101": {
+    "Grooming": 0.5,
+    "Background": 0.5
+  },
+  "Type_464": {
+    "Fighting": 1.0
+  },
+  "Type_720": {
+    "Unknown": 1.0
+  },
+  "Type_522": {
+    "Grooming": 1.0
+  },
+  "Type_429": {
+    "Unknown": 1.0
+  },
+  "Type_601": {
+    "Unknown": 1.0
+  },
+  "Type_138": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_626": {
+    "Unknown": 1.0
+  },
+  "Type_695": {
+    "Unknown": 1.0
+  },
+  "Type_316": {
+    "Fighting": 1.0
+  },
+  "Type_688": {
+    "Background": 1.0
+  },
+  "Type_623": {
+    "Grooming": 1.0
+  },
+  "Type_181": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_402": {
+    "Background": 1.0
+  },
+  "Type_737": {
+    "Background": 1.0
+  },
+  "Type_438": {
+    "Grooming": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_529": {
+    "Unknown": 1.0
+  },
+  "Type_197": {
+    "Background": 0.2,
+    "Fighting": 0.2,
+    "Unknown": 0.6
+  },
+  "Type_624": {
+    "Unknown": 1.0
+  },
+  "Type_702": {
+    "Unknown": 1.0
+  },
+  "Type_13": {
+    "Protest": 0.045454547,
+    "Fighting": 0.13636364,
+    "Unknown": 0.45454547,
+    "Sleeping": 0.045454547,
+    "Grooming": 0.045454547,
+    "Background": 0.27272728
+  },
+  "Type_327": {
+    "Unknown": 1.0
+  },
+  "Type_468": {
+    "Fighting": 1.0
+  },
+  "Type_474": {
+    "Unknown": 1.0
+  },
+  "Type_620": {
+    "Grooming": 1.0
+  },
+  "Type_93": {
+    "Background": 0.6666667,
+    "Fighting": 0.33333334
+  },
+  "Type_224": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_506": {
+    "Unknown": 1.0
+  },
+  "Type_500": {
+    "Grooming": 1.0
+  },
+  "Type_308": {
+    "Protest": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_357": {
+    "Unknown": 0.8333333,
+    "Background": 0.16666667
+  },
+  "Type_641": {
+    "Unknown": 1.0
+  },
+  "Type_340": {
+    "Unknown": 1.0
+  },
+  "Type_146": {
+    "Unknown": 0.33333334,
+    "Background": 0.33333334,
+    "Fighting": 0.33333334
+  },
+  "Type_238": {
+    "Grooming": 0.14285715,
+    "Unknown": 0.42857143,
+    "Background": 0.42857143
+  },
+  "Type_45": {
+    "Background": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_677": {
+    "Fighting": 1.0
+  },
+  "Type_377": {
+    "Background": 0.33333334,
+    "Unknown": 0.33333334,
+    "Grooming": 0.33333334
+  },
+  "Type_364": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_245": {
+    "Fighting": 1.0
+  },
+  "Type_671": {
+    "Unknown": 1.0
+  },
+  "Type_426": {
+    "Unknown": 1.0
+  },
+  "Type_151": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_19": {
+    "Unknown": 0.33333334,
+    "Background": 0.33333334,
+    "Grooming": 0.11111111,
+    "Fighting": 0.22222222
+  },
+  "Type_439": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_167": {
+    "Unknown": 0.6666667,
+    "Grooming": 0.33333334
+  },
+  "Type_681": {
+    "Unknown": 0.5,
+    "Protest": 0.5
+  },
+  "Type_722": {
+    "Unknown": 1.0
+  },
+  "Type_235": {
+    "Fighting": 1.0
+  },
+  "Type_331": {
+    "Fighting": 1.0
+  },
+  "Type_638": {
+    "Unknown": 0.6,
+    "Background": 0.4
+  },
+  "Type_410": {
+    "Unknown": 1.0
+  },
+  "Type_711": {
+    "Unknown": 1.0
+  },
+  "Type_68": {
+    "Background": 0.16666667,
+    "Unknown": 0.8333333
+  },
+  "Type_450": {
+    "Grooming": 0.2,
+    "Unknown": 0.8
+  },
+  "Type_552": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_609": {
+    "Unknown": 1.0
+  },
+  "Type_766": {
+    "Unknown": 1.0
+  },
+  "Type_487": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_763": {
+    "Grooming": 1.0
+  },
+  "Type_664": {
+    "Fighting": 1.0
+  },
+  "Type_90": {
+    "Background": 1.0
+  },
+  "Type_514": {
+    "Unknown": 1.0
+  },
+  "Type_211": {
+    "Fighting": 0.4,
+    "Background": 0.2,
+    "Grooming": 0.4
+  },
+  "Type_194": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_602": {
+    "Unknown": 1.0
+  },
+  "Type_297": {
+    "Unknown": 0.25,
+    "Background": 0.75
+  },
+  "Type_547": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_163": {
+    "Unknown": 0.33333334,
+    "Fighting": 0.33333334,
+    "Background": 0.33333334
+  },
+  "Type_64": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_204": {
+    "Fighting": 1.0
+  },
+  "Type_385": {
+    "Unknown": 1.0
+  },
+  "Type_203": {
+    "Unknown": 0.375,
+    "Background": 0.375,
+    "Protest": 0.125,
+    "Fighting": 0.125
+  },
+  "Type_324": {
+    "Fighting": 1.0
+  },
+  "Type_342": {
+    "Grooming": 0.2,
+    "Background": 0.2,
+    "Unknown": 0.6
+  },
+  "Type_513": {
+    "Unknown": 1.0
+  },
+  "Type_73": {
+    "Unknown": 1.0
+  },
+  "Type_255": {
+    "Fighting": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_145": {
+    "Fighting": 0.5,
+    "Grooming": 0.25,
+    "Unknown": 0.25
+  },
+  "Type_339": {
+    "Fighting": 1.0
+  },
+  "Type_441": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_717": {
+    "Grooming": 1.0
+  },
+  "Type_559": {
+    "Background": 1.0
+  },
+  "Type_346": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_398": {
+    "Protest": 1.0
+  },
+  "Type_578": {
+    "Unknown": 1.0
+  },
+  "Type_692": {
+    "Unknown": 1.0
+  },
+  "Type_501": {
+    "Grooming": 1.0
+  },
+  "Type_526": {
+    "Unknown": 1.0
+  },
+  "Type_433": {
+    "Unknown": 1.0
+  },
+  "Type_610": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_341": {
+    "Background": 0.14285715,
+    "Grooming": 0.2857143,
+    "Unknown": 0.5714286
+  },
+  "Type_345": {
+    "Unknown": 1.0
+  },
+  "Type_97": {
+    "Unknown": 0.33333334,
+    "Background": 0.6666667
+  },
+  "Type_192": {
+    "Background": 1.0
+  },
+  "Type_555": {
+    "Background": 1.0
+  },
+  "Type_757": {
+    "Unknown": 1.0
+  },
+  "Type_260": {
+    "Unknown": 1.0
+  },
+  "Type_313": {
+    "Fighting": 1.0
+  },
+  "Type_413": {
+    "Unknown": 1.0
+  },
+  "Type_393": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_528": {
+    "Unknown": 0.6666667,
+    "Grooming": 0.33333334
+  },
+  "Type_11": {
+    "Unknown": 1.0
+  },
+  "Type_205": {
+    "Grooming": 0.09090909,
+    "Unknown": 0.59090906,
+    "Protest": 0.09090909,
+    "Fighting": 0.18181819,
+    "Background": 0.045454547
+  },
+  "Type_551": {
+    "Grooming": 1.0
+  },
+  "Type_58": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_735": {
+    "Unknown": 1.0
+  },
+  "Type_545": {
+    "Background": 1.0
+  },
+  "Type_630": {
+    "Grooming": 1.0
+  },
+  "Type_321": {
+    "Fighting": 1.0
+  },
+  "Type_542": {
+    "Grooming": 1.0
+  },
+  "Type_226": {
+    "Unknown": 0.8,
+    "Background": 0.2
+  },
+  "Type_619": {
+    "Unknown": 1.0
+  },
+  "Type_755": {
+    "Unknown": 1.0
+  },
+  "Type_69": {
+    "Background": 1.0
+  },
+  "Type_696": {
+    "Unknown": 1.0
+  },
+  "Type_239": {
+    "Grooming": 0.2857143,
+    "Unknown": 0.5714286,
+    "Background": 0.14285715
+  },
+  "Type_31": {
+    "Background": 0.16666667,
+    "Unknown": 0.41666666,
+    "Protest": 0.083333336,
+    "Fighting": 0.33333334
+  },
+  "Type_293": {
+    "Unknown": 1.0
+  },
+  "Type_155": {
+    "Unknown": 1.0
+  },
+  "Type_699": {
+    "Unknown": 1.0
+  },
+  "Type_434": {
+    "Unknown": 0.8,
+    "Grooming": 0.2
+  },
+  "Type_462": {
+    "Unknown": 1.0
+  },
+  "Type_647": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_592": {
+    "Grooming": 1.0
+  },
+  "Type_41": {
+    "Background": 0.16666667,
+    "Grooming": 0.16666667,
+    "Unknown": 0.6666667
+  },
+  "Type_209": {
+    "Fighting": 0.2,
+    "Unknown": 0.6,
+    "Background": 0.2
+  },
+  "Type_48": {
+    "Background": 1.0
+  },
+  "Type_628": {
+    "Unknown": 1.0
+  },
+  "Type_183": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_428": {
+    "Unknown": 1.0
+  },
+  "Type_395": {
+    "Grooming": 1.0
+  },
+  "Type_466": {
+    "Unknown": 1.0
+  },
+  "Type_91": {
+    "Unknown": 1.0
+  },
+  "Type_523": {
+    "Grooming": 1.0
+  },
+  "Type_502": {
+    "Unknown": 1.0
+  },
+  "Type_472": {
+    "Unknown": 1.0
+  },
+  "Type_712": {
+    "Unknown": 1.0
+  },
+  "Type_750": {
+    "Unknown": 1.0
+  },
+  "Type_144": {
+    "Unknown": 1.0
+  },
+  "Type_3": {
+    "Unknown": 0.45454547,
+    "Background": 0.36363637,
+    "Protest": 0.09090909,
+    "Grooming": 0.09090909
+  },
+  "Type_16": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_278": {
+    "Unknown": 1.0
+  },
+  "Type_392": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_390": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_705": {
+    "Unknown": 1.0
+  },
+  "Type_159": {
+    "Grooming": 0.2,
+    "Unknown": 0.8
+  },
+  "Type_234": {
+    "Unknown": 0.6666667,
+    "Fighting": 0.33333334
+  },
+  "Type_563": {
+    "Unknown": 1.0
+  },
+  "Type_534": {
+    "Grooming": 1.0
+  },
+  "Type_599": {
+    "Fighting": 1.0
+  },
+  "Type_153": {
+    "Fighting": 1.0
+  },
+  "Type_654": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_504": {
+    "Unknown": 1.0
+  },
+  "Type_631": {
+    "Unknown": 1.0
+  },
+  "Type_22": {
+    "Background": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_686": {
+    "Grooming": 1.0
+  },
+  "Type_186": {
+    "Fighting": 0.25,
+    "Background": 0.25,
+    "Unknown": 0.25,
+    "Protest": 0.25
+  },
+  "Type_496": {
+    "Unknown": 1.0
+  },
+  "Type_595": {
+    "Background": 1.0
+  },
+  "Type_34": {
+    "Grooming": 0.14285715,
+    "Background": 0.5714286,
+    "Unknown": 0.2857143
+  },
+  "Type_691": {
+    "Unknown": 1.0
+  },
+  "Type_643": {
+    "Unknown": 1.0
+  },
+  "Type_130": {
+    "Fighting": 1.0
+  },
+  "Type_106": {
+    "Background": 1.0
+  },
+  "Type_200": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_156": {
+    "Fighting": 0.54545456,
+    "Grooming": 0.09090909,
+    "Unknown": 0.27272728,
+    "Background": 0.09090909
+  },
+  "Type_207": {
+    "Unknown": 1.0
+  },
+  "Type_561": {
+    "Unknown": 1.0
+  },
+  "Type_374": {
+    "Background": 1.0
+  },
+  "Type_566": {
+    "Unknown": 1.0
+  },
+  "Type_525": {
+    "Unknown": 1.0
+  },
+  "Type_412": {
+    "Unknown": 1.0
+  },
+  "Type_634": {
+    "Unknown": 1.0
+  },
+  "Type_380": {
+    "Grooming": 1.0
+  },
+  "Type_727": {
+    "Background": 1.0
+  },
+  "Type_256": {
+    "Unknown": 1.0
+  },
+  "Type_50": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_30": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_359": {
+    "Unknown": 0.875,
+    "Grooming": 0.125
+  },
+  "Type_611": {
+    "Unknown": 1.0
+  },
+  "Type_15": {
+    "Background": 1.0
+  },
+  "Type_81": {
+    "Unknown": 1.0
+  },
+  "Type_142": {
+    "Fighting": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_105": {
+    "Background": 1.0
+  },
+  "Type_403": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_337": {
+    "Unknown": 1.0
+  },
+  "Type_738": {
+    "Background": 1.0
+  },
+  "Type_670": {
+    "Unknown": 1.0
+  },
+  "Type_333": {
+    "Fighting": 1.0
+  },
+  "Type_95": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_351": {
+    "Unknown": 1.0
+  },
+  "Type_581": {
+    "Unknown": 1.0
+  },
+  "Type_261": {
+    "Unknown": 1.0
+  },
+  "Type_687": {
+    "Unknown": 0.8,
+    "Protest": 0.2
+  },
+  "Type_301": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_505": {
+    "Unknown": 1.0
+  },
+  "Type_272": {
+    "Unknown": 1.0
+  },
+  "Type_65": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_458": {
+    "Unknown": 1.0
+  },
+  "Type_550": {
+    "Background": 1.0
+  },
+  "Type_425": {
+    "Unknown": 1.0
+  },
+  "Type_576": {
+    "Unknown": 1.0
+  },
+  "Type_507": {
+    "Unknown": 1.0
+  },
+  "Type_241": {
+    "Unknown": 0.33333334,
+    "Background": 0.6666667
+  },
+  "Type_497": {
+    "Unknown": 1.0
+  },
+  "Type_430": {
+    "Fighting": 1.0
+  },
+  "Type_394": {
+    "Background": 1.0
+  },
+  "Type_352": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_583": {
+    "Unknown": 1.0
+  },
+  "Type_49": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_354": {
+    "Unknown": 1.0
+  },
+  "Type_298": {
+    "Background": 1.0
+  },
+  "Type_356": {
+    "Unknown": 0.75,
+    "Grooming": 0.125,
+    "Background": 0.125
+  },
+  "Type_108": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_673": {
+    "Fighting": 1.0
+  },
+  "Type_140": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_85": {
+    "Background": 0.5833333,
+    "Unknown": 0.41666666
+  },
+  "Type_415": {
+    "Unknown": 0.8,
+    "Background": 0.2
+  },
+  "Type_480": {
+    "Fighting": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_470": {
+    "Unknown": 1.0
+  },
+  "Type_690": {
+    "Unknown": 1.0
+  },
+  "Type_655": {
+    "Unknown": 1.0
+  },
+  "Type_621": {
+    "Unknown": 1.0
+  },
+  "Type_397": {
+    "Unknown": 1.0
+  },
+  "Type_236": {
+    "Unknown": 1.0
+  },
+  "Type_752": {
+    "Unknown": 1.0
+  },
+  "Type_494": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_310": {
+    "Grooming": 1.0
+  },
+  "Type_335": {
+    "Fighting": 1.0
+  },
+  "Type_14": {
+    "Background": 0.4,
+    "Unknown": 0.6
+  },
+  "Type_317": {
+    "Fighting": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_570": {
+    "Unknown": 1.0
+  },
+  "Type_251": {
+    "Grooming": 0.11111111,
+    "Unknown": 0.5555556,
+    "Background": 0.22222222,
+    "Fighting": 0.11111111
+  },
+  "Type_669": {
+    "Unknown": 1.0
+  },
+  "Type_177": {
+    "Unknown": 1.0
+  },
+  "Type_660": {
+    "Unknown": 1.0
+  },
+  "Type_764": {
+    "Grooming": 1.0
+  },
+  "Type_257": {
+    "Unknown": 1.0
+  },
+  "Type_743": {
+    "Grooming": 1.0
+  },
+  "Type_598": {
+    "Grooming": 1.0
+  },
+  "Type_217": {
+    "Fighting": 1.0
+  },
+  "Type_469": {
+    "Unknown": 1.0
+  },
+  "Type_75": {
+    "Background": 0.33333334,
+    "Unknown": 0.5,
+    "Fighting": 0.16666667
+  },
+  "Type_71": {
+    "Background": 1.0
+  },
+  "Type_658": {
+    "Grooming": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_747": {
+    "Fighting": 1.0
+  },
+  "Type_678": {
+    "Fighting": 1.0
+  },
+  "Type_269": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_53": {
+    "Unknown": 0.75,
+    "Grooming": 0.125,
+    "Background": 0.125
+  },
+  "Type_148": {
+    "Fighting": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_718": {
+    "Unknown": 1.0
+  },
+  "Type_38": {
+    "Background": 1.0
+  },
+  "Type_120": {
+    "Unknown": 1.0
+  },
+  "Type_662": {
+    "Fighting": 1.0
+  },
+  "Type_454": {
+    "Unknown": 1.0
+  },
+  "Type_4": {
+    "Unknown": 0.5,
+    "Background": 0.33333334,
+    "Fighting": 0.083333336,
+    "Grooming": 0.083333336
+  },
+  "Type_175": {
+    "Unknown": 1.0
+  },
+  "Type_564": {
+    "Unknown": 0.6666667,
+    "Background": 0.33333334
+  },
+  "Type_55": {
+    "Fighting": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_414": {
+    "Unknown": 1.0
+  },
+  "Type_32": {
+    "Grooming": 0.25,
+    "Unknown": 0.25,
+    "Background": 0.25,
+    "Fighting": 0.25
+  },
+  "Type_152": {
+    "Unknown": 0.8,
+    "Fighting": 0.2
+  },
+  "Type_645": {
+    "Unknown": 1.0
+  },
+  "Type_443": {
+    "Unknown": 1.0
+  },
+  "Type_63": {
+    "Unknown": 1.0
+  },
+  "Type_613": {
+    "Grooming": 1.0
+  },
+  "Type_264": {
+    "Unknown": 0.42857143,
+    "Background": 0.42857143,
+    "Grooming": 0.14285715
+  },
+  "Type_451": {
+    "Fighting": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_325": {
+    "Fighting": 0.5,
+    "Background": 0.25,
+    "Unknown": 0.25
+  },
+  "Type_35": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_136": {
+    "Background": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_674": {
+    "Unknown": 1.0
+  },
+  "Type_751": {
+    "Unknown": 1.0
+  },
+  "Type_446": {
+    "Unknown": 1.0
+  },
+  "Type_56": {
+    "Fighting": 0.14285715,
+    "Unknown": 0.85714287
+  },
+  "Type_43": {
+    "Unknown": 0.6,
+    "Fighting": 0.2,
+    "Background": 0.2
+  },
+  "Type_520": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_164": {
+    "Unknown": 0.33333334,
+    "Fighting": 0.33333334,
+    "Grooming": 0.33333334
+  },
+  "Type_12": {
+    "Background": 0.2,
+    "Unknown": 0.73333335,
+    "Grooming": 0.06666667
+  },
+  "Type_33": {
+    "Background": 0.5,
+    "Grooming": 0.25,
+    "Unknown": 0.25
+  },
+  "Type_605": {
+    "Unknown": 1.0
+  },
+  "Type_749": {
+    "Unknown": 1.0
+  },
+  "Type_421": {
+    "Unknown": 1.0
+  },
+  "Type_129": {
+    "Unknown": 1.0
+  },
+  "Type_314": {
+    "Protest": 0.18181819,
+    "Fighting": 0.18181819,
+    "Unknown": 0.6363636
+  },
+  "Type_473": {
+    "Unknown": 1.0
+  },
+  "Type_618": {
+    "Fighting": 1.0
+  },
+  "Type_139": {
+    "Fighting": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_128": {
+    "Unknown": 1.0
+  },
+  "Type_666": {
+    "Unknown": 1.0
+  },
+  "Type_759": {
+    "Unknown": 1.0
+  },
+  "Type_225": {
+    "Fighting": 1.0
+  },
+  "Type_379": {
+    "Grooming": 1.0
+  },
+  "Type_531": {
+    "Unknown": 0.33333334,
+    "Grooming": 0.6666667
+  },
+  "Type_489": {
+    "Unknown": 1.0
+  },
+  "Type_748": {
+    "Fighting": 1.0
+  },
+  "Type_706": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_319": {
+    "Fighting": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_637": {
+    "Unknown": 1.0
+  },
+  "Type_218": {
+    "Fighting": 1.0
+  },
+  "Type_369": {
+    "Grooming": 0.16666667,
+    "Unknown": 0.6666667,
+    "Fighting": 0.16666667
+  },
+  "Type_52": {
+    "Unknown": 0.36842105,
+    "Fighting": 0.42105263,
+    "Background": 0.21052632
+  },
+  "Type_381": {
+    "Background": 1.0
+  },
+  "Type_556": {
+    "Background": 1.0
+  },
+  "Type_280": {
+    "Background": 1.0
+  },
+  "Type_323": {
+    "Fighting": 0.6666667,
+    "Grooming": 0.33333334
+  },
+  "Type_521": {
+    "Unknown": 1.0
+  },
+  "Type_742": {
+    "Unknown": 1.0
+  },
+  "Type_292": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_519": {
+    "Background": 1.0
+  },
+  "Type_625": {
+    "Unknown": 1.0
+  },
+  "Type_249": {
+    "Background": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_445": {
+    "Unknown": 1.0
+  },
+  "Type_361": {
+    "Unknown": 1.0
+  },
+  "Type_614": {
+    "Unknown": 1.0
+  },
+  "Type_176": {
+    "Grooming": 0.14285715,
+    "Unknown": 0.42857143,
+    "Background": 0.42857143
+  },
+  "Type_119": {
+    "Unknown": 1.0
+  },
+  "Type_732": {
+    "Background": 1.0
+  },
+  "Type_67": {
+    "Unknown": 1.0
+  },
+  "Type_273": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_554": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_242": {
+    "Background": 1.0
+  },
+  "Type_495": {
+    "Unknown": 1.0
+  },
+  "Type_765": {
+    "Unknown": 1.0
+  },
+  "Type_481": {
+    "Grooming": 1.0
+  },
+  "Type_734": {
+    "Background": 1.0
+  },
+  "Type_338": {
+    "Unknown": 1.0
+  },
+  "Type_682": {
+    "Unknown": 1.0
+  },
+  "Type_330": {
+    "Unknown": 1.0
+  },
+  "Type_672": {
+    "Fighting": 1.0
+  },
+  "Type_54": {
+    "Grooming": 0.11111111,
+    "Unknown": 0.33333334,
+    "Background": 0.5555556
+  },
+  "Type_61": {
+    "Grooming": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_147": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_593": {
+    "Grooming": 1.0
+  },
+  "Type_98": {
+    "Background": 1.0
+  },
+  "Type_306": {
+    "Unknown": 0.3,
+    "Protest": 0.6,
+    "Background": 0.1
+  },
+  "Type_407": {
+    "Unknown": 1.0
+  },
+  "Type_372": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_596": {
+    "Background": 1.0
+  },
+  "Type_419": {
+    "Unknown": 1.0
+  },
+  "Type_704": {
+    "Unknown": 1.0
+  },
+  "Type_485": {
+    "Unknown": 1.0
+  },
+  "Type_515": {
+    "Unknown": 1.0
+  },
+  "Type_5": {
+    "Unknown": 0.5714286,
+    "Background": 0.2857143,
+    "Grooming": 0.14285715
+  },
+  "Type_40": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_640": {
+    "Unknown": 1.0
+  },
+  "Type_399": {
+    "Unknown": 1.0
+  },
+  "Type_315": {
+    "Background": 0.33333334,
+    "Fighting": 0.33333334,
+    "Unknown": 0.33333334
+  },
+  "Type_680": {
+    "Unknown": 1.0
+  },
+  "Type_113": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_18": {
+    "Background": 1.0
+  },
+  "Type_383": {
+    "Unknown": 1.0
+  },
+  "Type_154": {
+    "Unknown": 0.33333334,
+    "Background": 0.33333334,
+    "Fighting": 0.33333334
+  },
+  "Type_125": {
+    "Unknown": 1.0
+  },
+  "Type_285": {
+    "Unknown": 1.0
+  },
+  "Type_553": {
+    "Background": 1.0
+  },
+  "Type_284": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_165": {
+    "Unknown": 1.0
+  },
+  "Type_157": {
+    "Unknown": 0.33333334,
+    "Fighting": 0.6666667
+  },
+  "Type_463": {
+    "Unknown": 1.0
+  },
+  "Type_549": {
+    "Unknown": 0.6,
+    "Background": 0.4
+  },
+  "Type_665": {
+    "Unknown": 1.0
+  },
+  "Type_243": {
+    "Grooming": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_761": {
+    "Unknown": 1.0
+  },
+  "Type_689": {
+    "Unknown": 1.0
+  },
+  "Type_114": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_117": {
+    "Background": 0.14285715,
+    "Unknown": 0.71428573,
+    "Sleeping": 0.14285715
+  },
+  "Type_115": {
+    "Unknown": 0.5555556,
+    "Background": 0.44444445
+  },
+  "Type_724": {
+    "Unknown": 1.0
+  },
+  "Type_597": {
+    "Unknown": 1.0
+  },
+  "Type_195": {
+    "Background": 0.75,
+    "Unknown": 0.25
+  },
+  "Type_579": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_74": {
+    "Unknown": 1.0
+  },
+  "Type_719": {
+    "Unknown": 1.0
+  },
+  "Type_370": {
+    "Unknown": 1.0
+  },
+  "Type_567": {
+    "Unknown": 1.0
+  },
+  "Type_762": {
+    "Unknown": 1.0
+  },
+  "Type_642": {
+    "Background": 1.0
+  },
+  "Type_137": {
+    "Fighting": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_424": {
+    "Unknown": 1.0
+  },
+  "Type_355": {
+    "Unknown": 1.0
+  },
+  "Type_591": {
+    "Unknown": 1.0
+  },
+  "Type_279": {
+    "Unknown": 1.0
+  },
+  "Type_560": {
+    "Unknown": 1.0
+  },
+  "Type_373": {
+    "Unknown": 1.0
+  },
+  "Type_24": {
+    "Background": 0.17948718,
+    "Fighting": 0.17948718,
+    "Protest": 0.07692308,
+    "Unknown": 0.5641026
+  },
+  "Type_538": {
+    "Unknown": 1.0
+  },
+  "Type_668": {
+    "Unknown": 1.0
+  },
+  "Type_465": {
+    "Fighting": 1.0
+  },
+  "Type_216": {
+    "Unknown": 0.4,
+    "Fighting": 0.4,
+    "Background": 0.2
+  },
+  "Type_266": {
+    "Protest": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_149": {
+    "Fighting": 1.0
+  },
+  "Type_263": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_362": {
+    "Unknown": 1.0
+  },
+  "Type_571": {
+    "Unknown": 1.0
+  },
+  "Type_104": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_745": {
+    "Grooming": 1.0
+  },
+  "Type_386": {
+    "Background": 1.0
+  },
+  "Type_725": {
+    "Unknown": 1.0
+  },
+  "Type_663": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_459": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_493": {
+    "Unknown": 1.0
+  },
+  "Type_78": {
+    "Unknown": 1.0
+  },
+  "Type_375": {
+    "Unknown": 1.0
+  },
+  "Type_616": {
+    "Unknown": 1.0
+  },
+  "Type_635": {
+    "Unknown": 1.0
+  },
+  "Type_76": {
+    "Protest": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_347": {
+    "Fighting": 1.0
+  },
+  "Type_219": {
+    "Unknown": 1.0
+  },
+  "Type_23": {
+    "Grooming": 0.045454547,
+    "Background": 0.27272728,
+    "Unknown": 0.6818182
+  },
+  "Type_282": {
+    "Unknown": 1.0
+  },
+  "Type_498": {
+    "Unknown": 1.0
+  },
+  "Type_511": {
+    "Unknown": 1.0
+  },
+  "Type_707": {
+    "Unknown": 1.0
+  },
+  "Type_286": {
+    "Background": 1.0
+  },
+  "Type_449": {
+    "Fighting": 1.0
+  },
+  "Type_603": {
+    "Grooming": 1.0
+  },
+  "Type_698": {
+    "Unknown": 1.0
+  },
+  "Type_574": {
+    "Unknown": 1.0
+  },
+  "Type_349": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_291": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_577": {
+    "Unknown": 1.0
+  },
+  "Type_652": {
+    "Background": 1.0
+  },
+  "Type_229": {
+    "Unknown": 1.0
+  },
+  "Type_116": {
+    "Grooming": 0.33333334,
+    "Background": 0.16666667,
+    "Unknown": 0.5
+  },
+  "Type_275": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_378": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_644": {
+    "Background": 1.0
+  },
+  "Type_518": {
+    "Unknown": 1.0
+  },
+  "Type_565": {
+    "Unknown": 1.0
+  },
+  "Type_360": {
+    "Unknown": 1.0
+  },
+  "Type_646": {
+    "Unknown": 1.0
+  },
+  "Type_170": {
+    "Unknown": 1.0
+  },
+  "Type_189": {
+    "Fighting": 0.25,
+    "Background": 0.375,
+    "Unknown": 0.375
+  },
+  "Type_287": {
+    "Background": 1.0
+  },
+  "Type_582": {
+    "Unknown": 1.0
+  },
+  "Type_227": {
+    "Unknown": 1.0
+  },
+  "Type_607": {
+    "Unknown": 1.0
+  },
+  "Type_353": {
+    "Unknown": 0.375,
+    "Grooming": 0.625
+  },
+  "Type_210": {
+    "Fighting": 1.0
+  },
+  "Type_59": {
+    "Unknown": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_294": {
+    "Grooming": 1.0
+  },
+  "Type_246": {
+    "Fighting": 1.0
+  },
+  "Type_423": {
+    "Fighting": 1.0
+  },
+  "Type_222": {
+    "Fighting": 1.0
+  },
+  "Type_312": {
+    "Fighting": 1.0
+  },
+  "Type_244": {
+    "Background": 0.16666667,
+    "Fighting": 0.16666667,
+    "Unknown": 0.6666667
+  },
+  "Type_524": {
+    "Unknown": 1.0
+  },
+  "Type_562": {
+    "Unknown": 1.0
+  },
+  "Type_274": {
+    "Sleeping": 0.125,
+    "Fighting": 0.125,
+    "Unknown": 0.75
+  },
+  "Type_220": {
+    "Unknown": 1.0
+  },
+  "Type_382": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_486": {
+    "Unknown": 1.0
+  },
+  "Type_508": {
+    "Unknown": 1.0
+  },
+  "Type_307": {
+    "Unknown": 0.33333334,
+    "Background": 0.6666667
+  },
+  "Type_343": {
+    "Fighting": 0.25,
+    "Unknown": 0.75
+  },
+  "Type_17": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_683": {
+    "Unknown": 1.0
+  },
+  "Type_326": {
+    "Grooming": 0.2,
+    "Fighting": 0.8
+  },
+  "Type_744": {
+    "Grooming": 1.0
+  },
+  "Type_708": {
+    "Unknown": 1.0
+  },
+  "Type_304": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_600": {
+    "Unknown": 1.0
+  },
+  "Type_190": {
+    "Background": 1.0
+  },
+  "Type_288": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_533": {
+    "Unknown": 1.0
+  },
+  "Type_557": {
+    "Background": 1.0
+  },
+  "Type_169": {
+    "Background": 0.2,
+    "Unknown": 0.8
+  },
+  "Type_697": {
+    "Unknown": 1.0
+  },
+  "Type_491": {
+    "Unknown": 1.0
+  },
+  "Type_384": {
+    "Protest": 0.25,
+    "Background": 0.25,
+    "Unknown": 0.5
+  },
+  "Type_185": {
+    "Background": 0.15384616,
+    "Unknown": 0.6923077,
+    "Grooming": 0.15384616
+  },
+  "Type_548": {
+    "Unknown": 1.0
+  },
+  "Type_311": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_483": {
+    "Unknown": 1.0
+  },
+  "Type_580": {
+    "Unknown": 1.0
+  },
+  "Type_191": {
+    "Background": 1.0
+  },
+  "Type_694": {
+    "Unknown": 1.0
+  },
+  "Type_174": {
+    "Unknown": 1.0
+  },
+  "Type_89": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_94": {
+    "Background": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_587": {
+    "Unknown": 1.0
+  },
+  "Type_21": {
+    "Grooming": 0.04347826,
+    "Fighting": 0.2173913,
+    "Protest": 0.04347826,
+    "Background": 0.17391305,
+    "Unknown": 0.5217391
+  },
+  "Type_586": {
+    "Unknown": 1.0
+  },
+  "Type_344": {
+    "Unknown": 1.0
+  },
+  "Type_639": {
+    "Grooming": 1.0
+  },
+  "Type_371": {
+    "Unknown": 1.0
+  },
+  "Type_709": {
+    "Grooming": 1.0
+  },
+  "Type_83": {
+    "Unknown": 0.875,
+    "Background": 0.125
+  },
+  "Type_615": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_365": {
+    "Unknown": 0.75,
+    "Background": 0.25
+  },
+  "Type_740": {
+    "Unknown": 1.0
+  },
+  "Type_47": {
+    "Background": 1.0
+  },
+  "Type_302": {
+    "Fighting": 0.2,
+    "Unknown": 0.6,
+    "Background": 0.2
+  },
+  "Type_187": {
+    "Fighting": 0.5,
+    "Background": 0.5
+  },
+  "Type_289": {
+    "Unknown": 1.0
+  },
+  "Type_675": {
+    "Unknown": 1.0
+  },
+  "Type_84": {
+    "Background": 1.0
+  },
+  "Type_92": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_252": {
+    "Unknown": 1.0
+  },
+  "Type_440": {
+    "Unknown": 0.33333334,
+    "Background": 0.6666667
+  },
+  "Type_28": {
+    "Unknown": 0.3846154,
+    "Grooming": 0.07692308,
+    "Fighting": 0.15384616,
+    "Background": 0.3846154
+  },
+  "Type_435": {
+    "Unknown": 1.0
+  },
+  "Type_7": {
+    "Unknown": 0.5,
+    "Sleeping": 0.5
+  },
+  "Type_87": {
+    "Background": 1.0
+  },
+  "Type_303": {
+    "Background": 0.6666667,
+    "Unknown": 0.33333334
+  },
+  "Type_132": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_305": {
+    "Protest": 0.5,
+    "Grooming": 0.5
+  },
+  "Type_490": {
+    "Grooming": 1.0
+  },
+  "Type_9": {
+    "Background": 1.0
+  },
+  "Type_659": {
+    "Unknown": 1.0
+  },
+  "Type_475": {
+    "Unknown": 1.0
+  },
+  "Type_122": {
+    "Background": 0.33333334,
+    "Fighting": 0.33333334,
+    "Unknown": 0.33333334
+  },
+  "Type_215": {
+    "Unknown": 1.0
+  },
+  "Type_420": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  },
+  "Type_160": {
+    "Unknown": 1.0
+  },
+  "Type_447": {
+    "Fighting": 1.0
+  },
+  "Type_679": {
+    "Unknown": 1.0
+  },
+  "Type_88": {
+    "Background": 1.0
+  },
+  "Type_193": {
+    "Unknown": 0.22222222,
+    "Background": 0.33333334,
+    "Protest": 0.22222222,
+    "Fighting": 0.22222222
+  },
+  "Type_477": {
+    "Unknown": 1.0
+  },
+  "Type_460": {
+    "Unknown": 1.0
+  },
+  "Type_283": {
+    "Background": 0.33333334,
+    "Unknown": 0.6666667
+  },
+  "Type_396": {
+    "Grooming": 0.5,
+    "Unknown": 0.5
+  },
+  "Type_667": {
+    "Fighting": 1.0
+  },
+  "Type_648": {
+    "Protest": 0.33333334,
+    "Background": 0.33333334,
+    "Unknown": 0.33333334
+  },
+  "Type_471": {
+    "Unknown": 1.0
+  },
+  "Type_604": {
+    "Unknown": 1.0
+  },
+  "Type_437": {
+    "Fighting": 1.0
+  },
+  "Type_231": {
+    "Fighting": 1.0
+  },
+  "Type_651": {
+    "Grooming": 1.0
+  },
+  "Type_536": {
+    "Unknown": 1.0
+  },
+  "Type_214": {
+    "Unknown": 0.6666667,
+    "Fighting": 0.33333334
+  },
+  "Type_484": {
+    "Unknown": 1.0
+  },
+  "Type_408": {
+    "Grooming": 1.0
+  },
+  "Type_77": {
+    "Unknown": 0.75,
+    "Protest": 0.25
+  },
+  "Type_499": {
+    "Unknown": 1.0
+  },
+  "Type_366": {
+    "Unknown": 1.0
+  },
+  "Type_247": {
+    "Unknown": 0.5,
+    "Fighting": 0.5
+  },
+  "Type_230": {
+    "Unknown": 1.0
+  },
+  "Type_544": {
+    "Grooming": 1.0
+  },
+  "Type_676": {
+    "Unknown": 1.0
+  },
+  "Type_265": {
+    "Unknown": 0.5,
+    "Background": 0.5
+  }
+}

@@ -225,3 +225,32 @@ models/**/*.joblib
 # Local configuration
 local_config.py
 .env.local
+
+# BEANS-Zero dataset cache (91K audio samples - very large)
+technical_architecture/beans_zero_cache/
+beans_zero_cache/
+
+# BEANS analysis results (can be regenerated from benchmarks)
+technical_architecture/beans_analysis/
+beans_analysis/
+
+# Large analysis result files
+*_analysis_results.json
+*_phrase_library.json
+*_corpus*.json
+*_similarity_results.json
+*_symbolic_stream.json
+*_linguistic_analysis.json
+
+# Phase results directories
+*_phase*_results/
+*_phase*_results_fixed/
+within_call_results/
+
+# ZooVox data
+zoo_vox_rosetta/
+zoo_vox_rosetta.zip
+
+# Marmoset/Bat analysis directories
+marmoset_*/
+bat_*/

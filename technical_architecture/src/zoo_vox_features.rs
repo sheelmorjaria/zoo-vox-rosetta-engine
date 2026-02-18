@@ -415,7 +415,7 @@ impl ZooVoxFeatureExtractor {
 
         let max_idx = envelope.iter()
             .enumerate()
-            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i);
 
         if let Some(max_idx) = max_idx {
@@ -444,7 +444,7 @@ impl ZooVoxFeatureExtractor {
 
         let max_idx = envelope.iter()
             .enumerate()
-            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i);
 
         if let Some(max_idx) = max_idx {
@@ -838,7 +838,7 @@ impl ZooVoxFeatureExtractor {
         }
 
         let mut sorted = values.to_vec();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         let mid = sorted.len() / 2;
         if sorted.len() % 2 == 0 {

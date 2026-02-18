@@ -1,0 +1,167 @@
+{
+  "total_candidates": 51068,
+  "discrete_emissions": 45391,
+  "continuous_emissions": 5677,
+  "type_stats": [
+    [
+      "Type_1",
+      {
+        "total": 23864,
+        "discrete": 23864,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_3",
+      {
+        "total": 11935,
+        "discrete": 6914,
+        "graded": 5021
+      }
+    ],
+    [
+      "Type_2",
+      {
+        "total": 6467,
+        "discrete": 6467,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_4",
+      {
+        "total": 4296,
+        "discrete": 3712,
+        "graded": 584
+      }
+    ],
+    [
+      "Type_6",
+      {
+        "total": 1921,
+        "discrete": 1920,
+        "graded": 1
+      }
+    ],
+    [
+      "Type_7",
+      {
+        "total": 850,
+        "discrete": 847,
+        "graded": 3
+      }
+    ],
+    [
+      "Type_5",
+      {
+        "total": 833,
+        "discrete": 826,
+        "graded": 7
+      }
+    ],
+    [
+      "Type_9",
+      {
+        "total": 277,
+        "discrete": 276,
+        "graded": 1
+      }
+    ],
+    [
+      "Type_11",
+      {
+        "total": 225,
+        "discrete": 184,
+        "graded": 41
+      }
+    ],
+    [
+      "Type_10",
+      {
+        "total": 132,
+        "discrete": 114,
+        "graded": 18
+      }
+    ],
+    [
+      "Type_8",
+      {
+        "total": 71,
+        "discrete": 71,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_12",
+      {
+        "total": 58,
+        "discrete": 58,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_13",
+      {
+        "total": 44,
+        "discrete": 44,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_15",
+      {
+        "total": 37,
+        "discrete": 36,
+        "graded": 1
+      }
+    ],
+    [
+      "Type_14",
+      {
+        "total": 33,
+        "discrete": 33,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_16",
+      {
+        "total": 16,
+        "discrete": 16,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_17",
+      {
+        "total": 4,
+        "discrete": 4,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_18",
+      {
+        "total": 3,
+        "discrete": 3,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_19",
+      {
+        "total": 1,
+        "discrete": 1,
+        "graded": 0
+      }
+    ],
+    [
+      "Type_20",
+      {
+        "total": 1,
+        "discrete": 1,
+        "graded": 0
+      }
+    ]
+  ]
+}

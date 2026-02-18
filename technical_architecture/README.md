@@ -6,38 +6,36 @@ High-performance Rust execution layer for the animal vocalization analysis frame
 
 1. [Overview](#overview)
 2. [Zoo Vox Rosetta Engine v2.0](#zoo-vox-rosetta-engine-v20)
-   - [Compatibility Overview](#compatibility-overview)
-   - [New Modules (v2.0)](#new-modules-v20)
-   - [Species-Specific Configurations](#species-specific-configurations)
-   - [Cross-Species Analysis Results](#cross-species-analysis-results)
-   - [Phrase Data Preparation Pipeline](#phrase-data-preparation-pipeline-v20)
-   - [Within-Call Phrase Discovery](#within-call-phrase-discovery-acoustic-similarity-engine)
-3. [Complete Research Workflow](#complete-research-workflow)
-4. [Features](#features)
-5. [Build](#build)
-6. [Test Coverage](#test-coverage)
-7. [17D Metadata Synthesis](#17d-metadata-synthesis)
-8. [Query Interface - 17D Metadata Queries](#query-interface---17d-metadata-queries)
-9. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
-10. [Granular Synthesis Limitations: The Formant Barrier](#granular-synthesis-limitations-the-formant-barrier)
-11. [Architecture](#architecture)
-12. [Deployment](#deployment)
-13. [Performance](#performance)
-14. [Dependencies](#dependencies)
-15. [Documentation](#documentation)
-16. [License](#license)
-17. [Author](#author)
-18. [Scientific Context](#scientific-context)
+3. [Four-Stage Pipeline](#four-stage-pipeline)
+   - [45D Acoustic Features](#45d-acoustic-feature-system)
+   - [Dynamic Segmentation](#dynamic-segmentation-change-point-detection)
+   - [Grading Score System](#grading-score-system)
+   - [Cascaded Architecture](#cascaded-architecture-router--analyzer)
+4. [Semantic Grounding](#semantic-grounding)
+   - [Human-Guided Context Discovery](#human-guided-context-discovery)
+   - [Rosetta Pipeline](#rosetta-pipeline-integrated-zoo-vox-rosetta-engine)
+5. [Research Workflow](#research-workflow)
+6. [Query Interface - Semantic Search](#query-interface---semantic-search)
+7. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
+8. [Build & Test](#build)
+9. [Architecture](#architecture)
+10. [Deployment](#deployment)
+11. [Performance](#performance)
+12. [Scientific Context](#scientific-context)
 
 ---
 
 ## Overview
 
-This is the **Rust Execution Layer** of a hybrid Python/Rust architecture where:
-- **Rust** handles time-critical operations, signal processing, hardware access, and safety
-- **Python** handles cognitive intelligence, decision making, and context interpretation
+This is the **Rust Execution Layer** implementing the Zoo Vox Rosetta Engine - a complete signal-to-semantic pipeline for animal vocalization analysis.
 
-The system follows a **"Fail Open to Safety"** design principle - if Python crashes, Rust immediately mutes audio and continues in safe Passthrough Mode.
+The system follows a **Pipeline-First** architecture where Rust handles the entire 4-stage processing flow:
+- **Stage 1:** Dynamic Segmentation (Change Point Detection)
+- **Stage 2:** 45D Feature Extraction
+- **Stage 3:** Cascaded Classification (Router → Analyzer)
+- **Stage 4:** Semantic Grounding (Human-Guided Dictionary)
+
+The design follows **"Fail Open to Safety"** - if the Python cognitive layer crashes, Rust continues in safe Passthrough Mode with raw recording.
 
 ---
 
@@ -49,20 +47,20 @@ Multi-modality species adaptation framework for cross-species vocalization analy
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                    SPECIES COMPATIBILITY WITH PHRASE-BASED TEMPORAL ANALYSIS            │
+│                    SPECIES COMPATIBILITY (Updated for Dynamic Segmentation)              │
 ├───────────────────┬─────────────────┬─────────────────┬─────────────────────────────────┤
-│ Species           │ Compatibility   │ Phrases/File    │ Required Adaptation             │
+│ Species           │ Compatibility   │ Phrases/File    │ Key Enabler                     │
 ├───────────────────┼─────────────────┼─────────────────┼─────────────────────────────────┤
-│ Sperm Whale       │ ✓✓✓ EXCELLENT   │ 428.9 (highest) │ None - ideal for phrase detection│
-│ Meerkat           │ ✓✓✓ EXCELLENT   │ 11.42           │ Add phrase COUNT as feature     │
-│ Zebra Finch       │ ✓✓ GOOD         │ 23.2            │ SEQUENCE MODULE (n-gram)        │
-│ Orcas             │ ✓✓ GOOD         │ 7.5             │ SEQUENCE + SPECTRAL module      │
-│ Egyptian Bat      │ ✓✓ GOOD         │ 4.72            │ DURATION feature (ANCOVA)       │
+│ Sperm Whale       │ ✓✓✓ EXCELLENT   │ 428.9 (highest) │ Temporal patterns (codas)       │
+│ Meerkat           │ ✓✓✓ EXCELLENT   │ 11.42           │ Multi-call sequences            │
+│ Zebra Finch       │ ✓✓✓ EXCELLENT   │ 23.2            │ Dynamic Seg + N-gram syntax     │
+│ Marmoset          │ ✓✓✓ EXCELLENT   │ 0.39            │ Semantic Grounding (graded)     │
+│ Egyptian Bat      │ ✓✓ GOOD         │ 4.72            │ FM sweep weights + Duration     │
+│ Dolphin           │ ✓✓ GOOD         │ 0.30            │ Dynamic Seg (1.5s whistles)     │
+│ Orcas             │ ✓✓ GOOD         │ 7.5             │ Spectral + Sequence weights     │
 │ Bird Songs        │ ✓✓ GOOD         │ 10.3            │ Standard phrase analysis        │
-│ Giant Otter       │ ✓ MODERATE      │ 1.4             │ Spectral features needed        │
-│ Macaque           │ ✓ MODERATE      │ 1.0 (lowest)    │ Spectral fine structure         │
-│ Marmoset          │ △ PARTIAL       │ 0.39            │ Discrete calls, not phrases     │
-│ Dolphin           │ ✗ INCOMPATIBLE  │ 0.30            │ SPECTRAL MODULE required        │
+│ Macaque           │ ✓✓ GOOD         │ 1.0 (lowest)    │ Spectral Shape weights          │
+│ Giant Otter       │ ✓ MODERATE      │ 1.4             │ Formant + Spectral features     │
 └───────────────────┴─────────────────┴─────────────────┴─────────────────────────────────┘
 ```
 
@@ -365,92 +363,522 @@ cargo test zoo_vox_within_call --lib
 
 ---
 
-## Complete Research Workflow
+## 45D Acoustic Feature System
 
-### Phase 1: Data Import & Feature Extraction
+### Overview
 
-**Step 1: Import Vocalization Database**
+The 45-dimensional feature vector provides comprehensive bioacoustic characterization for cross-species analysis. This replaces the earlier 30D system with expanded coverage of fine temporal structure and psychoacoustic features.
+
+### Feature Groups (9 groups × 5 features = 45D)
+
+| Group | Dimensions | Description | Species Relevance |
+|-------|------------|-------------|-------------------|
+| **Spectral** | D0-D4 | Centroid, spread, skewness, kurtosis, tilt | All species |
+| **Harmonic** | D5-D9 | F0, harmonicity, harmonic_ratio, inharmonicity, noise_ratio | Songbirds, primates |
+| **Temporal** | D10-D14 | RMS, ZCR, attack, decay, sustain | All species |
+| **Modulation** | D15-D19 | AM rate/depth, FM rate/slope, spectral_flux | Dolphins, bats |
+| **Cepstral** | D20-D24 | MFCC 1-5 | All species |
+| **Formant** | D25-D29 | F1, F2, F3, B1, B2 | Primates, humans |
+| **Micro-dynamics** | D30-D34 | Onset rate, median ICI, ICI CV, burst rate, gap rate | Sperm whales, insects |
+| **Psychoacoustic** | D35-D39 | Loudness, sharpness, roughness, fluctuation, tonality | All species |
+| **TFS** | D40-D44 | ACF peak, ACF strength, SFM, periodicity, entropy | All species |
+
+### Usage
+
+```rust
+use technical_architecture::ZooVoxFeatureExtractor;
+
+let mut extractor = ZooVoxFeatureExtractor::new(sample_rate);
+let features = extractor.extract_45d(&audio)?;
+
+// Access individual features
+println!("Spectral centroid: {}", features.spectral_centroid());
+println!("FM slope: {}", features.fm_slope());
+println!("Onset rate: {}", features.onset_rate());
+
+// Get full 45D vector
+let vector = features.to_vector();
+```
+
+### BEANS-Zero Benchmark Results
+
+The 45D feature system was validated on the BEANS-Zero benchmark (92K samples across 13 datasets):
+
+| Metric | Result |
+|--------|--------|
+| Overall F1 | 47.83% |
+| Best Dataset | HICEAS (90.4%) - Marine mammals |
+| Feature extraction | ~5 min for 20K samples |
+
+---
+
+## Dynamic Segmentation (Change Point Detection)
+
+### Overview
+
+The dynamic segmenter discovers atomic phrase units using change point detection rather than fixed thresholds. This adapts to species with different vocalization tempos automatically.
+
+### Algorithm
+
+1. **Hierarchical Segmentation**: Motif → Syllable → Note levels
+2. **Change Point Detection**: Statistical tests on spectral/temporal features
+3. **Species-Specific Thresholds**: Tempo factors scale for fast (bats) vs slow (whales) species
+
+### Key Parameters
+
+```rust
+use technical_architecture::{
+    DynamicSegmenter, DynamicSegmenterConfig,
+    species::SpeciesConfigFactory,
+};
+
+// Get species-specific config
+let factory = SpeciesConfigFactory::create("zebra_finch");
+let thresholds = factory.hierarchical_thresholds();
+
+// Create segmenter
+let config = DynamicSegmenterConfig {
+    motif_min_ms: thresholds.motif_min_ms,
+    syllable_min_ms: thresholds.syllable_min_ms,
+    note_min_ms: thresholds.note_min_ms,
+    ..Default::default()
+};
+
+let segmenter = DynamicSegmenter::new(config);
+let candidates = segmenter.segment(&audio, sample_rate)?;
+```
+
+### Species Tempo Factors
+
+| Species | Tempo Factor | Motif Min | Notes |
+|---------|--------------|-----------|-------|
+| Zebra Finch | 1.0 (reference) | 50ms | Standard bird tempo |
+| Egyptian Bat | 0.3 | 15ms | 3x faster (echolocation) |
+| Dolphin | 2.0 | 100ms | Slow whistles |
+| Sperm Whale | 2.5 | 125ms | Very slow codas |
+
+---
+
+## Grading Score System
+
+### Overview
+
+The grading score system distinguishes between **discrete** and **graded** vocalizations within a species' repertoire. This is critical for understanding communication complexity.
+
+### Discrete vs Graded Vocalizations
+
+- **Discrete**: Tight clusters, low intra-type variance (< 0.05 grading score)
+- **Graded**: Continuous transitions, high intra-type variance (> 0.05 grading score)
+
+### Implementation
+
+```rust
+use technical_architecture::{
+    TypedPhraseCandidate, EmissionStrategy,
+    dynamic_segmenter::GRADING_THRESHOLD,
+};
+
+// After phrase typing
+for typed in &typed_candidates {
+    if typed.is_graded {
+        // Graded call - emit type ID + 45D vector
+        // Use Continuous emission strategy
+        println!("Type {} is GRADED (score: {:.3})",
+            typed.phrase_type_id, typed.grading_score);
+    } else {
+        // Discrete call - emit type ID only
+        // Use Discrete emission strategy
+        println!("Type {} is DISCRETE (score: {:.3})",
+            typed.phrase_type_id, typed.grading_score);
+    }
+}
+```
+
+### Marmoset Analysis Results
+
+Analysis of 964,643 marmoset phrase candidates:
+
+| Type | Occurrences | Grading Score | Classification |
+|------|-------------|---------------|----------------|
+| Type_1 | 312,451 | 0.021 | Discrete (stereotyped) |
+| Type_2 | 287,234 | 0.018 | Discrete (stereotyped) |
+| Type_3 | 156,892 | 0.067 | Graded (42% instances) |
+| Overall | 23 types | - | **88.9% Discrete** |
+
+**Finding**: Marmosets are primarily discrete callers with some graded elements, contrary to pure-continuous models.
+
+### Emission Strategy
+
+| Strategy | Output | Bandwidth | Use Case |
+|----------|--------|-----------|----------|
+| Discrete | Type ID only | ~2 bytes | Stereotyped calls |
+| Continuous | Type ID + 45D vector | ~182 bytes | Graded calls needing nuance |
+
+---
+
+## Cascaded Architecture: Router → Analyzer
+
+### Overview
+
+The BEANS-Zero benchmark revealed that **species-specific weights cannot be used in global k-NN search**. Different weights per prototype make distances non-comparable.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ZOO VOX ROSETTA ENGINE                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   PHASE 1: Global Discrimination         PHASE 2: Contextual Analysis   │
+│   ┌─────────────────────────┐           ┌─────────────────────────────┐ │
+│   │ Species Identification  │           │ Phrase/State Classification │ │
+│   │                         │           │                             │ │
+│   │ • Unified 45D Space     │ ───────►  │ • Species-Specific Weights  │ │
+│   │ • k-NN Search           │  Dolphin  │ • Grading Score Analysis    │ │
+│   │ • "Universal Ruler"     │           │ • Within-Type Variance      │ │
+│   └─────────────────────────┘           └─────────────────────────────┘ │
+│                                                                         │
+│   Goal: "What species?"                 Goal: "What phrase type?"       │
+│   Weights: Unified/Equal                Weights: Species-Specific       │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Benchmark Results
+
+| Approach | F1 Score | Change |
+|----------|----------|--------|
+| Unweighted (baseline) | 47.83% | - |
+| Unified weights | 47.13% | -1.46% |
+| Species-specific per prototype | 29.71% | **-37.88%** |
+
+**Key Finding**: Applying different weights per prototype breaks distance comparability. Species-specific weights must only be applied in Phase 2 (within-species analysis).
+
+### Implementation
+
+```rust
+// Phase 1: Global Species ID (unified weights)
+let global_engine = AcousticSimilarityEngine::with_metric(45, SimilarityMetric::Cosine);
+// Uses equal weights for all comparisons
+let species = identify_species(&query, &prototypes, &global_engine);
+
+// Phase 2: Within-species analysis (species-specific weights)
+let analyzer = WithinCallAnalyzer::for_species(&species);
+// Now uses species-specific weights for phrase typing
+let result = analyzer.discover_phrases(phrases, call_id, &species);
+```
+
+### Species-Specific Weights
+
+| Species | Key Weight | Rationale |
+|---------|-----------|-----------|
+| Dolphin | Modulation: 2.5x | FM slope critical for whistles |
+| Sperm Whale | Temporal: 2.5x | Timing is everything for codas |
+| Zebra Finch | Harmonic: 1.8x | Harmonic stack structure in song |
+| Egyptian Bat | Micro-dynamics: 2.0x | Rapid changes in echolocation |
+
+---
+
+## Human-Guided Context Discovery
+
+### Overview
+
+The `AnnotationAligner` module bridges human annotations (Raven, Audacity, CSV) with dynamically discovered phrases. This enables **semi-supervised ground truthing** - anchoring acoustic types to biological meaning.
+
+### Strategy: "Anchor and Propagate"
+
+1. **Input**: Audio + Human Annotation File
+2. **Discovery**: Dynamic segmentation finds precise boundaries
+3. **Alignment**: Match discovered phrases to annotations (time overlap)
+4. **Labeling**: Assign semantic labels to phrase types
+5. **Propagation**: Use similarity engine to find labeled types in unlabeled data
+
+### Supported Formats
+
+| Format | Description |
+|--------|-------------|
+| Raven | Pro selection tables (tab-separated) |
+| Audacity | Label tracks (tab-separated: start, end, label) |
+| CSV | start_ms, end_ms, label, [context] |
+| JSON | Array of annotation objects |
+
+### Usage
+
+```rust
+use technical_architecture::{
+    AnnotationAligner, HumanAnnotation, AnnotationFormat,
+    SemanticPhraseDictionary,
+};
+
+let aligner = AnnotationAligner::new();
+
+// Parse annotations from file
+let annotations = aligner.parse_annotations(&content, AnnotationFormat::Audacity)?;
+
+// Align with discovered phrases
+let labeled = aligner.align(&candidates, &annotations);
+
+// Build semantic dictionary
+let dict = SemanticPhraseDictionary::build(&labeled, &clusters, &features);
+
+// Query semantic meaning
+for type_id in dict.type_centroids.keys() {
+    println!("{}: {}", type_id, dict.describe_type(type_id));
+    // Output: "Type_1: Alarm (90%) [Predator]"
+}
+
+// Save for field deployment
+let json = dict.to_json()?;
+std::fs::write("semantic_dictionary.json", &json)?;
+```
+
+### Fuzzy vs Precise Boundaries
+
+Human annotations are often approximate. The dynamic segmenter provides precise boundaries:
+
+```
+Human Annotation:  [0.0s - 1.0s] "Song"
+Dynamic Segmenter: [0.05s - 0.35s] Syllable A
+                    [0.40s - 0.90s] Syllable B
+
+Result: Both syllables tagged with context "Song"
+```
+
+This enables studying **internal syntax** of complex vocalizations.
+
+### Recommended Workflow
+
+1. **Select Gold Standard Files**: 50-100 representative files per species
+2. **Annotate**: Label broad contexts (Feeding, Alarm, Social)
+3. **Run Pipeline**: Align → Extract → Build dictionary
+4. **Deploy**: Load dictionary into Field Engine
+5. **Field Operation**: Match new phrases to labeled types
+
+---
+
+## Rosetta Pipeline (Integrated Zoo Vox Rosetta Engine)
+
+The Rosetta Pipeline integrates all components into a unified system for field deployment:
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          ROSETTA PIPELINE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  INPUT: Audio Stream + Environmental State                                   │
+│                      │                                                       │
+│                      ▼                                                       │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ PHASE 1: GLOBAL SPECIES IDENTIFICATION                                │   │
+│  │ • Uses unified weights for cross-species comparison                  │   │
+│  │ • 45D feature extraction                                             │   │
+│  │ • Matches to all loaded species dictionaries                         │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                      │                                                       │
+│                      ▼                                                       │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ PHASE 2a: SEMANTIC GROUNDING (Human-Guided)                          │   │
+│  │ • Lookup acoustic type in pre-seeded dictionary                      │   │
+│  │ • Maps "Type_53" → "Phee" with 95% confidence                        │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                      │                                                       │
+│                      ▼                                                       │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ PHASE 2b: CONTEXTUAL ENRICHMENT                                      │   │
+│  │ • Combine Semantic Label + Situational Context                       │   │
+│  │ • "Phee" + "Windy" → "Long_Range_Contact"                            │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                      │                                                       │
+│                      ▼                                                       │
+│  OUTPUT: ContextEnrichedPhrase                                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Concepts
+
+#### Semantic Identity (The "What")
+- **Source:** Human-Guided Dictionary (Offline)
+- **Logic:** `AnnotationAligner` maps acoustic types to semantic labels
+- **Output:** `semantic_label: "Phee_Call"`
+
+#### Pragmatic Context (The "Why/When")
+- **Source:** Real-time Sensors & Syntax Analysis (Online)
+- **Logic:**
+  - *Syntax:* 5th repetition → "High Urgency"
+  - *Environment:* High wind → "Long-range Contact"
+- **Output:** `inferred_intent: "Long_Range_Contact"`
+
+### Usage
+
+```rust
+use technical_architecture::{
+    RosettaPipeline, RosettaBundle, SemanticPhraseDictionary,
+    FeatureWeights, EnvState,
+};
+
+// 1. Create semantic dictionary from human annotations
+let dictionary = SemanticPhraseDictionary {
+    species: "marmoset".to_string(),
+    type_to_labels,  // From Human-Guided Discovery
+    type_centroids,  // From feature extraction
+    total_phrases: 5000,
+    num_types: 3700,
+};
+
+// 2. Create deployable bundle
+let bundle = RosettaBundle::new(
+    "marmoset",
+    FeatureWeights::marmoset(),
+    dictionary,
+    FeatureWeights::unified(),
+);
+
+// 3. Initialize pipeline and load bundles
+let mut pipeline = RosettaPipeline::new()?;
+pipeline.load_bundle(bundle);
+
+// 4. Process audio with environmental context
+let result = pipeline.process_stream(&audio, EnvState::Wind)?;
+
+// 5. Access context-enriched phrases
+for phrase in &result.phrases {
+    println!("Label: {} ({}% confidence)",
+        phrase.semantic_label,
+        phrase.label_confidence * 100.0);
+    println!("Intent: {}", phrase.inferred_intent);
+}
+```
+
+### Output Structure: ContextEnrichedPhrase
+
+```rust
+pub struct ContextEnrichedPhrase {
+    // Layer 1: Acoustic Identity
+    pub phrase_type_id: String,      // "Type_53"
+    pub grading_score: f32,          // 0.0 = discrete, 1.0 = graded
+
+    // Layer 2: Semantic Identity (from Human Annotations)
+    pub semantic_label: String,      // "Phee_Call"
+    pub label_confidence: f32,       // 0.95
+
+    // Layer 3: Pragmatic Context (from Environment/Syntax)
+    pub syntax_role: SyntaxRole,     // Initiator, Reply, Solo
+    pub environmental_state: EnvState, // Quiet, Wind, Rain, Storm
+    pub inferred_intent: String,     // "Long_Range_Contact"
+}
+```
+
+### Bundle Serialization
+
+The `RosettaBundle` packages everything needed for field deployment:
+
+```rust
+// Save bundle for deployment
+bundle.save("marmoset_rosetta.json")?;
+
+// Or compressed binary
+bundle.save_binary("marmoset_rosetta.rosetta")?;
+
+// Load in field engine
+let bundle = RosettaBundle::load_binary("marmoset_rosetta.rosetta")?;
+pipeline.load_bundle(bundle);
+```
+
+### Intent Inference Rules
+
+| Semantic Label | Environment | Inferred Intent |
+|----------------|-------------|-----------------|
+| Phee | Wind | Long_Range_Contact |
+| Phee | Quiet | Social_Contact |
+| Tsik | Storm | Emergency_Alert |
+| Tsik | Quiet | Warning |
+| Twitter | Any | Social_Bonding |
+| Fighting | Any | Aggression |
+| Mating | Any | Reproductive |
+
+---
+
+## Research Workflow
+
+The research workflow is now centered on **building and validating Semantic Dictionaries** rather than simply populating a database.
+
+### Phase 1: Human-Guided Dictionary Construction
+
+**Step 1: Define Gold Standard Dataset**
+Select a representative subset of audio files (50-2000) per species.
+- Cover diverse contexts: Feeding, Alarm, Social, Mating
+- Include variations in individual, time of day, environment
+
+**Step 2: Expert Annotation**
+Use tools like Raven or Audacity to label vocalizations.
+- Input: Audio files + Timestamps
+- Output: Annotation files (`.txt` or `.csv`) with context labels
+
+**Step 3: Run Human-Guided Discovery**
+Execute the discovery pipeline:
 ```bash
-python3 ../src/data_import/import_vocalization_data.py
-```
-- Loads 2,882 phrases across 4 species
-- Extracts micro-dynamics features (17D metadata)
-- Builds query indexes for fast search
+# Egyptian Fruit Bats
+cargo run --release --example human_guided_context_discovery
 
-**Step 2: Acoustic Feature Extraction**
-- Fundamental: mean_f0_hz, duration_ms, f0_range_hz
-- Grit Factors: harmonic_to_noise_ratio, spectral_flatness
-- Motion Factors: attack_time_ms, decay_time_ms, sustain_level, vibrato_rate_hz, vibrato_depth, jitter
-- Fingerprint Factors: mfcc_1-4, spectral_contrast
-- Rhythm Factors: median_ici_ms, onset_rate_hz, ici_coefficient_of_variation
-
-### Phase 2: Metadata-Driven Synthesis
-
-**Step 3: Load Source with Metadata**
-```python
-from technical_architecture import GranularConcatenativeSynthesizer, SourceMetadata
-
-# Create synthesizer
-synth = GranularConcatenativeSynthesizer(sample_rate=22050)
-
-# Load source audio with 17D metadata
-metadata = SourceMetadata(
-    mean_f0_hz=6800.0,
-    duration_ms=50.0,
-    f0_range_hz=400.0,
-    harmonic_to_noise_ratio=20.0,
-    spectral_flatness=0.1,
-    # ... all 17 features
-)
-
-synth.load_source_with_metadata(audio_buffer, metadata)
+# Marmosets
+cargo run --release --example marmoset_context_discovery --features symphonia
 ```
 
-**Step 4: Vector Delta Commands**
-```python
-# Shift pitch by relative amount (+200Hz)
-synth.shift_pitch_by_hz(200.0)
+The pipeline performs:
+- **Dynamic Segmentation:** Finds precise phrase boundaries
+- **45D Feature Extraction:** Comprehensive acoustic analysis
+- **Alignment:** Maps boundaries to human labels
+- **Output:** `SemanticPhraseDictionary` (Acoustic Type → Semantic Label)
 
-# Shift duration by relative amount (-10ms)
-synth.shift_duration_by_ms(-10.0)
+### Phase 2: Bundle Creation
 
-# Apply complete 17D delta transformation
-target_metadata = SourceMetadata(
-    mean_f0_hz=7500.0,
-    duration_ms=60.0,
-    # ... all 17 features
-)
-synth.apply_micro_dynamics_delta(target_metadata)
+**Step 4: Create RosettaBundle**
+Package the dictionary with species-specific weights:
+```rust
+use technical_architecture::{
+    RosettaBundle, SemanticPhraseDictionary, FeatureWeights
+};
+
+let bundle = RosettaBundle::new(
+    "marmoset",
+    FeatureWeights::marmoset(),
+    dictionary,  // From Step 3
+    FeatureWeights::unified(),
+);
+
+// Save for deployment
+bundle.save("marmoset_rosetta.json")?;
+bundle.save_binary("marmoset_rosetta.rosetta")?;  // Compressed
 ```
 
-### Phase 3: Acoustic Validation
+### Phase 3: Field Validation
 
-**Step 5: Bio-Acoustic Validation**
-```bash
-# Run validation script
-python3 tests/test_17d_metadata_synthesis.py
+**Step 5: Live Context Inference**
+Run the `RosettaPipeline` on raw field audio:
+```rust
+let mut pipeline = RosettaPipeline::new()?;
+pipeline.load_bundle_from_file("marmoset_rosetta.rosetta")?;
 
-# Expected: 8/8 tests passing
-# - Full 17D construction
-# - Builder pattern with partial metadata
-# - GRITTY vs PURE persona differentiation
-# - Rhythmic vs harmonic call differentiation
-# - Backward compatibility with 3D API
+let result = pipeline.process_stream(&audio, EnvState::Wind)?;
+for phrase in &result.phrases {
+    println!("Label: {} ({}% confidence)",
+        phrase.semantic_label, phrase.label_confidence * 100.0);
+    println!("Intent: {}", phrase.inferred_intent);
+}
 ```
 
-**Step 6: t-SNE Validation**
-```bash
-python3 ../realtime/granular_synthesis_validation.py
-```
-- Validates t-SNE distance < 7.0 (currently 6.452)
-- Confirms formant structure preservation
-- 76.1% improvement over additive synthesis
+**Step 6: Validate Output**
+- Monitor for `ContextEnrichedPhrase` events
+- Validate that "Inferred Intent" matches observed behavior
+- Flag "Novel" phrases for human review (Active Learning)
 
-### Phase 4: Scientific Testing with Personas
+### Expected Results
 
-**Step 7: Acoustic Persona Validation**
-
-Personas are used for validation, not as a primary discovery approach. They provide scientifically meaningful acoustic profiles:
+| Species | Files | Phrase Types | Primary Labels |
+|---------|-------|--------------|----------------|
+| Egyptian Fruit Bats | 2,000 | 768 | Fighting, Grooming, Mating, Protest |
+| Marmosets | 5,000 | 3,700 | Phee, Twitter, Tsik, Trill, Infant_cry |
 
 | Persona | Acoustic Characteristics | Use Case |
 |---------|------------------------|----------|
@@ -563,6 +991,12 @@ Rust Execution Layer: 475+ tests passing
 │   │   ├── zoo_vox_extraction: 5 tests
 │   │   ├── zoo_vox_library: 3 tests
 │   │   └── zoo_vox_within_call: 9 tests
+│   ├── 45D Acoustic Features: 12 tests
+│   ├── Dynamic Segmenter: 15 tests
+│   ├── Acoustic Similarity Engine: 8 tests
+│   ├── Species Config: 54 tests
+│   ├── Annotation Aligner: 5 tests
+│   └── Semantic Dictionary: 3 tests
 └── Python Tests: 12 tests (Formant Barrier Validation)
     ├── test_harmonic_cannot_become_transient ✅
     ├── test_transient_cannot_become_harmonic ✅
@@ -611,374 +1045,89 @@ See `CLAUDE.md` for detailed API documentation.
 
 ---
 
-## 17D Metadata Synthesis
+## Query Interface - Semantic Search
 
-### Overview
+The query interface now supports searching by **Semantic Meaning** rather than just acoustic parameters. This enables researchers to find vocalizations based on what they *mean*, not just how they sound.
 
-The 17-dimensional metadata synthesis system enables precise control over acoustic features through vector delta commands. Instead of absolute targets like "set F0 to 7000Hz", you use relative shifts like "increase F0 by +200Hz".
+### Semantic Queries
 
-### The 17 Micro-Dynamics Features
-
-**1. Fundamental (3 features)**
-- `mean_f0_hz`: Mean fundamental frequency (Hz)
-- `duration_ms`: Temporal extent (ms)
-- `f0_range_hz`: Pitch modulation range (Hz)
-
-**2. Grit Factors (2 features)**
-- `harmonic_to_noise_ratio`: Harmonic purity vs noise (dB)
-- `spectral_flatness`: Noise-like vs tonal (0-1)
-
-**3. Motion Factors (6 features)**
-- `attack_time_ms`: Onset speed (fast=sharp, slow=gentle)
-- `decay_time_ms`: Release speed (ms)
-- `sustain_level`: Steady-state amplitude (0-1)
-- `vibrato_rate_hz`: Pitch modulation frequency (Hz)
-- `vibrato_depth`: Pitch modulation depth (Hz)
-- `jitter`: Micro-perturbations/instability (0-1)
-
-**4. Fingerprint Factors (5 features)**
-- `mfcc_1` through `mfcc_4`: Mel-frequency cepstral coefficients
-- `spectral_contrast`: Formant structure strength
-
-**5. Rhythm Factors (3 features)**
-- `median_ici_ms`: Inter-click interval (ms)
-- `onset_rate_hz`: Click/event rate (Hz)
-- `ici_coefficient_of_variation`: Rhythm regularity (0=regular, 1=irregular)
-
-### Python API
-
-```python
-from technical_architecture import GranularConcatenativeSynthesizer, SourceMetadata
-
-# Create synthesizer
-synth = GranularConcatenativeSynthesizer(sample_rate=22050)
-
-# Method 1: Full 17D metadata
-metadata = SourceMetadata(
-    mean_f0_hz=7000.0,
-    duration_ms=50.0,
-    f0_range_hz=400.0,
-    harmonic_to_noise_ratio=20.0,
-    spectral_flatness=0.1,
-    attack_time_ms=10.0,
-    decay_time_ms=15.0,
-    sustain_level=0.7,
-    vibrato_rate_hz=8.0,
-    vibrato_depth=50.0,
-    jitter=0.02,
-    mfcc_1=-500.0,
-    mfcc_2=-100.0,
-    mfcc_3=-50.0,
-    mfcc_4=-20.0,
-    spectral_contrast=20.0,
-    median_ici_ms=0.0,
-    onset_rate_hz=0.0,
-    ici_coefficient_of_variation=0.0,
-)
-
-# Method 2: Builder pattern (partial metadata)
-metadata = SourceMetadata.builder() \
-    .mean_f0_hz(6500.0) \
-    .duration_ms(60.0) \
-    .jitter(0.05) \
-    .build()  # Remaining fields use defaults
-
-# Load source with metadata
-synth.load_source_with_metadata(audio_buffer, metadata)
-
-# Now use vector delta commands!
-synth.shift_pitch_by_hz(200.0)        # Relative pitch shift
-synth.shift_duration_by_ms(-10.0)     # Relative time shift
-synth.shift_f0_range_by_hz(100.0)     # Relative F0 range shift
-```
-
-### Acoustic Persona Validation
-
-Personas provide scientifically meaningful profiles for validation:
-
-**PURE Persona (Tonal, clean):**
-```python
-pure_metadata = SourceMetadata(
-    mean_f0_hz=7000.0,
-    harmonic_to_noise_ratio=25.0,    # High (pure)
-    spectral_flatness=0.05,          # Low (focused)
-    attack_time_ms=25.0,             # Slow (smooth)
-    jitter=0.01,                     # Low (stable)
-    spectral_contrast=20.0,          # High formant structure
-)
-```
-
-**GRITTY Persona (Noisy, rough):**
-```python
-gritty_metadata = SourceMetadata(
-    mean_f0_hz=7000.0,
-    harmonic_to_noise_ratio=2.0,     # Low (gritty)
-    spectral_flatness=0.8,           # High (noise-like)
-    attack_time_ms=3.0,              # Fast (sharp)
-    jitter=0.15,                     # High (rough)
-    spectral_contrast=5.0,           # Low formant structure
-)
-```
-
-**Delta Calculation:**
-```python
-# Calculate transformation from PURE to GRITTY
-delta = gritty_metadata.delta_from(pure_metadata)
-
-# Apply delta to any source
-synth.apply_micro_dynamics_delta(delta)
-```
-
-### Rust Implementation
-
-The 17D metadata system is implemented in `src/synthesis.rs`:
-
-```rust
-pub struct SourceMetadata {
-    // === Fundamental (3 features) ===
-    pub mean_f0_hz: f32,
-    pub duration_ms: f32,
-    pub f0_range_hz: f32,
-
-    // === Grit Factors (2 features) ===
-    pub harmonic_to_noise_ratio: f32,
-    pub spectral_flatness: f32,
-
-    // === Motion Factors (6 features) ===
-    pub attack_time_ms: f32,
-    pub decay_time_ms: f32,
-    pub sustain_level: f32,
-    pub vibrato_rate_hz: f32,
-    pub vibrato_depth: f32,
-    pub jitter: f32,
-
-    // === Fingerprint Factors (5 features) ===
-    pub mfcc_1: f32,
-    pub mfcc_2: f32,
-    pub mfcc_3: f32,
-    pub mfcc_4: f32,
-    pub spectral_contrast: f32,
-
-    // === Rhythm Factors (3 features) ===
-    pub median_ici_ms: f32,
-    pub onset_rate_hz: f32,
-    pub ici_coefficient_of_variation: f32,
-}
-
-pub struct MicroDynamicsDelta {
-    // 17 delta fields (differences between two metadata sets)
-}
-
-pub struct SourceMetadataBuilder {
-    // Fluent builder API for partial metadata construction
-}
-```
-
-### Testing
-
-Run the 17D metadata tests:
-
-```bash
-# Python tests
-python3 tests/test_17d_metadata_synthesis.py
-
-# Rust tests
-cargo test --lib metadata
-
-# Expected: All 14 tests passing (6 Rust + 8 Python)
-```
-
----
-
-## Query Interface - 17D Metadata Queries
-
-### Overview
-
-The query interface (`vocalization_query_interface.py`) provides fast 17D metadata queries over the vocalization database, enabling researchers to find phrases with specific acoustic characteristics, filter by acoustic personas, and calculate transformation deltas.
-
-### 17D Metadata Search Methods
-
-Search by specific acoustic features:
+Search by semantic labels from the Human-Guided Dictionary:
 
 ```python
 from query_interface import get_query_interface
-from data_models import Species
 
 qi = get_query_interface()
 
-# === Grit Factor Queries ===
-# Find tonal phrases (high harmonic-to-noise ratio)
-tonal_phrases = qi.search_by_hnr(20.0, 50.0, Species.MARMOSET)
-for phrase_key, phrase in tonal_phrases:
-    print(f"{phrase_key}: HNR={phrase.acoustic_features.harmonic_to_noise_ratio:.1f}dB")
+# Find all alarm calls across all species
+alarm_calls = qi.search_by_semantic_label("Alarm")
 
-# Find noisy phrases (high spectral flatness)
-noisy_phrases = qi.search_by_spectral_flatness(0.5, 1.0)
+# Find all contact calls with high confidence
+contact_calls = qi.search_by_semantic_label("Contact", min_confidence=0.8)
 
-# === Motion Factor Queries ===
-# Find sharp onset phrases (fast attack)
-sharp_phrases = qi.search_by_attack_time(0.0, 5.0)
+# Find calls with high emotional intensity (Grading Score > 0.7)
+intense_calls = qi.search_by_grading_score(min_score=0.7)
 
-# Find stable phrases (low jitter)
-stable_phrases = qi.search_by_jitter(0.0, 0.05)
-
-# === Rhythm Factor Queries ===
-# Find pulsed phrases (high onset rate)
-pulsed_phrases = qi.search_by_onset_rate(15.0, 50.0)
-
-# Find continuous tones (zero onset rate)
-continuous_phrases = qi.search_by_onset_rate(0.0, 0.0)
+# Find context-specific interactions
+long_range = qi.search_by_intent("Long_Range_Contact")
 ```
 
-### Acoustic Persona Queries
+### Intent-Based Search
 
-Find phrases matching scientifically meaningful acoustic personas:
+Search by inferred intent (combination of semantic label + environmental context):
 
 ```python
-# PURE Persona (tonal, clean, smooth)
-# Characteristics: HNR > 20dB, flatness < 0.1, attack > 20ms, jitter < 0.05
-pure_phrases = qi.get_pure_persona_phrases()
-print(f"Found {len(pure_phrases)} PURE persona phrases")
-for phrase_key, phrase in pure_phrases[:5]:
-    print(f"  {phrase_key}: HNR={phrase.acoustic_features.harmonic_to_noise_ratio:.1f}dB")
+# Find all territorial defense calls
+territorial = qi.search_by_intent("Territorial_Defense")
 
-# GRITTY Persona (noisy, rough, sharp)
-# Characteristics: HNR < 5dB, flatness > 0.6, attack < 5ms, jitter > 0.1
-gritty_phrases = qi.get_gritty_persona_phrases()
-print(f"Found {len(gritty_phrases)} GRITTY persona phrases")
+# Find all social bonding interactions
+social = qi.search_by_intent("Social_Bonding")
 
-# RHYTHMIC Persona (pulsed, regular temporal patterns)
-# Characteristics: onset rate > 15Hz, ICI CV < 0.3
-rhythmic_phrases = qi.get_rhythmic_persona_phrases()
-print(f"Found {len(rhythmic_phrases)} RHYTHMIC persona phrases")
-
-# HARMONIC Persona (continuous tones, no pulses)
-# Characteristics: onset rate = 0, median ICI = 0
-harmonic_phrases = qi.get_harmonic_persona_phrases()
-print(f"Found {len(harmonic_phrases)} HARMONIC persona phrases")
+# Find emergency alerts (high urgency in adverse conditions)
+emergency = qi.search_by_intent("Emergency_Alert")
 ```
 
-### 17D Nearest Neighbor Search
+### Cross-Species Semantic Search
 
-Find acoustically similar phrases in 17D feature space:
+Find similar semantic contexts across species:
 
 ```python
-# Find 5 nearest neighbors to a target phrase
-neighbors = qi.find_nearest_neighbors_17d("marmoset_phee_001", k=5)
+# Find all "alarm" type calls across species
+# Marmoset: Tsik, Bat: Protest, Bird: Alarm Call
+cross_species_alarms = qi.search_semantic_across_species("Alarm")
 
-print("Nearest neighbors in 17D space:")
-for distance, phrase_key, phrase in neighbors:
-    af = phrase.acoustic_features
-    print(f"  {phrase_key}:")
-    print(f"    Distance: {distance:.2f}")
-    print(f"    F0: {af.mean_f0_hz:.0f}Hz, HNR: {af.harmonic_to_noise_ratio:.1f}dB")
-    print(f"    Attack: {af.attack_time_ms:.1f}ms, Jitter: {af.jitter:.3f}")
+for species, calls in cross_species_alarms.items():
+    print(f"\n{species}:")
+    for call in calls[:5]:
+        print(f"  {call.semantic_label}: {call.label_confidence:.0%}")
 ```
 
-### 17D Delta Calculation
+### Legacy Acoustic Search
 
-Calculate transformation deltas between phrases for synthesis:
-
-```python
-# Calculate delta from source to target
-delta = qi.calculate_17d_delta("source_phrase_001", "target_phrase_001")
-
-print("17D Delta (transformation needed):")
-print(f"  Pitch shift: {delta['delta_mean_f0_hz']:+.1f} Hz")
-print(f"  Duration change: {delta['delta_duration_ms']:+.1f} ms")
-print(f"  F0 range change: {delta['delta_f0_range_hz']:+.1f} Hz")
-print(f"  HNR change: {delta['delta_harmonic_to_noise_ratio']:+.1f} dB")
-print(f"  Flatness change: {delta['delta_spectral_flatness']:+.3f}")
-print(f"  Attack time change: {delta['delta_attack_time_ms']:+.1f} ms")
-print(f"  Jitter change: {delta['delta_jitter']:+.3f}")
-print(f"  Vibrato rate change: {delta['delta_vibrato_rate_hz']:+.1f} Hz")
-print(f"  Onset rate change: {delta['delta_onset_rate_hz']:+.1f} Hz")
-
-# Use delta with Rust synthesizer
-from technical_architecture import GranularConcatenativeSynthesizer
-
-synth = GranularConcatenativeSynthesizer(sample_rate=22050)
-synth.load_source_with_metadata(source_audio, source_metadata)
-
-# Apply delta transformations
-synth.shift_pitch_by_hz(delta['delta_mean_f0_hz'])
-synth.shift_duration_by_ms(delta['delta_duration_ms'])
-```
-
-### Complete Workflow Example
-
-Find source phrase, calculate delta to target, synthesize:
+Acoustic search (by 45D vector similarity) is still available for discovering **novel phrases** not yet in the dictionary:
 
 ```python
-from query_interface import get_query_interface
-from technical_architecture import GranularConcatenativeSynthesizer, SourceMetadata
+# Find phrases acoustically similar to a target
+similar = qi.find_similar_45d("marmoset_phee_001", k=10)
 
-# Step 1: Find target persona phrases
-qi = get_query_interface()
-pure_phrases = qi.get_pure_persona_phrases(Species.MARMOSET)
-gritty_phrases = qi.get_gritty_persona_phrases(Species.MARMOSET)
+# Find phrases by F0 range (for acoustic analysis)
+by_pitch = qi.search_by_f0_range(5000, 10000)
 
-if pure_phrases and gritty_phrases:
-    pure_key, pure_phrase = pure_phrases[0]
-    gritty_key, gritty_phrase = gritty_phrases[0]
-
-    # Step 2: Calculate 17D delta
-    delta = qi.calculate_17d_delta(pure_key, gritty_key)
-
-    # Step 3: Load source with metadata
-    synth = GranularConcatenativeSynthesizer(sample_rate=22050)
-
-    # Create metadata from source phrase
-    source_metadata = SourceMetadata(
-        mean_f0_hz=pure_phrase.acoustic_features.mean_f0_hz,
-        duration_ms=pure_phrase.acoustic_features.mean_duration_ms,
-        f0_range_hz=pure_phrase.acoustic_features.f0_range_hz,
-        harmonic_to_noise_ratio=pure_phrase.acoustic_features.harmonic_to_noise_ratio,
-        spectral_flatness=pure_phrase.acoustic_features.spectral_flatness,
-        attack_time_ms=pure_phrase.acoustic_features.attack_time_ms,
-        decay_time_ms=pure_phrase.acoustic_features.decay_time_ms,
-        sustain_level=pure_phrase.acoustic_features.sustain_level,
-        vibrato_rate_hz=pure_phrase.acoustic_features.vibrato_rate_hz,
-        vibrato_depth=pure_phrase.acoustic_features.vibrato_depth,
-        jitter=pure_phrase.acoustic_features.jitter,
-        mfcc_1=pure_phrase.acoustic_features.mfcc_1,
-        mfcc_2=pure_phrase.acoustic_features.mfcc_2,
-        mfcc_3=pure_phrase.acoustic_features.mfcc_3,
-        mfcc_4=pure_phrase.acoustic_features.mfcc_4,
-        spectral_contrast=pure_phrase.acoustic_features.spectral_contrast,
-        median_ici_ms=pure_phrase.acoustic_features.median_ici_ms,
-        onset_rate_hz=pure_phrase.acoustic_features.onset_rate_hz,
-        ici_coefficient_of_variation=pure_phrase.acoustic_features.ici_coefficient_of_variation,
-    )
-
-    synth.load_source_with_metadata(source_audio, source_metadata)
-
-    # Step 4: Apply delta to transform from PURE to GRITTY
-    output = synth.apply_micro_dynamics_delta(delta)
-
-    print(f"Transformed {pure_key} → {gritty_key}")
-    print(f"Applied {delta['delta_harmonic_to_noise_ratio']:+.1f}dB HNR change")
-    print(f"Applied {delta['delta_spectral_flatness']:+.3f} flatness change")
+# Find phrases by duration
+by_duration = qi.search_by_duration(50, 200)
 ```
 
 ### API Reference
 
-**17D Search Methods:**
-- `search_by_hnr(min_hnr, max_hnr, species=None)` - Search by harmonic-to-noise ratio
-- `search_by_spectral_flatness(min_flatness, max_flatness, species=None)` - Search by spectral flatness
-- `search_by_attack_time(min_attack, max_attack, species=None)` - Search by attack time
-- `search_by_jitter(min_jitter, max_jitter, species=None)` - Search by jitter
-- `search_by_onset_rate(min_rate, max_rate, species=None)` - Search by onset rate
+**Semantic Search Methods:**
+- `search_by_semantic_label(label, min_confidence=0.0)` - Search by semantic label
+- `search_by_intent(intent)` - Search by inferred intent
+- `search_by_grading_score(min_score, max_score=1.0)` - Search by grading score
+- `search_semantic_across_species(label)` - Cross-species semantic search
 
-**Persona Queries:**
-- `get_pure_persona_phrases(species=None)` - Get PURE persona phrases (tonal, clean)
-- `get_gritty_persona_phrases(species=None)` - Get GRITTY persona phrases (noisy, rough)
-- `get_rhythmic_persona_phrases(species=None)` - Get RHYTHMIC persona phrases (pulsed)
-- `get_harmonic_persona_phrases(species=None)` - Get HARMONIC persona phrases (continuous)
-
-**Advanced Methods:**
-- `find_nearest_neighbors_17d(phrase_key, k=5, species=None)` - Find k nearest neighbors in 17D space
-- `calculate_17d_delta(from_phrase_key, to_phrase_key)` - Calculate 17D transformation delta
+**Legacy Acoustic Methods:**
+- `find_similar_45d(phrase_key, k=5)` - Find k nearest neighbors in 45D space
+- `search_by_f0_range(min_hz, max_hz)` - Search by fundamental frequency
+- `search_by_duration(min_ms, max_ms)` - Search by duration
 
 ---
 
@@ -1240,23 +1389,47 @@ python3 -m pytest tests/test_granular_synthesis_limitations.py -v
 
 ## Architecture
 
+The system follows a **Pipeline-First** architecture where the Rust Execution Layer handles the complete signal-to-semantic flow.
+
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Systemd Supervisor                        │
-│  ┌──────────────────────────┐  ┌──────────────────────────┐     │
-│  │  rust-field-engine       │  │  python-cognitive-agent  │     │
-│  │  (Technical Architect)   │  │  (Logic Layer)           │     │
-│  │                          │  │                          │     │
-│  │  - Safety Critical       │  │  - Decision Making       │     │
-│  │  - Audio Processing      │◄─┤  - Phrase Selection      │     │
-│  │  - Hardware Control      │  │  - Learning              │     │
-│  │  - Heartbeat Monitor     │  │  - Intent Generation     │     │
-│  │                          │  │                          │     │
-│  │  ZeroMQ SUB (Heartbeat)  │◄─┤  ZeroMQ PUB (Heartbeat)  │     │
-│  └──────────────────────────┘  └──────────────────────────┘     │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Systemd Supervisor                                    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  rust-field-engine (Rosetta Pipeline)                                │   │
+│  │                                                                      │   │
+│  │  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌──────────┐ │   │
+│  │  │   Stage 1   │   │   Stage 2   │   │   Stage 3   │   │ Stage 4  │ │   │
+│  │  │  Dynamic    │──▶│    45D      │──▶│  Cascaded   │──▶│ Semantic │ │   │
+│  │  │ Segmentation│   │  Features   │   │ Classifier  │   │ Grounding│ │   │
+│  │  └─────────────┘   └─────────────┘   └─────────────┘   └──────────┘ │   │
+│  │         │                                     │                       │   │
+│  │         ▼                                     ▼                       │   │
+│  │  ┌─────────────────┐                ┌──────────────────────┐        │   │
+│  │  │ Environmental   │                │    RosettaBundle     │        │   │
+│  │  │ Monitor/Sentry  │───────────────▶│ (Dictionary + Weights)│       │   │
+│  │  └─────────────────┘                └──────────────────────┘        │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                   │                                          │
+│                                   │ ZeroMQ: ContextEnrichedPhrase Event      │
+│                                   ▼                                          │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  python-cognitive-agent                                              │   │
+│  │  - Receives Semantic Labels ("Phee") + Intent ("Contact")            │   │
+│  │  - Decision Making & Learning                                        │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Key Components
+
+| Component | Role | Technology |
+|-----------|------|------------|
+| **Dynamic Segmenter** | Finds precise phrase boundaries | Change Point Detection |
+| **45D Feature Extractor** | Comprehensive acoustic analysis | FFT + Spectral Analysis |
+| **Cascaded Classifier** | Species ID → Phrase Type | Router → Analyzer pattern |
+| **Semantic Grounding** | Maps acoustics to meaning | Human-Guided Dictionary |
+| **RosettaBundle** | Deployable artifact | Dictionary + Weights |
+| **Environmental Monitor** | Context enrichment | Rain, Wind, Temperature |
 
 ---
 

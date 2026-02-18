@@ -1,0 +1,216 @@
+{
+  "species": "marmoset",
+  "total_files": 500,
+  "processing_time_sec": 49.455644747,
+  "hierarchical": {
+    "motifs": {
+      "phrase_types": 38,
+      "candidates": 351,
+      "avg_duration_ms": 697.397856014067,
+      "duration_distribution": {
+        "500ms+": 351
+      }
+    },
+    "syllables": {
+      "phrase_types": 91,
+      "candidates": 1034,
+      "avg_duration_ms": 240.02846493158395,
+      "duration_distribution": {
+        "200-500ms": 1023,
+        "50-100ms": 1,
+        "100-200ms": 10
+      }
+    },
+    "notes": {
+      "phrase_types": 151,
+      "candidates": 3227,
+      "avg_duration_ms": 77.82875067655021,
+      "duration_distribution": {
+        "50-100ms": 3087,
+        "100-200ms": 66,
+        "0-50ms": 74
+      }
+    }
+  },
+  "syntax": {
+    "vocabulary_size": 84,
+    "unique_transitions": 542,
+    "entropy": 1.913988225272853,
+    "perplexity": 8.10380352412675,
+    "top_transitions": [
+      {
+        "from_phrase": 6,
+        "to_phrase": 6,
+        "count": 95,
+        "probability": 0.7421875
+      },
+      {
+        "from_phrase": 2,
+        "to_phrase": 2,
+        "count": 41,
+        "probability": 0.4659090909090909
+      },
+      {
+        "from_phrase": 11,
+        "to_phrase": 11,
+        "count": 29,
+        "probability": 0.21014492753623187
+      },
+      {
+        "from_phrase": 0,
+        "to_phrase": 0,
+        "count": 22,
+        "probability": 0.2222222222222222
+      },
+      {
+        "from_phrase": 2,
+        "to_phrase": 6,
+        "count": 19,
+        "probability": 0.2159090909090909
+      },
+      {
+        "from_phrase": 0,
+        "to_phrase": 5,
+        "count": 17,
+        "probability": 0.1717171717171717
+      },
+      {
+        "from_phrase": 11,
+        "to_phrase": 0,
+        "count": 16,
+        "probability": 0.11594202898550725
+      },
+      {
+        "from_phrase": 7,
+        "to_phrase": 11,
+        "count": 16,
+        "probability": 0.2191780821917808
+      },
+      {
+        "from_phrase": 5,
+        "to_phrase": 0,
+        "count": 16,
+        "probability": 0.1951219512195122
+      },
+      {
+        "from_phrase": 5,
+        "to_phrase": 11,
+        "count": 14,
+        "probability": 0.17073170731707318
+      }
+    ],
+    "common_patterns": [
+      {
+        "pattern": [
+          6,
+          6,
+          6
+        ],
+        "occurrences": 52
+      },
+      {
+        "pattern": [
+          2,
+          2,
+          2
+        ],
+        "occurrences": 13
+      },
+      {
+        "pattern": [
+          2,
+          6,
+          6
+        ],
+        "occurrences": 10
+      },
+      {
+        "pattern": [
+          11,
+          0,
+          0
+        ],
+        "occurrences": 6
+      },
+      {
+        "pattern": [
+          7,
+          11,
+          11
+        ],
+        "occurrences": 5
+      },
+      {
+        "pattern": [
+          11,
+          0,
+          11
+        ],
+        "occurrences": 4
+      },
+      {
+        "pattern": [
+          11,
+          1,
+          11
+        ],
+        "occurrences": 4
+      },
+      {
+        "pattern": [
+          11,
+          7,
+          0
+        ],
+        "occurrences": 4
+      },
+      {
+        "pattern": [
+          0,
+          7,
+          7
+        ],
+        "occurrences": 4
+      },
+      {
+        "pattern": [
+          11,
+          7,
+          11
+        ],
+        "occurrences": 4
+      }
+    ]
+  },
+  "fingerprint": {
+    "phrase_types": 84,
+    "call_type_distribution": {
+      "Twitter": 190,
+      "Trill": 48,
+      "Seep": 10,
+      "Phee": 121,
+      "Vocalization": 1303,
+      "Tsik": 52
+    },
+    "duration_range_ms": [
+      234.48974609375,
+      798.208740234375
+    ],
+    "avg_duration_ms": 700.296005585354,
+    "acoustic_niches": [
+      {
+        "name": "Long Calls",
+        "call_types": [
+          "Vocalization",
+          "Trill",
+          "Tsik",
+          "Twitter",
+          "Seep",
+          "Phee"
+        ],
+        "occurrence_percent": 99.8259860788863,
+        "avg_duration_ms": 701.006531754737
+      }
+    ]
+  }
+}

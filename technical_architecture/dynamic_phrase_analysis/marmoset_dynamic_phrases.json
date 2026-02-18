@@ -1,0 +1,17 @@
+{
+  "species": "marmoset",
+  "total_files": 1000,
+  "total_candidates": 0,
+  "total_atomic_phrases": 0,
+  "high_quality_phrases": 0,
+  "avg_phrases_per_file": 0.0,
+  "avg_phrase_duration_ms": -0.0,
+  "duration_distribution": {},
+  "call_type_distribution": {},
+  "avg_cluster_size": 0.0,
+  "avg_intra_similarity": -0.0,
+  "avg_separation": -0.0,
+  "avg_reuse": -0.0,
+  "top_phrases": [],
+  "processing_time_sec": 0.310365293
+}

@@ -15,8 +15,9 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
-use crate::zoo_vox_data_models::{AcousticFeatures30D, PhrasePrototype, ContextAssociation};
+use crate::zoo_vox_data_models::{AcousticFeatures30D, PhrasePrototype};
 use crate::acoustic_similarity::{AcousticSimilarityEngine, DistanceMetric};
+use crate::species::FeatureWeights;
 
 // =============================================================================
 // Within-Call Analysis Configuration
@@ -195,13 +196,49 @@ impl WithinCallAnalyzer {
         }
     }
 
-    /// Create analyzer for specific species
+    /// Create analyzer for specific species with optimized weights
+    ///
+    /// This implements the "Router then Analyzer" pattern:
+    /// - Phase 1 (Species ID): Uses unified 45D space (handled elsewhere)
+    /// - Phase 2 (Phrase Analysis): Uses species-specific weights for
+    ///   enhanced within-species discrimination
+    ///
+    /// The weights are applied to improve phrase type discrimination
+    /// within a single species' vocal repertoire.
     pub fn for_species(species: &str) -> Self {
         let config = WithinCallConfig::for_species(species);
-        let similarity_engine = AcousticSimilarityEngine::with_metric(
+        let mut similarity_engine = AcousticSimilarityEngine::with_metric(
             30,
             config.distance_metric.clone(),
         );
+
+        // Apply species-specific weights for Phase 2 analysis
+        // This is the CORRECT use of species weights - within-species
+        // discrimination, not cross-species comparison
+        let weights = get_species_weights_30d(species);
+        if config.use_weighted_features {
+            similarity_engine.set_feature_weights(&weights);
+        }
+
+        Self {
+            config,
+            similarity_engine,
+        }
+    }
+
+    /// Create analyzer for species with explicit weights
+    pub fn for_species_with_weights(species: &str, weights: &FeatureWeights) -> Self {
+        let config = WithinCallConfig::for_species(species);
+        let mut similarity_engine = AcousticSimilarityEngine::with_metric(
+            30,
+            config.distance_metric.clone(),
+        );
+
+        // Convert 45D weights to 30D (first 6 feature groups)
+        let weights_30d = weights.to_weight_vector_30d();
+        if config.use_weighted_features {
+            similarity_engine.set_feature_weights(&weights_30d);
+        }
 
         Self {
             config,
@@ -655,6 +692,38 @@ impl Default for SimilarityBasedLibraryBuilder {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// =============================================================================
+// Species-Specific Weight Helper
+// =============================================================================
+
+/// Get species-specific 30D feature weights for within-species analysis
+///
+/// This implements Phase 2 of the "Router then Analyzer" pattern:
+/// - These weights are for WITHIN-species phrase discrimination
+/// - They should NOT be used for cross-species comparison (Phase 1)
+///
+/// The 30D features cover:
+/// - D0-D4: Spectral (centroid, spread, skewness, kurtosis, tilt)
+/// - D5-D9: Harmonic (f0, harmonicity, harmonic_ratio, inharmonicity, noise_ratio)
+/// - D10-D14: Temporal (rms, zcr, attack, decay, sustain)
+/// - D15-D19: Modulation (am_rate, am_depth, fm_rate, fm_slope, spectral_flux)
+/// - D20-D24: Cepstral (mfcc_1-5)
+/// - D25-D29: Formant (f1, f2, f3, b1, b2)
+fn get_species_weights_30d(species: &str) -> Vec<f32> {
+    let weights = match species {
+        "dolphin" | "orca" => FeatureWeights::dolphin(),
+        "sperm_whale" => FeatureWeights::sperm_whale(),
+        "zebra_finch" => FeatureWeights::zebra_finch(),
+        "marmoset" => FeatureWeights::marmoset(),
+        "egyptian_bat" => FeatureWeights::bat(),
+        "macaque" => FeatureWeights::macaque(),
+        "meerkat" => FeatureWeights::meerkat(),
+        _ => FeatureWeights::default(),
+    };
+
+    weights.to_weight_vector_30d()
 }
 
 // =============================================================================

@@ -1094,7 +1094,8 @@ impl LexiconToSyntaxPipeline {
                         (arr, 30)
                     }
                     crate::micro_dynamics_extractor::FeatureVector::D37(features) => {
-                        let mut arr = Array2::zeros((1, 37));
+                        // Note: D37 struct actually has 30D base + 8 new features = 38D total
+                        let mut arr = Array2::zeros((1, 38));
                         let base = &features.base_30d;
                         // Base 30D features (indices 0-29)
                         arr[[0, 0]] = base.attack_time_ms as f64;
@@ -1474,6 +1475,11 @@ impl LexiconToSyntaxPipeline {
 
     /// Load WAV file using hound
     fn load_wav(&self, path: &Path) -> Result<(Vec<f32>, u32)> {
+        // Check if file exists first
+        if !path.exists() {
+            return Err(PipelineError::AudioNotFound(path.display().to_string()));
+        }
+
         // Try to open and read WAV file using hound
         let reader = hound::WavReader::open(path)
             .map_err(|e| PipelineError::SegmentationError(format!("Failed to open {}: {}", path.display(), e)))?;
@@ -1538,7 +1544,11 @@ impl LexiconToSyntaxPipeline {
         use symphonia::core::meta::MetadataOptions;
         use symphonia::core::probe::Hint;
         use symphonia::core::audio::{AudioBufferRef, Signal};
-        
+
+        // Check if file exists first
+        if !path.exists() {
+            return Err(PipelineError::AudioNotFound(path.display().to_string()));
+        }
 
         // Create a hint to help the format registry guess what format reader is appropriate.
         let mut hint = Hint::new();
@@ -2318,23 +2328,47 @@ mod tests {
     fn test_full_pipeline_with_dummy_data() {
         let pipeline = LexiconToSyntaxPipeline::new();
 
-        // Create dummy audio files (won't actually exist)
+        // Create dummy audio files with valid WAV format
         let temp_dir = TempDir::new().unwrap();
         let audio_file1 = temp_dir.path().join("test1.wav");
         let audio_file2 = temp_dir.path().join("test2.wav");
 
-        // Create empty files
-        std::fs::write(&audio_file1, b"").unwrap();
-        std::fs::write(&audio_file2, b"").unwrap();
+        // Create valid WAV files with 1 second of silence at 44100Hz
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 44100,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
 
-        // Run pipeline (will use dummy audio loading)
+        // Create WAV file 1
+        {
+            let mut writer = hound::WavWriter::create(&audio_file1, spec).unwrap();
+            // Write 0.1 second of silence (4410 samples)
+            for _ in 0..4410 {
+                writer.write_sample(0i16).unwrap();
+            }
+            writer.finalize().unwrap();
+        }
+
+        // Create WAV file 2
+        {
+            let mut writer = hound::WavWriter::create(&audio_file2, spec).unwrap();
+            // Write 0.1 second of silence (4410 samples)
+            for _ in 0..4410 {
+                writer.write_sample(0i16).unwrap();
+            }
+            writer.finalize().unwrap();
+        }
+
+        // Run pipeline
         let result = pipeline.run(&[audio_file1, audio_file2]);
 
-        // Should succeed with dummy data
-        assert!(result.is_ok());
+        // Should succeed with valid WAV data
+        assert!(result.is_ok(), "Pipeline failed: {:?}", result.err());
 
         let result = result.unwrap();
-        assert_eq!(result.execution_time_sec > 0.0, true);
+        assert!(result.execution_time_sec > 0.0);
     }
 
     #[test]

@@ -196,6 +196,26 @@ impl AcousticSimilarityEngine {
         self.fitted = true;
     }
 
+    /// Set species-specific feature weights
+    ///
+    /// This allows the similarity engine to use domain knowledge about
+    /// which features are important for each species:
+    /// - Sperm Whale: Rhythm (ICI, onset rate) weighted high
+    /// - Dolphin: FM slope weighted high for whistle contours
+    /// - Macaque: Spectral kurtosis/tilt for voice quality
+    /// - Bat: FM slope and micro-dynamics for echolocation
+    pub fn set_feature_weights(&mut self, weights: &[f32]) {
+        let min_len = weights.len().min(self.weights.len());
+        for (i, &w) in weights.iter().take(min_len).enumerate() {
+            self.weights[i] = w as f64;
+        }
+    }
+
+    /// Get current feature weights
+    pub fn feature_weights(&self) -> &[f64] {
+        self.weights.as_slice().unwrap_or(&[])
+    }
+
     /// Check if normalization has been fitted
     pub fn is_fitted(&self) -> bool {
         self.fitted

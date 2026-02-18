@@ -1,0 +1,208 @@
+{
+  "files_processed": 50000,
+  "candidates_extracted": 487058,
+  "phrase_types": 22,
+  "avg_intra_cluster_distance": 0.008651947248125836,
+  "max_intra_cluster_distance": 0.07481862656566685,
+  "system_classification": "DISCRETE SYSTEM (tight clusters)",
+  "cluster_stats": [
+    {
+      "type_id": "Type_1",
+      "instance_count": 242767,
+      "avg_distance_to_centroid": 0.0006980637657431172,
+      "max_distance_to_centroid": 0.04469107182786203,
+      "min_distance_to_centroid": 1.1131929933405615e-8,
+      "distance_variance": 1.0229920656338732e-6,
+      "avg_duration_ms": 240.40237
+    },
+    {
+      "type_id": "Type_2",
+      "instance_count": 128825,
+      "avg_distance_to_centroid": 0.07481862656566685,
+      "max_distance_to_centroid": 0.34058566506881904,
+      "min_distance_to_centroid": 2.6989660197873633e-6,
+      "distance_variance": 0.006639209164604611,
+      "avg_duration_ms": 240.67009
+    },
+    {
+      "type_id": "Type_3",
+      "instance_count": 47815,
+      "avg_distance_to_centroid": 0.047567108966298455,
+      "max_distance_to_centroid": 0.4253630270382104,
+      "min_distance_to_centroid": 6.622918063969863e-7,
+      "distance_variance": 0.006441305963577449,
+      "avg_duration_ms": 239.97359
+    },
+    {
+      "type_id": "Type_12",
+      "instance_count": 31711,
+      "avg_distance_to_centroid": 0.0003277286916484382,
+      "max_distance_to_centroid": 0.0172879473647658,
+      "min_distance_to_centroid": 3.4016055305841064e-8,
+      "distance_variance": 7.764618948182182e-7,
+      "avg_duration_ms": 239.44992
+    },
+    {
+      "type_id": "Type_6",
+      "instance_count": 12603,
+      "avg_distance_to_centroid": 0.0010943315924246077,
+      "max_distance_to_centroid": 0.49735432546827274,
+      "min_distance_to_centroid": 4.342182328143096e-7,
+      "distance_variance": 0.00003036030675020092,
+      "avg_duration_ms": 241.12437
+    },
+    {
+      "type_id": "Type_10",
+      "instance_count": 6267,
+      "avg_distance_to_centroid": 0.004850083724688777,
+      "max_distance_to_centroid": 0.3484067928556358,
+      "min_distance_to_centroid": 1.097004393435519e-6,
+      "distance_variance": 0.0001714889448014498,
+      "avg_duration_ms": 240.68208
+    },
+    {
+      "type_id": "Type_5",
+      "instance_count": 4643,
+      "avg_distance_to_centroid": 0.0006669029279681237,
+      "max_distance_to_centroid": 0.10941140863542032,
+      "min_distance_to_centroid": 4.927359125161956e-7,
+      "distance_variance": 4.626327837406682e-6,
+      "avg_duration_ms": 240.61768
+    },
+    {
+      "type_id": "Type_9",
+      "instance_count": 3469,
+      "avg_distance_to_centroid": 0.033598664357118266,
+      "max_distance_to_centroid": 0.31956509147391365,
+      "min_distance_to_centroid": 4.729484486265534e-6,
+      "distance_variance": 0.0017373699875762177,
+      "avg_duration_ms": 238.4307
+    },
+    {
+      "type_id": "Type_4",
+      "instance_count": 3293,
+      "avg_distance_to_centroid": 0.003062953530557933,
+      "max_distance_to_centroid": 0.22095449496613562,
+      "min_distance_to_centroid": 3.597926565013232e-6,
+      "distance_variance": 0.00014015378758215456,
+      "avg_duration_ms": 237.55618
+    },
+    {
+      "type_id": "Type_14",
+      "instance_count": 1668,
+      "avg_distance_to_centroid": 0.0005327648188739722,
+      "max_distance_to_centroid": 0.011523430655613565,
+      "min_distance_to_centroid": 1.6945635705756246e-7,
+      "distance_variance": 8.219105216646626e-7,
+      "avg_duration_ms": 240.21524
+    },
+    {
+      "type_id": "Type_8",
+      "instance_count": 1415,
+      "avg_distance_to_centroid": 0.0006967580265406334,
+      "max_distance_to_centroid": 0.06002247854114129,
+      "min_distance_to_centroid": 7.187400106190012e-7,
+      "distance_variance": 8.0778518457787e-6,
+      "avg_duration_ms": 240.71603
+    },
+    {
+      "type_id": "Type_7",
+      "instance_count": 1404,
+      "avg_distance_to_centroid": 0.00048111466391529816,
+      "max_distance_to_centroid": 0.015465417157071837,
+      "min_distance_to_centroid": 3.837011434915105e-6,
+      "distance_variance": 1.0100601383831178e-6,
+      "avg_duration_ms": 241.12033
+    },
+    {
+      "type_id": "Type_15",
+      "instance_count": 454,
+      "avg_distance_to_centroid": 0.000698088295715841,
+      "max_distance_to_centroid": 0.020314281024304104,
+      "min_distance_to_centroid": 8.41320938904655e-6,
+      "distance_variance": 2.782445715228067e-6,
+      "avg_duration_ms": 239.82976
+    },
+    {
+      "type_id": "Type_11",
+      "instance_count": 320,
+      "avg_distance_to_centroid": 0.005897177899554874,
+      "max_distance_to_centroid": 0.07667748899642257,
+      "min_distance_to_centroid": 0.000034215229562706284,
+      "distance_variance": 0.00006901542261409162,
+      "avg_duration_ms": 236.04855
+    },
+    {
+      "type_id": "Type_17",
+      "instance_count": 307,
+      "avg_distance_to_centroid": 0.0009048912589260254,
+      "max_distance_to_centroid": 0.010894365550641827,
+      "min_distance_to_centroid": 5.907045365405317e-6,
+      "distance_variance": 1.6180638887259383e-6,
+      "avg_duration_ms": 240.68065
+    },
+    {
+      "type_id": "Type_13",
+      "instance_count": 46,
+      "avg_distance_to_centroid": 0.0013191476093620137,
+      "max_distance_to_centroid": 0.009501444679518856,
+      "min_distance_to_centroid": 0.00003774089935504321,
+      "distance_variance": 4.609814110464754e-6,
+      "avg_duration_ms": 241.32207
+    },
+    {
+      "type_id": "Type_16",
+      "instance_count": 20,
+      "avg_distance_to_centroid": 0.0003264837212376692,
+      "max_distance_to_centroid": 0.0011794771597340992,
+      "min_distance_to_centroid": 0.000013182192472815935,
+      "distance_variance": 8.015219645067493e-8,
+      "avg_duration_ms": 242.22221
+    },
+    {
+      "type_id": "Type_20",
+      "instance_count": 10,
+      "avg_distance_to_centroid": 0.0032537359673134314,
+      "max_distance_to_centroid": 0.010731146041812578,
+      "min_distance_to_centroid": 0.00015066437530941723,
+      "distance_variance": 0.0000112896297258947,
+      "avg_duration_ms": 239.47844
+    },
+    {
+      "type_id": "Type_18",
+      "instance_count": 8,
+      "avg_distance_to_centroid": 0.0015615169498492815,
+      "max_distance_to_centroid": 0.0052530549617018085,
+      "min_distance_to_centroid": 4.852602573990339e-6,
+      "distance_variance": 2.602250163152528e-6,
+      "avg_duration_ms": 238.23126
+    },
+    {
+      "type_id": "Type_21",
+      "instance_count": 6,
+      "avg_distance_to_centroid": 0.005544355399267842,
+      "max_distance_to_centroid": 0.022453897981132398,
+      "min_distance_to_centroid": 0.0004536557181599177,
+      "distance_variance": 0.00005934554390482012,
+      "avg_duration_ms": 207.8836
+    },
+    {
+      "type_id": "Type_22",
+      "instance_count": 4,
+      "avg_distance_to_centroid": 0.001166178001190038,
+      "max_distance_to_centroid": 0.0028511257037938664,
+      "min_distance_to_centroid": 0.00010111105029220191,
+      "distance_variance": 1.2697134292570686e-6,
+      "avg_duration_ms": 244.46712
+    },
+    {
+      "type_id": "Type_19",
+      "instance_count": 3,
+      "avg_distance_to_centroid": 0.0012761627249069003,
+      "max_distance_to_centroid": 0.0022963384963151645,
+      "min_distance_to_centroid": 0.00004736277772365849,
+      "distance_variance": 8.64743987161258e-7,
+      "avg_duration_ms": 246.13
+    }
+  ]
+}
