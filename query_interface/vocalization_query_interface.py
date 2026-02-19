@@ -836,6 +836,240 @@ class VocalizationQueryInterface:
             - from_af.ici_coefficient_of_variation,
         }
 
+    # =========================================================================
+    # Semantic Search Methods (Human-Guided Context Discovery)
+    # =========================================================================
+
+    def search_by_semantic_label(
+        self,
+        label: str,
+        min_confidence: float = 0.0,
+        species: Optional[Species] = None,
+    ) -> List[Tuple[str, Phrase, float]]:
+        """
+        Search phrases by semantic label from Human-Guided Dictionary.
+
+        Args:
+            label: Semantic label to search for (e.g., "Alarm", "Contact", "Phee")
+            min_confidence: Minimum confidence threshold (0.0 - 1.0)
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, phrase, confidence) tuples
+        """
+        results = []
+
+        species_data_iter = (
+            [(species, self.db.species_data[species])]
+            if species and species in self.db.species_data
+            else self.db.species_data.items()
+        )
+
+        for sp, sp_data in species_data_iter:
+            for phrase_key, phrase in sp_data.phrase_library.items():
+                # Check contexts for matching label
+                for context in phrase.contexts:
+                    if label.lower() in context.context_name.lower():
+                        confidence = context.percentage / 100.0  # Convert to 0-1
+                        if confidence >= min_confidence:
+                            results.append((phrase_key, phrase, confidence))
+                            break  # Only add once per phrase
+
+        # Sort by confidence descending
+        results.sort(key=lambda x: x[2], reverse=True)
+        return results
+
+    def search_by_intent(
+        self,
+        intent: str,
+        species: Optional[Species] = None,
+    ) -> List[Tuple[str, Phrase, str]]:
+        """
+        Search phrases by inferred intent.
+
+        Intent is derived from semantic label + environmental context:
+        - "Phee" + "Windy" → "Long_Range_Contact"
+        - "Tsik" + "Storm" → "Emergency_Alert"
+        - "Twitter" + Any → "Social_Bonding"
+
+        Args:
+            intent: Intent to search for (e.g., "Long_Range_Contact", "Warning")
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, phrase, matched_intent) tuples
+        """
+        # Intent inference rules
+        intent_to_labels = {
+            "Long_Range_Contact": ["phee", "contact"],
+            "Social_Contact": ["phee", "contact"],
+            "Emergency_Alert": ["tsik", "alarm", "protest"],
+            "Warning": ["tsik", "alarm", "protest"],
+            "Social_Bonding": ["twitter", "grooming", "social"],
+            "Affiliative": ["trill", "affiliative"],
+            "Solicitation": ["infant_cry", "solicitation"],
+            "Aggression": ["fighting", "aggression", "protest"],
+            "Reproductive": ["mating", "reproductive"],
+            "Territorial_Defense": ["fighting", "territorial"],
+        }
+
+        # Find matching labels for the intent
+        matching_labels = intent_to_labels.get(intent, [intent.lower()])
+
+        results = []
+        species_data_iter = (
+            [(species, self.db.species_data[species])]
+            if species and species in self.db.species_data
+            else self.db.species_data.items()
+        )
+
+        for sp, sp_data in species_data_iter:
+            for phrase_key, phrase in sp_data.phrase_library.items():
+                for context in phrase.contexts:
+                    context_lower = context.context_name.lower()
+                    if any(label in context_lower for label in matching_labels):
+                        results.append((phrase_key, phrase, intent))
+                        break
+
+        return results
+
+    def search_by_grading_score(
+        self,
+        min_score: float = 0.0,
+        max_score: float = 1.0,
+        label: Optional[str] = None,
+        species: Optional[Species] = None,
+    ) -> List[Tuple[str, Phrase, float]]:
+        """
+        Search phrases by grading score (discrete vs graded vocalizations).
+
+        Grading score indicates how much a phrase deviates from its type centroid:
+        - Low score (~0.0): Discrete calls (consistent, stereotyped)
+        - High score (~1.0): Graded calls (variable, continuous)
+
+        Args:
+            min_score: Minimum grading score (0.0 = most discrete)
+            max_score: Maximum grading score (1.0 = most graded)
+            label: Optional semantic label filter
+            species: Optional species filter
+
+        Returns:
+            List of (phrase_key, phrase, grading_score) tuples
+        """
+        results = []
+
+        # Get phrases matching label if specified
+        if label:
+            base_phrases = self.search_by_semantic_label(label, 0.0, species)
+            phrase_iter = [(pk, p) for pk, p, _ in base_phrases]
+        else:
+            species_data_iter = (
+                [(species, self.db.species_data[species])]
+                if species and species in self.db.species_data
+                else self.db.species_data.items()
+            )
+            phrase_iter = [
+                (pk, p)
+                for sp, sp_data in species_data_iter
+                for pk, p in sp_data.phrase_library.items()
+            ]
+
+        for phrase_key, phrase in phrase_iter:
+            # Estimate grading score from acoustic variation
+            # High jitter/shimmer = more graded; Low = more discrete
+            af = phrase.acoustic_features
+            if af is None:
+                continue
+
+            # Calculate grading proxy from acoustic features
+            jitter = getattr(af, 'jitter', 0.0) or 0.0
+            spectral_flatness = getattr(af, 'spectral_flatness', 0.0) or 0.0
+            f0_range = getattr(af, 'f0_range_hz', 0.0) or 0.0
+
+            # Normalize to 0-1 range (approximate)
+            grading_score = min(1.0, (jitter * 5.0 + spectral_flatness + f0_range / 5000.0) / 3.0)
+
+            if min_score <= grading_score <= max_score:
+                results.append((phrase_key, phrase, grading_score))
+
+        # Sort by grading score descending (most graded first)
+        results.sort(key=lambda x: x[2], reverse=True)
+        return results
+
+    def search_semantic_across_species(
+        self,
+        label: str,
+        min_confidence: float = 0.5,
+    ) -> Dict[Species, List[Tuple[str, Phrase, float]]]:
+        """
+        Find similar semantic contexts across species.
+
+        Example: "alarm" type calls across species:
+        - Marmoset: Tsik
+        - Egyptian Fruit Bat: Protest
+        - Bird: Alarm Call
+
+        Args:
+            label: Semantic label to search for
+            min_confidence: Minimum confidence threshold
+
+        Returns:
+            Dict mapping species to list of matching phrases
+        """
+        results = {}
+
+        for species in self.db.species_data.keys():
+            species_results = self.search_by_semantic_label(label, min_confidence, species)
+            if species_results:
+                results[species] = species_results
+
+        return results
+
+    def get_semantic_labels(self, species: Optional[Species] = None) -> List[str]:
+        """
+        Get all unique semantic labels in the database.
+
+        Args:
+            species: Optional species filter
+
+        Returns:
+            Sorted list of unique semantic labels
+        """
+        labels = set()
+
+        species_data_iter = (
+            [(species, self.db.species_data[species])]
+            if species and species in self.db.species_data
+            else self.db.species_data.items()
+        )
+
+        for sp, sp_data in species_data_iter:
+            for phrase in sp_data.phrase_library.values():
+                for context in phrase.contexts:
+                    labels.add(context.context_name)
+
+        return sorted(labels)
+
+    def get_available_intents(self) -> List[str]:
+        """
+        Get all available intent categories.
+
+        Returns:
+            List of intent names that can be searched
+        """
+        return [
+            "Long_Range_Contact",
+            "Social_Contact",
+            "Emergency_Alert",
+            "Warning",
+            "Social_Bonding",
+            "Affiliative",
+            "Solicitation",
+            "Aggression",
+            "Reproductive",
+            "Territorial_Defense",
+        ]
+
     def get_database_info(self) -> Dict[str, Any]:
         """Get database information and statistics"""
         info = {
@@ -895,3 +1129,46 @@ def get_database_statistics() -> Dict[str, Any]:
     """Convenience function for getting database statistics"""
     interface = get_query_interface()
     return interface.get_database_info()
+
+
+# =============================================================================
+# Semantic Search Convenience Functions
+# =============================================================================
+
+def search_by_semantic_label(
+    label: str,
+    min_confidence: float = 0.0,
+    species: Optional[Species] = None,
+) -> List[Tuple[str, Phrase, float]]:
+    """Convenience function for semantic label queries"""
+    interface = get_query_interface()
+    return interface.search_by_semantic_label(label, min_confidence, species)
+
+
+def search_by_intent(
+    intent: str,
+    species: Optional[Species] = None,
+) -> List[Tuple[str, Phrase, str]]:
+    """Convenience function for intent-based queries"""
+    interface = get_query_interface()
+    return interface.search_by_intent(intent, species)
+
+
+def search_by_grading_score(
+    min_score: float = 0.0,
+    max_score: float = 1.0,
+    label: Optional[str] = None,
+    species: Optional[Species] = None,
+) -> List[Tuple[str, Phrase, float]]:
+    """Convenience function for grading score queries"""
+    interface = get_query_interface()
+    return interface.search_by_grading_score(min_score, max_score, label, species)
+
+
+def search_semantic_across_species(
+    label: str,
+    min_confidence: float = 0.5,
+) -> Dict[Species, List[Tuple[str, Phrase, float]]]:
+    """Convenience function for cross-species semantic queries"""
+    interface = get_query_interface()
+    return interface.search_semantic_across_species(label, min_confidence)
