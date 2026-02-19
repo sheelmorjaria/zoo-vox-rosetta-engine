@@ -584,6 +584,9 @@ pub mod rosetta_pipeline;
 // Bio-Acoustic Interaction Agent (Synthesis Integration)
 pub mod bio_acoustic_agent;
 
+// Dictionary Loader (Field Deployment Persistence)
+pub mod dictionary_loader;
+
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechArchConfig {
