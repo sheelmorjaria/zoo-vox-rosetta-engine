@@ -3,7 +3,7 @@
 //! Implements phrase segmentation and extraction from audio,
 //! with species-specific strategies based on encoding type.
 
-use crate::species::{EncodingStrategy, SpeciesConfigFactory};
+use crate::species::SpeciesConfigFactory;
 use crate::zoo_vox_data_models::{
     AcousticFeatures30D, BehaviorAnnotation, ContextAssociation, PhrasePrototype,
 };

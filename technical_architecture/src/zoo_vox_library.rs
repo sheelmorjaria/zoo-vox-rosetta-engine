@@ -159,7 +159,7 @@ impl ZooVoxLibraryBuilder {
         for phrase in phrases {
             key_groups
                 .entry(phrase.phrase_key.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(phrase);
         }
 

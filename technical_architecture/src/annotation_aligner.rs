@@ -631,7 +631,7 @@ impl SemanticPhraseDictionary {
             .and_then(|ctxs| {
                 ctxs.iter()
                     .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
-                    .map(|(c, p)| format!(" [{}]", c))
+                    .map(|(c, _p)| format!(" [{}]", c))
             })
             .unwrap_or_default();
 

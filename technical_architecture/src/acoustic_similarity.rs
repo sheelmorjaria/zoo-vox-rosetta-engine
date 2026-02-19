@@ -34,9 +34,10 @@ use serde::{Deserialize, Serialize};
 // =============================================================================
 
 /// Distance metric type for similarity computation
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub enum DistanceMetric {
     /// Weighted Euclidean distance
+    #[default]
     WeightedEuclidean,
 
     /// Cosine similarity (1 - cosine = distance)
@@ -47,12 +48,6 @@ pub enum DistanceMetric {
 
     /// Chebyshev distance (L-inf norm)
     Chebyshev,
-}
-
-impl Default for DistanceMetric {
-    fn default() -> Self {
-        DistanceMetric::WeightedEuclidean
-    }
 }
 
 // =============================================================================
@@ -426,7 +421,7 @@ impl SimilarityAnalysis {
         file_names: &[String],
         feature_names: &[&str],
     ) -> Self {
-        let n_samples = features.nrows();
+        let _n_samples = features.nrows();
         let n_features = features.ncols();
 
         // Build similarity engine
@@ -914,7 +909,7 @@ impl KnnClassifier {
 
     /// Find optimal k using cross-validation
     pub fn find_optimal_k(&self, k_values: &[usize], n_folds: usize) -> KnnCvResults {
-        let n_samples = self.train_features.nrows();
+        let _n_samples = self.train_features.nrows();
 
         // Try each k value
         let mut best_k = k_values[0];

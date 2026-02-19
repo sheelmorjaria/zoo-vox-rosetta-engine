@@ -105,7 +105,7 @@ impl HierarchicalAggregator {
         let mut mfcc_multi_scale: Vec<MultiScaleFeatures> = Vec::new();
         for coeff_idx in 0..13 {
             if let Some(_coeff_values) = mfcc_frames
-                .get(0)
+                .first()
                 .map(|f| f.len())
                 .filter(|&l| l > coeff_idx)
             {

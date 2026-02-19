@@ -6,8 +6,6 @@
 // This module is required for species that use frequency contours rather than
 // temporal phrase patterns for communication encoding.
 
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 /// Configuration for frequency contour detection

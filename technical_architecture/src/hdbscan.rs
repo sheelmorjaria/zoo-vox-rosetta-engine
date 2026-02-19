@@ -408,7 +408,7 @@ impl HdbscanClustering {
                         // Find k+1 nearest neighbors (includes self)
                         let neighbors = tree.find_knn(row, min_samples + 1);
                         // Get distance to min_samples-th neighbor (excluding self at dist=0)
-                        if neighbors.len() >= min_samples + 1 {
+                        if neighbors.len() > min_samples {
                             // Skip first (self) and get min_samples-th
                             neighbors[min_samples].1
                         } else if neighbors.len() > 1 {

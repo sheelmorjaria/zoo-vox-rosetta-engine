@@ -19,9 +19,7 @@
 //! - **Dolphin**: Contours (~500ms+) are the carrier of meaning (whistle shapes)
 
 use crate::species::HierarchicalThresholds;
-use ndarray::{Array1, Array2};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Configuration for dynamic segmentation
 #[derive(Debug, Clone, Serialize, Deserialize)]

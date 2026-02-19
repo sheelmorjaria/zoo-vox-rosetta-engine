@@ -35,10 +35,9 @@
 
 use crate::dynamic_segmenter::{DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig};
 use crate::species::{AtomicGranularity, HierarchicalThresholds};
-use crate::zoo_vox_data_models::{AcousticFeatures30D, PhrasePrototype};
+use crate::zoo_vox_data_models::PhrasePrototype;
 use crate::zoo_vox_features::ZooVoxFeatureExtractor;
-use crate::zoo_vox_within_call::{WithinCallAnalysisResult, WithinCallAnalyzer};
-use ndarray::Array1;
+use crate::zoo_vox_within_call::WithinCallAnalyzer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

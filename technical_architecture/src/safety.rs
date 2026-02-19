@@ -517,4 +517,123 @@ mod tests {
             .iter()
             .any(|v| v.violation_type == "WATCHDOG_EXPIRED"));
     }
+
+    #[tokio::test]
+    async fn test_consecutive_error_shutdown_trigger() {
+        let config = SafetyConfig {
+            max_consecutive_errors: 3,
+            auto_emergency_shutdown: true,
+            ..Default::default()
+        };
+        let monitor = SafetyMonitor::new(config).await.unwrap();
+        monitor.start_monitoring().await.unwrap();
+
+        // Report errors up to threshold
+        monitor.report_error().await;
+        monitor.report_error().await;
+        monitor.report_error().await;
+
+        let check = monitor.check_safety().await.unwrap();
+        assert!(!check.is_safe);
+        assert!(check
+            .violations
+            .iter()
+            .any(|v| v.violation_type == "MAX_CONSECUTIVE_ERRORS"));
+        assert!(check.metrics.consecutive_errors >= 3);
+    }
+
+    #[tokio::test]
+    async fn test_safety_violation_severity_levels() {
+        let warning = SafetyViolation::warning("TEST_WARNING");
+        assert_eq!(warning.severity, "WARNING");
+        assert_eq!(warning.violation_type, "TEST_WARNING");
+
+        let critical = SafetyViolation::critical("TEST_CRITICAL");
+        assert_eq!(critical.severity, "CRITICAL");
+        assert_eq!(critical.violation_type, "TEST_CRITICAL");
+    }
+
+    #[tokio::test]
+    async fn test_safety_check_evaluation() {
+        let config = SafetyConfig::default();
+        let monitor = SafetyMonitor::new(config).await.unwrap();
+        monitor.start_monitoring().await.unwrap();
+
+        // Check safety when everything is normal
+        let check = monitor.check_safety().await.unwrap();
+        assert!(check.is_safe);
+        assert!(check.violations.is_empty());
+        assert!(check.metrics.uptime_seconds < 10); // Just started
+    }
+
+    #[tokio::test]
+    async fn test_monitoring_start_stop() {
+        let config = SafetyConfig::default();
+        let monitor = SafetyMonitor::new(config).await.unwrap();
+
+        // Start monitoring
+        monitor.start_monitoring().await.unwrap();
+        let stats = monitor.get_stats().await;
+        assert!(stats.monitoring_active);
+
+        // Stop monitoring
+        monitor.stop_monitoring().await.unwrap();
+        let stats = monitor.get_stats().await;
+        assert!(!stats.monitoring_active);
+    }
+
+    #[tokio::test]
+    async fn test_watchdog_enable_disable() {
+        let watchdog = WatchdogTimer::new(100);
+
+        assert!(watchdog.enabled.load(std::sync::atomic::Ordering::SeqCst));
+
+        watchdog.disable();
+        assert!(!watchdog.enabled.load(std::sync::atomic::Ordering::SeqCst));
+
+        // Disabled watchdog should never expire
+        tokio::time::sleep(Duration::from_millis(150)).await;
+        assert!(!watchdog.is_expired());
+
+        watchdog.enable();
+        assert!(watchdog.enabled.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn test_clear_violations() {
+        let config = SafetyConfig::default();
+        let monitor = SafetyMonitor::new(config).await.unwrap();
+
+        // Add some violations
+        monitor
+            .log_violation(SafetyViolation::warning("TEST1"))
+            .await;
+        monitor
+            .log_violation(SafetyViolation::warning("TEST2"))
+            .await;
+
+        let violations = monitor.get_violations().await;
+        assert_eq!(violations.len(), 2);
+
+        // Clear violations
+        monitor.clear_violations().await;
+        let violations = monitor.get_violations().await;
+        assert!(violations.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_safety_metrics_tracking() {
+        let config = SafetyConfig::default();
+        let monitor = SafetyMonitor::new(config).await.unwrap();
+        monitor.start_monitoring().await.unwrap();
+
+        // Report frame time and errors
+        monitor.report_frame_time(75.0).await;
+        monitor.report_error().await;
+        monitor.report_error().await;
+
+        let check = monitor.check_safety().await.unwrap();
+        assert!((check.metrics.last_frame_time_ms - 75.0).abs() < 1.0);
+        assert_eq!(check.metrics.consecutive_errors, 2);
+    }
 }

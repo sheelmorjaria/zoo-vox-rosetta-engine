@@ -94,12 +94,10 @@ impl MetricCalculator {
                 } else {
                     tn += 1;
                 }
+            } else if pred > 0 {
+                fp += 1;
             } else {
-                if pred > 0 {
-                    fp += 1;
-                } else {
-                    fn_count += 1;
-                }
+                fn_count += 1;
             }
         }
 

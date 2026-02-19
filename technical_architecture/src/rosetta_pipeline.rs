@@ -119,35 +119,25 @@ impl SemanticPhraseDictionary {
 // =============================================================================
 
 /// Environmental state from sensors
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum EnvState {
     Quiet,
     Wind,
     Rain,
     Storm,
+    #[default]
     Unknown,
 }
 
-impl Default for EnvState {
-    fn default() -> Self {
-        Self::Unknown
-    }
-}
-
 /// Syntax role in a sequence
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum SyntaxRole {
     Initiator,
     Reply,
     Solo,
     Chorus,
+    #[default]
     Unknown,
-}
-
-impl Default for SyntaxRole {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 /// Complete context-enriched phrase output

@@ -333,7 +333,7 @@ impl TrajectoryAnalyzer {
             (x, y, z)
         } else {
             // Fallback: use first 2-3 dimensions directly
-            let x = features.get(0).copied().unwrap_or(0.0);
+            let x = features.first().copied().unwrap_or(0.0);
             let y = features.get(1).copied().unwrap_or(0.0);
             let z = features.get(2).copied();
             (x, y, z)
@@ -372,7 +372,7 @@ impl TrajectoryAnalyzer {
     }
 
     /// Check if point is in a transition zone between types
-    fn is_transition_zone(&self, features: &[f64], nearest_distance: f64) -> bool {
+    fn is_transition_zone(&self, features: &[f64], _nearest_distance: f64) -> bool {
         // Count how many types are within the transition threshold
         let mut nearby_count = 0;
 

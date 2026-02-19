@@ -435,4 +435,102 @@ mod tests {
         assert!(stats.monitoring_active);
         assert!(stats.current_temp_c.is_some());
     }
+
+    #[tokio::test]
+    async fn test_recovery_hysteresis() {
+        let config = ThermalConfig {
+            throttling_temp_c: 80.0,
+            recovery_temp_c: 70.0,
+            ..Default::default()
+        };
+        let governor = ThermalGovernor::new(config).await.unwrap();
+
+        // Enter throttling state
+        governor.set_mock_temperature(82.0).await;
+        assert_eq!(governor.get_state().await, ThermalState::Throttling);
+
+        // Temperature drops but not below recovery threshold
+        governor.set_mock_temperature(75.0).await;
+        // State should still be warning (not back to normal yet)
+        assert_eq!(governor.get_state().await, ThermalState::Warning);
+
+        // Drop below recovery threshold
+        governor.set_mock_temperature(68.0).await;
+        assert_eq!(governor.get_state().await, ThermalState::Normal);
+    }
+
+    #[tokio::test]
+    async fn test_critical_temperature_detection() {
+        let config = ThermalConfig {
+            critical_temp_c: 85.0,
+            ..Default::default()
+        };
+        let governor = ThermalGovernor::new(config).await.unwrap();
+
+        governor.set_mock_temperature(87.0).await;
+        assert!(governor.is_critical().await);
+        assert!(governor.should_throttle().await);
+
+        let stats = governor.get_stats().await;
+        assert_eq!(stats.current_state, ThermalState::Critical);
+    }
+
+    #[tokio::test]
+    async fn test_temperature_history() {
+        let config = ThermalConfig {
+            use_mock_temp: true,
+            ..Default::default()
+        };
+        let governor = ThermalGovernor::new(config).await.unwrap();
+        governor.start_monitoring().await.unwrap();
+
+        // Run monitoring to build history
+        for _ in 0..3 {
+            governor.monitor().await.unwrap();
+        }
+
+        let history = governor.get_history().await;
+        assert!(!history.is_empty());
+
+        let avg = governor.get_average_temp().await;
+        assert!(avg.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_monitoring_start_stop() {
+        let config = ThermalConfig::default();
+        let governor = ThermalGovernor::new(config).await.unwrap();
+
+        governor.start_monitoring().await.unwrap();
+        let stats = governor.get_stats().await;
+        assert!(stats.monitoring_active);
+
+        governor.stop_monitoring().await.unwrap();
+        let stats = governor.get_stats().await;
+        assert!(!stats.monitoring_active);
+    }
+
+    #[tokio::test]
+    async fn test_thermal_state_helpers() {
+        assert!(!ThermalState::Normal.requires_throttling());
+        assert!(!ThermalState::Warning.requires_throttling());
+        assert!(ThermalState::Throttling.requires_throttling());
+        assert!(ThermalState::Critical.requires_throttling());
+
+        assert!(!ThermalState::Normal.is_critical());
+        assert!(!ThermalState::Warning.is_critical());
+        assert!(!ThermalState::Throttling.is_critical());
+        assert!(ThermalState::Critical.is_critical());
+    }
+
+    #[tokio::test]
+    async fn test_temperature_reading_creation() {
+        let reading = TemperatureReading::new(42.5, "cpu".to_string());
+        assert!((reading.temp_c - 42.5).abs() < 0.01);
+        assert_eq!(reading.source, "cpu");
+
+        let mock_reading = TemperatureReading::mock(50.0);
+        assert!((mock_reading.temp_c - 50.0).abs() < 0.01);
+        assert_eq!(mock_reading.source, "mock");
+    }
 }

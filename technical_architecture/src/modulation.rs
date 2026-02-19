@@ -631,7 +631,7 @@ fn generate_trill(
     (0..num_samples)
         .map(|i| {
             let t = i as f32 / sample_rate as f32;
-            let freq = if (i / period_samples) % 2 == 0 {
+            let freq = if (i / period_samples).is_multiple_of(2) {
                 freq1
             } else {
                 freq2

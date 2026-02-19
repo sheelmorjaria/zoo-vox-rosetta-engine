@@ -478,7 +478,7 @@ impl MiniBatchKMeans {
 
         for (k, center) in centers.iter().enumerate() {
             let mut dist = 0.0;
-            for (_d, (&val, &center_val)) in sample.iter().zip(center.iter()).enumerate() {
+            for (&val, &center_val) in sample.iter().zip(center.iter()) {
                 let diff = val - center_val;
                 dist += diff * diff;
             }

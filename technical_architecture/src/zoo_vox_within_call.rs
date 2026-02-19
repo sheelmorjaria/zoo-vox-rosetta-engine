@@ -185,8 +185,7 @@ impl WithinCallAnalyzer {
     /// Create new analyzer with default configuration
     pub fn new() -> Self {
         let config = WithinCallConfig::default();
-        let similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric.clone());
+        let similarity_engine = AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         Self {
             config,
@@ -206,7 +205,7 @@ impl WithinCallAnalyzer {
     pub fn for_species(species: &str) -> Self {
         let config = WithinCallConfig::for_species(species);
         let mut similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric.clone());
+            AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         // Apply species-specific weights for Phase 2 analysis
         // This is the CORRECT use of species weights - within-species
@@ -226,7 +225,7 @@ impl WithinCallAnalyzer {
     pub fn for_species_with_weights(species: &str, weights: &FeatureWeights) -> Self {
         let config = WithinCallConfig::for_species(species);
         let mut similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric.clone());
+            AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         // Convert 45D weights to 30D (first 6 feature groups)
         let weights_30d = weights.to_weight_vector_30d();
@@ -242,8 +241,7 @@ impl WithinCallAnalyzer {
 
     /// Create analyzer with custom configuration
     pub fn with_config(config: WithinCallConfig) -> Self {
-        let similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric.clone());
+        let similarity_engine = AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         Self {
             config,
@@ -303,7 +301,7 @@ impl WithinCallAnalyzer {
         // Build phrase sequence
         let phrase_sequence: Vec<String> = phrase_types
             .iter()
-            .flat_map(|pt| std::iter::repeat(pt.type_id.clone()).take(pt.instances.len()))
+            .flat_map(|pt| std::iter::repeat_n(pt.type_id.clone(), pt.instances.len()))
             .collect();
 
         // Compute transition matrix
@@ -484,7 +482,7 @@ impl WithinCallAnalyzer {
 
         let mut sum = ndarray::Array1::zeros(30);
         for &idx in indices {
-            sum = sum + &feature_vectors[idx];
+            sum += &feature_vectors[idx];
         }
 
         sum / indices.len() as f64
@@ -503,7 +501,7 @@ impl WithinCallAnalyzer {
 
             *matrix
                 .entry(from.clone())
-                .or_insert_with(HashMap::new)
+                .or_default()
                 .entry(to.clone())
                 .or_insert(0) += 1;
         }
@@ -571,10 +569,7 @@ impl WithinCallAnalyzer {
             for start in 0..=(sequence.len() - length) {
                 let subseq: Vec<String> = sequence[start..start + length].to_vec();
                 *motif_counts.entry(subseq.clone()).or_insert(0) += 1;
-                motif_positions
-                    .entry(subseq)
-                    .or_insert_with(Vec::new)
-                    .push(start);
+                motif_positions.entry(subseq).or_default().push(start);
             }
         }
 

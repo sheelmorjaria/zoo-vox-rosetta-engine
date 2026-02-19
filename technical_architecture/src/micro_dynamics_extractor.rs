@@ -1156,8 +1156,7 @@ impl MicroDynamicsExtractor {
 
         for i in 1..envelope.len().saturating_sub(1) {
             let derivative = envelope[i + 1] - envelope[i - 1];
-            if derivative > threshold
-                && onsets.last().map_or(true, |&last| i - last >= min_distance)
+            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance)
             {
                 onsets.push(i);
             }
@@ -1215,8 +1214,7 @@ impl MicroDynamicsExtractor {
 
         for i in 1..envelope.len().saturating_sub(1) {
             let derivative = envelope[i + 1] - envelope[i - 1];
-            if derivative > threshold
-                && onsets.last().map_or(true, |&last| i - last >= min_distance)
+            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance)
             {
                 onsets.push(i);
             }
@@ -1441,7 +1439,7 @@ impl MicroDynamicsExtractor {
         let mel_max = hz_to_mel(sr / 2.0);
         let mel_points = (0..=num_filters + 1)
             .map(|i| mel_min + (mel_max - mel_min) * i as f32 / (num_filters + 1) as f32)
-            .map(|mel| mel_to_hz(mel))
+            .map(mel_to_hz)
             .collect::<Vec<_>>();
 
         // Convert Mel points to bin indices
@@ -1469,12 +1467,10 @@ impl MicroDynamicsExtractor {
                     } else {
                         0.0
                     }
+                } else if right > center {
+                    (right - bin_idx) as f32 / (right - center) as f32
                 } else {
-                    if right > center {
-                        (right - bin_idx) as f32 / (right - center) as f32
-                    } else {
-                        0.0
-                    }
+                    0.0
                 };
 
                 mel_energies[m] += energy * weight;
@@ -1761,7 +1757,7 @@ impl MicroDynamicsExtractor {
                     let min_distance = (sr * 0.01) as usize; // 10ms
                     if onsets
                         .last()
-                        .map_or(true, |&last| sample_idx - last >= min_distance)
+                        .is_none_or(|&last| sample_idx - last >= min_distance)
                     {
                         onsets.push(sample_idx);
                     }
@@ -1869,7 +1865,7 @@ impl MicroDynamicsExtractor {
         // Extract formant frequencies (top 3)
         let formant_extractor = FormantExtractor::new(self.sample_rate, 3);
         let formants = formant_extractor.extract(audio);
-        let formant_f1 = formants.get(0).copied().unwrap_or(0.0);
+        let formant_f1 = formants.first().copied().unwrap_or(0.0);
         let formant_f2 = formants.get(1).copied().unwrap_or(0.0);
         let formant_f3 = formants.get(2).copied().unwrap_or(0.0);
 

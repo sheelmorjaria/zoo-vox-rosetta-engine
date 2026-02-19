@@ -111,6 +111,12 @@ pub struct PhraseSequenceAnalyzer {
     min_word_count: usize,
 }
 
+impl Default for PhraseSequenceAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PhraseSequenceAnalyzer {
     pub fn new() -> Self {
         Self {
@@ -277,7 +283,7 @@ impl PhraseSequenceAnalyzer {
             // Convert bin to frequency, focusing on bat vocal range (10-100 kHz)
             let freq = bin as f64 * sample_rate as f64 / (2.0 * spectrum.len() as f64);
             // Filter to reasonable bat F0 range
-            if freq >= 10000.0 && freq <= 100000.0 {
+            if (10000.0..=100000.0).contains(&freq) {
                 freq
             } else {
                 20000.0 // Default F0 estimate
@@ -520,10 +526,7 @@ impl PhraseSequenceAnalyzer {
 
         for seq in sequences {
             for (pos, &word) in seq.words.iter().enumerate() {
-                position_words
-                    .entry(pos)
-                    .or_insert_with(Vec::new)
-                    .push(word);
+                position_words.entry(pos).or_default().push(word);
             }
         }
 
@@ -549,7 +552,7 @@ impl PhraseSequenceAnalyzer {
                 if i + 1 < seq.words.len() {
                     transition_patterns
                         .entry(word)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(seq.words[i + 1]);
                 }
             }

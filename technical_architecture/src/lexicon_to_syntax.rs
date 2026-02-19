@@ -1151,7 +1151,7 @@ impl LexiconToSyntaxPipeline {
                             arr[[0, 25]] = base.onset_rate_hz as f64;
                             arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
                             // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms as f64;
+                            arr[[0, 27]] = phrase.duration_ms;
                             arr[[0, 28]] = 0.0; // f0_mean placeholder
                             arr[[0, 29]] = 0.0; // f0_std placeholder
                             (arr, 30)
@@ -1180,7 +1180,7 @@ impl LexiconToSyntaxPipeline {
                             arr[[0, 25]] = base.onset_rate_hz as f64;
                             arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
                             // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms as f64;
+                            arr[[0, 27]] = phrase.duration_ms;
                             arr[[0, 28]] = 0.0; // f0_mean placeholder
                             arr[[0, 29]] = 0.0; // f0_std placeholder
 
@@ -1220,7 +1220,7 @@ impl LexiconToSyntaxPipeline {
                             arr[[0, 25]] = base.onset_rate_hz as f64;
                             arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
                             // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms as f64;
+                            arr[[0, 27]] = phrase.duration_ms;
                             arr[[0, 28]] = 0.0; // f0_mean placeholder
                             arr[[0, 29]] = 0.0; // f0_std placeholder
 
@@ -1315,7 +1315,7 @@ impl LexiconToSyntaxPipeline {
                             arr[[0, 25]] = base.onset_rate_hz as f64;
                             arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
                             // Placeholder values for remaining base fields
-                            arr[[0, 27]] = phrase.duration_ms as f64;
+                            arr[[0, 27]] = phrase.duration_ms;
                             arr[[0, 28]] = 0.0; // f0_mean placeholder
                             arr[[0, 29]] = 0.0; // f0_std placeholder
 
@@ -1432,7 +1432,7 @@ impl LexiconToSyntaxPipeline {
             if label == -1 {
                 noise_count += 1;
             } else {
-                clusters.entry(label).or_insert_with(Vec::new).push(idx);
+                clusters.entry(label).or_default().push(idx);
             }
         }
 

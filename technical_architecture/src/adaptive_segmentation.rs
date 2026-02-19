@@ -232,7 +232,7 @@ impl OnsetDetector {
                 // Enforce minimum distance between onsets
                 if peaks
                     .last()
-                    .map_or(true, |&last| sample_pos - last >= min_distance)
+                    .is_none_or(|&last| sample_pos - last >= min_distance)
                 {
                     peaks.push(sample_pos);
                 }

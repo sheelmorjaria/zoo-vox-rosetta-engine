@@ -144,7 +144,7 @@ impl DtwMetric {
 
         // Fill cost matrix with window constraint
         for i in 0..n {
-            let j_start = if i > window { i - window } else { 0 };
+            let j_start = i.saturating_sub(window);
             let j_end = (i + window + 1).min(m);
 
             for j in j_start..j_end {

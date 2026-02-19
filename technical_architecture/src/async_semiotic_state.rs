@@ -38,9 +38,10 @@ use log::{info, warn};
 // =============================================================================
 
 /// Response modification based on semiotic analysis
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ResponseModification {
     /// Standard response
+    #[default]
     Normal,
     /// Acknowledge but don't echo deception
     DeceptionAcknowledge,
@@ -58,27 +59,16 @@ pub enum ResponseModification {
     UrgencyReduce,
 }
 
-impl Default for ResponseModification {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
-
 /// Context states from probabilistic context machine
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ContextState {
     Silence,
     Contact,
     Alarm,
     Food,
+    #[default]
     Neutral,
     Uncertain,
-}
-
-impl Default for ContextState {
-    fn default() -> Self {
-        Self::Neutral
-    }
 }
 
 /// Semiotic scores from analysis
@@ -106,7 +96,7 @@ impl Default for SemioticScores {
 }
 
 /// Visual attention target for multi-modal fusion
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum GazeTarget {
     /// Looking at the speaker/device
     Speaker,
@@ -115,13 +105,8 @@ pub enum GazeTarget {
     /// Looking at food source
     Food,
     /// Looking away or unknown
+    #[default]
     Unknown,
-}
-
-impl Default for GazeTarget {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 /// Multi-modal visual attention data
@@ -315,7 +300,8 @@ impl SemioticState {
         // Combine with weighted average
         // Visual attention adds 30% weight when looking at speaker
         if self.visual_attention.is_looking_at_speaker() {
-            self.combined_directed_score = (semiotic_directed * 0.7) + (visual_boost + 0.7).min(1.0) * 0.3;
+            self.combined_directed_score =
+                (semiotic_directed * 0.7) + (visual_boost + 0.7).min(1.0) * 0.3;
         } else {
             self.combined_directed_score = semiotic_directed;
         }
@@ -549,7 +535,10 @@ impl SharedSemioticState {
     /// Get update statistics
     pub fn stats(&self) -> (u64, bool) {
         match self.inner.read() {
-            Ok(state) => (state.update_count, state.is_stale(Duration::from_millis(500))),
+            Ok(state) => (
+                state.update_count,
+                state.is_stale(Duration::from_millis(500)),
+            ),
             Err(_) => (0, true),
         }
     }
@@ -877,9 +866,7 @@ mod tests {
         assert_eq!(state.get_response_priority(), 0);
 
         // Level 1: Directed communication
-        let state = SemioticStateBuilder::new()
-            .directed(0.7)
-            .build();
+        let state = SemioticStateBuilder::new().directed(0.7).build();
         assert_eq!(state.get_response_priority(), 1);
 
         // Level 2: Looking at speaker + contact call
@@ -1017,9 +1004,7 @@ mod tests {
         assert!(!state.is_healthy());
 
         // Update with good state
-        let good_state = SemioticStateBuilder::new()
-            .confidence(0.8)
-            .build();
+        let good_state = SemioticStateBuilder::new().confidence(0.8).build();
         state.update(good_state);
 
         // Now should be healthy

@@ -108,9 +108,8 @@ impl SpectralTiltCalculator {
         }
 
         // Slope (m) in dB/octave
-        let slope = (n * sum_xy - sum_x * sum_y) / denominator;
 
-        slope
+        (n * sum_xy - sum_x * sum_y) / denominator
     }
 
     /// Compute magnitude spectrum

@@ -364,7 +364,7 @@ impl MultipleSequenceAligner {
     fn compute_position_contexts(&self, aligned: &[Vec<i32>]) -> Vec<HashMap<i32, usize>> {
         // This would need context information passed in
         // For now, return empty
-        vec![HashMap::new(); aligned.get(0).map(|s| s.len()).unwrap_or(0)]
+        vec![HashMap::new(); aligned.first().map(|s| s.len()).unwrap_or(0)]
     }
 }
 
@@ -911,7 +911,7 @@ impl NetworkMotifAnalyzer {
     ) -> Result<MotifAnalysisResult> {
         // Build combined transition network
         let mut all_transitions = Vec::new();
-        for (_ctx, trans) in transitions_by_context {
+        for trans in transitions_by_context.values() {
             all_transitions.extend(trans.clone());
         }
 

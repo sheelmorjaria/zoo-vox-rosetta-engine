@@ -21,22 +21,17 @@ use std::collections::HashMap;
 // ============================================================================
 
 /// Arousal level classification
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum ArousalLevel {
     /// Resting, relaxed states (e.g., contact calls while foraging)
     Low,
     /// Normal social interaction
+    #[default]
     Neutral,
     /// Alert, excited states (e.g., food discovery, territorial)
     High,
     /// Emergency, distress (e.g., predator alarm, infant distress)
     Urgent,
-}
-
-impl Default for ArousalLevel {
-    fn default() -> Self {
-        ArousalLevel::Neutral
-    }
 }
 
 impl ArousalLevel {
@@ -255,7 +250,7 @@ impl ArousalInferrer {
             .species_thresholds
             .get(species)
             .cloned()
-            .unwrap_or_else(|| ArousalThresholds {
+            .unwrap_or(ArousalThresholds {
                 f0_low: 4000.0,
                 f0_high: 8000.0,
                 f0_urgent: 12000.0,
@@ -424,7 +419,7 @@ impl ArousalBasedSelector {
 
         self.sources_by_arousal
             .entry(arousal)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(idx);
 
         self.sources.push(source);

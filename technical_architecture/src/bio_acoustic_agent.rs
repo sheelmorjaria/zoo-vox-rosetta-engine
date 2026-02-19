@@ -394,19 +394,14 @@ impl MicroDynamicsDelta {
 // =============================================================================
 
 /// Environmental state (from RosettaPipeline)
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub enum EnvState {
     Quiet,
     Wind,
     Rain,
     Storm,
+    #[default]
     Unknown,
-}
-
-impl Default for EnvState {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 /// Interaction context for response generation

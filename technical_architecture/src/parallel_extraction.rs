@@ -24,12 +24,9 @@ use symphonia::{
 
 // Hound for WAV decoding (simpler and faster than symphonia for WAV)
 #[cfg(feature = "hound")]
-use hound;
-
 // =============================================================================
 // Error Types
 // =============================================================================
-
 #[derive(Debug, thiserror::Error)]
 pub enum ExtractionError {
     #[error("Audio file not found: {path}")]
@@ -218,7 +215,7 @@ fn load_symphonia_file<P: AsRef<Path>>(
                     AudioBufferRef::F32(buf) => {
                         let audio_buffer = buf.as_ref();
                         if let Some(plane) = audio_buffer.planes().planes().first() {
-                            let samples: Vec<f32> = plane.iter().copied().collect();
+                            let samples: Vec<f32> = plane.to_vec();
                             all_samples.extend(samples);
                         }
                     }
@@ -520,10 +517,7 @@ impl PhraseAudioLibrary {
         let phrase_key = segment.phrase_key.clone();
 
         // Get or create segment list for this phrase
-        let segments = self
-            .phrase_segments
-            .entry(phrase_key.clone())
-            .or_insert_with(Vec::new);
+        let segments = self.phrase_segments.entry(phrase_key.clone()).or_default();
 
         // Check if we've reached the maximum
         if segments.len() >= self.max_segments_per_phrase {
@@ -1711,10 +1705,7 @@ pub fn cluster_phrase_candidates(
     for (candidate, &label) in candidates.iter().zip(&cluster_labels) {
         if label >= 0 {
             // Only include non-noise points
-            cluster_members
-                .entry(label)
-                .or_insert_with(Vec::new)
-                .push(candidate);
+            cluster_members.entry(label).or_default().push(candidate);
         }
     }
 
@@ -1791,11 +1782,11 @@ pub fn batch_process_and_cluster(
     max_files: Option<usize>,
 ) -> Result<(Vec<ClusteredPhrase>, Vec<VocalizationResult>)> {
     // Create checkpoint directory
-    std::fs::create_dir_all(checkpoint_dir).map_err(|e| ExtractionError::IoError(e))?;
+    std::fs::create_dir_all(checkpoint_dir).map_err(ExtractionError::IoError)?;
 
     // Discover all WAV files
     let mut wav_files: Vec<_> = std::fs::read_dir(audio_dir)
-        .map_err(|e| ExtractionError::IoError(e))?
+        .map_err(ExtractionError::IoError)?
         .filter_map(|entry| entry.ok())
         .filter(|entry| {
             entry
@@ -1818,7 +1809,7 @@ pub fn batch_process_and_cluster(
         wav_files.len()
     };
 
-    let num_batches = (total_files + batch_size - 1) / batch_size;
+    let num_batches = total_files.div_ceil(batch_size);
 
     println!("📦 Batch processing:");
     println!("   Total files: {}", total_files);
@@ -2521,7 +2512,7 @@ impl ParallelExtractionPipeline {
         // Classify efficiency
         let efficiency = if slope_alpha.abs() < 0.1 {
             CommunicationEfficiency::Random { slope: slope_alpha }
-        } else if slope_alpha <= -0.9 && slope_alpha >= -1.1 {
+        } else if (-1.1..=-0.9).contains(&slope_alpha) {
             CommunicationEfficiency::Optimal { slope: slope_alpha }
         } else if slope_alpha <= -0.5 && slope_alpha > -0.9 {
             CommunicationEfficiency::Efficient { slope: slope_alpha }
@@ -2628,7 +2619,7 @@ impl ParallelExtractionPipeline {
 
                 *transition_counts
                     .entry(from_id.clone())
-                    .or_insert_with(HashMap::new)
+                    .or_default()
                     .entry(to_id.clone())
                     .or_insert(0) += 1;
 
@@ -3083,10 +3074,7 @@ pub fn analyze_context(annotations: &[EmitterAnnotation]) -> ContextAnalysis {
     let mut context_groups: HashMap<i32, Vec<&EmitterAnnotation>> = HashMap::new();
     for ann in annotations {
         *context_frequencies.entry(ann.context).or_insert(0) += 1;
-        context_groups
-            .entry(ann.context)
-            .or_insert_with(Vec::new)
-            .push(ann);
+        context_groups.entry(ann.context).or_default().push(ann);
     }
 
     // Calculate turn-switch rate for each context
@@ -3214,10 +3202,7 @@ pub fn extract_audio_segments(
     let mut cluster_groups: std::collections::HashMap<i32, Vec<&ClusteredPhrase>> =
         std::collections::HashMap::new();
     for cp in clustered_phrases {
-        cluster_groups
-            .entry(cp.cluster_id)
-            .or_insert_with(Vec::new)
-            .push(cp);
+        cluster_groups.entry(cp.cluster_id).or_default().push(cp);
     }
 
     // Extract phrases for each cluster

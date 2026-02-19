@@ -90,7 +90,7 @@ impl ZooVoxFeatureExtractor {
 
         // === FINGERPRINT FACTORS (14) ===
         let mfccs = self.compute_mfccs(&audio, 13);
-        features.mfcc_1 = mfccs.get(0).copied().unwrap_or(0.0);
+        features.mfcc_1 = mfccs.first().copied().unwrap_or(0.0);
         features.mfcc_2 = mfccs.get(1).copied().unwrap_or(0.0);
         features.mfcc_3 = mfccs.get(2).copied().unwrap_or(0.0);
         features.mfcc_4 = mfccs.get(3).copied().unwrap_or(0.0);
@@ -152,7 +152,7 @@ impl ZooVoxFeatureExtractor {
 
         // === FINGERPRINT FACTORS (14) ===
         let mfccs = self.compute_mfccs(&audio, 13);
-        features.mfcc_1 = mfccs.get(0).copied().unwrap_or(0.0);
+        features.mfcc_1 = mfccs.first().copied().unwrap_or(0.0);
         features.mfcc_2 = mfccs.get(1).copied().unwrap_or(0.0);
         features.mfcc_3 = mfccs.get(2).copied().unwrap_or(0.0);
         features.mfcc_4 = mfccs.get(3).copied().unwrap_or(0.0);
@@ -175,10 +175,10 @@ impl ZooVoxFeatureExtractor {
 
         // === RESONANCE FACTORS (6) - NEW ===
         let formants = self.compute_formants(&audio);
-        features.formant_1_hz = formants.get(0).map(|(f, _)| *f).unwrap_or(0.0);
+        features.formant_1_hz = formants.first().map(|(f, _)| *f).unwrap_or(0.0);
         features.formant_2_hz = formants.get(1).map(|(f, _)| *f).unwrap_or(0.0);
         features.formant_3_hz = formants.get(2).map(|(f, _)| *f).unwrap_or(0.0);
-        features.formant_1_bandwidth = formants.get(0).map(|(_, bw)| *bw).unwrap_or(0.0);
+        features.formant_1_bandwidth = formants.first().map(|(_, bw)| *bw).unwrap_or(0.0);
         features.formant_2_bandwidth = formants.get(1).map(|(_, bw)| *bw).unwrap_or(0.0);
         features.formant_dispersion = self.compute_formant_dispersion(&formants);
 
@@ -852,7 +852,7 @@ impl ZooVoxFeatureExtractor {
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         let mid = sorted.len() / 2;
-        if sorted.len() % 2 == 0 {
+        if sorted.len().is_multiple_of(2) {
             (sorted[mid - 1] + sorted[mid]) / 2.0
         } else {
             sorted[mid]

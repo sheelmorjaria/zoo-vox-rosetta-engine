@@ -15,18 +15,13 @@ pub use temporal_features::{TemporalDeltaComputer, TemporalFeatureType};
 pub type DeltaFeatures = (Vec<f32>, Vec<f32>); // (delta, delta_delta)
 
 /// Delta feature configuration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DeltaWidth {
     /// N=2 regression (recommended)
+    #[default]
     N2,
     /// N=1 regression (simplest)
     N1,
-}
-
-impl Default for DeltaWidth {
-    fn default() -> Self {
-        Self::N2
-    }
 }
 
 #[cfg(test)]

@@ -490,7 +490,7 @@ impl RhythmSequencer {
         let species_patterns = self
             .patterns_by_species
             .entry(pattern.species.clone())
-            .or_insert_with(Vec::new);
+            .or_default();
 
         // Check if we should replace an existing pattern
         if species_patterns.len() >= self.config.max_patterns_per_species {

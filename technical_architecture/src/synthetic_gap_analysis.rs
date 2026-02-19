@@ -137,7 +137,7 @@ impl SyntheticGapAnalyzer {
     pub fn add_natural_sample(&mut self, type_name: &str, features: Vec<f64>) {
         self.natural_samples
             .entry(type_name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(features);
     }
 

@@ -93,7 +93,6 @@ impl HarmonicDeviationCalculator {
             let end = (expected_bin + search_range + 1).min(spectrum.len());
 
             let peak_bin = (start..end)
-                .into_iter()
                 .max_by_key(|&i| spectrum[i] as i64)
                 .unwrap_or(expected_bin);
 

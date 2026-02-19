@@ -468,4 +468,164 @@ mod tests {
         assert_eq!(controller.last_sequence, 5);
         assert!(controller.is_python_alive());
     }
+
+    #[test]
+    fn test_mode_switch_on_heartbeat_received() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_mode_switch.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut controller = PeerController::new(config).unwrap();
+
+        // Start in passthrough
+        assert_eq!(controller.mode(), OperationMode::Passthrough);
+        assert!(!controller.is_python_alive());
+
+        // Receive heartbeat
+        let msg = HeartbeatMessage::new(1, 12345);
+        controller.handle_heartbeat(msg);
+
+        // Should switch to interactive
+        controller.update_mode();
+        assert_eq!(controller.mode(), OperationMode::Interactive);
+        assert!(controller.is_python_alive());
+    }
+
+    #[test]
+    fn test_audio_mute_state_transitions() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_mute.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut controller = PeerController::new(config).unwrap();
+
+        // Start muted
+        assert_eq!(controller.audio_mute(), AudioMuteState::Muted);
+
+        // Receive heartbeat - audio should become active
+        let msg = HeartbeatMessage::new(1, 12345);
+        controller.handle_heartbeat(msg);
+        assert_eq!(controller.audio_mute(), AudioMuteState::Active);
+
+        // Disconnect - audio should mute
+        controller.handle_disconnect();
+        assert_eq!(controller.audio_mute(), AudioMuteState::Muted);
+    }
+
+    #[test]
+    fn test_disconnect_handling() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_disconnect.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut controller = PeerController::new(config).unwrap();
+
+        // Simulate connected state
+        let msg = HeartbeatMessage::new(1, 12345);
+        controller.handle_heartbeat(msg);
+        assert!(controller.is_python_alive());
+
+        // Disconnect
+        controller.handle_disconnect();
+        assert!(!controller.is_python_alive());
+        assert_eq!(controller.mode(), OperationMode::Passthrough);
+        assert!(controller.last_heartbeat.is_none());
+        assert_eq!(controller.last_sequence, 0);
+    }
+
+    #[test]
+    fn test_time_since_last_heartbeat() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_time_since.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut controller = PeerController::new(config).unwrap();
+
+        // No heartbeat yet
+        assert!(controller.time_since_last_heartbeat().is_none());
+
+        // Receive heartbeat
+        let msg = HeartbeatMessage::new(1, 12345);
+        controller.handle_heartbeat(msg);
+
+        // Should have a time
+        let elapsed = controller.time_since_last_heartbeat();
+        assert!(elapsed.is_some());
+        assert!(elapsed.unwrap() < Duration::from_secs(1));
+    }
+
+    #[test]
+    fn test_config_access() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_config.ipc".to_string(),
+            heartbeat_timeout_ms: 200,
+            poll_interval_ms: 20,
+            verbose_logging: true,
+        };
+
+        let controller = PeerController::new(config.clone()).unwrap();
+        let retrieved_config = controller.get_config();
+
+        assert_eq!(
+            retrieved_config.heartbeat_endpoint,
+            "ipc:///tmp/test_config.ipc"
+        );
+        assert_eq!(retrieved_config.heartbeat_timeout_ms, 200);
+        assert_eq!(retrieved_config.poll_interval_ms, 20);
+        assert!(retrieved_config.verbose_logging);
+    }
+
+    #[test]
+    fn test_heartbeat_endpoint_string() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/my_endpoint.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let controller = PeerController::new(config).unwrap();
+        assert_eq!(
+            controller.heartbeat_endpoint(),
+            "ipc:///tmp/my_endpoint.ipc"
+        );
+    }
+
+    #[test]
+    fn test_reconnection_scenario() {
+        let config = PeerControllerConfig {
+            heartbeat_endpoint: "ipc:///tmp/test_reconnect.ipc".to_string(),
+            heartbeat_timeout_ms: 50,
+            ..Default::default()
+        };
+
+        let mut controller = PeerController::new(config).unwrap();
+
+        // Initial state: disconnected
+        assert!(!controller.is_python_alive());
+        assert_eq!(controller.mode(), OperationMode::Passthrough);
+
+        // Connect
+        let msg1 = HeartbeatMessage::new(1, 12345);
+        controller.handle_heartbeat(msg1);
+        assert!(controller.is_python_alive());
+        // handle_heartbeat doesn't call update_mode, so mode is still Passthrough
+        controller.update_mode();
+        assert_eq!(controller.mode(), OperationMode::Interactive);
+
+        // Disconnect - handle_disconnect doesn't call update_mode
+        controller.handle_disconnect();
+        assert!(!controller.is_python_alive());
+        controller.update_mode();
+        assert_eq!(controller.mode(), OperationMode::Passthrough);
+
+        // Reconnect with new PID
+        let msg2 = HeartbeatMessage::new(10, 67890);
+        controller.handle_heartbeat(msg2);
+        assert!(controller.is_python_alive());
+        controller.update_mode();
+        assert_eq!(controller.mode(), OperationMode::Interactive);
+    }
 }

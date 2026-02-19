@@ -54,7 +54,7 @@ impl NGram {
     /// Create a new n-gram from a sequence of symbols
     pub fn new(symbols: Vec<usize>) -> Result<Self> {
         let n = symbols.len();
-        if n < 2 || n > 6 {
+        if !(2..=6).contains(&n) {
             return Err(CorpusError::InvalidNGramSize { n });
         }
         Ok(Self { symbols, n })
@@ -172,7 +172,7 @@ impl NGramMiner {
     /// # Arguments
     /// * `max_n` - Maximum n-gram size (default: 6)
     pub fn new(max_n: usize) -> Result<Self> {
-        if max_n < 2 || max_n > 6 {
+        if !(2..=6).contains(&max_n) {
             return Err(CorpusError::InvalidNGramSize { n: max_n });
         }
         Ok(Self { max_n })
@@ -303,11 +303,11 @@ impl PMICalculator {
         let p_a = self
             .unigram_probs
             .get(&a)
-            .ok_or_else(|| CorpusError::SymbolNotFound(a))?;
+            .ok_or(CorpusError::SymbolNotFound(a))?;
         let p_b = self
             .unigram_probs
             .get(&b)
-            .ok_or_else(|| CorpusError::SymbolNotFound(b))?;
+            .ok_or(CorpusError::SymbolNotFound(b))?;
         let p_ab = self.bigram_probs.get(&(a, b)).unwrap_or(&0.0);
 
         if *p_a == 0.0 || *p_b == 0.0 || *p_ab == 0.0 {
@@ -394,7 +394,7 @@ impl SuffixEntropyCalculator {
                             *ngram_counts.entry(ng.clone()).or_insert(0) += 1;
                             *suffix_counts
                                 .entry(ng)
-                                .or_insert_with(HashMap::new)
+                                .or_default()
                                 .entry(suffix)
                                 .or_insert(0) += 1;
                         }

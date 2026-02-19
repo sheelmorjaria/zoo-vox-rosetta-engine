@@ -146,7 +146,7 @@ impl MacaqueSpectralDerivative {
 
         let hop_ms = (self.hop_size as f64 / self.sample_rate as f64) * 1000.0;
         let freq_resolution =
-            frequencies.get(1).unwrap_or(&0.0) - frequencies.get(0).unwrap_or(&0.0);
+            frequencies.get(1).unwrap_or(&0.0) - frequencies.first().unwrap_or(&0.0);
 
         // Find peaks in derivative (rapid FM regions)
         let mut in_sweep = false;

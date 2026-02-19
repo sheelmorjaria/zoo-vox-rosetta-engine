@@ -918,13 +918,13 @@ impl CrossSpeciesPhraseDatabase {
         // Update strategy summary
         self.encoding_strategy_summary
             .entry(strategy)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(species.clone());
 
         // Update modality summary
         self.modality_summary
             .entry(modality)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(species);
 
         // Add library

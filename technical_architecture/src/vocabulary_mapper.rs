@@ -226,7 +226,7 @@ impl VocabularyMapper {
         for (idx, &label) in cluster_labels.iter().enumerate() {
             if label != -1 {
                 // Skip noise
-                clusters.entry(label).or_insert_with(Vec::new).push(idx);
+                clusters.entry(label).or_default().push(idx);
             }
         }
 
