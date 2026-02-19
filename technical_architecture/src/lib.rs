@@ -623,6 +623,9 @@ pub mod dictionary_loader;
 // Async Semiotic State (Python-Rust Decoupling)
 pub mod async_semiotic_state;
 
+// Computational Ethology (Linguistic Structure Validation)
+pub mod computational_ethology;
+
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechArchConfig {
