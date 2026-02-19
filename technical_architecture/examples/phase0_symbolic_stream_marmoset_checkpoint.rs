@@ -15,10 +15,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use rayon::prelude::*;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::*;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
@@ -27,8 +27,8 @@ use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
 use technical_architecture::{
+    hdbscan::{DistanceMetric, HdbscanClustering},
     MicroDynamicsExtractor,
-    hdbscan::{HdbscanClustering, DistanceMetric},
 };
 
 // =============================================================================
@@ -41,7 +41,7 @@ struct ExtractedFeatures {
     file_name: String,
     call_type: String,
     phrase_index: usize,
-    features: Vec<f64>,  // 15D features
+    features: Vec<f64>, // 15D features
     duration_ms: f64,
 }
 
@@ -61,7 +61,7 @@ struct CheckpointData {
     all_features: Vec<SerializableFeatures>,
     all_file_names: Vec<String>,
     total_files: usize,
-    processed_at: String,  // ISO 8601 timestamp
+    processed_at: String, // ISO 8601 timestamp
 }
 
 /// Checkpoint statistics for display
@@ -189,7 +189,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !vocalizations_dir.exists() {
-        println!("   ❌ Vocalizations directory not found: {}", vocalizations_dir.display());
+        println!(
+            "   ❌ Vocalizations directory not found: {}",
+            vocalizations_dir.display()
+        );
         return Err("Dataset not found".into());
     }
 
@@ -200,10 +203,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(n) = limit {
         let original_len = flac_files.len();
         flac_files.truncate(n.min(original_len));
-        println!("📊 Limited to {} files (was {})", flac_files.len(), original_len);
+        println!(
+            "📊 Limited to {} files (was {})",
+            flac_files.len(),
+            original_len
+        );
     }
 
-    println!("   📂 Vocalizations Directory: {}", vocalizations_dir.display());
+    println!(
+        "   📂 Vocalizations Directory: {}",
+        vocalizations_dir.display()
+    );
     println!("   🔢 Total FLAC files: {}", flac_files.len());
     println!("   💾 Results Directory: {}", results_dir.display());
     println!();
@@ -211,9 +221,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Count by call type
     let mut call_type_counts: HashMap<CallType, usize> = HashMap::new();
     for (path, _) in &flac_files {
-        let filename = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
+        let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
         let call_type = CallType::from_filename(filename);
         *call_type_counts.entry(call_type).or_insert(0) += 1;
     }
@@ -243,13 +251,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut all_file_names: Vec<String> = Vec::new();
 
     for (i, (file_path, call_type)) in flac_files.iter().enumerate() {
-        let filename = file_path.file_name()
+        let filename = file_path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown");
 
         if i % 100 == 0 || i == flac_files.len() - 1 {
-            println!("   🔄 Processing {}/{} ({:.1}%)...",
-                     i + 1, flac_files.len(), (i + 1) as f64 / flac_files.len() as f64 * 100.0);
+            println!(
+                "   🔄 Processing {}/{} ({:.1}%)...",
+                i + 1,
+                flac_files.len(),
+                (i + 1) as f64 / flac_files.len() as f64 * 100.0
+            );
         }
 
         match load_flac_file(file_path) {
@@ -273,7 +286,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         });
                     }
                     Err(e) => {
-                        eprintln!("      Warning: Feature extraction failed for {}: {}", filename, e);
+                        eprintln!(
+                            "      Warning: Feature extraction failed for {}: {}",
+                            filename, e
+                        );
                     }
                 }
             }
@@ -289,9 +305,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("   ✅ Feature extraction complete!");
     println!("      ├─ Total features: {}", n_features);
-    println!("      ├─ Time: {:.2}s ({:.1} files/sec)",
-             extract_time.as_secs_f64(),
-             flac_files.len() as f64 / extract_time.as_secs_f64());
+    println!(
+        "      ├─ Time: {:.2}s ({:.1} files/sec)",
+        extract_time.as_secs_f64(),
+        flac_files.len() as f64 / extract_time.as_secs_f64()
+    );
     println!();
 
     if n_features == 0 {
@@ -320,8 +338,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   ✅ Converted to {}x{} array in {:.2}s",
-             n_features, n_dims, convert_start.elapsed().as_secs_f64());
+    println!(
+        "   ✅ Converted to {}x{} array in {:.2}s",
+        n_features,
+        n_dims,
+        convert_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // =============================================================================
@@ -357,9 +379,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file_names_json = serde_json::to_string_pretty(&all_file_names)?;
     fs::write(&file_names_path, &file_names_json)?;
 
-    println!("   💾 Features saved: {} ({} MB)",
-             features_path.display(),
-             features_data.len() / 1_048_576);
+    println!(
+        "   💾 Features saved: {} ({} MB)",
+        features_path.display(),
+        features_data.len() / 1_048_576
+    );
     println!("   💾 File names saved: {}", file_names_path.display());
     println!();
 
@@ -379,7 +403,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let min_samples = (min_cluster_size * 3) / 4;
 
     println!("   🏗️  HDBSCAN Configuration:");
-    println!("      ├─ min_cluster_size: {} (minimum phrases per word type)", min_cluster_size);
+    println!(
+        "      ├─ min_cluster_size: {} (minimum phrases per word type)",
+        min_cluster_size
+    );
     println!("      ├─ min_samples: {} (density threshold)", min_samples);
     println!("      ├─ metric: Euclidean distance");
     println!("      └─ Output: Cluster IDs (each ID = discovered word/syllable type)");
@@ -387,19 +414,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cluster_start = Instant::now();
 
-    let hdbscan = HdbscanClustering::with_metric(
-        min_cluster_size,
-        min_samples,
-        DistanceMetric::Euclidean,
-    )?;
+    let hdbscan =
+        HdbscanClustering::with_metric(min_cluster_size, min_samples, DistanceMetric::Euclidean)?;
 
     println!("   🔍 Running HDBSCAN...");
     let labels = hdbscan.fit_predict(&feature_matrix)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!("   ✅ Clustering complete in {:.2}s ({:.3}ms per sample)",
-             cluster_time.as_secs_f64(),
-             cluster_time.as_millis() as f64 / n_features as f64);
+    println!(
+        "   ✅ Clustering complete in {:.2}s ({:.3}ms per sample)",
+        cluster_time.as_secs_f64(),
+        cluster_time.as_millis() as f64 / n_features as f64
+    );
     println!();
 
     // =============================================================================
@@ -416,8 +442,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Clustering Results:");
     println!("      ├─ Total vocalizations analyzed: {}", n_features);
     println!("      ├─ Vocabulary items discovered: {}", stats.n_clusters);
-    println!("      ├─ Noise points (unclassified): {}", stats.noise_count);
-    println!("      └─ Classified vocalizations: {}", n_features - stats.noise_count);
+    println!(
+        "      ├─ Noise points (unclassified): {}",
+        stats.noise_count
+    );
+    println!(
+        "      └─ Classified vocalizations: {}",
+        n_features - stats.noise_count
+    );
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -427,12 +459,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let min_size = *stats.cluster_sizes.iter().min().unwrap_or(&0);
 
         println!("   📈 Cluster Statistics:");
-        println!("      ├─ Size range: {} - {} vocalizations", min_size, max_size);
-        println!("      ├─ Average: {:.1} vocalizations per word type", avg_size);
+        println!(
+            "      ├─ Size range: {} - {} vocalizations",
+            min_size, max_size
+        );
+        println!(
+            "      ├─ Average: {:.1} vocalizations per word type",
+            avg_size
+        );
         println!();
 
         // Top 20 discovered word types
-        let mut sorted_clusters: Vec<(i32, usize)> = stats.cluster_sizes.iter()
+        let mut sorted_clusters: Vec<(i32, usize)> = stats
+            .cluster_sizes
+            .iter()
             .enumerate()
             .map(|(i, size)| (i as i32, *size))
             .collect();
@@ -446,8 +486,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (i, (cluster_id, size)) in sorted_clusters.iter().take(20).enumerate() {
             let percentage = *size as f64 / n_features as f64 * 100.0;
             let word_type = classify_cluster_by_size(*size);
-            println!("      │   {:3}    │    {:5}  │ {:5.1} │ {:14} │",
-                     i + 1, cluster_id, percentage, word_type);
+            println!(
+                "      │   {:3}    │    {:5}  │ {:5.1} │ {:14} │",
+                i + 1,
+                cluster_id,
+                percentage,
+                word_type
+            );
         }
         println!("      └──────────┴───────────┴────────┴────────────────┘");
     }
@@ -465,8 +510,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create symbolic stream: Convert cluster IDs to symbolic representation
     // Using offset IDs starting from 100 for readability (100, 101, 102...)
     let cluster_offset = 100;
-    let symbolic_stream: Vec<i32> = labels.iter()
-        .map(|&label| if label == -1 { 0 } else { label + cluster_offset })
+    let symbolic_stream: Vec<i32> = labels
+        .iter()
+        .map(|&label| {
+            if label == -1 {
+                0
+            } else {
+                label + cluster_offset
+            }
+        })
         .collect();
 
     // Create symbol-to-count mapping
@@ -478,11 +530,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📝 Symbolic Stream Statistics:");
     println!("      ├─ Total symbols: {}", symbolic_stream.len());
     println!("      ├─ Unique symbols: {}", symbol_counts.len());
-    println!("      ├─ Symbol 0 (noise): {} occurrences",
-             symbol_counts.get(&0).unwrap_or(&0));
-    println!("      └─ Symbol range: {} - {}",
-             cluster_offset,
-             cluster_offset + stats.n_clusters as i32 - 1);
+    println!(
+        "      ├─ Symbol 0 (noise): {} occurrences",
+        symbol_counts.get(&0).unwrap_or(&0)
+    );
+    println!(
+        "      └─ Symbol range: {} - {}",
+        cluster_offset,
+        cluster_offset + stats.n_clusters as i32 - 1
+    );
     println!();
 
     // Display first 100 symbols of stream
@@ -551,12 +607,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(&clusters_path, serde_json::to_string_pretty(&clusters_output)?)?;
+    fs::write(
+        &clusters_path,
+        serde_json::to_string_pretty(&clusters_output)?,
+    )?;
     println!("   💾 Clusters saved: {}", clusters_path.display());
 
     // Save pure symbolic stream (just the sequence)
     let stream_path = results_dir.join("symbolic_stream.txt");
-    let stream_text: String = symbolic_stream.iter()
+    let stream_text: String = symbolic_stream
+        .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
         .join(",");
@@ -567,9 +627,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let readable_path = results_dir.join("symbolic_stream_readable.csv");
     let mut readable_content = String::from("file_name,call_type,cluster_id,symbol\n");
     for (file_info, label) in all_features.iter().zip(labels.iter()) {
-        let symbol = if *label == -1 { 0 } else { *label + cluster_offset };
-        readable_content.push_str(&format!("{},{},{},{}\n",
-            file_info.file_name, file_info.call_type, label, symbol));
+        let symbol = if *label == -1 {
+            0
+        } else {
+            *label + cluster_offset
+        };
+        readable_content.push_str(&format!(
+            "{},{},{},{}\n",
+            file_info.file_name, file_info.call_type, label, symbol
+        ));
     }
     fs::write(&readable_path, &readable_content)?;
     println!("   💾 Readable stream saved: {}", readable_path.display());
@@ -586,21 +652,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  ✅ Raw audio converted to symbolic stream                        ║");
     println!("║                                                                   ║");
     println!("║  📊 SUMMARY:                                                       ║");
-    println!("║     • Input: {} FLAC files                                      ║", flac_files.len());
+    println!(
+        "║     • Input: {} FLAC files                                      ║",
+        flac_files.len()
+    );
     println!("║     • Features: 15D Goldilocks Subset (RFE-optimized)            ║");
-    println!("║     • Vocabulary items discovered: {}                          ║", stats.n_clusters);
-    println!("║     • Noise points: {} ({:.1}%)                                    ║",
-             stats.noise_count,
-             stats.noise_count as f64 / n_features as f64 * 100.0);
+    println!(
+        "║     • Vocabulary items discovered: {}                          ║",
+        stats.n_clusters
+    );
+    println!(
+        "║     • Noise points: {} ({:.1}%)                                    ║",
+        stats.noise_count,
+        stats.noise_count as f64 / n_features as f64 * 100.0
+    );
     println!("║                                                                   ║");
     println!("║  📁 OUTPUT FILES:                                                   ║");
-    println!("║     • {:50} ║", features_path.file_name().unwrap_or_default().to_string_lossy());
-    println!("║     • {:50} ║", clusters_path.file_name().unwrap_or_default().to_string_lossy());
-    println!("║     • {:50} ║", stream_path.file_name().unwrap_or_default().to_string_lossy());
-    println!("║     • {:50} ║", readable_path.file_name().unwrap_or_default().to_string_lossy());
+    println!(
+        "║     • {:50} ║",
+        features_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
+    println!(
+        "║     • {:50} ║",
+        clusters_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
+    println!(
+        "║     • {:50} ║",
+        stream_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
+    println!(
+        "║     • {:50} ║",
+        readable_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
     println!("║                                                                   ║");
     println!("║  🎯 SYMBOLIC STREAM FORMAT:                                          ║");
-    println!("║     • Each cluster ID + {} = discovered word type                 ║", cluster_offset);
+    println!(
+        "║     • Each cluster ID + {} = discovered word type                 ║",
+        cluster_offset
+    );
     println!("║     • Example: [101, 105, 101, 105, 200, ...]                    ║");
     println!("║     • 0 = noise (unclassified)                                      ║");
     println!("║                                                                   ║");
@@ -634,9 +735,7 @@ fn discover_flac_files(dir: &Path) -> Result<Vec<(PathBuf, CallType)>, Box<dyn s
             // Check if it's a FLAC file
             if let Some(ext) = path.extension() {
                 if ext.to_string_lossy().to_lowercase() == "flac" {
-                    let filename = path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
+                    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                     let call_type = CallType::from_filename(filename);
                     if call_type != CallType::Unknown {
@@ -670,7 +769,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();

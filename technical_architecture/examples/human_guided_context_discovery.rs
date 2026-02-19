@@ -6,22 +6,20 @@
 //! - Egyptian Fruit Bats: /mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/
 //! - Marmoset Vocalizations: ~/birdsong_analysis/data/Vocalizations/
 
-use technical_architecture::{
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-    species::FeatureWeights,
-};
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Read, Write, BufWriter};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    species::FeatureWeights, AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
-const MAX_FILES: usize = 2000;  // Process first 2000 files
+const MAX_FILES: usize = 2000; // Process first 2000 files
 
 // =============================================================================
 // Egyptian Fruit Bat Context Codes
@@ -51,10 +49,14 @@ fn get_bat_context_name(code: i32) -> &'static str {
 
 #[derive(Debug, Clone, Deserialize)]
 struct BatAnnotation {
-    #[serde(rename = "Emitter")] emitter: i32,
-    #[serde(rename = "Addressee")] addressee: i32,
-    #[serde(rename = "Context")] context: i32,
-    #[serde(rename = "File Name")] filename: String,
+    #[serde(rename = "Emitter")]
+    emitter: i32,
+    #[serde(rename = "Addressee")]
+    addressee: i32,
+    #[serde(rename = "Context")]
+    context: i32,
+    #[serde(rename = "File Name")]
+    filename: String,
 }
 
 // =============================================================================
@@ -88,7 +90,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let annotations = load_bat_annotations(&bat_ann_path)?;
     let total_annotations = annotations.len();
     let process_count = total_annotations.min(MAX_FILES);
-    println!("Loaded {} bat annotations, processing first {}", total_annotations, process_count);
+    println!(
+        "Loaded {} bat annotations, processing first {}",
+        total_annotations, process_count
+    );
 
     // Show context distribution
     let mut context_counts: HashMap<i32, usize> = HashMap::new();
@@ -99,14 +104,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut contexts: Vec<_> = context_counts.iter().collect();
     contexts.sort_by_key(|(_, c)| std::cmp::Reverse(*c));
     for (ctx, count) in contexts.iter().take(10) {
-        println!("  {} ({}): {} files", get_bat_context_name(**ctx), ctx, count);
+        println!(
+            "  {} ({}): {} files",
+            get_bat_context_name(**ctx),
+            ctx,
+            count
+        );
     }
     println!();
 
     // =========================================================================
     // STEP 2: Feature Extraction (Whole File)
     // =========================================================================
-    println!("[2/4] Extracting 45D features from {} files...", process_count);
+    println!(
+        "[2/4] Extracting 45D features from {} files...",
+        process_count
+    );
 
     let extract_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
@@ -157,8 +170,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total_phrases = all_phrases.len();
     let error_count = errors.load(Ordering::Relaxed);
 
-    println!("\nExtracted {} features from {} files in {:.1}s",
-        total_phrases, process_count - error_count, extract_time.as_secs_f64());
+    println!(
+        "\nExtracted {} features from {} files in {:.1}s",
+        total_phrases,
+        process_count - error_count,
+        extract_time.as_secs_f64()
+    );
     println!("  ({}) files had errors)", error_count);
     println!();
 
@@ -195,7 +212,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Simple clustering using similarity
     let similarity_threshold = 0.85;
-    println!("  Clustering with similarity threshold {:.0}%...", similarity_threshold * 100.0);
+    println!(
+        "  Clustering with similarity threshold {:.0}%...",
+        similarity_threshold * 100.0
+    );
 
     let mut phrase_types: Vec<Vec<usize>> = Vec::new();
     let mut type_centroids: Vec<Vec<f32>> = Vec::new();
@@ -230,7 +250,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let num_types = phrase_types.len();
-    println!("  Found {} phrase types from {} phrases", num_types, total_phrases);
+    println!(
+        "  Found {} phrase types from {} phrases",
+        num_types, total_phrases
+    );
 
     // Build semantic dictionary
     let mut type_to_labels: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -251,7 +274,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (type_id, label_counts) in &type_to_labels {
         let total: usize = label_counts.values().sum();
         if total > 0 {
-            let probs: HashMap<String, f32> = label_counts.iter()
+            let probs: HashMap<String, f32> = label_counts
+                .iter()
                 .map(|(label, &count)| (label.clone(), count as f32 / total as f32))
                 .collect();
             type_to_label_probs.insert(type_id.clone(), probs);
@@ -269,7 +293,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Sort types by occurrence count
-    let mut type_sizes: Vec<_> = phrase_types.iter().enumerate()
+    let mut type_sizes: Vec<_> = phrase_types
+        .iter()
+        .enumerate()
         .map(|(i, members)| (i, members.len()))
         .collect();
     type_sizes.sort_by_key(|(_, size)| std::cmp::Reverse(*size));
@@ -284,7 +310,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut labels: Vec<_> = label_probs.iter().collect();
             labels.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
 
-            let primary = labels.first()
+            let primary = labels
+                .first()
                 .map(|(l, p)| format!("{} ({:.0}%)", l, **p * 100.0))
                 .unwrap_or_else(|| "Unknown".to_string());
 
@@ -309,7 +336,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save type centroids for propagation
     let centroids_path = format!("{}/bat_type_centroids.json", output_dir);
-    let centroids_data: HashMap<String, Vec<f32>> = type_centroids.iter()
+    let centroids_data: HashMap<String, Vec<f32>> = type_centroids
+        .iter()
         .enumerate()
         .map(|(i, c)| (format!("Type_{}", i), c.clone()))
         .collect();
@@ -370,12 +398,13 @@ fn load_wav_f32(path: &str) -> Result<AudioData, Box<dyn std::error::Error>> {
     // Check RIFF header
     if &buffer[0..4] != b"RIFF" {
         // Try raw float format
-        let samples: Vec<f64> = buffer.chunks_exact(4)
+        let samples: Vec<f64> = buffer
+            .chunks_exact(4)
             .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f64)
             .collect();
         return Ok(AudioData {
             samples,
-            sample_rate: 250000,  // Default bat sample rate
+            sample_rate: 250000, // Default bat sample rate
         });
     }
 
@@ -385,16 +414,21 @@ fn load_wav_f32(path: &str) -> Result<AudioData, Box<dyn std::error::Error>> {
     let data_start = 44;
 
     let samples: Vec<f64> = if bits_per_sample == 16 {
-        buffer[data_start..].chunks_exact(2)
+        buffer[data_start..]
+            .chunks_exact(2)
             .map(|c| i16::from_le_bytes([c[0], c[1]]) as f64 / 32768.0)
             .collect()
     } else if bits_per_sample == 32 {
-        buffer[data_start..].chunks_exact(4)
+        buffer[data_start..]
+            .chunks_exact(4)
             .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f64)
             .collect()
     } else {
         return Err(format!("Unsupported bits per sample: {}", bits_per_sample).into());
     };
 
-    Ok(AudioData { samples, sample_rate })
+    Ok(AudioData {
+        samples,
+        sample_rate,
+    })
 }

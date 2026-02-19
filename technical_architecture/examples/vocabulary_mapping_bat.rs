@@ -8,10 +8,9 @@
 
 use std::path::Path;
 use technical_architecture::{
-    VocabularyMapper, AudioSegmenter, SynthesisPipeline,
-    AnnotationDataset, VocalizationContext,
-    MetadataDrivenParams, GranularSynthesisParams, ConcatenativeParams,
-    GrainEnvelopeType,
+    AnnotationDataset, AudioSegmenter, ConcatenativeParams, GrainEnvelopeType,
+    GranularSynthesisParams, MetadataDrivenParams, SynthesisPipeline, VocabularyMapper,
+    VocalizationContext,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,7 +47,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sample_rate = 250000; // 250kHz for bat recordings
     let mut mapper = VocabularyMapper::new(annotations, sample_rate);
-    println!("   ✅ Vocabulary mapper created (sample_rate = {}Hz)", sample_rate);
+    println!(
+        "   ✅ Vocabulary mapper created (sample_rate = {}Hz)",
+        sample_rate
+    );
     println!();
 
     // Step 3: Load clustered phrases from JSON
@@ -58,7 +60,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let phrases_json = output_dir.join("phrases_metadata.json");
     if !phrases_json.exists() {
-        println!("   ⚠️  Phrases metadata not found at: {}", phrases_json.display());
+        println!(
+            "   ⚠️  Phrases metadata not found at: {}",
+            phrases_json.display()
+        );
         println!("   Please run full_pipeline_bat example first to generate clustered phrases");
         println!("   Command: cargo run --example full_pipeline_bat --release");
         return Ok(());
@@ -71,11 +76,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create sample cluster assignments
     // In production, these would come from your clustering results
-    let cluster_labels = vec
-![0; 100]; // 100 files in cluster 0
-    let file_paths: Vec<String> = (0..100)
-        .map(|i| format!("sentence_{:05}.wav", i))
-        .collect();
+    let cluster_labels = vec![0; 100]; // 100 files in cluster 0
+    let file_paths: Vec<String> = (0..100).map(|i| format!("sentence_{:05}.wav", i)).collect();
     let time_ranges: Vec<(f64, f64)> = (0..100)
         .map(|i| (i as f64 * 0.5, i as f64 * 0.5 + 0.3))
         .collect();
@@ -102,7 +104,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     let stats = mapper.get_statistics();
-    println!("   📊 Total vocabulary items: {}", stats.total_vocabulary_items);
+    println!(
+        "   📊 Total vocabulary items: {}",
+        stats.total_vocabulary_items
+    );
     println!("   📊 Total occurrences: {}", stats.total_occurrences);
     println!("   📊 Unique contexts: {}", stats.unique_contexts);
     println!();
@@ -113,12 +118,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("   🎯 Vocabulary: {}", vocab_id);
             println!("      ├─ Cluster: {}", vocab.cluster_id);
             println!("      ├─ Occurrences: {}", vocab.occurrences.len());
-            println!("      ├─ Duration: {:.1}ms - {:.1}ms (mean: {:.1}ms)",
+            println!(
+                "      ├─ Duration: {:.1}ms - {:.1}ms (mean: {:.1}ms)",
                 vocab.duration_stats.min_ms,
                 vocab.duration_stats.max_ms,
                 vocab.duration_stats.mean_ms
             );
-            println!("      ├─ Feature templates: {}", vocab.feature_templates.len());
+            println!(
+                "      ├─ Feature templates: {}",
+                vocab.feature_templates.len()
+            );
 
             // Show contexts
             let mut contexts = std::collections::HashSet::new();
@@ -128,7 +137,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             if !contexts.is_empty() {
-                println!("      └─ Contexts: {}", contexts.iter().cloned().collect::<Vec<_>>().join(", "));
+                println!(
+                    "      └─ Contexts: {}",
+                    contexts.iter().cloned().collect::<Vec<_>>().join(", ")
+                );
             } else {
                 println!("      └─ Contexts: None");
             }
@@ -142,11 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     let synthesis_output_dir = base_dir.join("synthesis_assets");
-    let segmenter = AudioSegmenter::new(
-        &audio_dir,
-        &synthesis_output_dir,
-        sample_rate,
-    );
+    let segmenter = AudioSegmenter::new(&audio_dir, &synthesis_output_dir, sample_rate);
     println!("   ✅ Audio segmenter created");
     println!("   📂 Output directory: {}", synthesis_output_dir.display());
     println!();
@@ -156,11 +164,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 6: Creating Synthesis Pipeline");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    let pipeline = SynthesisPipeline::new(
-        mapper.clone(),
-        segmenter,
-        &synthesis_output_dir,
-    );
+    let pipeline = SynthesisPipeline::new(mapper.clone(), segmenter, &synthesis_output_dir);
     println!("   ✅ Synthesis pipeline created");
     println!();
 
@@ -173,14 +177,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(assets) => {
             println!("   ✅ Synthesis assets generated:");
             println!("      ├─ Metadata file: {}", assets.metadata_path.display());
-            println!("      ├─ Concatenative assets: {}", assets.concatenative_assets.len());
+            println!(
+                "      ├─ Concatenative assets: {}",
+                assets.concatenative_assets.len()
+            );
             println!("      ├─ Granular assets: {}", assets.granular_assets.len());
             println!("      └─ Metadata assets: {}", assets.metadata_assets.len());
 
             // Export vocabulary statistics
             let stats_json = synthesis_output_dir.join("vocabulary_stats.json");
             mapper.export_json(&stats_json)?;
-            println!("   ✅ Vocabulary statistics exported: {}", stats_json.display());
+            println!(
+                "   ✅ Vocabulary statistics exported: {}",
+                stats_json.display()
+            );
         }
         Err(e) => {
             println!("   ⚠️  Asset generation failed: {}", e);
@@ -200,8 +210,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let params = MetadataDrivenParams {
             target_duration: 0.3, // 300ms
-            f0_contour: vec
-![15000.0, 18000.0, 16000.0],
+            f0_contour: vec![15000.0, 18000.0, 16000.0],
             intensity: 0.7,
             spectral_centroid: 25000.0,
             spectral_bandwidth: 10000.0,
@@ -268,10 +277,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
     println!("Summary:");
-    println!("  • Vocabulary items discovered: {}", stats.total_vocabulary_items);
+    println!(
+        "  • Vocabulary items discovered: {}",
+        stats.total_vocabulary_items
+    );
     println!("  • Total occurrences: {}", stats.total_occurrences);
     println!("  • Unique behavioral contexts: {}", stats.unique_contexts);
-    println!("  • Synthesis assets: {}/synthesis_assets", base_dir.display());
+    println!(
+        "  • Synthesis assets: {}/synthesis_assets",
+        base_dir.display()
+    );
     println!();
     println!("Next steps:");
     println!("  1. Review synthesized audio in synthesis_assets/concatenative/");
@@ -297,8 +312,7 @@ fn load_bat_annotations(path: &Path) -> Result<AnnotationDataset, Box<dyn std::e
         println!("   ℹ️  Loading annotations from: {}", path.display());
         // TODO: Implement actual CSV loading
         return Ok(AnnotationDataset {
-            annotations: vec
-![]
+            annotations: vec![],
         });
     }
 
@@ -311,13 +325,17 @@ fn load_bat_annotations(path: &Path) -> Result<AnnotationDataset, Box<dyn std::e
         let file_name = format!("sentence_{:05}.wav", i);
 
         // Sample behavioral contexts
-        let contexts = vec
-!["feeding", "aggression", "mating", "parental_care", "unknown"];
+        let contexts = vec![
+            "feeding",
+            "aggression",
+            "mating",
+            "parental_care",
+            "unknown",
+        ];
         let context = contexts[i % contexts.len()];
 
         // Sample emitters
-        let emitters = vec
-!["bat_1", "bat_2", "bat_3", "bat_4"];
+        let emitters = vec!["bat_1", "bat_2", "bat_3", "bat_4"];
         let emitter = emitters[i % emitters.len()];
 
         annotations.push(VocalizationContext {

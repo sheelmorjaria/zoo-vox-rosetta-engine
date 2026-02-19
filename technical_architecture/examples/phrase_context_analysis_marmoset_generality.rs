@@ -20,13 +20,13 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_marmoset_generality
 
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 use std::sync::{Arc, Mutex};
-use rayon::prelude::*;
-use serde::{Serialize, Deserialize};
+use std::time::Instant;
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
@@ -187,7 +187,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configuration
     let data_dir = Path::new("/home/sheel/birdsong_analysis/data/Vocalizations");
-    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
+    let results_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
 
     fs::create_dir_all(&results_dir)?;
 
@@ -208,7 +209,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
         let call_type = CallType::from_filename(filename);
         if call_type != CallType::Unknown {
-            files_by_type.entry(call_type).or_insert_with(Vec::new).push(path.clone());
+            files_by_type
+                .entry(call_type)
+                .or_insert_with(Vec::new)
+                .push(path.clone());
         }
     }
 
@@ -248,12 +252,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let analyzer = WithinVocalizationAnalyzer::new(config);
 
     // Process files in parallel with limit for testing
-    let max_files = 1000usize;  // Adjust as needed
-    let all_files: Vec<_> = files_by_type.values().flat_map(|v| v.iter()).cloned().collect();
+    let max_files = 1000usize; // Adjust as needed
+    let all_files: Vec<_> = files_by_type
+        .values()
+        .flat_map(|v| v.iter())
+        .cloned()
+        .collect();
     let files_to_process: Vec<_> = all_files.into_iter().take(max_files).collect();
 
-    println!("   🔄 Processing {} files (limited from {} total)",
-             files_to_process.len(), flac_files.len());
+    println!(
+        "   🔄 Processing {} files (limited from {} total)",
+        files_to_process.len(),
+        flac_files.len()
+    );
     println!();
 
     let all_phrases: Arc<Mutex<Vec<ExtractedPhrase>>> = Arc::new(Mutex::new(Vec::new()));
@@ -267,8 +278,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Ok(segmentation) = analyzer.analyze_vocalization(&audio, None) {
                 let mut phrases = Vec::new();
 
-                for (i, (&start_ms, &duration_ms)) in segmentation.phrase_starts_ms.iter()
-                    .zip(segmentation.phrase_durations_ms.iter()).enumerate()
+                for (i, (&start_ms, &duration_ms)) in segmentation
+                    .phrase_starts_ms
+                    .iter()
+                    .zip(segmentation.phrase_durations_ms.iter())
+                    .enumerate()
                 {
                     let end_ms = start_ms + duration_ms;
                     let start_sample = (start_ms * sample_rate as f64 / 1000.0) as usize;
@@ -279,7 +293,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
 
                     if duration_ms < 10.0 {
-                        continue;  // Skip very short phrases
+                        continue; // Skip very short phrases
                     }
 
                     let phrase_audio = &audio[start_sample..end_sample];
@@ -315,7 +329,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let phrases = Arc::try_unwrap(all_phrases).unwrap().into_inner()?;
 
     println!();
-    println!("   ✅ Extracted {} phrases from {} files", phrases.len(), files_to_process.len());
+    println!(
+        "   ✅ Extracted {} phrases from {} files",
+        phrases.len(),
+        files_to_process.len()
+    );
     println!();
 
     // ========================================================================
@@ -349,7 +367,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let context = phrase.call_type.name().to_string();
 
-        *phrase_context_map.entry(word_id.clone()).or_default().entry(context.clone()).or_insert(0) += 1;
+        *phrase_context_map
+            .entry(word_id.clone())
+            .or_default()
+            .entry(context.clone())
+            .or_insert(0) += 1;
         *phrase_totals.entry(word_id.clone()).or_insert(0) += 1;
         *context_totals.entry(context).or_insert(0) += 1;
     }
@@ -373,7 +395,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let mut metrics = calculate_generality_metrics(&phrase_context_map, &phrase_totals, n_contexts)?;
+    let mut metrics =
+        calculate_generality_metrics(&phrase_context_map, &phrase_totals, n_contexts)?;
     println!("      └─ Computed metrics for {} phrases", metrics.len());
     println!();
 
@@ -393,16 +416,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      ┌────────────────────────────┬──────────┬──────────┐");
     println!("      │ Type                       │ Count    │ Percentage│");
     println!("      ├────────────────────────────┼──────────┼──────────┤");
-    println!("      │ Universal Generalist       │ {:8} │ {:8.1}│",
-             type_counts.0, type_counts.0 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Generalist                 │ {:8} │ {:8.1}│",
-             type_counts.1, type_counts.1 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Flexible Specialist        │ {:8} │ {:8.1}│",
-             type_counts.2, type_counts.2 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Context Specialist         │ {:8} │ {:8.1}│",
-             type_counts.3, type_counts.3 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Highly Specific            │ {:8} │ {:8.1}│",
-             type_counts.4, type_counts.4 as f64 / metrics.len() as f64 * 100.0);
+    println!(
+        "      │ Universal Generalist       │ {:8} │ {:8.1}│",
+        type_counts.0,
+        type_counts.0 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Generalist                 │ {:8} │ {:8.1}│",
+        type_counts.1,
+        type_counts.1 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Flexible Specialist        │ {:8} │ {:8.1}│",
+        type_counts.2,
+        type_counts.2 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Context Specialist         │ {:8} │ {:8.1}│",
+        type_counts.3,
+        type_counts.3 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Highly Specific            │ {:8} │ {:8.1}│",
+        type_counts.4,
+        type_counts.4 as f64 / metrics.len() as f64 * 100.0
+    );
     println!("      └────────────────────────────┴──────────┴──────────┘");
     println!();
 
@@ -416,16 +454,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let n_permutations = 1000;
-    let perm_result = run_permutation_test(&phrase_context_map, &phrase_totals, n_permutations, n_contexts)?;
+    let perm_result = run_permutation_test(
+        &phrase_context_map,
+        &phrase_totals,
+        n_permutations,
+        n_contexts,
+    )?;
 
     println!();
     println!("   ✅ Permutation Test Results:");
-    println!("      ├─ Observed mean generality: {:.4}", perm_result.observed_mean_generality);
-    println!("      ├─ Null mean generality:      {:.4} ± {:.4}",
-             perm_result.null_mean_generality, perm_result.null_std_generality);
-    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
-    println!("      ├─ P-value:                   {:.6}", perm_result.p_value);
-    println!("      └─ Significant (α=0.05):      {}", if perm_result.significant { "YES ✨" } else { "NO" });
+    println!(
+        "      ├─ Observed mean generality: {:.4}",
+        perm_result.observed_mean_generality
+    );
+    println!(
+        "      ├─ Null mean generality:      {:.4} ± {:.4}",
+        perm_result.null_mean_generality, perm_result.null_std_generality
+    );
+    println!(
+        "      ├─ Z-score:                   {:.4}",
+        perm_result.z_score
+    );
+    println!(
+        "      ├─ P-value:                   {:.6}",
+        perm_result.p_value
+    );
+    println!(
+        "      └─ Significant (α=0.05):      {}",
+        if perm_result.significant {
+            "YES ✨"
+        } else {
+            "NO"
+        }
+    );
     println!();
 
     if perm_result.significant {
@@ -453,7 +514,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Shannon Entropy Distribution:");
     println!("      ├─ Mean:   {:.4} bits", summary.mean_shannon_entropy);
-    println!("      └─ Median: {:.4} bits", summary.median_shannon_entropy);
+    println!(
+        "      └─ Median: {:.4} bits",
+        summary.median_shannon_entropy
+    );
     println!();
 
     // ========================================================================
@@ -499,14 +563,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                           ║");
     println!("║  📊 KEY FINDINGS:                                                         ║");
-    println!("║     • Total phrases analyzed: {}                                        ║", n_phrases);
-    println!("║     • Call type contexts: {}                                            ║", n_contexts);
-    println!("║     • Generalist phrases: {} ({:.1}%)                                   ║",
-             type_counts.0 + type_counts.1,
-             (type_counts.0 + type_counts.1) as f64 / metrics.len() as f64 * 100.0);
-    println!("║     • Specialist phrases: {} ({:.1}%)                                   ║",
-             type_counts.3 + type_counts.4,
-             (type_counts.3 + type_counts.4) as f64 / metrics.len() as f64 * 100.0);
+    println!(
+        "║     • Total phrases analyzed: {}                                        ║",
+        n_phrases
+    );
+    println!(
+        "║     • Call type contexts: {}                                            ║",
+        n_contexts
+    );
+    println!(
+        "║     • Generalist phrases: {} ({:.1}%)                                   ║",
+        type_counts.0 + type_counts.1,
+        (type_counts.0 + type_counts.1) as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "║     • Specialist phrases: {} ({:.1}%)                                   ║",
+        type_counts.3 + type_counts.4,
+        (type_counts.3 + type_counts.4) as f64 / metrics.len() as f64 * 100.0
+    );
     println!("║                                                                           ║");
     if perm_result.significant {
         println!("║     ✅ SIGNIFICANT: Phrase reuse is non-random                            ║");
@@ -515,10 +589,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("║     ⚠️  NOT SIGNIFICANT                                                 ║");
     }
     println!("║                                                                           ║");
-    println!("║  ⏱️  Analysis time: {:.2}s                                                ║", elapsed.as_secs_f64());
+    println!(
+        "║  ⏱️  Analysis time: {:.2}s                                                ║",
+        elapsed.as_secs_f64()
+    );
     println!("║                                                                           ║");
     println!("║  📁 Results saved to:                                                     ║");
-    println!("║     {}                                              ║", results_dir.display());
+    println!(
+        "║     {}                                              ║",
+        results_dir.display()
+    );
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
@@ -570,7 +650,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -601,15 +682,20 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     Ok(audio_samples)
 }
 
-fn extract_15d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_15d_features(
+    audio: &[f32],
+    sample_rate: u32,
+) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     let features = extractor.extract_15d_marmoset(audio)?;
     Ok(features.to_array().to_vec())
 }
 
-fn cluster_phrases(phrases: &[ExtractedPhrase]) -> Result<Vec<(String, Vec<f32>)>, Box<dyn std::error::Error>> {
-    use technical_architecture::hdbscan::HdbscanClustering;
+fn cluster_phrases(
+    phrases: &[ExtractedPhrase],
+) -> Result<Vec<(String, Vec<f32>)>, Box<dyn std::error::Error>> {
     use ndarray::Array2;
+    use technical_architecture::hdbscan::HdbscanClustering;
 
     if phrases.is_empty() {
         return Ok(Vec::new());
@@ -642,7 +728,7 @@ fn cluster_phrases(phrases: &[ExtractedPhrase]) -> Result<Vec<(String, Vec<f32>)
     let mut vocabulary = Vec::new();
     for (cluster_id, members) in clusters {
         if cluster_id < 0 {
-            continue;  // Skip noise
+            continue; // Skip noise
         }
 
         // Compute centroid
@@ -787,7 +873,8 @@ fn run_permutation_test(
 ) -> Result<PermutationTestResult, Box<dyn std::error::Error>> {
     use rand::Rng;
 
-    let observed_gens: Vec<f64> = pcm.keys()
+    let observed_gens: Vec<f64> = pcm
+        .keys()
         .map(|phrase_id| {
             pcm.get(phrase_id)
                 .map(|ctxs| ctxs.len() as f64 / n_contexts as f64)
@@ -810,7 +897,8 @@ fn run_permutation_test(
         .into_par_iter()
         .map(|_| {
             let mut rng = rand::thread_rng();
-            let mut shuffled_contexts: Vec<String> = all_pairs.iter().map(|(ctx, _)| ctx.clone()).collect();
+            let mut shuffled_contexts: Vec<String> =
+                all_pairs.iter().map(|(ctx, _)| ctx.clone()).collect();
             shuffled_contexts.shuffle(&mut rng);
 
             let mut phrase_context_counts: HashMap<String, usize> = HashMap::new();
@@ -818,7 +906,8 @@ fn run_permutation_test(
                 *phrase_context_counts.entry(phrase_id.clone()).or_insert(0) += 1;
             }
 
-            let gen_scores: Vec<f64> = phrase_context_counts.values()
+            let gen_scores: Vec<f64> = phrase_context_counts
+                .values()
                 .map(|&n_ctx| n_ctx as f64 / n_contexts as f64)
                 .collect();
 
@@ -827,9 +916,11 @@ fn run_permutation_test(
         .collect();
 
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_variance = null_means.iter()
+    let null_variance = null_means
+        .iter()
         .map(|&x| (x - null_mean).powi(2))
-        .sum::<f64>() / null_means.len() as f64;
+        .sum::<f64>()
+        / null_means.len() as f64;
     let null_std = null_variance.sqrt();
 
     let z_score = if null_std > 0.0 {
@@ -860,7 +951,11 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     let mut sorted_gen = gen_scores.clone();
     sorted_gen.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let median_gen = sorted_gen[sorted_gen.len() / 2];
-    let var_gen = gen_scores.iter().map(|x| (x - mean_gen).powi(2)).sum::<f64>() / gen_scores.len() as f64;
+    let var_gen = gen_scores
+        .iter()
+        .map(|x| (x - mean_gen).powi(2))
+        .sum::<f64>()
+        / gen_scores.len() as f64;
 
     let entropies: Vec<f64> = metrics.iter().map(|m| m.shannon_entropy).collect();
     let mean_ent = entropies.iter().sum::<f64>() / entropies.len() as f64;
@@ -882,7 +977,10 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     }
 }
 
-fn save_generality_csv(metrics: &[GeneralityMetrics], path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+fn save_generality_csv(
+    metrics: &[GeneralityMetrics],
+    path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut wtr = csv::Writer::from_path(path)?;
 
     wtr.write_record(&[

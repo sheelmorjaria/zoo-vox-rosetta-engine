@@ -9,7 +9,7 @@
 
 #[cfg(test)]
 mod test_spectral_module {
-    use technical_architecture::spectral::{SpectralModule, ContourConfig, FMType};
+    use technical_architecture::spectral::{ContourConfig, FMType, SpectralModule};
 
     #[test]
     fn test_spectral_module_creation() {
@@ -186,7 +186,9 @@ mod test_sequence_module {
         let motifs = module.find_motifs(&sequence);
 
         // Should find [0, 1, 2] pattern appearing 3 times
-        assert!(motifs.iter().any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
+        assert!(motifs
+            .iter()
+            .any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
     }
 
     #[test]
@@ -239,7 +241,11 @@ mod test_sequence_module {
         let perplexity = module.compute_perplexity(&sequence);
 
         // Low perplexity for repetitive sequence
-        assert!(perplexity < 2.0, "Perplexity should be low for repetitive sequence, got {}", perplexity);
+        assert!(
+            perplexity < 2.0,
+            "Perplexity should be low for repetitive sequence, got {}",
+            perplexity
+        );
     }
 
     #[test]
@@ -252,7 +258,11 @@ mod test_sequence_module {
         let perplexity = module.compute_perplexity(&sequence);
 
         // High perplexity for diverse sequence (should be ~log2(10) ≈ 3.32)
-        assert!(perplexity > 3.0, "Perplexity should be high for diverse sequence, got {}", perplexity);
+        assert!(
+            perplexity > 3.0,
+            "Perplexity should be high for diverse sequence, got {}",
+            perplexity
+        );
     }
 
     #[test]
@@ -298,7 +308,9 @@ mod test_sequence_module {
 
 #[cfg(test)]
 mod test_species_config {
-    use technical_architecture::species::{SpeciesConfigFactory, EncodingStrategy, AnalysisModality, AnalysisModule};
+    use technical_architecture::species::{
+        AnalysisModality, AnalysisModule, EncodingStrategy, SpeciesConfigFactory,
+    };
 
     #[test]
     fn test_sperm_whale_config() {
@@ -307,7 +319,9 @@ mod test_species_config {
         assert_eq!(config.species(), "Sperm Whale");
         assert_eq!(config.encoding_strategy(), EncodingStrategy::CodaType);
         assert_eq!(config.modality(), AnalysisModality::Temporal);
-        assert!(config.required_modules().contains(&AnalysisModule::Temporal));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Temporal));
         assert!(config.feature_params().similarity_threshold >= 0.75);
     }
 
@@ -316,9 +330,14 @@ mod test_species_config {
         let config = SpeciesConfigFactory::create("dolphin");
 
         assert_eq!(config.species(), "Dolphin");
-        assert_eq!(config.encoding_strategy(), EncodingStrategy::FrequencyModulated);
+        assert_eq!(
+            config.encoding_strategy(),
+            EncodingStrategy::FrequencyModulated
+        );
         assert_eq!(config.modality(), AnalysisModality::Spectral);
-        assert!(config.required_modules().contains(&AnalysisModule::Spectral));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Spectral));
     }
 
     #[test]
@@ -328,7 +347,9 @@ mod test_species_config {
         assert_eq!(config.species(), "Zebra Finch");
         assert_eq!(config.encoding_strategy(), EncodingStrategy::Combinatorial);
         assert_eq!(config.modality(), AnalysisModality::Temporal);
-        assert!(config.required_modules().contains(&AnalysisModule::Sequence));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Sequence));
     }
 
     #[test]
@@ -345,8 +366,13 @@ mod test_species_config {
         let config = SpeciesConfigFactory::create("bat");
 
         assert_eq!(config.species(), "Egyptian Fruit Bat");
-        assert_eq!(config.encoding_strategy(), EncodingStrategy::DurationMediated);
-        assert!(config.required_modules().contains(&AnalysisModule::Duration));
+        assert_eq!(
+            config.encoding_strategy(),
+            EncodingStrategy::DurationMediated
+        );
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Duration));
     }
 
     #[test]
@@ -355,8 +381,12 @@ mod test_species_config {
 
         assert_eq!(config.species(), "Orca");
         assert_eq!(config.modality(), AnalysisModality::Hybrid);
-        assert!(config.required_modules().contains(&AnalysisModule::Sequence));
-        assert!(config.required_modules().contains(&AnalysisModule::Spectral));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Sequence));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Spectral));
     }
 
     #[test]
@@ -401,11 +431,11 @@ mod test_species_config {
 
 #[cfg(test)]
 mod test_integration {
-    use technical_architecture::species::SpeciesConfigFactory;
-    use technical_architecture::species::AnalysisModule;
-    use technical_architecture::species::AnalysisModality;
     use technical_architecture::sequence::SequenceModule;
-    use technical_architecture::spectral::{SpectralModule, ContourConfig};
+    use technical_architecture::species::AnalysisModality;
+    use technical_architecture::species::AnalysisModule;
+    use technical_architecture::species::SpeciesConfigFactory;
+    use technical_architecture::spectral::{ContourConfig, SpectralModule};
 
     #[test]
     fn test_zebra_finch_pipeline() {
@@ -413,7 +443,9 @@ mod test_integration {
         let config = SpeciesConfigFactory::create("zebra_finch");
 
         // Verify Sequence module is needed
-        assert!(config.required_modules().contains(&AnalysisModule::Sequence));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Sequence));
 
         // Create sequence module
         let seq_module = SequenceModule::new(3);
@@ -423,7 +455,10 @@ mod test_integration {
         let analysis = seq_module.analyze(&sequence);
 
         // Verify analysis produces expected output
-        assert!(!analysis.motifs.is_empty(), "Should find motifs in zebra finch sequence");
+        assert!(
+            !analysis.motifs.is_empty(),
+            "Should find motifs in zebra finch sequence"
+        );
         assert!(analysis.ngram_stats.unique_bigrams > 0);
     }
 
@@ -433,7 +468,9 @@ mod test_integration {
         let config = SpeciesConfigFactory::create("dolphin");
 
         // Verify Spectral module is needed
-        assert!(config.required_modules().contains(&AnalysisModule::Spectral));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Spectral));
 
         // Create spectral module
         let spec_config = ContourConfig {
@@ -460,7 +497,10 @@ mod test_integration {
         let contours = spec_module.analyze(&audio, sample_rate);
 
         // Verify contours detected
-        assert!(!contours.is_empty(), "Should detect FM contours in dolphin whistle");
+        assert!(
+            !contours.is_empty(),
+            "Should detect FM contours in dolphin whistle"
+        );
     }
 
     #[test]
@@ -469,7 +509,9 @@ mod test_integration {
         let config = SpeciesConfigFactory::create("sperm_whale");
 
         // Verify Temporal module is primary
-        assert!(config.required_modules().contains(&AnalysisModule::Temporal));
+        assert!(config
+            .required_modules()
+            .contains(&AnalysisModule::Temporal));
         assert_eq!(config.modality(), AnalysisModality::Temporal);
 
         // Verify high similarity threshold for stereotyped codas
@@ -479,7 +521,9 @@ mod test_integration {
 
 #[cfg(test)]
 mod test_contour_features {
-    use technical_architecture::spectral::{SpectralModule, ContourConfig, FMType, ContourFeatures};
+    use technical_architecture::spectral::{
+        ContourConfig, ContourFeatures, FMType, SpectralModule,
+    };
 
     #[test]
     fn test_contour_features_slope() {

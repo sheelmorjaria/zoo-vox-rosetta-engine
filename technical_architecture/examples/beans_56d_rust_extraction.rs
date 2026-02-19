@@ -6,20 +6,22 @@
 // 3. Processes 1000+ samples for robust competence assessment
 // 4. Saves features for clustering and classification evaluation
 
-use std::path::{Path, PathBuf};
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::BufWriter;
-use anyhow::Result;
-use serde::{Serialize, Deserialize};
-use technical_architecture::micro_dynamics_extractor::{MicroDynamicsExtractor, MicroDynamicsFeatures56D};
+use std::path::{Path, PathBuf};
 use technical_architecture::island_hopping::Vector30D;
+use technical_architecture::micro_dynamics_extractor::{
+    MicroDynamicsExtractor, MicroDynamicsFeatures56D,
+};
 
 /// 56D feature vector for serialization
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct FeatureEntry56D {
     pub sample_id: String,
-    pub features_56d: Vec<f32>,  // 56 elements
-    pub features_30d: Vec<f32>,  // 30 elements (for comparison)
+    pub features_56d: Vec<f32>, // 56 elements
+    pub features_30d: Vec<f32>, // 30 elements (for comparison)
     pub metadata: AudioMetadata,
 }
 
@@ -63,9 +65,7 @@ impl BeansProcessor {
 
         // Sample target number of files
         let num_samples = self.target_samples.min(audio_files.len());
-        let sampled_files: Vec<_> = audio_files.into_iter()
-            .take(num_samples)
-            .collect();
+        let sampled_files: Vec<_> = audio_files.into_iter().take(num_samples).collect();
 
         println!("   Processing {} samples", num_samples);
         println!();
@@ -83,8 +83,12 @@ impl BeansProcessor {
             let audio_data = self.load_audio_file(audio_path)?;
 
             if audio_data.len() < 1000 {
-                println!("   [{:4}/{}] ⚠ Skipping (too short): {}",
-                    idx + 1, num_samples, audio_path.display());
+                println!(
+                    "   [{:4}/{}] ⚠ Skipping (too short): {}",
+                    idx + 1,
+                    num_samples,
+                    audio_path.display()
+                );
                 continue;
             }
 
@@ -101,11 +105,15 @@ impl BeansProcessor {
                     let mean_f0 = 5000.0; // Placeholder - would be estimated
                     let duration_ms = metadata.duration_seconds * 1000.0;
                     let f0_range = 1000.0; // Placeholder
-                    let vector30d = features_56d.base_30d.to_vector30d(mean_f0, duration_ms, f0_range);
+                    let vector30d =
+                        features_56d
+                            .base_30d
+                            .to_vector30d(mean_f0, duration_ms, f0_range);
                     let features_30d_vec = vector30d.to_array().to_vec();
 
                     let entry = FeatureEntry56D {
-                        sample_id: audio_path.file_stem()
+                        sample_id: audio_path
+                            .file_stem()
                             .unwrap_or_default()
                             .to_string_lossy()
                             .to_string(),
@@ -121,14 +129,16 @@ impl BeansProcessor {
                     }
                 }
                 Err(e) => {
-                    println!("   [{:4}/{}] ✗ Error: {}",
-                        idx + 1, num_samples, e);
+                    println!("   [{:4}/{}] ✗ Error: {}", idx + 1, num_samples, e);
                 }
             }
         }
 
         println!();
-        println!("   ✓ Successfully extracted {} feature vectors", entries.len());
+        println!(
+            "   ✓ Successfully extracted {} feature vectors",
+            entries.len()
+        );
         println!();
 
         // Step 3: Save features
@@ -159,8 +169,7 @@ impl BeansProcessor {
 
     fn find_beans_audio_files(&self) -> Result<Vec<PathBuf>> {
         // BEANS-Zero is typically cached in ~/.cache/huggingface/datasets/
-        let home = std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))?;
+        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE"))?;
 
         let cache_path = PathBuf::from(home)
             .join(".cache/huggingface/datasets/EarthSpeciesProject___beans-zero");
@@ -177,7 +186,9 @@ impl BeansProcessor {
         // If not found in cache, try alternative locations
         if audio_files.is_empty() {
             let alt_paths = vec![
-                PathBuf::from("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis/audio"),
+                PathBuf::from(
+                    "/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis/audio",
+                ),
                 PathBuf::from("./beans_audio"),
             ];
 
@@ -255,8 +266,10 @@ impl BeansProcessor {
         let num_samples = audio.len();
         let duration_seconds = num_samples as f32 / 44100.0;
         let sample_rate = 44100;
-        let mean_amplitude = audio.iter().map(|&x| x.abs()).sum::<f32>() / num_samples.max(1) as f32;
-        let rms_energy = (audio.iter().map(|&x| x * x).sum::<f32>() / num_samples.max(1) as f32).sqrt();
+        let mean_amplitude =
+            audio.iter().map(|&x| x.abs()).sum::<f32>() / num_samples.max(1) as f32;
+        let rms_energy =
+            (audio.iter().map(|&x| x * x).sum::<f32>() / num_samples.max(1) as f32).sqrt();
 
         AudioMetadata {
             duration_seconds,
@@ -274,7 +287,9 @@ impl BeansProcessor {
         let base = &features.base_30d;
         vec.extend_from_slice(&[
             // Fundamental (3) - will be added later with F0 estimation
-            0.0, 0.0, 0.0,  // mean_f0, duration, f0_range (placeholders)
+            0.0,
+            0.0,
+            0.0, // mean_f0, duration, f0_range (placeholders)
             // Grit Factors (3)
             base.harmonic_to_noise_ratio,
             base.spectral_flatness,
@@ -475,7 +490,8 @@ struct ProcessingReport {
 }
 
 fn main() -> Result<()> {
-    let output_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
+    let output_dir =
+        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
     let processor = BeansProcessor::new(output_dir.clone(), 1000);
 
     let report = processor.process()?;

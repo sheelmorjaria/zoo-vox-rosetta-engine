@@ -39,8 +39,8 @@ pub type Result<T> = std::result::Result<T, DtwError>;
 /// Dynamic Time Warping for sequence alignment
 #[derive(Debug, Clone)]
 pub struct DtwMetric {
-    window_size: Option<usize>,  // Sakoe-Chiba band width (None = no constraint)
-    lower_bound: bool,            // Use lower bound for early abandoning
+    window_size: Option<usize>, // Sakoe-Chiba band width (None = no constraint)
+    lower_bound: bool,          // Use lower bound for early abandoning
 }
 
 impl DtwMetric {
@@ -119,9 +119,7 @@ impl DtwMetric {
         for i in 0..n {
             for j in 0..m {
                 let cost = (seq1[i] - seq2[j]).abs();
-                let min_prev = dtw[[i, j]]
-                    .min(dtw[[i, j + 1]])
-                    .min(dtw[[i + 1, j]]);
+                let min_prev = dtw[[i, j]].min(dtw[[i, j + 1]]).min(dtw[[i + 1, j]]);
                 dtw[[i + 1, j + 1]] = cost + min_prev;
             }
         }
@@ -151,9 +149,7 @@ impl DtwMetric {
 
             for j in j_start..j_end {
                 let cost = (seq1[i] - seq2[j]).abs();
-                let min_prev = dtw[[i, j]]
-                    .min(dtw[[i, j + 1]])
-                    .min(dtw[[i + 1, j]]);
+                let min_prev = dtw[[i, j]].min(dtw[[i, j + 1]]).min(dtw[[i + 1, j]]);
                 dtw[[i + 1, j + 1]] = cost + min_prev;
             }
         }
@@ -216,7 +212,7 @@ impl DtwMetric {
 /// Uses a multi-resolution approach to approximate DTW in O(n) time
 #[derive(Debug, Clone)]
 pub struct FastDtw {
-    radius: usize,  // Resolution radius
+    radius: usize, // Resolution radius
 }
 
 impl FastDtw {
@@ -393,11 +389,9 @@ impl DtwDbscan {
         let neighbors: Vec<usize> = sequences
             .par_iter()
             .enumerate()
-            .filter_map(|(i, seq)| {
-                match self.dtw_metric.compute(point, seq) {
-                    Ok(dist) if dist <= self.eps => Some(i),
-                    _ => None,
-                }
+            .filter_map(|(i, seq)| match self.dtw_metric.compute(point, seq) {
+                Ok(dist) if dist <= self.eps => Some(i),
+                _ => None,
             })
             .collect();
 
@@ -406,7 +400,8 @@ impl DtwDbscan {
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> DtwClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> =
+            std::collections::HashMap::new();
         let mut noise_count = 0;
 
         for &label in labels {
@@ -454,14 +449,20 @@ mod tests {
         let seq2 = vec![1.0, 2.0, 3.0, 4.0];
 
         let dist = dtw.compute(&seq1, &seq2).unwrap();
-        assert!((dist - 0.0).abs() < 1e-6, "Identical sequences should have zero distance");
+        assert!(
+            (dist - 0.0).abs() < 1e-6,
+            "Identical sequences should have zero distance"
+        );
 
         // Different sequences
         let seq3 = vec![1.0, 2.0, 3.0, 4.0];
         let seq4 = vec![2.0, 3.0, 4.0, 5.0];
 
         let dist = dtw.compute(&seq3, &seq4).unwrap();
-        assert!(dist > 0.0, "Different sequences should have positive distance");
+        assert!(
+            dist > 0.0,
+            "Different sequences should have positive distance"
+        );
     }
 
     /// Test 2: Windowed DTW produces valid distances
@@ -473,7 +474,10 @@ mod tests {
         let seq2 = vec![1.0, 2.0, 3.0, 4.0];
 
         let dist = dtw.compute(&seq1, &seq2).unwrap();
-        assert!(dist.is_finite(), "Windowed DTW should produce finite distance");
+        assert!(
+            dist.is_finite(),
+            "Windowed DTW should produce finite distance"
+        );
         assert!(dist >= 0.0, "Distance should be non-negative");
     }
 
@@ -610,10 +614,7 @@ mod tests {
     #[test]
     fn test_dtw_dbscan_invalid_params() {
         // Window size of 0 should still work (degrades to point-wise matching)
-        let sequences = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![1.1, 2.1, 3.1],
-        ];
+        let sequences = vec![vec![1.0, 2.0, 3.0], vec![1.1, 2.1, 3.1]];
 
         let dbscan = DtwDbscan::new(1.0, 2, Some(0));
         let labels = dbscan.fit_predict(&sequences);

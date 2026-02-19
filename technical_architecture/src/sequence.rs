@@ -152,7 +152,8 @@ impl SequenceModule {
         }
 
         // Convert to Motif structs and filter by minimum occurrence
-        let mut motifs: Vec<Motif> = motif_map.into_iter()
+        let mut motifs: Vec<Motif> = motif_map
+            .into_iter()
             .filter(|(_, positions)| positions.len() >= self.min_occurrence)
             .map(|(pattern, positions)| Motif {
                 pattern,
@@ -183,18 +184,22 @@ impl SequenceModule {
         let mut trigram_counts: HashMap<(i32, i32, i32), usize> = HashMap::new();
         if sequence.len() >= 3 {
             for window in sequence.windows(3) {
-                *trigram_counts.entry((window[0], window[1], window[2])).or_default() += 1;
+                *trigram_counts
+                    .entry((window[0], window[1], window[2]))
+                    .or_default() += 1;
             }
         }
 
         // Find most common bigram
-        let most_common_bigram = bigram_counts.iter()
+        let most_common_bigram = bigram_counts
+            .iter()
             .max_by_key(|(_, c)| *c)
             .map(|((a, b), _)| (*a, *b))
             .unwrap_or((0, 0));
 
         // Find most common trigram
-        let most_common_trigram = trigram_counts.iter()
+        let most_common_trigram = trigram_counts
+            .iter()
             .max_by_key(|(_, c)| *c)
             .map(|((a, b, c), _)| (*a, *b, *c))
             .unwrap_or((0, 0, 0));
@@ -202,10 +207,15 @@ impl SequenceModule {
         // Compute bigram entropy
         let total_bigrams: usize = bigram_counts.values().sum();
         let bigram_entropy = if total_bigrams > 0 {
-            bigram_counts.values()
+            bigram_counts
+                .values()
                 .map(|&c| {
                     let p = c as f64 / total_bigrams as f64;
-                    if p > 0.0 { -p * p.log2() } else { 0.0 }
+                    if p > 0.0 {
+                        -p * p.log2()
+                    } else {
+                        0.0
+                    }
                 })
                 .sum()
         } else {
@@ -215,10 +225,15 @@ impl SequenceModule {
         // Compute trigram entropy
         let total_trigrams: usize = trigram_counts.values().sum();
         let trigram_entropy = if total_trigrams > 0 {
-            trigram_counts.values()
+            trigram_counts
+                .values()
                 .map(|&c| {
                     let p = c as f64 / total_trigrams as f64;
-                    if p > 0.0 { -p * p.log2() } else { 0.0 }
+                    if p > 0.0 {
+                        -p * p.log2()
+                    } else {
+                        0.0
+                    }
                 })
                 .sum()
         } else {
@@ -254,10 +269,15 @@ impl SequenceModule {
 
         // Compute entropy
         let total = sequence.len() as f64;
-        let entropy: f64 = type_counts.values()
+        let entropy: f64 = type_counts
+            .values()
             .map(|&c| {
                 let p = c as f64 / total;
-                if p > 0.0 { -p * p.log2() } else { 0.0 }
+                if p > 0.0 {
+                    -p * p.log2()
+                } else {
+                    0.0
+                }
             })
             .sum();
 
@@ -279,7 +299,11 @@ impl SequenceModule {
             let from = window[0];
             let to = window[1];
 
-            *transition_counts.entry(from).or_default().entry(to).or_default() += 1;
+            *transition_counts
+                .entry(from)
+                .or_default()
+                .entry(to)
+                .or_default() += 1;
             *from_counts.entry(from).or_default() += 1;
         }
 
@@ -288,7 +312,8 @@ impl SequenceModule {
 
         for (from, to_counts) in transition_counts {
             let total = from_counts.get(&from).copied().unwrap_or(1) as f64;
-            let probs: HashMap<i32, f64> = to_counts.into_iter()
+            let probs: HashMap<i32, f64> = to_counts
+                .into_iter()
                 .map(|(to, count)| (to, count as f64 / total))
                 .collect();
             transition_matrix.insert(from, probs);
@@ -324,7 +349,9 @@ mod tests {
         let motifs = module.find_motifs(&sequence);
 
         // Should find [0, 1, 2] pattern appearing 3 times
-        assert!(motifs.iter().any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
+        assert!(motifs
+            .iter()
+            .any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
     }
 
     #[test]

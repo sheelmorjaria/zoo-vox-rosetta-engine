@@ -86,8 +86,7 @@ fn load_phrase_data(path: &str) -> Vec<(String, Vec<i32>)> {
     let file = File::open(path).expect("Failed to open phrase data");
     let reader = BufReader::new(file);
 
-    let json: serde_json::Value =
-        serde_json::from_reader(reader).expect("Failed to parse JSON");
+    let json: serde_json::Value = serde_json::from_reader(reader).expect("Failed to parse JSON");
 
     let mut results = Vec::new();
 
@@ -157,7 +156,8 @@ print(json.dumps(output))
     // Write Python script to temp file
     let temp_script = "/tmp/load_meerkat_labels_seq.py";
     let mut file = File::create(temp_script).expect("Failed to create temp script");
-    file.write_all(python_script.as_bytes()).expect("Failed to write script");
+    file.write_all(python_script.as_bytes())
+        .expect("Failed to write script");
 
     // Run Python script
     let output = Command::new("python3")
@@ -184,10 +184,7 @@ print(json.dumps(output))
     labels
 }
 
-fn compute_transition_divergence(
-    sequences_a: &[Vec<i32>],
-    sequences_b: &[Vec<i32>],
-) -> f64 {
+fn compute_transition_divergence(sequences_a: &[Vec<i32>], sequences_b: &[Vec<i32>]) -> f64 {
     // Compute transition matrices
     let mut trans_a: HashMap<(i32, i32), usize> = HashMap::new();
     let mut trans_b: HashMap<(i32, i32), usize> = HashMap::new();
@@ -273,10 +270,7 @@ fn analyze_sequence_encoding(
     }
 
     println!("   Matched {} sequences with context labels", matched_count);
-    println!(
-        "   Found {} unique contexts",
-        context_sequences.len()
-    );
+    println!("   Found {} unique contexts", context_sequences.len());
 
     println!("\n┌─────────────────────────────────────────────────────────────────┐");
     println!("│ Step 3: Computing N-gram Statistics per Context                 │");
@@ -289,7 +283,11 @@ fn analyze_sequence_encoding(
     let mut sequence_length_stats: HashMap<String, (f64, f64, usize, usize)> = HashMap::new();
 
     for (ctx, sequences) in &context_sequences {
-        println!("\n   Processing context: {} ({})", ctx, get_label_meaning(ctx));
+        println!(
+            "\n   Processing context: {} ({})",
+            ctx,
+            get_label_meaning(ctx)
+        );
         println!("      Sequences: {}", sequences.len());
 
         // Compute sequence length stats
@@ -304,10 +302,7 @@ fn analyze_sequence_encoding(
         let min_len = *lengths.iter().min().unwrap_or(&0);
         let max_len = *lengths.iter().max().unwrap_or(&0);
 
-        sequence_length_stats.insert(
-            ctx.clone(),
-            (mean_len, std_len, min_len, max_len),
-        );
+        sequence_length_stats.insert(ctx.clone(), (mean_len, std_len, min_len, max_len));
         println!(
             "      Sequence length: mean={:.1}, std={:.1}, range=[{}, {}]",
             mean_len, std_len, min_len, max_len
@@ -372,17 +367,18 @@ fn analyze_sequence_encoding(
     let contexts: Vec<String> = context_sequences.keys().cloned().collect();
     let mut transition_divergence = HashMap::new();
 
-    println!("   Computing Jensen-Shannon divergence for {} context pairs...", contexts.len() * (contexts.len() - 1) / 2);
+    println!(
+        "   Computing Jensen-Shannon divergence for {} context pairs...",
+        contexts.len() * (contexts.len() - 1) / 2
+    );
 
     for i in 0..contexts.len() {
         for j in (i + 1)..contexts.len() {
             let ctx_a = &contexts[i];
             let ctx_b = &contexts[j];
 
-            let div = compute_transition_divergence(
-                &context_sequences[ctx_a],
-                &context_sequences[ctx_b],
-            );
+            let div =
+                compute_transition_divergence(&context_sequences[ctx_a], &context_sequences[ctx_b]);
 
             transition_divergence.insert((ctx_a.clone(), ctx_b.clone()), div);
         }
@@ -418,7 +414,10 @@ impl SequenceContextAnalysis {
         println!("║       SEQUENCE-BASED CONTEXT ENCODING RESULTS                  ║");
         println!("╚═══════════════════════════════════════════════════════════════╝");
 
-        println!("\n📊 OVERALL SEQUENCE SPECIFICITY: {:.4}", self.sequence_specificity);
+        println!(
+            "\n📊 OVERALL SEQUENCE SPECIFICITY: {:.4}",
+            self.sequence_specificity
+        );
         println!("   (Higher = more context-specific transition patterns)");
 
         // Sort contexts by entropy
@@ -433,7 +432,10 @@ impl SequenceContextAnalysis {
         for (ctx, entropy) in &entropy_sorted {
             let meaning = get_label_meaning(ctx);
             let diversity = self.phrase_diversity.get(&**ctx).unwrap_or(&0);
-            let (mean, std, _, _) = self.sequence_length_stats.get(&**ctx).unwrap_or(&(0.0, 0.0, 0, 0));
+            let (mean, std, _, _) = self
+                .sequence_length_stats
+                .get(&**ctx)
+                .unwrap_or(&(0.0, 0.0, 0, 0));
             println!(
                 "   │ {:<18} │ {:>7.4} │ {:>9} │ {:>8.1} ± {:.1}        │",
                 format!("{} ({})", ctx, meaning),
@@ -450,11 +452,18 @@ impl SequenceContextAnalysis {
             let meaning = get_label_meaning(ctx);
             println!("\n   {} ({}):", ctx, meaning);
             for (i, p) in patterns.iter().take(5).enumerate() {
-                let seq_str: String = p.sequence.iter()
+                let seq_str: String = p
+                    .sequence
+                    .iter()
                     .map(|t| t.to_string())
                     .collect::<Vec<_>>()
                     .join(" → ");
-                println!("      {}. [{}]: {:.2}%", i + 1, seq_str, p.frequency * 100.0);
+                println!(
+                    "      {}. [{}]: {:.2}%",
+                    i + 1,
+                    seq_str,
+                    p.frequency * 100.0
+                );
             }
         }
 
@@ -506,7 +515,10 @@ impl SequenceContextAnalysis {
             / entropy_values.len() as f64;
 
         println!("\n   📈 Key Metrics:");
-        println!("      ├─ Mean Sequence Specificity:  {:.4}", self.sequence_specificity);
+        println!(
+            "      ├─ Mean Sequence Specificity:  {:.4}",
+            self.sequence_specificity
+        );
         println!("      ├─ Max Transition Divergence:  {:.4}", max_div);
         println!(
             "      ├─ High-Divergence Pairs:      {} / {} ({:.1}%)",
@@ -514,7 +526,10 @@ impl SequenceContextAnalysis {
             total_pairs,
             high_div_count as f64 / total_pairs as f64 * 100.0
         );
-        println!("      ├─ Mean Bigram Entropy:        {:.4} bits", mean_entropy);
+        println!(
+            "      ├─ Mean Bigram Entropy:        {:.4} bits",
+            mean_entropy
+        );
         println!("      └─ Entropy Variance:           {:.4}", entropy_var);
 
         println!("\n   🔬 Interpretation:");
@@ -603,7 +618,8 @@ fn main() {
 
     let phrase_path = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/within_call_results/meerkat_within_call_analyses.json";
     let labels_dir = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/lbl/08000Hz";
-    let output_dir = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/sequence_encoding_results";
+    let output_dir =
+        "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/sequence_encoding_results";
 
     println!("\n┌─────────────────────────────────────────────────────────────────┐");
     println!("│ Step 1: Loading Data                                            │");

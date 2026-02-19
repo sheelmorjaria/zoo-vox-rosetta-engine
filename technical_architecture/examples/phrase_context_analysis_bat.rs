@@ -78,7 +78,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        println!("   └─ Loaded {} file-context mappings", file_to_context.len());
+        println!(
+            "   └─ Loaded {} file-context mappings",
+            file_to_context.len()
+        );
     } else {
         println!("   ⚠️  Annotations file not found, using synthetic contexts");
     }
@@ -109,16 +112,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut processed_files: Vec<String> = std::fs::read_dir(&audio_dir)?
         .filter_map(|entry| entry.ok())
         .filter(|entry| {
-            entry.path().extension()
+            entry
+                .path()
+                .extension()
                 .and_then(|s| s.to_str())
                 .map(|ext| ext.eq_ignore_ascii_case("wav"))
                 .unwrap_or(false)
         })
-        .filter_map(|entry| {
-            entry.file_name()
-                .to_str()
-                .map(|s| s.to_string())
-        })
+        .filter_map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
         .collect();
     processed_files.sort();
 
@@ -132,7 +133,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let file_name = &processed_files[i];
 
         // Get context for this file
-        let context = file_to_context.get(file_name)
+        let context = file_to_context
+            .get(file_name)
             .cloned()
             .unwrap_or_else(|| "Unknown".to_string());
 
@@ -210,7 +212,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Sort by generality score
     phrase_analysis.sort_by(|a, b| b.generality_score.partial_cmp(&a.generality_score).unwrap());
 
-    println!("   └─ Calculated metrics for {} phrases", phrase_analysis.len());
+    println!(
+        "   └─ Calculated metrics for {} phrases",
+        phrase_analysis.len()
+    );
     println!();
 
     // ========================================================================
@@ -229,41 +234,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("General-Purpose Phrases (appear in most/all contexts):");
     println!("─────────────────────────────────────────────────");
-    let general_purpose: Vec<_> = phrase_analysis.iter()
+    let general_purpose: Vec<_> = phrase_analysis
+        .iter()
         .filter(|p| p.classification == "General-Purpose")
         .collect();
 
     for phrase in general_purpose.iter().take(10) {
-        println!("   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
-            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count);
+        println!(
+            "   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
+            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
+        );
     }
-    println!("   Total: {} general-purpose phrases", general_purpose.len());
+    println!(
+        "   Total: {} general-purpose phrases",
+        general_purpose.len()
+    );
     println!();
 
     println!("Multi-Context Phrases (moderate reusability):");
     println!("──────────────────────────────────────────────");
-    let multi_context: Vec<_> = phrase_analysis.iter()
+    let multi_context: Vec<_> = phrase_analysis
+        .iter()
         .filter(|p| p.classification == "Multi-Context")
         .collect();
 
     for phrase in multi_context.iter().take(10) {
-        println!("   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
-            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count);
+        println!(
+            "   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
+            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
+        );
     }
     println!("   Total: {} multi-context phrases", multi_context.len());
     println!();
 
     println!("Context-Specific Phrases (highly specialized):");
     println!("──────────────────────────────────────────────");
-    let context_specific: Vec<_> = phrase_analysis.iter()
+    let context_specific: Vec<_> = phrase_analysis
+        .iter()
         .filter(|p| p.classification == "Context-Specific")
         .collect();
 
     for phrase in context_specific.iter().take(10) {
-        println!("   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
-            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count);
+        println!(
+            "   Phrase {:2}: Generality={:.2}, Entropy={:.2}, Count={}",
+            phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
+        );
     }
-    println!("   Total: {} context-specific phrases", context_specific.len());
+    println!(
+        "   Total: {} context-specific phrases",
+        context_specific.len()
+    );
     println!();
 
     // ========================================================================
@@ -280,32 +300,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total = phrase_analysis.len();
 
     println!("   Distribution:");
-    println!("   ├─ General-Purpose: {} ({:.1}%)", n_general, n_general as f64 / total as f64 * 100.0);
-    println!("   ├─ Multi-Context: {} ({:.1}%)", n_multi, n_multi as f64 / total as f64 * 100.0);
-    println!("   └─ Context-Specific: {} ({:.1}%)", n_specific, n_specific as f64 / total as f64 * 100.0);
+    println!(
+        "   ├─ General-Purpose: {} ({:.1}%)",
+        n_general,
+        n_general as f64 / total as f64 * 100.0
+    );
+    println!(
+        "   ├─ Multi-Context: {} ({:.1}%)",
+        n_multi,
+        n_multi as f64 / total as f64 * 100.0
+    );
+    println!(
+        "   └─ Context-Specific: {} ({:.1}%)",
+        n_specific,
+        n_specific as f64 / total as f64 * 100.0
+    );
     println!();
 
     // Average entropy by classification
     let avg_entropy_general = if n_general > 0 {
-        general_purpose.iter()
+        general_purpose
+            .iter()
             .map(|p| p.normalized_entropy)
-            .sum::<f64>() / n_general as f64
+            .sum::<f64>()
+            / n_general as f64
     } else {
         0.0
     };
 
     let avg_entropy_multi = if n_multi > 0 {
-        multi_context.iter()
+        multi_context
+            .iter()
             .map(|p| p.normalized_entropy)
-            .sum::<f64>() / n_multi as f64
+            .sum::<f64>()
+            / n_multi as f64
     } else {
         0.0
     };
 
     let avg_entropy_specific = if n_specific > 0 {
-        context_specific.iter()
+        context_specific
+            .iter()
             .map(|p| p.normalized_entropy)
-            .sum::<f64>() / n_specific as f64
+            .sum::<f64>()
+            / n_specific as f64
     } else {
         0.0
     };
@@ -334,8 +372,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("   Results:");
-    println!("   ├─ General-purpose phrases found: {}", has_general_purpose);
-    println!("   ├─ Context-specific phrases found: {}", has_context_specific);
+    println!(
+        "   ├─ General-purpose phrases found: {}",
+        has_general_purpose
+    );
+    println!(
+        "   ├─ Context-specific phrases found: {}",
+        has_context_specific
+    );
     println!("   └─ Mixture ratio: {:.1}%", mixture_ratio * 100.0);
     println!();
 

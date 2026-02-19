@@ -235,8 +235,10 @@ impl VocabularyMapper {
             let vocab_id = format!("cluster_{}", cluster_id);
 
             // Collect feature templates
-            let feature_templates: Vec<Array2<f64>> =
-                indices.iter().map(|&idx| feature_series[idx].clone()).collect();
+            let feature_templates: Vec<Array2<f64>> = indices
+                .iter()
+                .map(|&idx| feature_series[idx].clone())
+                .collect();
 
             // Compute duration statistics
             let durations_ms: Vec<f64> = indices
@@ -363,12 +365,10 @@ impl VocabularyMapper {
         self.vocabulary
             .values()
             .filter(|vocab| {
-                vocab.occurrences.iter().any(|occ| {
-                    occ.context
-                        .behavioral_context
-                        .as_deref()
-                        == Some(context)
-                })
+                vocab
+                    .occurrences
+                    .iter()
+                    .any(|occ| occ.context.behavioral_context.as_deref() == Some(context))
             })
             .collect()
     }
@@ -378,9 +378,10 @@ impl VocabularyMapper {
         self.vocabulary
             .values()
             .filter(|vocab| {
-                vocab.occurrences.iter().any(|occ| {
-                    occ.context.emitter_id.as_deref() == Some(emitter_id)
-                })
+                vocab
+                    .occurrences
+                    .iter()
+                    .any(|occ| occ.context.emitter_id.as_deref() == Some(emitter_id))
             })
             .collect()
     }
@@ -392,8 +393,7 @@ impl VocabularyMapper {
         let json = serde_json::to_string_pretty(&stats)
             .map_err(|e| VocabularyError::InvalidContext(e.to_string()))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| VocabularyError::InvalidContext(e.to_string()))?;
+        std::fs::write(path, json).map_err(|e| VocabularyError::InvalidContext(e.to_string()))?;
 
         Ok(())
     }
@@ -441,7 +441,9 @@ mod tests {
     /// Test 1: Create vocabulary mapper
     #[test]
     fn test_vocabulary_mapper_creation() {
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         assert_eq!(mapper.sample_rate, 48000);
@@ -469,8 +471,11 @@ mod tests {
         let mut mapper = VocabularyMapper::new(annotations, 48000);
 
         let cluster_labels = vec![0, 0, 1];
-        let file_paths = vec
-!["test.wav".to_string(), "test.wav".to_string(), "test.wav".to_string()];
+        let file_paths = vec![
+            "test.wav".to_string(),
+            "test.wav".to_string(),
+            "test.wav".to_string(),
+        ];
         let time_ranges = [(0.0, 0.5), (0.5, 1.0), (1.0, 1.5)];
         let feature_series = vec![
             arr2(&[[1.0, 2.0], [3.0, 4.0]]),
@@ -478,7 +483,8 @@ mod tests {
             arr2(&[[5.0, 6.0], [7.0, 8.0]]),
         ];
 
-        let result = mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
+        let result =
+            mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
 
         assert!(result.is_ok(), "Mapping should succeed");
         assert_eq!(mapper.vocabulary.len(), 2);
@@ -487,7 +493,9 @@ mod tests {
     /// Test 3: Duration statistics computation
     #[test]
     fn test_duration_stats() {
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         let durations = vec![100.0, 200.0, 300.0];
@@ -551,7 +559,9 @@ mod tests {
             }],
         };
 
-        mapper.vocabulary.insert("cluster_0".to_string(), vocab_item);
+        mapper
+            .vocabulary
+            .insert("cluster_0".to_string(), vocab_item);
 
         let results = mapper.find_by_context("feeding");
         assert_eq!(results.len(), 1);
@@ -560,7 +570,9 @@ mod tests {
     /// Test 5: Vocabulary statistics
     #[test]
     fn test_vocabulary_statistics() {
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         let stats = mapper.get_statistics();
@@ -573,7 +585,9 @@ mod tests {
     fn test_export_json() {
         use std::io::Write;
 
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         let mut file = tempfile::NamedTempFile::new().unwrap();
@@ -589,16 +603,18 @@ mod tests {
     /// Test 7: Invalid input length handling
     #[test]
     fn test_invalid_input_length() {
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mut mapper = VocabularyMapper::new(annotations, 48000);
 
         let cluster_labels = vec![0, 0]; // 2 items
-        let file_paths = vec
-!["test.wav".to_string()]; // 1 item - mismatch!
+        let file_paths = vec!["test.wav".to_string()]; // 1 item - mismatch!
         let time_ranges = vec![(0.0, 1.0)];
         let feature_series = vec![arr2(&[[1.0, 2.0]])];
 
-        let result = mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
+        let result =
+            mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
 
         assert!(result.is_err(), "Should reject mismatched input lengths");
     }

@@ -9,12 +9,12 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_within_call_demo
 
-use technical_architecture::{
-    ZooVoxFeatureExtractor, ZooVoxPhraseExtractor, ZooVoxExtractionConfig,
-    ZooVoxLibraryBuilder, AcousticFeatures30D, PhrasePrototype,
-    WithinCallAnalyzer, WithinCallConfig, SimilarityBasedLibraryBuilder,
-};
 use technical_architecture::species::SpeciesConfigFactory;
+use technical_architecture::{
+    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer,
+    WithinCallConfig, ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder,
+    ZooVoxPhraseExtractor,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("========================================");
@@ -33,8 +33,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a 5-second vocalization with multiple phrases separated by gaps
     // Each phrase is ~200ms with 100ms gaps
     let total_duration = 5.0;
-    let phrase_duration = 0.2;  // 200ms phrases
-    let gap_duration = 0.1;     // 100ms gaps
+    let phrase_duration = 0.2; // 200ms phrases
+    let gap_duration = 0.1; // 100ms gaps
     let total_samples = (sample_rate as f64 * total_duration) as usize;
 
     let audio: Vec<f64> = (0..total_samples)
@@ -77,9 +77,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let num_phrases = (total_duration / (phrase_duration + gap_duration)) as usize;
-    println!("  Generated {:.0}-second synthetic vocalization", total_duration);
-    println!("  Phrase duration: {}ms, Gap duration: {}ms",
-        phrase_duration * 1000.0, gap_duration * 1000.0);
+    println!(
+        "  Generated {:.0}-second synthetic vocalization",
+        total_duration
+    );
+    println!(
+        "  Phrase duration: {}ms, Gap duration: {}ms",
+        phrase_duration * 1000.0,
+        gap_duration * 1000.0
+    );
     println!("  Expected ~{} phrases:", num_phrases);
     println!("    - Type A (6800 Hz, phee-like)");
     println!("    - Type B (8500 Hz, twitter-like)");
@@ -97,11 +103,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("  Extracted {} phrase candidates", phrases.len());
     for (i, phrase) in phrases.iter().take(5).enumerate() {
-        println!("    {}: F0={:.0}Hz, Dur={:.0}ms, Key={}",
+        println!(
+            "    {}: F0={:.0}Hz, Dur={:.0}ms, Key={}",
             i + 1,
             phrase.features_30d.mean_f0_hz,
             phrase.features_30d.duration_ms,
-            phrase.phrase_key);
+            phrase.phrase_key
+        );
     }
     println!();
 
@@ -120,11 +128,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     for (i, pt) in result.phrase_types.iter().enumerate() {
-        println!("  Type {}: {} ({} occurrences)",
-            i + 1, pt.type_id, pt.occurrence_count);
+        println!(
+            "  Type {}: {} ({} occurrences)",
+            i + 1,
+            pt.type_id,
+            pt.occurrence_count
+        );
         println!("    Phrase key: {}", pt.phrase_key);
         println!("    Centroid F0: {:.0} Hz", pt.centroid_features.mean_f0_hz);
-        println!("    Centroid Duration: {:.0} ms", pt.centroid_features.duration_ms);
+        println!(
+            "    Centroid Duration: {:.0} ms",
+            pt.centroid_features.duration_ms
+        );
         println!("    Intra-type variability: {:.4}", pt.intra_variability);
     }
     println!();
@@ -134,8 +149,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     println!("Step 4: Similarity Statistics...\n");
 
-    println!("  Average within-type similarity: {:.4}", result.avg_within_type_similarity);
-    println!("  Average between-type distance: {:.4}", result.avg_between_type_distance);
+    println!(
+        "  Average within-type similarity: {:.4}",
+        result.avg_within_type_similarity
+    );
+    println!(
+        "  Average between-type distance: {:.4}",
+        result.avg_between_type_distance
+    );
 
     let separation = if result.avg_within_type_similarity > 0.0 {
         result.avg_between_type_distance / (1.0 - result.avg_within_type_similarity)
@@ -150,10 +171,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     println!("Step 5: Phrase Sequence and Transitions...\n");
 
-    println!("  Phrase sequence: {} phrases total", result.phrase_sequence.len());
+    println!(
+        "  Phrase sequence: {} phrases total",
+        result.phrase_sequence.len()
+    );
     for (i, phrase_id) in result.phrase_sequence.iter().take(10).enumerate() {
         print!("  {} ", phrase_id.split('_').last().unwrap_or("?"));
-        if (i + 1) % 5 == 0 { println!(); }
+        if (i + 1) % 5 == 0 {
+            println!();
+        }
     }
     println!("\n");
 
@@ -190,8 +216,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 7: Compare Library Building Approaches...\n");
 
     // Standard approach (key-based grouping)
-    let standard_builder = ZooVoxLibraryBuilder::new()
-        .with_similarity_threshold(0.85);
+    let standard_builder = ZooVoxLibraryBuilder::new().with_similarity_threshold(0.85);
     let standard_library = standard_builder.build_library(phrases.clone(), "marmoset", None)?;
 
     println!("  Standard (Key-Based):");
@@ -221,12 +246,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("marmoset", "Harmonic encoding", 0.85),
     ];
 
-    println!("  {:<15} {:<25} {:<12}", "Species", "Encoding Type", "Sim Threshold");
+    println!(
+        "  {:<15} {:<25} {:<12}",
+        "Species", "Encoding Type", "Sim Threshold"
+    );
     println!("  {}", "-".repeat(55));
 
     for (species, encoding, threshold) in &species_configs {
         let config = WithinCallConfig::for_species(species);
-        println!("  {:<15} {:<25} {:.2}", species, encoding, config.similarity_threshold);
+        println!(
+            "  {:<15} {:<25} {:.2}",
+            species, encoding, config.similarity_threshold
+        );
     }
     println!();
 

@@ -16,10 +16,6 @@
 //! - Modulation Factors (3): Tilt, FM Slope, AM Depth
 //! - Non-Linear Factors (2): Subharmonic Ratio, Spectral Entropy
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -29,6 +25,7 @@ use std::io::{BufReader, BufWriter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 
@@ -154,7 +151,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Configuration:");
     println!("  ├─ Dataset: EarthSpeciesProject/BEANS-Zero");
     println!("  ├─ Total Samples: {}", total_samples);
-    println!("  ├─ Feature Dimension: {}D (30D base + 15D new)", FEATURE_DIM);
+    println!(
+        "  ├─ Feature Dimension: {}D (30D base + 15D new)",
+        FEATURE_DIM
+    );
     println!("  ├─ Similarity Threshold: 0.85");
     println!("  ├─ Distance Metric: Cosine");
     println!("  ├─ k-NN Values: [5, 10, 15]");
@@ -172,16 +172,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let extracted_results: Vec<Option<ExtractedSample>> = manifest.samples
+    let extracted_results: Vec<Option<ExtractedSample>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
             // Progress update
             let count = processed.fetch_add(1, Ordering::Relaxed);
             if count % 10000 == 0 {
-                println!("      Progress: {}/{} samples ({:.1}%)",
-                    count + 1, total_samples,
-                    (count + 1) as f64 / total_samples as f64 * 100.0);
+                println!(
+                    "      Progress: {}/{} samples ({:.1}%)",
+                    count + 1,
+                    total_samples,
+                    (count + 1) as f64 / total_samples as f64 * 100.0
+                );
             }
 
             // Load audio from raw file
@@ -200,7 +204,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut extractor = ZooVoxFeatureExtractor::new(entry.sample_rate);
             match extractor.extract_45d(&audio) {
                 Ok(features) => Some(ExtractedSample {
-                    sample_id: entry.id.clone().unwrap_or_else(|| format!("sample_{}", idx)),
+                    sample_id: entry
+                        .id
+                        .clone()
+                        .unwrap_or_else(|| format!("sample_{}", idx)),
                     features: features.to_vector().to_vec(),
                     source_dataset: entry.labels.source_dataset.clone(),
                     task: entry.labels.task.clone(),
@@ -214,9 +221,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_time = extraction_start.elapsed();
 
     // Filter valid samples
-    let valid_samples: Vec<_> = extracted_results.into_iter()
-        .filter_map(|s| s)
-        .collect();
+    let valid_samples: Vec<_> = extracted_results.into_iter().filter_map(|s| s).collect();
 
     let n_valid = valid_samples.len();
     let n_failed = total_samples - n_valid;
@@ -224,9 +229,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("Extraction Complete:");
     println!("  ├─ Valid Samples: {}", n_valid);
-    println!("  ├─ Failed Samples: {} ({:.1}%)", n_failed, n_failed as f64 / total_samples as f64 * 100.0);
+    println!(
+        "  ├─ Failed Samples: {} ({:.1}%)",
+        n_failed,
+        n_failed as f64 / total_samples as f64 * 100.0
+    );
     println!("  ├─ Time: {:.2}s", extraction_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} samples/sec", n_valid as f64 / extraction_time.as_secs_f64());
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        n_valid as f64 / extraction_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -239,19 +251,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let feature_names_45d = [
         // Base 30D features
-        "mean_f0_hz", "duration_ms", "f0_range_hz",
-        "harmonic_to_noise_ratio", "spectral_flatness", "harmonicity",
-        "attack_time_ms", "decay_time_ms", "sustain_level",
-        "vibrato_rate_hz", "vibrato_depth", "jitter", "shimmer",
-        "mfcc_1", "mfcc_2", "mfcc_3", "mfcc_4", "mfcc_5", "mfcc_6", "mfcc_7",
-        "mfcc_8", "mfcc_9", "mfcc_10", "mfcc_11", "mfcc_12", "mfcc_13",
-        "spectral_flux", "median_ici_ms", "onset_rate_hz", "ici_cv",
+        "mean_f0_hz",
+        "duration_ms",
+        "f0_range_hz",
+        "harmonic_to_noise_ratio",
+        "spectral_flatness",
+        "harmonicity",
+        "attack_time_ms",
+        "decay_time_ms",
+        "sustain_level",
+        "vibrato_rate_hz",
+        "vibrato_depth",
+        "jitter",
+        "shimmer",
+        "mfcc_1",
+        "mfcc_2",
+        "mfcc_3",
+        "mfcc_4",
+        "mfcc_5",
+        "mfcc_6",
+        "mfcc_7",
+        "mfcc_8",
+        "mfcc_9",
+        "mfcc_10",
+        "mfcc_11",
+        "mfcc_12",
+        "mfcc_13",
+        "spectral_flux",
+        "median_ici_ms",
+        "onset_rate_hz",
+        "ici_cv",
         // New 15D features
-        "formant_1_hz", "formant_2_hz", "formant_3_hz",
-        "formant_1_bandwidth", "formant_2_bandwidth", "formant_dispersion",
-        "spectral_centroid", "spectral_spread", "spectral_skewness", "spectral_kurtosis",
-        "spectral_tilt", "fm_slope_hz_per_sec", "am_depth",
-        "subharmonic_ratio", "spectral_entropy",
+        "formant_1_hz",
+        "formant_2_hz",
+        "formant_3_hz",
+        "formant_1_bandwidth",
+        "formant_2_bandwidth",
+        "formant_dispersion",
+        "spectral_centroid",
+        "spectral_spread",
+        "spectral_skewness",
+        "spectral_kurtosis",
+        "spectral_tilt",
+        "fm_slope_hz_per_sec",
+        "am_depth",
+        "subharmonic_ratio",
+        "spectral_entropy",
     ];
 
     let mut feature_mins = vec![f64::MAX; FEATURE_DIM];
@@ -261,8 +306,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for sample in &valid_samples {
         for (j, &val) in sample.features.iter().enumerate() {
-            if val < feature_mins[j] { feature_mins[j] = val; }
-            if val > feature_maxs[j] { feature_maxs[j] = val; }
+            if val < feature_mins[j] {
+                feature_mins[j] = val;
+            }
+            if val > feature_maxs[j] {
+                feature_maxs[j] = val;
+            }
             feature_sums[j] += val;
             feature_sq_sums[j] += val * val;
         }
@@ -273,8 +322,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut feature_stds = HashMap::new();
 
     for (i, name) in feature_names_45d.iter().enumerate() {
-        let min = if feature_mins[i] == f64::MAX { 0.0 } else { feature_mins[i] };
-        let max = if feature_maxs[i] == f64::MIN { 0.0 } else { feature_maxs[i] };
+        let min = if feature_mins[i] == f64::MAX {
+            0.0
+        } else {
+            feature_mins[i]
+        };
+        let max = if feature_maxs[i] == f64::MIN {
+            0.0
+        } else {
+            feature_maxs[i]
+        };
         let mean = feature_sums[i] / n_valid as f64;
         let variance = feature_sq_sums[i] / n_valid as f64 - mean * mean;
         let std = variance.sqrt().max(0.0);
@@ -301,7 +358,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Feature Statistics (selected):");
     println!("  Base 30D Variance: {:.2}", base_30d_variance);
     println!("  New 15D Variance: {:.2}", new_15d_variance);
-    println!("  New Features Variance Explained: {:.1}%", new_features_variance_explained * 100.0);
+    println!(
+        "  New Features Variance Explained: {:.1}%",
+        new_features_variance_explained * 100.0
+    );
     println!();
 
     println!("New 15D Feature Ranges:");
@@ -310,7 +370,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (min, max) = feature_ranges[name];
         let mean = feature_means[name];
         let std = feature_stds[name];
-        println!("  ├─ {}: [{:.2}, {:.2}] μ={:.2} σ={:.2}", name, min, max, mean, std);
+        println!(
+            "  ├─ {}: [{:.2}, {:.2}] μ={:.2} σ={:.2}",
+            name, min, max, mean, std
+        );
     }
     println!();
 
@@ -333,20 +396,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Clustering Complete:");
     println!("  ├─ Clusters Found: {}", n_clusters);
     println!("  ├─ Time: {:.2}s", analysis_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} samples/sec", n_valid as f64 / analysis_time.as_secs_f64());
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        n_valid as f64 / analysis_time.as_secs_f64()
+    );
     println!();
 
     // Compute cluster statistics
     let cluster_sizes: Vec<usize> = clusters.iter().map(|c| c.count).collect();
     let largest_cluster = cluster_sizes.iter().max().copied().unwrap_or(0);
     let smallest_cluster = cluster_sizes.iter().min().copied().unwrap_or(0);
-    let avg_cluster_size = cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len().max(1) as f64;
+    let avg_cluster_size =
+        cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len().max(1) as f64;
 
     // Compute cluster entropy
-    let cluster_entropy: f64 = clusters.iter()
+    let cluster_entropy: f64 = clusters
+        .iter()
         .map(|c| {
             let p = c.count as f64 / n_valid as f64;
-            if p > 0.0 { -p * p.log2() } else { 0.0 }
+            if p > 0.0 {
+                -p * p.log2()
+            } else {
+                0.0
+            }
         })
         .sum();
 
@@ -410,7 +482,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut task_distribution: HashMap<String, usize> = HashMap::new();
 
     for sample in &valid_samples {
-        *source_dataset_distribution.entry(sample.source_dataset.clone()).or_insert(0) += 1;
+        *source_dataset_distribution
+            .entry(sample.source_dataset.clone())
+            .or_insert(0) += 1;
         *task_distribution.entry(sample.task.clone()).or_insert(0) += 1;
     }
 
@@ -451,13 +525,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Features: 45D (30D base + 15D new)");
-    println!("  ├─ New Features Variance Explained: {:.1}%", new_features_variance_explained * 100.0);
-    println!("  └─ Feature Extraction: {:.1} samples/sec", n_valid as f64 / extraction_time.as_secs_f64());
+    println!(
+        "  ├─ New Features Variance Explained: {:.1}%",
+        new_features_variance_explained * 100.0
+    );
+    println!(
+        "  └─ Feature Extraction: {:.1} samples/sec",
+        n_valid as f64 / extraction_time.as_secs_f64()
+    );
     println!();
 
     println!("Performance:");
-    println!("  ├─ Total Time: {:.1}s ({:.1} min)", total_time.as_secs_f64(), total_time.as_secs_f64() / 60.0);
-    println!("  ├─ Extraction Time: {:.1}s", extraction_time.as_secs_f64());
+    println!(
+        "  ├─ Total Time: {:.1}s ({:.1} min)",
+        total_time.as_secs_f64(),
+        total_time.as_secs_f64() / 60.0
+    );
+    println!(
+        "  ├─ Extraction Time: {:.1}s",
+        extraction_time.as_secs_f64()
+    );
     println!("  └─ Analysis Time: {:.1}s", analysis_time.as_secs_f64());
     println!();
 
@@ -542,10 +629,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
-    let audio: Vec<f64> = bytes.chunks_exact(4)
+    let audio: Vec<f64> = bytes
+        .chunks_exact(4)
         .take(expected_samples)
         .map(|chunk| {
             let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
@@ -569,9 +660,7 @@ fn build_clusters_streaming(
     let n = samples.len();
 
     // Create feature matrix for fitting
-    let _features_matrix: Vec<Vec<f64>> = samples.iter()
-        .map(|s| s.features.clone())
-        .collect();
+    let _features_matrix: Vec<Vec<f64>> = samples.iter().map(|s| s.features.clone()).collect();
 
     // Create and fit similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
@@ -611,8 +700,13 @@ fn build_clusters_streaming(
             // Add to existing cluster (update centroid incrementally)
             let n_in_cluster = clusters[cluster_idx].count + 1;
             clusters[cluster_idx].count = n_in_cluster;
-            clusters[cluster_idx].sample_ids.push(sample.sample_id.clone());
-            *clusters[cluster_idx].source_datasets.entry(sample.source_dataset.clone()).or_insert(0) += 1;
+            clusters[cluster_idx]
+                .sample_ids
+                .push(sample.sample_id.clone());
+            *clusters[cluster_idx]
+                .source_datasets
+                .entry(sample.source_dataset.clone())
+                .or_insert(0) += 1;
 
             // Incremental centroid update
             for (j, &val) in sample.features.iter().enumerate() {
@@ -634,14 +728,23 @@ fn build_clusters_streaming(
         }
 
         if (i + 1) % 20000 == 0 {
-            println!("      Progress: {}/{} samples, {} clusters", i + 1, n, clusters.len());
+            println!(
+                "      Progress: {}/{} samples, {} clusters",
+                i + 1,
+                n,
+                clusters.len()
+            );
         }
     }
 
     // Sort by count
     clusters.sort_by(|a, b| b.count.cmp(&a.count));
 
-    println!("      Discovered {} clusters from {} samples", clusters.len(), n);
+    println!(
+        "      Discovered {} clusters from {} samples",
+        clusters.len(),
+        n
+    );
     clusters
 }
 
@@ -686,7 +789,11 @@ fn compute_similarity_metrics(
         }
     }
 
-    let avg_intra_sim = if intra_count > 0 { intra_sim_sum / intra_count as f64 } else { 0.0 };
+    let avg_intra_sim = if intra_count > 0 {
+        intra_sim_sum / intra_count as f64
+    } else {
+        0.0
+    };
 
     // Compute inter-cluster distance (between centroids)
     let mut inter_dist_sum = 0.0;
@@ -701,7 +808,11 @@ fn compute_similarity_metrics(
         }
     }
 
-    let avg_inter_dist = if inter_count > 0 { inter_dist_sum / inter_count as f64 } else { 0.0 };
+    let avg_inter_dist = if inter_count > 0 {
+        inter_dist_sum / inter_count as f64
+    } else {
+        0.0
+    };
 
     // Silhouette approximation: (inter - intra) / max(inter, intra)
     let silhouette = if avg_inter_dist > 0.0 || avg_intra_sim > 0.0 {
@@ -755,10 +866,13 @@ fn compute_knn_accuracy(samples: &[ExtractedSample], k: usize) -> f64 {
         // Vote among top k
         let mut dataset_counts: HashMap<&str, usize> = HashMap::new();
         for (idx, _) in distances.iter().take(k) {
-            *dataset_counts.entry(&samples[*idx].source_dataset).or_insert(0) += 1;
+            *dataset_counts
+                .entry(&samples[*idx].source_dataset)
+                .or_insert(0) += 1;
         }
 
-        let predicted = dataset_counts.iter()
+        let predicted = dataset_counts
+            .iter()
             .max_by_key(|(_, &c)| c)
             .map(|(d, _)| *d);
 

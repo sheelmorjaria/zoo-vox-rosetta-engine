@@ -174,13 +174,13 @@ impl HierarchicalThresholds {
     pub fn bat() -> Self {
         Self {
             // Bats: events happen ~3x faster due to ultrasonic sample rate
-            motif_min_ms: 100.0,   // Multi-syllable sequences
+            motif_min_ms: 100.0, // Multi-syllable sequences
             motif_max_ms: 400.0,
             motif_change_threshold: 0.40,
-            syllable_min_ms: 15.0,  // ATOMIC LEVEL for bats
+            syllable_min_ms: 15.0, // ATOMIC LEVEL for bats
             syllable_max_ms: 100.0,
             syllable_change_threshold: 0.28,
-            note_min_ms: 5.0,       // FM sweep components
+            note_min_ms: 5.0, // FM sweep components
             note_max_ms: 40.0,
             note_change_threshold: 0.20,
             tempo_factor: 0.3,
@@ -321,20 +321,20 @@ impl FeatureWeights {
     /// Create weights optimized for dolphin whistles (FM contours)
     pub fn dolphin() -> Self {
         Self {
-            spectral: 1.5,        // Important for whistle frequency
-            harmonic: 0.5,        // Less harmonic content
+            spectral: 1.5, // Important for whistle frequency
+            harmonic: 0.5, // Less harmonic content
             temporal: 1.0,
-            modulation: 2.5,      // FM slope is CRITICAL for whistles
+            modulation: 2.5, // FM slope is CRITICAL for whistles
             cepstral: 0.8,
-            formant: 0.5,         // Not relevant for dolphins
-            micro_dynamics: 0.5,  // Long contours, less micro-structure
-            psychoacoustic: 1.2,  // Pitch perception important
+            formant: 0.5,        // Not relevant for dolphins
+            micro_dynamics: 0.5, // Long contours, less micro-structure
+            psychoacoustic: 1.2, // Pitch perception important
             tfs: 0.8,
             overrides: vec![
-                (18, 3.0),  // D18: fm_slope - highest weight for whistle contours
-                (17, 2.0),  // D17: fm_rate - FM rate important
-                (0, 1.8),   // D0: spectral_centroid - frequency tracking
-                (12, 1.5),  // D12: attack - onset of whistle
+                (18, 3.0), // D18: fm_slope - highest weight for whistle contours
+                (17, 2.0), // D17: fm_rate - FM rate important
+                (0, 1.8),  // D0: spectral_centroid - frequency tracking
+                (12, 1.5), // D12: attack - onset of whistle
             ],
         }
     }
@@ -342,21 +342,21 @@ impl FeatureWeights {
     /// Create weights optimized for macaque coos (fine spectral discrimination)
     pub fn macaque() -> Self {
         Self {
-            spectral: 2.0,        // Fine spectral discrimination needed
-            harmonic: 1.5,        // Harmonic structure in coos
+            spectral: 2.0, // Fine spectral discrimination needed
+            harmonic: 1.5, // Harmonic structure in coos
             temporal: 1.2,
             modulation: 0.8,
-            cepstral: 1.8,        // Good for voice quality
-            formant: 2.0,         // Formants carry information
+            cepstral: 1.8, // Good for voice quality
+            formant: 2.0,  // Formants carry information
             micro_dynamics: 1.0,
-            psychoacoustic: 1.5,  // Pitch perception
+            psychoacoustic: 1.5, // Pitch perception
             tfs: 1.2,
             overrides: vec![
-                (3, 2.0),   // D3: spectral_kurtosis - fine discrimination
-                (4, 1.8),   // D4: spectral_tilt - voice quality
-                (25, 1.8),  // D25: f1 (first formant)
-                (26, 1.8),  // D26: f2 (second formant)
-                (5, 1.5),   // D5: f0 - fundamental frequency
+                (3, 2.0),  // D3: spectral_kurtosis - fine discrimination
+                (4, 1.8),  // D4: spectral_tilt - voice quality
+                (25, 1.8), // D25: f1 (first formant)
+                (26, 1.8), // D26: f2 (second formant)
+                (5, 1.5),  // D5: f0 - fundamental frequency
             ],
         }
     }
@@ -364,21 +364,21 @@ impl FeatureWeights {
     /// Create weights optimized for Egyptian fruit bats (ultrasonic FM sweeps)
     pub fn bat() -> Self {
         Self {
-            spectral: 1.8,        // High-frequency content
-            harmonic: 1.2,        // Some harmonic structure
-            temporal: 1.5,        // Timing critical for echolocation
-            modulation: 2.0,      // FM sweeps are key
+            spectral: 1.8,   // High-frequency content
+            harmonic: 1.2,   // Some harmonic structure
+            temporal: 1.5,   // Timing critical for echolocation
+            modulation: 2.0, // FM sweeps are key
             cepstral: 0.8,
-            formant: 0.3,         // Not relevant for ultrasonic
-            micro_dynamics: 2.0,  // Rapid changes in echolocation calls
+            formant: 0.3,        // Not relevant for ultrasonic
+            micro_dynamics: 2.0, // Rapid changes in echolocation calls
             psychoacoustic: 0.8,
-            tfs: 1.5,             // Fine timing for echolocation
+            tfs: 1.5, // Fine timing for echolocation
             overrides: vec![
-                (18, 2.5),  // D18: fm_slope - FM sweep direction
-                (13, 2.0),  // D13: decay - call termination
-                (14, 1.8),  // D14: sustain - call duration
-                (30, 1.8),  // D30: onset_rate - rapid call sequences
-                (33, 1.5),  // D33: burst_rate - echolocation pattern
+                (18, 2.5), // D18: fm_slope - FM sweep direction
+                (13, 2.0), // D13: decay - call termination
+                (14, 1.8), // D14: sustain - call duration
+                (30, 1.8), // D30: onset_rate - rapid call sequences
+                (33, 1.5), // D33: burst_rate - echolocation pattern
             ],
         }
     }
@@ -386,20 +386,20 @@ impl FeatureWeights {
     /// Create weights optimized for zebra finch song (combinatorial syntax)
     pub fn zebra_finch() -> Self {
         Self {
-            spectral: 1.2,        // Moderate spectral importance
-            harmonic: 1.8,        // Harmonic stack structure in song
-            temporal: 1.5,        // Syllable timing important
+            spectral: 1.2, // Moderate spectral importance
+            harmonic: 1.8, // Harmonic stack structure in song
+            temporal: 1.5, // Syllable timing important
             modulation: 1.0,
             cepstral: 1.2,
             formant: 0.8,
-            micro_dynamics: 1.5,  // Syllable transitions
+            micro_dynamics: 1.5, // Syllable transitions
             psychoacoustic: 1.0,
-            tfs: 1.3,             // Temporal fine structure for song
+            tfs: 1.3, // Temporal fine structure for song
             overrides: vec![
-                (5, 1.8),   // D5: f0 - pitch of syllables
-                (10, 1.5),  // D10: rms - amplitude envelope
-                (12, 1.5),  // D12: attack - syllable onset
-                (31, 1.5),  // D31: median_ici - inter-call interval
+                (5, 1.8),  // D5: f0 - pitch of syllables
+                (10, 1.5), // D10: rms - amplitude envelope
+                (12, 1.5), // D12: attack - syllable onset
+                (31, 1.5), // D31: median_ici - inter-call interval
             ],
         }
     }
@@ -407,20 +407,20 @@ impl FeatureWeights {
     /// Create weights optimized for marmoset phee calls (discrete types)
     pub fn marmoset() -> Self {
         Self {
-            spectral: 1.5,        // Spectral shape distinguishes call types
-            harmonic: 1.3,        // Harmonic structure in phee calls
+            spectral: 1.5, // Spectral shape distinguishes call types
+            harmonic: 1.3, // Harmonic structure in phee calls
             temporal: 1.2,
             modulation: 1.0,
             cepstral: 1.0,
-            formant: 1.2,         // Formants in primate vocalizations
+            formant: 1.2, // Formants in primate vocalizations
             micro_dynamics: 1.0,
             psychoacoustic: 1.2,
             tfs: 1.0,
             overrides: vec![
-                (0, 1.5),   // D0: spectral_centroid - frequency center
-                (5, 1.3),   // D5: f0 - fundamental
-                (25, 1.3),  // D25: f1 - first formant
-                (14, 1.2),  // D14: sustain - call length
+                (0, 1.5),  // D0: spectral_centroid - frequency center
+                (5, 1.3),  // D5: f0 - fundamental
+                (25, 1.3), // D25: f1 - first formant
+                (14, 1.2), // D14: sustain - call length
             ],
         }
     }
@@ -428,21 +428,21 @@ impl FeatureWeights {
     /// Create weights optimized for sperm whale codas (rhythm patterns)
     pub fn sperm_whale() -> Self {
         Self {
-            spectral: 0.8,        // Less spectral variation
-            harmonic: 0.5,        // Clicks are broadband
-            temporal: 2.5,        // TIMING IS EVERYTHING for codas
+            spectral: 0.8, // Less spectral variation
+            harmonic: 0.5, // Clicks are broadband
+            temporal: 2.5, // TIMING IS EVERYTHING for codas
             modulation: 0.5,
             cepstral: 0.8,
             formant: 0.3,
-            micro_dynamics: 2.0,  // Click patterns
+            micro_dynamics: 2.0, // Click patterns
             psychoacoustic: 0.8,
-            tfs: 1.8,             // Temporal structure critical
+            tfs: 1.8, // Temporal structure critical
             overrides: vec![
-                (30, 2.5),  // D30: onset_rate - click rate
-                (31, 2.5),  // D31: median_ici - inter-click interval
-                (32, 2.0),  // D32: ici_cv - rhythm variation
-                (43, 2.0),  // D43: periodicity - rhythmic pattern
-                (44, 1.8),  // D44: entropy - pattern regularity
+                (30, 2.5), // D30: onset_rate - click rate
+                (31, 2.5), // D31: median_ici - inter-click interval
+                (32, 2.0), // D32: ici_cv - rhythm variation
+                (43, 2.0), // D43: periodicity - rhythmic pattern
+                (44, 1.8), // D44: entropy - pattern regularity
             ],
         }
     }
@@ -450,19 +450,19 @@ impl FeatureWeights {
     /// Create weights optimized for orca calls (hybrid tonal/pulsed)
     pub fn orca() -> Self {
         Self {
-            spectral: 1.5,        // Both tonal and pulsed calls
+            spectral: 1.5, // Both tonal and pulsed calls
             harmonic: 1.2,
-            temporal: 1.5,        // Call timing
-            modulation: 1.8,      // FM in tonal calls
+            temporal: 1.5,   // Call timing
+            modulation: 1.8, // FM in tonal calls
             cepstral: 1.0,
             formant: 0.8,
-            micro_dynamics: 1.5,  // Pulsed call patterns
+            micro_dynamics: 1.5, // Pulsed call patterns
             psychoacoustic: 1.2,
             tfs: 1.3,
             overrides: vec![
-                (18, 2.0),  // D18: fm_slope - FM in tonal calls
-                (0, 1.5),   // D0: spectral_centroid
-                (30, 1.5),  // D30: onset_rate - pulsed patterns
+                (18, 2.0), // D18: fm_slope - FM in tonal calls
+                (0, 1.5),  // D0: spectral_centroid
+                (30, 1.5), // D30: onset_rate - pulsed patterns
             ],
         }
     }
@@ -472,7 +472,7 @@ impl FeatureWeights {
         Self {
             spectral: 1.3,
             harmonic: 1.0,
-            temporal: 2.0,        // Call count and timing
+            temporal: 2.0, // Call count and timing
             modulation: 1.0,
             cepstral: 0.8,
             formant: 1.0,
@@ -480,9 +480,9 @@ impl FeatureWeights {
             psychoacoustic: 1.0,
             tfs: 1.2,
             overrides: vec![
-                (10, 1.8),  // D10: rms - call amplitude
-                (30, 1.8),  // D30: onset_rate - call rate
-                (12, 1.5),  // D12: attack - urgency
+                (10, 1.8), // D10: rms - call amplitude
+                (30, 1.8), // D30: onset_rate - call rate
+                (12, 1.5), // D12: attack - urgency
             ],
         }
     }
@@ -944,7 +944,10 @@ mod tests {
         let config = SpeciesConfigFactory::create("dolphin");
 
         assert_eq!(config.species(), "Dolphin");
-        assert_eq!(config.encoding_strategy(), EncodingStrategy::FrequencyModulated);
+        assert_eq!(
+            config.encoding_strategy(),
+            EncodingStrategy::FrequencyModulated
+        );
         assert_eq!(config.modality(), AnalysisModality::Spectral);
         assert!(config.requires_module(AnalysisModule::Spectral));
     }

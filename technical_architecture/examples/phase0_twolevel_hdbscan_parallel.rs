@@ -10,35 +10,35 @@
 //   - Incremental checkpointing for resume capability
 //   - Full timestamp tracking for audio extraction
 
+use rayon::prelude::*;
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use rayon::prelude::*;
 use symphonia::core::audio::AudioBufferRef;
-use symphonia::core::codecs::{CODEC_TYPE_NULL, DecoderOptions};
+use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
 use ndarray::Array2;
-use technical_architecture::hdbscan::{HdbscanClustering, DistanceMetric};
+use serde::{Deserialize, Serialize};
+use technical_architecture::hdbscan::{DistanceMetric, HdbscanClustering};
 use technical_architecture::micro_dynamics_extractor::MicroDynamicsExtractor;
 use technical_architecture::pitch::YinEstimator;
-use serde::{Deserialize, Serialize};
 
 // =============================================================================
 // Configuration
 // =============================================================================
 
-const FRAME_SIZE_MS: usize = 25;      // 25ms frames (typical for speech processing)
-const FRAME_SHIFT_MS: usize = 10;     // 10ms shift (75% overlap)
-const MIN_PHRASE_DURATION_MS: usize = 30;  // Minimum phrase duration (lowered for more discovery)
-const BATCH_SIZE: usize = 100;         // Files per batch
+const FRAME_SIZE_MS: usize = 25; // 25ms frames (typical for speech processing)
+const FRAME_SHIFT_MS: usize = 10; // 10ms shift (75% overlap)
+const MIN_PHRASE_DURATION_MS: usize = 30; // Minimum phrase duration (lowered for more discovery)
+const BATCH_SIZE: usize = 100; // Files per batch
 
 // Level 2 HDBSCAN: Cross-vocalization vocabulary
-const LEVEL2_MIN_CLUSTER_SIZE: usize = 5;   // Minimum phrases per vocabulary item
-const LEVEL2_MIN_SAMPLES: usize = 3;        // Density threshold for vocabulary
+const LEVEL2_MIN_CLUSTER_SIZE: usize = 5; // Minimum phrases per vocabulary item
+const LEVEL2_MIN_SAMPLES: usize = 3; // Density threshold for vocabulary
 
 // =============================================================================
 // Data Structures with Full Timestamp Info
@@ -49,7 +49,7 @@ struct FrameFeatures {
     frame_index: usize,
     start_time_ms: f64,
     duration_ms: f64,
-    features: Vec<f64>,  // Multi-dimensional acoustic features
+    features: Vec<f64>, // Multi-dimensional acoustic features
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,12 +60,12 @@ struct PhraseSegment {
     start_time_ms: f64,
     end_time_ms: f64,
     duration_ms: f64,
-    start_sample: usize,  // For audio extraction
-    end_sample: usize,    // For audio extraction
-    sample_rate: u32,     // For audio extraction
+    start_sample: usize, // For audio extraction
+    end_sample: usize,   // For audio extraction
+    sample_rate: u32,    // For audio extraction
     frame_indices: Vec<usize>,
     level1_cluster_id: i32,
-    representative_features: Vec<f64>,  // Aggregated features for this phrase
+    representative_features: Vec<f64>, // Aggregated features for this phrase
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,26 +98,23 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
     let meta_opts: MetadataOptions = Default::default();
     let fmt_opts: FormatOptions = Default::default();
 
-    let probed = symphonia::default::get_probe().format(
-        &hint,
-        src,
-        &fmt_opts,
-        &meta_opts
-    )?;
+    let probed = symphonia::default::get_probe().format(&hint, src, &fmt_opts, &meta_opts)?;
 
     let mut format = probed.format;
 
-    let track = format.tracks()
+    let track = format
+        .tracks()
         .iter()
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
     let track_id = track.id;
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
-    let sample_rate = track.codec_params
+    let sample_rate = track
+        .codec_params
         .sample_rate
         .ok_or("Missing sample rate")?;
 
@@ -128,7 +125,10 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
             Ok(packet) => packet,
             Err(symphonia::core::errors::Error::ResetRequired) => continue,
             Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break
+            }
             Err(e) => return Err(format!("Failed to read packet: {}", e).into()),
         };
 
@@ -151,7 +151,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / 32768.0).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / 32768.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -159,7 +160,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U8(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -167,7 +169,10 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 32768.0) / 32768.0).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|&s| (s as f32 - 32768.0) / 32768.0)
+                                .collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -175,7 +180,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S32(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -207,10 +213,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
 // Frame-Level Feature Extraction
 // =============================================================================
 
-fn extract_frame_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Vec<FrameFeatures> {
+fn extract_frame_features(audio: &[f32], sample_rate: u32) -> Vec<FrameFeatures> {
     let frame_size_samples = (sample_rate as usize * FRAME_SIZE_MS) / 1000;
     let frame_shift_samples = (sample_rate as usize * FRAME_SHIFT_MS) / 1000;
 
@@ -246,12 +249,10 @@ fn compute_frame_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
 
     // 1. Energy (RMS)
     let rms = (audio.iter().map(|&x| (x * x) as f64).sum::<f64>() / audio.len() as f64).sqrt();
-    features.push(rms.ln_1p());  // Log-scale
+    features.push(rms.ln_1p()); // Log-scale
 
     // 2. Zero Crossing Rate
-    let zcr = audio.windows(2)
-        .filter(|w| w[0] * w[1] < 0.0)
-        .count() as f64 / audio.len() as f64;
+    let zcr = audio.windows(2).filter(|w| w[0] * w[1] < 0.0).count() as f64 / audio.len() as f64;
     features.push(zcr);
 
     // 3. Spectral features
@@ -274,10 +275,10 @@ fn compute_frame_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
     // 4. Pitch-related features
     if let Some(pitch) = estimate_pitch(audio, sample_rate) {
         features.push(pitch);
-        features.push(1.0);  // Pitch confidence
+        features.push(1.0); // Pitch confidence
     } else {
-        features.push(0.0);  // No pitch detected
-        features.push(0.0);  // Zero confidence
+        features.push(0.0); // No pitch detected
+        features.push(0.0); // Zero confidence
     }
 
     // Pad to 20D (frame-level features for segmentation only)
@@ -299,7 +300,7 @@ fn compute_spectrum(audio: &[f32]) -> Result<Vec<f64>, Box<dyn std::error::Error
         windowed[i] = sample as f64 * hann;
     }
 
-    for k in 0..n/2 {
+    for k in 0..n / 2 {
         let mut real = 0.0;
         let mut imag = 0.0;
         for (i, &sample) in windowed.iter().enumerate() {
@@ -450,7 +451,10 @@ fn segment_by_energy(frames: &[FrameFeatures], sample_rate: u32) -> Vec<usize> {
     // Find local minima as potential boundaries
     for i in 2..smoothed.len().saturating_sub(2) {
         let prev_avg = smoothed[i - 2..i].iter().sum::<f64>() / 3.0;
-        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)].iter().sum::<f64>() / 3.0;
+        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)]
+            .iter()
+            .sum::<f64>()
+            / 3.0;
         let current = smoothed[i];
 
         if current < prev_avg * 0.5 && current < next_avg * 0.5 {
@@ -488,17 +492,19 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
             let mean_before = before.iter().sum::<f64>() / before.len() as f64;
             let mean_after = after.iter().sum::<f64>() / after.len() as f64;
 
-            let var_before = before.iter()
+            let var_before = before
+                .iter()
                 .map(|&x| (x - mean_before).powi(2))
-                .sum::<f64>() / before.len() as f64;
-            let var_after = after.iter()
-                .map(|&x| (x - mean_after).powi(2))
-                .sum::<f64>() / after.len() as f64;
+                .sum::<f64>()
+                / before.len() as f64;
+            let var_after =
+                after.iter().map(|&x| (x - mean_after).powi(2)).sum::<f64>() / after.len() as f64;
 
             let pooled_std = ((var_before + var_after) / 2.0).sqrt();
             if pooled_std > 0.001 {
                 let z_score = (mean_after - mean_before).abs() / pooled_std;
-                if z_score > 2.0 { // Lowered threshold for more boundaries
+                if z_score > 2.0 {
+                    // Lowered threshold for more boundaries
                     significant_change = true;
                     break;
                 }
@@ -515,14 +521,12 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
     boundaries
 }
 
-fn combine_segmentation_methods(
-    frames: &[FrameFeatures],
-    sample_rate: u32,
-) -> Vec<(usize, usize)> {
+fn combine_segmentation_methods(frames: &[FrameFeatures], sample_rate: u32) -> Vec<(usize, usize)> {
     let energy_bounds = segment_by_energy(frames, sample_rate);
     let change_bounds = segment_by_change_point(frames);
 
-    let mut combined: Vec<usize> = energy_bounds.into_iter()
+    let mut combined: Vec<usize> = energy_bounds
+        .into_iter()
         .chain(change_bounds.into_iter())
         .collect();
 
@@ -533,7 +537,10 @@ fn combine_segmentation_methods(
     let min_spacing = 10;
     let mut filtered = Vec::new();
     for boundary in combined {
-        if filtered.last().map_or(true, |&last| boundary - last >= min_spacing) {
+        if filtered
+            .last()
+            .map_or(true, |&last| boundary - last >= min_spacing)
+        {
             filtered.push(boundary);
         }
     }
@@ -561,7 +568,8 @@ fn process_single_vocalization(
     file_idx: usize,
     file_path: &Path,
 ) -> Result<Vec<PhraseSegment>, Box<dyn std::error::Error>> {
-    let file_name = file_path.file_name()
+    let file_name = file_path
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown.wav");
 
@@ -624,9 +632,9 @@ fn process_single_vocalization(
                     *feat /= frame_indices.len().max(1) as f64;
                 }
                 // Pad remaining dimensions with defaults
-                fallback[0] = 7000.0;  // mean_f0_hz
-                fallback[1] = 400.0;   // f0_range_hz
-                fallback[2] = duration_ms;  // duration_ms
+                fallback[0] = 7000.0; // mean_f0_hz
+                fallback[1] = 400.0; // f0_range_hz
+                fallback[2] = duration_ms; // duration_ms
                 fallback
             }
         };
@@ -708,14 +716,14 @@ fn estimate_f0_from_audio(audio: &[f32], sample_rate: u32) -> f32 {
     if confidence > 0.3 && f0 > 0.0 {
         f0
     } else {
-        7000.0  // Default bat F0 if no clear pitch detected
+        7000.0 // Default bat F0 if no clear pitch detected
     }
 }
 
 /// Estimate F0 range from audio (min to max) using YIN
 fn estimate_f0_range_from_audio(audio: &[f32], sample_rate: u32) -> f32 {
     // Split into windows and estimate F0 for each using YIN
-    let window_size = (sample_rate as usize * 10) / 1000;  // 10ms windows
+    let window_size = (sample_rate as usize * 10) / 1000; // 10ms windows
     let mut f0_values = Vec::new();
 
     let yin = YinEstimator::with_range(sample_rate, 5000.0, 15000.0);
@@ -729,7 +737,7 @@ fn estimate_f0_range_from_audio(audio: &[f32], sample_rate: u32) -> f32 {
     }
 
     if f0_values.is_empty() {
-        return 400.0;  // Default F0 range
+        return 400.0; // Default F0 range
     }
 
     let min_f0 = f0_values.iter().fold(f32::INFINITY, |a, &b| a.min(b));
@@ -751,7 +759,9 @@ fn save_checkpoint(
     Ok(())
 }
 
-fn load_checkpoint(results_dir: &Path) -> Result<Option<ProcessingCheckpoint>, Box<dyn std::error::Error>> {
+fn load_checkpoint(
+    results_dir: &Path,
+) -> Result<Option<ProcessingCheckpoint>, Box<dyn std::error::Error>> {
     let checkpoint_path = results_dir.join("checkpoint.json");
     if !checkpoint_path.exists() {
         return Ok(None);
@@ -765,7 +775,10 @@ fn load_checkpoint(results_dir: &Path) -> Result<Option<ProcessingCheckpoint>, B
 fn load_existing_segments(results_dir: &Path) -> Vec<PhraseSegment> {
     match load_checkpoint(results_dir) {
         Ok(Some(checkpoint)) => {
-            println!("   📂 Found checkpoint: {} files completed", checkpoint.completed_files);
+            println!(
+                "   📂 Found checkpoint: {} files completed",
+                checkpoint.completed_files
+            );
             checkpoint.all_segments
         }
         _ => vec![],
@@ -785,7 +798,10 @@ fn build_vocabulary(
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    println!("   📊 Total phrase segments from all vocalizations: {}", all_segments.len());
+    println!(
+        "   📊 Total phrase segments from all vocalizations: {}",
+        all_segments.len()
+    );
 
     if all_segments.is_empty() {
         println!("   ⚠ No phrase segments found!");
@@ -795,7 +811,10 @@ fn build_vocabulary(
     let n_segments = all_segments.len();
     let n_features = all_segments[0].representative_features.len();
 
-    println!("   📊 Feature dimensions: {} segments × {}D features", n_segments, n_features);
+    println!(
+        "   📊 Feature dimensions: {} segments × {}D features",
+        n_segments, n_features
+    );
 
     let mut flat_features = Vec::with_capacity(n_segments * n_features);
     for segment in all_segments {
@@ -813,11 +832,15 @@ fn build_vocabulary(
     println!("   ✅ Vocabulary built in {:.2}s", vocab_time.as_secs_f64());
 
     // Group segments by cluster
-    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> = std::collections::HashMap::new();
+    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> =
+        std::collections::HashMap::new();
 
     for (segment_idx, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            cluster_map.entry(label).or_insert_with(Vec::new).push(&all_segments[segment_idx]);
+            cluster_map
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(&all_segments[segment_idx]);
         }
     }
 
@@ -832,9 +855,11 @@ fn build_vocabulary(
 
         let durations: Vec<f64> = segments.iter().map(|s| s.duration_ms).collect();
         let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
-        let variance = durations.iter()
+        let variance = durations
+            .iter()
             .map(|&d| (d - avg_duration).powi(2))
-            .sum::<f64>() / durations.len() as f64;
+            .sum::<f64>()
+            / durations.len() as f64;
         let std_duration = variance.sqrt();
 
         vocabulary.push(VocabularyItem {
@@ -871,11 +896,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let data_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats");
     // Use test directory for initial testing - comment out to use full dataset
-    let audio_dir = if Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio_test").exists() {
-        data_dir.join("audio_test")
-    } else {
-        data_dir.join("audio")
-    };
+    let audio_dir =
+        if Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio_test").exists() {
+            data_dir.join("audio_test")
+        } else {
+            data_dir.join("audio")
+        };
     let results_dir = data_dir.join("phase0_twolevel_hdbscan_results");
 
     fs::create_dir_all(&results_dir)?;
@@ -883,7 +909,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Discover WAV files
     let mut wav_files: Vec<_> = fs::read_dir(&audio_dir)?
         .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().extension().map(|e| e == "wav").unwrap_or(false))
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .map(|e| e == "wav")
+                .unwrap_or(false)
+        })
         .map(|entry| entry.path())
         .collect();
 
@@ -927,7 +959,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("   🏗️  Aggressive Segmentation Configuration:");
     println!("      ├─ Methods: Energy-based + Change-point detection");
-    println!("      ├─ Frame size: {}ms, Frame shift: {}ms", FRAME_SIZE_MS, FRAME_SHIFT_MS);
+    println!(
+        "      ├─ Frame size: {}ms, Frame shift: {}ms",
+        FRAME_SIZE_MS, FRAME_SHIFT_MS
+    );
     println!("      ├─ Min phrase duration: {}ms", MIN_PHRASE_DURATION_MS);
     println!("      ├─ Batch size: {} files", BATCH_SIZE);
     println!("      └─ Energy threshold: 50% drop, Z-score > 2.0");
@@ -944,8 +979,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let batch_end = (batch_start + BATCH_SIZE).min(wav_files.len());
         let batch_files: Vec<_> = wav_files[batch_start..batch_end].to_vec();
 
-        println!("   🔄 Batch {}/{} (files {}-{})...",
-                 batch_idx + 1, total_batches, batch_start, batch_end - 1);
+        println!(
+            "   🔄 Batch {}/{} (files {}-{})...",
+            batch_idx + 1,
+            total_batches,
+            batch_start,
+            batch_end - 1
+        );
 
         // Process batch in parallel
         let batch_segments: Vec<Vec<PhraseSegment>> = batch_files
@@ -953,11 +993,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .enumerate()
             .map(|(local_idx, file_path)| {
                 let file_idx = batch_start + local_idx;
-                process_single_vocalization(file_idx, file_path)
-                    .unwrap_or_else(|e| {
-                        eprintln!("        ⚠ Failed to process {:?}: {}", file_path, e);
-                        vec![]
-                    })
+                process_single_vocalization(file_idx, file_path).unwrap_or_else(|e| {
+                    eprintln!("        ⚠ Failed to process {:?}: {}", file_path, e);
+                    vec![]
+                })
             })
             .collect();
 
@@ -968,8 +1007,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             all_segments.append(&mut segments);
         }
 
-        println!("      📝 Discovered {} phrase segments (total: {})",
-                 batch_segment_count, all_segments.len());
+        println!(
+            "      📝 Discovered {} phrase segments (total: {})",
+            batch_segment_count,
+            all_segments.len()
+        );
 
         // Save checkpoint after each batch
         let checkpoint = ProcessingCheckpoint {
@@ -991,7 +1033,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
     println!("   ✅ Processed {} vocalizations", all_segments.len());
-    println!("   📝 Total phrase segments discovered: {}", all_segments.len());
+    println!(
+        "   📝 Total phrase segments discovered: {}",
+        all_segments.len()
+    );
     println!("   ⏱️  Level 1 time: {:.2}s", level1_time.as_secs_f64());
     println!();
 
@@ -1029,12 +1074,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "RARE"
             };
 
-            println!("      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
-                     item.vocabulary_id,
-                     item.phrase_count,
-                     item.avg_duration_ms,
-                     item.std_duration_ms,
-                     vocab_type);
+            println!(
+                "      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
+                item.vocabulary_id,
+                item.phrase_count,
+                item.avg_duration_ms,
+                item.std_duration_ms,
+                vocab_type
+            );
         }
 
         println!("      └──────┴──────────────┴──────────────┴─────────────┴────────────┘");
@@ -1060,18 +1107,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save timestamp map for audio extraction
     let timestamp_map_path = results_dir.join("timestamp_map.json");
-    let timestamp_map: Vec<serde_json::Value> = all_segments.iter()
-        .map(|seg| serde_json::json!({
-            "file_name": seg.file_name,
-            "segment_id": seg.segment_id,
-            "vocabulary_id": seg.level1_cluster_id,
-            "start_time_ms": seg.start_time_ms,
-            "end_time_ms": seg.end_time_ms,
-            "duration_ms": seg.duration_ms,
-            "start_sample": seg.start_sample,
-            "end_sample": seg.end_sample,
-            "sample_rate": seg.sample_rate,
-        }))
+    let timestamp_map: Vec<serde_json::Value> = all_segments
+        .iter()
+        .map(|seg| {
+            serde_json::json!({
+                "file_name": seg.file_name,
+                "segment_id": seg.segment_id,
+                "vocabulary_id": seg.level1_cluster_id,
+                "start_time_ms": seg.start_time_ms,
+                "end_time_ms": seg.end_time_ms,
+                "duration_ms": seg.duration_ms,
+                "start_sample": seg.start_sample,
+                "end_sample": seg.end_sample,
+                "sample_rate": seg.sample_rate,
+            })
+        })
         .collect();
     let timestamp_json = serde_json::to_string_pretty(&timestamp_map)?;
     fs::write(&timestamp_map_path, timestamp_json)?;
@@ -1085,7 +1135,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate symbolic stream with cluster IDs
     let mut symbolic_stream: Vec<i32> = Vec::new();
-    let mut segment_to_vocab: std::collections::HashMap<usize, i32> = std::collections::HashMap::new();
+    let mut segment_to_vocab: std::collections::HashMap<usize, i32> =
+        std::collections::HashMap::new();
 
     // Build mapping from segment to vocabulary ID
     for vocab in &vocabulary {
@@ -1097,12 +1148,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate stream by sorting segments by file_index and segment_id
     let mut sorted_segments: Vec<_> = all_segments.iter().collect();
     sorted_segments.sort_by(|a, b| {
-        a.file_index.cmp(&b.file_index)
+        a.file_index
+            .cmp(&b.file_index)
             .then_with(|| a.segment_id.cmp(&b.segment_id))
     });
 
     for segment in sorted_segments {
-        let vocab_id = segment_to_vocab.get(&segment.segment_id)
+        let vocab_id = segment_to_vocab
+            .get(&segment.segment_id)
             .copied()
             .unwrap_or(-1); // -1 for noise/unclassified
         symbolic_stream.push(vocab_id);
@@ -1111,11 +1164,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📝 Symbolic Stream Statistics:");
     println!("      ├─ Total symbols: {}", symbolic_stream.len());
     println!("      ├─ Unique vocabulary items: {}", vocabulary.len());
-    println!("      └─ Noise symbols: {}", symbolic_stream.iter().filter(|&&x| x == -1).count());
+    println!(
+        "      └─ Noise symbols: {}",
+        symbolic_stream.iter().filter(|&&x| x == -1).count()
+    );
 
     // Save symbolic stream
     let stream_path = results_dir.join("symbolic_stream.txt");
-    let stream_text: String = symbolic_stream.iter()
+    let stream_text: String = symbolic_stream
+        .iter()
         .map(|id| id.to_string())
         .collect::<Vec<_>>()
         .join(" ");
@@ -1125,7 +1182,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Show preview
     println!();
     println!("   🔤 Symbolic Stream Preview (first 50 symbols):");
-    println!("      └─ {}", symbolic_stream.iter().take(50).map(|x| x.to_string()).collect::<Vec<_>>().join(" "));
+    println!(
+        "      └─ {}",
+        symbolic_stream
+            .iter()
+            .take(50)
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
 
     println!();
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
@@ -1135,10 +1200,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  Parallel + Checkpointed Two-Level HDBSCAN                              ║");
     println!("║                                                                           ║");
     println!("║  SUMMARY:                                                                 ║");
-    println!("║     • Vocalizations processed: {}                                         ║", wav_files.len());
-    println!("║     • Phrase segments discovered: {}                                     ║", all_segments.len());
-    println!("║     • Vocabulary items discovered: {}                                     ║", vocabulary.len());
-    println!("║     • Symbolic stream length: {} symbols                                 ║", symbolic_stream.len());
+    println!(
+        "║     • Vocalizations processed: {}                                         ║",
+        wav_files.len()
+    );
+    println!(
+        "║     • Phrase segments discovered: {}                                     ║",
+        all_segments.len()
+    );
+    println!(
+        "║     • Vocabulary items discovered: {}                                     ║",
+        vocabulary.len()
+    );
+    println!(
+        "║     • Symbolic stream length: {} symbols                                 ║",
+        symbolic_stream.len()
+    );
     println!("║                                                                           ║");
     println!("║  OUTPUT FILES:                                                           ║");
     println!("║     • vocabulary.json - Vocabulary items with metadata                    ║");

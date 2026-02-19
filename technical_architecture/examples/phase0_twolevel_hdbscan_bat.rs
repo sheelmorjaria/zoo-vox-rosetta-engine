@@ -11,32 +11,32 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use symphonia::core::audio::AudioBufferRef;
-use symphonia::core::codecs::{CODEC_TYPE_NULL, DecoderOptions};
+use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
 use ndarray::Array2;
-use technical_architecture::hdbscan::HdbscanClustering;
 use serde::{Deserialize, Serialize};
+use technical_architecture::hdbscan::HdbscanClustering;
 
 // =============================================================================
 // Configuration
 // =============================================================================
 
-const FRAME_SIZE_MS: usize = 25;      // 25ms frames (typical for speech processing)
-const FRAME_SHIFT_MS: usize = 10;     // 10ms shift (75% overlap)
-const MIN_PHRASE_DURATION_MS: usize = 50;  // Minimum phrase duration
+const FRAME_SIZE_MS: usize = 25; // 25ms frames (typical for speech processing)
+const FRAME_SHIFT_MS: usize = 10; // 10ms shift (75% overlap)
+const MIN_PHRASE_DURATION_MS: usize = 50; // Minimum phrase duration
 const MAX_PHRASE_DURATION_MS: usize = 500; // Maximum phrase duration
 
 // Level 1 HDBSCAN: Within-vocalization segmentation
-const LEVEL1_MIN_CLUSTER_SIZE: usize = 30;  // Minimum frames per phrase
-const LEVEL1_MIN_SAMPLES: usize = 10;       // Density threshold for phrase detection
+const LEVEL1_MIN_CLUSTER_SIZE: usize = 30; // Minimum frames per phrase
+const LEVEL1_MIN_SAMPLES: usize = 10; // Density threshold for phrase detection
 
 // Level 2 HDBSCAN: Cross-vocalization vocabulary
-const LEVEL2_MIN_CLUSTER_SIZE: usize = 5;   // Minimum phrases per vocabulary item (lowered for small datasets)
-const LEVEL2_MIN_SAMPLES: usize = 3;        // Density threshold for vocabulary (lowered for small datasets)
+const LEVEL2_MIN_CLUSTER_SIZE: usize = 5; // Minimum phrases per vocabulary item (lowered for small datasets)
+const LEVEL2_MIN_SAMPLES: usize = 3; // Density threshold for vocabulary (lowered for small datasets)
 
 // =============================================================================
 // Data Structures
@@ -47,7 +47,7 @@ struct FrameFeatures {
     frame_index: usize,
     start_time_ms: f64,
     duration_ms: f64,
-    features: Vec<f64>,  // Multi-dimensional acoustic features
+    features: Vec<f64>, // Multi-dimensional acoustic features
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,7 +60,7 @@ struct PhraseSegment {
     duration_ms: f64,
     frame_indices: Vec<usize>,
     level1_cluster_id: i32,
-    representative_features: Vec<f64>,  // Aggregated features for this phrase
+    representative_features: Vec<f64>, // Aggregated features for this phrase
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,26 +84,23 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
     let meta_opts: MetadataOptions = Default::default();
     let fmt_opts: FormatOptions = Default::default();
 
-    let probed = symphonia::default::get_probe().format(
-        &hint,
-        src,
-        &fmt_opts,
-        &meta_opts
-    )?;
+    let probed = symphonia::default::get_probe().format(&hint, src, &fmt_opts, &meta_opts)?;
 
     let mut format = probed.format;
 
-    let track = format.tracks()
+    let track = format
+        .tracks()
         .iter()
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
     let track_id = track.id;
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
-    let sample_rate = track.codec_params
+    let sample_rate = track
+        .codec_params
         .sample_rate
         .ok_or("Missing sample rate")?;
 
@@ -114,7 +111,10 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
             Ok(packet) => packet,
             Err(symphonia::core::errors::Error::ResetRequired) => continue,
             Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break
+            }
             Err(e) => return Err(format!("Failed to read packet: {}", e).into()),
         };
 
@@ -137,7 +137,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / 32768.0).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / 32768.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -145,7 +146,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U8(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -153,7 +155,10 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 32768.0) / 32768.0).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|&s| (s as f32 - 32768.0) / 32768.0)
+                                .collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -161,7 +166,8 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S32(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -193,10 +199,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
 // Frame-Level Feature Extraction
 // =============================================================================
 
-fn extract_frame_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Vec<FrameFeatures> {
+fn extract_frame_features(audio: &[f32], sample_rate: u32) -> Vec<FrameFeatures> {
     let frame_size_samples = (sample_rate as usize * FRAME_SIZE_MS) / 1000;
     let frame_shift_samples = (sample_rate as usize * FRAME_SHIFT_MS) / 1000;
 
@@ -232,12 +235,10 @@ fn compute_frame_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
 
     // 1. Energy (RMS)
     let rms = (audio.iter().map(|&x| (x * x) as f64).sum::<f64>() / audio.len() as f64).sqrt();
-    features.push(rms.ln_1p());  // Log-scale
+    features.push(rms.ln_1p()); // Log-scale
 
     // 2. Zero Crossing Rate
-    let zcr = audio.windows(2)
-        .filter(|w| w[0] * w[1] < 0.0)
-        .count() as f64 / audio.len() as f64;
+    let zcr = audio.windows(2).filter(|w| w[0] * w[1] < 0.0).count() as f64 / audio.len() as f64;
     features.push(zcr);
 
     // 3. Spectral features (simplified FFT-based)
@@ -269,10 +270,10 @@ fn compute_frame_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
     // 5. Pitch-related features (simplified)
     if let Some(pitch) = estimate_pitch(audio, sample_rate) {
         features.push(pitch);
-        features.push(1.0);  // Pitch confidence
+        features.push(1.0); // Pitch confidence
     } else {
-        features.push(0.0);  // No pitch detected
-        features.push(0.0);  // Zero confidence
+        features.push(0.0); // No pitch detected
+        features.push(0.0); // Zero confidence
     }
 
     // Total: 1 (RMS) + 1 (ZCR) + 3 (spectral) + 8 (mel bands) + 2 (pitch) = 15 features
@@ -299,7 +300,7 @@ fn compute_spectrum(audio: &[f32]) -> Result<Vec<f64>, Box<dyn std::error::Error
     }
 
     // Naive DFT (for simplicity - in production use FFT)
-    for k in 0..n/2 {
+    for k in 0..n / 2 {
         let mut real = 0.0;
         let mut imag = 0.0;
         for (i, &sample) in windowed.iter().enumerate() {
@@ -396,8 +397,8 @@ fn hz_to_mel(hz: f64) -> f64 {
 
 fn estimate_pitch(audio: &[f32], sample_rate: u32) -> Option<f64> {
     // Simplified autocorrelation-based pitch estimation
-    let min_period = (sample_rate as usize / 500).max(1);  // Max 500 Hz
-    let max_period = (sample_rate as usize / 50).min(audio.len() / 2);  // Min 50 Hz
+    let min_period = (sample_rate as usize / 500).max(1); // Max 500 Hz
+    let max_period = (sample_rate as usize / 50).min(audio.len() / 2); // Min 50 Hz
 
     let mut best_period = min_period;
     let mut best_corr = 0.0;
@@ -456,7 +457,10 @@ fn segment_by_energy(frames: &[FrameFeatures], sample_rate: u32) -> Vec<usize> {
     // Find local minima as potential boundaries
     for i in 2..smoothed.len().saturating_sub(2) {
         let prev_avg = smoothed[i - 2..i].iter().sum::<f64>() / 3.0;
-        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)].iter().sum::<f64>() / 3.0;
+        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)]
+            .iter()
+            .sum::<f64>()
+            / 3.0;
         let current = smoothed[i];
 
         // Local minimum with significant drop
@@ -484,7 +488,8 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
     for i in window_size..frames.len().saturating_sub(window_size) {
         let mut significant_change = false;
 
-        for feat_idx in 0..frames[0].features.len().min(10) { // Use first 10 features
+        for feat_idx in 0..frames[0].features.len().min(10) {
+            // Use first 10 features
             let before: Vec<f64> = frames[i - window_size..i]
                 .iter()
                 .map(|f| f.features[feat_idx])
@@ -498,12 +503,13 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
             let mean_before = before.iter().sum::<f64>() / before.len() as f64;
             let mean_after = after.iter().sum::<f64>() / after.len() as f64;
 
-            let var_before = before.iter()
+            let var_before = before
+                .iter()
                 .map(|&x| (x - mean_before).powi(2))
-                .sum::<f64>() / before.len() as f64;
-            let var_after = after.iter()
-                .map(|&x| (x - mean_after).powi(2))
-                .sum::<f64>() / after.len() as f64;
+                .sum::<f64>()
+                / before.len() as f64;
+            let var_after =
+                after.iter().map(|&x| (x - mean_after).powi(2)).sum::<f64>() / after.len() as f64;
 
             let std_before = var_before.sqrt();
             let std_after = var_after.sqrt();
@@ -512,7 +518,8 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
             let pooled_std = ((var_before + var_after) / 2.0).sqrt();
             if pooled_std > 0.001 {
                 let z_score = (mean_after - mean_before).abs() / pooled_std;
-                if z_score > 2.5 { // Significant change threshold
+                if z_score > 2.5 {
+                    // Significant change threshold
                     significant_change = true;
                     break;
                 }
@@ -531,21 +538,25 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
 }
 
 /// Combine multiple segmentation methods using voting
-fn combine_segmentation_methods(
-    frames: &[FrameFeatures],
-    sample_rate: u32,
-) -> Vec<(usize, usize)> {
+fn combine_segmentation_methods(frames: &[FrameFeatures], sample_rate: u32) -> Vec<(usize, usize)> {
     let mut all_boundaries: Vec<usize> = Vec::new();
 
     // Get boundaries from different methods
     let energy_bounds = segment_by_energy(frames, sample_rate);
     let change_bounds = segment_by_change_point(frames);
 
-    println!("        📊 Energy-based boundaries: {}", energy_bounds.len());
-    println!("        📊 Change-point boundaries: {}", change_bounds.len());
+    println!(
+        "        📊 Energy-based boundaries: {}",
+        energy_bounds.len()
+    );
+    println!(
+        "        📊 Change-point boundaries: {}",
+        change_bounds.len()
+    );
 
     // Combine with minimum spacing
-    let mut combined: Vec<usize> = energy_bounds.into_iter()
+    let mut combined: Vec<usize> = energy_bounds
+        .into_iter()
         .chain(change_bounds.into_iter())
         .collect();
 
@@ -556,7 +567,10 @@ fn combine_segmentation_methods(
     let min_spacing = 10; // minimum frames between boundaries
     let mut filtered = Vec::new();
     for boundary in combined {
-        if filtered.last().map_or(true, |&last| boundary - last >= min_spacing) {
+        if filtered
+            .last()
+            .map_or(true, |&last| boundary - last >= min_spacing)
+        {
             filtered.push(boundary);
         }
     }
@@ -566,7 +580,8 @@ fn combine_segmentation_methods(
     let mut start = 0;
 
     for &boundary in &filtered {
-        if boundary - start >= 3 { // Minimum 3 frames per segment
+        if boundary - start >= 3 {
+            // Minimum 3 frames per segment
             segments.push((start, boundary));
             start = boundary;
         }
@@ -589,8 +604,12 @@ fn segment_vocalization_hdbscan(
     sample_rate: u32,
     hdbscan: &HdbscanClustering,
 ) -> Result<Vec<PhraseSegment>, Box<dyn std::error::Error>> {
-    println!("      🎵 Segmenting: {} ({} samples, {} Hz)",
-             file_name, audio.len(), sample_rate);
+    println!(
+        "      🎵 Segmenting: {} ({} samples, {} Hz)",
+        file_name,
+        audio.len(),
+        sample_rate
+    );
 
     // Extract frame-level features
     let frames = extract_frame_features(audio, sample_rate);
@@ -626,7 +645,10 @@ fn segment_vocalization_hdbscan(
     let labels = hdbscan.fit_predict_hnsw(&features_array)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!("        ✅ Segmentation complete in {:.2}s", cluster_time.as_secs_f64());
+    println!(
+        "        ✅ Segmentation complete in {:.2}s",
+        cluster_time.as_secs_f64()
+    );
 
     // Convert frame-level clusters to phrase segments
     let mut segments = Vec::new();
@@ -645,10 +667,12 @@ fn segment_vocalization_hdbscan(
             if current_cluster >= 0 {
                 let start_frame = &frames[segment_start];
                 let end_frame = &frames[end_idx.saturating_sub(1)];
-                let duration_ms = end_frame.start_time_ms + end_frame.duration_ms - start_frame.start_time_ms;
+                let duration_ms =
+                    end_frame.start_time_ms + end_frame.duration_ms - start_frame.start_time_ms;
 
-                if duration_ms >= MIN_PHRASE_DURATION_MS as f64 &&
-                   duration_ms <= MAX_PHRASE_DURATION_MS as f64 {
+                if duration_ms >= MIN_PHRASE_DURATION_MS as f64
+                    && duration_ms <= MAX_PHRASE_DURATION_MS as f64
+                {
                     // Aggregate features for this segment (mean of frame features)
                     let mut rep_features = vec![0.0; n_features];
                     let frame_indices: Vec<usize> = (segment_start..end_idx).collect();
@@ -697,8 +721,12 @@ fn segment_vocalization_aggressive(
     audio: &[f32],
     sample_rate: u32,
 ) -> Result<Vec<PhraseSegment>, Box<dyn std::error::Error>> {
-    println!("      🎵 Segmenting (AGGRESSIVE): {} ({} samples, {} Hz)",
-             file_name, audio.len(), sample_rate);
+    println!(
+        "      🎵 Segmenting (AGGRESSIVE): {} ({} samples, {} Hz)",
+        file_name,
+        audio.len(),
+        sample_rate
+    );
 
     // Extract frame-level features
     let frames = extract_frame_features(audio, sample_rate);
@@ -719,7 +747,8 @@ fn segment_vocalization_aggressive(
     for (seg_idx, (start, end)) in segment_ranges.iter().enumerate() {
         let start_frame = &frames[*start];
         let end_frame = &frames[end.saturating_sub(1)];
-        let duration_ms = end_frame.start_time_ms + end_frame.duration_ms - start_frame.start_time_ms;
+        let duration_ms =
+            end_frame.start_time_ms + end_frame.duration_ms - start_frame.start_time_ms;
 
         // Duration filter
         if duration_ms < MIN_PHRASE_DURATION_MS as f64 {
@@ -771,7 +800,10 @@ fn build_vocabulary(
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    println!("   📊 Total phrase segments from all vocalizations: {}", all_segments.len());
+    println!(
+        "   📊 Total phrase segments from all vocalizations: {}",
+        all_segments.len()
+    );
 
     if all_segments.is_empty() {
         println!("   ⚠ No phrase segments found!");
@@ -782,7 +814,10 @@ fn build_vocabulary(
     let n_segments = all_segments.len();
     let n_features = all_segments[0].representative_features.len();
 
-    println!("   📊 Feature dimensions: {} segments × {}D features", n_segments, n_features);
+    println!(
+        "   📊 Feature dimensions: {} segments × {}D features",
+        n_segments, n_features
+    );
 
     let mut flat_features = Vec::with_capacity(n_segments * n_features);
     for segment in all_segments {
@@ -802,11 +837,16 @@ fn build_vocabulary(
     println!("   ✅ Vocabulary built in {:.2}s", vocab_time.as_secs_f64());
 
     // Group segments by vocabulary item (cluster)
-    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> = std::collections::HashMap::new();
+    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> =
+        std::collections::HashMap::new();
 
     for (segment_idx, &label) in labels.iter().enumerate() {
-        if label >= 0 {  // Skip noise
-            cluster_map.entry(label).or_insert_with(Vec::new).push(&all_segments[segment_idx]);
+        if label >= 0 {
+            // Skip noise
+            cluster_map
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(&all_segments[segment_idx]);
         }
     }
 
@@ -823,9 +863,11 @@ fn build_vocabulary(
         // Compute statistics
         let durations: Vec<f64> = segments.iter().map(|s| s.duration_ms).collect();
         let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
-        let variance = durations.iter()
+        let variance = durations
+            .iter()
             .map(|&d| (d - avg_duration).powi(2))
-            .sum::<f64>() / durations.len() as f64;
+            .sum::<f64>()
+            / durations.len() as f64;
         let std_duration = variance.sqrt();
 
         vocabulary.push(VocabularyItem {
@@ -871,7 +913,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Discover WAV files
     let wav_files: Vec<_> = fs::read_dir(&audio_dir)?
         .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().extension().map(|e| e == "wav").unwrap_or(false))
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .map(|e| e == "wav")
+                .unwrap_or(false)
+        })
         .map(|entry| entry.path())
         .collect();
 
@@ -897,7 +945,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let wav_files: Vec<_> = wav_files.into_iter().take(test_subset_size).collect();
 
-    println!("   🔬 Processing subset of {} files for testing", wav_files.len());
+    println!(
+        "   🔬 Processing subset of {} files for testing",
+        wav_files.len()
+    );
     println!("      (Set TEST_SUBSET=N to process N files)");
     println!();
 
@@ -913,7 +964,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("   🏗️  Level 1: Aggressive Segmentation Configuration:");
     println!("      ├─ Methods: Energy-based + Change-point detection");
-    println!("      ├─ Frame size: {}ms (25ms typical for speech)", FRAME_SIZE_MS);
+    println!(
+        "      ├─ Frame size: {}ms (25ms typical for speech)",
+        FRAME_SIZE_MS
+    );
     println!("      ├─ Frame shift: {}ms (75% overlap)", FRAME_SHIFT_MS);
     println!("      ├─ Min phrase duration: {}ms", MIN_PHRASE_DURATION_MS);
     println!("      ├─ Energy threshold: 50% drop = boundary");
@@ -927,25 +981,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut total_frames_processed = 0;
 
     for (file_idx, wav_file) in wav_files.iter().enumerate() {
-        let file_name = wav_file.file_name()
+        let file_name = wav_file
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown.wav");
 
-        println!("   🔄 [{}/{}] {}",
-                 file_idx + 1,
-                 wav_files.len(),
-                 file_name);
+        println!("   🔄 [{}/{}] {}", file_idx + 1, wav_files.len(), file_name);
 
         match load_audio_file(wav_file) {
             Ok((audio, sample_rate)) => {
                 total_frames_processed += audio.len();
 
-                match segment_vocalization_aggressive(
-                    file_name,
-                    file_idx,
-                    &audio,
-                    sample_rate,
-                ) {
+                match segment_vocalization_aggressive(file_name, file_idx, &audio, sample_rate) {
                     Ok(mut segments) => {
                         all_segments.append(&mut segments);
                     }
@@ -969,10 +1016,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("   ✅ Processed {} vocalizations", wav_files.len());
     println!("   📊 Total audio samples: {}", total_frames_processed);
-    println!("   📝 Total phrase segments discovered: {}", all_segments.len());
-    println!("   ⏱️  Level 1 time: {:.2}s ({:.2}s per file)",
-             level1_time.as_secs_f64(),
-             level1_time.as_secs_f64() / wav_files.len() as f64);
+    println!(
+        "   📝 Total phrase segments discovered: {}",
+        all_segments.len()
+    );
+    println!(
+        "   ⏱️  Level 1 time: {:.2}s ({:.2}s per file)",
+        level1_time.as_secs_f64(),
+        level1_time.as_secs_f64() / wav_files.len() as f64
+    );
     println!();
 
     if all_segments.is_empty() {
@@ -1015,12 +1067,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "RARE"
             };
 
-            println!("      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
-                     item.vocabulary_id,
-                     item.phrase_count,
-                     item.avg_duration_ms,
-                     item.std_duration_ms,
-                     vocab_type);
+            println!(
+                "      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
+                item.vocabulary_id,
+                item.phrase_count,
+                item.avg_duration_ms,
+                item.std_duration_ms,
+                vocab_type
+            );
         }
 
         println!("      └──────┴──────────────┴──────────────┴─────────────┴────────────┘");
@@ -1053,9 +1107,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  ✅ Two-level HDBSCAN for phrase discovery                                 ║");
     println!("║                                                                           ║");
     println!("║  📊 SUMMARY:                                                              ║");
-    println!("║     • Vocalizations processed: {}                                      ║", wav_files.len());
-    println!("║     • Phrase segments discovered: {}                                  ║", all_segments.len());
-    println!("║     • Vocabulary items discovered: {}                                  ║", vocabulary.len());
+    println!(
+        "║     • Vocalizations processed: {}                                      ║",
+        wav_files.len()
+    );
+    println!(
+        "║     • Phrase segments discovered: {}                                  ║",
+        all_segments.len()
+    );
+    println!(
+        "║     • Vocabulary items discovered: {}                                  ║",
+        vocabulary.len()
+    );
     println!("║                                                                           ║");
     println!("║  🎯 NEXT STEPS:                                                           ║");
     println!("║     • Analyze vocabulary item distributions                             ║");

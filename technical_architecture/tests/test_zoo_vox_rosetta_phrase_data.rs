@@ -84,7 +84,7 @@ mod test_acoustic_features_30d {
 
 #[cfg(test)]
 mod test_phrase_prototype {
-    use technical_architecture::zoo_vox_data_models::{PhrasePrototype, ContextAssociation};
+    use technical_architecture::zoo_vox_data_models::{ContextAssociation, PhrasePrototype};
 
     #[test]
     fn test_phrase_creation() {
@@ -116,7 +116,7 @@ mod test_phrase_prototype {
 
 #[cfg(test)]
 mod test_species_phrase_library {
-    use technical_architecture::zoo_vox_data_models::{SpeciesPhraseLibrary, PhrasePrototype};
+    use technical_architecture::zoo_vox_data_models::{PhrasePrototype, SpeciesPhraseLibrary};
 
     #[test]
     fn test_library_creation() {
@@ -158,7 +158,9 @@ mod test_species_phrase_library {
 
 #[cfg(test)]
 mod test_cross_species_database {
-    use technical_architecture::zoo_vox_data_models::{CrossSpeciesPhraseDatabase, SpeciesPhraseLibrary};
+    use technical_architecture::zoo_vox_data_models::{
+        CrossSpeciesPhraseDatabase, SpeciesPhraseLibrary,
+    };
 
     #[test]
     fn test_database_creation() {
@@ -217,14 +219,20 @@ mod test_feature_extractor {
 
         // Check F0 is approximately correct (within 20%)
         let f0_ratio = features.mean_f0_hz / frequency;
-        assert!(f0_ratio > 0.8 && f0_ratio < 1.2,
-            "F0 estimate: {} Hz, expected: {} Hz", features.mean_f0_hz, frequency);
+        assert!(
+            f0_ratio > 0.8 && f0_ratio < 1.2,
+            "F0 estimate: {} Hz, expected: {} Hz",
+            features.mean_f0_hz,
+            frequency
+        );
     }
 }
 
 #[cfg(test)]
 mod test_phrase_extractor {
-    use technical_architecture::zoo_vox_extraction::{ZooVoxPhraseExtractor, ZooVoxExtractionConfig};
+    use technical_architecture::zoo_vox_extraction::{
+        ZooVoxExtractionConfig, ZooVoxPhraseExtractor,
+    };
 
     #[test]
     fn test_extraction_config_default() {
@@ -265,8 +273,8 @@ mod test_phrase_extractor {
 
 #[cfg(test)]
 mod test_library_builder {
-    use technical_architecture::zoo_vox_library::ZooVoxLibraryBuilder;
     use technical_architecture::zoo_vox_data_models::PhrasePrototype;
+    use technical_architecture::zoo_vox_library::ZooVoxLibraryBuilder;
 
     #[test]
     fn test_builder_creation() {
@@ -287,15 +295,13 @@ mod test_library_builder {
     fn test_build_library_with_phrases() {
         let builder = ZooVoxLibraryBuilder::new();
 
-        let mut phrase = PhrasePrototype::new(
-            "marmoset_001",
-            "F0_6800_DUR_65",
-            "marmoset",
-        );
+        let mut phrase = PhrasePrototype::new("marmoset_001", "F0_6800_DUR_65", "marmoset");
         phrase.occurrence_count = 100;
         phrase.primary_context = Some("contact".to_string());
 
-        let library = builder.build_library(vec![phrase], "marmoset", None).unwrap();
+        let library = builder
+            .build_library(vec![phrase], "marmoset", None)
+            .unwrap();
 
         assert_eq!(library.total_phrases, 1);
         assert_eq!(library.total_occurrences, 100);
@@ -305,11 +311,10 @@ mod test_library_builder {
 
 #[cfg(test)]
 mod test_integration {
-    use technical_architecture::{
-        ZooVoxFeatureExtractor, ZooVoxPhraseExtractor, ZooVoxLibraryBuilder,
-        ZooVoxExtractionConfig,
-    };
     use technical_architecture::species::SpeciesConfigFactory;
+    use technical_architecture::{
+        ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder, ZooVoxPhraseExtractor,
+    };
 
     #[test]
     fn test_full_pipeline() {
@@ -335,7 +340,9 @@ mod test_integration {
         // Extract phrases
         let config = ZooVoxExtractionConfig::for_species("marmoset", sample_rate as u32);
         let mut phrase_extractor = ZooVoxPhraseExtractor::new(config);
-        let phrases = phrase_extractor.extract_phrases(&audio, "marmoset", None).unwrap();
+        let phrases = phrase_extractor
+            .extract_phrases(&audio, "marmoset", None)
+            .unwrap();
 
         assert!(!phrases.is_empty());
 

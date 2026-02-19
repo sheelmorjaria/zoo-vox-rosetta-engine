@@ -25,25 +25,25 @@
 //
 // Usage: cargo run --example marmoset_15d_lexicon_to_syntax --release [vocalizations_dir] [--resume]
 
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use std::fs;
 use std::io::Write;
-use rayon::prelude::*;
-use serde::{Serialize, Deserialize};
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
-use technical_architecture::{MicroDynamicsExtractor, hdbscan::HdbscanClustering};
+use technical_architecture::{hdbscan::HdbscanClustering, MicroDynamicsExtractor};
 
 /// Marmoset call types (contexts)
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 enum CallType {
-    Vocalization,  // General/unclassified vocalizations (largest category)
+    Vocalization, // General/unclassified vocalizations (largest category)
     Phee,
     Twitter,
     Trill,
@@ -122,7 +122,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -182,7 +183,7 @@ struct PhraseCandidate {
     phrase_id: String,
     file_name: String,
     call_type: CallType,
-    features: Vec<f32>,  // 15D feature vector
+    features: Vec<f32>, // 15D feature vector
     duration_ms: f32,
 }
 
@@ -192,7 +193,7 @@ struct VocabWord {
     word_id: usize,
     representative_features: Vec<f32>,
     member_phrases: Vec<String>,
-    contexts: HashSet<CallType>,  // Which call types use this word
+    contexts: HashSet<CallType>, // Which call types use this word
 }
 
 /// Syntactic analysis results for a context
@@ -204,17 +205,17 @@ struct ContextSyntaxResults {
     unique_words: usize,
     shared_words: usize,
     avg_sequence_length: f64,
-    word_frequency_distribution: Vec<(usize, usize)>,  // (word_id, frequency)
+    word_frequency_distribution: Vec<(usize, usize)>, // (word_id, frequency)
 }
 
 /// Checkpoint data structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CheckpointData {
-    completed_contexts: Vec<String>,  // Names of completed call types
+    completed_contexts: Vec<String>, // Names of completed call types
     total_phrases: usize,
     timestamp_seconds: u64,
-    phase2_completed: bool,  // Global vocabulary discovery completed
-    phase3_completed: bool,  // Context-specific analysis completed
+    phase2_completed: bool, // Global vocabulary discovery completed
+    phase3_completed: bool, // Context-specific analysis completed
 }
 
 impl Default for CheckpointData {
@@ -247,7 +248,8 @@ impl CheckpointManager {
 
     /// Get the phrases checkpoint path for a specific call type
     fn phrases_checkpoint_path(&self, call_type: &str) -> PathBuf {
-        self.checkpoints_dir.join(format!("phrases_{}.json", call_type))
+        self.checkpoints_dir
+            .join(format!("phrases_{}.json", call_type))
     }
 
     /// Load checkpoint if exists
@@ -264,22 +266,31 @@ impl CheckpointManager {
         let data: serde_json::Value = serde_json::from_str(&content)?;
 
         // Check if new fields exist, if not use defaults
-        let phase2_completed = data.get("phase2_completed")
+        let phase2_completed = data
+            .get("phase2_completed")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-        let phase3_completed = data.get("phase3_completed")
+        let phase3_completed = data
+            .get("phase3_completed")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         // Parse the rest with defaults
-        let completed_contexts: Vec<String> = data.get("completed_contexts")
+        let completed_contexts: Vec<String> = data
+            .get("completed_contexts")
             .and_then(|v| v.as_array())
-            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
-        let total_phrases = data.get("total_phrases")
+        let total_phrases = data
+            .get("total_phrases")
             .and_then(|v| v.as_u64())
             .unwrap_or(0) as usize;
-        let timestamp_seconds = data.get("timestamp_seconds")
+        let timestamp_seconds = data
+            .get("timestamp_seconds")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
@@ -362,14 +373,17 @@ impl CheckpointManager {
         let path = self.phase2_checkpoint_path();
 
         // Convert VocabWord to a serializable format
-        let serializable: Vec<serde_json::Value> = vocabulary.iter().map(|word| {
-            serde_json::json!({
-                "word_id": word.word_id,
-                "representative_features": word.representative_features,
-                "member_phrases": word.member_phrases,
-                "contexts": word.contexts.iter().map(|c| c.name()).collect::<Vec<_>>(),
+        let serializable: Vec<serde_json::Value> = vocabulary
+            .iter()
+            .map(|word| {
+                serde_json::json!({
+                    "word_id": word.word_id,
+                    "representative_features": word.representative_features,
+                    "member_phrases": word.member_phrases,
+                    "contexts": word.contexts.iter().map(|c| c.name()).collect::<Vec<_>>(),
+                })
             })
-        }).collect();
+            .collect();
 
         let json = serde_json::to_string_pretty(&serializable)?;
         let mut file = fs::File::create(&path)?;
@@ -387,47 +401,51 @@ impl CheckpointManager {
         let content = fs::read_to_string(&path)?;
         let data: Vec<serde_json::Value> = serde_json::from_str(&content)?;
 
-        let vocabulary = data.into_iter().map(|value| {
-            let word_id = value["word_id"].as_u64().unwrap() as usize;
-            let representative_features: Vec<f32> = value["representative_features"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| v.as_f64().unwrap() as f32)
-                .collect();
-            let member_phrases: Vec<String> = value["member_phrases"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| v.as_str().unwrap().to_string())
-                .collect();
-            let context_names: Vec<String> = value["contexts"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| v.as_str().unwrap().to_string())
-                .collect();
+        let vocabulary = data
+            .into_iter()
+            .map(|value| {
+                let word_id = value["word_id"].as_u64().unwrap() as usize;
+                let representative_features: Vec<f32> = value["representative_features"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap() as f32)
+                    .collect();
+                let member_phrases: Vec<String> = value["member_phrases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_str().unwrap().to_string())
+                    .collect();
+                let context_names: Vec<String> = value["contexts"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_str().unwrap().to_string())
+                    .collect();
 
-            let contexts: HashSet<CallType> = context_names.iter()
-                .filter_map(|name| match name.as_str() {
-                    "Vocalization" => Some(CallType::Vocalization),
-                    "Phee" => Some(CallType::Phee),
-                    "Twitter" => Some(CallType::Twitter),
-                    "Trill" => Some(CallType::Trill),
-                    "Tsik" => Some(CallType::Tsik),
-                    "Seep" => Some(CallType::Seep),
-                    "Infant" => Some(CallType::Infant),
-                    _ => None,
-                })
-                .collect();
+                let contexts: HashSet<CallType> = context_names
+                    .iter()
+                    .filter_map(|name| match name.as_str() {
+                        "Vocalization" => Some(CallType::Vocalization),
+                        "Phee" => Some(CallType::Phee),
+                        "Twitter" => Some(CallType::Twitter),
+                        "Trill" => Some(CallType::Trill),
+                        "Tsik" => Some(CallType::Tsik),
+                        "Seep" => Some(CallType::Seep),
+                        "Infant" => Some(CallType::Infant),
+                        _ => None,
+                    })
+                    .collect();
 
-            VocabWord {
-                word_id,
-                representative_features,
-                member_phrases,
-                contexts,
-            }
-        }).collect();
+                VocabWord {
+                    word_id,
+                    representative_features,
+                    member_phrases,
+                    contexts,
+                }
+            })
+            .collect();
 
         Ok(Some(vocabulary))
     }
@@ -439,17 +457,20 @@ impl CheckpointManager {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let path = self.phase3_checkpoint_path();
 
-        let serializable: Vec<serde_json::Value> = results.iter().map(|r| {
-            serde_json::json!({
-                "context": r.context.name(),
-                "num_phrases": r.num_phrases,
-                "vocabulary_size": r.vocabulary_size,
-                "unique_words": r.unique_words,
-                "shared_words": r.shared_words,
-                "avg_sequence_length": r.avg_sequence_length,
-                "word_frequency_distribution": r.word_frequency_distribution,
+        let serializable: Vec<serde_json::Value> = results
+            .iter()
+            .map(|r| {
+                serde_json::json!({
+                    "context": r.context.name(),
+                    "num_phrases": r.num_phrases,
+                    "vocabulary_size": r.vocabulary_size,
+                    "unique_words": r.unique_words,
+                    "shared_words": r.shared_words,
+                    "avg_sequence_length": r.avg_sequence_length,
+                    "word_frequency_distribution": r.word_frequency_distribution,
+                })
             })
-        }).collect();
+            .collect();
 
         let json = serde_json::to_string_pretty(&serializable)?;
         let mut file = fs::File::create(&path)?;
@@ -458,7 +479,9 @@ impl CheckpointManager {
     }
 
     /// Load Phase 3 results (context-specific analysis)
-    fn load_phase3_results(&self) -> Result<Option<Vec<ContextSyntaxResults>>, Box<dyn std::error::Error>> {
+    fn load_phase3_results(
+        &self,
+    ) -> Result<Option<Vec<ContextSyntaxResults>>, Box<dyn std::error::Error>> {
         let path = self.phase3_checkpoint_path();
         if !path.exists() {
             return Ok(None);
@@ -467,39 +490,44 @@ impl CheckpointManager {
         let content = fs::read_to_string(&path)?;
         let data: Vec<serde_json::Value> = serde_json::from_str(&content)?;
 
-        let results = data.into_iter().map(|value| {
-            let context_name = value["context"].as_str().unwrap();
-            let context = match context_name {
-                "Vocalization" => CallType::Vocalization,
-                "Phee" => CallType::Phee,
-                "Twitter" => CallType::Twitter,
-                "Trill" => CallType::Trill,
-                "Tsik" => CallType::Tsik,
-                "Seep" => CallType::Seep,
-                "Infant" => CallType::Infant,
-                _ => CallType::Unknown,
-            };
+        let results = data
+            .into_iter()
+            .map(|value| {
+                let context_name = value["context"].as_str().unwrap();
+                let context = match context_name {
+                    "Vocalization" => CallType::Vocalization,
+                    "Phee" => CallType::Phee,
+                    "Twitter" => CallType::Twitter,
+                    "Trill" => CallType::Trill,
+                    "Tsik" => CallType::Tsik,
+                    "Seep" => CallType::Seep,
+                    "Infant" => CallType::Infant,
+                    _ => CallType::Unknown,
+                };
 
-            let word_freq_dist: Vec<(usize, usize)> = value["word_frequency_distribution"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| (
-                    v[0].as_u64().unwrap() as usize,
-                    v[1].as_u64().unwrap() as usize,
-                ))
-                .collect();
+                let word_freq_dist: Vec<(usize, usize)> = value["word_frequency_distribution"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| {
+                        (
+                            v[0].as_u64().unwrap() as usize,
+                            v[1].as_u64().unwrap() as usize,
+                        )
+                    })
+                    .collect();
 
-            ContextSyntaxResults {
-                context,
-                num_phrases: value["num_phrases"].as_u64().unwrap() as usize,
-                vocabulary_size: value["vocabulary_size"].as_u64().unwrap() as usize,
-                unique_words: value["unique_words"].as_u64().unwrap() as usize,
-                shared_words: value["shared_words"].as_u64().unwrap() as usize,
-                avg_sequence_length: value["avg_sequence_length"].as_f64().unwrap(),
-                word_frequency_distribution: word_freq_dist,
-            }
-        }).collect();
+                ContextSyntaxResults {
+                    context,
+                    num_phrases: value["num_phrases"].as_u64().unwrap() as usize,
+                    vocabulary_size: value["vocabulary_size"].as_u64().unwrap() as usize,
+                    unique_words: value["unique_words"].as_u64().unwrap() as usize,
+                    shared_words: value["shared_words"].as_u64().unwrap() as usize,
+                    avg_sequence_length: value["avg_sequence_length"].as_f64().unwrap(),
+                    word_frequency_distribution: word_freq_dist,
+                }
+            })
+            .collect();
 
         Ok(Some(results))
     }
@@ -534,10 +562,7 @@ impl CheckpointManager {
 }
 
 /// Check if a phrase has already been processed (exists in checkpoint)
-fn is_phrase_processed(
-    processed_phrase_ids: &HashSet<String>,
-    phrase_id: &str,
-) -> bool {
+fn is_phrase_processed(processed_phrase_ids: &HashSet<String>, phrase_id: &str) -> bool {
     processed_phrase_ids.contains(phrase_id)
 }
 
@@ -577,22 +602,32 @@ fn discover_vocabulary(
 
     // Skip clustering mode: treat each phrase as its own word
     if hdbscan_config.skip_clustering {
-        println!("  ⏭ Skip-clustering mode: treating each of {} phrases as its own word", n_samples);
+        println!(
+            "  ⏭ Skip-clustering mode: treating each of {} phrases as its own word",
+            n_samples
+        );
 
-        return phrases.iter().enumerate().map(|(i, phrase)| {
-            let mut contexts = HashSet::new();
-            contexts.insert(phrase.call_type);
+        return phrases
+            .iter()
+            .enumerate()
+            .map(|(i, phrase)| {
+                let mut contexts = HashSet::new();
+                contexts.insert(phrase.call_type);
 
-            VocabWord {
-                word_id: i,
-                representative_features: phrase.features.clone(),
-                member_phrases: vec![phrase.phrase_id.clone()],
-                contexts,
-            }
-        }).collect();
+                VocabWord {
+                    word_id: i,
+                    representative_features: phrase.features.clone(),
+                    member_phrases: vec![phrase.phrase_id.clone()],
+                    contexts,
+                }
+            })
+            .collect();
     }
 
-    println!("  📊 Running HDBSCAN clustering on {} phrases ({}D features)...", n_samples, n_features);
+    println!(
+        "  📊 Running HDBSCAN clustering on {} phrases ({}D features)...",
+        n_samples, n_features
+    );
     println!("     ├─ min_cluster_size: {}", min_cluster_size);
     println!("     └─ min_samples: {}", min_samples);
     if hdbscan_config.no_merge {
@@ -613,15 +648,22 @@ fn discover_vocabulary(
     }
 
     // LARGE DATASET: Use chunked processing with hierarchical merging
-    println!("  📦 Large dataset detected, using chunked processing (chunk_size = {})...", chunk_size);
+    println!(
+        "  📦 Large dataset detected, using chunked processing (chunk_size = {})...",
+        chunk_size
+    );
 
     // Phase 1: Cluster each chunk independently
     let mut chunk_vocabularies: Vec<Vec<VocabWord>> = Vec::new();
     let mut total_chunks = (n_samples + chunk_size - 1) / chunk_size;
 
     for (chunk_idx, chunk) in phrases.chunks(chunk_size).enumerate() {
-        println!("  🔄 Processing chunk {}/{} ({} phrases)...",
-                 chunk_idx + 1, total_chunks, chunk.len());
+        println!(
+            "  🔄 Processing chunk {}/{} ({} phrases)...",
+            chunk_idx + 1,
+            total_chunks,
+            chunk.len()
+        );
 
         // Adaptive parameters for chunk-level clustering
         // Smaller chunks need smaller min_cluster_size
@@ -629,13 +671,14 @@ fn discover_vocabulary(
         let chunk_min_samples = (chunk_min_cluster_size * 3) / 4;
 
         // Process chunk and collect results
-        let chunk_vocabulary = discover_vocabulary_single_pass(
-            chunk,
-            chunk_min_cluster_size,
-            chunk_min_samples,
-        );
+        let chunk_vocabulary =
+            discover_vocabulary_single_pass(chunk, chunk_min_cluster_size, chunk_min_samples);
 
-        println!("     → Found {} words in chunk {}", chunk_vocabulary.len(), chunk_idx + 1);
+        println!(
+            "     → Found {} words in chunk {}",
+            chunk_vocabulary.len(),
+            chunk_idx + 1
+        );
 
         // Store results and explicitly drop chunk data to free memory
         chunk_vocabularies.push(chunk_vocabulary);
@@ -652,8 +695,10 @@ fn discover_vocabulary(
     // (Skip if --no-merge flag is set)
     if hdbscan_config.no_merge {
         println!();
-        println!("  📋 No-merge mode: returning {} chunk-level vocabularies without merging...",
-                 chunk_vocabularies.len());
+        println!(
+            "  📋 No-merge mode: returning {} chunk-level vocabularies without merging...",
+            chunk_vocabularies.len()
+        );
 
         // Flatten all chunk vocabularies into a single list
         let mut flat_vocabulary: Vec<VocabWord> = Vec::new();
@@ -671,7 +716,10 @@ fn discover_vocabulary(
 
     // Phase 2: Merge vocabularies by clustering their centroids
     println!();
-    println!("  🔄 Phase 2: Merging {} chunk vocabularies...", chunk_vocabularies.len());
+    println!(
+        "  🔄 Phase 2: Merging {} chunk vocabularies...",
+        chunk_vocabularies.len()
+    );
 
     // Collect all centroids and track their source members
     let mut all_centroids: Vec<Vec<f32>> = Vec::new();
@@ -711,7 +759,10 @@ fn discover_vocabulary(
     let hdbscan = match HdbscanClustering::new(merge_min_cluster_size, merge_min_samples) {
         Ok(h) => h,
         Err(e) => {
-            eprintln!("  ⚠ Failed to create HDBSCAN for merging: {:?}, using all centroids as words", e);
+            eprintln!(
+                "  ⚠ Failed to create HDBSCAN for merging: {:?}, using all centroids as words",
+                e
+            );
             return create_vocabulary_from_centroids(all_centroids, all_members, all_contexts);
         }
     };
@@ -719,7 +770,10 @@ fn discover_vocabulary(
     let labels = match hdbscan.fit_predict(&centroid_matrix) {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("  ⚠ HDBSCAN merge failed: {:?}, using all centroids as words", e);
+            eprintln!(
+                "  ⚠ HDBSCAN merge failed: {:?}, using all centroids as words",
+                e
+            );
             return create_vocabulary_from_centroids(all_centroids, all_members, all_contexts);
         }
     };
@@ -730,14 +784,20 @@ fn discover_vocabulary(
 
     for (i, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            merged_clusters.entry(label).or_insert_with(Vec::new).push(i);
+            merged_clusters
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(i);
         } else {
             noise_count += 1;
         }
     }
 
-    println!("  ✅ Merged into {} final vocabulary words ({} noise centroids excluded)",
-             merged_clusters.len(), noise_count);
+    println!(
+        "  ✅ Merged into {} final vocabulary words ({} noise centroids excluded)",
+        merged_clusters.len(),
+        noise_count
+    );
 
     // Build final vocabulary from merged clusters
     let mut final_vocabulary: Vec<VocabWord> = Vec::new();
@@ -797,11 +857,8 @@ fn discover_vocabulary_single_pass(
         // Recursively process in smaller sub-chunks
         let mut results: Vec<VocabWord> = Vec::new();
         for sub_chunk in phrases.chunks(SAFE_HDBSCAN_MAX_SAMPLES) {
-            let sub_results = discover_vocabulary_single_pass(
-                sub_chunk,
-                min_cluster_size,
-                min_samples,
-            );
+            let sub_results =
+                discover_vocabulary_single_pass(sub_chunk, min_cluster_size, min_samples);
             results.extend(sub_results);
         }
         return results;
@@ -819,7 +876,10 @@ fn discover_vocabulary_single_pass(
     let hdbscan = match HdbscanClustering::new(min_cluster_size, min_samples) {
         Ok(h) => h,
         Err(e) => {
-            eprintln!("  ⚠ Failed to create HDBSCAN: {:?}, falling back to single cluster", e);
+            eprintln!(
+                "  ⚠ Failed to create HDBSCAN: {:?}, falling back to single cluster",
+                e
+            );
             return vec![create_single_word_cluster(phrases, 0)];
         }
     };
@@ -827,7 +887,10 @@ fn discover_vocabulary_single_pass(
     let labels = match hdbscan.fit_predict(&feature_matrix) {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("  ⚠ HDBSCAN failed: {:?}, falling back to single cluster", e);
+            eprintln!(
+                "  ⚠ HDBSCAN failed: {:?}, falling back to single cluster",
+                e
+            );
             return vec![create_single_word_cluster(phrases, 0)];
         }
     };
@@ -838,13 +901,20 @@ fn discover_vocabulary_single_pass(
 
     for (i, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            cluster_map.entry(label).or_insert_with(Vec::new).push(&phrases[i]);
+            cluster_map
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(&phrases[i]);
         } else {
             noise_count += 1;
         }
     }
 
-    println!("     → Found {} clusters ({} noise points excluded)", cluster_map.len(), noise_count);
+    println!(
+        "     → Found {} clusters ({} noise points excluded)",
+        cluster_map.len(),
+        noise_count
+    );
 
     // Convert clusters to VocabWord structs
     cluster_map
@@ -883,16 +953,19 @@ fn create_vocabulary_from_centroids(
     members: Vec<Vec<String>>,
     contexts: Vec<HashSet<CallType>>,
 ) -> Vec<VocabWord> {
-    centroids.into_iter().zip(members).zip(contexts)
+    centroids
+        .into_iter()
+        .zip(members)
+        .zip(contexts)
         .enumerate()
-        .map(|(word_id, ((centroid, member_phrases), contexts))| {
-            VocabWord {
+        .map(
+            |(word_id, ((centroid, member_phrases), contexts))| VocabWord {
                 word_id,
                 representative_features: centroid,
                 member_phrases,
                 contexts,
-            }
-        })
+            },
+        )
         .collect()
 }
 
@@ -941,13 +1014,12 @@ fn analyze_context(
     let vocabulary = discover_vocabulary(phrases, min_cluster_size, min_samples, hdbscan_config);
 
     // Count unique vs shared words
-    let unique_words = vocabulary.iter()
+    let unique_words = vocabulary
+        .iter()
         .filter(|w| w.contexts.len() == 1 && w.contexts.contains(&call_type))
         .count();
 
-    let shared_words = vocabulary.iter()
-        .filter(|w| w.contexts.len() > 1)
-        .count();
+    let shared_words = vocabulary.iter().filter(|w| w.contexts.len() > 1).count();
 
     // Build word frequency distribution
     let mut word_counts: HashMap<usize, usize> = HashMap::new();
@@ -962,7 +1034,7 @@ fn analyze_context(
     }
 
     let mut word_freq_dist: Vec<_> = word_counts.into_iter().collect();
-    word_freq_dist.sort_by(|a, b| b.1.cmp(&a.1));  // Sort by frequency descending
+    word_freq_dist.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by frequency descending
 
     Ok(ContextSyntaxResults {
         context: call_type,
@@ -970,7 +1042,7 @@ fn analyze_context(
         vocabulary_size: vocabulary.len(),
         unique_words,
         shared_words,
-        avg_sequence_length: 1.0,  // Each phrase is one "word" in this analysis
+        avg_sequence_length: 1.0, // Each phrase is one "word" in this analysis
         word_frequency_distribution: word_freq_dist,
     })
 }
@@ -1000,9 +1072,7 @@ fn scan_vocalizations_dir(
                 continue;
             }
 
-            let filename = file_path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             if !filename.to_lowercase().ends_with(".flac") {
                 continue;
@@ -1011,7 +1081,10 @@ fn scan_vocalizations_dir(
             let call_type = CallType::from_filename(filename);
             if call_type != CallType::Unknown {
                 let full_path = file_path.to_str().ok_or("Invalid path")?.to_string();
-                context_files.entry(call_type).or_insert_with(Vec::new).push(full_path);
+                context_files
+                    .entry(call_type)
+                    .or_insert_with(Vec::new)
+                    .push(full_path);
             }
         }
     }
@@ -1033,7 +1106,10 @@ fn run_phase2_clustering(
     if hdbscan_config.min_cluster_size.is_some() {
         println!("  min_cluster_size: {} (custom)", min_cluster_size);
     } else {
-        println!("  min_cluster_size: {} (based on sqrt(n))", min_cluster_size);
+        println!(
+            "  min_cluster_size: {} (based on sqrt(n))",
+            min_cluster_size
+        );
     }
     if hdbscan_config.min_samples.is_some() {
         println!("  min_samples: {} (custom)", min_samples);
@@ -1042,7 +1118,8 @@ fn run_phase2_clustering(
     }
     println!();
 
-    let global_vocabulary = discover_vocabulary(all_phrases, min_cluster_size, min_samples, hdbscan_config);
+    let global_vocabulary =
+        discover_vocabulary(all_phrases, min_cluster_size, min_samples, hdbscan_config);
 
     // Save Phase 2 results
     checkpoint_manager.save_phase2_results(&global_vocabulary)?;
@@ -1075,9 +1152,16 @@ fn run_phase3_analysis(
         if let Some(phrases) = phrases_to_analyze {
             // Adaptive HDBSCAN parameters per context
             let n_phrases = phrases.len();
-            let (context_min_cluster_size, context_min_samples) = hdbscan_config.get_context_params(n_phrases);
+            let (context_min_cluster_size, context_min_samples) =
+                hdbscan_config.get_context_params(n_phrases);
 
-            match analyze_context(&phrases, call_type, context_min_cluster_size, context_min_samples, hdbscan_config) {
+            match analyze_context(
+                &phrases,
+                call_type,
+                context_min_cluster_size,
+                context_min_samples,
+                hdbscan_config,
+            ) {
                 Ok(results) => {
                     context_results.push(results);
                 }
@@ -1096,33 +1180,36 @@ fn run_phase3_analysis(
 struct HdbscanConfig {
     min_cluster_size: Option<usize>,
     min_samples: Option<usize>,
-    no_merge: bool,  // Skip hierarchical merging for chunk-level granularity
-    skip_clustering: bool,  // Skip HDBSCAN entirely - treat each phrase as its own word
+    no_merge: bool,        // Skip hierarchical merging for chunk-level granularity
+    skip_clustering: bool, // Skip HDBSCAN entirely - treat each phrase as its own word
 }
 
 impl HdbscanConfig {
     fn get_global_params(&self, n_samples: usize) -> (usize, usize) {
-        let min_cluster_size = self.min_cluster_size.unwrap_or_else(|| {
-            (n_samples as f64).sqrt() as usize
-        });
-        let min_samples = self.min_samples.unwrap_or_else(|| {
-            (min_cluster_size * 3) / 4
-        });
+        let min_cluster_size = self
+            .min_cluster_size
+            .unwrap_or_else(|| (n_samples as f64).sqrt() as usize);
+        let min_samples = self
+            .min_samples
+            .unwrap_or_else(|| (min_cluster_size * 3) / 4);
         (min_cluster_size, min_samples)
     }
 
     fn get_context_params(&self, n_samples: usize) -> (usize, usize) {
-        let min_cluster_size = self.min_cluster_size.unwrap_or_else(|| {
-            ((n_samples as f64).ln() as usize).max(5)
-        });
-        let min_samples = self.min_samples.unwrap_or_else(|| {
-            (min_cluster_size * 3) / 4
-        });
+        let min_cluster_size = self
+            .min_cluster_size
+            .unwrap_or_else(|| ((n_samples as f64).ln() as usize).max(5));
+        let min_samples = self
+            .min_samples
+            .unwrap_or_else(|| (min_cluster_size * 3) / 4);
         (min_cluster_size, min_samples)
     }
 
     fn is_custom(&self) -> bool {
-        self.min_cluster_size.is_some() || self.min_samples.is_some() || self.no_merge || self.skip_clustering
+        self.min_cluster_size.is_some()
+            || self.min_samples.is_some()
+            || self.no_merge
+            || self.skip_clustering
     }
 }
 
@@ -1147,9 +1234,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Options:");
         println!("  --resume                Resume from checkpoint (skip Phase 1)");
         println!("  --recluster             Force re-run Phase 2 & 3 even if checkpointed");
-        println!("  --no-merge              Skip centroid merging for more granular chunk-level results");
-        println!("  --skip-clustering       Skip HDBSCAN entirely - treat each phrase as its own word");
-        println!("  --min-cluster-size N    Override min_cluster_size for HDBSCAN (default: sqrt(n))");
+        println!(
+            "  --no-merge              Skip centroid merging for more granular chunk-level results"
+        );
+        println!(
+            "  --skip-clustering       Skip HDBSCAN entirely - treat each phrase as its own word"
+        );
+        println!(
+            "  --min-cluster-size N    Override min_cluster_size for HDBSCAN (default: sqrt(n))"
+        );
         println!("  --min-samples N         Override min_samples for HDBSCAN (default: 75% of min_cluster_size)");
         println!("  --help, -h              Show this help message");
         println!();
@@ -1164,7 +1257,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  cargo run --example marmoset_15d_lexicon_to_syntax --release -- --resume --min-cluster-size 50");
         println!();
         println!("  # Skip merging to preserve chunk-level granularity");
-        println!("  cargo run --example marmoset_15d_lexicon_to_syntax --release -- --resume --no-merge");
+        println!(
+            "  cargo run --example marmoset_15d_lexicon_to_syntax --release -- --resume --no-merge"
+        );
         println!();
         println!("  # Skip HDBSCAN clustering entirely - each phrase is a word");
         println!("  cargo run --example marmoset_15d_lexicon_to_syntax --release -- --resume --skip-clustering");
@@ -1223,12 +1318,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         i += 1;
     }
 
-    let hdbscan_config = HdbscanConfig { min_cluster_size, min_samples, no_merge, skip_clustering };
+    let hdbscan_config = HdbscanConfig {
+        min_cluster_size,
+        min_samples,
+        no_merge,
+        skip_clustering,
+    };
 
     let vocalizations_dir = Path::new(&vocalizations_dir);
 
     if !vocalizations_dir.exists() {
-        println!("❌ Vocalizations directory not found: {}", vocalizations_dir.display());
+        println!(
+            "❌ Vocalizations directory not found: {}",
+            vocalizations_dir.display()
+        );
         println!("   Usage: cargo run --example marmoset_15d_lexicon_to_syntax --release <vocalizations_dir> [--resume]");
         return Err("Directory not found".into());
     }
@@ -1246,7 +1349,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("🔄 Resuming from checkpoint...");
         if let Some(checkpoint) = checkpoint_manager.load_checkpoint()? {
             println!("   Checkpoint found:");
-            println!("     - Completed contexts: {:?}", checkpoint.completed_contexts);
+            println!(
+                "     - Completed contexts: {:?}",
+                checkpoint.completed_contexts
+            );
             println!("     - Total phrases: {}", checkpoint.total_phrases);
             println!("     - Phase 2 completed: {}", checkpoint.phase2_completed);
             println!("     - Phase 3 completed: {}", checkpoint.phase3_completed);
@@ -1285,14 +1391,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("📂 Scanning vocalizations directory: {}", vocalizations_dir.display());
+    println!(
+        "📂 Scanning vocalizations directory: {}",
+        vocalizations_dir.display()
+    );
     println!();
 
     // Scan for marmoset vocalization files
     let context_files = scan_vocalizations_dir(vocalizations_dir)?;
 
     let total_files: usize = context_files.values().map(|v| v.len()).sum();
-    println!("✅ Discovered {} FLAC files across {} call types", total_files, context_files.len());
+    println!(
+        "✅ Discovered {} FLAC files across {} call types",
+        total_files,
+        context_files.len()
+    );
     println!();
 
     // Display file counts per call type
@@ -1314,7 +1427,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ""
         };
         if count > 0 {
-            println!("  [{:1}] {:15} {:>8} files | {}", status, call_type.name(), count, call_type.description());
+            println!(
+                "  [{:1}] {:15} {:>8} files | {}",
+                status,
+                call_type.name(),
+                count,
+                call_type.description()
+            );
         }
     }
     println!();
@@ -1329,12 +1448,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // If resuming, load existing phrases into memory
     let loaded_phrases_clone = loaded_phrases.clone();
-    let context_phrases: Mutex<HashMap<CallType, Vec<PhraseCandidate>>> = Mutex::new(HashMap::new());
+    let context_phrases: Mutex<HashMap<CallType, Vec<PhraseCandidate>>> =
+        Mutex::new(HashMap::new());
 
     // Load checkpoint phrases into context map
     for phrase in &loaded_phrases_clone {
         let mut ctx = context_phrases.lock().unwrap();
-        ctx.entry(phrase.call_type).or_insert_with(Vec::new).push(phrase.clone());
+        ctx.entry(phrase.call_type)
+            .or_insert_with(Vec::new)
+            .push(phrase.clone());
     }
 
     // Process all call types in parallel
@@ -1345,7 +1467,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Clone the vocalizations dir path for use in parallel
     let vocalizations_dir_path = vocalizations_dir.to_path_buf();
 
-    println!("🚀 Processing {} call types in parallel...", total_call_types);
+    println!(
+        "🚀 Processing {} call types in parallel...",
+        total_call_types
+    );
     println!();
 
     // Process call types in parallel, collecting results
@@ -1468,19 +1593,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Merge all phrases from all call types
     let mut all_phrases: Vec<PhraseCandidate> = loaded_phrases;
-    all_phrases.extend(merged_context_phrases
-        .values()
-        .flat_map(|v| v.iter().cloned())
-        .collect::<Vec<_>>());
+    all_phrases.extend(
+        merged_context_phrases
+            .values()
+            .flat_map(|v| v.iter().cloned())
+            .collect::<Vec<_>>(),
+    );
 
     // Update context_phrases with merged results
     *context_phrases.lock().unwrap() = merged_context_phrases;
 
     // Save final checkpoint
-    if let Err(e) = checkpoint_manager.save_checkpoint(
-        &merged_completed_contexts,
-        all_phrases.len(),
-    ) {
+    if let Err(e) =
+        checkpoint_manager.save_checkpoint(&merged_completed_contexts, all_phrases.len())
+    {
         eprintln!("    Warning: Failed to save progress checkpoint: {}", e);
     }
 
@@ -1533,15 +1659,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Word Sharing Across Contexts:");
-    println!("  Universal (all 7 contexts):     {} words ({:.1}%)",
-             universal_words,
-             universal_words as f64 / global_vocabulary.len() as f64 * 100.0);
-    println!("  Shared (2-3 contexts):          {} words ({:.1}%)",
-             shared_2_3_contexts,
-             shared_2_3_contexts as f64 / global_vocabulary.len() as f64 * 100.0);
-    println!("  Context-specific (1 context):  {} words ({:.1}%)",
-             context_specific_words,
-             context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0);
+    println!(
+        "  Universal (all 7 contexts):     {} words ({:.1}%)",
+        universal_words,
+        universal_words as f64 / global_vocabulary.len() as f64 * 100.0
+    );
+    println!(
+        "  Shared (2-3 contexts):          {} words ({:.1}%)",
+        shared_2_3_contexts,
+        shared_2_3_contexts as f64 / global_vocabulary.len() as f64 * 100.0
+    );
+    println!(
+        "  Context-specific (1 context):  {} words ({:.1}%)",
+        context_specific_words,
+        context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0
+    );
     println!();
 
     // Analyze each context separately
@@ -1554,7 +1686,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("⏭ Phase 3 already completed, loading from checkpoint...");
         match checkpoint_manager.load_phase3_results()? {
             Some(results) => {
-                println!("✅ Loaded {} context results from checkpoint", results.len());
+                println!(
+                    "✅ Loaded {} context results from checkpoint",
+                    results.len()
+                );
                 println!();
                 results
             }
@@ -1582,20 +1717,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for results in &context_results {
         println!("┌─────────────────────────────────────────────────────────────────────────┐");
-        println!("│ Context: {} ({})                                            │",
-                 results.context.name(),
-                 results.context.description());
+        println!(
+            "│ Context: {} ({})                                            │",
+            results.context.name(),
+            results.context.description()
+        );
         println!("└─────────────────────────────────────────────────────────────────────────┘");
         println!("  Total phrases:           {}", results.num_phrases);
-        println!("  Vocabulary size:         {} words", results.vocabulary_size);
-        println!("  Unique words:            {} (only in this context)", results.unique_words);
-        println!("  Shared words:            {} (found in ≥2 contexts)", results.shared_words);
+        println!(
+            "  Vocabulary size:         {} words",
+            results.vocabulary_size
+        );
+        println!(
+            "  Unique words:            {} (only in this context)",
+            results.unique_words
+        );
+        println!(
+            "  Shared words:            {} (found in ≥2 contexts)",
+            results.shared_words
+        );
         println!();
 
         if !results.word_frequency_distribution.is_empty() {
             println!("  Top 10 Most Frequent Words:");
-            for (i, (word_id, freq)) in results.word_frequency_distribution.iter().take(10).enumerate() {
-                println!("    {:2}. Word {:>4} occurs {} time(s)", i + 1, word_id, freq);
+            for (i, (word_id, freq)) in results
+                .word_frequency_distribution
+                .iter()
+                .take(10)
+                .enumerate()
+            {
+                println!(
+                    "    {:2}. Word {:>4} occurs {} time(s)",
+                    i + 1,
+                    word_id,
+                    freq
+                );
             }
         }
         println!();
@@ -1607,8 +1763,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    println!("{:<15} {:>10} {:>10} {:>12} {:>12} {:>12}",
-             "Context", "Phrases", "Vocab", "Unique", "Shared", "Uniq%");
+    println!(
+        "{:<15} {:>10} {:>10} {:>12} {:>12} {:>12}",
+        "Context", "Phrases", "Vocab", "Unique", "Shared", "Uniq%"
+    );
     println!("{}", "-".repeat(75));
 
     for results in &context_results {
@@ -1618,13 +1776,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             0.0
         };
 
-        println!("{:<15} {:>10} {:>10} {:>12} {:>12} {:>11.1}%",
-                 results.context.name(),
-                 results.num_phrases,
-                 results.vocabulary_size,
-                 results.unique_words,
-                 results.shared_words,
-                 uniq_pct);
+        println!(
+            "{:<15} {:>10} {:>10} {:>12} {:>12} {:>11.1}%",
+            results.context.name(),
+            results.num_phrases,
+            results.vocabulary_size,
+            results.unique_words,
+            results.shared_words,
+            uniq_pct
+        );
     }
     println!();
 
@@ -1646,13 +1806,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if context_specific_words > global_vocabulary.len() / 2 {
         println!("✓ HIGH CONTEXT SPECIFICITY");
-        println!("  → {:.0}% of words are context-specific",
-                 context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0);
+        println!(
+            "  → {:.0}% of words are context-specific",
+            context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0
+        );
         println!("  → Suggests: Strong call type specialization");
     } else {
         println!("✓ MODERATE VOCABULARY SHARING");
-        println!("  → {:.0}% of words are context-specific",
-                 context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0);
+        println!(
+            "  → {:.0}% of words are context-specific",
+            context_specific_words as f64 / global_vocabulary.len() as f64 * 100.0
+        );
         println!("  → Suggests: Shared acoustic elements across call types");
     }
     println!();

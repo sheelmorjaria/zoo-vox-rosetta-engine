@@ -9,11 +9,11 @@
 // - High cluster coherence (indicating distinct vocabulary items)
 // - Structured phoneme sequences (via GMM-HMM)
 
-use std::path::Path;
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 use technical_architecture::{
-    LexiconToSyntaxPipeline, SegmentationConfig, VectorizationConfig,
-    DiscoveryConfig, RefinementConfig,
+    DiscoveryConfig, LexiconToSyntaxPipeline, RefinementConfig, SegmentationConfig,
+    VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -107,13 +107,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load annotations to get context information
     let bat_annotations_data = load_bat_annotations(&bat_annotations)?;
-    println!("📋 Loaded {} annotations from bat dataset", bat_annotations_data.len());
+    println!(
+        "📋 Loaded {} annotations from bat dataset",
+        bat_annotations_data.len()
+    );
 
     // Collect subset of bat audio files
     let bat_audio_files: Vec<_> = std::fs::read_dir(&bat_audio_dir)?
         .filter_map(|entry| entry.ok())
         .filter(|entry| {
-            entry.path().extension()
+            entry
+                .path()
+                .extension()
                 .and_then(|s| s.to_str())
                 .map(|ext| ext.eq_ignore_ascii_case("wav"))
                 .unwrap_or(false)
@@ -122,7 +127,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|entry| entry.path())
         .collect();
 
-    println!("📁 Selected {} bat audio files for analysis", bat_audio_files.len());
+    println!(
+        "📁 Selected {} bat audio files for analysis",
+        bat_audio_files.len()
+    );
     println!();
 
     // Run pipeline on bat dataset
@@ -152,8 +160,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 Loaded {} ESC-50 metadata entries", esc50_metadata.len());
 
     // Select diverse subset across different categories
-    let esc50_audio_files = select_diverse_esc50_samples(&esc50_audio_dir, &esc50_metadata, subset_size)?;
-    println!("📁 Selected {} ESC-50 audio files across {} categories",
+    let esc50_audio_files =
+        select_diverse_esc50_samples(&esc50_audio_dir, &esc50_metadata, subset_size)?;
+    println!(
+        "📁 Selected {} ESC-50 audio files across {} categories",
         esc50_audio_files.len(),
         count_unique_categories(&esc50_audio_files, &esc50_metadata)
     );
@@ -220,7 +230,8 @@ fn load_bat_annotations(path: &Path) -> Result<Vec<BatAnnotation>, Box<dyn std::
     let mut annotations = Vec::new();
     let content = std::fs::read_to_string(path)?;
 
-    for line in content.lines().skip(1) { // Skip header
+    for line in content.lines().skip(1) {
+        // Skip header
         let parts: Vec<&str> = line.split(',').collect();
         if parts.len() >= 8 {
             annotations.push(BatAnnotation {
@@ -239,7 +250,8 @@ fn load_esc50_metadata(path: &Path) -> Result<Vec<Esc50Metadata>, Box<dyn std::e
     let mut metadata = Vec::new();
     let content = std::fs::read_to_string(path)?;
 
-    for line in content.lines().skip(1) { // Skip header
+    for line in content.lines().skip(1) {
+        // Skip header
         let parts: Vec<&str> = line.split(',').collect();
         if parts.len() >= 5 {
             metadata.push(Esc50Metadata {
@@ -267,7 +279,8 @@ fn select_diverse_esc50_samples(
 
     // Group files by category
     for meta in metadata {
-        files_per_category.entry(&meta.category)
+        files_per_category
+            .entry(&meta.category)
             .or_insert_with(Vec::new)
             .push(meta);
     }
@@ -295,11 +308,13 @@ fn select_diverse_esc50_samples(
 }
 
 fn count_unique_categories(files: &[std::path::PathBuf], metadata: &[Esc50Metadata]) -> usize {
-    let meta_map: HashMap<_, _> = metadata.iter()
+    let meta_map: HashMap<_, _> = metadata
+        .iter()
         .map(|m| (&m.filename, &m.category))
         .collect();
 
-    files.iter()
+    files
+        .iter()
         .filter_map(|f| f.file_name().and_then(|n| n.to_str()))
         .filter_map(|n| meta_map.get(&n.to_string()).copied())
         .collect::<HashSet<_>>()
@@ -387,12 +402,16 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
 
     // Segmented phrases
-    println!("│ Segmented Phrases         │ {:>16} │ {:>16} │            │",
-        bat.phrases, esc50.phrases);
+    println!(
+        "│ Segmented Phrases         │ {:>16} │ {:>16} │            │",
+        bat.phrases, esc50.phrases
+    );
 
     // Vocabulary size
-    println!("│ Vocabulary Items          │ {:>16} │ {:>16} │            │",
-        bat.vocabulary, esc50.vocabulary);
+    println!(
+        "│ Vocabulary Items          │ {:>16} │ {:>16} │            │",
+        bat.vocabulary, esc50.vocabulary
+    );
 
     // Zipf's alpha
     match (bat.zipf_alpha, esc50.zipf_alpha) {
@@ -405,33 +424,51 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
                 "❌ Unnatural"
             };
 
-            println!("│ Zipf's α                  │ {:>16.3} │ {:>16.3} │ {:>10} │",
-                bat_alpha, esc50_alpha, assessment);
+            println!(
+                "│ Zipf's α                  │ {:>16.3} │ {:>16.3} │ {:>10} │",
+                bat_alpha, esc50_alpha, assessment
+            );
 
-            println!("├─────────────────────────────────────────────────────────────────────────────┤");
+            println!(
+                "├─────────────────────────────────────────────────────────────────────────────┤"
+            );
             println!("│ Zipf's Law Interpretation:                                                     │");
-            println!("│   • α ≈ 1.0 indicates natural language-like distribution                      │");
-            println!("│   • Bat vocalizations showing α ≈ 1.0 suggests communicative structure        │");
-            println!("│   • Environmental sounds expected to deviate from α ≈ 1.0                     │");
+            println!(
+                "│   • α ≈ 1.0 indicates natural language-like distribution                      │"
+            );
+            println!(
+                "│   • Bat vocalizations showing α ≈ 1.0 suggests communicative structure        │"
+            );
+            println!(
+                "│   • Environmental sounds expected to deviate from α ≈ 1.0                     │"
+            );
         }
         _ => {
-            println!("│ Zipf's α                  │ {:>16} │ {:>16} │            │",
-                "N/A", "N/A");
+            println!(
+                "│ Zipf's α                  │ {:>16} │ {:>16} │            │",
+                "N/A", "N/A"
+            );
         }
     }
 
     // Average cluster size
-    println!("│ Avg Cluster Size          │ {:>16.1} │ {:>16.1} │            │",
-        bat.avg_cluster_size, esc50.avg_cluster_size);
+    println!(
+        "│ Avg Cluster Size          │ {:>16.1} │ {:>16.1} │            │",
+        bat.avg_cluster_size, esc50.avg_cluster_size
+    );
 
     // Noise ratio
     let bat_noise_ratio = (bat.noise_count as f64 / bat.phrases as f64) * 100.0;
     let esc50_noise_ratio = (esc50.noise_count as f64 / esc50.phrases as f64) * 100.0;
-    println!("│ Noise Ratio (%)           │ {:>16.1} │ {:>16.1} │            │",
-        bat_noise_ratio, esc50_noise_ratio);
+    println!(
+        "│ Noise Ratio (%)           │ {:>16.1} │ {:>16.1} │            │",
+        bat_noise_ratio, esc50_noise_ratio
+    );
 
-    println!("│ Phoneme Models            │ {:>16} │ {:>16} │            │",
-        bat.phoneme_models, esc50.phoneme_models);
+    println!(
+        "│ Phoneme Models            │ {:>16} │ {:>16} │            │",
+        bat.phoneme_models, esc50.phoneme_models
+    );
 
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -466,11 +503,19 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
     let esc50_vocabulary_ratio = (esc50.vocabulary as f64 / esc50.phrases as f64) * 100.0;
 
     println!("Vocabulary Diversity:");
-    println!("   ├─ Bat: {:.1}% of phrases are unique vocabulary items", bat_vocabulary_ratio);
-    println!("   ├─ ESC-50: {:.1}% of phrases are unique vocabulary items", esc50_vocabulary_ratio);
+    println!(
+        "   ├─ Bat: {:.1}% of phrases are unique vocabulary items",
+        bat_vocabulary_ratio
+    );
+    println!(
+        "   ├─ ESC-50: {:.1}% of phrases are unique vocabulary items",
+        esc50_vocabulary_ratio
+    );
 
     if bat_vocabulary_ratio < esc50_vocabulary_ratio {
-        println!("   └─ ✅ Lower ratio in bats suggests more phrase repetition (linguistic marker)");
+        println!(
+            "   └─ ✅ Lower ratio in bats suggests more phrase repetition (linguistic marker)"
+        );
     } else {
         println!("   └─ ⚠️  Higher ratio in bats may indicate less structured communication");
     }
@@ -478,7 +523,13 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
 
     // Cluster coherence analysis
     println!("Cluster Coherence:");
-    println!("   ├─ Bat: {} vocabulary items from {} phrases", bat.vocabulary, bat.phrases);
-    println!("   ├─ ESC-50: {} vocabulary items from {} phrases", esc50.vocabulary, esc50.phrases);
+    println!(
+        "   ├─ Bat: {} vocabulary items from {} phrases",
+        bat.vocabulary, bat.phrases
+    );
+    println!(
+        "   ├─ ESC-50: {} vocabulary items from {} phrases",
+        esc50.vocabulary, esc50.phrases
+    );
     println!("   └─ Higher vocabulary in bats suggests more diverse vocalization repertoire");
 }

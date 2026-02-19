@@ -11,9 +11,9 @@
 
 use technical_architecture::{
     bio_acoustic_agent::{
-        BioAcousticAgent, AcousticInventory, AcousticPrototype, AcousticModality,
-        SourceMetadata, SynthesisRequest, EnvState, InteractionContext,
-        ContextDeltaCalculator, FormantBarrierValidator,
+        AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent,
+        ContextDeltaCalculator, EnvState, FormantBarrierValidator, InteractionContext,
+        SourceMetadata, SynthesisRequest,
     },
     rosetta_pipeline::ContextEnrichedPhrase,
 };
@@ -96,15 +96,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Set response strategies
-    inventory.set_response_strategy("Tsik", "Phee");  // Calm alarm with contact
-    inventory.set_response_strategy("Phee", "Phee");  // Reply to contact
+    inventory.set_response_strategy("Tsik", "Phee"); // Calm alarm with contact
+    inventory.set_response_strategy("Phee", "Phee"); // Reply to contact
     inventory.set_response_strategy("Twitter", "Twitter"); // Echo social
 
     println!("  Added prototypes:");
     for label in inventory.available_labels() {
         let proto = inventory.get_prototype(label).unwrap();
-        println!("    ├─ {}: F0={:.0}Hz, Duration={:.0}ms, Modality={:?}",
-            label, proto.metadata.mean_f0_hz, proto.metadata.duration_ms, proto.modality);
+        println!(
+            "    ├─ {}: F0={:.0}Hz, Duration={:.0}ms, Modality={:?}",
+            label, proto.metadata.mean_f0_hz, proto.metadata.duration_ms, proto.modality
+        );
     }
     println!();
 
@@ -136,8 +138,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (env, effect) in env_deltas {
         let delta = ContextDeltaCalculator::calculate(env, InteractionContext::Solo);
-        println!("  │ {:?} │ +{:.0}Hz, +{:.2} loudness ({})",
-            env, delta.delta_mean_f0_hz, delta.delta_loudness, effect);
+        println!(
+            "  │ {:?} │ +{:.0}Hz, +{:.2} loudness ({})",
+            env, delta.delta_mean_f0_hz, delta.delta_loudness, effect
+        );
     }
     println!("  └─────────────┴─────────────────────────────────────────────────────────────┘");
     println!();
@@ -155,18 +159,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_context(InteractionContext::Reply);
     let plan = agent.plan_synthesis(request)?;
     println!("    ├─ Source: F0={:.0}Hz", plan.source_metadata.mean_f0_hz);
-    println!("    ├─ Delta: +{:.0}Hz pitch, +{:.2} loudness", plan.delta.delta_mean_f0_hz, plan.delta.delta_loudness);
+    println!(
+        "    ├─ Delta: +{:.0}Hz pitch, +{:.2} loudness",
+        plan.delta.delta_mean_f0_hz, plan.delta.delta_loudness
+    );
     println!("    ├─ Target: F0={:.0}Hz", plan.target_metadata.mean_f0_hz);
     println!("    └─ Valid: {} ✓", plan.validation.is_valid);
     println!();
 
     // Test 2: Tsik with high emotional intensity
     println!("  Test 2: Synthesize 'Tsik' with high urgency (grading=0.9)");
-    let request = SynthesisRequest::new("Tsik")
-        .with_grading(0.9);
+    let request = SynthesisRequest::new("Tsik").with_grading(0.9);
     let plan = agent.plan_synthesis(request)?;
     println!("    ├─ Source: jitter={:.2}", plan.source_metadata.jitter);
-    println!("    ├─ Delta: +{:.2} jitter, +{:.2} shimmer", plan.delta.delta_jitter, plan.delta.delta_shimmer);
+    println!(
+        "    ├─ Delta: +{:.2} jitter, +{:.2} shimmer",
+        plan.delta.delta_jitter, plan.delta.delta_shimmer
+    );
     println!("    ├─ Target: jitter={:.2}", plan.target_metadata.jitter);
     println!("    └─ Valid: {} ✓", plan.validation.is_valid);
     println!();
@@ -176,7 +185,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env_delta = ContextDeltaCalculator::calculate(EnvState::Wind, InteractionContext::Reply);
     let grading_delta = ContextDeltaCalculator::calculate_for_grading(0.8);
     let combined = ContextDeltaCalculator::combine(&[env_delta, grading_delta]);
-    println!("    └─ Combined: +{:.0}Hz pitch, +{:.2} jitter", combined.delta_mean_f0_hz, combined.delta_jitter);
+    println!(
+        "    └─ Combined: +{:.0}Hz pitch, +{:.2} jitter",
+        combined.delta_mean_f0_hz, combined.delta_jitter
+    );
     println!();
 
     // =========================================================================
@@ -198,8 +210,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
     let validation = FormantBarrierValidator::validate(&source, &target);
-    println!("    ├─ Source: HNR={:.0}, Entropy={:.2}", source.harmonic_to_noise_ratio, source.entropy);
-    println!("    ├─ Target: HNR={:.0}, Entropy={:.2}", target.harmonic_to_noise_ratio, target.entropy);
+    println!(
+        "    ├─ Source: HNR={:.0}, Entropy={:.2}",
+        source.harmonic_to_noise_ratio, source.entropy
+    );
+    println!(
+        "    ├─ Target: HNR={:.0}, Entropy={:.2}",
+        target.harmonic_to_noise_ratio, target.entropy
+    );
     println!("    └─ Valid: {} ✓", validation.is_valid);
     println!();
 
@@ -218,8 +236,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
     let validation = FormantBarrierValidator::validate(&source, &target);
-    println!("    ├─ Source: HNR={:.0}, Entropy={:.2} (Harmonic)", source.harmonic_to_noise_ratio, source.entropy);
-    println!("    ├─ Target: HNR={:.0}, Entropy={:.2} (Transient)", target.harmonic_to_noise_ratio, target.entropy);
+    println!(
+        "    ├─ Source: HNR={:.0}, Entropy={:.2} (Harmonic)",
+        source.harmonic_to_noise_ratio, source.entropy
+    );
+    println!(
+        "    ├─ Target: HNR={:.0}, Entropy={:.2} (Transient)",
+        target.harmonic_to_noise_ratio, target.entropy
+    );
     println!("    ├─ Valid: {} ✗", validation.is_valid);
     println!("    ├─ Violations:");
     for v in &validation.violations {
@@ -249,19 +273,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("  Input Phrase (from RosettaPipeline):");
-    println!("    ├─ Semantic Label: {} ({:.0}% confidence)", input_phrase.semantic_label, input_phrase.label_confidence * 100.0);
+    println!(
+        "    ├─ Semantic Label: {} ({:.0}% confidence)",
+        input_phrase.semantic_label,
+        input_phrase.label_confidence * 100.0
+    );
     println!("    ├─ Inferred Intent: {}", input_phrase.inferred_intent);
     println!("    ├─ Environment: {:?}", input_phrase.environmental_state);
     println!("    └─ Grading Score: {:.1}", input_phrase.grading_score);
     println!();
 
     // Select response
-    let response_label = agent.select_response(&input_phrase.semantic_label)
+    let response_label = agent
+        .select_response(&input_phrase.semantic_label)
         .map(|s| s.clone())
         .unwrap_or_else(|| input_phrase.semantic_label.clone());
 
     println!("  Response Strategy:");
-    println!("    └─ Input '{}' → Response '{}'", input_phrase.semantic_label, response_label);
+    println!(
+        "    └─ Input '{}' → Response '{}'",
+        input_phrase.semantic_label, response_label
+    );
     println!();
 
     // Plan synthesis
@@ -282,16 +314,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("  Synthesis Plan:");
     println!("    ├─ Source: '{}' prototype", plan.source_label);
-    println!("    ├─ F0: {:.0}Hz → {:.0}Hz (+{:.0}Hz)",
+    println!(
+        "    ├─ F0: {:.0}Hz → {:.0}Hz (+{:.0}Hz)",
         plan.source_metadata.mean_f0_hz,
         plan.target_metadata.mean_f0_hz,
-        plan.delta.delta_mean_f0_hz);
-    println!("    ├─ Loudness: {:.2} → {:.2}",
-        plan.source_metadata.loudness,
-        plan.target_metadata.loudness);
-    println!("    ├─ Jitter: {:.2} → {:.2}",
-        plan.source_metadata.jitter,
-        plan.target_metadata.jitter);
+        plan.delta.delta_mean_f0_hz
+    );
+    println!(
+        "    ├─ Loudness: {:.2} → {:.2}",
+        plan.source_metadata.loudness, plan.target_metadata.loudness
+    );
+    println!(
+        "    ├─ Jitter: {:.2} → {:.2}",
+        plan.source_metadata.jitter, plan.target_metadata.jitter
+    );
     println!("    └─ Valid: {} ✓", plan.validation.is_valid);
     println!();
 
@@ -305,7 +341,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("The Bio-Acoustic Interaction Agent successfully:");
     println!();
     println!("  1. LISTENED: Processed ContextEnrichedPhrase from RosettaPipeline");
-    println!("  2. DECIDED: Selected '{}' as response to '{}'", response_label, input_phrase.semantic_label);
+    println!(
+        "  2. DECIDED: Selected '{}' as response to '{}'",
+        response_label, input_phrase.semantic_label
+    );
     println!("  3. SELECTED: Retrieved prototype from AcousticInventory");
     println!("  4. CALCULATED: Generated context-aware deltas (Wind + Reply + Grading)");
     println!("  5. CHECKED: Validated against Formant Barrier");

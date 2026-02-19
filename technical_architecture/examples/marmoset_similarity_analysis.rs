@@ -28,11 +28,7 @@ use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 
 use technical_architecture::{
-    AcousticSimilarityEngine,
-    KnnClassifier,
-    SimilarityAnalysis,
-    SimilarityIndex,
-    KnnCvResults,
+    AcousticSimilarityEngine, KnnClassifier, KnnCvResults, SimilarityAnalysis, SimilarityIndex,
 };
 
 // =============================================================================
@@ -181,14 +177,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let analysis_start = Instant::now();
 
-    let analysis = SimilarityAnalysis::analyze(
-        &feature_matrix,
-        &call_types,
-        &file_names,
-        &feature_names,
-    );
+    let analysis =
+        SimilarityAnalysis::analyze(&feature_matrix, &call_types, &file_names, &feature_names);
 
-    println!("   ✅ Analysis complete in {:.2}s", analysis_start.elapsed().as_secs_f64());
+    println!(
+        "   ✅ Analysis complete in {:.2}s",
+        analysis_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Print summary
@@ -205,7 +200,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("   🔧 Building k-NN classifier...");
-    let classifier = KnnClassifier::new(feature_matrix.clone(), call_types.clone(), file_names.clone());
+    let classifier = KnnClassifier::new(
+        feature_matrix.clone(),
+        call_types.clone(),
+        file_names.clone(),
+    );
 
     println!("   🔍 Finding optimal k (testing k=1,3,5,7,9)...");
     let k_values = vec![1, 3, 5, 7, 9];
@@ -217,7 +216,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   └────────────────────────────────────────────────────────────────┘");
     println!();
     println!("   📊 Optimal k: {}", cv_results.optimal_k);
-    println!("   📊 Mean Accuracy: {:.1}%", cv_results.mean_accuracy * 100.0);
+    println!(
+        "   📊 Mean Accuracy: {:.1}%",
+        cv_results.mean_accuracy * 100.0
+    );
     println!();
 
     println!("   📊 Per-Class Accuracy:");
@@ -234,7 +236,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Confusion Matrix (showing misclassifications):");
     for entry in cv_results.confusion_matrix.iter() {
         if entry.predicted != entry.actual && entry.count > 0 {
-            println!("      • Predicted {}, Actual {}: {} times", entry.predicted, entry.actual, entry.count);
+            println!(
+                "      • Predicted {}, Actual {}: {} times",
+                entry.predicted, entry.actual, entry.count
+            );
         }
     }
     println!();
@@ -268,9 +273,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(results) => {
                 println!("      Top 5 similar:");
                 for (i, r) in results.iter().enumerate() {
-                    let match_marker = if &r.call_type == demo_type { "✓" } else { "✗" };
-                    println!("         {}. {} {:.3} ({}) {}",
-                             i + 1, r.call_type, r.similarity, match_marker, r.file_name);
+                    let match_marker = if &r.call_type == demo_type {
+                        "✓"
+                    } else {
+                        "✗"
+                    };
+                    println!(
+                        "         {}. {} {:.3} ({}) {}",
+                        i + 1,
+                        r.call_type,
+                        r.similarity,
+                        match_marker,
+                        r.file_name
+                    );
                 }
             }
             None => {
@@ -357,11 +372,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠══════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                      ║");
     println!("║  📊 RESULTS:                                                         ║");
-    println!("║      • Samples analyzed: {}                                          ║", n_samples);
-    println!("║      • Feature dimensions: {}                                        ║", n_dims);
-    println!("║      • Call types: {}                                                ║", type_counts.len());
-    println!("║      • k-NN accuracy: {:.1}%                                         ║", cv_results.mean_accuracy * 100.0);
-    println!("║      • Separation ratio: {:.2}x                                      ║", analysis.separation_ratio);
+    println!(
+        "║      • Samples analyzed: {}                                          ║",
+        n_samples
+    );
+    println!(
+        "║      • Feature dimensions: {}                                        ║",
+        n_dims
+    );
+    println!(
+        "║      • Call types: {}                                                ║",
+        type_counts.len()
+    );
+    println!(
+        "║      • k-NN accuracy: {:.1}%                                         ║",
+        cv_results.mean_accuracy * 100.0
+    );
+    println!(
+        "║      • Separation ratio: {:.2}x                                      ║",
+        analysis.separation_ratio
+    );
     println!("║                                                                      ║");
     println!("║  🎯 RECOMMENDATION:                                                  ║");
     if analysis.separation_ratio > 2.0 {

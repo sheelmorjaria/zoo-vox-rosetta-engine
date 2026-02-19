@@ -8,7 +8,7 @@
 //! from the discovery pipeline.
 
 use crate::bio_acoustic_agent::{
-    AcousticInventory, AcousticPrototype, AcousticModality, SourceMetadata,
+    AcousticInventory, AcousticModality, AcousticPrototype, SourceMetadata,
 };
 use std::collections::HashMap;
 use std::path::Path;
@@ -44,13 +44,13 @@ pub mod feature_indices {
     pub const DURATION_MS: usize = 1;
     pub const F0_RANGE_HZ: usize = 2;
     pub const HARMONIC_TO_NOISE_RATIO: usize = 3;
-    pub const SPECTRAL_FLATNESS: usize = 4;  // -> entropy
+    pub const SPECTRAL_FLATNESS: usize = 4; // -> entropy
     pub const HARMONICITY: usize = 5;
     pub const ATTACK_TIME_MS: usize = 6;
     pub const DECAY_TIME_MS: usize = 7;
     pub const SUSTAIN_LEVEL: usize = 8;
-    pub const VIBRATO_RATE_HZ: usize = 9;  // -> fm_rate_hz
-    pub const VIBRATO_DEPTH: usize = 10;   // -> fm_depth_hz
+    pub const VIBRATO_RATE_HZ: usize = 9; // -> fm_rate_hz
+    pub const VIBRATO_DEPTH: usize = 10; // -> fm_depth_hz
     pub const JITTER: usize = 11;
     pub const SHIMMER: usize = 12;
     pub const MFCC_1: usize = 13;
@@ -103,12 +103,12 @@ pub fn features_to_metadata(features: &[f64]) -> SourceMetadata {
         duration_ms: features[DURATION_MS] as f32,
         f0_range_hz: features[F0_RANGE_HZ] as f32,
         f0_contour_slope: features[FM_SLOPE] as f32,
-        pitch_stability: 1.0 - features[JITTER] as f32,  // Inverse of jitter
+        pitch_stability: 1.0 - features[JITTER] as f32, // Inverse of jitter
 
         // Harmonic
         harmonic_to_noise_ratio: features[HARMONIC_TO_NOISE_RATIO] as f32,
         inharmonicity: 1.0 - features[HARMONICITY] as f32,
-        harmonic_1: features[FORMANT_1_HZ] as f32 / 1000.0,  // Normalize
+        harmonic_1: features[FORMANT_1_HZ] as f32 / 1000.0, // Normalize
         harmonic_2: features[FORMANT_2_HZ] as f32 / 1000.0,
         harmonic_3: features[FORMANT_3_HZ] as f32 / 1000.0,
 
@@ -116,13 +116,13 @@ pub fn features_to_metadata(features: &[f64]) -> SourceMetadata {
         attack_time_ms: features[ATTACK_TIME_MS] as f32,
         decay_time_ms: features[DECAY_TIME_MS] as f32,
         sustain_level: features[SUSTAIN_LEVEL] as f32,
-        release_time_ms: features[DECAY_TIME_MS] as f32 * 0.5,  // Estimate
-        rms_energy: 0.5,  // Default, would need actual audio
+        release_time_ms: features[DECAY_TIME_MS] as f32 * 0.5, // Estimate
+        rms_energy: 0.5,                                       // Default, would need actual audio
 
         // Modulation
         fm_rate_hz: features[VIBRATO_RATE_HZ] as f32,
         fm_depth_hz: features[VIBRATO_DEPTH] as f32,
-        am_rate_hz: 5.0,  // Default
+        am_rate_hz: 5.0, // Default
         am_depth: features[AM_DEPTH] as f32,
         tremolo_rate: features[VIBRATO_RATE_HZ] as f32,
 
@@ -143,13 +143,13 @@ pub fn features_to_metadata(features: &[f64]) -> SourceMetadata {
         // Micro-Dynamics
         jitter: features[JITTER] as f32,
         shimmer: features[SHIMMER] as f32,
-        hnr_variation: 0.1,  // Default
-        cpp: 0.5,  // Default
+        hnr_variation: 0.1, // Default
+        cpp: 0.5,           // Default
         entropy: features[SPECTRAL_FLATNESS] as f32,
 
         // Psychoacoustic
-        loudness: 0.5,  // Default, would need actual audio
-        sharpness: features[SPECTRAL_CENTROID] as f32 / 10000.0,  // Normalize
+        loudness: 0.5, // Default, would need actual audio
+        sharpness: features[SPECTRAL_CENTROID] as f32 / 10000.0, // Normalize
         roughness: features[SPECTRAL_FLUX] as f32 / 10.0,
         tonality: features[HARMONICITY] as f32,
         fluctuation_strength: features[AM_DEPTH] as f32,
@@ -240,7 +240,8 @@ impl DictionaryLoader {
 
         for (type_id, labels) in &dict.semantic {
             // Find primary label (highest probability)
-            let primary_label = labels.iter()
+            let primary_label = labels
+                .iter()
                 .max_by(|(_, p1), (_, p2)| p1.partial_cmp(p2).unwrap_or(std::cmp::Ordering::Equal))
                 .map(|(l, _)| l.clone())
                 .unwrap_or_else(|| "Unknown".to_string());
@@ -264,7 +265,11 @@ impl DictionaryLoader {
             let n = types.len() as f64;
             let avg_features: Vec<f64> = (0..45)
                 .map(|i| {
-                    types.iter().map(|(_, c)| c.get(i).copied().unwrap_or(0.0)).sum::<f64>() / n
+                    types
+                        .iter()
+                        .map(|(_, c)| c.get(i).copied().unwrap_or(0.0))
+                        .sum::<f64>()
+                        / n
                 })
                 .collect();
 
@@ -277,7 +282,7 @@ impl DictionaryLoader {
             // Create prototype with placeholder audio
             // In production, this would load actual audio samples
             let duration_samples = (metadata.duration_ms / 1000.0 * 48000.0) as usize;
-            let placeholder_audio = vec![0.0f32; duration_samples.max(4800)];  // At least 100ms
+            let placeholder_audio = vec![0.0f32; duration_samples.max(4800)]; // At least 100ms
 
             let prototype = AcousticPrototype {
                 label: label.clone(),
@@ -301,7 +306,7 @@ impl DictionaryLoader {
     fn set_default_strategies(inventory: &mut AcousticInventory) {
         // Contact calls
         if inventory.get_prototype("Phee").is_some() {
-            inventory.set_response_strategy("Phee", "Phee");  // Reply to contact
+            inventory.set_response_strategy("Phee", "Phee"); // Reply to contact
         }
 
         // Alarm calls - respond with calming contact

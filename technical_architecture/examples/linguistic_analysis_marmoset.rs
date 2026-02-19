@@ -12,9 +12,8 @@
 
 use std::collections::HashMap;
 use technical_architecture::{
-    ParallelExtractionPipeline, ExtractionConfig,
-    VocalizationResult, ClusteredPhrase,
-    LinguisticAnalysis, ExtractionPhraseCandidate as PhraseCandidate,
+    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate,
+    LinguisticAnalysis, ParallelExtractionPipeline, VocalizationResult,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,8 +46,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✓ Loaded marmoset vocalization data:");
     println!("  - Vocalizations: {}", vocalization_results.len());
-    println!("  - Total phrases: {}", vocalization_results.iter()
-               .map(|v| v.phrases.len()).sum::<usize>());
+    println!(
+        "  - Total phrases: {}",
+        vocalization_results
+            .iter()
+            .map(|v| v.phrases.len())
+            .sum::<usize>()
+    );
     println!("  - Clustered phrases: {}", clustered_phrases.len());
     println!();
 
@@ -112,7 +116,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Top 5 most frequent phrases
     println!("  Top 5 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(5).enumerate() {
-        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
+        let freq = analysis
+            .zipf
+            .phrase_frequencies
+            .get(phrase_id)
+            .unwrap_or(&0);
         let rank = i + 1;
         println!("    {}. {} (occurrences: {})", rank, phrase_id, freq);
     }
@@ -128,8 +136,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Prosody Analysis:");
-    println!("  Gap CV (Coefficient of Variation): {:.3}", analysis.prosody.gap_cv);
-    println!("  Mean gap duration: {:.2} ms", analysis.prosody.mean_gap_ms);
+    println!(
+        "  Gap CV (Coefficient of Variation): {:.3}",
+        analysis.prosody.gap_cv
+    );
+    println!(
+        "  Mean gap duration: {:.2} ms",
+        analysis.prosody.mean_gap_ms
+    );
     println!("  Gap std deviation: {:.2} ms", analysis.prosody.gap_std_ms);
     println!("  Rhythm classification: {:?}", analysis.prosody.rhythm);
     println!();
@@ -173,16 +187,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Phonotactics Analysis:");
-    println!("  Total unique transitions: {}", analysis.phonotactics.transition_matrix.len());
-    println!("  Forbidden/rare transitions: {}", analysis.phonotactics.forbidden_transitions.len());
-    println!("  Mean spectral delta: {:.3}", analysis.phonotactics.mean_spectral_delta);
+    println!(
+        "  Total unique transitions: {}",
+        analysis.phonotactics.transition_matrix.len()
+    );
+    println!(
+        "  Forbidden/rare transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
+    println!(
+        "  Mean spectral delta: {:.3}",
+        analysis.phonotactics.mean_spectral_delta
+    );
     println!();
 
     if !analysis.phonotactics.forbidden_transitions.is_empty() {
         println!("  Sample of Forbidden/Rare Transitions:");
-        for (i, ft) in analysis.phonotactics.forbidden_transitions.iter().take(5).enumerate() {
-            println!("    {}. {} → {} (prob: {:.3}, reason: {:?})",
-                     i + 1, ft.from_phrase, ft.to_phrase, ft.probability, ft.reason);
+        for (i, ft) in analysis
+            .phonotactics
+            .forbidden_transitions
+            .iter()
+            .take(5)
+            .enumerate()
+        {
+            println!(
+                "    {}. {} → {} (prob: {:.3}, reason: {:?})",
+                i + 1,
+                ft.from_phrase,
+                ft.to_phrase,
+                ft.probability,
+                ft.reason
+            );
         }
         println!();
 
@@ -207,8 +242,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Pragmatics Analysis:");
     println!("  Pattern: {:?}", analysis.pragmatics.pattern);
-    println!("  Overlap count: {}", analysis.pragmatics.overlap_analysis.overlap_count);
-    println!("  Mean gap: {:.1} ms", analysis.pragmatics.gap_analysis.mean_gap_ms);
+    println!(
+        "  Overlap count: {}",
+        analysis.pragmatics.overlap_analysis.overlap_count
+    );
+    println!(
+        "  Mean gap: {:.1} ms",
+        analysis.pragmatics.gap_analysis.mean_gap_ms
+    );
     println!();
 
     match analysis.pragmatics.pattern {
@@ -243,38 +284,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let phonologically_atomic = analysis.updated_atomic_phrases.iter()
+    let phonologically_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_phonologically_atomic)
         .count();
-    let semantically_atomic = analysis.updated_atomic_phrases.iter()
+    let semantically_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_semantically_atomic)
         .count();
-    let truly_atomic = analysis.updated_atomic_phrases.iter()
+    let truly_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
         .count();
 
     println!("Updated Atomicity Analysis:");
-    println!("  Total phrases analyzed: {}", analysis.updated_atomic_phrases.len());
-    println!("  Phonologically atomic: {} ({:.1}%)",
-             phonologically_atomic,
-             phonologically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
-    println!("  Semantically atomic: {} ({:.1}%)",
-             semantically_atomic,
-             semantically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
-    println!("  Truly atomic (both): {} ({:.1}%)",
-             truly_atomic,
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "  Total phrases analyzed: {}",
+        analysis.updated_atomic_phrases.len()
+    );
+    println!(
+        "  Phonologically atomic: {} ({:.1}%)",
+        phonologically_atomic,
+        phonologically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
+    println!(
+        "  Semantically atomic: {} ({:.1}%)",
+        semantically_atomic,
+        semantically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
+    println!(
+        "  Truly atomic (both): {} ({:.1}%)",
+        truly_atomic,
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     // Sample truly atomic phrases
     println!("  Sample of Truly Atomic Phrases:");
-    for (i, phrase) in analysis.updated_atomic_phrases.iter()
+    for (i, phrase) in analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
         .take(5)
-        .enumerate() {
-        println!("    {}. {} (freq: {}, intra_sim: {:.2}, inter_sim: {:.2})",
-                 i + 1, phrase.phrase_id, phrase.frequency,
-                 phrase.intra_cluster_similarity, phrase.inter_cluster_similarity);
+        .enumerate()
+    {
+        println!(
+            "    {}. {} (freq: {}, intra_sim: {:.2}, inter_sim: {:.2})",
+            i + 1,
+            phrase.phrase_id,
+            phrase.frequency,
+            phrase.intra_cluster_similarity,
+            phrase.inter_cluster_similarity
+        );
     }
     println!();
 
@@ -296,7 +360,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("1. Information Theory:");
     println!("   - Efficiency Level: {:?}", analysis.zipf.efficiency);
-    println!("   - Zipf Slope (α): {:.3} (human ≈ -1.0)", analysis.zipf.slope_alpha);
+    println!(
+        "   - Zipf Slope (α): {:.3} (human ≈ -1.0)",
+        analysis.zipf.slope_alpha
+    );
     println!();
 
     println!("2. Prosody:");
@@ -305,13 +372,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("3. Phonotactics:");
-    println!("   - Forbidden Transitions: {}", analysis.phonotactics.forbidden_transitions.len());
-    println!("   - Production Flexibility: {}",
-             if analysis.phonotactics.forbidden_transitions.len() < 10 {
-                 "High"
-             } else {
-                 "Constrained"
-             });
+    println!(
+        "   - Forbidden Transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
+    println!(
+        "   - Production Flexibility: {}",
+        if analysis.phonotactics.forbidden_transitions.len() < 10 {
+            "High"
+        } else {
+            "Constrained"
+        }
+    );
     println!();
 
     println!("4. Pragmatics:");
@@ -320,8 +392,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("5. Atomic Phrases:");
     println!("   - True Vocabulary: {} phrases", truly_atomic);
-    println!("   - Compositionality: {:.1}% of phrases are reusable",
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "   - Compositionality: {:.1}% of phrases are reusable",
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     println!("═══════════════════════════════════════════════════════════════════════════");
@@ -343,10 +417,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // mimics real marmoset vocalization patterns.
 // ============================================================================
 
-fn create_marmoset_demo_data() -> Result<
-    (Vec<VocalizationResult>, Vec<ClusteredPhrase>),
-    Box<dyn std::error::Error>
-> {
+fn create_marmoset_demo_data(
+) -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>), Box<dyn std::error::Error>> {
     // Marmoset vocal characteristics (based on real research):
     // - Phee calls: 7-12 kHz F0 range
     // - Duration: 50-200 ms typical
@@ -368,8 +440,7 @@ fn create_marmoset_demo_data() -> Result<
             let duration = 50.0 + ((phrase_id * 15) % 150) as f64; // 50-200 ms
             let gap = 80.0 + ((phrase_id * 20) % 80) as f64; // Rhythmic gaps 80-160ms
 
-            let phrase_key = format!("F0_{:.0}_DUR_{:.0}",
-                                     f0 / 100.0, duration);
+            let phrase_key = format!("F0_{:.0}_DUR_{:.0}", f0 / 100.0, duration);
 
             phrases.push(PhraseCandidate {
                 phrase_id: phrase_key.clone(),

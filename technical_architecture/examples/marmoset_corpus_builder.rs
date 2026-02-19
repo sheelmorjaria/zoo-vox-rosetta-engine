@@ -23,8 +23,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configuration
     let vocalizations_dir = PathBuf::from("/home/sheel/birdsong_analysis/data/Vocalizations");
-    let output_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
-    let output_symbolic_stream = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
+    let output_path =
+        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
+    let output_symbolic_stream =
+        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
 
     // ========================================================================
     // Step 1: Scan Vocalizations Directory
@@ -36,7 +38,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !vocalizations_dir.exists() {
-        println!("   ❌ Vocalizations directory not found: {}", vocalizations_dir.display());
+        println!(
+            "   ❌ Vocalizations directory not found: {}",
+            vocalizations_dir.display()
+        );
         return Err("Directory not found".into());
     }
 
@@ -128,8 +133,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "phrases": phrases_in_session,
         }));
 
-        println!("   📝 {} session: phrases {}-{} ({})",
-                 call_type, phrase_id_start, phrase_id_counter - 1, phrases_in_session.len());
+        println!(
+            "   📝 {} session: phrases {}-{} ({})",
+            call_type,
+            phrase_id_start,
+            phrase_id_counter - 1,
+            phrases_in_session.len()
+        );
     }
 
     println!();
@@ -143,7 +153,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let total_phrases = sessions.iter()
+    let total_phrases = sessions
+        .iter()
         .map(|s| s["phrases"].as_array().map(|a| a.len()).unwrap_or(0))
         .sum::<usize>();
 
@@ -179,8 +190,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "symbolic_streams": sessions,
     });
 
-    fs::write(&output_symbolic_stream, serde_json::to_string_pretty(&symbolic_stream)?)?;
-    println!("   💾 Symbolic stream: {}", output_symbolic_stream.display());
+    fs::write(
+        &output_symbolic_stream,
+        serde_json::to_string_pretty(&symbolic_stream)?,
+    )?;
+    println!(
+        "   💾 Symbolic stream: {}",
+        output_symbolic_stream.display()
+    );
     println!();
 
     // ========================================================================
@@ -194,14 +211,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════╣");
     println!("║                                                                       ║");
     println!("║  📊 SUMMARY:                                                         ║");
-    println!("║     • Total files scanned: {}                                       ║", total_files);
-    println!("║     • Call types: {}                                                ║", call_types.len());
-    println!("║     • Total phrases: {}                                              ║", phrase_id_counter);
-    println!("║     • Build time: {:.2}s                                             ║", elapsed.as_secs_f64());
+    println!(
+        "║     • Total files scanned: {}                                       ║",
+        total_files
+    );
+    println!(
+        "║     • Call types: {}                                                ║",
+        call_types.len()
+    );
+    println!(
+        "║     • Total phrases: {}                                              ║",
+        phrase_id_counter
+    );
+    println!(
+        "║     • Build time: {:.2}s                                             ║",
+        elapsed.as_secs_f64()
+    );
     println!("║                                                                       ║");
     println!("║  📁 Output files:                                                    ║");
-    println!("║     • {}                                               ║", output_path.display());
-    println!("║     • {}                                        ║", output_symbolic_stream.display());
+    println!(
+        "║     • {}                                               ║",
+        output_path.display()
+    );
+    println!(
+        "║     • {}                                        ║",
+        output_symbolic_stream.display()
+    );
     println!("╚═══════════════════════════════════════════════════════════════╝");
     println!();
 

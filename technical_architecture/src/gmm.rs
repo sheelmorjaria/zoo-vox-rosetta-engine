@@ -42,9 +42,9 @@ pub type Result<T> = std::result::Result<T, GmmError>;
 #[derive(Debug, Clone)]
 pub struct GaussianMixtureModel {
     n_components: usize,
-    means: Array2<f64>,      // (n_components, n_features)
-    covariances: Vec<Array2<f64>>,  // (n_features, n_features) per component
-    weights: Array1<f64>,     // (n_components,) - mixing coefficients
+    means: Array2<f64>,            // (n_components, n_features)
+    covariances: Vec<Array2<f64>>, // (n_features, n_features) per component
+    weights: Array1<f64>,          // (n_components,) - mixing coefficients
     converged: bool,
 }
 
@@ -75,7 +75,7 @@ impl GaussianMixtureModel {
         for _ in 0..n_components {
             let mut cov = Array2::zeros((n_features, n_features));
             for i in 0..n_features {
-                cov[[i, i]] = 1.0;  // Identity matrix
+                cov[[i, i]] = 1.0; // Identity matrix
             }
             covariances.push(cov);
         }
@@ -103,7 +103,12 @@ impl GaussianMixtureModel {
     /// * `features` - Feature matrix (n_samples, n_features)
     /// * `max_iterations` - Maximum EM iterations (default: 100)
     /// * `tolerance` - Convergence tolerance (default: 1e-6)
-    pub fn fit(&mut self, features: &Array2<f64>, max_iterations: usize, tolerance: f64) -> Result<()> {
+    pub fn fit(
+        &mut self,
+        features: &Array2<f64>,
+        max_iterations: usize,
+        tolerance: f64,
+    ) -> Result<()> {
         let n_samples = features.nrows();
         let n_features = features.ncols();
 
@@ -144,9 +149,10 @@ impl GaussianMixtureModel {
 
             // Prevent infinite loops
             if log_likelihood.is_nan() || log_likelihood.is_infinite() {
-                return Err(GmmError::ConvergenceFailed(
-                    format!("Numerical instability at iteration {}", iteration)
-                ));
+                return Err(GmmError::ConvergenceFailed(format!(
+                    "Numerical instability at iteration {}",
+                    iteration
+                )));
             }
         }
 
@@ -163,8 +169,7 @@ impl GaussianMixtureModel {
             let mut log_prob = Array1::zeros(self.n_components);
 
             for k in 0..self.n_components {
-                log_prob[k] = self.weights[k].ln()
-                    + self.log_gaussian_pdf(sample, k)?;
+                log_prob[k] = self.weights[k].ln() + self.log_gaussian_pdf(sample, k)?;
             }
 
             // Log-sum-exp trick for numerical stability
@@ -172,7 +177,8 @@ impl GaussianMixtureModel {
             let max_log = log_prob.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
 
             for k in 0..self.n_components {
-                responsibilities[[i, k]] = (log_prob[k] - max_log).exp() * (-log_sum_exp + max_log).exp();
+                responsibilities[[i, k]] =
+                    (log_prob[k] - max_log).exp() * (-log_sum_exp + max_log).exp();
             }
 
             // Normalize
@@ -259,7 +265,9 @@ impl GaussianMixtureModel {
 
         for i in 0..features.nrows() {
             let resp_row = responsibilities.row(i);
-            let max_idx = resp_row.iter().enumerate()
+            let max_idx = resp_row
+                .iter()
+                .enumerate()
                 .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
                 .map(|(idx, _)| idx)
                 .unwrap_or(0);
@@ -325,14 +333,16 @@ impl GaussianMixtureModel {
     /// Get AIC (Akaike Information Criterion) for model selection
     pub fn aic(&self, features: &Array2<f64>) -> Result<f64> {
         let log_likelihood = self.compute_log_likelihood(features)?;
-        let n_params = self.n_components * (1 + self.means.ncols() + self.means.ncols() * self.means.ncols());
+        let n_params =
+            self.n_components * (1 + self.means.ncols() + self.means.ncols() * self.means.ncols());
         Ok(2.0 * n_params as f64 - 2.0 * log_likelihood)
     }
 
     /// Get BIC (Bayesian Information Criterion) for model selection
     pub fn bic(&self, features: &Array2<f64>) -> Result<f64> {
         let log_likelihood = self.compute_log_likelihood(features)?;
-        let n_params = self.n_components * (1 + self.means.ncols() + self.means.ncols() * self.means.ncols());
+        let n_params =
+            self.n_components * (1 + self.means.ncols() + self.means.ncols() * self.means.ncols());
         let n_samples = features.nrows() as f64;
         Ok(n_params as f64 * (n_samples).ln() - 2.0 * log_likelihood)
     }
@@ -420,12 +430,7 @@ mod tests {
     /// Test 5: GMM computes AIC and BIC
     #[test]
     fn test_gmm_information_criteria() {
-        let features = arr2(&[
-            [0.0, 0.0],
-            [0.1, 0.0],
-            [5.0, 5.0],
-            [5.1, 5.0],
-        ]);
+        let features = arr2(&[[0.0, 0.0], [0.1, 0.0], [5.0, 5.0], [5.1, 5.0]]);
 
         let mut gmm = GaussianMixtureModel::new(2, 2, 42).unwrap();
         gmm.fit(&features, 100, 1e-6).unwrap();
@@ -441,10 +446,7 @@ mod tests {
     /// Test 6: GMM is deterministic with same seed
     #[test]
     fn test_gmm_deterministic() {
-        let features = arr2(&[
-            [0.0, 0.0],
-            [5.0, 5.0],
-        ]);
+        let features = arr2(&[[0.0, 0.0], [5.0, 5.0]]);
 
         let mut gmm1 = GaussianMixtureModel::new(2, 2, 42).unwrap();
         gmm1.fit(&features, 10, 1e-6).unwrap();
@@ -455,6 +457,9 @@ mod tests {
         let labels1 = gmm1.predict(&features).unwrap();
         let labels2 = gmm2.predict(&features).unwrap();
 
-        assert_eq!(labels1, labels2, "Results should be deterministic with same seed");
+        assert_eq!(
+            labels1, labels2,
+            "Results should be deterministic with same seed"
+        );
     }
 }

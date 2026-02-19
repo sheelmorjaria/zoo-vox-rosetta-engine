@@ -10,11 +10,9 @@
 //! Target: Total loop < 200ms for "Antiphonal" (turn-taking) behavior
 
 use std::time::{Duration, Instant};
-use technical_architecture::{
-    bio_acoustic_agent::{
-        BioAcousticAgent, AcousticInventory, AcousticPrototype, AcousticModality,
-        SourceMetadata, SynthesisRequest, EnvState, InteractionContext,
-    },
+use technical_architecture::bio_acoustic_agent::{
+    AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent, EnvState,
+    InteractionContext, SourceMetadata, SynthesisRequest,
 };
 
 /// Benchmark results
@@ -54,23 +52,62 @@ impl LatencyProfile {
         println!("  ┌─────────────────────────────────┬───────────┬───────────┐");
         println!("  │ Stage                           │ Time (ms) │ % of Total│");
         println!("  ├─────────────────────────────────┼───────────┼───────────┤");
-        println!("  │ 1. Audio Capture                │ {:>9.2} │ {:>8.1}% │", self.audio_capture_ms, self.audio_capture_ms / self.total() * 100.0);
-        println!("  │ 2. Dynamic Segmentation         │ {:>9.2} │ {:>8.1}% │", self.segmentation_ms, self.segmentation_ms / self.total() * 100.0);
-        println!("  │ 3. 45D Feature Extraction       │ {:>9.2} │ {:>8.1}% │", self.feature_extraction_ms, self.feature_extraction_ms / self.total() * 100.0);
-        println!("  │ 4. Cascaded Classification      │ {:>9.2} │ {:>8.1}% │", self.classification_ms, self.classification_ms / self.total() * 100.0);
-        println!("  │ 5. Cognitive Decision           │ {:>9.2} │ {:>8.1}% │", self.decision_ms, self.decision_ms / self.total() * 100.0);
-        println!("  │ 6. Synthesis Planning           │ {:>9.2} │ {:>8.1}% │", self.synthesis_planning_ms, self.synthesis_planning_ms / self.total() * 100.0);
-        println!("  │ 7. Granular Synthesis           │ {:>9.2} │ {:>8.1}% │", self.synthesis_audio_ms, self.synthesis_audio_ms / self.total() * 100.0);
+        println!(
+            "  │ 1. Audio Capture                │ {:>9.2} │ {:>8.1}% │",
+            self.audio_capture_ms,
+            self.audio_capture_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 2. Dynamic Segmentation         │ {:>9.2} │ {:>8.1}% │",
+            self.segmentation_ms,
+            self.segmentation_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 3. 45D Feature Extraction       │ {:>9.2} │ {:>8.1}% │",
+            self.feature_extraction_ms,
+            self.feature_extraction_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 4. Cascaded Classification      │ {:>9.2} │ {:>8.1}% │",
+            self.classification_ms,
+            self.classification_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 5. Cognitive Decision           │ {:>9.2} │ {:>8.1}% │",
+            self.decision_ms,
+            self.decision_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 6. Synthesis Planning           │ {:>9.2} │ {:>8.1}% │",
+            self.synthesis_planning_ms,
+            self.synthesis_planning_ms / self.total() * 100.0
+        );
+        println!(
+            "  │ 7. Granular Synthesis           │ {:>9.2} │ {:>8.1}% │",
+            self.synthesis_audio_ms,
+            self.synthesis_audio_ms / self.total() * 100.0
+        );
         println!("  ├─────────────────────────────────┼───────────┼───────────┤");
-        println!("  │ TOTAL                           │ {:>9.2} │     100.0% │", self.total());
+        println!(
+            "  │ TOTAL                           │ {:>9.2} │     100.0% │",
+            self.total()
+        );
         println!("  └─────────────────────────────────┴───────────┴───────────┘");
 
         let target_ms = 200.0;
         let margin = target_ms - self.total();
         if self.total() <= target_ms {
-            println!("\n  ✓ WITHIN TARGET: {:.2}ms remaining ({:.1}% headroom)", margin, margin / target_ms * 100.0);
+            println!(
+                "\n  ✓ WITHIN TARGET: {:.2}ms remaining ({:.1}% headroom)",
+                margin,
+                margin / target_ms * 100.0
+            );
         } else {
-            println!("\n  ✗ EXCEEDS TARGET: {:.2}ms over budget ({:.1}% excess)", -margin, -margin / target_ms * 100.0);
+            println!(
+                "\n  ✗ EXCEEDS TARGET: {:.2}ms over budget ({:.1}% excess)",
+                -margin,
+                -margin / target_ms * 100.0
+            );
         }
     }
 }
@@ -98,7 +135,7 @@ fn simulate_segmentation(audio: &[f32]) -> (Vec<(usize, usize)>, Duration) {
     // In production: ~5ms for 1s audio
     let mut segments = Vec::new();
     let frame_size = 4800; // 100ms frames
-    let hop_size = 2400;   // 50ms hop
+    let hop_size = 2400; // 50ms hop
 
     let mut pos = 0;
     while pos + frame_size < audio.len() {
@@ -119,10 +156,13 @@ fn simulate_feature_extraction(segments: &[(usize, usize)]) -> (Vec<Vec<f64>>, D
     let start = Instant::now();
 
     // In production: ~2ms per segment
-    let features: Vec<Vec<f64>> = segments.iter().map(|_| {
-        // Placeholder 45D feature vector
-        vec![0.0; 45]
-    }).collect();
+    let features: Vec<Vec<f64>> = segments
+        .iter()
+        .map(|_| {
+            // Placeholder 45D feature vector
+            vec![0.0; 45]
+        })
+        .collect();
 
     let processing_us = (segments.len() as f64 * 2000.0) as u64;
     std::thread::sleep(Duration::from_micros(processing_us.min(50000)));
@@ -152,7 +192,7 @@ fn simulate_cognitive_decision(label: &str, confidence: f64) -> (String, Duratio
     // Python cognitive layer would process this
     // Simulate ZeroMQ round-trip + decision logic
     let response = if confidence > 0.7 {
-        label.to_string()  // Echo
+        label.to_string() // Echo
     } else {
         "Unknown".to_string()
     };
@@ -164,14 +204,22 @@ fn simulate_cognitive_decision(label: &str, confidence: f64) -> (String, Duratio
 }
 
 /// Real synthesis planning (using actual BioAcousticAgent)
-fn plan_synthesis(agent: &BioAcousticAgent, label: &str) -> (technical_architecture::bio_acoustic_agent::SynthesisPlan, Duration) {
+fn plan_synthesis(
+    agent: &BioAcousticAgent,
+    label: &str,
+) -> (
+    technical_architecture::bio_acoustic_agent::SynthesisPlan,
+    Duration,
+) {
     let start = Instant::now();
 
     let request = SynthesisRequest::new(label)
         .with_environment(EnvState::Quiet)
         .with_context(InteractionContext::Reply);
 
-    let plan = agent.plan_synthesis(request).expect("Synthesis planning failed");
+    let plan = agent
+        .plan_synthesis(request)
+        .expect("Synthesis planning failed");
 
     (plan, start.elapsed())
 }
@@ -217,7 +265,8 @@ fn run_benchmark_iteration(agent: &BioAcousticAgent) -> LatencyProfile {
     let plan_ms = plan_time.as_secs_f64() * 1000.0;
 
     // 7. Granular Synthesis
-    let (_output, synth_time) = simulate_granular_synthesis(plan.target_metadata.duration_ms as f64);
+    let (_output, synth_time) =
+        simulate_granular_synthesis(plan.target_metadata.duration_ms as f64);
     let synth_ms = synth_time.as_secs_f64() * 1000.0;
 
     LatencyProfile {
@@ -228,7 +277,7 @@ fn run_benchmark_iteration(agent: &BioAcousticAgent) -> LatencyProfile {
         decision_ms: decision_ms,
         synthesis_planning_ms: plan_ms,
         synthesis_audio_ms: synth_ms,
-        total_ms: 0.0,  // Calculated later
+        total_ms: 0.0, // Calculated later
     }
 }
 
@@ -304,7 +353,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..n_iterations {
         let profile = run_benchmark_iteration(&agent);
         profiles.push(profile);
-        println!("  Iteration {}: {:.2}ms", i + 1, profiles.last().unwrap().total());
+        println!(
+            "  Iteration {}: {:.2}ms",
+            i + 1,
+            profiles.last().unwrap().total()
+        );
     }
 
     // =========================================================================
@@ -316,13 +369,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate averages
     let avg_profile = LatencyProfile {
-        audio_capture_ms: profiles.iter().map(|p| p.audio_capture_ms).sum::<f64>() / n_iterations as f64,
-        segmentation_ms: profiles.iter().map(|p| p.segmentation_ms).sum::<f64>() / n_iterations as f64,
-        feature_extraction_ms: profiles.iter().map(|p| p.feature_extraction_ms).sum::<f64>() / n_iterations as f64,
-        classification_ms: profiles.iter().map(|p| p.classification_ms).sum::<f64>() / n_iterations as f64,
+        audio_capture_ms: profiles.iter().map(|p| p.audio_capture_ms).sum::<f64>()
+            / n_iterations as f64,
+        segmentation_ms: profiles.iter().map(|p| p.segmentation_ms).sum::<f64>()
+            / n_iterations as f64,
+        feature_extraction_ms: profiles
+            .iter()
+            .map(|p| p.feature_extraction_ms)
+            .sum::<f64>()
+            / n_iterations as f64,
+        classification_ms: profiles.iter().map(|p| p.classification_ms).sum::<f64>()
+            / n_iterations as f64,
         decision_ms: profiles.iter().map(|p| p.decision_ms).sum::<f64>() / n_iterations as f64,
-        synthesis_planning_ms: profiles.iter().map(|p| p.synthesis_planning_ms).sum::<f64>() / n_iterations as f64,
-        synthesis_audio_ms: profiles.iter().map(|p| p.synthesis_audio_ms).sum::<f64>() / n_iterations as f64,
+        synthesis_planning_ms: profiles
+            .iter()
+            .map(|p| p.synthesis_planning_ms)
+            .sum::<f64>()
+            / n_iterations as f64,
+        synthesis_audio_ms: profiles.iter().map(|p| p.synthesis_audio_ms).sum::<f64>()
+            / n_iterations as f64,
         total_ms: 0.0,
     };
 
@@ -351,11 +416,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let antiphonal_status = if p95 <= 200.0 { "✓ PASS" } else { "✗ FAIL" };
     let call_response_status = if p95 <= 500.0 { "✓ PASS" } else { "✗ FAIL" };
-    let monitoring_status = if p95 <= 1000.0 { "✓ PASS" } else { "✗ FAIL" };
+    let monitoring_status = if p95 <= 1000.0 {
+        "✓ PASS"
+    } else {
+        "✗ FAIL"
+    };
 
-    println!("  │ Antiphonal (200ms)         │ 200ms     │ {} ({:.0}ms) │", antiphonal_status, p95);
-    println!("  │ Call-Response (500ms)      │ 500ms     │ {} ({:.0}ms) │", call_response_status, p95);
-    println!("  │ Monitoring (1000ms)        │ 1000ms    │ {} ({:.0}ms) │", monitoring_status, p95);
+    println!(
+        "  │ Antiphonal (200ms)         │ 200ms     │ {} ({:.0}ms) │",
+        antiphonal_status, p95
+    );
+    println!(
+        "  │ Call-Response (500ms)      │ 500ms     │ {} ({:.0}ms) │",
+        call_response_status, p95
+    );
+    println!(
+        "  │ Monitoring (1000ms)        │ 1000ms    │ {} ({:.0}ms) │",
+        monitoring_status, p95
+    );
     println!("  └────────────────────────────┴───────────┴───────────┘");
 
     println!("\n  OPTIMIZATION RECOMMENDATIONS:");
@@ -369,15 +447,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("Granular Synthesis", avg_profile.synthesis_audio_ms),
     ];
 
-    let max_stage = bottleneck.iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap()).unwrap();
-    println!("  - Primary bottleneck: {} ({:.1}ms, {:.0}% of total)",
-        max_stage.0, max_stage.1, max_stage.1 / avg_profile.total() * 100.0);
+    let max_stage = bottleneck
+        .iter()
+        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        .unwrap();
+    println!(
+        "  - Primary bottleneck: {} ({:.1}ms, {:.0}% of total)",
+        max_stage.0,
+        max_stage.1,
+        max_stage.1 / avg_profile.total() * 100.0
+    );
 
     if avg_profile.decision_ms > 20.0 {
-        println!("  - Consider optimizing Python cognitive layer (currently {:.1}ms)", avg_profile.decision_ms);
+        println!(
+            "  - Consider optimizing Python cognitive layer (currently {:.1}ms)",
+            avg_profile.decision_ms
+        );
     }
     if avg_profile.feature_extraction_ms > 20.0 {
-        println!("  - Consider SIMD optimization for feature extraction (currently {:.1}ms)", avg_profile.feature_extraction_ms);
+        println!(
+            "  - Consider SIMD optimization for feature extraction (currently {:.1}ms)",
+            avg_profile.feature_extraction_ms
+        );
     }
 
     println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

@@ -7,9 +7,7 @@
 //   cargo run --example test_clustering_small --release --features parallel-extraction
 
 use std::path::Path;
-use technical_architecture::{
-    batch_process_and_cluster, ClusteredPhrase,
-};
+use technical_architecture::{batch_process_and_cluster, ClusteredPhrase};
 
 // Configuration - Process 1000 files to see Zipf's Law emerge
 const BAT_AUDIO_DIR: &str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio";
@@ -62,10 +60,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count unique clusters
-    let unique_clusters: std::collections::HashSet<i32> = clustered_phrases
-        .iter()
-        .map(|cp| cp.cluster_id)
-        .collect();
+    let unique_clusters: std::collections::HashSet<i32> =
+        clustered_phrases.iter().map(|cp| cp.cluster_id).collect();
 
     println!("📊 Clustering Statistics:");
     println!("   Total clustered phrases: {}", clustered_phrases.len());
@@ -99,11 +95,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify expectations
     if unique_clusters.len() < MAX_FILES {
-        println!("✅ PASS: Phrase reuse detected ({} types from {} files)",
-                 unique_clusters.len(), MAX_FILES);
+        println!(
+            "✅ PASS: Phrase reuse detected ({} types from {} files)",
+            unique_clusters.len(),
+            MAX_FILES
+        );
     } else {
-        println!("⚠️  WARNING: High cluster count ({} types from {} files)",
-                 unique_clusters.len(), MAX_FILES);
+        println!(
+            "⚠️  WARNING: High cluster count ({} types from {} files)",
+            unique_clusters.len(),
+            MAX_FILES
+        );
         println!("   Expected phrase reuse (fewer clusters than files)");
     }
 

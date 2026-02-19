@@ -12,7 +12,8 @@ use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Paths to checkpoint data
-    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir =
+        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let output_path = results_dir.join("minibatch_clusters.json");
 
@@ -27,14 +28,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let load_start = Instant::now();
 
     let features_data = std::fs::read(&features_path)?;
-    println!("   ├─ Loaded {} MB of feature data", features_data.len() / 1_048_576);
+    println!(
+        "   ├─ Loaded {} MB of feature data",
+        features_data.len() / 1_048_576
+    );
 
     // Deserialize features
-    let serializable_features: Vec<technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable> =
-        bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<
+        technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable,
+    > = bincode::deserialize(&features_data)?;
 
     let n_features = serializable_features.len();
-    println!("   └─ {} features loaded in {:.2}s", n_features, load_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ {} features loaded in {:.2}s",
+        n_features,
+        load_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Convert to 2D array for clustering
@@ -52,8 +61,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   └─ Converted to {}x{} array in {:.2}s",
-        n_features, n_dims, convert_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ Converted to {}x{} array in {:.2}s",
+        n_features,
+        n_dims,
+        convert_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Configure MiniBatch K-Means
@@ -61,8 +74,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // For 1.4M phrases, let's try 50 clusters (can be adjusted)
     let n_clusters = 50;
     let batch_size = 1000; // Larger batch for faster convergence
-    let max_iter = 100;     // Maximum iterations
-    let tol = 1e-4;         // Convergence tolerance
+    let max_iter = 100; // Maximum iterations
+    let tol = 1e-4; // Convergence tolerance
 
     println!("🏗️  Running MiniBatch K-Means clustering...");
     println!("   ├─ n_clusters: {}", n_clusters);
@@ -87,8 +100,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cluster_time = cluster_start.elapsed();
     let ms_per_sample = cluster_time.as_millis() as f64 / n_features as f64;
-    println!("   └─ Clustering completed in {:.2}s ({:.3}ms per sample)",
-        cluster_time.as_secs_f64(), ms_per_sample);
+    println!(
+        "   └─ Clustering completed in {:.2}s ({:.3}ms per sample)",
+        cluster_time.as_secs_f64(),
+        ms_per_sample
+    );
     println!();
 
     // Analyze results
@@ -100,7 +116,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
+    println!(
+        "   Clustered phrases:    {}",
+        n_features - stats.noise_count
+    );
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -114,7 +133,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
 
         // Top 15 clusters
-        let mut sorted_clusters: Vec<(usize, usize)> = stats.cluster_sizes.iter()
+        let mut sorted_clusters: Vec<(usize, usize)> = stats
+            .cluster_sizes
+            .iter()
             .enumerate()
             .map(|(i, &size)| (i, size))
             .collect();
@@ -123,8 +144,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   Top 15 Clusters:");
         for (i, (cluster_id, size)) in sorted_clusters.iter().take(15).enumerate() {
             let percentage = size.clone() as f64 / n_features as f64 * 100.0;
-            println!("      {}. Cluster {}: {} phrases ({:.2}%)",
-                i + 1, cluster_id, size, percentage);
+            println!(
+                "      {}. Cluster {}: {} phrases ({:.2}%)",
+                i + 1,
+                cluster_id,
+                size,
+                percentage
+            );
         }
     }
 
@@ -149,10 +175,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Phase 3 Complete!");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    println!("   Discovered {} vocabulary items from {} phrases",
-        stats.n_clusters, n_features);
-    println!("   Completed in {:.2}s ({:.1}x faster than HDBSCAN)",
-        cluster_time.as_secs_f64(), 60.0 * 3600.0 / cluster_time.as_secs_f64());
+    println!(
+        "   Discovered {} vocabulary items from {} phrases",
+        stats.n_clusters, n_features
+    );
+    println!(
+        "   Completed in {:.2}s ({:.1}x faster than HDBSCAN)",
+        cluster_time.as_secs_f64(),
+        60.0 * 3600.0 / cluster_time.as_secs_f64()
+    );
     println!();
 
     Ok(())

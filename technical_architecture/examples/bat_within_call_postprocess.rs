@@ -132,7 +132,9 @@ fn analyze_aggregate(analyses: &[WithinCallAnalysisFile]) -> AggregateAnalysis {
     for analysis in analyses {
         total_phrases += analysis.stats.n_phrases;
 
-        *phrases_per_call.entry(analysis.stats.n_phrases).or_default() += 1;
+        *phrases_per_call
+            .entry(analysis.stats.n_phrases)
+            .or_default() += 1;
 
         for phrase in &analysis.phrases {
             all_durations.push(phrase.duration_ms);
@@ -149,14 +151,14 @@ fn analyze_aggregate(analyses: &[WithinCallAnalysisFile]) -> AggregateAnalysis {
         for motif in &analysis.motifs {
             *motif_lengths.entry(motif.pattern.len()).or_default() += motif.occurrences;
 
-            let aggregator = motif_patterns.entry(motif.pattern.clone()).or_insert_with(|| {
-                MotifAggregator {
+            let aggregator = motif_patterns
+                .entry(motif.pattern.clone())
+                .or_insert_with(|| MotifAggregator {
                     pattern: motif.pattern.clone(),
                     total_occurrences: 0,
                     n_vocalizations: 0,
                     example_files: Vec::new(),
-                }
-            });
+                });
 
             aggregator.total_occurrences += motif.occurrences;
             aggregator.n_vocalizations += 1;
@@ -173,7 +175,8 @@ fn analyze_aggregate(analyses: &[WithinCallAnalysisFile]) -> AggregateAnalysis {
     let entropy_stats = compute_entropy_stats(&all_entropies);
 
     // Top motifs
-    let mut top_motifs: Vec<MotifSummary> = motif_patterns.into_values()
+    let mut top_motifs: Vec<MotifSummary> = motif_patterns
+        .into_values()
         .map(|agg| MotifSummary {
             pattern: agg.pattern,
             total_occurrences: agg.total_occurrences,
@@ -202,8 +205,16 @@ fn analyze_aggregate(analyses: &[WithinCallAnalysisFile]) -> AggregateAnalysis {
 fn compute_duration_stats(durations: &[f64]) -> DurationStats {
     if durations.is_empty() {
         return DurationStats {
-            min_ms: 0.0, max_ms: 0.0, mean_ms: 0.0, median_ms: 0.0, std_ms: 0.0,
-            p10: 0.0, p25: 0.0, p50: 0.0, p75: 0.0, p90: 0.0,
+            min_ms: 0.0,
+            max_ms: 0.0,
+            mean_ms: 0.0,
+            median_ms: 0.0,
+            std_ms: 0.0,
+            p10: 0.0,
+            p25: 0.0,
+            p50: 0.0,
+            p75: 0.0,
+            p90: 0.0,
         };
     }
 
@@ -231,8 +242,12 @@ fn compute_duration_stats(durations: &[f64]) -> DurationStats {
 fn compute_entropy_stats(entropies: &[f64]) -> EntropyStats {
     if entropies.is_empty() {
         return EntropyStats {
-            min: 0.0, max: 0.0, mean: 0.0,
-            simple_count: 0, medium_count: 0, complex_count: 0,
+            min: 0.0,
+            max: 0.0,
+            mean: 0.0,
+            simple_count: 0,
+            medium_count: 0,
+            complex_count: 0,
         };
     }
 
@@ -269,7 +284,10 @@ fn consolidate_phrase_types(
 
         for phrase in &analysis.phrases {
             if let Some(local_type) = phrase.phrase_type {
-                type_features.entry(local_type).or_default().push(phrase.features.clone());
+                type_features
+                    .entry(local_type)
+                    .or_default()
+                    .push(phrase.features.clone());
             }
         }
 
@@ -304,7 +322,8 @@ fn consolidate_phrase_types(
 
         for (i, global_features) in global_types.iter().enumerate() {
             let global_feat = Array1::from_vec(global_features.clone());
-            let dist: f64 = query.iter()
+            let dist: f64 = query
+                .iter()
                 .zip(global_feat.iter())
                 .map(|(a, b)| (a - b).powi(2))
                 .sum();
@@ -332,7 +351,8 @@ fn consolidate_phrase_types(
     let consolidation_ratio = local_types.len() as f64 / n_global_types as f64;
 
     // Get top types by frequency
-    let mut type_frequencies: Vec<(i32, usize)> = type_counts.into_iter()
+    let mut type_frequencies: Vec<(i32, usize)> = type_counts
+        .into_iter()
         .enumerate()
         .map(|(i, count)| (i as i32, count))
         .collect();
@@ -357,15 +377,24 @@ impl AggregateAnalysis {
         println!("╚═══════════════════════════════════════════════════════════════╝");
 
         println!("\n📊 OVERVIEW");
-        println!("   ├─ Total vocalizations: {:>12}", self.total_vocalizations);
+        println!(
+            "   ├─ Total vocalizations: {:>12}",
+            self.total_vocalizations
+        );
         println!("   ├─ Total phrases:       {:>12}", self.total_phrases);
-        println!("   └─ Avg phrases/call:    {:>12.2}", self.avg_phrases_per_call);
+        println!(
+            "   └─ Avg phrases/call:    {:>12.2}",
+            self.avg_phrases_per_call
+        );
 
         println!("\n📊 PHRASE DURATION (ms)");
         println!("   ├─ Min:    {:>8.1}", self.phrase_duration_stats.min_ms);
         println!("   ├─ Max:    {:>8.1}", self.phrase_duration_stats.max_ms);
         println!("   ├─ Mean:   {:>8.1}", self.phrase_duration_stats.mean_ms);
-        println!("   ├─ Median: {:>8.1}", self.phrase_duration_stats.median_ms);
+        println!(
+            "   ├─ Median: {:>8.1}",
+            self.phrase_duration_stats.median_ms
+        );
         println!("   ├─ Std:    {:>8.1}", self.phrase_duration_stats.std_ms);
         println!("   ├─ P10:    {:>8.1}", self.phrase_duration_stats.p10);
         println!("   ├─ P25:    {:>8.1}", self.phrase_duration_stats.p25);
@@ -373,7 +402,10 @@ impl AggregateAnalysis {
         println!("   └─ P90:    {:>8.1}", self.phrase_duration_stats.p90);
 
         println!("\n📊 MOTIF STATISTICS");
-        println!("   ├─ Files with motifs: {} ({:.1}%)", self.files_with_motifs, self.pct_with_motifs);
+        println!(
+            "   ├─ Files with motifs: {} ({:.1}%)",
+            self.files_with_motifs, self.pct_with_motifs
+        );
 
         let total_motif_occurrences: usize = self.motif_length_distribution.values().sum();
         println!("   ├─ Total motif occurrences: {}", total_motif_occurrences);
@@ -386,25 +418,43 @@ impl AggregateAnalysis {
 
         println!("\n📊 TOP MOTIF PATTERNS (across all vocalizations)");
         for (i, motif) in self.top_motifs.iter().take(10).enumerate() {
-            let pattern_str: String = motif.pattern.iter()
+            let pattern_str: String = motif
+                .pattern
+                .iter()
                 .map(|t| t.to_string())
                 .collect::<Vec<_>>()
                 .join("-");
-            println!("   {}. [{}] : {} occurrences in {} files",
-                     i + 1, pattern_str, motif.total_occurrences, motif.n_vocalizations);
+            println!(
+                "   {}. [{}] : {} occurrences in {} files",
+                i + 1,
+                pattern_str,
+                motif.total_occurrences,
+                motif.n_vocalizations
+            );
         }
 
         println!("\n📊 VOCABULARY COMPLEXITY (Type Entropy)");
         println!("   ├─ Min entropy: {:.3}", self.entropy_stats.min);
         println!("   ├─ Max entropy: {:.3}", self.entropy_stats.max);
         println!("   ├─ Mean entropy: {:.3}", self.entropy_stats.mean);
-        let total_with_phrases = self.entropy_stats.simple_count + self.entropy_stats.medium_count + self.entropy_stats.complex_count;
-        println!("   ├─ Simple (E<0.5): {} ({:.1}%)", self.entropy_stats.simple_count,
-                 self.entropy_stats.simple_count as f64 / total_with_phrases as f64 * 100.0);
-        println!("   ├─ Medium (0.5≤E<1.5): {} ({:.1}%)", self.entropy_stats.medium_count,
-                 self.entropy_stats.medium_count as f64 / total_with_phrases as f64 * 100.0);
-        println!("   └─ Complex (E≥1.5): {} ({:.1}%)", self.entropy_stats.complex_count,
-                 self.entropy_stats.complex_count as f64 / total_with_phrases as f64 * 100.0);
+        let total_with_phrases = self.entropy_stats.simple_count
+            + self.entropy_stats.medium_count
+            + self.entropy_stats.complex_count;
+        println!(
+            "   ├─ Simple (E<0.5): {} ({:.1}%)",
+            self.entropy_stats.simple_count,
+            self.entropy_stats.simple_count as f64 / total_with_phrases as f64 * 100.0
+        );
+        println!(
+            "   ├─ Medium (0.5≤E<1.5): {} ({:.1}%)",
+            self.entropy_stats.medium_count,
+            self.entropy_stats.medium_count as f64 / total_with_phrases as f64 * 100.0
+        );
+        println!(
+            "   └─ Complex (E≥1.5): {} ({:.1}%)",
+            self.entropy_stats.complex_count,
+            self.entropy_stats.complex_count as f64 / total_with_phrases as f64 * 100.0
+        );
 
         println!("\n📊 PHRASES PER VOCALIZATION");
         let mut ppc: Vec<_> = self.phrases_per_call_distribution.iter().collect();
@@ -430,9 +480,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════╝");
 
     let results_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results/bat_within_call_analyses.json");
-    let output_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results");
+    let output_dir = PathBuf::from(
+        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results",
+    );
 
-    println!("\n📂 Loading analysis results from: {}", results_path.display());
+    println!(
+        "\n📂 Loading analysis results from: {}",
+        results_path.display()
+    );
 
     let file = File::open(&results_path)?;
     let analyses: Vec<WithinCallAnalysisFile> = serde_json::from_reader(BufReader::new(file))?;
@@ -447,7 +502,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let aggregate_path = output_dir.join("aggregate_analysis.json");
     let file = File::create(&aggregate_path)?;
     serde_json::to_writer_pretty(BufWriter::new(file), &aggregate)?;
-    println!("\n💾 Saved aggregate analysis to: {}", aggregate_path.display());
+    println!(
+        "\n💾 Saved aggregate analysis to: {}",
+        aggregate_path.display()
+    );
 
     // Consolidate phrase types with different thresholds
     println!("\n╔═══════════════════════════════════════════════════════════════╗");
@@ -458,14 +516,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for threshold in [0.5, 0.6, 0.7, 0.75, 0.8, 0.9] {
         let vocab = consolidate_phrase_types(&analyses, threshold);
-        println!("   Threshold {:.2}: {:>6} global types ({:.1}x consolidation)",
-                 threshold, vocab.n_global_types, vocab.consolidation_ratio);
+        println!(
+            "   Threshold {:.2}: {:>6} global types ({:.1}x consolidation)",
+            threshold, vocab.n_global_types, vocab.consolidation_ratio
+        );
         consolidation_results.push((threshold, vocab));
     }
 
     // Save consolidation results
     let consolidation_path = output_dir.join("consolidation_analysis.json");
-    let consolidation_data: Vec<_> = consolidation_results.into_iter()
+    let consolidation_data: Vec<_> = consolidation_results
+        .into_iter()
         .map(|(threshold, vocab)| {
             serde_json::json!({
                 "threshold": threshold,
@@ -478,7 +539,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let file = File::create(&consolidation_path)?;
     serde_json::to_writer_pretty(BufWriter::new(file), &consolidation_data)?;
-    println!("\n💾 Saved consolidation analysis to: {}", consolidation_path.display());
+    println!(
+        "\n💾 Saved consolidation analysis to: {}",
+        consolidation_path.display()
+    );
 
     println!("\n╔═══════════════════════════════════════════════════════════════╗");
     println!("║                      ANALYSIS COMPLETE                         ║");

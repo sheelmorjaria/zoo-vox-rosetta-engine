@@ -103,10 +103,7 @@ impl MacaqueSpectralDerivative {
     /// Compute spectral derivative from spectrogram
     ///
     /// Returns the rate of frequency change at each time-frequency point
-    pub fn compute_spectral_derivative(
-        &self,
-        spectrogram: &[Vec<f64>],
-    ) -> Vec<Vec<f64>> {
+    pub fn compute_spectral_derivative(&self, spectrogram: &[Vec<f64>]) -> Vec<Vec<f64>> {
         if spectrogram.is_empty() || spectrogram[0].is_empty() {
             return Vec::new();
         }
@@ -119,8 +116,10 @@ impl MacaqueSpectralDerivative {
         for frame_idx in 1..n_frames - 1 {
             for bin_idx in 0..n_bins {
                 // Central difference for time derivative
-                let dt = (frame_idx as f64 * self.hop_size as f64) / self.sample_rate as f64 * 1000.0;
-                let df = (spectrogram[frame_idx + 1][bin_idx] - spectrogram[frame_idx - 1][bin_idx])
+                let dt =
+                    (frame_idx as f64 * self.hop_size as f64) / self.sample_rate as f64 * 1000.0;
+                let df = (spectrogram[frame_idx + 1][bin_idx]
+                    - spectrogram[frame_idx - 1][bin_idx])
                     / (2.0 * dt);
 
                 derivative[frame_idx][bin_idx] = df;
@@ -146,7 +145,8 @@ impl MacaqueSpectralDerivative {
         }
 
         let hop_ms = (self.hop_size as f64 / self.sample_rate as f64) * 1000.0;
-        let freq_resolution = frequencies.get(1).unwrap_or(&0.0) - frequencies.get(0).unwrap_or(&0.0);
+        let freq_resolution =
+            frequencies.get(1).unwrap_or(&0.0) - frequencies.get(0).unwrap_or(&0.0);
 
         // Find peaks in derivative (rapid FM regions)
         let mut in_sweep = false;
@@ -158,7 +158,8 @@ impl MacaqueSpectralDerivative {
 
         for (frame_idx, frame) in derivative.iter().enumerate() {
             // Find maximum derivative at this frame
-            let (max_bin, &max_deriv) = frame.iter()
+            let (max_bin, &max_deriv) = frame
+                .iter()
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
                 .unwrap_or((0, &0.0));
@@ -190,7 +191,11 @@ impl MacaqueSpectralDerivative {
                         start_freq_hz: sweep_freq_start,
                         end_freq_hz: sweep_freq_end,
                         sweep_rate_hz_ms: sweep_max_rate,
-                        direction: if sweep_direction > 0 { SweepDirection::Up } else { SweepDirection::Down },
+                        direction: if sweep_direction > 0 {
+                            SweepDirection::Up
+                        } else {
+                            SweepDirection::Down
+                        },
                         intensity: sweep_max_rate / self.max_sweep_rate,
                     });
                 }
@@ -208,7 +213,11 @@ impl MacaqueSpectralDerivative {
                     start_freq_hz: sweep_freq_start,
                     end_freq_hz: sweep_freq_end,
                     sweep_rate_hz_ms: sweep_max_rate,
-                    direction: if sweep_direction > 0 { SweepDirection::Up } else { SweepDirection::Down },
+                    direction: if sweep_direction > 0 {
+                        SweepDirection::Up
+                    } else {
+                        SweepDirection::Down
+                    },
                     intensity: sweep_max_rate / self.max_sweep_rate,
                 });
             }
@@ -235,8 +244,14 @@ impl MacaqueSpectralDerivative {
             0.0
         };
 
-        let up_sweeps = sweeps.iter().filter(|s| s.direction == SweepDirection::Up).count();
-        let down_sweeps = sweeps.iter().filter(|s| s.direction == SweepDirection::Down).count();
+        let up_sweeps = sweeps
+            .iter()
+            .filter(|s| s.direction == SweepDirection::Up)
+            .count();
+        let down_sweeps = sweeps
+            .iter()
+            .filter(|s| s.direction == SweepDirection::Down)
+            .count();
 
         let mut features = HashMap::new();
         features.insert("sweep_count".to_string(), sweeps.len() as f64);
@@ -244,32 +259,39 @@ impl MacaqueSpectralDerivative {
         features.insert("avg_sweep_rate_hz_ms".to_string(), avg_sweep_rate);
         features.insert("up_sweep_count".to_string(), up_sweeps as f64);
         features.insert("down_sweep_count".to_string(), down_sweeps as f64);
-        features.insert("sweep_ratio".to_string(), if down_sweeps > 0 {
-            up_sweeps as f64 / down_sweeps as f64
-        } else {
-            up_sweeps as f64
-        });
+        features.insert(
+            "sweep_ratio".to_string(),
+            if down_sweeps > 0 {
+                up_sweeps as f64 / down_sweeps as f64
+            } else {
+                up_sweeps as f64
+            },
+        );
 
         // Max derivative across all frames
-        let max_deriv: f64 = derivative.iter()
+        let max_deriv: f64 = derivative
+            .iter()
             .flat_map(|f| f.iter())
             .map(|d| d.abs())
             .fold(0.0, |a, b| a.max(b));
         features.insert("max_spectral_derivative".to_string(), max_deriv);
 
-        let events: Vec<DetectedEvent> = sweeps.iter().map(|s| DetectedEvent {
-            event_type: "fm_sweep".to_string(),
-            start_ms: s.start_ms,
-            duration_ms: s.duration_ms,
-            intensity: s.intensity,
-            parameters: {
-                let mut p = HashMap::new();
-                p.insert("start_freq_hz".to_string(), s.start_freq_hz);
-                p.insert("end_freq_hz".to_string(), s.end_freq_hz);
-                p.insert("sweep_rate_hz_ms".to_string(), s.sweep_rate_hz_ms);
-                p
-            },
-        }).collect();
+        let events: Vec<DetectedEvent> = sweeps
+            .iter()
+            .map(|s| DetectedEvent {
+                event_type: "fm_sweep".to_string(),
+                start_ms: s.start_ms,
+                duration_ms: s.duration_ms,
+                intensity: s.intensity,
+                parameters: {
+                    let mut p = HashMap::new();
+                    p.insert("start_freq_hz".to_string(), s.start_freq_hz);
+                    p.insert("end_freq_hz".to_string(), s.end_freq_hz);
+                    p.insert("sweep_rate_hz_ms".to_string(), s.sweep_rate_hz_ms);
+                    p
+                },
+            })
+            .collect();
 
         SpeciesAnalysisResult {
             species: "macaque".to_string(),
@@ -411,10 +433,7 @@ impl DolphinBispectrumAnalyzer {
     ///
     /// QPC occurs when the bispectrum magnitude is high and the biphase
     /// (phi1 + phi2 - phi3) is near zero (phase coherent).
-    pub fn detect_qpc(
-        &self,
-        bispectrum: &BispectrumResult,
-    ) -> Vec<QpcEvent> {
+    pub fn detect_qpc(&self, bispectrum: &BispectrumResult) -> Vec<QpcEvent> {
         let mut qpc_events = Vec::new();
 
         let n = bispectrum.magnitude.len();
@@ -423,7 +442,9 @@ impl DolphinBispectrumAnalyzer {
         }
 
         // Find maximum for normalization
-        let max_bispec: f64 = bispectrum.magnitude.iter()
+        let max_bispec: f64 = bispectrum
+            .magnitude
+            .iter()
             .flat_map(|row| row.iter())
             .copied()
             .fold(0.0_f64, |a, b| a.max(b));
@@ -444,8 +465,9 @@ impl DolphinBispectrumAnalyzer {
 
                     // Biphase coherence (closer to 0 mod 2pi = more coherent)
                     let biphase = bispectrum.phase[f1_bin][f2_bin];
-                    let coherence = ((biphase % (2.0 * std::f64::consts::PI))
-                        .abs() / std::f64::consts::PI).min(1.0);
+                    let coherence = ((biphase % (2.0 * std::f64::consts::PI)).abs()
+                        / std::f64::consts::PI)
+                        .min(1.0);
 
                     qpc_events.push(QpcEvent {
                         f1_hz: f1,
@@ -460,8 +482,11 @@ impl DolphinBispectrumAnalyzer {
         }
 
         // Sort by magnitude
-        qpc_events.sort_by(|a, b| b.bispectrum_magnitude.partial_cmp(&a.bispectrum_magnitude)
-            .unwrap_or(std::cmp::Ordering::Equal));
+        qpc_events.sort_by(|a, b| {
+            b.bispectrum_magnitude
+                .partial_cmp(&a.bispectrum_magnitude)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Return top events
         qpc_events.into_iter().take(50).collect()
@@ -477,7 +502,8 @@ impl DolphinBispectrumAnalyzer {
         let whistle_threshold = 20000.0; // 20kHz
 
         let has_click = f1 > click_threshold || f2 > click_threshold || f3 > click_threshold;
-        let has_whistle = f1 < whistle_threshold || f2 < whistle_threshold || f3 < whistle_threshold;
+        let has_whistle =
+            f1 < whistle_threshold || f2 < whistle_threshold || f3 < whistle_threshold;
 
         if has_click && has_whistle {
             CouplingType::ClickWhistleInteraction
@@ -503,7 +529,11 @@ impl DolphinBispectrumAnalyzer {
         // Compute aggregate statistics
         let total_qpc = qpc_events.len();
         let avg_magnitude = if !qpc_events.is_empty() {
-            qpc_events.iter().map(|e| e.bispectrum_magnitude).sum::<f64>() / qpc_events.len() as f64
+            qpc_events
+                .iter()
+                .map(|e| e.bispectrum_magnitude)
+                .sum::<f64>()
+                / qpc_events.len() as f64
         } else {
             0.0
         };
@@ -513,13 +543,16 @@ impl DolphinBispectrumAnalyzer {
             0.0
         };
 
-        let click_interactions = qpc_events.iter()
+        let click_interactions = qpc_events
+            .iter()
             .filter(|e| e.coupling_type == CouplingType::ClickClickInteraction)
             .count();
-        let whistle_interactions = qpc_events.iter()
+        let whistle_interactions = qpc_events
+            .iter()
             .filter(|e| e.coupling_type == CouplingType::WhistleWhistleInteraction)
             .count();
-        let mixed_interactions = qpc_events.iter()
+        let mixed_interactions = qpc_events
+            .iter()
             .filter(|e| e.coupling_type == CouplingType::ClickWhistleInteraction)
             .count();
 
@@ -527,33 +560,51 @@ impl DolphinBispectrumAnalyzer {
         features.insert("qpc_count".to_string(), total_qpc as f64);
         features.insert("avg_bispectrum_magnitude".to_string(), avg_magnitude);
         features.insert("avg_biphase_coherence".to_string(), avg_coherence);
-        features.insert("click_click_interactions".to_string(), click_interactions as f64);
-        features.insert("whistle_whistle_interactions".to_string(), whistle_interactions as f64);
-        features.insert("click_whistle_interactions".to_string(), mixed_interactions as f64);
+        features.insert(
+            "click_click_interactions".to_string(),
+            click_interactions as f64,
+        );
+        features.insert(
+            "whistle_whistle_interactions".to_string(),
+            whistle_interactions as f64,
+        );
+        features.insert(
+            "click_whistle_interactions".to_string(),
+            mixed_interactions as f64,
+        );
 
         // Bispectrum entropy (measure of distribution)
         let entropy = self.compute_bispectrum_entropy(&bispectrum);
         features.insert("bispectrum_entropy".to_string(), entropy);
 
-        let events: Vec<DetectedEvent> = qpc_events.iter().map(|e| DetectedEvent {
-            event_type: "qpc".to_string(),
-            start_ms: 0.0, // QPC is frequency-domain, no temporal location
-            duration_ms: 0.0,
-            intensity: e.bispectrum_magnitude,
-            parameters: {
-                let mut p = HashMap::new();
-                p.insert("f1_hz".to_string(), e.f1_hz);
-                p.insert("f2_hz".to_string(), e.f2_hz);
-                p.insert("f3_hz".to_string(), e.f3_hz);
-                p.insert("biphase_coherence".to_string(), e.biphase_coherence);
-                p
-            },
-        }).collect();
+        let events: Vec<DetectedEvent> = qpc_events
+            .iter()
+            .map(|e| DetectedEvent {
+                event_type: "qpc".to_string(),
+                start_ms: 0.0, // QPC is frequency-domain, no temporal location
+                duration_ms: 0.0,
+                intensity: e.bispectrum_magnitude,
+                parameters: {
+                    let mut p = HashMap::new();
+                    p.insert("f1_hz".to_string(), e.f1_hz);
+                    p.insert("f2_hz".to_string(), e.f2_hz);
+                    p.insert("f3_hz".to_string(), e.f3_hz);
+                    p.insert("biphase_coherence".to_string(), e.biphase_coherence);
+                    p
+                },
+            })
+            .collect();
 
         SpeciesAnalysisResult {
             species: "dolphin".to_string(),
             analysis_type: "bispectrum".to_string(),
-            confidence: if total_qpc > 5 { 0.9 } else if total_qpc > 0 { 0.6 } else { 0.3 },
+            confidence: if total_qpc > 5 {
+                0.9
+            } else if total_qpc > 0 {
+                0.6
+            } else {
+                0.3
+            },
             features,
             events,
             timestamp_ms,
@@ -562,9 +613,7 @@ impl DolphinBispectrumAnalyzer {
 
     /// Compute entropy of bispectrum magnitude distribution
     fn compute_bispectrum_entropy(&self, bispectrum: &BispectrumResult) -> f64 {
-        let total: f64 = bispectrum.magnitude.iter()
-            .flat_map(|row| row.iter())
-            .sum();
+        let total: f64 = bispectrum.magnitude.iter().flat_map(|row| row.iter()).sum();
 
         if total == 0.0 {
             return 0.0;
@@ -689,8 +738,7 @@ mod tests {
 
     #[test]
     fn test_macaque_custom_params() {
-        let analyzer = MacaqueSpectralDerivative::new(48000)
-            .with_params(2048, 512, 20.0, 3000.0);
+        let analyzer = MacaqueSpectralDerivative::new(48000).with_params(2048, 512, 20.0, 3000.0);
         assert_eq!(analyzer.fft_size, 2048);
         assert_eq!(analyzer.hop_size, 512);
     }
@@ -741,9 +789,9 @@ mod tests {
         let analyzer = MacaqueSpectralDerivative::new(48000);
 
         // Create spectrogram with some variation
-        let spectrogram: Vec<Vec<f64>> = (0..10).map(|i| {
-            vec![1.0 + i as f64 * 0.1, 2.0, 3.0]
-        }).collect();
+        let spectrogram: Vec<Vec<f64>> = (0..10)
+            .map(|i| vec![1.0 + i as f64 * 0.1, 2.0, 3.0])
+            .collect();
         let frequencies = vec![1000.0, 2000.0, 3000.0];
 
         let result = analyzer.analyze(&spectrogram, &frequencies, 0);
@@ -787,8 +835,7 @@ mod tests {
 
     #[test]
     fn test_dolphin_custom_params() {
-        let analyzer = DolphinBispectrumAnalyzer::new(192000)
-            .with_params(4096, 100000.0, 0.4);
+        let analyzer = DolphinBispectrumAnalyzer::new(192000).with_params(4096, 100000.0, 0.4);
         assert_eq!(analyzer.fft_size, 4096);
         assert_eq!(analyzer.max_freq, 100000.0);
         assert!((analyzer.qpc_threshold - 0.4).abs() < 0.001);
@@ -854,9 +901,17 @@ mod tests {
         let analyzer = DolphinBispectrumAnalyzer::new(192000);
 
         // Simple FFT data
-        let magnitudes: Vec<f64> = (0..256).map(|i| {
-            if i < 50 { 0.5 } else if i < 100 { 0.3 } else { 0.1 }
-        }).collect();
+        let magnitudes: Vec<f64> = (0..256)
+            .map(|i| {
+                if i < 50 {
+                    0.5
+                } else if i < 100 {
+                    0.3
+                } else {
+                    0.1
+                }
+            })
+            .collect();
         let phases: Vec<f64> = (0..256).map(|_| 0.0).collect();
 
         let result = analyzer.analyze(&magnitudes, &phases, 0);
@@ -870,9 +925,18 @@ mod tests {
     fn test_coupling_type_classification() {
         let analyzer = DolphinBispectrumAnalyzer::new(192000);
 
-        assert_eq!(analyzer.classify_coupling(10000.0, 15000.0, 25000.0), CouplingType::WhistleWhistleInteraction);
-        assert_eq!(analyzer.classify_coupling(60000.0, 70000.0, 130000.0), CouplingType::ClickClickInteraction);
-        assert_eq!(analyzer.classify_coupling(10000.0, 60000.0, 70000.0), CouplingType::ClickWhistleInteraction);
+        assert_eq!(
+            analyzer.classify_coupling(10000.0, 15000.0, 25000.0),
+            CouplingType::WhistleWhistleInteraction
+        );
+        assert_eq!(
+            analyzer.classify_coupling(60000.0, 70000.0, 130000.0),
+            CouplingType::ClickClickInteraction
+        );
+        assert_eq!(
+            analyzer.classify_coupling(10000.0, 60000.0, 70000.0),
+            CouplingType::ClickWhistleInteraction
+        );
     }
 
     #[test]

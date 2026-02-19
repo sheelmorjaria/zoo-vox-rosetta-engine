@@ -9,11 +9,6 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_hierarchical_discovery
 
-use technical_architecture::{
-    DynamicSegmenter, DynamicSegmenterConfig, DynamicPhraseCandidate,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,6 +19,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
+    SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 const SAMPLE_RATE: u32 = 44100;
@@ -144,9 +143,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     let motif_config = DynamicSegmenterConfig {
         frame_duration_ms: 10.0,
-        min_phrase_duration_ms: 100.0,   // Motifs are 100ms+
+        min_phrase_duration_ms: 100.0, // Motifs are 100ms+
         max_phrase_duration_ms: 2000.0,
-        change_threshold: 0.30,          // High threshold = fewer, larger segments
+        change_threshold: 0.30, // High threshold = fewer, larger segments
         smoothing_window: 5,
         peak_prominence: 0.08,
         feature_dim: 45,
@@ -154,19 +153,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let syllable_config = DynamicSegmenterConfig {
         frame_duration_ms: 10.0,
-        min_phrase_duration_ms: 30.0,    // Syllables are 30-200ms
+        min_phrase_duration_ms: 30.0, // Syllables are 30-200ms
         max_phrase_duration_ms: 300.0,
-        change_threshold: 0.20,          // Lower threshold = more segments
+        change_threshold: 0.20, // Lower threshold = more segments
         smoothing_window: 3,
         peak_prominence: 0.05,
         feature_dim: 45,
     };
 
     let note_config = DynamicSegmenterConfig {
-        frame_duration_ms: 5.0,          // Higher time resolution
-        min_phrase_duration_ms: 10.0,    // Notes are 10-50ms
+        frame_duration_ms: 5.0,       // Higher time resolution
+        min_phrase_duration_ms: 10.0, // Notes are 10-50ms
         max_phrase_duration_ms: 80.0,
-        change_threshold: 0.15,          // Lowest threshold = finest granularity
+        change_threshold: 0.15, // Lowest threshold = finest granularity
         smoothing_window: 2,
         peak_prominence: 0.03,
         feature_dim: 45,
@@ -174,13 +173,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Hierarchical Configuration:");
     println!("  Level 0 (Motifs):");
-    println!("    ├─ Min Duration: {}ms", motif_config.min_phrase_duration_ms);
+    println!(
+        "    ├─ Min Duration: {}ms",
+        motif_config.min_phrase_duration_ms
+    );
     println!("    └─ Change Threshold: {}", motif_config.change_threshold);
     println!("  Level 1 (Syllables):");
-    println!("    ├─ Min Duration: {}ms", syllable_config.min_phrase_duration_ms);
-    println!("    └─ Change Threshold: {}", syllable_config.change_threshold);
+    println!(
+        "    ├─ Min Duration: {}ms",
+        syllable_config.min_phrase_duration_ms
+    );
+    println!(
+        "    └─ Change Threshold: {}",
+        syllable_config.change_threshold
+    );
     println!("  Level 2 (Notes):");
-    println!("    ├─ Min Duration: {}ms", note_config.min_phrase_duration_ms);
+    println!(
+        "    ├─ Min Duration: {}ms",
+        note_config.min_phrase_duration_ms
+    );
     println!("    └─ Change Threshold: {}", note_config.change_threshold);
     println!();
 
@@ -216,18 +227,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                    SAMPLE_RATE,
+                )));
                 let result = motif_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64)
+                            .ok()
+                            .map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
 
-                result.candidates.into_iter()
+                result
+                    .candidates
+                    .into_iter()
                     .map(|c| (c, ann.call_type.clone()))
                     .collect()
             } else {
@@ -238,8 +255,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Cluster motifs
     let motif_clusters = cluster_phrases(&motif_results, 0.35, 2);
-    println!("\nMotifs Discovered: {} types from {} candidates",
-        motif_clusters.len(), motif_results.len());
+    println!(
+        "\nMotifs Discovered: {} types from {} candidates",
+        motif_clusters.len(),
+        motif_results.len()
+    );
 
     // ========================================================================
     // PASS 2: Find Syllables within Motifs
@@ -290,18 +310,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                    SAMPLE_RATE,
+                )));
                 let result = syllable_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64)
+                            .ok()
+                            .map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
 
-                result.candidates.into_iter()
+                result
+                    .candidates
+                    .into_iter()
                     .map(|c| (c, ann.call_type.clone()))
                     .collect()
             } else {
@@ -311,8 +337,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let syllable_clusters = cluster_phrases(&syllable_results, 0.30, 3);
-    println!("\nSyllables Discovered: {} types from {} candidates",
-        syllable_clusters.len(), syllable_results.len());
+    println!(
+        "\nSyllables Discovered: {} types from {} candidates",
+        syllable_clusters.len(),
+        syllable_results.len()
+    );
 
     // ========================================================================
     // PASS 3: Find Notes within Syllables
@@ -339,18 +368,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                    SAMPLE_RATE,
+                )));
                 let result = note_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64)
+                            .ok()
+                            .map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
 
-                result.candidates.into_iter()
+                result
+                    .candidates
+                    .into_iter()
                     .map(|c| (c, ann.call_type.clone()))
                     .collect()
             } else {
@@ -360,8 +395,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let note_clusters = cluster_phrases(&note_results, 0.25, 3);
-    println!("\nNotes Discovered: {} types from {} candidates",
-        note_clusters.len(), note_results.len());
+    println!(
+        "\nNotes Discovered: {} types from {} candidates",
+        note_clusters.len(),
+        note_results.len()
+    );
 
     // ========================================================================
     // Generate Report
@@ -380,19 +418,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ Level         │ Types │ Candidates │ Avg Duration │ Typical Range        │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!("│ MOTIFS        │ {:>5} │ {:>10} │ {:>8.1}ms  │ 100-800ms            │",
-        motif_stats.total_phrases, motif_stats.total_candidates, motif_stats.avg_duration_ms);
-    println!("│ SYLLABLES     │ {:>5} │ {:>10} │ {:>8.1}ms  │ 30-150ms             │",
-        syllable_stats.total_phrases, syllable_stats.total_candidates, syllable_stats.avg_duration_ms);
-    println!("│ NOTES         │ {:>5} │ {:>10} │ {:>8.1}ms  │ 10-50ms              │",
-        note_stats.total_phrases, note_stats.total_candidates, note_stats.avg_duration_ms);
+    println!(
+        "│ MOTIFS        │ {:>5} │ {:>10} │ {:>8.1}ms  │ 100-800ms            │",
+        motif_stats.total_phrases, motif_stats.total_candidates, motif_stats.avg_duration_ms
+    );
+    println!(
+        "│ SYLLABLES     │ {:>5} │ {:>10} │ {:>8.1}ms  │ 30-150ms             │",
+        syllable_stats.total_phrases,
+        syllable_stats.total_candidates,
+        syllable_stats.avg_duration_ms
+    );
+    println!(
+        "│ NOTES         │ {:>5} │ {:>10} │ {:>8.1}ms  │ 10-50ms              │",
+        note_stats.total_phrases, note_stats.total_candidates, note_stats.avg_duration_ms
+    );
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("Zebra Finch Vocal Hierarchy:");
     println!("  └─ Motif ({} types, ~350ms)", motif_stats.total_phrases);
-    println!("      └─ Syllable ({} types, ~50-100ms)", syllable_stats.total_phrases);
-    println!("          └─ Note ({} types, ~15-30ms)", note_stats.total_phrases);
+    println!(
+        "      └─ Syllable ({} types, ~50-100ms)",
+        syllable_stats.total_phrases
+    );
+    println!(
+        "          └─ Note ({} types, ~15-30ms)",
+        note_stats.total_phrases
+    );
     println!();
 
     // Save report
@@ -498,7 +550,10 @@ fn cluster_phrases(
     clusters
 }
 
-fn compute_centroid(indices: &[usize], candidates: &[(DynamicPhraseCandidate, String)]) -> Vec<f64> {
+fn compute_centroid(
+    indices: &[usize],
+    candidates: &[(DynamicPhraseCandidate, String)],
+) -> Vec<f64> {
     if indices.is_empty() {
         return vec![0.0; FEATURE_DIM];
     }
@@ -533,29 +588,40 @@ fn compute_level_stats(
             d if d < 200.0 => "100-200ms",
             d if d < 500.0 => "200-500ms",
             _ => "500ms+",
-        }.to_string();
+        }
+        .to_string();
         *duration_dist.entry(bucket).or_insert(0) += 1;
     }
 
     let avg_duration = if candidates.is_empty() {
         0.0
     } else {
-        candidates.iter().map(|(c, _)| c.duration_ms as f64).sum::<f64>() / candidates.len() as f64
+        candidates
+            .iter()
+            .map(|(c, _)| c.duration_ms as f64)
+            .sum::<f64>()
+            / candidates.len() as f64
     };
 
-    let top_phrases: Vec<PhraseInfo> = clusters.iter()
+    let top_phrases: Vec<PhraseInfo> = clusters
+        .iter()
         .take(5)
         .map(|c| {
-            let call_type = c.member_indices.first()
+            let call_type = c
+                .member_indices
+                .first()
                 .map(|&idx| candidates[idx].1.clone())
                 .unwrap_or_else(|| "unknown".to_string());
 
             PhraseInfo {
                 id: c.phrase_id,
                 size: c.member_indices.len(),
-                avg_duration_ms: c.member_indices.iter()
+                avg_duration_ms: c
+                    .member_indices
+                    .iter()
                     .map(|&idx| candidates[idx].0.duration_ms as f64)
-                    .sum::<f64>() / c.member_indices.len() as f64,
+                    .sum::<f64>()
+                    / c.member_indices.len() as f64,
                 intra_similarity: c.intra_similarity,
                 call_type,
             }
@@ -590,12 +656,14 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => {
-            reader.into_samples::<f32>().filter_map(|s| s.ok()).collect()
-        }
+        hound::SampleFormat::Float => reader
+            .into_samples::<f32>()
+            .filter_map(|s| s.ok())
+            .collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
-            reader.into_samples::<i32>()
+            reader
+                .into_samples::<i32>()
                 .filter_map(|s| s.ok())
                 .map(|s| s as f32 / max_val)
                 .collect()

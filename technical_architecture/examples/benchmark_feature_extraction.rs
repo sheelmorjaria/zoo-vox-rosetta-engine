@@ -43,7 +43,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let birdvox_dataset = birdvox_loader.load()?;
     println!("✓ Loaded {} recordings", birdvox_dataset.recordings.len());
     println!("  Sample rate: {} Hz", birdvox_dataset.metadata.sample_rate);
-    println!("  Total duration: {:.1} ms", birdvox_dataset.metadata.total_duration_ms);
+    println!(
+        "  Total duration: {:.1} ms",
+        birdvox_dataset.metadata.total_duration_ms
+    );
     println!("  Classes: {}", birdvox_dataset.metadata.num_classes);
     println!();
 
@@ -53,7 +56,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let nemesis_dataset = nemesis_loader.load()?;
     println!("✓ Loaded {} recordings", nemesis_dataset.recordings.len());
     println!("  Sample rate: {} Hz", nemesis_dataset.metadata.sample_rate);
-    println!("  Total duration: {:.1} ms", nemesis_dataset.metadata.total_duration_ms);
+    println!(
+        "  Total duration: {:.1} ms",
+        nemesis_dataset.metadata.total_duration_ms
+    );
     println!("  Classes: {}", nemesis_dataset.metadata.num_classes);
     println!();
 
@@ -69,11 +75,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_report = evaluator.evaluate_extraction(&birdvox_dataset)?;
     let eval_time = start.elapsed();
 
-    println!("✓ Extraction evaluation completed in {:.2} ms", eval_time.as_millis() as f32);
+    println!(
+        "✓ Extraction evaluation completed in {:.2} ms",
+        eval_time.as_millis() as f32
+    );
     println!("  Total processed: {}", extraction_report.total_processed);
     println!("  Successful: {}", extraction_report.successful);
     println!("  Failed: {}", extraction_report.failed);
-    println!("  Average time: {:.2} ms/recording", extraction_report.average_time_ms);
+    println!(
+        "  Average time: {:.2} ms/recording",
+        extraction_report.average_time_ms
+    );
     println!();
 
     // ========================================================================
@@ -98,8 +110,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cm = &metrics.confusion_matrix;
     println!("                Predicted");
     println!("              Pos    Neg");
-    println!("Actual Pos  {:4}    {:4}", cm.true_positives, cm.false_negatives);
-    println!("       Neg  {:4}    {:4}", cm.false_positives, cm.true_negatives);
+    println!(
+        "Actual Pos  {:4}    {:4}",
+        cm.true_positives, cm.false_negatives
+    );
+    println!(
+        "       Neg  {:4}    {:4}",
+        cm.false_positives, cm.true_negatives
+    );
     println!();
 
     // ========================================================================
@@ -114,13 +132,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let comparison_report = evaluator.compare_dimensions(&nemesis_dataset)?;
     let comp_time = start.elapsed();
 
-    println!("✓ Comparison completed in {:.2} ms", comp_time.as_millis() as f32);
+    println!(
+        "✓ Comparison completed in {:.2} ms",
+        comp_time.as_millis() as f32
+    );
     println!();
 
     println!("Accuracy by Dimensionality:");
-    println!("  30D (baseline):  {:.1}%", comparison_report.accuracy_30d * 100.0);
-    println!("  39D (compact):   {:.1}%", comparison_report.accuracy_39d * 100.0);
-    println!("  56D (full):      {:.1}%", comparison_report.accuracy_56d * 100.0);
+    println!(
+        "  30D (baseline):  {:.1}%",
+        comparison_report.accuracy_30d * 100.0
+    );
+    println!(
+        "  39D (compact):   {:.1}%",
+        comparison_report.accuracy_39d * 100.0
+    );
+    println!(
+        "  56D (full):      {:.1}%",
+        comparison_report.accuracy_56d * 100.0
+    );
     println!();
 
     let improvement_39d = (comparison_report.accuracy_39d - comparison_report.accuracy_30d)
@@ -144,7 +174,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Feature group contribution analysis:");
     println!();
-    println!("  {:<20}  {:>10}  {:>10}  {:>10}  {:>10}", "Feature Group", "30D Acc", "39D Acc", "56D Acc", "Improve");
+    println!(
+        "  {:<20}  {:>10}  {:>10}  {:>10}  {:>10}",
+        "Feature Group", "30D Acc", "39D Acc", "56D Acc", "Improve"
+    );
     println!("  {}", "-".repeat(65));
 
     for ablation in &comparison_report.ablation_results {
@@ -154,11 +187,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let improvement = format!("{:+.1}%%", ablation.improvement_percent);
         println!(
             "  {:<20}  {:>10}  {:>10}  {:>10}  {:>10}",
-            ablation.feature_group,
-            acc_30d_str,
-            acc_39d_str,
-            acc_56d_str,
-            improvement
+            ablation.feature_group, acc_30d_str, acc_39d_str, acc_56d_str, improvement
         );
     }
     println!();
@@ -238,7 +267,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✓ Benchmark evaluation completed successfully!");
     println!();
     println!("Key findings:");
-    println!("  • 56D features show {:.1}% improvement over 30D baseline", improvement_56d);
+    println!(
+        "  • 56D features show {:.1}% improvement over 30D baseline",
+        improvement_56d
+    );
     println!("  • Feature extraction is real-time capable");
     println!("  • Multi-scale features capture additional temporal dynamics");
     println!("  • Full delta preservation (56D) provides best accuracy");

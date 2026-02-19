@@ -3,11 +3,11 @@
 // Analyzes which features provide the best clustering discrimination
 // Uses variance analysis and correlation to identify redundant features
 
+use ndarray::{Array1, Array2};
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
-use serde::Deserialize;
-use ndarray::{Array2, Array1};
 
 #[derive(Debug, Clone, Deserialize)]
 struct PhraseSegment {
@@ -31,7 +31,7 @@ struct FeatureStats {
     std: f64,
     min: f64,
     max: f64,
-    cv: f64,  // Coefficient of variation
+    cv: f64, // Coefficient of variation
     variance: f64,
 }
 
@@ -56,7 +56,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_size = 50000.min(all_segments.len());
     let sample_indices: Vec<usize> = (0..sample_size).collect();
 
-    println!("📊 Analyzing {} segments (sampled from {} total)", sample_size, all_segments.len());
+    println!(
+        "📊 Analyzing {} segments (sampled from {} total)",
+        sample_size,
+        all_segments.len()
+    );
     println!();
 
     // Build feature matrix
@@ -90,9 +94,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "jitter",
         "shimmer",
         // Fingerprint/MFCCs (13-25)
-        "mfcc_1", "mfcc_2", "mfcc_3", "mfcc_4", "mfcc_5",
-        "mfcc_6", "mfcc_7", "mfcc_8", "mfcc_9", "mfcc_10",
-        "mfcc_11", "mfcc_12", "mfcc_13",
+        "mfcc_1",
+        "mfcc_2",
+        "mfcc_3",
+        "mfcc_4",
+        "mfcc_5",
+        "mfcc_6",
+        "mfcc_7",
+        "mfcc_8",
+        "mfcc_9",
+        "mfcc_10",
+        "mfcc_11",
+        "mfcc_12",
+        "mfcc_13",
         // Spectral Dynamics (26)
         "spectral_flux",
         // Rhythm Factors (27-29)
@@ -119,18 +133,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let mean = values.iter().sum::<f64>() / n_samples as f64;
-        let variance = values.iter()
-            .map(|&x| (x - mean).powi(2))
-            .sum::<f64>() / n_samples as f64;
+        let variance = values.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / n_samples as f64;
         let std = variance.sqrt();
         let min_val = values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
         let max_val = values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
 
-        let cv = if mean > 0.0 {
-            std / mean.abs()
-        } else {
-            0.0
-        };
+        let cv = if mean > 0.0 { std / mean.abs() } else { 0.0 };
 
         feature_stats.push(FeatureStats {
             index: feat_idx,
@@ -152,14 +160,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ├──────┼──────────────────────────────┼────────────┼────────────┼──────────┼────────────┤");
 
     for stat in feature_stats.iter().take(15) {
-        println!("   │ {:4} │ {:28} │ {:10.2e} │ {:10.2} │ {:8.2} │ {:.2} - {:.2} │",
-                 stat.index,
-                 feature_names[stat.index],
-                 stat.variance,
-                 stat.std,
-                 stat.cv,
-                 stat.min,
-                 stat.max);
+        println!(
+            "   │ {:4} │ {:28} │ {:10.2e} │ {:10.2} │ {:8.2} │ {:.2} - {:.2} │",
+            stat.index,
+            feature_names[stat.index],
+            stat.variance,
+            stat.std,
+            stat.cv,
+            stat.min,
+            stat.max
+        );
     }
 
     println!("   └──────┴──────────────────────────────┴────────────┴────────────┴──────────┴────────────┘");
@@ -197,11 +207,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (idx, &(feat_idx, contrib)) in contributions.iter().enumerate() {
         let pct = contrib / total_contribution * 100.0;
         cumulative += pct;
-        println!("   │ {:4} │ {:28} │ {:10.2e} | {:9.2}%% │",
-                 feat_idx,
-                 feature_names[feat_idx],
-                 contrib,
-                 pct);
+        println!(
+            "   │ {:4} │ {:28} │ {:10.2e} | {:9.2}%% │",
+            feat_idx, feature_names[feat_idx], contrib, pct
+        );
         if idx >= 14 {
             break;
         }
@@ -220,15 +229,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Option 1: High-variance features (excluding F0 dominance)
-    let high_variance_features: Vec<usize> = feature_stats.iter()
-        .filter(|s| s.index != 0)  // Exclude F0
+    let high_variance_features: Vec<usize> = feature_stats
+        .iter()
+        .filter(|s| s.index != 0) // Exclude F0
         .take(15)
         .map(|s| s.index)
         .collect();
 
     println!("   OPTION 1: High-Variance Features (excluding F0)");
     println!("   ┌─────────────────────────────────────────────────────────────────────┐");
-    println!("   │ Features: {:?} │", high_variance_features.iter().map(|i| feature_names[*i]).collect::<Vec<_>>());
+    println!(
+        "   │ Features: {:?} │",
+        high_variance_features
+            .iter()
+            .map(|i| feature_names[*i])
+            .collect::<Vec<_>>()
+    );
     println!("   └─────────────────────────────────────────────────────────────────────┘");
     println!("   Rationale: Excludes dominant F0, keeps features with good variance");
     println!();
@@ -238,7 +254,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   OPTION 2: Linguistic Features (Duration + MFCCs)");
     println!("   ┌─────────────────────────────────────────────────────────────────────┐");
-    println!("   │ Features: {:?} │", linguistic_features.iter().map(|i| feature_names[*i]).collect::<Vec<_>>());
+    println!(
+        "   │ Features: {:?} │",
+        linguistic_features
+            .iter()
+            .map(|i| feature_names[*i])
+            .collect::<Vec<_>>()
+    );
     println!("   └─────────────────────────────────────────────────────────────────────┘");
     println!("   Rationale: Duration and spectral envelope are most linguistically relevant");
     println!();

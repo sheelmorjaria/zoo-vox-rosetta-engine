@@ -46,7 +46,7 @@ fn compute_fft_spectrum(audio: &[f32], _sample_rate: u32) -> Vec<f64> {
     }
 
     // Cooley-Tukey FFT (simplified - for production use FFTW or rustfft)
-    for k in 0..n/2 {
+    for k in 0..n / 2 {
         let mut sum_real = 0.0;
         let mut sum_imag = 0.0;
         for t in 0..n {
@@ -206,10 +206,7 @@ pub enum BoundaryType {
     },
 
     /// Combined: both pause and F0 change
-    Combined {
-        from_f0: f64,
-        to_f0: f64,
-    },
+    Combined { from_f0: f64, to_f0: f64 },
 
     /// Spectral + F0 combination (seamless concatenation with F0 change)
     SpectralF0 {
@@ -297,7 +294,8 @@ impl WithinVocalizationAnalyzer {
         let spectral_boundaries = self.detect_spectral_boundaries(audio)?;
 
         // Step 4: Combine all boundary hypotheses
-        let combined_boundaries = self.combine_all_boundaries(pause_boundaries, f0_boundaries, spectral_boundaries)?;
+        let combined_boundaries =
+            self.combine_all_boundaries(pause_boundaries, f0_boundaries, spectral_boundaries)?;
 
         // Step 5: Validate and filter boundaries
         let valid_boundaries = self.validate_boundaries(&combined_boundaries, duration_ms)?;
@@ -310,9 +308,12 @@ impl WithinVocalizationAnalyzer {
 
     /// Detect boundaries based on energy/pauses
     fn detect_pause_boundaries(&self, audio: &[f32]) -> Result<Vec<PhraseBoundary>> {
-        let frame_size_samples = (self.config.frame_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
-        let hop_size_samples = (self.config.hop_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
-        let min_pause_samples = (self.config.min_pause_duration_ms * self.config.sample_rate as f64 / 1000.0) as usize;
+        let frame_size_samples =
+            (self.config.frame_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
+        let hop_size_samples =
+            (self.config.hop_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
+        let min_pause_samples =
+            (self.config.min_pause_duration_ms * self.config.sample_rate as f64 / 1000.0) as usize;
 
         let mut boundaries = Vec::new();
 
@@ -335,7 +336,8 @@ impl WithinVocalizationAnalyzer {
                     let pause_duration_samples = pause_duration_frames * hop_size_samples;
 
                     if pause_duration_samples >= min_pause_samples {
-                        let position_ms = (start * hop_size_samples) as f64 * 1000.0 / self.config.sample_rate as f64;
+                        let position_ms = (start * hop_size_samples) as f64 * 1000.0
+                            / self.config.sample_rate as f64;
 
                         boundaries.push(PhraseBoundary {
                             position_ms,
@@ -392,8 +394,10 @@ impl WithinVocalizationAnalyzer {
     /// It looks for discontinuities in spectral content that indicate transitions
     /// between acoustically distinct phrases.
     fn detect_spectral_boundaries(&self, audio: &[f32]) -> Result<Vec<PhraseBoundary>> {
-        let frame_size_samples = (self.config.frame_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
-        let hop_size_samples = (self.config.hop_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
+        let frame_size_samples =
+            (self.config.frame_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
+        let hop_size_samples =
+            (self.config.hop_size_ms * self.config.sample_rate as f64 / 1000.0) as usize;
 
         let mut boundaries = Vec::new();
         let mut spectral_centroids = Vec::new();
@@ -417,7 +421,12 @@ impl WithinVocalizationAnalyzer {
         let mut prev_centroid = spectral_centroids.first().copied().unwrap_or(0.0);
         let mut prev_rolloff = spectral_rolloffs.first().copied().unwrap_or(0.0);
 
-        for (i, (&centroid, &rolloff)) in spectral_centroids.iter().zip(spectral_rolloffs.iter()).enumerate().skip(1) {
+        for (i, (&centroid, &rolloff)) in spectral_centroids
+            .iter()
+            .zip(spectral_rolloffs.iter())
+            .enumerate()
+            .skip(1)
+        {
             let centroid_change = (centroid - prev_centroid).abs();
             let _rolloff_change = (rolloff - prev_rolloff).abs();
 
@@ -460,10 +469,8 @@ impl WithinVocalizationAnalyzer {
 
         // Merge nearby boundaries (within 20ms of each other)
         let merge_threshold_ms = 20.0;
-        let mut all_boundaries: Vec<PhraseBoundary> = pause_boundaries
-            .into_iter()
-            .chain(f0_boundaries)
-            .collect();
+        let mut all_boundaries: Vec<PhraseBoundary> =
+            pause_boundaries.into_iter().chain(f0_boundaries).collect();
 
         all_boundaries.sort_by_key(|b| b.position_ms as usize);
 
@@ -558,14 +565,18 @@ impl WithinVocalizationAnalyzer {
                                 to_f0: *to_f0,
                             }
                         }
-                        (BoundaryType::SpectralChange { .. }, BoundaryType::F0Change { from_f0, to_f0, .. }) |
-                        (BoundaryType::F0Change { from_f0, to_f0, .. }, BoundaryType::SpectralChange { .. }) => {
-                            BoundaryType::SpectralF0 {
-                                from_f0: *from_f0,
-                                to_f0: *to_f0,
-                                spectral_change: last.confidence,
-                            }
-                        }
+                        (
+                            BoundaryType::SpectralChange { .. },
+                            BoundaryType::F0Change { from_f0, to_f0, .. },
+                        )
+                        | (
+                            BoundaryType::F0Change { from_f0, to_f0, .. },
+                            BoundaryType::SpectralChange { .. },
+                        ) => BoundaryType::SpectralF0 {
+                            from_f0: *from_f0,
+                            to_f0: *to_f0,
+                            spectral_change: last.confidence,
+                        },
                         _ => BoundaryType::Consensus,
                     };
 
@@ -709,7 +720,8 @@ impl WithinVocalizationAnalyzer {
 
         while pos + frame_size <= audio.len() {
             let frame = &audio[pos..pos + frame_size];
-            let frame_energy: f64 = frame.iter().map(|&x| (x * x) as f64).sum::<f64>() / frame.len() as f64;
+            let frame_energy: f64 =
+                frame.iter().map(|&x| (x * x) as f64).sum::<f64>() / frame.len() as f64;
             energy.push(frame_energy.sqrt()); // RMS energy
             pos += hop_size;
         }
@@ -860,7 +872,10 @@ mod tests {
 
         // Should detect 2 boundaries (3 phrases)
         assert_eq!(result.num_phrases, 3);
-        assert!(result.boundaries.len() >= 1, "Should detect at least 1 boundary");
+        assert!(
+            result.boundaries.len() >= 1,
+            "Should detect at least 1 boundary"
+        );
     }
 
     #[test]
@@ -896,10 +911,15 @@ mod tests {
         f0_contour.extend(vec![12000.0; num_frames / 3]);
         f0_contour.extend(vec![9000.0; num_frames - f0_contour.len()]);
 
-        let result = analyzer.analyze_vocalization(&audio, Some(&f0_contour)).unwrap();
+        let result = analyzer
+            .analyze_vocalization(&audio, Some(&f0_contour))
+            .unwrap();
 
         // Should detect F0 changes at boundaries
-        assert!(result.num_phrases >= 2, "Should detect at least 2 phrases from F0 changes");
+        assert!(
+            result.num_phrases >= 2,
+            "Should detect at least 2 phrases from F0 changes"
+        );
         assert!(result.boundaries.len() >= 1, "Should detect F0 boundaries");
     }
 
@@ -921,7 +941,9 @@ mod tests {
         let num_frames = (samples as f64 * 2.0 / (5.0 * 250000.0 / 1000.0)).ceil() as usize;
         let f0_contour = vec![10000.0; num_frames];
 
-        let result = analyzer.analyze_vocalization(&audio, Some(&f0_contour)).unwrap();
+        let result = analyzer
+            .analyze_vocalization(&audio, Some(&f0_contour))
+            .unwrap();
 
         // Should detect single phrase (no boundaries)
         assert_eq!(result.num_phrases, 1);
@@ -965,7 +987,9 @@ mod tests {
         let vocalizations: Vec<&[f32]> = owned_audio.iter().map(|v| v.as_slice()).collect();
         let f0_contours: Vec<Option<Vec<f64>>> = vec![None; 5];
 
-        let stats = corpus_analyzer.analyze_corpus(vocalizations, f0_contours).unwrap();
+        let stats = corpus_analyzer
+            .analyze_corpus(vocalizations, f0_contours)
+            .unwrap();
 
         // Should detect ~40% multi-phrase rate
         assert_eq!(stats.total_vocalizations, 5);
@@ -1037,9 +1061,10 @@ mod tests {
         );
 
         // Check that boundaries were detected via spectral change
-        let has_spectral_boundary = result.boundaries.iter().any(|b| {
-            matches!(b.boundary_type, BoundaryType::SpectralChange { .. })
-        });
+        let has_spectral_boundary = result
+            .boundaries
+            .iter()
+            .any(|b| matches!(b.boundary_type, BoundaryType::SpectralChange { .. }));
         assert!(
             has_spectral_boundary || !result.boundaries.is_empty(),
             "Should detect spectral change boundaries for seamless concatenation"

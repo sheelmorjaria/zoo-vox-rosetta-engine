@@ -15,15 +15,15 @@
 // - Mono, IEEE Float format
 
 use std::path::Path;
-use technical_architecture::within_vocalization_analyzer::{
-    CorpusPhraseAnalyzer, PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
-};
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
+use technical_architecture::within_vocalization_analyzer::{
+    CorpusPhraseAnalyzer, PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
+};
 
 /// Load a single WAV file and return audio samples
 fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
@@ -34,12 +34,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let meta_opts: MetadataOptions = Default::default();
     let fmt_opts: FormatOptions = Default::default();
 
-    let probed = symphonia::default::get_probe().format(
-        &hint,
-        mss,
-        &fmt_opts,
-        &meta_opts,
-    )?;
+    let probed = symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts)?;
 
     let mut format = probed.format;
     let track = format
@@ -48,10 +43,8 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(
-        &track.codec_params,
-        &DecoderOptions::default(),
-    )?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
     // Get number of channels from the decoder's spec
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
@@ -110,21 +103,27 @@ fn analyze_bat_corpus(
 
     // Configuration for bat vocalizations (250kHz, high-frequency detection)
     let config = WithinVocalizationConfig {
-        min_phrase_duration_ms: 5.0,   // Short phrases (5ms minimum)
-        min_pause_duration_ms: 2.0,    // Very brief pauses (2ms minimum)
-        min_f0_change_hz: 1500.0,      // F0 changes (1.5kHz threshold for bats)
-        sample_rate: 250000,           // Bat audio sample rate
-        frame_size_ms: 2.0,            // Fine-grained analysis (2ms frames)
-        hop_size_ms: 1.0,              // Overlapping frames (1ms hop)
-        pause_energy_threshold: 0.15,  // Energy threshold for pause detection
-        require_consensus: false,      // Don't require consensus (seamless concatenation)
-        max_phrases: 8,                // Maximum phrases per vocalization
+        min_phrase_duration_ms: 5.0,  // Short phrases (5ms minimum)
+        min_pause_duration_ms: 2.0,   // Very brief pauses (2ms minimum)
+        min_f0_change_hz: 1500.0,     // F0 changes (1.5kHz threshold for bats)
+        sample_rate: 250000,          // Bat audio sample rate
+        frame_size_ms: 2.0,           // Fine-grained analysis (2ms frames)
+        hop_size_ms: 1.0,             // Overlapping frames (1ms hop)
+        pause_energy_threshold: 0.15, // Energy threshold for pause detection
+        require_consensus: false,     // Don't require consensus (seamless concatenation)
+        max_phrases: 8,               // Maximum phrases per vocalization
     };
 
     println!("Configuration:");
     println!("  - Sample rate: {} kHz", config.sample_rate / 1000);
-    println!("  - Min phrase duration: {} ms", config.min_phrase_duration_ms);
-    println!("  - Min pause duration: {} ms", config.min_pause_duration_ms);
+    println!(
+        "  - Min phrase duration: {} ms",
+        config.min_phrase_duration_ms
+    );
+    println!(
+        "  - Min pause duration: {} ms",
+        config.min_pause_duration_ms
+    );
     println!("  - Min F0 change: {} Hz", config.min_f0_change_hz);
     println!("  - Frame size: {} ms", config.frame_size_ms);
     println!("  - Hop size: {} ms", config.hop_size_ms);
@@ -142,7 +141,11 @@ fn analyze_bat_corpus(
         .take(sample_size)
         .collect();
 
-    println!("Found {} audio files (analyzing sample of {})", audio_files.len(), sample_size);
+    println!(
+        "Found {} audio files (analyzing sample of {})",
+        audio_files.len(),
+        sample_size
+    );
     println!();
 
     // Load and analyze vocalizations
@@ -168,10 +171,13 @@ fn analyze_bat_corpus(
                 match analyzer.analyze_vocalization(&audio, None) {
                     Ok(segmentation) => {
                         if segmentation.num_phrases > 1 {
-                            multi_phrase_examples.push((file_name.to_string(), segmentation.clone()));
+                            multi_phrase_examples
+                                .push((file_name.to_string(), segmentation.clone()));
                             if multi_phrase_examples.len() <= 5 {
-                                println!("  ✓ [{}] {} phrases detected: {}",
-                                    file_name, segmentation.num_phrases,
+                                println!(
+                                    "  ✓ [{}] {} phrases detected: {}",
+                                    file_name,
+                                    segmentation.num_phrases,
                                     format_bounds(&segmentation)
                                 );
                             }
@@ -214,10 +220,19 @@ fn analyze_bat_corpus(
 
         match corpus_analyzer.analyze_corpus(vocalizations_refs, f0_contours) {
             Ok(stats) => {
-                println!("Total vocalizations analyzed: {}", stats.total_vocalizations);
+                println!(
+                    "Total vocalizations analyzed: {}",
+                    stats.total_vocalizations
+                );
                 println!("Multi-phrase vocalizations: {}", stats.multi_phrase_count);
-                println!("Multi-phrase detection rate: {:.2}%", stats.multi_phrase_rate * 100.0);
-                println!("Average phrases per vocalization: {:.2}", stats.avg_phrases_per_vocalization);
+                println!(
+                    "Multi-phrase detection rate: {:.2}%",
+                    stats.multi_phrase_rate * 100.0
+                );
+                println!(
+                    "Average phrases per vocalization: {:.2}",
+                    stats.avg_phrases_per_vocalization
+                );
                 println!("Total boundaries detected: {}", stats.total_boundaries);
                 println!();
 
@@ -227,20 +242,40 @@ fn analyze_bat_corpus(
 
                 if stats.multi_phrase_rate > 0.30 {
                     println!("✓ STRONG EVIDENCE for multi-phrase structure:");
-                    println!("  {:.1}% of vocalizations show internal phrase boundaries", stats.multi_phrase_rate * 100.0);
-                    println!("  Average {:.2} phrases per vocalization", stats.avg_phrases_per_vocalization);
+                    println!(
+                        "  {:.1}% of vocalizations show internal phrase boundaries",
+                        stats.multi_phrase_rate * 100.0
+                    );
+                    println!(
+                        "  Average {:.2} phrases per vocalization",
+                        stats.avg_phrases_per_vocalization
+                    );
                     println!("  → Supports hypothesis: [Word A] + [Word B] structure exists");
                 } else if stats.multi_phrase_rate > 0.10 {
                     println!("~ MODERATE EVIDENCE for multi-phrase structure:");
-                    println!("  {:.1}% of vocalizations show internal phrase boundaries", stats.multi_phrase_rate * 100.0);
-                    println!("  Average {:.2} phrases per vocalization", stats.avg_phrases_per_vocalization);
+                    println!(
+                        "  {:.1}% of vocalizations show internal phrase boundaries",
+                        stats.multi_phrase_rate * 100.0
+                    );
+                    println!(
+                        "  Average {:.2} phrases per vocalization",
+                        stats.avg_phrases_per_vocalization
+                    );
                     println!("  → Suggests some vocalizations have multi-phrase structure");
                 } else {
                     println!("✗ LIMITED EVIDENCE for multi-phrase structure:");
-                    println!("  {:.1}% of vocalizations show internal phrase boundaries", stats.multi_phrase_rate * 100.0);
-                    println!("  Average {:.2} phrases per vocalization", stats.avg_phrases_per_vocalization);
+                    println!(
+                        "  {:.1}% of vocalizations show internal phrase boundaries",
+                        stats.multi_phrase_rate * 100.0
+                    );
+                    println!(
+                        "  Average {:.2} phrases per vocalization",
+                        stats.avg_phrases_per_vocalization
+                    );
                     println!("  → Most vocalizations appear to be holistic units");
-                    println!("  → May need to adjust detection thresholds or use different features");
+                    println!(
+                        "  → May need to adjust detection thresholds or use different features"
+                    );
                 }
             }
             Err(e) => {
@@ -253,10 +288,9 @@ fn analyze_bat_corpus(
     println!("Example Multi-Phrase Vocalizations:");
     println!("====================================");
     for (file_name, segmentation) in multi_phrase_examples.iter().take(10) {
-        println!("  [{}]: {} phrases, confidence: {:.2}",
-            file_name,
-            segmentation.num_phrases,
-            segmentation.confidence
+        println!(
+            "  [{}]: {} phrases, confidence: {:.2}",
+            file_name, segmentation.num_phrases, segmentation.confidence
         );
         println!("    Boundaries: {}", format_bounds(segmentation));
         println!("    Durations: {}", format_durations(segmentation));
@@ -269,7 +303,9 @@ fn format_bounds(segmentation: &PhraseSegmentation) -> String {
     if segmentation.boundaries.is_empty() {
         "none".to_string()
     } else {
-        segmentation.boundaries.iter()
+        segmentation
+            .boundaries
+            .iter()
             .map(|b| format!("{:.1}ms", b.position_ms))
             .collect::<Vec<_>>()
             .join(", ")
@@ -277,7 +313,9 @@ fn format_bounds(segmentation: &PhraseSegmentation) -> String {
 }
 
 fn format_durations(segmentation: &PhraseSegmentation) -> String {
-    segmentation.phrase_durations_ms.iter()
+    segmentation
+        .phrase_durations_ms
+        .iter()
         .map(|d| format!("{:.1}ms", d))
         .collect::<Vec<_>>()
         .join(" + ")

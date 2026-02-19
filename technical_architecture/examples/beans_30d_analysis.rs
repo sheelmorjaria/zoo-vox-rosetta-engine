@@ -11,10 +11,10 @@
 // - Cluster coherence (within classes)
 // - Classification potential (k-NN accuracy)
 
-use std::path::Path;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::Path;
 
 // For this analysis, we'll interface with Python to load the HuggingFace dataset
 // Then process the audio through our Rust pipeline
@@ -27,7 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Configuration
-    let output_dir = Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
+    let output_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
     std::fs::create_dir_all(output_dir)?;
 
     println!("📊 Analysis Configuration:");
@@ -321,7 +322,10 @@ fn beans_analysis(_py: Python, m: &PyModule) -> PyResult<()> {
     let pipeline_path = output_dir.join("feature_extraction.py");
     std::fs::write(&pipeline_path, rust_pipeline)?;
 
-    println!("✅ Feature extraction pipeline created: {}", pipeline_path.display());
+    println!(
+        "✅ Feature extraction pipeline created: {}",
+        pipeline_path.display()
+    );
     println!();
 
     // Step 5: Create analysis report

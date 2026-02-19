@@ -114,8 +114,8 @@ pub struct PhraseSequenceAnalyzer {
 impl PhraseSequenceAnalyzer {
     pub fn new() -> Self {
         Self {
-            similarity_threshold: 0.15,  // Cosine distance threshold
-            min_word_count: 5,            // Minimum occurrences to be a word type
+            similarity_threshold: 0.15, // Cosine distance threshold
+            min_word_count: 5,          // Minimum occurrences to be a word type
         }
     }
 
@@ -127,12 +127,10 @@ impl PhraseSequenceAnalyzer {
     }
 
     /// Extract phrases from a vocalization
-    pub fn extract_phrases(
-        &self,
-        audio: &[f32],
-        sample_rate: u32,
-    ) -> Result<Vec<Phrase>> {
-        use crate::within_vocalization_analyzer::{WithinVocalizationAnalyzer, WithinVocalizationConfig};
+    pub fn extract_phrases(&self, audio: &[f32], sample_rate: u32) -> Result<Vec<Phrase>> {
+        use crate::within_vocalization_analyzer::{
+            WithinVocalizationAnalyzer, WithinVocalizationConfig,
+        };
 
         // Use within-vocalization analyzer to detect phrase boundaries
         let config = WithinVocalizationConfig {
@@ -148,7 +146,8 @@ impl PhraseSequenceAnalyzer {
         };
 
         let analyzer = WithinVocalizationAnalyzer::new(config.clone());
-        let segmentation = analyzer.analyze_vocalization(audio, None)
+        let segmentation = analyzer
+            .analyze_vocalization(audio, None)
             .map_err(|e| PhraseSequenceError::ClusteringFailed(e.to_string()))?;
 
         // Convert segmentation to phrases with features
@@ -185,9 +184,7 @@ impl PhraseSequenceAnalyzer {
         let energy = energy.sqrt();
 
         // Calculate zero-crossing rate (simple frequency proxy)
-        let zero_crossings = audio.windows(2)
-            .filter(|w| w[0] * w[1] < 0.0)
-            .count() as f64;
+        let zero_crossings = audio.windows(2).filter(|w| w[0] * w[1] < 0.0).count() as f64;
         let zcr = zero_crossings / audio.len() as f64;
 
         // Estimate F0 from ZCR (rough approximation for bats: 20-100 kHz)
@@ -222,7 +219,7 @@ impl PhraseSequenceAnalyzer {
         }
 
         let two_pi_n = 2.0 * std::f64::consts::PI / n as f64;
-        for k in 0..n/2 {
+        for k in 0..n / 2 {
             let mut sum_real = 0.0;
             let mut sum_imag = 0.0;
             for t in 0..n {
@@ -270,7 +267,8 @@ impl PhraseSequenceAnalyzer {
 
     fn estimate_f0(&self, spectrum: &[f64], sample_rate: u32) -> f64 {
         // Find the peak in the spectrum
-        let max_bin = spectrum.iter()
+        let max_bin = spectrum
+            .iter()
             .enumerate()
             .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
             .map(|(i, _)| i);
@@ -345,7 +343,7 @@ impl PhraseSequenceAnalyzer {
 
         if word_types.is_empty() {
             return Err(PhraseSequenceError::InsufficientData(
-                "No word types discovered - phrases may be too diverse".to_string()
+                "No word types discovered - phrases may be too diverse".to_string(),
             ));
         }
 
@@ -374,9 +372,9 @@ impl PhraseSequenceAnalyzer {
         // Normalize to 0-1 range (approximate for bat vocalization ranges)
         vec![
             (f.f0_mean.log10() - 4.0) / 2.0,           // F0: 10^4 to 10^6 Hz
-            (f.spectral_centroid.log10() - 4.0) / 2.0,  // Centroid: same range
-            f.spectral_rolloff / 50000.0,                // Rolloff: 0 to 50kHz
-            f.energy.sqrt().min(1.0),                   // Energy: 0 to 1
+            (f.spectral_centroid.log10() - 4.0) / 2.0, // Centroid: same range
+            f.spectral_rolloff / 50000.0,              // Rolloff: 0 to 50kHz
+            f.energy.sqrt().min(1.0),                  // Energy: 0 to 1
         ]
     }
 
@@ -470,7 +468,7 @@ impl PhraseSequenceAnalyzer {
         let mut high_pmi_transitions: Vec<(usize, usize, f64)> = pmi_scores
             .iter()
             .map(|(&(w1, w2), &pmi)| (w1, w2, pmi))
-            .filter(|(_, _, pmi)| *pmi > 2.0)  // PMI > 2.0 indicates strong association
+            .filter(|(_, _, pmi)| *pmi > 2.0) // PMI > 2.0 indicates strong association
             .collect::<Vec<_>>();
 
         high_pmi_transitions.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap());
@@ -522,7 +520,10 @@ impl PhraseSequenceAnalyzer {
 
         for seq in sequences {
             for (pos, &word) in seq.words.iter().enumerate() {
-                position_words.entry(pos).or_insert_with(Vec::new).push(word);
+                position_words
+                    .entry(pos)
+                    .or_insert_with(Vec::new)
+                    .push(word);
             }
         }
 
@@ -546,7 +547,10 @@ impl PhraseSequenceAnalyzer {
         for seq in sequences {
             for (i, &word) in seq.words.iter().enumerate() {
                 if i + 1 < seq.words.len() {
-                    transition_patterns.entry(word).or_insert_with(Vec::new).push(seq.words[i + 1]);
+                    transition_patterns
+                        .entry(word)
+                        .or_insert_with(Vec::new)
+                        .push(seq.words[i + 1]);
                 }
             }
         }
@@ -556,7 +560,8 @@ impl PhraseSequenceAnalyzer {
             fixed_transitions: pmi.high_pmi_transitions,
             positional_grammar,
             avg_sentence_length: if !sequences.is_empty() {
-                sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64 / sequences.len() as f64
+                sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64
+                    / sequences.len() as f64
             } else {
                 0.0
             },
@@ -647,7 +652,7 @@ mod tests {
         };
 
         let features2 = PhraseFeatures {
-            f0_mean: 21000.0,  // Slightly different
+            f0_mean: 21000.0, // Slightly different
             f0_std: 1100.0,
             spectral_centroid: 26000.0,
             spectral_rolloff: 41000.0,
@@ -658,7 +663,10 @@ mod tests {
         let similarity = analyzer.compute_similarity(&features1, &features2);
 
         // Similar phrases should have high similarity
-        assert!(similarity > 0.8, "Similar phrases should have high similarity");
+        assert!(
+            similarity > 0.8,
+            "Similar phrases should have high similarity"
+        );
     }
 
     #[test]
@@ -669,17 +677,17 @@ mod tests {
         let sequences = vec![
             WordSequence {
                 vocalization_id: 0,
-                words: vec![0, 1, 2, 0, 1],  // Pattern: 0->1, 1->2, 2->0, 0->1
+                words: vec![0, 1, 2, 0, 1], // Pattern: 0->1, 1->2, 2->0, 0->1
                 phrase_boundaries: vec![0.0, 20.0, 40.0, 60.0, 80.0],
             },
             WordSequence {
                 vocalization_id: 1,
-                words: vec![0, 1, 2],  // Same pattern
+                words: vec![0, 1, 2], // Same pattern
                 phrase_boundaries: vec![0.0, 20.0, 40.0],
             },
             WordSequence {
                 vocalization_id: 2,
-                words: vec![1, 0, 1],  // Different pattern
+                words: vec![1, 0, 1], // Different pattern
                 phrase_boundaries: vec![0.0, 20.0, 40.0],
             },
         ];
@@ -706,12 +714,12 @@ mod tests {
             },
             WordSequence {
                 vocalization_id: 1,
-                words: vec![0, 1, 2],  // Same pattern
+                words: vec![0, 1, 2], // Same pattern
                 phrase_boundaries: vec![0.0, 20.0, 40.0],
             },
             WordSequence {
                 vocalization_id: 2,
-                words: vec![0, 1, 3],  // Different ending
+                words: vec![0, 1, 3], // Different ending
                 phrase_boundaries: vec![0.0, 20.0, 40.0],
             },
         ];

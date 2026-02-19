@@ -10,8 +10,8 @@
 
 use std::path::Path;
 use technical_architecture::{
-    LexiconToSyntaxPipeline, SegmentationConfig, VectorizationConfig,
-    DiscoveryConfig, RefinementConfig, PipelineCheckpoint,
+    DiscoveryConfig, LexiconToSyntaxPipeline, PipelineCheckpoint, RefinementConfig,
+    SegmentationConfig, VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configuration
     let base_dir = Path::new("/home/sheel/birdsong_analysis/data");
-    let audio_dir = base_dir.join("Vocalizations");  // Full dataset (871K files)
+    let audio_dir = base_dir.join("Vocalizations"); // Full dataset (871K files)
     let output_dir = base_dir.join("marmoset_lexicon_to_syntax_results");
 
     // Create output directory if it doesn't exist
@@ -58,26 +58,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Each file is a separate recording that may contain silence + one call
     // We need very sensitive onset detection for these short calls
     let segmentation_config = SegmentationConfig {
-        min_duration_ms: 10.0,       // 10ms minimum (marmoset calls are very short)
-        max_duration_ms: 1000.0,     // 1 second maximum
-        onset_threshold: 0.01,       // Extremely low threshold for very sensitive detection
-        min_onset_distance_ms: 2.0,  // 2ms minimum between onsets
-        sample_rate: 96000,          // 96kHz (actual sample rate of marmoset recordings)
+        min_duration_ms: 10.0,      // 10ms minimum (marmoset calls are very short)
+        max_duration_ms: 1000.0,    // 1 second maximum
+        onset_threshold: 0.01,      // Extremely low threshold for very sensitive detection
+        min_onset_distance_ms: 2.0, // 2ms minimum between onsets
+        sample_rate: 96000,         // 96kHz (actual sample rate of marmoset recordings)
     };
 
     println!("📐 Segmentation Config:");
-    println!("   ├─ Min duration: {}ms", segmentation_config.min_duration_ms);
-    println!("   ├─ Max duration: {}ms", segmentation_config.max_duration_ms);
-    println!("   ├─ Onset threshold: {}", segmentation_config.onset_threshold);
+    println!(
+        "   ├─ Min duration: {}ms",
+        segmentation_config.min_duration_ms
+    );
+    println!(
+        "   ├─ Max duration: {}ms",
+        segmentation_config.max_duration_ms
+    );
+    println!(
+        "   ├─ Onset threshold: {}",
+        segmentation_config.onset_threshold
+    );
     println!("   └─ Sample rate: {}Hz", segmentation_config.sample_rate);
     println!();
 
     // Phase 2: Vectorization Configuration
     let vectorization_config = VectorizationConfig {
-        n_mels: 30,          // 30-dimensional MicroDynamics features
-        fft_size: 2048,      // FFT size for spectral analysis
-        hop_size: 512,       // Hop size for frame analysis
-        normalize: true,     // Normalize features
+        n_mels: 30,      // 30-dimensional MicroDynamics features
+        fft_size: 2048,  // FFT size for spectral analysis
+        hop_size: 512,   // Hop size for frame analysis
+        normalize: true, // Normalize features
     };
 
     println!("📊 Vectorization Config:");
@@ -91,12 +100,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Marmoset vocalizations have distinct call types - use larger epsilon for clustering
     // The features from short vocalizations may need larger epsilon to form clusters
     let discovery_config = DiscoveryConfig {
-        eps: 10.0,                 // DBSCAN epsilon (much larger for marmoset feature space)
-        min_samples: 2,            // Minimum samples for cluster (lower for small clusters)
-        dtw_window_size: None,     // Full DTW (no windowing)
-        use_fast_dtw: true,        // Use FastDTW for speed
-        fast_dtw_radius: 10,       // FastDTW radius
-        use_lb_keogh: true,        // Use LB_Keogh lower bound pruning
+        eps: 10.0,             // DBSCAN epsilon (much larger for marmoset feature space)
+        min_samples: 2,        // Minimum samples for cluster (lower for small clusters)
+        dtw_window_size: None, // Full DTW (no windowing)
+        use_fast_dtw: true,    // Use FastDTW for speed
+        fast_dtw_radius: 10,   // FastDTW radius
+        use_lb_keogh: true,    // Use LB_Keogh lower bound pruning
     };
 
     println!("🔍 Discovery Config:");
@@ -109,19 +118,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Phase 4: Refinement Configuration
     let refinement_config = RefinementConfig {
-        n_states: None,                 // Auto-determine HMM states
-        n_components: 2,                // GMM components per state
-        max_iterations: 100,            // Max EM iterations
-        convergence_threshold: 1e-4,    // Convergence threshold
-        covariance_reg: 1e-6,           // Covariance regularization
+        n_states: None,              // Auto-determine HMM states
+        n_components: 2,             // GMM components per state
+        max_iterations: 100,         // Max EM iterations
+        convergence_threshold: 1e-4, // Convergence threshold
+        covariance_reg: 1e-6,        // Covariance regularization
     };
 
     println!("🎯 Refinement Config:");
     println!("   ├─ HMM states: {:?}", refinement_config.n_states);
     println!("   ├─ GMM components: {}", refinement_config.n_components);
     println!("   ├─ Max iterations: {}", refinement_config.max_iterations);
-    println!("   ├─ Convergence: {}", refinement_config.convergence_threshold);
-    println!("   └─ Covariance regularization: {}", refinement_config.covariance_reg);
+    println!(
+        "   ├─ Convergence: {}",
+        refinement_config.convergence_threshold
+    );
+    println!(
+        "   └─ Covariance regularization: {}",
+        refinement_config.covariance_reg
+    );
     println!();
 
     // Create pipeline with custom configs
@@ -146,13 +161,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Collect WAV and FLAC files from audio directory (recursively)
     let mut audio_files = Vec::new();
-    fn collect_flac_files(dir: &std::path::Path, files: &mut Vec<std::path::PathBuf>) -> std::io::Result<()> {
+    fn collect_flac_files(
+        dir: &std::path::Path,
+        files: &mut Vec<std::path::PathBuf>,
+    ) -> std::io::Result<()> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
                 collect_flac_files(&path, files)?;
-            } else if path.extension()
+            } else if path
+                .extension()
                 .and_then(|s| s.to_str())
                 .map(|ext| ext.eq_ignore_ascii_case("flac") || ext.eq_ignore_ascii_case("wav"))
                 .unwrap_or(false)
@@ -173,7 +192,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Show sample files
     for (i, file) in audio_files.iter().take(5).enumerate() {
-        println!("   {}. {}", i + 1, file.file_name().unwrap().to_string_lossy());
+        println!(
+            "   {}. {}",
+            i + 1,
+            file.file_name().unwrap().to_string_lossy()
+        );
     }
     if audio_files.len() > 5 {
         println!("   ... and {} more", audio_files.len() - 5);
@@ -200,7 +223,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
     } else {
         println!("💾 No checkpoint found - starting fresh");
-        println!("   ├─ Checkpoint will be saved to: {}", checkpoint_path.display());
+        println!(
+            "   ├─ Checkpoint will be saved to: {}",
+            checkpoint_path.display()
+        );
         println!("   └─ Checkpoint interval: every 100 files");
         println!();
     }
@@ -232,14 +258,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let max_duration = durations.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
         let mean_duration = durations.iter().sum::<f64>() / durations.len() as f64;
 
-        println!("   ├─ Duration range: {:.1}ms - {:.1}ms", min_duration, max_duration);
+        println!(
+            "   ├─ Duration range: {:.1}ms - {:.1}ms",
+            min_duration, max_duration
+        );
         println!("   ├─ Mean duration: {:.1}ms", mean_duration);
 
         // Show sample phrases
         println!("   └─ Sample phrases:");
         for phrase in phrases.iter().take(5) {
-            println!("      • {} - {:.1}ms (onset conf: {:.2})",
-                phrase.phrase_id, phrase.duration_ms, phrase.onset_confidence);
+            println!(
+                "      • {} - {:.1}ms (onset conf: {:.2})",
+                phrase.phrase_id, phrase.duration_ms, phrase.onset_confidence
+            );
         }
         if phrases.len() > 5 {
             println!("      ... and {} more", phrases.len() - 5);
@@ -257,7 +288,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let features = &result.phrase_features;
-    println!("📊 Extracted feature matrices for {} phrases", features.len());
+    println!(
+        "📊 Extracted feature matrices for {} phrases",
+        features.len()
+    );
 
     if !features.is_empty() {
         println!("   ├─ Feature dimensions: 30 (MicroDynamics)");
@@ -270,8 +304,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let d0 = feat.features[[0, 0]];
             let d1 = feat.features[[0, 1]];
             let d2 = feat.features[[0, 2]];
-            println!("      • {} - [{:.3}, {:.3}, {:.3}, ...]",
-                feat.phrase_id, d0, d1, d2);
+            println!(
+                "      • {} - [{:.3}, {:.3}, {:.3}, ...]",
+                feat.phrase_id, d0, d1, d2
+            );
         }
     }
     println!();
@@ -288,7 +324,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vocabulary = &result.vocabulary;
     let stats = &result.vocabulary_stats;
 
-    println!("🔍 Discovered {} vocabulary items (phrase types)", vocabulary.len());
+    println!(
+        "🔍 Discovered {} vocabulary items (phrase types)",
+        vocabulary.len()
+    );
     println!();
 
     if !vocabulary.is_empty() {
@@ -328,15 +367,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sorted_vocab.sort_by(|a, b| b.size.cmp(&a.size));
 
         for (i, vocab) in sorted_vocab.iter().take(10).enumerate() {
-            println!("   {}. Cluster {} - {} phrases", i + 1, vocab.cluster_id, vocab.size);
+            println!(
+                "   {}. Cluster {} - {} phrases",
+                i + 1,
+                vocab.cluster_id,
+                vocab.size
+            );
             println!("      ├─ Coherence: {:.3}", vocab.coherence);
-            println!("      ├─ Feature template: [{:.3}, {:.3}, {:.3}, ...]",
+            println!(
+                "      ├─ Feature template: [{:.3}, {:.3}, {:.3}, ...]",
                 vocab.feature_template[[0, 0]],
                 vocab.feature_template[[0, 1]],
                 vocab.feature_template[[0, 2]],
             );
-            println!("      └─ Sample phrase IDs: {}",
-                vocab.phrase_ids.iter().take(3).cloned().collect::<Vec<_>>().join(", "));
+            println!(
+                "      └─ Sample phrase IDs: {}",
+                vocab
+                    .phrase_ids
+                    .iter()
+                    .take(3)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         }
         if vocabulary.len() > 10 {
             println!("   ... and {} more", vocabulary.len() - 10);
@@ -367,10 +420,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
         println!("   Sample Phoneme Models:");
         for model in phoneme_models.iter().take(5) {
-            println!("   ├─ Cluster {} - {} states", model.cluster_id, model.n_states);
+            println!(
+                "   ├─ Cluster {} - {} states",
+                model.cluster_id, model.n_states
+            );
             println!("   │  ├─ Log-likelihood: {:.3}", model.log_likelihood);
-            println!("   │  └─ State labels: {}",
-                model.state_labels.join(" → "));
+            println!("   │  └─ State labels: {}", model.state_labels.join(" → "));
         }
         if phoneme_models.len() > 5 {
             println!("   └─ ... and {} more", phoneme_models.len() - 5);
@@ -387,7 +442,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    println!("Processed {} audio files in {:.2}s", audio_files.len(), elapsed.as_secs_f64());
+    println!(
+        "Processed {} audio files in {:.2}s",
+        audio_files.len(),
+        elapsed.as_secs_f64()
+    );
     println!();
 
     println!("Phase 1 - Segmentation:");

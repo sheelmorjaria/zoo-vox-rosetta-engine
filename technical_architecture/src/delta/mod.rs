@@ -8,7 +8,7 @@
 pub mod mfcc_delta;
 pub mod temporal_features;
 
-pub use mfcc_delta::{MfccDeltaComputer, DeltaRegression};
+pub use mfcc_delta::{DeltaRegression, MfccDeltaComputer};
 pub use temporal_features::{TemporalDeltaComputer, TemporalFeatureType};
 
 /// Common result type for delta features
@@ -46,7 +46,11 @@ mod tests {
         let temporal_computer = TemporalDeltaComputer::new(DeltaWidth::N2);
 
         // Test MFCC delta computation
-        let mfcc_frames = vec![vec![1.0, 2.0, 3.0], vec![1.1, 2.1, 3.1], vec![1.2, 2.2, 3.2]];
+        let mfcc_frames = vec![
+            vec![1.0, 2.0, 3.0],
+            vec![1.1, 2.1, 3.1],
+            vec![1.2, 2.2, 3.2],
+        ];
         let (delta, delta_delta) = mfcc_computer.compute(&mfcc_frames).unwrap();
 
         assert_eq!(delta.len(), 3);

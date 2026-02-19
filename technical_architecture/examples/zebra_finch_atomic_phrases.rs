@@ -11,10 +11,6 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_atomic_phrases
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -25,6 +21,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 const SAMPLE_RATE: u32 = 44100;
@@ -184,7 +181,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .flat_map(|ann| {
             let count = processed.fetch_add(1, Ordering::Relaxed);
             if count % 100 == 0 {
-                println!("  Progress: {}/{} files", count + 1, max_files.min(total_files));
+                println!(
+                    "  Progress: {}/{} files",
+                    count + 1,
+                    max_files.min(total_files)
+                );
             }
 
             let audio_path = vocalizations_dir.join(&ann.filename);
@@ -197,7 +198,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nExtraction Complete:");
     println!("  ├─ Candidates Extracted: {}", candidates.len());
     println!("  ├─ Time: {:.1}s", extraction_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} candidates/sec", candidates.len() as f64 / extraction_time.as_secs_f64().max(1.0));
+    println!(
+        "  └─ Throughput: {:.1} candidates/sec",
+        candidates.len() as f64 / extraction_time.as_secs_f64().max(1.0)
+    );
     println!();
 
     // ========================================================================
@@ -258,8 +262,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             phrase.members.push(candidate.id.clone());
-            *phrase.call_types.entry(candidate.call_type.clone()).or_insert(0) += 1;
-            *phrase.bird_names.entry(candidate.bird_name.clone()).or_insert(0) += 1;
+            *phrase
+                .call_types
+                .entry(candidate.call_type.clone())
+                .or_insert(0) += 1;
+            *phrase
+                .bird_names
+                .entry(candidate.bird_name.clone())
+                .or_insert(0) += 1;
             phrase.source_files.insert(candidate.source_file.clone());
         } else {
             // Create new phrase
@@ -287,11 +297,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if (i + 1) % 5000 == 0 {
-            println!("  Progress: {}/{} candidates, {} phrases", i + 1, candidates.len(), atomic_phrases.len());
+            println!(
+                "  Progress: {}/{} candidates, {} phrases",
+                i + 1,
+                candidates.len(),
+                atomic_phrases.len()
+            );
         }
     }
 
-    println!("  Discovered {} raw phrases from {} candidates", atomic_phrases.len(), candidates.len());
+    println!(
+        "  Discovered {} raw phrases from {} candidates",
+        atomic_phrases.len(),
+        candidates.len()
+    );
 
     // Filter to atomic phrases (min cluster size)
     let mut atomic_phrases: Vec<AtomicPhrase> = atomic_phrases
@@ -299,7 +318,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .filter(|p| p.members.len() >= MIN_CLUSTER_SIZE)
         .collect();
 
-    println!("  Filtered to {} atomic phrases (min size {})", atomic_phrases.len(), MIN_CLUSTER_SIZE);
+    println!(
+        "  Filtered to {} atomic phrases (min size {})",
+        atomic_phrases.len(),
+        MIN_CLUSTER_SIZE
+    );
 
     // Compute quality metrics for each phrase
     println!("\nComputing quality metrics...");
@@ -317,7 +340,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        phrase.intra_cluster_similarity = if count > 0 { total_sim / count as f64 } else { 0.0 };
+        phrase.intra_cluster_similarity = if count > 0 {
+            total_sim / count as f64
+        } else {
+            0.0
+        };
 
         // Reuse score (how many different files use this phrase)
         phrase.reuse_score = phrase.source_files.len() as f64;
@@ -339,7 +366,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         atomic_phrases[i].inter_cluster_distance = min_dist;
-        atomic_phrases[i].separation_score = min_dist / (1.0 - atomic_phrases[i].intra_cluster_similarity + 0.001);
+        atomic_phrases[i].separation_score =
+            min_dist / (1.0 - atomic_phrases[i].intra_cluster_similarity + 0.001);
     }
 
     let clustering_time = clustering_start.elapsed();
@@ -362,22 +390,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     sorted_phrases.sort_by(|a, b| b.separation_score.partial_cmp(&a.separation_score).unwrap());
 
     // High quality phrases (good separation + good internal coherence)
-    let high_quality_phrases: Vec<_> = sorted_phrases.iter()
+    let high_quality_phrases: Vec<_> = sorted_phrases
+        .iter()
         .filter(|p| p.intra_cluster_similarity > 0.85 && p.separation_score > 1.5)
         .collect();
 
     // Compute statistics
-    let avg_cluster_size = atomic_phrases.iter().map(|p| p.members.len()).sum::<usize>() as f64 / atomic_phrases.len().max(1) as f64;
-    let avg_intra_similarity = atomic_phrases.iter().map(|p| p.intra_cluster_similarity).sum::<f64>() / atomic_phrases.len().max(1) as f64;
-    let avg_inter_distance = atomic_phrases.iter().map(|p| p.inter_cluster_distance).sum::<f64>() / atomic_phrases.len().max(1) as f64;
-    let avg_separation = atomic_phrases.iter().map(|p| p.separation_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
-    let avg_reuse = atomic_phrases.iter().map(|p| p.reuse_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_cluster_size = atomic_phrases
+        .iter()
+        .map(|p| p.members.len())
+        .sum::<usize>() as f64
+        / atomic_phrases.len().max(1) as f64;
+    let avg_intra_similarity = atomic_phrases
+        .iter()
+        .map(|p| p.intra_cluster_similarity)
+        .sum::<f64>()
+        / atomic_phrases.len().max(1) as f64;
+    let avg_inter_distance = atomic_phrases
+        .iter()
+        .map(|p| p.inter_cluster_distance)
+        .sum::<f64>()
+        / atomic_phrases.len().max(1) as f64;
+    let avg_separation = atomic_phrases
+        .iter()
+        .map(|p| p.separation_score)
+        .sum::<f64>()
+        / atomic_phrases.len().max(1) as f64;
+    let avg_reuse = atomic_phrases.iter().map(|p| p.reuse_score).sum::<f64>()
+        / atomic_phrases.len().max(1) as f64;
 
     // Call type distribution in atomic phrases
     let mut phrase_call_distribution: HashMap<String, usize> = HashMap::new();
     for phrase in &atomic_phrases {
         for (call_type, _) in &phrase.call_types {
-            *phrase_call_distribution.entry(call_type.clone()).or_insert(0) += 1;
+            *phrase_call_distribution
+                .entry(call_type.clone())
+                .or_insert(0) += 1;
         }
     }
 
@@ -386,12 +434,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("Total Phrase Candidates: {}", candidates.len());
     println!("Atomic Phrases Discovered: {}", atomic_phrases.len());
-    println!("High Quality Phrases (intra > 0.85, separation > 1.5): {}", high_quality_phrases.len());
+    println!(
+        "High Quality Phrases (intra > 0.85, separation > 1.5): {}",
+        high_quality_phrases.len()
+    );
     println!();
 
     println!("Quality Metrics:");
     println!("  ├─ Avg Cluster Size: {:.1}", avg_cluster_size);
-    println!("  ├─ Avg Intra-Cluster Similarity: {:.3}", avg_intra_similarity);
+    println!(
+        "  ├─ Avg Intra-Cluster Similarity: {:.3}",
+        avg_intra_similarity
+    );
     println!("  ├─ Avg Inter-Cluster Distance: {:.3}", avg_inter_distance);
     println!("  ├─ Avg Separation Score: {:.2}", avg_separation);
     println!("  └─ Avg Reuse Score: {:.1} files/phrase", avg_reuse);
@@ -401,30 +455,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let top_phrases: Vec<PhraseSummary> = sorted_phrases.iter().take(10).map(|p| {
-        let primary_call_type = p.call_types.iter()
-            .max_by_key(|(_, &c)| c)
-            .map(|(ct, _)| ct.clone())
-            .unwrap_or_else(|| "Unknown".to_string());
+    let top_phrases: Vec<PhraseSummary> = sorted_phrases
+        .iter()
+        .take(10)
+        .map(|p| {
+            let primary_call_type = p
+                .call_types
+                .iter()
+                .max_by_key(|(_, &c)| c)
+                .map(|(ct, _)| ct.clone())
+                .unwrap_or_else(|| "Unknown".to_string());
 
-        PhraseSummary {
-            phrase_id: p.phrase_id,
-            size: p.members.len(),
-            intra_similarity: p.intra_cluster_similarity,
-            separation: p.separation_score,
-            reuse_score: p.reuse_score,
-            primary_call_type,
-            unique_birds: p.bird_names.len(),
-            unique_files: p.source_files.len(),
-        }
-    }).collect();
+            PhraseSummary {
+                phrase_id: p.phrase_id,
+                size: p.members.len(),
+                intra_similarity: p.intra_cluster_similarity,
+                separation: p.separation_score,
+                reuse_score: p.reuse_score,
+                primary_call_type,
+                unique_birds: p.bird_names.len(),
+                unique_files: p.source_files.len(),
+            }
+        })
+        .collect();
 
     for (i, summary) in top_phrases.iter().enumerate() {
         println!("{}. Phrase #{}", i + 1, summary.phrase_id);
         println!("   ├─ Size: {} segments", summary.size);
         println!("   ├─ Intra-Similarity: {:.3}", summary.intra_similarity);
         println!("   ├─ Separation: {:.2}", summary.separation);
-        println!("   ├─ Reuse: {} files, {} birds", summary.unique_files, summary.unique_birds);
+        println!(
+            "   ├─ Reuse: {} files, {} birds",
+            summary.unique_files, summary.unique_birds
+        );
         println!("   └─ Primary Call Type: {}", summary.primary_call_type);
         println!();
     }
@@ -497,12 +560,15 @@ fn extract_phrase_candidates(
 
     // Convert to f64
     let audio: Vec<f64> = match spec.sample_format {
-        hound::SampleFormat::Float => {
-            reader.into_samples::<f32>().filter_map(|s| s.ok()).map(|s| s as f64).collect()
-        }
+        hound::SampleFormat::Float => reader
+            .into_samples::<f32>()
+            .filter_map(|s| s.ok())
+            .map(|s| s as f64)
+            .collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f64;
-            reader.into_samples::<i32>()
+            reader
+                .into_samples::<i32>()
                 .filter_map(|s| s.ok())
                 .map(|s| s as f64 / max_val)
                 .collect()
@@ -541,7 +607,11 @@ fn extract_phrase_candidates(
             let start_ms = start as f64 / SAMPLE_RATE as f64 * 1000.0;
 
             candidates.push(PhraseCandidate {
-                id: format!("{}_seg{}", annotation.filename.replace(".wav", ""), segment_idx),
+                id: format!(
+                    "{}_seg{}",
+                    annotation.filename.replace(".wav", ""),
+                    segment_idx
+                ),
                 features: features.to_vector().to_vec(),
                 source_file: annotation.filename.clone(),
                 call_type: annotation.call_type.clone(),

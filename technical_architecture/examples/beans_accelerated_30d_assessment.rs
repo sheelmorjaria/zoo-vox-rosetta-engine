@@ -13,15 +13,15 @@
 //
 // Performance Target: 10-50x speedup over sequential Python processing
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::Instant;
 
 use anyhow::Result;
+use ndarray::{Array1, Array2};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use ndarray::{Array1, Array2};
 
 // ============================================================================
 // Configuration
@@ -229,14 +229,16 @@ impl AcceleratedFeatureExtractor {
         let mfccs = self.compute_mfcc(audio);
 
         // Delta (13D) - first derivative
-        let delta: Vec<f64> = mfccs.iter()
+        let delta: Vec<f64> = mfccs
+            .iter()
             .zip(mfccs.iter().skip(1))
             .map(|(a, b)| (b - a) as f64)
             .take(13)
             .collect();
 
         // Delta-delta (13D) - second derivative
-        let delta_delta: Vec<f64> = delta.iter()
+        let delta_delta: Vec<f64> = delta
+            .iter()
             .zip(delta.iter().skip(1))
             .map(|(a, b)| b - a)
             .take(13)
@@ -260,7 +262,7 @@ impl AcceleratedFeatureExtractor {
     fn estimate_f0(&self, audio: &[f32]) -> (f64, f64) {
         // Simplified F0 estimation using autocorrelation
         let min_period = (self.sample_rate as f64 / 20000.0) as usize; // Max 20kHz
-        let max_period = (self.sample_rate as f64 / 500.0) as usize;   // Min 500Hz
+        let max_period = (self.sample_rate as f64 / 500.0) as usize; // Min 500Hz
 
         if audio.len() < max_period + 1 {
             return (0.0, 0.0);
@@ -302,15 +304,14 @@ impl AcceleratedFeatureExtractor {
 
         // Spectral flatness (simplified)
         let energy = audio.iter().map(|x| x * x).sum::<f32>();
-        let geometric_mean = audio.iter()
-            .map(|x| (x.abs() + 1e-10).ln())
-            .sum::<f32>() / audio.len() as f32;
+        let geometric_mean =
+            audio.iter().map(|x| (x.abs() + 1e-10).ln()).sum::<f32>() / audio.len() as f32;
         let arithmetic_mean = energy / audio.len() as f32;
         let flatness = (geometric_mean.exp() / (arithmetic_mean + 1e-10)) as f64;
 
         // Harmonicity (correlation-based estimate)
         let harmonicity = if audio.len() > 100 {
-            let autocorr: f32 = audio[..audio.len()-100]
+            let autocorr: f32 = audio[..audio.len() - 100]
                 .iter()
                 .zip(&audio[100..])
                 .map(|(a, b)| a * b)
@@ -320,7 +321,11 @@ impl AcceleratedFeatureExtractor {
             0.5
         };
 
-        (hnr.min(50.0), flatness.clamp(0.0, 1.0), harmonicity.clamp(0.0, 1.0))
+        (
+            hnr.min(50.0),
+            flatness.clamp(0.0, 1.0),
+            harmonicity.clamp(0.0, 1.0),
+        )
     }
 
     fn compute_motion_factors(&self, audio: &[f32]) -> (f64, f64, f64, f64, f64, f64, f64) {
@@ -330,7 +335,8 @@ impl AcceleratedFeatureExtractor {
 
         // Envelope analysis
         let envelope = self.compute_envelope(audio);
-        let peak_idx = envelope.iter()
+        let peak_idx = envelope
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .map(|(i, _)| i)
@@ -340,7 +346,8 @@ impl AcceleratedFeatureExtractor {
 
         // Attack time (time to 90% of peak)
         let threshold_90 = peak_val * 0.9;
-        let attack_idx = envelope.iter()
+        let attack_idx = envelope
+            .iter()
             .position(|&x| x >= threshold_90)
             .unwrap_or(peak_idx);
         let attack_ms = (attack_idx as f64 / self.sample_rate as f64) * 1000.0;
@@ -355,9 +362,9 @@ impl AcceleratedFeatureExtractor {
 
         // Sustain level
         let sustain = if peak_idx < envelope.len() / 2 {
-            envelope[envelope.len() * 3 / 4..]
-                .iter()
-                .sum::<f32>() / (envelope.len() / 4) as f32 / peak_val
+            envelope[envelope.len() * 3 / 4..].iter().sum::<f32>()
+                / (envelope.len() / 4) as f32
+                / peak_val
         } else {
             0.5
         };
@@ -388,11 +395,8 @@ impl AcceleratedFeatureExtractor {
         for i in 0..audio.len() {
             let start = i.saturating_sub(window_size / 2);
             let end = (i + window_size / 2).min(audio.len());
-            let rms = audio[start..end]
-                .iter()
-                .map(|x| x * x)
-                .sum::<f32>()
-                .sqrt() / (end - start) as f32;
+            let rms =
+                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             envelope.push(rms);
         }
 
@@ -416,15 +420,18 @@ impl AcceleratedFeatureExtractor {
         // Count zero-crossings
         let mut crossings = 0;
         for i in 1..derivative.len() {
-            if (derivative[i - 1] < 0.0 && derivative[i] >= 0.0) ||
-               (derivative[i - 1] >= 0.0 && derivative[i] < 0.0) {
+            if (derivative[i - 1] < 0.0 && derivative[i] >= 0.0)
+                || (derivative[i - 1] >= 0.0 && derivative[i] < 0.0)
+            {
                 crossings += 1;
             }
         }
 
         let vib_rate = (crossings as f64 * self.sample_rate as f64) / (2.0 * envelope.len() as f64);
-        let vib_depth = (envelope.iter().cloned().fold(0.0f32, f32::max) -
-                        envelope.iter().cloned().fold(f32::INFINITY, f32::min)) as f64 * 100.0;
+        let vib_depth = (envelope.iter().cloned().fold(0.0f32, f32::max)
+            - envelope.iter().cloned().fold(f32::INFINITY, f32::min))
+            as f64
+            * 100.0;
 
         (vib_rate.clamp(0.0, 20.0), vib_depth.clamp(0.0, 200.0))
     }
@@ -440,8 +447,7 @@ impl AcceleratedFeatureExtractor {
         let mut last_crossing = 0;
 
         for i in 1..audio.len() {
-            if (audio[i - 1] < 0.0 && audio[i] >= 0.0) ||
-               (audio[i - 1] >= 0.0 && audio[i] < 0.0) {
+            if (audio[i - 1] < 0.0 && audio[i] >= 0.0) || (audio[i - 1] >= 0.0 && audio[i] < 0.0) {
                 if last_crossing > 0 {
                     periods.push(i - last_crossing);
                 }
@@ -455,10 +461,12 @@ impl AcceleratedFeatureExtractor {
         }
 
         let mean_period = periods.iter().sum::<usize>() as f64 / periods.len() as f64;
-        let jitter: f64 = periods.windows(3)
-            .map(|w| ((w[1] as f64 - mean_period).abs() +
-                     (w[2] as f64 - w[1] as f64).abs()) / 2.0)
-            .sum::<f64>() / periods.len() as f64 / mean_period;
+        let jitter: f64 = periods
+            .windows(3)
+            .map(|w| ((w[1] as f64 - mean_period).abs() + (w[2] as f64 - w[1] as f64).abs()) / 2.0)
+            .sum::<f64>()
+            / periods.len() as f64
+            / mean_period;
 
         jitter.clamp(0.0, 0.1)
     }
@@ -482,10 +490,12 @@ impl AcceleratedFeatureExtractor {
         }
 
         let mean_amp = amplitudes.iter().sum::<f32>() / amplitudes.len() as f32;
-        let shimmer: f64 = amplitudes.windows(3)
-            .map(|w| ((w[1] - mean_amp).abs() +
-                     (w[2] - w[1]).abs()) as f64 / 2.0)
-            .sum::<f64>() / amplitudes.len() as f64 / mean_amp as f64;
+        let shimmer: f64 = amplitudes
+            .windows(3)
+            .map(|w| ((w[1] - mean_amp).abs() + (w[2] - w[1]).abs()) as f64 / 2.0)
+            .sum::<f64>()
+            / amplitudes.len() as f64
+            / mean_amp as f64;
 
         shimmer.clamp(0.0, 0.2)
     }
@@ -515,7 +525,8 @@ impl AcceleratedFeatureExtractor {
         let mut dct = vec![0.0f32; 13];
         for k in 0..13 {
             for n in 0..13 {
-                dct[k] += mfccs[n] * ((std::f32::consts::PI * (n as f32 + 0.5) * k as f32 / 13.0).cos());
+                dct[k] +=
+                    mfccs[n] * ((std::f32::consts::PI * (n as f32 + 0.5) * k as f32 / 13.0).cos());
             }
         }
 
@@ -536,7 +547,8 @@ impl AcceleratedFeatureExtractor {
             let frame = &audio[frame_start..frame_start + self.fft_size];
 
             // Simplified magnitude spectrum
-            let spectrum: Vec<f32> = frame.chunks(2)
+            let spectrum: Vec<f32> = frame
+                .chunks(2)
                 .map(|c| (c[0].powi(2) + c.get(1).copied().unwrap_or(0.0).powi(2)).sqrt())
                 .take(self.fft_size / 2)
                 .collect();
@@ -574,21 +586,25 @@ impl AcceleratedFeatureExtractor {
         }
 
         // Compute inter-onset intervals
-        let icis: Vec<f64> = onsets.windows(2)
+        let icis: Vec<f64> = onsets
+            .windows(2)
             .map(|w| ((w[1] - w[0]) as f64 / self.sample_rate as f64) * 1000.0)
             .collect();
 
         let mean_ici = icis.iter().sum::<f64>() / icis.len() as f64;
         let std_ici = if icis.len() > 1 {
-            let variance = icis.iter()
-                .map(|x| (x - mean_ici).powi(2))
-                .sum::<f64>() / (icis.len() - 1) as f64;
+            let variance =
+                icis.iter().map(|x| (x - mean_ici).powi(2)).sum::<f64>() / (icis.len() - 1) as f64;
             variance.sqrt()
         } else {
             0.0
         };
 
-        let ici_cv = if mean_ici > 0.0 { std_ici / mean_ici } else { 0.0 };
+        let ici_cv = if mean_ici > 0.0 {
+            std_ici / mean_ici
+        } else {
+            0.0
+        };
         let onset_rate = 1000.0 / mean_ici;
 
         (mean_ici, onset_rate, ici_cv)
@@ -618,7 +634,8 @@ impl BatchedProcessor {
     pub fn process_batch(&self, batch: &[(&[f32], String)]) -> Vec<ExtractedFeatures> {
         let extractor = self.extractor.clone();
 
-        batch.par_iter()
+        batch
+            .par_iter()
             .map(|(audio, id)| {
                 let start = Instant::now();
                 let features = extractor.extract_30d(audio).unwrap_or_default();
@@ -654,7 +671,8 @@ impl BatchedProcessor {
 
             if batch.len() >= self.config.batch_size {
                 // Process batch in parallel
-                let batch_refs: Vec<(&[f32], String)> = batch.iter()
+                let batch_refs: Vec<(&[f32], String)> = batch
+                    .iter()
                     .map(|(a, id)| (a.as_slice(), id.clone()))
                     .collect();
                 let results = self.process_batch(&batch_refs);
@@ -662,9 +680,12 @@ impl BatchedProcessor {
 
                 processed += batch.len();
                 if processed % 500 == 0 {
-                    println!("  Processed {}/{} samples ({:.1}%)",
-                        processed, total_count,
-                        processed as f64 / total_count as f64 * 100.0);
+                    println!(
+                        "  Processed {}/{} samples ({:.1}%)",
+                        processed,
+                        total_count,
+                        processed as f64 / total_count as f64 * 100.0
+                    );
                 }
 
                 batch.clear();
@@ -673,7 +694,8 @@ impl BatchedProcessor {
 
         // Process remaining samples
         if !batch.is_empty() {
-            let batch_refs: Vec<(&[f32], String)> = batch.iter()
+            let batch_refs: Vec<(&[f32], String)> = batch
+                .iter()
                 .map(|(a, id)| (a.as_slice(), id.clone()))
                 .collect();
             let results = self.process_batch(&batch_refs);
@@ -756,9 +778,8 @@ pub fn run_accelerated_assessment(config: AcceleratedConfig) -> Result<Competenc
     let extraction_start = Instant::now();
 
     // Process with parallel batched extraction
-    let features = pool.install(|| {
-        processor.process_dataset_streaming(samples.into_iter(), sample_count)
-    });
+    let features =
+        pool.install(|| processor.process_dataset_streaming(samples.into_iter(), sample_count));
 
     let extraction_time = extraction_start.elapsed().as_secs_f64();
     let throughput = sample_count as f64 / extraction_time;
@@ -774,8 +795,12 @@ pub fn run_accelerated_assessment(config: AcceleratedConfig) -> Result<Competenc
     let extraction_times: Vec<f64> = features.iter().map(|f| f.extraction_time_ms).collect();
     let extraction_stats = ExtractionStats {
         total_extraction_time_ms: extraction_time * 1000.0,
-        avg_extraction_time_ms: extraction_times.iter().sum::<f64>() / extraction_times.len() as f64,
-        min_extraction_time_ms: extraction_times.iter().cloned().fold(f64::INFINITY, f64::min),
+        avg_extraction_time_ms: extraction_times.iter().sum::<f64>()
+            / extraction_times.len() as f64,
+        min_extraction_time_ms: extraction_times
+            .iter()
+            .cloned()
+            .fold(f64::INFINITY, f64::min),
         max_extraction_time_ms: extraction_times.iter().cloned().fold(0.0, f64::max),
         successful_extractions: features.len(),
         failed_extractions: sample_count - features.len(),
@@ -802,7 +827,11 @@ pub fn run_accelerated_assessment(config: AcceleratedConfig) -> Result<Competenc
     let std = {
         let mut s = Array1::<f64>::zeros(feature_dim);
         for i in 0..feature_dim {
-            let variance = feature_matrix.column(i).mapv(|x| (x - mean[i]).powi(2)).mean().unwrap();
+            let variance = feature_matrix
+                .column(i)
+                .mapv(|x| (x - mean[i]).powi(2))
+                .mean()
+                .unwrap();
             s[i] = variance.sqrt().max(1e-10);
         }
         s
@@ -815,12 +844,19 @@ pub fn run_accelerated_assessment(config: AcceleratedConfig) -> Result<Competenc
     }
 
     // Run simplified DBSCAN
-    let clustering_results = run_dbscan(&feature_matrix, config.dbscan_eps, config.dbscan_min_samples)?;
+    let clustering_results = run_dbscan(
+        &feature_matrix,
+        config.dbscan_eps,
+        config.dbscan_min_samples,
+    )?;
 
     println!("✅ Clustering results:");
     println!("   ├─ Clusters: {}", clustering_results.n_clusters);
     println!("   ├─ Noise points: {}", clustering_results.n_noise);
-    println!("   └─ Silhouette: {:.4}", clustering_results.silhouette_score);
+    println!(
+        "   └─ Silhouette: {:.4}",
+        clustering_results.silhouette_score
+    );
     println!();
 
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -884,14 +920,33 @@ pub fn run_accelerated_assessment(config: AcceleratedConfig) -> Result<Competenc
     println!();
     println!("Performance:");
     println!("  ├─ Total time: {:.2}s", results.processing_time_sec);
-    println!("  ├─ Throughput: {:.1} samples/sec", results.throughput_samples_per_sec);
-    println!("  └─ Avg extraction: {:.2}ms/sample", results.extraction_stats.avg_extraction_time_ms);
+    println!(
+        "  ├─ Throughput: {:.1} samples/sec",
+        results.throughput_samples_per_sec
+    );
+    println!(
+        "  └─ Avg extraction: {:.2}ms/sample",
+        results.extraction_stats.avg_extraction_time_ms
+    );
     println!();
     println!("Competence Assessment:");
     println!("  ├─ Level: {}", results.competence_level.to_uppercase());
-    println!("  ├─ Clusters found: {}", results.clustering_results.n_clusters);
-    println!("  ├─ Silhouette score: {:.4}", results.clustering_results.silhouette_score);
-    println!("  └─ 5-NN accuracy: {:.4}", results.classification_results.knn_results.get("5").unwrap_or(&0.0));
+    println!(
+        "  ├─ Clusters found: {}",
+        results.clustering_results.n_clusters
+    );
+    println!(
+        "  ├─ Silhouette score: {:.4}",
+        results.clustering_results.silhouette_score
+    );
+    println!(
+        "  └─ 5-NN accuracy: {:.4}",
+        results
+            .classification_results
+            .knn_results
+            .get("5")
+            .unwrap_or(&0.0)
+    );
     println!();
 
     Ok(results)
@@ -918,8 +973,9 @@ fn run_dbscan(features: &Array2<f64>, eps: f64, min_samples: usize) -> Result<Cl
     // Compute pairwise distances (simplified)
     let mut distances = vec![vec![0.0; n]; n];
     for i in 0..n {
-        for j in (i+1)..n {
-            let dist: f64 = features.row(i)
+        for j in (i + 1)..n {
+            let dist: f64 = features
+                .row(i)
                 .iter()
                 .zip(features.row(j).iter())
                 .map(|(a, b)| (a - b).powi(2))
@@ -980,31 +1036,29 @@ fn run_dbscan(features: &Array2<f64>, eps: f64, min_samples: usize) -> Result<Cl
                 continue;
             }
 
-            let my_cluster: Vec<usize> = (0..n)
-                .filter(|&j| labels[j] == labels[i])
-                .collect();
+            let my_cluster: Vec<usize> = (0..n).filter(|&j| labels[j] == labels[i]).collect();
 
             if my_cluster.len() <= 1 {
                 continue;
             }
 
-            let a: f64 = my_cluster.iter()
+            let a: f64 = my_cluster
+                .iter()
                 .filter(|&&j| j != i)
                 .map(|&j| distances[i][j])
-                .sum::<f64>() / (my_cluster.len() - 1) as f64;
+                .sum::<f64>()
+                / (my_cluster.len() - 1) as f64;
 
             let b = (0..n_clusters)
                 .filter(|&c| c as i32 != labels[i])
                 .map(|c| {
-                    let other_cluster: Vec<usize> = (0..n)
-                        .filter(|&j| labels[j] == c as i32)
-                        .collect();
+                    let other_cluster: Vec<usize> =
+                        (0..n).filter(|&j| labels[j] == c as i32).collect();
                     if other_cluster.is_empty() {
                         f64::INFINITY
                     } else {
-                        other_cluster.iter()
-                            .map(|&j| distances[i][j])
-                            .sum::<f64>() / other_cluster.len() as f64
+                        other_cluster.iter().map(|&j| distances[i][j]).sum::<f64>()
+                            / other_cluster.len() as f64
                     }
                 })
                 .fold(f64::INFINITY, f64::min);
@@ -1014,7 +1068,11 @@ fn run_dbscan(features: &Array2<f64>, eps: f64, min_samples: usize) -> Result<Cl
             }
         }
 
-        if scores.is_empty() { 0.0 } else { scores.iter().sum::<f64>() / scores.len() as f64 }
+        if scores.is_empty() {
+            0.0
+        } else {
+            scores.iter().sum::<f64>() / scores.len() as f64
+        }
     } else {
         0.0
     };
@@ -1046,7 +1104,8 @@ fn evaluate_knn(
             // Find k nearest neighbors in training set
             let mut distances: Vec<(usize, f64)> = (0..n_train)
                 .map(|train_idx| {
-                    let dist: f64 = features.row(test_idx)
+                    let dist: f64 = features
+                        .row(test_idx)
                         .iter()
                         .zip(features.row(train_idx).iter())
                         .map(|(a, b)| (a - b).powi(2))
@@ -1063,7 +1122,8 @@ fn evaluate_knn(
                 *votes.entry(labels[*idx]).or_insert(0) += 1;
             }
 
-            let predicted = votes.into_iter()
+            let predicted = votes
+                .into_iter()
                 .max_by_key(|(_, count)| *count)
                 .map(|(label, _)| label)
                 .unwrap_or(-1);
@@ -1079,16 +1139,40 @@ fn evaluate_knn(
 
     // Feature importance (simplified - based on variance)
     let feature_names = vec![
-        "mean_f0", "duration", "f0_range",
-        "hnr", "spectral_flatness", "harmonicity",
-        "attack_time", "decay_time", "sustain", "vibrato_rate", "vibrato_depth",
-        "jitter", "shimmer",
-        "mfcc_1", "mfcc_2", "mfcc_3", "mfcc_4", "mfcc_5", "mfcc_6", "mfcc_7",
-        "mfcc_8", "mfcc_9", "mfcc_10", "mfcc_11", "mfcc_12", "mfcc_13",
-        "spectral_flux", "median_ici", "onset_rate", "ici_cv",
+        "mean_f0",
+        "duration",
+        "f0_range",
+        "hnr",
+        "spectral_flatness",
+        "harmonicity",
+        "attack_time",
+        "decay_time",
+        "sustain",
+        "vibrato_rate",
+        "vibrato_depth",
+        "jitter",
+        "shimmer",
+        "mfcc_1",
+        "mfcc_2",
+        "mfcc_3",
+        "mfcc_4",
+        "mfcc_5",
+        "mfcc_6",
+        "mfcc_7",
+        "mfcc_8",
+        "mfcc_9",
+        "mfcc_10",
+        "mfcc_11",
+        "mfcc_12",
+        "mfcc_13",
+        "spectral_flux",
+        "median_ici",
+        "onset_rate",
+        "ici_cv",
     ];
 
-    let feature_importance: Vec<(String, f64)> = feature_names.iter()
+    let feature_importance: Vec<(String, f64)> = feature_names
+        .iter()
         .enumerate()
         .map(|(i, name)| {
             let variance = features.column(i).mapv(|x| x.powi(2)).mean().unwrap_or(0.0);

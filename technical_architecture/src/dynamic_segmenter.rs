@@ -62,8 +62,8 @@ impl DynamicSegmenterConfig {
     pub fn zebra_finch() -> Self {
         Self {
             frame_duration_ms: 10.0,
-            min_phrase_duration_ms: 20.0,   // Short syllables
-            max_phrase_duration_ms: 500.0,  // Song motifs
+            min_phrase_duration_ms: 20.0,  // Short syllables
+            max_phrase_duration_ms: 500.0, // Song motifs
             change_threshold: 0.30,
             smoothing_window: 3,
             peak_prominence: 0.08,
@@ -100,7 +100,7 @@ impl DynamicSegmenterConfig {
     /// Create config optimized for bat vocalizations
     pub fn bat() -> Self {
         Self {
-            frame_duration_ms: 5.0,          // Higher time resolution for FM sweeps
+            frame_duration_ms: 5.0, // Higher time resolution for FM sweeps
             min_phrase_duration_ms: 15.0,
             max_phrase_duration_ms: 400.0,
             change_threshold: 0.40,
@@ -333,7 +333,10 @@ pub struct DynamicSegmenter {
 impl DynamicSegmenter {
     /// Create a new dynamic segmenter with the given configuration
     pub fn new(config: DynamicSegmenterConfig, sample_rate: u32) -> Self {
-        Self { config, sample_rate }
+        Self {
+            config,
+            sample_rate,
+        }
     }
 
     /// Create with default configuration
@@ -419,7 +422,8 @@ impl DynamicSegmenter {
     where
         F: Fn(&[f32], u32) -> Option<Vec<f64>>,
     {
-        let frame_samples = ((self.config.frame_duration_ms / 1000.0) * self.sample_rate as f32) as usize;
+        let frame_samples =
+            ((self.config.frame_duration_ms / 1000.0) * self.sample_rate as f32) as usize;
         let hop_samples = frame_samples / 2; // 50% overlap
 
         let mut features = Vec::new();
@@ -541,7 +545,10 @@ impl DynamicSegmenter {
             }
 
             let start_ms = frame_times.get(start_frame).copied().unwrap_or(0.0);
-            let end_ms = frame_times.get(end_frame - 1).copied().unwrap_or(start_ms + self.config.frame_duration_ms);
+            let end_ms = frame_times
+                .get(end_frame - 1)
+                .copied()
+                .unwrap_or(start_ms + self.config.frame_duration_ms);
             let duration_ms = end_ms - start_ms + self.config.frame_duration_ms;
 
             // Filter by duration constraints
@@ -568,8 +575,12 @@ impl DynamicSegmenter {
                     }
 
                     let split_start_ms = frame_times.get(split_start).copied().unwrap_or(0.0);
-                    let split_end_ms = frame_times.get(split_end - 1).copied().unwrap_or(split_start_ms);
-                    let split_duration = split_end_ms - split_start_ms + self.config.frame_duration_ms;
+                    let split_end_ms = frame_times
+                        .get(split_end - 1)
+                        .copied()
+                        .unwrap_or(split_start_ms);
+                    let split_duration =
+                        split_end_ms - split_start_ms + self.config.frame_duration_ms;
 
                     if split_duration >= self.config.min_phrase_duration_ms {
                         if let Some(candidate) = self.create_candidate(
@@ -835,12 +846,16 @@ impl AtomicPhraseAnalyzer {
 
                 // Compute centroid
                 let centroid = average_features(
-                    &members.iter().map(|m| m.features.clone()).collect::<Vec<_>>(),
+                    &members
+                        .iter()
+                        .map(|m| m.features.clone())
+                        .collect::<Vec<_>>(),
                 );
 
                 // Compute quality metrics
                 let intra_similarity = compute_intra_cluster_similarity(&members, &centroid);
-                let avg_duration = members.iter().map(|m| m.duration_ms).sum::<f32>() / members.len() as f32;
+                let avg_duration =
+                    members.iter().map(|m| m.duration_ms).sum::<f32>() / members.len() as f32;
 
                 AtomicPhraseType {
                     type_id,
@@ -915,11 +930,7 @@ mod tests {
 
     #[test]
     fn test_average_features() {
-        let features = vec![
-            vec![1.0, 2.0],
-            vec![3.0, 4.0],
-            vec![5.0, 6.0],
-        ];
+        let features = vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]];
         let avg = average_features(&features);
         assert!((avg[0] - 3.0).abs() < 0.001);
         assert!((avg[1] - 4.0).abs() < 0.001);

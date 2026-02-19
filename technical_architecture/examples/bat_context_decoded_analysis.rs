@@ -16,19 +16,19 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BatContext {
-    Agonistic = 0,      // Aggressive encounters
-    Antiphonal = 1,     // Response to another bat
-    BabyDirected = 2,   // Parent to pup
-    Distress = 3,       // Emergency/urgency
-    Feeding = 4,        // Food-related
-    FoodDispute = 5,    // Competition over food
-    Isolation = 6,      // Bat alone
-    Landing = 7,        // Landing behavior
-    Mating = 8,         // Courtship
-    Protest = 9,        // Complaint/rejection
-    Resting = 10,       // Roosting
-    Social = 11,        // General social
-    Unknown = 12,       // Unknown context
+    Agonistic = 0,    // Aggressive encounters
+    Antiphonal = 1,   // Response to another bat
+    BabyDirected = 2, // Parent to pup
+    Distress = 3,     // Emergency/urgency
+    Feeding = 4,      // Food-related
+    FoodDispute = 5,  // Competition over food
+    Isolation = 6,    // Bat alone
+    Landing = 7,      // Landing behavior
+    Mating = 8,       // Courtship
+    Protest = 9,      // Complaint/rejection
+    Resting = 10,     // Roosting
+    Social = 11,      // General social
+    Unknown = 12,     // Unknown context
 }
 
 impl BatContext {
@@ -89,18 +89,18 @@ impl BatContext {
     /// Emotional intensity (1 = highest intensity)
     pub fn emotional_intensity(&self) -> i32 {
         match self {
-            Self::Distress => 1,      // Highest - emergency
-            Self::Agonistic => 2,     // High - conflict
-            Self::FoodDispute => 3,   // High - competition
-            Self::Protest => 4,       // Medium-high
-            Self::Mating => 5,        // Medium - courtship
-            Self::BabyDirected => 6,  // Medium - parental
-            Self::Antiphonal => 7,    // Medium - responsive
-            Self::Social => 8,        // Lower - routine
-            Self::Feeding => 9,       // Lower - functional
-            Self::Landing => 10,      // Low - transition
-            Self::Resting => 11,      // Low - passive
-            Self::Isolation => 12,    // Lowest - solitary
+            Self::Distress => 1,     // Highest - emergency
+            Self::Agonistic => 2,    // High - conflict
+            Self::FoodDispute => 3,  // High - competition
+            Self::Protest => 4,      // Medium-high
+            Self::Mating => 5,       // Medium - courtship
+            Self::BabyDirected => 6, // Medium - parental
+            Self::Antiphonal => 7,   // Medium - responsive
+            Self::Social => 8,       // Lower - routine
+            Self::Feeding => 9,      // Lower - functional
+            Self::Landing => 10,     // Low - transition
+            Self::Resting => 11,     // Low - passive
+            Self::Isolation => 12,   // Lowest - solitary
             Self::Unknown => 13,
         }
     }
@@ -108,18 +108,18 @@ impl BatContext {
     /// Social complexity (1 = most complex)
     pub fn social_complexity(&self) -> i32 {
         match self {
-            Self::Mating => 1,        // Most complex - courtship
-            Self::FoodDispute => 2,   // Complex - negotiation
-            Self::Agonistic => 3,     // Complex - conflict
-            Self::Social => 4,        // Complex - interaction
-            Self::Antiphonal => 5,    // Medium - turn-taking
-            Self::BabyDirected => 6,  // Medium - parental
-            Self::Protest => 7,       // Medium - expression
-            Self::Distress => 8,      // Simpler - emergency
-            Self::Feeding => 9,       // Simpler - functional
-            Self::Landing => 10,      // Simple - transition
-            Self::Resting => 11,      // Simple - passive
-            Self::Isolation => 12,    // Simplest - alone
+            Self::Mating => 1,       // Most complex - courtship
+            Self::FoodDispute => 2,  // Complex - negotiation
+            Self::Agonistic => 3,    // Complex - conflict
+            Self::Social => 4,       // Complex - interaction
+            Self::Antiphonal => 5,   // Medium - turn-taking
+            Self::BabyDirected => 6, // Medium - parental
+            Self::Protest => 7,      // Medium - expression
+            Self::Distress => 8,     // Simpler - emergency
+            Self::Feeding => 9,      // Simpler - functional
+            Self::Landing => 10,     // Simple - transition
+            Self::Resting => 11,     // Simple - passive
+            Self::Isolation => 12,   // Simplest - alone
             Self::Unknown => 13,
         }
     }
@@ -277,7 +277,10 @@ fn compute_pearson(x: &[f64], y: &[f64]) -> CorrelationResult {
     let n = x.len();
     if n != y.len() || n < 3 {
         return CorrelationResult {
-            r: 0.0, p: 1.0, n: 0, significant: false,
+            r: 0.0,
+            p: 1.0,
+            n: 0,
+            significant: false,
             direction: "insufficient data".to_string(),
         };
     }
@@ -311,15 +314,25 @@ fn compute_pearson(x: &[f64], y: &[f64]) -> CorrelationResult {
     };
 
     // Simplified p-value approximation
-    let p = if t.abs() > 4.0 { 0.001 }
-            else if t.abs() > 3.0 { 0.01 }
-            else if t.abs() > 2.0 { 0.05 }
-            else if t.abs() > 1.5 { 0.15 }
-            else { 0.3 };
+    let p = if t.abs() > 4.0 {
+        0.001
+    } else if t.abs() > 3.0 {
+        0.01
+    } else if t.abs() > 2.0 {
+        0.05
+    } else if t.abs() > 1.5 {
+        0.15
+    } else {
+        0.3
+    };
 
-    let direction = if r > 0.3 { "positive".to_string() }
-                   else if r < -0.3 { "negative".to_string() }
-                   else { "weak/none".to_string() };
+    let direction = if r > 0.3 {
+        "positive".to_string()
+    } else if r < -0.3 {
+        "negative".to_string()
+    } else {
+        "weak/none".to_string()
+    };
 
     CorrelationResult {
         r,
@@ -335,19 +348,24 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
     let context_mapping: HashMap<i32, ContextInfo> = (0..=12)
         .map(|id| {
             let ctx = BatContext::from_id(id);
-            (id, ContextInfo {
+            (
                 id,
-                name: ctx.name().to_string(),
-                short_name: ctx.short_name().to_string(),
-                category: ctx.category().to_string(),
-                emotional_intensity: ctx.emotional_intensity(),
-                social_complexity: ctx.social_complexity(),
-            })
+                ContextInfo {
+                    id,
+                    name: ctx.name().to_string(),
+                    short_name: ctx.short_name().to_string(),
+                    category: ctx.category().to_string(),
+                    emotional_intensity: ctx.emotional_intensity(),
+                    social_complexity: ctx.social_complexity(),
+                },
+            )
         })
         .collect();
 
     // Decode statistics
-    let decoded_statistics: Vec<DecodedStats> = results.context_statistics.iter()
+    let decoded_statistics: Vec<DecodedStats> = results
+        .context_statistics
+        .iter()
         .map(|ctx| {
             let info = &context_mapping[&ctx.context_id];
             DecodedStats {
@@ -365,11 +383,26 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
         .collect();
 
     // Correlation analysis
-    let rep: Vec<f64> = decoded_statistics.iter().map(|d| d.repetition_rate).collect();
-    let intensity: Vec<f64> = decoded_statistics.iter().map(|d| d.emotional_intensity as f64).collect();
-    let complexity: Vec<f64> = decoded_statistics.iter().map(|d| d.social_complexity as f64).collect();
-    let duration: Vec<f64> = decoded_statistics.iter().map(|d| d.avg_duration_ms).collect();
-    let phrases: Vec<f64> = decoded_statistics.iter().map(|d| d.avg_phrases_per_call).collect();
+    let rep: Vec<f64> = decoded_statistics
+        .iter()
+        .map(|d| d.repetition_rate)
+        .collect();
+    let intensity: Vec<f64> = decoded_statistics
+        .iter()
+        .map(|d| d.emotional_intensity as f64)
+        .collect();
+    let complexity: Vec<f64> = decoded_statistics
+        .iter()
+        .map(|d| d.social_complexity as f64)
+        .collect();
+    let duration: Vec<f64> = decoded_statistics
+        .iter()
+        .map(|d| d.avg_duration_ms)
+        .collect();
+    let phrases: Vec<f64> = decoded_statistics
+        .iter()
+        .map(|d| d.avg_phrases_per_call)
+        .collect();
 
     let rep_vs_intensity = compute_pearson(&rep, &intensity);
     let rep_vs_complexity = compute_pearson(&rep, &complexity);
@@ -380,9 +413,15 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
         "Repetition shows {} correlation with emotional intensity (r={:.3}, {}), suggesting \
          that bats modulate syllable repetition based on urgency. Duration shows {} correlation \
          with intensity (r={:.3}).",
-        rep_vs_intensity.direction, rep_vs_intensity.r,
-        if rep_vs_intensity.significant { "significant" } else { "not significant" },
-        dur_vs_intensity.direction, dur_vs_intensity.r
+        rep_vs_intensity.direction,
+        rep_vs_intensity.r,
+        if rep_vs_intensity.significant {
+            "significant"
+        } else {
+            "not significant"
+        },
+        dur_vs_intensity.direction,
+        dur_vs_intensity.r
     );
 
     let correlation_analysis = CorrelationAnalysis {
@@ -400,7 +439,8 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
     let key_findings = identify_key_findings(&decoded_statistics, &rep_vs_intensity, results);
 
     // Scientific summary
-    let scientific_summary = generate_scientific_summary(&decoded_statistics, &rep_vs_intensity, results);
+    let scientific_summary =
+        generate_scientific_summary(&decoded_statistics, &rep_vs_intensity, results);
 
     DecodedAnalysis {
         context_mapping,
@@ -422,12 +462,16 @@ fn analyze_by_category(stats: &[DecodedStats]) -> CategoryAnalysis {
     fn compute_category_stats(items: &[&DecodedStats]) -> CategoryStats {
         let contexts: Vec<String> = items.iter().map(|s| s.context_name.clone()).collect();
         let n: usize = items.iter().map(|s| s.n_vocalizations).sum();
-        let mean_rep = items.iter()
+        let mean_rep = items
+            .iter()
             .map(|s| s.repetition_rate * s.n_vocalizations as f64)
-            .sum::<f64>() / n as f64;
-        let mean_dur = items.iter()
+            .sum::<f64>()
+            / n as f64;
+        let mean_dur = items
+            .iter()
             .map(|s| s.avg_duration_ms * s.n_vocalizations as f64)
-            .sum::<f64>() / n as f64;
+            .sum::<f64>()
+            / n as f64;
 
         CategoryStats {
             contexts,
@@ -475,7 +519,10 @@ fn identify_key_findings(
         findings.push(KeyFinding {
             rank: 2,
             title: "Minimum Syllable Repetition".to_string(),
-            observation: format!("{} shows only {:.1}% repetition rate", lowest.context_name, lowest.repetition_rate),
+            observation: format!(
+                "{} shows only {:.1}% repetition rate",
+                lowest.context_name, lowest.repetition_rate
+            ),
             statistic: format!("{} vocalizations analyzed", lowest.n_vocalizations),
             interpretation: format!(
                 "{} contexts ({}) involve simple signaling without emphatic structure",
@@ -490,9 +537,13 @@ fn identify_key_findings(
         findings.push(KeyFinding {
             rank: 3,
             title: "Context Modulation Range".to_string(),
-            observation: format!("Repetition varies by {:.1} percentage points across contexts", range),
+            observation: format!(
+                "Repetition varies by {:.1} percentage points across contexts",
+                range
+            ),
             statistic: format!("χ² = 2071.70, p < 0.0001"),
-            interpretation: "Context significantly influences temporal syntax structure".to_string(),
+            interpretation: "Context significantly influences temporal syntax structure"
+                .to_string(),
         });
     }
 
@@ -514,15 +565,23 @@ fn identify_key_findings(
     sorted_by_n.sort_by(|a, b| b.n_vocalizations.cmp(&a.n_vocalizations));
 
     if let Some(most_common) = sorted_by_n.first() {
-        let pct = most_common.n_vocalizations as f64 / results.metadata.total_vocalizations as f64 * 100.0;
+        let pct = most_common.n_vocalizations as f64 / results.metadata.total_vocalizations as f64
+            * 100.0;
         findings.push(KeyFinding {
             rank: 5,
             title: "Dominant Communication Context".to_string(),
-            observation: format!("{} accounts for {:.1}% of all vocalizations", most_common.context_name, pct),
-            statistic: format!("{} out of {} calls", most_common.n_vocalizations, results.metadata.total_vocalizations),
+            observation: format!(
+                "{} accounts for {:.1}% of all vocalizations",
+                most_common.context_name, pct
+            ),
+            statistic: format!(
+                "{} out of {} calls",
+                most_common.n_vocalizations, results.metadata.total_vocalizations
+            ),
             interpretation: format!(
                 "Most bat communication serves {} functions with {:.1}% repetition rate",
-                most_common.category.to_lowercase(), most_common.repetition_rate
+                most_common.category.to_lowercase(),
+                most_common.repetition_rate
             ),
         });
     }
@@ -600,8 +659,14 @@ impl DecodedAnalysis {
         contexts.sort_by_key(|(id, _)| *id);
 
         for (id, info) in contexts.iter().take(12) {
-            println!("   │ {:>3} │ {:<22} │ {:<13} │ {:>8} │ {:>9} │",
-                id, info.short_name, info.category, info.emotional_intensity, info.social_complexity);
+            println!(
+                "   │ {:>3} │ {:<22} │ {:<13} │ {:>8} │ {:>9} │",
+                id,
+                info.short_name,
+                info.category,
+                info.emotional_intensity,
+                info.social_complexity
+            );
         }
         println!("   └─────┴────────────────────────┴───────────────┴──────────┴───────────┘");
 
@@ -610,7 +675,9 @@ impl DecodedAnalysis {
         println!("   │ Context                │ N Calls    │ Repetition  │ Visual             │");
         println!("   ├────────────────────────┼────────────┼─────────────┼────────────────────┤");
 
-        let mut sorted: Vec<_> = self.decoded_statistics.iter()
+        let mut sorted: Vec<_> = self
+            .decoded_statistics
+            .iter()
             .filter(|s| s.n_vocalizations > 0)
             .collect();
         sorted.sort_by(|a, b| b.repetition_rate.partial_cmp(&a.repetition_rate).unwrap());
@@ -618,7 +685,8 @@ impl DecodedAnalysis {
         for ctx in sorted {
             let bar_len = (ctx.repetition_rate / 5.0) as usize;
             let bar = "█".repeat(bar_len.min(20));
-            println!("   │ {:<22} │ {:>10} │ {:>6.1}%     │ {:20} │",
+            println!(
+                "   │ {:<22} │ {:>10} │ {:>6.1}%     │ {:20} │",
                 ctx.context_name.chars().take(22).collect::<String>(),
                 ctx.n_vocalizations,
                 ctx.repetition_rate,
@@ -632,22 +700,53 @@ impl DecodedAnalysis {
         let rep_comp = &self.correlation_analysis.repetition_vs_complexity;
 
         println!("   Repetition vs Emotional Intensity:");
-        println!("      r = {:.3}, p = {:.4} ({})", rep_int.r, rep_int.p,
-            if rep_int.significant { "SIGNIFICANT" } else { "not significant" });
+        println!(
+            "      r = {:.3}, p = {:.4} ({})",
+            rep_int.r,
+            rep_int.p,
+            if rep_int.significant {
+                "SIGNIFICANT"
+            } else {
+                "not significant"
+            }
+        );
 
         println!("   Repetition vs Social Complexity:");
-        println!("      r = {:.3}, p = {:.4} ({})", rep_comp.r, rep_comp.p,
-            if rep_comp.significant { "SIGNIFICANT" } else { "not significant" });
+        println!(
+            "      r = {:.3}, p = {:.4} ({})",
+            rep_comp.r,
+            rep_comp.p,
+            if rep_comp.significant {
+                "SIGNIFICANT"
+            } else {
+                "not significant"
+            }
+        );
 
-        println!("\n   Interpretation: {}", self.correlation_analysis.interpretation);
+        println!(
+            "\n   Interpretation: {}",
+            self.correlation_analysis.interpretation
+        );
 
         println!("\n📊 CATEGORY ANALYSIS:");
         println!("   High Arousal (Distress, Agonistic, Protest):");
-        println!("      Mean repetition: {:.1}%, N = {}", self.category_analysis.high_arousal.mean_repetition, self.category_analysis.high_arousal.n_vocalizations);
+        println!(
+            "      Mean repetition: {:.1}%, N = {}",
+            self.category_analysis.high_arousal.mean_repetition,
+            self.category_analysis.high_arousal.n_vocalizations
+        );
         println!("   Social (Mating, Food Dispute, Social, Antiphonal):");
-        println!("      Mean repetition: {:.1}%, N = {}", self.category_analysis.social.mean_repetition, self.category_analysis.social.n_vocalizations);
+        println!(
+            "      Mean repetition: {:.1}%, N = {}",
+            self.category_analysis.social.mean_repetition,
+            self.category_analysis.social.n_vocalizations
+        );
         println!("   Low Arousal (Resting, Isolation, Landing):");
-        println!("      Mean repetition: {:.1}%, N = {}", self.category_analysis.low_arousal.mean_repetition, self.category_analysis.low_arousal.n_vocalizations);
+        println!(
+            "      Mean repetition: {:.1}%, N = {}",
+            self.category_analysis.low_arousal.mean_repetition,
+            self.category_analysis.low_arousal.n_vocalizations
+        );
 
         println!("\n📊 KEY FINDINGS:");
         for finding in &self.key_findings {
@@ -726,7 +825,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n📂 Loading combined analysis results...");
     let results = load_results(&results_path)?;
-    println!("   Loaded {} context statistics", results.context_statistics.len());
+    println!(
+        "   Loaded {} context statistics",
+        results.context_statistics.len()
+    );
 
     println!("\n🔬 Running decoded analysis...");
     let analysis = analyze_decoded(&results);
@@ -745,9 +847,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut wtr = csv::Writer::from_writer(BufWriter::new(File::create(&csv_path)?));
 
     wtr.write_record(&[
-        "context_id", "context_name", "category",
-        "n_vocalizations", "repetition_rate", "avg_duration_ms",
-        "avg_phrases_per_call", "emotional_intensity", "social_complexity"
+        "context_id",
+        "context_name",
+        "category",
+        "n_vocalizations",
+        "repetition_rate",
+        "avg_duration_ms",
+        "avg_phrases_per_call",
+        "emotional_intensity",
+        "social_complexity",
     ])?;
 
     for ctx in &analysis.decoded_statistics {

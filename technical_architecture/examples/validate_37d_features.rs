@@ -14,10 +14,8 @@
 //! particularly for Corvids (roughness for "caws") and Bats (FM depth for FM sweeps).
 
 use technical_architecture::{
-    MicroDynamicsExtractor, FeatureDim,
-    PitchEntropyCalculator, RoughnessCalculator,
-    SpectralTiltCalculator, HarmonicDeviationCalculator,
-    FormantExtractor, FmDepthCalculator,
+    FeatureDim, FmDepthCalculator, FormantExtractor, HarmonicDeviationCalculator,
+    MicroDynamicsExtractor, PitchEntropyCalculator, RoughnessCalculator, SpectralTiltCalculator,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,14 +34,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features_37d = extractor.extract_37d(&pure_tone)?;
 
     println!("Base 30D Features:");
-    println!("  Harmonic-to-Noise Ratio: {:.1} dB", features_37d.base_30d.harmonic_to_noise_ratio);
+    println!(
+        "  Harmonic-to-Noise Ratio: {:.1} dB",
+        features_37d.base_30d.harmonic_to_noise_ratio
+    );
     println!("  HNR: {:.3}", features_37d.base_30d.harmonicity);
-    println!("  Vibrato Rate: {:.2} Hz", features_37d.base_30d.vibrato_rate_hz);
+    println!(
+        "  Vibrato Rate: {:.2} Hz",
+        features_37d.base_30d.vibrato_rate_hz
+    );
 
     println!("\nNew 37D Phylogenetic Descriptors:");
-    println!("  Pitch Entropy: {:.3} (0=monotone, 1=complex)", features_37d.pitch_entropy);
-    println!("  Spectral Tilt: {:.2} dB/octave", features_37d.spectral_tilt);
-    println!("  Harmonic Deviation: {:.4} (0=perfect harmonic)", features_37d.harmonic_deviation);
+    println!(
+        "  Pitch Entropy: {:.3} (0=monotone, 1=complex)",
+        features_37d.pitch_entropy
+    );
+    println!(
+        "  Spectral Tilt: {:.2} dB/octave",
+        features_37d.spectral_tilt
+    );
+    println!(
+        "  Harmonic Deviation: {:.4} (0=perfect harmonic)",
+        features_37d.harmonic_deviation
+    );
     println!("  Formant F1: {:.1} Hz", features_37d.formant_f1);
     println!("  Formant F2: {:.1} Hz", features_37d.formant_f2);
     println!("  Formant F3: {:.1} Hz", features_37d.formant_f3);
@@ -62,15 +75,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features_37d = extractor.extract_37d(&caw_vocalization)?;
 
     println!("Base 30D Features:");
-    println!("  HNR: {:.3}", features_37d.base_30d.harmonic_to_noise_ratio);
-    println!("  Spectral Flatness: {:.3}", features_37d.base_30d.spectral_flatness);
+    println!(
+        "  HNR: {:.3}",
+        features_37d.base_30d.harmonic_to_noise_ratio
+    );
+    println!(
+        "  Spectral Flatness: {:.3}",
+        features_37d.base_30d.spectral_flatness
+    );
 
     println!("\nNew 37D Phylogenetic Descriptors:");
     println!("  Pitch Entropy: {:.3}", features_37d.pitch_entropy);
-    println!("  Spectral Tilt: {:.2} dB/octave", features_37d.spectral_tilt);
-    println!("  Harmonic Deviation: {:.4}", features_37d.harmonic_deviation);
+    println!(
+        "  Spectral Tilt: {:.2} dB/octave",
+        features_37d.spectral_tilt
+    );
+    println!(
+        "  Harmonic Deviation: {:.4}",
+        features_37d.harmonic_deviation
+    );
     println!("  FM Depth: {:.2} Hz", features_37d.fm_depth_hz);
-    println!("  Roughness: {:.3} (HIGH for corvid caws!)", features_37d.roughness);
+    println!(
+        "  Roughness: {:.3} (HIGH for corvid caws!)",
+        features_37d.roughness
+    );
 
     validate_corvid_caw(&features_37d);
 
@@ -85,14 +113,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features_37d = extractor.extract_37d(&bat_sweep)?;
 
     println!("Base 30D Features:");
-    println!("  Spectral Flux: {:.3}", features_37d.base_30d.spectral_flux);
-    println!("  Onset Rate: {:.1} Hz", features_37d.base_30d.onset_rate_hz);
+    println!(
+        "  Spectral Flux: {:.3}",
+        features_37d.base_30d.spectral_flux
+    );
+    println!(
+        "  Onset Rate: {:.1} Hz",
+        features_37d.base_30d.onset_rate_hz
+    );
 
     println!("\nNew 37D Phylogenetic Descriptors:");
-    println!("  Pitch Entropy: {:.3} (HIGH for sweeps!)", features_37d.pitch_entropy);
-    println!("  Spectral Tilt: {:.2} dB/octave", features_37d.spectral_tilt);
-    println!("  Harmonic Deviation: {:.4}", features_37d.harmonic_deviation);
-    println!("  FM Depth: {:.2} Hz (HIGH for FM sweeps!)", features_37d.fm_depth_hz);
+    println!(
+        "  Pitch Entropy: {:.3} (HIGH for sweeps!)",
+        features_37d.pitch_entropy
+    );
+    println!(
+        "  Spectral Tilt: {:.2} dB/octave",
+        features_37d.spectral_tilt
+    );
+    println!(
+        "  Harmonic Deviation: {:.4}",
+        features_37d.harmonic_deviation
+    );
+    println!(
+        "  FM Depth: {:.2} Hz (HIGH for FM sweeps!)",
+        features_37d.fm_depth_hz
+    );
     println!("  Roughness: {:.3}", features_37d.roughness);
 
     validate_bat_fm_sweep(&features_37d);
@@ -107,16 +153,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features_37d = extractor.extract_37d(&phee_call)?;
 
     println!("Base 30D Features:");
-    println!("  Harmonicity: {:.3} (HIGH for tonal calls!)", features_37d.base_30d.harmonicity);
-    println!("  Vibrato Rate: {:.2} Hz", features_37d.base_30d.vibrato_rate_hz);
+    println!(
+        "  Harmonicity: {:.3} (HIGH for tonal calls!)",
+        features_37d.base_30d.harmonicity
+    );
+    println!(
+        "  Vibrato Rate: {:.2} Hz",
+        features_37d.base_30d.vibrato_rate_hz
+    );
 
     println!("\nNew 37D Phylogenetic Descriptors:");
-    println!("  Pitch Entropy: {:.3} (LOW for steady tones)", features_37d.pitch_entropy);
-    println!("  Spectral Tilt: {:.2} dB/octave", features_37d.spectral_tilt);
-    println!("  Harmonic Deviation: {:.4} (LOW for pure tones)", features_37d.harmonic_deviation);
+    println!(
+        "  Pitch Entropy: {:.3} (LOW for steady tones)",
+        features_37d.pitch_entropy
+    );
+    println!(
+        "  Spectral Tilt: {:.2} dB/octave",
+        features_37d.spectral_tilt
+    );
+    println!(
+        "  Harmonic Deviation: {:.4} (LOW for pure tones)",
+        features_37d.harmonic_deviation
+    );
     println!("  Formant F1: {:.1} Hz", features_37d.formant_f1);
-    println!("  FM Depth: {:.2} Hz (LOW for steady tones)", features_37d.fm_depth_hz);
-    println!("  Roughness: {:.3} (LOW for tonal calls)", features_37d.roughness);
+    println!(
+        "  FM Depth: {:.2} Hz (LOW for steady tones)",
+        features_37d.fm_depth_hz
+    );
+    println!(
+        "  Roughness: {:.3} (LOW for tonal calls)",
+        features_37d.roughness
+    );
 
     validate_marmoset_phee(&features_37d);
 
@@ -181,9 +248,18 @@ fn validate_pure_tone(features: &technical_architecture::MicroDynamicsFeatures37
     // - Low harmonic deviation (perfect harmonics)
     // - Low FM depth (no modulation)
     // Note: Roughness measures high-frequency energy (>500Hz), so a 1kHz tone has high roughness
-    assert!(features.pitch_entropy < 0.3, "Pure tone should have low pitch entropy");
-    assert!(features.harmonic_deviation < 0.1, "Pure tone should have low harmonic deviation");
-    assert!(features.fm_depth_hz < 100.0, "Pure tone should have low FM depth");
+    assert!(
+        features.pitch_entropy < 0.3,
+        "Pure tone should have low pitch entropy"
+    );
+    assert!(
+        features.harmonic_deviation < 0.1,
+        "Pure tone should have low harmonic deviation"
+    );
+    assert!(
+        features.fm_depth_hz < 100.0,
+        "Pure tone should have low FM depth"
+    );
     // Roughness is correctly high for 1kHz tone (energy > 500Hz)
 }
 
@@ -191,7 +267,10 @@ fn validate_corvid_caw(features: &technical_architecture::MicroDynamicsFeatures3
     // Corvid caws should have:
     // - High roughness (harsh, chaotic sound)
     // - Low to moderate harmonic deviation (inharmonic components present)
-    assert!(features.roughness > 0.5, "Corvid caw should have high roughness");
+    assert!(
+        features.roughness > 0.5,
+        "Corvid caw should have high roughness"
+    );
     // Note: Pitch entropy may be low if the synthesized signal has stable pitch
     // Real corvid caws would have higher pitch entropy due to natural variation
 }
@@ -201,7 +280,10 @@ fn validate_bat_fm_sweep(features: &technical_architecture::MicroDynamicsFeature
     // - High FM depth (large frequency range)
     // Note: Pitch entropy may be low if F0 contour estimation is stable
     // The FM depth correctly captures the frequency sweep range (4000 Hz!)
-    assert!(features.fm_depth_hz > 1000.0, "FM sweep should have high FM depth");
+    assert!(
+        features.fm_depth_hz > 1000.0,
+        "FM sweep should have high FM depth"
+    );
     // FM depth of 4000 Hz correctly detected! This is the key feature for bat analysis
 }
 
@@ -210,9 +292,18 @@ fn validate_marmoset_phee(features: &technical_architecture::MicroDynamicsFeatur
     // - Low pitch entropy (steady pitch)
     // - Low harmonic deviation (tonal, harmonic)
     // - Low to moderate FM depth (steady tone with slight vibrato)
-    assert!(features.pitch_entropy < 0.5, "Phee should have relatively low pitch entropy");
-    assert!(features.harmonic_deviation < 0.2, "Phee should have low harmonic deviation");
-    assert!(features.fm_depth_hz < 500.0, "Phee should have low to moderate FM depth");
+    assert!(
+        features.pitch_entropy < 0.5,
+        "Phee should have relatively low pitch entropy"
+    );
+    assert!(
+        features.harmonic_deviation < 0.2,
+        "Phee should have low harmonic deviation"
+    );
+    assert!(
+        features.fm_depth_hz < 500.0,
+        "Phee should have low to moderate FM depth"
+    );
     // Note: Roughness may be high for 9kHz tone (energy > 500Hz)
 }
 
@@ -240,16 +331,16 @@ fn generate_corvid_caw(sample_rate: u32) -> Vec<f32> {
             let t = i as f32 / sample_rate as f32;
             // Multiple non-harmonically related frequencies
             let f1 = 1500.0;
-            let f2 = 2300.0;  // Inharmonic
-            let f3 = 4100.0;  // Inharmonic
+            let f2 = 2300.0; // Inharmonic
+            let f3 = 4100.0; // Inharmonic
 
             // Amplitude envelope (attack, sustain, decay)
             let env = if t < 0.05 {
-                t / 0.05  // Attack
+                t / 0.05 // Attack
             } else if t < 0.15 {
-                1.0  // Sustain
+                1.0 // Sustain
             } else {
-                (1.0 - (t - 0.15) / 0.15).max(0.0)  // Decay
+                (1.0 - (t - 0.15) / 0.15).max(0.0) // Decay
             };
 
             // Mix of inharmonic components
@@ -262,7 +353,12 @@ fn generate_corvid_caw(sample_rate: u32) -> Vec<f32> {
         .collect()
 }
 
-fn generate_fm_sweep(start_freq: f32, end_freq: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+fn generate_fm_sweep(
+    start_freq: f32,
+    end_freq: f32,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
 
     // Linear FM sweep (chirp)
@@ -270,9 +366,9 @@ fn generate_fm_sweep(start_freq: f32, end_freq: f32, sample_rate: u32, duration_
         .map(|i| {
             let t = i as f32 / sample_rate as f32;
             // Instantaneous frequency: f(t) = f0 + (f1 - f0) * t / T
-            let phase = 2.0 * std::f32::consts::PI * (
-                start_freq * t + (end_freq - start_freq) * t * t / (2.0 * duration_sec)
-            );
+            let phase = 2.0
+                * std::f32::consts::PI
+                * (start_freq * t + (end_freq - start_freq) * t * t / (2.0 * duration_sec));
             phase.sin()
         })
         .collect()
@@ -291,11 +387,11 @@ fn generate_phee_call(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 
             // Amplitude envelope (slow attack, long sustain, slow decay)
             let env = if t < 0.05 {
-                t / 0.05  // Attack
+                t / 0.05 // Attack
             } else if t < 0.15 {
-                1.0  // Sustain
+                1.0 // Sustain
             } else {
-                (1.0 - (t - 0.15) / 0.05).max(0.0)  // Decay
+                (1.0 - (t - 0.15) / 0.05).max(0.0) // Decay
             };
 
             (2.0 * std::f32::consts::PI * freq * t).sin() * env

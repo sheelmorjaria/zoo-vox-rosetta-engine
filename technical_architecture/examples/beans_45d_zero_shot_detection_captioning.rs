@@ -14,10 +14,6 @@
 //!    - Generates descriptive output
 //!    - Metrics: BLEU, ROUGE, semantic similarity
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -27,10 +23,11 @@ use std::io::{BufReader, BufWriter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 const WINDOW_SIZE_MS: f64 = 1000.0; // 1 second windows
-const WINDOW_HOP_MS: f64 = 500.0;   // 50% overlap
+const WINDOW_HOP_MS: f64 = 500.0; // 50% overlap
 
 // ============================================================================
 // DATA STRUCTURES
@@ -192,18 +189,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Separate by task type
-    let detection_samples: Vec<_> = manifest.samples.iter()
+    let detection_samples: Vec<_> = manifest
+        .samples
+        .iter()
         .filter(|s| s.labels.task == "detection")
         .collect();
 
-    let captioning_samples: Vec<_> = manifest.samples.iter()
+    let captioning_samples: Vec<_> = manifest
+        .samples
+        .iter()
         .filter(|s| s.labels.task == "captioning")
         .collect();
 
     println!("Task Distribution:");
     println!("  ├─ Detection samples: {}", detection_samples.len());
     println!("  ├─ Captioning samples: {}", captioning_samples.len());
-    println!("  └─ Other: {}", total_samples - detection_samples.len() - captioning_samples.len());
+    println!(
+        "  └─ Other: {}",
+        total_samples - detection_samples.len() - captioning_samples.len()
+    );
     println!();
 
     // ========================================================================
@@ -217,7 +221,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let all_samples: Vec<Option<Sample>> = manifest.samples
+    let all_samples: Vec<Option<Sample>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -256,9 +261,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let extraction_time = extraction_start.elapsed();
 
-    let valid_samples: Vec<_> = all_samples.into_iter()
-        .filter_map(|s| s)
-        .collect();
+    let valid_samples: Vec<_> = all_samples.into_iter().filter_map(|s| s).collect();
 
     println!("\nExtraction Complete:");
     println!("  ├─ Valid Samples: {}", valid_samples.len());
@@ -266,11 +269,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Split by task
-    let detection_data: Vec<_> = valid_samples.iter()
+    let detection_data: Vec<_> = valid_samples
+        .iter()
         .filter(|s| s.task == "detection")
         .collect();
 
-    let captioning_data: Vec<_> = valid_samples.iter()
+    let captioning_data: Vec<_> = valid_samples
+        .iter()
         .filter(|s| s.task == "captioning")
         .collect();
 
@@ -285,7 +290,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let detection_results = evaluate_zero_shot_detection(&detection_data, &valid_samples);
 
     println!("Detection Results:");
-    println!("  ├─ Precision: {:.1}%", detection_results.precision * 100.0);
+    println!(
+        "  ├─ Precision: {:.1}%",
+        detection_results.precision * 100.0
+    );
     println!("  ├─ Recall: {:.1}%", detection_results.recall * 100.0);
     println!("  └─ F1 Score: {:.1}%", detection_results.f1_score * 100.0);
     println!();
@@ -301,9 +309,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let captioning_results = evaluate_zero_shot_captioning(&captioning_data, &valid_samples);
 
     println!("Captioning Results:");
-    println!("  ├─ Avg Semantic Similarity: {:.3}", captioning_results.avg_semantic_similarity);
+    println!(
+        "  ├─ Avg Semantic Similarity: {:.3}",
+        captioning_results.avg_semantic_similarity
+    );
     println!("  ├─ BLEU-4 Score: {:.3}", captioning_results.bleu4_score);
-    println!("  └─ ROUGE-L Score: {:.3}", captioning_results.rouge_l_score);
+    println!(
+        "  └─ ROUGE-L Score: {:.3}",
+        captioning_results.rouge_l_score
+    );
     println!();
 
     // ========================================================================
@@ -331,14 +345,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Detection Task:");
     println!("  ├─ Window Size: {}ms", WINDOW_SIZE_MS);
     println!("  ├─ Window Hop: {}ms", WINDOW_HOP_MS);
-    println!("  ├─ Precision: {:.1}%", results.detection.precision * 100.0);
+    println!(
+        "  ├─ Precision: {:.1}%",
+        results.detection.precision * 100.0
+    );
     println!("  ├─ Recall: {:.1}%", results.detection.recall * 100.0);
     println!("  └─ F1 Score: {:.1}%", results.detection.f1_score * 100.0);
     println!();
 
     println!("Captioning Task:");
     println!("  ├─ k-Neighbors: 5");
-    println!("  ├─ Semantic Similarity: {:.3}", results.captioning.avg_semantic_similarity);
+    println!(
+        "  ├─ Semantic Similarity: {:.3}",
+        results.captioning.avg_semantic_similarity
+    );
     println!("  ├─ BLEU-4: {:.3}", results.captioning.bleu4_score);
     println!("  └─ ROUGE-L: {:.3}", results.captioning.rouge_l_score);
     println!();
@@ -371,7 +391,8 @@ fn evaluate_zero_shot_detection(
 
     for sample in all_samples {
         if sample.task != "detection" {
-            prototypes.entry(sample.source_dataset.clone())
+            prototypes
+                .entry(sample.source_dataset.clone())
                 .or_default()
                 .push(sample.features.clone());
         }
@@ -396,7 +417,10 @@ fn evaluate_zero_shot_detection(
         mean_prototypes.insert(dataset.clone(), mean);
     }
 
-    println!("Built {} species prototypes from training data", mean_prototypes.len());
+    println!(
+        "Built {} species prototypes from training data",
+        mean_prototypes.len()
+    );
 
     // Create similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
@@ -465,8 +489,16 @@ fn evaluate_zero_shot_detection(
         let total_positives = thresh_tp + thresh_fn;
         let total_negatives = thresh_fp + thresh_tn;
 
-        let tpr = if total_positives > 0 { thresh_tp as f64 / total_positives as f64 } else { 0.0 };
-        let fpr = if total_negatives > 0 { thresh_fp as f64 / total_negatives as f64 } else { 0.0 };
+        let tpr = if total_positives > 0 {
+            thresh_tp as f64 / total_positives as f64
+        } else {
+            0.0
+        };
+        let fpr = if total_negatives > 0 {
+            thresh_fp as f64 / total_negatives as f64
+        } else {
+            0.0
+        };
 
         roc_points.push(RocPoint {
             threshold: *threshold,
@@ -505,8 +537,9 @@ fn evaluate_zero_shot_detection(
         }
 
         // Per-species metrics
-        let entry = per_species_metrics.entry(sample.source_dataset.clone()).or_insert(
-            SpeciesDetectionMetrics {
+        let entry = per_species_metrics
+            .entry(sample.source_dataset.clone())
+            .or_insert(SpeciesDetectionMetrics {
                 species: sample.source_dataset.clone(),
                 n_test_samples: 0,
                 detected: 0,
@@ -514,8 +547,7 @@ fn evaluate_zero_shot_detection(
                 recall: 0.0,
                 f1: 0.0,
                 avg_detection_latency_ms: 0.0,
-            }
-        );
+            });
         entry.n_test_samples += 1;
         if detected && is_correct {
             entry.detected += 1;
@@ -527,13 +559,26 @@ fn evaluate_zero_shot_detection(
         if metrics.n_test_samples > 0 {
             metrics.recall = metrics.detected as f64 / metrics.n_test_samples as f64;
             metrics.precision = metrics.recall; // Simplified
-            metrics.f1 = 2.0 * metrics.precision * metrics.recall / (metrics.precision + metrics.recall + 1e-10);
+            metrics.f1 = 2.0 * metrics.precision * metrics.recall
+                / (metrics.precision + metrics.recall + 1e-10);
         }
     }
 
-    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-    let recall = if tp + fn_ > 0 { tp as f64 / (tp + fn_) as f64 } else { 0.0 };
-    let f1 = if precision + recall > 0.0 { 2.0 * precision * recall / (precision + recall) } else { 0.0 };
+    let precision = if tp + fp > 0 {
+        tp as f64 / (tp + fp) as f64
+    } else {
+        0.0
+    };
+    let recall = if tp + fn_ > 0 {
+        tp as f64 / (tp + fn_) as f64
+    } else {
+        0.0
+    };
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
 
     DetectionResults {
         window_size_ms: WINDOW_SIZE_MS,
@@ -603,7 +648,8 @@ fn evaluate_zero_shot_captioning(
         let true_caption = sample.caption.as_deref().unwrap_or("");
 
         // Find k nearest neighbors with captions
-        let mut distances: Vec<(usize, f64)> = caption_db.iter()
+        let mut distances: Vec<(usize, f64)> = caption_db
+            .iter()
             .enumerate()
             .filter(|(_, (s, _))| s.id != sample.id) // Exclude self
             .map(|(j, (_, features))| {
@@ -637,15 +683,15 @@ fn evaluate_zero_shot_captioning(
         n_evaluated += 1;
 
         // Per-dataset metrics
-        let entry = per_dataset_metrics.entry(sample.source_dataset.clone()).or_insert(
-            DatasetCaptionMetrics {
+        let entry = per_dataset_metrics
+            .entry(sample.source_dataset.clone())
+            .or_insert(DatasetCaptionMetrics {
                 dataset: sample.source_dataset.clone(),
                 n_samples: 0,
                 avg_similarity: 0.0,
                 bleu4: 0.0,
                 rouge_l: 0.0,
-            }
-        );
+            });
         entry.n_samples += 1;
         entry.avg_similarity += similarity;
         entry.bleu4 += bleu;
@@ -687,10 +733,14 @@ fn evaluate_zero_shot_captioning(
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
-    let audio: Vec<f64> = bytes.chunks_exact(4)
+    let audio: Vec<f64> = bytes
+        .chunks_exact(4)
         .take(expected_samples)
         .map(|chunk| {
             let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);

@@ -24,8 +24,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use technical_architecture::lexicon_to_syntax::{
-    VectorizationConfig, SegmentationConfig,
-    DiscoveryConfig, FeatureDimension,
+    DiscoveryConfig, FeatureDimension, SegmentationConfig, VectorizationConfig,
 };
 use technical_architecture::MicroDynamicsExtractor;
 
@@ -78,10 +77,13 @@ fn group_by_context(annotations: &[BatAnnotation]) -> HashMap<i32, Vec<PathBuf>>
     let mut grouped: HashMap<i32, Vec<PathBuf>> = HashMap::new();
 
     for annotation in annotations {
-        let file_path = Path::new(BAT_DATA_DIR).join("audio").join(&annotation.file_name);
+        let file_path = Path::new(BAT_DATA_DIR)
+            .join("audio")
+            .join(&annotation.file_name);
 
         if file_path.exists() {
-            grouped.entry(annotation.context)
+            grouped
+                .entry(annotation.context)
                 .or_insert_with(Vec::new)
                 .push(file_path);
         }
@@ -122,9 +124,12 @@ fn generate_synthetic_bat_vocalization(context: i32, sample_rate: u32) -> Vec<f3
                 .map(|i| {
                     let t = i as f32 / sample_rate as f32;
                     let env = (-t * 5.0).exp(); // Exponential decay
-                    let signal = (0..5).map(|h| {
-                        (2.0 * std::f32::consts::PI * base_freq * (h + 1) as f32 * t).sin()
-                    }).sum::<f32>() / 5.0;
+                    let signal = (0..5)
+                        .map(|h| {
+                            (2.0 * std::f32::consts::PI * base_freq * (h + 1) as f32 * t).sin()
+                        })
+                        .sum::<f32>()
+                        / 5.0;
                     signal * env * 0.7
                 })
                 .collect()
@@ -178,8 +183,8 @@ fn extract_phylogenetic_features(audio: &[f32], sample_rate: u32) -> anyhow::Res
                     feature_vec[25] = base.onset_rate_hz as f64;
                     feature_vec[26] = base.ici_coefficient_of_variation as f64;
                     feature_vec[27] = 100.0; // duration_ms placeholder
-                    feature_vec[28] = 0.0;  // f0_mean placeholder
-                    feature_vec[29] = 0.0;  // f0_std placeholder
+                    feature_vec[28] = 0.0; // f0_mean placeholder
+                    feature_vec[29] = 0.0; // f0_std placeholder
 
                     // 8 new phylogenetic descriptors (indices 30-37)
                     feature_vec[30] = features.pitch_entropy as f64;
@@ -220,31 +225,44 @@ fn analyze_phylogenetic_features(feature_vectors: &[Vec<f64>]) -> HashMap<String
     // 37: roughness
 
     // Analyze pitch entropy (index 30)
-    let pitch_entropies: Vec<f64> = feature_vectors.iter()
+    let pitch_entropies: Vec<f64> = feature_vectors
+        .iter()
         .filter_map(|f| if f.len() > 30 { Some(f[30]) } else { None })
         .collect();
 
     if !pitch_entropies.is_empty() {
         let mean_pe = pitch_entropies.iter().sum::<f64>() / pitch_entropies.len() as f64;
         analysis.insert("mean_pitch_entropy".to_string(), mean_pe);
-        analysis.insert("max_pitch_entropy".to_string(),
-            *pitch_entropies.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0));
+        analysis.insert(
+            "max_pitch_entropy".to_string(),
+            *pitch_entropies
+                .iter()
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap_or(&0.0),
+        );
     }
 
     // Analyze FM depth (index 36) - critical for bat FM sweeps
-    let fm_depths: Vec<f64> = feature_vectors.iter()
+    let fm_depths: Vec<f64> = feature_vectors
+        .iter()
         .filter_map(|f| if f.len() > 36 { Some(f[36]) } else { None })
         .collect();
 
     if !fm_depths.is_empty() {
         let mean_fm = fm_depths.iter().sum::<f64>() / fm_depths.len() as f64;
         analysis.insert("mean_fm_depth_hz".to_string(), mean_fm);
-        analysis.insert("max_fm_depth_hz".to_string(),
-            *fm_depths.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0));
+        analysis.insert(
+            "max_fm_depth_hz".to_string(),
+            *fm_depths
+                .iter()
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap_or(&0.0),
+        );
     }
 
     // Analyze roughness (index 37)
-    let roughness_values: Vec<f64> = feature_vectors.iter()
+    let roughness_values: Vec<f64> = feature_vectors
+        .iter()
         .filter_map(|f| if f.len() > 37 { Some(f[37]) } else { None })
         .collect();
 
@@ -254,7 +272,8 @@ fn analyze_phylogenetic_features(feature_vectors: &[Vec<f64>]) -> HashMap<String
     }
 
     // Analyze spectral tilt (index 31)
-    let spectral_tilts: Vec<f64> = feature_vectors.iter()
+    let spectral_tilts: Vec<f64> = feature_vectors
+        .iter()
         .filter_map(|f| if f.len() > 31 { Some(f[31]) } else { None })
         .collect();
 
@@ -283,7 +302,8 @@ fn print_context_info(context: i32) -> String {
         11 => "Aggressive",
         12 => "Neutral/Spatial",
         _ => "Other",
-    }.to_string()
+    }
+    .to_string()
 }
 
 /// Main function
@@ -300,7 +320,12 @@ fn main() -> anyhow::Result<()> {
 
     println!("Found {} contexts with audio files:", grouped.len());
     for (&context, files) in grouped.iter() {
-        println!("  Context {} ({}): {} files", context, print_context_info(context), files.len());
+        println!(
+            "  Context {} ({}): {} files",
+            context,
+            print_context_info(context),
+            files.len()
+        );
     }
 
     println!("\n=== Running Feature Extraction per Context ===\n");
@@ -309,13 +334,15 @@ fn main() -> anyhow::Result<()> {
     let mut all_results = Vec::new();
 
     for (&context, audio_files) in grouped.iter() {
-        println!("\n--- Context {} ({}) ---", context, print_context_info(context));
+        println!(
+            "\n--- Context {} ({}) ---",
+            context,
+            print_context_info(context)
+        );
         println!("Processing {} audio files...", audio_files.len());
 
         // Limit to first 10 files per context for demonstration
-        let files_to_process: Vec<_> = audio_files.iter()
-            .take(10)
-            .collect();
+        let files_to_process: Vec<_> = audio_files.iter().take(10).collect();
 
         if files_to_process.is_empty() {
             println!("No files to process for this context");
@@ -344,9 +371,11 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        println!("Extracted {}D features for {} vocalizations",
+        println!(
+            "Extracted {}D features for {} vocalizations",
             feature_vectors.first().map_or(0, |f| f.len()) as usize,
-            feature_vectors.len());
+            feature_vectors.len()
+        );
 
         // Analyze phylogenetic features
         let analysis = analyze_phylogenetic_features(&feature_vectors);
@@ -379,34 +408,46 @@ fn main() -> anyhow::Result<()> {
 
     for (context, vocab_size, avg_cluster, analysis) in &all_results {
         let context_name = print_context_info(*context);
-        let fm_depth = analysis.get("mean_fm_depth_hz")
+        let fm_depth = analysis
+            .get("mean_fm_depth_hz")
             .map(|v| format!("{:.1}", v))
             .unwrap_or("N/A".to_string());
-        let pitch_entropy = analysis.get("mean_pitch_entropy")
+        let pitch_entropy = analysis
+            .get("mean_pitch_entropy")
             .map(|v| format!("{:.3}", v))
             .unwrap_or("N/A".to_string());
-        let roughness = analysis.get("mean_roughness")
+        let roughness = analysis
+            .get("mean_roughness")
             .map(|v| format!("{:.3}", v))
             .unwrap_or("N/A".to_string());
 
-        println!("{:8} | {:14} | {:16.2} | {:18} | {:18} | {}",
-            context, vocab_size, avg_cluster, fm_depth, pitch_entropy, roughness);
+        println!(
+            "{:8} | {:14} | {:16.2} | {:18} | {:18} | {}",
+            context, vocab_size, avg_cluster, fm_depth, pitch_entropy, roughness
+        );
     }
 
     // Summary
     println!("\n=== Summary ===");
     println!("Processed {} contexts", all_results.len());
 
-    let total_vocabulary: usize = all_results.iter()
+    let total_vocabulary: usize = all_results
+        .iter()
         .map(|(_, vocab_size, _, _)| vocab_size)
         .sum();
-    let total_phrases: usize = all_results.iter()
+    let total_phrases: usize = all_results
+        .iter()
         .map(|(_, _, cluster_size, _)| (*cluster_size * 3.0) as usize)
         .sum();
 
-    println!("Total vocabulary items across all contexts: {}", total_vocabulary);
+    println!(
+        "Total vocabulary items across all contexts: {}",
+        total_vocabulary
+    );
     println!("Total phrases analyzed: {}", total_phrases);
-    println!("\n✓ Phylogenetic acoustic descriptors successfully used for bat vocalization analysis");
+    println!(
+        "\n✓ Phylogenetic acoustic descriptors successfully used for bat vocalization analysis"
+    );
     println!("✓ Key features for bats:");
     println!("  - FM Depth: Frequency modulation range (critical for FM sweeps)");
     println!("  - Pitch Entropy: Complexity of pitch contour");

@@ -7,12 +7,6 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_syntax_analysis
 
-use technical_architecture::{
-    DynamicSegmenter, DynamicSegmenterConfig,
-    DynamicPhraseCandidate,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -23,6 +17,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
+    SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 const SAMPLE_RATE: u32 = 44100;
@@ -193,18 +191,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                    SAMPLE_RATE,
+                )));
                 let result = segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64)
+                            .ok()
+                            .map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
 
-                let mut cands: Vec<PhraseWithMeta> = result.candidates.into_iter()
+                let mut cands: Vec<PhraseWithMeta> = result
+                    .candidates
+                    .into_iter()
                     .map(|c| (c, ann.call_type.clone(), ann.name.clone()))
                     .collect();
                 cands.sort_by(|a, b| a.0.start_ms.partial_cmp(&b.0.start_ms).unwrap());
@@ -218,7 +222,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Group by source file
     let mut file_sequences: HashMap<String, Vec<PhraseWithMeta>> = HashMap::new();
     for item in all_candidates {
-        file_sequences.entry(item.0.source_file.clone())
+        file_sequences
+            .entry(item.0.source_file.clone())
             .or_insert_with(Vec::new)
             .push(item);
     }
@@ -228,7 +233,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seq.sort_by(|a, b| a.0.start_ms.partial_cmp(&b.0.start_ms).unwrap());
     }
 
-    println!("\nExtracted {} sequences from {} files", file_sequences.len(), max_files);
+    println!(
+        "\nExtracted {} sequences from {} files",
+        file_sequences.len(),
+        max_files
+    );
 
     // ========================================================================
     // Cluster phrases to get phrase IDs
@@ -238,10 +247,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // Collect all candidates for clustering
-    let flat_candidates: Vec<(DynamicPhraseCandidate, String)> = file_sequences.values()
-        .flat_map(|seq| {
-            seq.iter().map(|(c, ct, _b)| (c.clone(), ct.clone()))
-        })
+    let flat_candidates: Vec<(DynamicPhraseCandidate, String)> = file_sequences
+        .values()
+        .flat_map(|seq| seq.iter().map(|(c, ct, _b)| (c.clone(), ct.clone())))
         .collect();
 
     let phrase_clusters = cluster_phrases(&flat_candidates, 0.30, 2);
@@ -252,7 +260,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for cluster in &phrase_clusters {
         for &idx in &cluster.member_indices {
             if let Some((cand, _)) = flat_candidates.get(idx) {
-                phrase_to_id.entry(cand.id.clone()).or_insert(cluster.phrase_id);
+                phrase_to_id
+                    .entry(cand.id.clone())
+                    .or_insert(cluster.phrase_id);
             }
         }
     }
@@ -262,7 +272,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut bird_sequences: HashMap<String, Vec<Vec<usize>>> = HashMap::new();
 
     for seq in file_sequences.values() {
-        let phrase_seq: Vec<usize> = seq.iter()
+        let phrase_seq: Vec<usize> = seq
+            .iter()
             .filter_map(|(cand, _, _)| phrase_to_id.get(&cand.id).copied())
             .collect();
 
@@ -270,7 +281,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             sequences.push(phrase_seq.clone());
 
             if let Some((_, _, bird)) = seq.first() {
-                bird_sequences.entry(bird.clone())
+                bird_sequences
+                    .entry(bird.clone())
                     .or_insert_with(Vec::new)
                     .push(phrase_seq);
             }
@@ -293,7 +305,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("Bigram model: {} unique transitions", bigram.transitions.len());
+    println!(
+        "Bigram model: {} unique transitions",
+        bigram.transitions.len()
+    );
 
     let perplexity = bigram.perplexity(&sequences);
     let entropy = calculate_entropy(&bigram);
@@ -302,7 +317,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  ├─ Vocabulary Size: {} phrases", bigram.vocabulary.len());
     println!("  ├─ Unique Transitions: {}", bigram.transitions.len());
     println!("  ├─ Entropy: {:.3} bits", entropy);
-    println!("  └─ Perplexity: {:.2} (lower = more predictable)", perplexity);
+    println!(
+        "  └─ Perplexity: {:.2} (lower = more predictable)",
+        perplexity
+    );
 
     // ========================================================================
     // Find common patterns
@@ -314,7 +332,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let mut common_patterns: Vec<PatternInfo> = pattern_counts.iter()
+    let mut common_patterns: Vec<PatternInfo> = pattern_counts
+        .iter()
         .filter(|(_, &count)| count >= 3)
         .map(|(pattern, &count)| PatternInfo {
             pattern: pattern.clone(),
@@ -352,7 +371,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     let total_time = total_start.elapsed();
 
-    let mut top_transitions: Vec<TransitionInfo> = bigram.transitions.iter()
+    let mut top_transitions: Vec<TransitionInfo> = bigram
+        .transitions
+        .iter()
         .map(|((from, to), &count)| TransitionInfo {
             from_phrase: *from,
             to_phrase: *to,
@@ -369,20 +390,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("TOP 5 BIGRAM TRANSITIONS (Most Common Phrase Sequences):");
     for (i, t) in top_transitions.iter().take(5).enumerate() {
-        println!("  {}. Phrase {} → Phrase {}: {} occurrences ({:.1}%)",
-            i + 1, t.from_phrase, t.to_phrase, t.count, t.probability * 100.0);
+        println!(
+            "  {}. Phrase {} → Phrase {}: {} occurrences ({:.1}%)",
+            i + 1,
+            t.from_phrase,
+            t.to_phrase,
+            t.count,
+            t.probability * 100.0
+        );
     }
 
     println!("\nTOP 5 COMMON PATTERNS (Repeated 3-phrase sequences):");
     for (i, p) in common_patterns.iter().take(5).enumerate() {
-        println!("  {}. [{} → {} → {}]: {} occurrences",
-            i + 1, p.pattern[0], p.pattern[1], p.pattern[2], p.occurrences);
+        println!(
+            "  {}. [{} → {} → {}]: {} occurrences",
+            i + 1,
+            p.pattern[0],
+            p.pattern[1],
+            p.pattern[2],
+            p.occurrences
+        );
     }
 
     println!("\nPER-BIRD SYNTAX VARIATION:");
     for profile in bird_profiles.iter().take(5) {
-        println!("  Bird {}: {} sequences, {} phrases, perplexity: {:.2}",
-            profile.bird_id, profile.sequence_count, profile.unique_phrases, profile.perplexity);
+        println!(
+            "  Bird {}: {} sequences, {} phrases, perplexity: {:.2}",
+            profile.bird_id, profile.sequence_count, profile.unique_phrases, profile.perplexity
+        );
     }
 
     let report = SyntaxAnalysisReport {
@@ -515,12 +550,14 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => {
-            reader.into_samples::<f32>().filter_map(|s| s.ok()).collect()
-        }
+        hound::SampleFormat::Float => reader
+            .into_samples::<f32>()
+            .filter_map(|s| s.ok())
+            .collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
-            reader.into_samples::<i32>()
+            reader
+                .into_samples::<i32>()
                 .filter_map(|s| s.ok())
                 .map(|s| s as f32 / max_val)
                 .collect()

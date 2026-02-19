@@ -9,15 +9,14 @@
 //
 // Usage: cargo run --example full_pipeline_marmoset --release
 
+use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use rand::{Rng, SeedableRng};
 use technical_architecture::{
-    ParallelExtractionPipeline, ExtractionConfig,
-    VocalizationResult, ClusteredPhrase,
-    AnnotationEntry, ExtractionPhraseCandidate as PhraseCandidate,
-    LinguisticAnalysis,
+    AnnotationEntry, ClusteredPhrase, ExtractionConfig,
+    ExtractionPhraseCandidate as PhraseCandidate, LinguisticAnalysis, ParallelExtractionPipeline,
+    VocalizationResult,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -149,13 +148,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📝 Corpus analysis data: marmoset_corpus_for_analysis.json");
     println!();
     println!("Key Findings:");
-    println!("  • Communication Efficiency: {:?}", analysis.zipf.efficiency);
+    println!(
+        "  • Communication Efficiency: {:?}",
+        analysis.zipf.efficiency
+    );
     println!("  • Rhythm Pattern: {:?}", analysis.prosody.rhythm);
-    println!("  • Atomic Phrases: {} / {} ({:.1}%)",
-             analysis.updated_atomic_phrases.iter().filter(|p| p.is_truly_atomic).count(),
-             analysis.updated_atomic_phrases.len(),
-             analysis.updated_atomic_phrases.iter().filter(|p| p.is_truly_atomic).count() as f64 /
-             analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "  • Atomic Phrases: {} / {} ({:.1}%)",
+        analysis
+            .updated_atomic_phrases
+            .iter()
+            .filter(|p| p.is_truly_atomic)
+            .count(),
+        analysis.updated_atomic_phrases.len(),
+        analysis
+            .updated_atomic_phrases
+            .iter()
+            .filter(|p| p.is_truly_atomic)
+            .count() as f64
+            / analysis.updated_atomic_phrases.len() as f64
+            * 100.0
+    );
     println!();
     println!("Next Steps:");
     println!("  • Run corpus analysis: cargo run --example corpus_analysis_marmoset");
@@ -173,8 +186,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn convert_database_to_pipeline_format(
     phrases_data: &serde_json::Value,
 ) -> Result<
-    (Vec<VocalizationResult>, Vec<ClusteredPhrase>, Vec<AnnotationEntry>),
-    Box<dyn std::error::Error>
+    (
+        Vec<VocalizationResult>,
+        Vec<ClusteredPhrase>,
+        Vec<AnnotationEntry>,
+    ),
+    Box<dyn std::error::Error>,
 > {
     let mut vocalization_results = Vec::new();
     let mut clustered_phrases = Vec::new();
@@ -192,7 +209,9 @@ fn convert_database_to_pipeline_format(
 
             // Extract acoustic features
             let mean_f0 = acoustic_features["mean_f0_hz"].as_f64().unwrap_or(0.0);
-            let duration = acoustic_features["mean_duration_ms"].as_f64().unwrap_or(0.0);
+            let duration = acoustic_features["mean_duration_ms"]
+                .as_f64()
+                .unwrap_or(0.0);
             let f0_range = acoustic_features["f0_range_hz"].as_f64().unwrap_or(0.0);
 
             // Create 56D feature vector (simplified - using available features)
@@ -220,7 +239,9 @@ fn convert_database_to_pipeline_format(
             // Determine primary context
             let primary_context = if let Some(contexts_arr) = contexts.as_array() {
                 if !contexts_arr.is_empty() {
-                    contexts_arr[0]["context_name"].as_str().unwrap_or("unknown")
+                    contexts_arr[0]["context_name"]
+                        .as_str()
+                        .unwrap_or("unknown")
                 } else {
                     "unknown"
                 }
@@ -261,7 +282,8 @@ fn convert_database_to_pipeline_format(
 
                 // Collect context IDs
                 let context_ids: Vec<i32> = if let Some(contexts_arr) = contexts.as_array() {
-                    contexts_arr.iter()
+                    contexts_arr
+                        .iter()
                         .filter_map(|c| {
                             let name = c["context_name"].as_str().unwrap_or("unknown");
                             match name {
@@ -315,7 +337,6 @@ fn display_comprehensive_results(
     analysis: &technical_architecture::LinguisticAnalysis,
     clustered_phrases: &[ClusteredPhrase],
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     // ========================================================================
     // 1. Information Theory: Zipf's Law
     // ========================================================================
@@ -328,7 +349,10 @@ fn display_comprehensive_results(
     println!("Zipf's Law Parameters:");
     println!("  Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("  Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
-    println!("  Total unique phrases: {}", analysis.zipf.phrase_frequencies.len());
+    println!(
+        "  Total unique phrases: {}",
+        analysis.zipf.phrase_frequencies.len()
+    );
     println!();
 
     // Interpretation
@@ -367,7 +391,11 @@ fn display_comprehensive_results(
     // Top 10 phrases by frequency
     println!("Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
+        let freq = analysis
+            .zipf
+            .phrase_frequencies
+            .get(phrase_id)
+            .unwrap_or(&0);
         let rank = i + 1;
 
         // Parse phrase signature
@@ -376,8 +404,10 @@ fn display_comprehensive_results(
                 let f0_part = &start[..end_idx];
                 let dur_part = &start[end_idx + 5..];
 
-                println!("    {:2}. {:20} | freq: {:4} | F0: {:8} Hz | Dur: {:6} ms",
-                         rank, phrase_id, freq, f0_part, dur_part);
+                println!(
+                    "    {:2}. {:20} | freq: {:4} | F0: {:8} Hz | Dur: {:6} ms",
+                    rank, phrase_id, freq, f0_part, dur_part
+                );
             }
         }
     }
@@ -393,8 +423,14 @@ fn display_comprehensive_results(
     println!();
 
     println!("Rhythm Metrics:");
-    println!("  Coefficient of Variation (CV): {:.4}", analysis.prosody.gap_cv);
-    println!("  Mean gap duration: {:.2} ms", analysis.prosody.mean_gap_ms);
+    println!(
+        "  Coefficient of Variation (CV): {:.4}",
+        analysis.prosody.gap_cv
+    );
+    println!(
+        "  Mean gap duration: {:.2} ms",
+        analysis.prosody.mean_gap_ms
+    );
     println!("  Gap std deviation: {:.2} ms", analysis.prosody.gap_std_ms);
     println!();
 
@@ -436,16 +472,34 @@ fn display_comprehensive_results(
     println!();
 
     println!("Transition Analysis:");
-    println!("  Total unique transitions: {}", analysis.phonotactics.transition_matrix.len());
-    println!("  Forbidden/rare transitions: {}", analysis.phonotactics.forbidden_transitions.len());
-    println!("  Mean spectral delta: {:.3}", analysis.phonotactics.mean_spectral_delta);
+    println!(
+        "  Total unique transitions: {}",
+        analysis.phonotactics.transition_matrix.len()
+    );
+    println!(
+        "  Forbidden/rare transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
+    println!(
+        "  Mean spectral delta: {:.3}",
+        analysis.phonotactics.mean_spectral_delta
+    );
     println!();
 
     if !analysis.phonotactics.forbidden_transitions.is_empty() {
         println!("Sample Forbidden Transitions:");
-        for (i, ft) in analysis.phonotactics.forbidden_transitions.iter().take(5).enumerate() {
+        for (i, ft) in analysis
+            .phonotactics
+            .forbidden_transitions
+            .iter()
+            .take(5)
+            .enumerate()
+        {
             println!("  {}. {} → {}", i + 1, ft.from_phrase, ft.to_phrase);
-            println!("     Probability: {:.4} | Reason: {:?}", ft.probability, ft.reason);
+            println!(
+                "     Probability: {:.4} | Reason: {:?}",
+                ft.probability, ft.reason
+            );
         }
         println!();
 
@@ -471,8 +525,14 @@ fn display_comprehensive_results(
 
     println!("Turn-Taking Analysis:");
     println!("  Pattern: {:?}", analysis.pragmatics.pattern);
-    println!("  Overlap count: {}", analysis.pragmatics.overlap_analysis.overlap_count);
-    println!("  Total overlap time: {:.2} ms", analysis.pragmatics.overlap_analysis.total_overlap_ms);
+    println!(
+        "  Overlap count: {}",
+        analysis.pragmatics.overlap_analysis.overlap_count
+    );
+    println!(
+        "  Total overlap time: {:.2} ms",
+        analysis.pragmatics.overlap_analysis.total_overlap_ms
+    );
     println!();
 
     match analysis.pragmatics.pattern {
@@ -508,47 +568,69 @@ fn display_comprehensive_results(
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let phonologically_atomic = analysis.updated_atomic_phrases.iter()
+    let phonologically_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_phonologically_atomic)
         .count();
-    let semantically_atomic = analysis.updated_atomic_phrases.iter()
+    let semantically_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_semantically_atomic)
         .count();
-    let truly_atomic = analysis.updated_atomic_phrases.iter()
+    let truly_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
         .count();
 
     println!("Atomicity Statistics:");
-    println!("  Total phrases analyzed: {}", analysis.updated_atomic_phrases.len());
-    println!("  Phonologically atomic: {} ({:.1}%)",
-             phonologically_atomic,
-             phonologically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
-    println!("  Semantically atomic: {} ({:.1}%)",
-             semantically_atomic,
-             semantically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
-    println!("  Truly atomic (both): {} ({:.1}%)",
-             truly_atomic,
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "  Total phrases analyzed: {}",
+        analysis.updated_atomic_phrases.len()
+    );
+    println!(
+        "  Phonologically atomic: {} ({:.1}%)",
+        phonologically_atomic,
+        phonologically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
+    println!(
+        "  Semantically atomic: {} ({:.1}%)",
+        semantically_atomic,
+        semantically_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
+    println!(
+        "  Truly atomic (both): {} ({:.1}%)",
+        truly_atomic,
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     // Sample truly atomic phrases with detailed info
     println!("Sample of Truly Atomic Phrases:");
-    println!("  {:<30} | {:>6} | {:>6} | {:>6} | {:>8} | {:>6}",
-             "Phrase ID", "Freq", "Intra", "Inter", "Atomic?", "Cluster");
+    println!(
+        "  {:<30} | {:>6} | {:>6} | {:>6} | {:>8} | {:>6}",
+        "Phrase ID", "Freq", "Intra", "Inter", "Atomic?", "Cluster"
+    );
     println!("  {}", "-".repeat(85));
 
-    for phrase in analysis.updated_atomic_phrases.iter()
+    for phrase in analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
-        .take(10) {
+        .take(10)
+    {
         let atomic_status = if phrase.is_truly_atomic { "✓" } else { "✗" };
 
-        println!("  {:<30} | {:>6} | {:>6.2} | {:>6.2} | {:>8} | {:>6}",
-                 phrase.phrase_id,
-                 phrase.frequency,
-                 phrase.intra_cluster_similarity,
-                 phrase.inter_cluster_similarity,
-                 atomic_status,
-                 phrase.cluster_id);
+        println!(
+            "  {:<30} | {:>6} | {:>6.2} | {:>6.2} | {:>8} | {:>6}",
+            phrase.phrase_id,
+            phrase.frequency,
+            phrase.intra_cluster_similarity,
+            phrase.inter_cluster_similarity,
+            atomic_status,
+            phrase.cluster_id
+        );
     }
     println!();
 
@@ -565,7 +647,10 @@ fn display_comprehensive_results(
     println!();
     println!("1. Information Theory (Zipf's Law):");
     println!("   → Efficiency: {:?}", analysis.zipf.efficiency);
-    println!("   → Slope (α): {:.4} (human optimal ≈ -1.0)", analysis.zipf.slope_alpha);
+    println!(
+        "   → Slope (α): {:.4} (human optimal ≈ -1.0)",
+        analysis.zipf.slope_alpha
+    );
     println!("   → Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
     println!();
 
@@ -576,15 +661,20 @@ fn display_comprehensive_results(
     println!();
 
     println!("3. Phonotactics:");
-    println!("   → Forbidden transitions: {}", analysis.phonotactics.forbidden_transitions.len());
-    println!("   → Production flexibility: {}",
-             if analysis.phonotactics.forbidden_transitions.len() < 10 {
-                 "HIGH"
-             } else if analysis.phonotactics.forbidden_transitions.len() < 50 {
-                 "MODERATE"
-             } else {
-                 "CONSTRAINED"
-             });
+    println!(
+        "   → Forbidden transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
+    println!(
+        "   → Production flexibility: {}",
+        if analysis.phonotactics.forbidden_transitions.len() < 10 {
+            "HIGH"
+        } else if analysis.phonotactics.forbidden_transitions.len() < 50 {
+            "MODERATE"
+        } else {
+            "CONSTRAINED"
+        }
+    );
     println!();
 
     println!("4. Pragmatics:");
@@ -593,8 +683,10 @@ fn display_comprehensive_results(
 
     println!("5. Atomicity:");
     println!("   → True vocabulary: {} phrases", truly_atomic);
-    println!("   → Compositionality: {:.1}%",
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "   → Compositionality: {:.1}%",
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     println!("═══════════════════════════════════════════════════════════════════════════");
@@ -642,7 +734,9 @@ fn export_corpus_analysis_data(
         let phrase_key = cp.phrase.phrase_id.clone();
 
         phrase_to_cluster.insert(phrase_key.clone(), cluster_id);
-        cluster_to_phrase.entry(cluster_id).or_insert_with(|| phrase_key.clone());
+        cluster_to_phrase
+            .entry(cluster_id)
+            .or_insert_with(|| phrase_key.clone());
         clusters.entry(cluster_id).or_default().push(cp);
     }
 
@@ -656,10 +750,14 @@ fn export_corpus_analysis_data(
         let context = cp.phrase.context.clone();
 
         // Add phrases to context-based sessions
-        context_sessions.entry(context.clone()).or_default().push(cluster_id);
+        context_sessions
+            .entry(context.clone())
+            .or_default()
+            .push(cluster_id);
 
         // Add multiple occurrences based on phrase frequency
-        let freq = clustered_phrases.iter()
+        let freq = clustered_phrases
+            .iter()
             .filter(|p| p.cluster_id == cp.cluster_id)
             .count();
 
@@ -670,9 +768,7 @@ fn export_corpus_analysis_data(
     }
 
     // Convert to session format (Vec<Vec<usize>>)
-    let mut sessions: Vec<Vec<usize>> = context_sessions.values()
-        .map(|v| v.clone())
-        .collect();
+    let mut sessions: Vec<Vec<usize>> = context_sessions.values().map(|v| v.clone()).collect();
 
     // Ensure we have enough sessions for meaningful analysis
     // If we have too few sessions, split them into smaller sessions
@@ -691,7 +787,8 @@ fn export_corpus_analysis_data(
     }
 
     // Also add some mixed sessions with phrases from different contexts
-    let all_cluster_ids: Vec<usize> = clustered_phrases.iter()
+    let all_cluster_ids: Vec<usize> = clustered_phrases
+        .iter()
         .map(|cp| cp.cluster_id as usize)
         .collect();
 
@@ -729,13 +826,20 @@ fn export_corpus_analysis_data(
 
     println!("✅ Corpus analysis data exported");
     println!("   Sessions: {}", sessions.len());
-    println!("   Total phrases: {}", sessions.iter().map(|s| s.len()).sum::<usize>());
+    println!(
+        "   Total phrases: {}",
+        sessions.iter().map(|s| s.len()).sum::<usize>()
+    );
     println!("   Vocabulary size: {}", cluster_to_phrase.len());
     println!("   Output: {}", corpus_path);
 
     // Calculate and display corpus statistics
     let total_phrases: usize = sessions.iter().map(|s| s.len()).sum();
-    let avg_session_len = if sessions.is_empty() { 0.0 } else { total_phrases as f64 / sessions.len() as f64 };
+    let avg_session_len = if sessions.is_empty() {
+        0.0
+    } else {
+        total_phrases as f64 / sessions.len() as f64
+    };
 
     println!();
     println!("Corpus Statistics:");
@@ -766,7 +870,13 @@ fn export_corpus_analysis_data(
             } else {
                 phrase_key.clone()
             };
-            println!("    {:2}. Cluster {:>4}: {} occurrences | {}", i + 1, cluster_id, count, f0_display);
+            println!(
+                "    {:2}. Cluster {:>4}: {} occurrences | {}",
+                i + 1,
+                cluster_id,
+                count,
+                f0_display
+            );
         }
     }
 

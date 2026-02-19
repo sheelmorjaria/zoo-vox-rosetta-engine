@@ -8,22 +8,23 @@
 //
 // Performance: ~5-10x faster than naive DFT implementation
 
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::Instant;
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
 
 use anyhow::Result;
+use ndarray::Array2;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use ndarray::Array2;
 
 use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,  // Uses proper FFT!
+    AcousticSimilarityEngine,
+    SimilarityMetric,
+    ZooVoxFeatureExtractor, // Uses proper FFT!
 };
 
 // ============================================================================
@@ -95,14 +96,14 @@ struct GlobalAssessment {
 // Parallel Feature Extraction using Library's FFT-based Extractor
 // ============================================================================
 
-fn extract_features_parallel(
-    manifest: &Manifest,
-    base_path: &Path,
-) -> Vec<ExtractedFeatures> {
+fn extract_features_parallel(manifest: &Manifest, base_path: &Path) -> Vec<ExtractedFeatures> {
     let n_samples = manifest.samples.len();
     let sample_rate = manifest.resample_rate;
 
-    println!("Extracting {} samples using FFT-based ZooVoxFeatureExtractor...", n_samples);
+    println!(
+        "Extracting {} samples using FFT-based ZooVoxFeatureExtractor...",
+        n_samples
+    );
     println!("  (Parallel with {} threads)", rayon::current_num_threads());
     println!();
 
@@ -110,7 +111,8 @@ fn extract_features_parallel(
     let failed = Arc::new(AtomicUsize::new(0));
     let start_time = Instant::now();
 
-    let all_features: Vec<ExtractedFeatures> = manifest.samples
+    let all_features: Vec<ExtractedFeatures> = manifest
+        .samples
         .par_iter()
         .filter_map(|sample| {
             // Create extractor for this thread (uses proper FFT)
@@ -162,7 +164,10 @@ fn extract_features_parallel(
     let n_failed = failed.load(Ordering::Relaxed);
     let throughput = n_processed as f64 / elapsed.as_secs_f64();
 
-    println!("\r  Progress: {}/{} samples processed", n_processed, n_samples);
+    println!(
+        "\r  Progress: {}/{} samples processed",
+        n_processed, n_samples
+    );
     println!();
     println!("Extraction complete:");
     println!("  ├─ Processed: {} samples", n_processed);
@@ -250,7 +255,9 @@ fn build_global_types_streaming(
         if let Some(type_idx) = best_type {
             let n_in_type = types[type_idx].count + 1;
             types[type_idx].count = n_in_type;
-            types[type_idx].sample_ids.push(features[i].sample_id.clone());
+            types[type_idx]
+                .sample_ids
+                .push(features[i].sample_id.clone());
 
             for (j, val) in features[i].features.iter().enumerate().take(FEATURE_DIM) {
                 types[type_idx].centroid[j] +=
@@ -313,10 +320,15 @@ fn compute_statistics(
 
     let total: usize = types.iter().map(|t| t.count).sum();
     let entropy = if total > 0 {
-        types.iter()
+        types
+            .iter()
             .map(|t| {
                 let p = t.count as f64 / total as f64;
-                if p > 0.0 { -p * p.log2() } else { 0.0 }
+                if p > 0.0 {
+                    -p * p.log2()
+                } else {
+                    0.0
+                }
             })
             .sum()
     } else {
@@ -340,7 +352,9 @@ fn compute_statistics(
     let mut intra_count = 0;
 
     for t in types.iter().take(50) {
-        if t.count < 2 { continue; }
+        if t.count < 2 {
+            continue;
+        }
 
         let centroid = ndarray::Array1::from_vec(t.centroid.clone());
 
@@ -353,13 +367,17 @@ fn compute_statistics(
         }
     }
 
-    let avg_intra = if intra_count > 0 { intra_sim / intra_count as f64 } else { 0.0 };
+    let avg_intra = if intra_count > 0 {
+        intra_sim / intra_count as f64
+    } else {
+        0.0
+    };
 
     let mut inter_dist = 0.0;
     let mut inter_count = 0;
 
     for i in 0..types.len().min(50) {
-        for j in (i+1)..types.len().min(50) {
+        for j in (i + 1)..types.len().min(50) {
             let a = ndarray::Array1::from_vec(types[i].centroid.clone());
             let b = ndarray::Array1::from_vec(types[j].centroid.clone());
             inter_dist += engine.distance(&a, &b);
@@ -367,7 +385,11 @@ fn compute_statistics(
         }
     }
 
-    let avg_inter = if inter_count > 0 { inter_dist / inter_count as f64 } else { 0.0 };
+    let avg_inter = if inter_count > 0 {
+        inter_dist / inter_count as f64
+    } else {
+        0.0
+    };
 
     let separation = if avg_intra > 0.0 && avg_intra < 1.0 {
         avg_inter / (1.0 - avg_intra)
@@ -379,8 +401,14 @@ fn compute_statistics(
 }
 
 fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
-    let labels: Vec<String> = features.iter()
-        .map(|f| f.labels.get("source_dataset").cloned().unwrap_or_else(|| "unknown".to_string()))
+    let labels: Vec<String> = features
+        .iter()
+        .map(|f| {
+            f.labels
+                .get("source_dataset")
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string())
+        })
         .collect();
 
     let n = features.len();
@@ -399,7 +427,10 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
         m
     };
 
-    let eval_labels: Vec<String> = eval_indices.iter().map(|&idx| labels[idx].clone()).collect();
+    let eval_labels: Vec<String> = eval_indices
+        .iter()
+        .map(|&idx| labels[idx].clone())
+        .collect();
 
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     engine.fit_normalization(&eval_features);
@@ -412,7 +443,11 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
 
     for fold in 0..n_folds {
         let test_start = fold * fold_size;
-        let test_end = if fold == n_folds - 1 { eval_size } else { (fold + 1) * fold_size };
+        let test_end = if fold == n_folds - 1 {
+            eval_size
+        } else {
+            (fold + 1) * fold_size
+        };
 
         for i in test_start..test_end {
             let query = eval_features.row(i).to_owned();
@@ -434,7 +469,8 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
                 *votes.entry(label.clone()).or_insert(0) += 1;
             }
 
-            let predicted = votes.into_iter()
+            let predicted = votes
+                .into_iter()
                 .max_by_key(|(_, count)| *count)
                 .map(|(label, _)| label)
                 .unwrap_or_else(|| "unknown".to_string());
@@ -455,7 +491,9 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
     (accuracy, K_NEIGHBORS)
 }
 
-fn analyze_labels(features: &[ExtractedFeatures]) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn analyze_labels(
+    features: &[ExtractedFeatures],
+) -> (HashMap<String, usize>, HashMap<String, usize>) {
     let mut source_datasets = HashMap::new();
     let mut task_types = HashMap::new();
 
@@ -508,7 +546,10 @@ fn main() -> Result<()> {
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
     println!("  ├─ Similarity Threshold: {:.2}", SIMILARITY_THRESHOLD);
     println!("  ├─ k-NN Neighbors: {}", K_NEIGHBORS);
-    println!("  ├─ Parallel: Rayon with {} threads", rayon::current_num_threads());
+    println!(
+        "  ├─ Parallel: Rayon with {} threads",
+        rayon::current_num_threads()
+    );
     println!("  └─ Feature Extraction: ZooVoxFeatureExtractor (FFT-based)");
     println!();
 
@@ -555,7 +596,13 @@ fn main() -> Result<()> {
 
     println!("Top 10 Types:");
     for (i, t) in global_types.iter().take(10).enumerate() {
-        println!("  {:2}. {} - {} samples, dist: {:.4}", i + 1, t.type_id, t.count, t.avg_distance_to_centroid);
+        println!(
+            "  {:2}. {} - {} samples, dist: {:.4}",
+            i + 1,
+            t.type_id,
+            t.count,
+            t.avg_distance_to_centroid
+        );
     }
     println!();
 
@@ -624,19 +671,33 @@ fn main() -> Result<()> {
     println!();
 
     println!("Performance:");
-    println!("  ├─ Total time: {:.1}s ({:.1} min)", assessment.total_time_sec, assessment.total_time_sec / 60.0);
-    println!("  └─ Throughput: {:.1} samples/sec", assessment.throughput_samples_per_sec);
+    println!(
+        "  ├─ Total time: {:.1}s ({:.1} min)",
+        assessment.total_time_sec,
+        assessment.total_time_sec / 60.0
+    );
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        assessment.throughput_samples_per_sec
+    );
     println!();
 
     println!("Type Discovery:");
     println!("  ├─ Types: {}", assessment.global_types);
     println!("  ├─ Entropy: {:.3} bits", assessment.type_entropy);
-    println!("  ├─ Intra-sim: {:.4}", assessment.avg_intra_type_similarity);
+    println!(
+        "  ├─ Intra-sim: {:.4}",
+        assessment.avg_intra_type_similarity
+    );
     println!("  ├─ Inter-dist: {:.4}", assessment.avg_inter_type_distance);
     println!("  └─ Separation: {:.2}x", assessment.separation_ratio);
     println!();
 
-    println!("Classification: {}-NN @ {:.1}%", assessment.knn_best_k, assessment.knn_accuracy * 100.0);
+    println!(
+        "Classification: {}-NN @ {:.1}%",
+        assessment.knn_best_k,
+        assessment.knn_accuracy * 100.0
+    );
 
     let competence = if assessment.knn_accuracy > 0.8 && assessment.separation_ratio > 2.0 {
         "EXCELLENT"

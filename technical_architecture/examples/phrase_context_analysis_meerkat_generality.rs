@@ -147,14 +147,18 @@ fn get_label_meanings() -> HashMap<String, String> {
 // Loading Functions
 // ============================================================================
 
-fn load_within_call_results(path: &Path) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
+fn load_within_call_results(
+    path: &Path,
+) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let results: Vec<WithinCallAnalysis> = serde_json::from_reader(reader)?;
     Ok(results)
 }
 
-fn load_hdf5_labels(labels_dir: &Path) -> Result<HashMap<String, FileLabel>, Box<dyn std::error::Error>> {
+fn load_hdf5_labels(
+    labels_dir: &Path,
+) -> Result<HashMap<String, FileLabel>, Box<dyn std::error::Error>> {
     // Use external Python to read HDF5 since Rust HDF5 support is limited
     // We'll parse the output from a Python script
 
@@ -411,17 +415,23 @@ fn run_permutation_test(
     n_contexts: usize,
 ) -> PermutationTestResult {
     // Calculate observed mean generality
-    let observed_generalities: Vec<f64> = pcm.matrix.values()
+    let observed_generalities: Vec<f64> = pcm
+        .matrix
+        .values()
         .map(|ctx_counts| ctx_counts.len() as f64 / n_contexts as f64)
         .collect();
-    let observed_mean = observed_generalities.iter().sum::<f64>() / observed_generalities.len() as f64;
+    let observed_mean =
+        observed_generalities.iter().sum::<f64>() / observed_generalities.len() as f64;
 
     // Collect all context assignments
-    let all_contexts: Vec<String> = pcm.matrix.values()
+    let all_contexts: Vec<String> = pcm
+        .matrix
+        .values()
         .flat_map(|ctx_counts| {
-            ctx_counts.iter().flat_map(|(ctx, &count)| {
-                std::iter::repeat(ctx.clone()).take(count)
-            }).collect::<Vec<_>>()
+            ctx_counts
+                .iter()
+                .flat_map(|(ctx, &count)| std::iter::repeat(ctx.clone()).take(count))
+                .collect::<Vec<_>>()
         })
         .collect();
 
@@ -453,11 +463,16 @@ fn run_permutation_test(
     }
 
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_var: f64 = null_means.iter().map(|x| (x - null_mean).powi(2)).sum::<f64>() / null_means.len() as f64;
+    let null_var: f64 = null_means
+        .iter()
+        .map(|x| (x - null_mean).powi(2))
+        .sum::<f64>()
+        / null_means.len() as f64;
     let null_std = null_var.sqrt();
 
     let z_score = (observed_mean - null_mean) / null_std.max(1e-10);
-    let p_value = null_means.iter().filter(|&&x| x >= observed_mean).count() as f64 / n_permutations as f64;
+    let p_value =
+        null_means.iter().filter(|&&x| x >= observed_mean).count() as f64 / n_permutations as f64;
 
     PermutationTestResult {
         observed_mean_generality: observed_mean,
@@ -585,8 +600,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let label_meanings = get_label_meanings();
     for (ctx, count) in context_vec.iter() {
         let meaning = label_meanings.get(*ctx).unwrap_or(ctx);
-        println!("      {} ({}): {} observations ({:.1}%)",
-                 ctx, meaning, count, **count as f64 / total_obs as f64 * 100.0);
+        println!(
+            "      {} ({}): {} observations ({:.1}%)",
+            ctx,
+            meaning,
+            count,
+            **count as f64 / total_obs as f64 * 100.0
+        );
     }
     println!();
 
@@ -617,11 +637,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      ┌────────────────────────────┬──────────┬──────────┐");
     println!("      │ Type                       │ Count    │ Percentage│");
     println!("      ├────────────────────────────┼──────────┼──────────┤");
-    println!("      │ Universal Generalist       │ {:8} │ {:8.1}%│", type_counts.0, type_counts.0 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Generalist                 │ {:8} │ {:8.1}%│", type_counts.1, type_counts.1 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Flexible Specialist        │ {:8} │ {:8.1}%│", type_counts.2, type_counts.2 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Context Specialist         │ {:8} │ {:8.1}%│", type_counts.3, type_counts.3 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Highly Specific            │ {:8} │ {:8.1}%│", type_counts.4, type_counts.4 as f64 / metrics.len() as f64 * 100.0);
+    println!(
+        "      │ Universal Generalist       │ {:8} │ {:8.1}%│",
+        type_counts.0,
+        type_counts.0 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Generalist                 │ {:8} │ {:8.1}%│",
+        type_counts.1,
+        type_counts.1 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Flexible Specialist        │ {:8} │ {:8.1}%│",
+        type_counts.2,
+        type_counts.2 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Context Specialist         │ {:8} │ {:8.1}%│",
+        type_counts.3,
+        type_counts.3 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Highly Specific            │ {:8} │ {:8.1}%│",
+        type_counts.4,
+        type_counts.4 as f64 / metrics.len() as f64 * 100.0
+    );
     println!("      └────────────────────────────┴──────────┴──────────┘");
     println!();
 
@@ -633,13 +673,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for m in metrics.iter().take(10) {
         let mut ctx_vec: Vec<_> = m.context_distribution.iter().collect();
         ctx_vec.sort_by(|a, b| b.1.cmp(a.1));
-        let ctx_str: String = ctx_vec.iter()
+        let ctx_str: String = ctx_vec
+            .iter()
             .take(3)
             .map(|(k, v)| format!("{}:{}", k, v))
             .collect::<Vec<_>>()
             .join(", ");
-        println!("      │ {:7} │ {:10.3} │ {:9} │ {:30} │",
-                 m.phrase_id, m.generality_score, m.total_occurrences, ctx_str);
+        println!(
+            "      │ {:7} │ {:10.3} │ {:9} │ {:30} │",
+            m.phrase_id, m.generality_score, m.total_occurrences, ctx_str
+        );
     }
     println!("      └─────────┴────────────┴───────────┴────────────────────────────────┘");
     println!();
@@ -661,12 +704,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     println!("   ✅ Permutation Test Results:");
-    println!("      ├─ Observed mean generality: {:.4}", perm_result.observed_mean_generality);
-    println!("      ├─ Null mean generality:      {:.4} ± {:.4}",
-             perm_result.null_mean_generality, perm_result.null_std_generality);
-    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
-    println!("      ├─ P-value:                   {:.4}", perm_result.p_value);
-    println!("      └─ Significant:               {}", if perm_result.significant { "YES ✓" } else { "NO ✗" });
+    println!(
+        "      ├─ Observed mean generality: {:.4}",
+        perm_result.observed_mean_generality
+    );
+    println!(
+        "      ├─ Null mean generality:      {:.4} ± {:.4}",
+        perm_result.null_mean_generality, perm_result.null_std_generality
+    );
+    println!(
+        "      ├─ Z-score:                   {:.4}",
+        perm_result.z_score
+    );
+    println!(
+        "      ├─ P-value:                   {:.4}",
+        perm_result.p_value
+    );
+    println!(
+        "      └─ Significant:               {}",
+        if perm_result.significant {
+            "YES ✓"
+        } else {
+            "NO ✗"
+        }
+    );
     println!();
 
     // ========================================================================
@@ -682,7 +743,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let std_generality = {
         let mean = mean_generality;
-        let var: f64 = generality_scores.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / generality_scores.len() as f64;
+        let var: f64 = generality_scores
+            .iter()
+            .map(|x| (x - mean).powi(2))
+            .sum::<f64>()
+            / generality_scores.len() as f64;
         var.sqrt()
     };
 
@@ -715,10 +780,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Key Metrics:");
     println!("      ├─ Mean Generality Score:    {:.3}", mean_generality);
-    println!("      ├─ Median Generality Score:  {:.3}", median_generality);
+    println!(
+        "      ├─ Median Generality Score:  {:.3}",
+        median_generality
+    );
     println!("      ├─ General Phrases:          {:.1}%", pct_general);
     println!("      ├─ Specific Phrases:         {:.1}%", pct_specific);
-    println!("      └─ Permutation p-value:      {:.4}", perm_result.p_value);
+    println!(
+        "      └─ Permutation p-value:      {:.4}",
+        perm_result.p_value
+    );
     println!();
 
     if pct_general > 20.0 && perm_result.significant {
@@ -778,7 +849,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (ptype, ctx_counts) in &pcm.matrix {
         let total = pcm.phrase_totals.get(ptype).copied().unwrap_or(0);
         let gen = ctx_counts.len() as f64 / n_contexts as f64;
-        let ctx_str: String = ctx_counts.iter()
+        let ctx_str: String = ctx_counts
+            .iter()
             .map(|(k, v)| format!("{}:{}", k, v))
             .collect::<Vec<_>>()
             .join(";");
@@ -790,7 +862,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let elapsed = start_time.elapsed();
     println!();
     println!("╔═══════════════════════════════════════════════════════════════╗");
-    println!("║ ANALYSIS COMPLETE ({:.1?})                                      ║", elapsed);
+    println!(
+        "║ ANALYSIS COMPLETE ({:.1?})                                      ║",
+        elapsed
+    );
     println!("╚═════════════════════════════════════════════════════════════════╝");
 
     Ok(())

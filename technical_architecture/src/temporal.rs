@@ -78,7 +78,8 @@ impl RhythmicStabilityCalculator {
         }
 
         // Calculate inter-onset intervals (in samples)
-        let iois: Vec<f32> = onsets.windows(2)
+        let iois: Vec<f32> = onsets
+            .windows(2)
             .map(|pair| (pair[1] - pair[0]) as f32)
             .collect();
 
@@ -89,9 +90,11 @@ impl RhythmicStabilityCalculator {
             return 0.0;
         }
 
-        let variance = iois.iter()
+        let variance = iois
+            .iter()
             .map(|&ioi| (ioi - mean_ioi).powi(2))
-            .sum::<f32>() / iois.len() as f32;
+            .sum::<f32>()
+            / iois.len() as f32;
 
         let std_ioi = variance.sqrt();
 
@@ -127,7 +130,8 @@ impl RhythmicStabilityCalculator {
 
             if let Some(prev) = &prev_spectrum {
                 // Calculate spectral flux (sum of positive differences)
-                let flux = spectrum.iter()
+                let flux = spectrum
+                    .iter()
                     .zip(prev.iter())
                     .map(|(&curr, &prev)| (curr - prev).max(0.0))
                     .sum::<f32>();
@@ -170,7 +174,8 @@ impl RhythmicStabilityCalculator {
         }
 
         // Apply Hann window
-        let windowed: Vec<f32> = frame.iter()
+        let windowed: Vec<f32> = frame
+            .iter()
             .enumerate()
             .map(|(i, &x)| {
                 let window = 0.5 * (1.0 - (2.0 * PI * i as f32 / (n - 1) as f32).cos());
@@ -219,7 +224,10 @@ impl RhythmicStabilityCalculator {
         }
 
         // Return magnitude (only positive frequencies)
-        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
+        complex[..n / 2]
+            .iter()
+            .map(|&(r, i)| (r * r + i * i).sqrt())
+            .collect()
     }
 }
 
@@ -316,7 +324,10 @@ mod tests {
         let clicks = generate_irregular_clicks(48000, 10, 0.5);
         let stability = calculator.calculate(&clicks);
         // Irregular clicks should have lower stability
-        assert!(stability < 0.7, "Irregular clicks should have lower stability");
+        assert!(
+            stability < 0.7,
+            "Irregular clicks should have lower stability"
+        );
     }
 
     #[test]
@@ -355,7 +366,11 @@ mod tests {
         let trill: Vec<f32> = (0..num_samples)
             .map(|i| {
                 let t = i as f32 / sample_rate as f32;
-                let freq = if (i / (sample_rate as usize / 20)) % 2 == 0 { 440.0 } else { 880.0 };
+                let freq = if (i / (sample_rate as usize / 20)) % 2 == 0 {
+                    440.0
+                } else {
+                    880.0
+                };
                 (2.0 * PI * freq * t).sin()
             })
             .collect();
@@ -377,7 +392,10 @@ mod tests {
     fn test_rhythmic_stability_range() {
         let calculator = RhythmicStabilityCalculator::default();
         // Test with various inputs
-        for &test in &[&[0.0f32; 4800][..], &generate_sine_wave(1000.0, 48000, 0.1)[..]] {
+        for &test in &[
+            &[0.0f32; 4800][..],
+            &generate_sine_wave(1000.0, 48000, 0.1)[..],
+        ] {
             let stability = calculator.calculate(test);
             assert!(stability >= 0.0 && stability <= 1.0);
         }
@@ -479,7 +497,10 @@ fn generate_irregular_clicks(sample_rate: u32, num_clicks: usize, duration_sec: 
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
 
-    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
     let mut rng: u32 = seed;
 
     for _ in 0..num_clicks {

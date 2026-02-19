@@ -107,10 +107,10 @@ pub struct AnnotationAlignerConfig {
 impl Default for AnnotationAlignerConfig {
     fn default() -> Self {
         Self {
-            overlap_threshold: 0.3,  // 30% overlap required
-            min_overlap_ms: 10.0,    // At least 10ms overlap
-            use_iou: true,           // Use Intersection over Union
-            annotation_weight: 0.3,  // 30% weight to annotation confidence
+            overlap_threshold: 0.3, // 30% overlap required
+            min_overlap_ms: 10.0,   // At least 10ms overlap
+            use_iou: true,          // Use Intersection over Union
+            annotation_weight: 0.3, // 30% weight to annotation confidence
         }
     }
 }
@@ -151,19 +151,24 @@ impl AnnotationAligner {
                 // Calculate overlap (IoU or simple ratio)
                 let overlap = if self.config.use_iou {
                     Self::calculate_iou(
-                        candidate.start_ms, candidate.end_ms,
-                        annotation.start_ms, annotation.end_ms,
+                        candidate.start_ms,
+                        candidate.end_ms,
+                        annotation.start_ms,
+                        annotation.end_ms,
                     )
                 } else {
                     Self::calculate_overlap_ratio(
-                        candidate.start_ms, candidate.end_ms,
-                        annotation.start_ms, annotation.end_ms,
+                        candidate.start_ms,
+                        candidate.end_ms,
+                        annotation.start_ms,
+                        annotation.end_ms,
                     )
                 };
 
                 // Check if overlap meets thresholds
                 let overlap_ms = (candidate.end_ms.min(annotation.end_ms)
-                    - candidate.start_ms.max(annotation.start_ms)).max(0.0);
+                    - candidate.start_ms.max(annotation.start_ms))
+                .max(0.0);
 
                 if overlap >= self.config.overlap_threshold
                     && overlap_ms >= self.config.min_overlap_ms
@@ -217,14 +222,22 @@ impl AnnotationAligner {
     fn calculate_iou(s1: f32, e1: f32, s2: f32, e2: f32) -> f32 {
         let intersection = (e1.min(e2) - s1.max(s2)).max(0.0);
         let union = (e1 - s1) + (e2 - s2) - intersection;
-        if union <= 0.0 { 0.0 } else { intersection / union }
+        if union <= 0.0 {
+            0.0
+        } else {
+            intersection / union
+        }
     }
 
     /// Calculate simple overlap ratio (intersection / candidate duration)
     fn calculate_overlap_ratio(s1: f32, e1: f32, s2: f32, e2: f32) -> f32 {
         let intersection = (e1.min(e2) - s1.max(s2)).max(0.0);
         let candidate_duration = e1 - s1;
-        if candidate_duration <= 0.0 { 0.0 } else { intersection / candidate_duration }
+        if candidate_duration <= 0.0 {
+            0.0
+        } else {
+            intersection / candidate_duration
+        }
     }
 
     /// Parse annotations from various file formats
@@ -252,9 +265,11 @@ impl AnnotationAligner {
         for line in lines {
             let fields: Vec<&str> = line.split('\t').collect();
             if fields.len() >= 5 {
-                let start_s: f32 = fields[3].parse()
+                let start_s: f32 = fields[3]
+                    .parse()
                     .map_err(|_| AnnotationParseError::ParseError("Invalid start time".into()))?;
-                let end_s: f32 = fields[4].parse()
+                let end_s: f32 = fields[4]
+                    .parse()
                     .map_err(|_| AnnotationParseError::ParseError("Invalid end time".into()))?;
 
                 annotations.push(HumanAnnotation {
@@ -278,9 +293,11 @@ impl AnnotationAligner {
         for line in content.lines() {
             let fields: Vec<&str> = line.split('\t').collect();
             if fields.len() >= 3 {
-                let start_s: f32 = fields[0].parse()
+                let start_s: f32 = fields[0]
+                    .parse()
                     .map_err(|_| AnnotationParseError::ParseError("Invalid start time".into()))?;
-                let end_s: f32 = fields[1].parse()
+                let end_s: f32 = fields[1]
+                    .parse()
                     .map_err(|_| AnnotationParseError::ParseError("Invalid end time".into()))?;
 
                 // Parse label and optional context (format: "label|context")
@@ -315,7 +332,11 @@ impl AnnotationAligner {
         let first_fields: Vec<&str> = first_line.split(',').collect();
 
         // Check if first line is header
-        let start_idx = if first_fields[0].parse::<f32>().is_err() { 1 } else { 0 };
+        let start_idx = if first_fields[0].parse::<f32>().is_err() {
+            1
+        } else {
+            0
+        };
 
         // Process first line if it wasn't a header
         if start_idx == 0 {
@@ -339,20 +360,27 @@ impl AnnotationAligner {
             return Err(AnnotationParseError::ParseError("Not enough fields".into()));
         }
 
-        let start: f32 = fields[0].parse()
+        let start: f32 = fields[0]
+            .parse()
             .map_err(|_| AnnotationParseError::ParseError("Invalid start time".into()))?;
-        let end: f32 = fields[1].parse()
+        let end: f32 = fields[1]
+            .parse()
             .map_err(|_| AnnotationParseError::ParseError("Invalid end time".into()))?;
 
         Ok(HumanAnnotation {
             start_ms: start,
             end_ms: end,
             label: fields[2].trim().to_string(),
-            context: fields.get(3).map(|s| s.trim().to_string()).unwrap_or_default(),
-            confidence: fields.get(4)
+            context: fields
+                .get(3)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_default(),
+            confidence: fields
+                .get(4)
                 .and_then(|s| s.trim().parse().ok())
                 .unwrap_or(1.0),
-            annotator_id: fields.get(5)
+            annotator_id: fields
+                .get(5)
                 .map(|s| s.trim().to_string())
                 .unwrap_or_default(),
         })
@@ -511,9 +539,9 @@ impl SemanticPhraseDictionary {
 
             // Accumulate features for centroid
             if *candidate_idx < features.len() {
-                let sum = type_feature_sums.entry(type_id.clone()).or_insert_with(|| {
-                    vec![0.0; features[*candidate_idx].len()]
-                });
+                let sum = type_feature_sums
+                    .entry(type_id.clone())
+                    .or_insert_with(|| vec![0.0; features[*candidate_idx].len()]);
                 for (i, &f) in features[*candidate_idx].iter().enumerate() {
                     sum[i] += f;
                 }
@@ -522,14 +550,16 @@ impl SemanticPhraseDictionary {
         }
 
         // Convert counts to probabilities
-        let all_labels: std::collections::HashSet<_> = label_counts.values()
+        let all_labels: std::collections::HashSet<_> = label_counts
+            .values()
             .flat_map(|m| m.keys().cloned())
             .collect();
 
         for (type_id, counts) in &label_counts {
             let total: usize = counts.values().sum();
             if total > 0 {
-                let probs: HashMap<String, f32> = counts.iter()
+                let probs: HashMap<String, f32> = counts
+                    .iter()
                     .map(|(label, &count)| (label.clone(), count as f32 / total as f32))
                     .collect();
                 dict.type_to_labels.insert(type_id.clone(), probs);
@@ -539,7 +569,8 @@ impl SemanticPhraseDictionary {
         for (type_id, counts) in &context_counts {
             let total: usize = counts.values().sum();
             if total > 0 {
-                let probs: HashMap<String, f32> = counts.iter()
+                let probs: HashMap<String, f32> = counts
+                    .iter()
                     .map(|(ctx, &count)| (ctx.clone(), count as f32 / total as f32))
                     .collect();
                 dict.type_to_contexts.insert(type_id.clone(), probs);
@@ -550,9 +581,7 @@ impl SemanticPhraseDictionary {
         for (type_id, sum) in type_feature_sums {
             if let Some(&count) = type_counts.get(&type_id) {
                 if count > 0 {
-                    let centroid: Vec<f32> = sum.iter()
-                        .map(|&s| s / count as f32)
-                        .collect();
+                    let centroid: Vec<f32> = sum.iter().map(|&s| s / count as f32).collect();
                     dict.type_centroids.insert(type_id, centroid);
                 }
             }
@@ -576,13 +605,12 @@ impl SemanticPhraseDictionary {
 
     /// Get the most likely label for a phrase type
     pub fn get_primary_label(&self, type_id: &str) -> Option<(&String, f32)> {
-        self.type_to_labels
-            .get(type_id)
-            .and_then(|labels| {
-                labels.iter()
-                    .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
-                    .map(|(k, &v)| (k, v))
-            })
+        self.type_to_labels.get(type_id).and_then(|labels| {
+            labels
+                .iter()
+                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                .map(|(k, &v)| (k, v))
+        })
     }
 
     /// Get all types associated with a semantic label
@@ -592,11 +620,14 @@ impl SemanticPhraseDictionary {
 
     /// Get semantic description for a type (human-readable)
     pub fn describe_type(&self, type_id: &str) -> String {
-        let label_part = self.get_primary_label(type_id)
+        let label_part = self
+            .get_primary_label(type_id)
             .map(|(l, p)| format!("{} ({:.0}%)", l, p * 100.0))
             .unwrap_or_else(|| "Unknown".to_string());
 
-        let context_part = self.type_to_contexts.get(type_id)
+        let context_part = self
+            .type_to_contexts
+            .get(type_id)
             .and_then(|ctxs| {
                 ctxs.iter()
                     .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
@@ -691,7 +722,9 @@ mod tests {
         let aligner = AnnotationAligner::new();
         let content = "0.0\t1.0\tSong|Territory\n1.5\t2.5\tAlarm|Predator\n";
 
-        let annotations = aligner.parse_annotations(content, AnnotationFormat::Audacity).unwrap();
+        let annotations = aligner
+            .parse_annotations(content, AnnotationFormat::Audacity)
+            .unwrap();
 
         assert_eq!(annotations.len(), 2);
         assert_eq!(annotations[0].label, "Song");

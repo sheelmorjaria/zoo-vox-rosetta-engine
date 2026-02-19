@@ -153,9 +153,13 @@ impl From<GrainEnvelopeType> for GrainEnvelope {
     fn from(env: GrainEnvelopeType) -> Self {
         match env {
             GrainEnvelopeType::None => GrainEnvelope::None,
-            GrainEnvelopeType::Linear { fade_in_ms, fade_out_ms } => {
-                GrainEnvelope::Linear { fade_in_ms, fade_out_ms }
-            }
+            GrainEnvelopeType::Linear {
+                fade_in_ms,
+                fade_out_ms,
+            } => GrainEnvelope::Linear {
+                fade_in_ms,
+                fade_out_ms,
+            },
             GrainEnvelopeType::Gaussian { width_ms } => GrainEnvelope::Gaussian { width_ms },
             GrainEnvelopeType::Hann => GrainEnvelope::Hann,
         }
@@ -213,11 +217,7 @@ impl SynthesisPipeline {
     /// * `mapper` - Vocabulary mapper with context
     /// * `segmenter` - Audio segmenter
     /// * `output_dir` - Output directory for synthesis assets
-    pub fn new(
-        mapper: VocabularyMapper,
-        segmenter: AudioSegmenter,
-        output_dir: &Path,
-    ) -> Self {
+    pub fn new(mapper: VocabularyMapper, segmenter: AudioSegmenter, output_dir: &Path) -> Self {
         Self {
             mapper,
             segmenter,
@@ -301,7 +301,9 @@ impl SynthesisPipeline {
         );
 
         // Call simplified export
-        let _metadata_path = self.segmenter.export_metadata(&all_vocab)
+        let _metadata_path = self
+            .segmenter
+            .export_metadata(&all_vocab)
             .map_err(|e| SynthesisError::ExportError(e.to_string()))?;
 
         // let metadata_path = self
@@ -333,7 +335,9 @@ impl SynthesisPipeline {
             f0_contours.extend(f0);
 
             // Extract intensity
-            let rms = (segment.audio.iter().map(|&x| x * x).sum::<f32>() / segment.audio.len() as f32).sqrt();
+            let rms = (segment.audio.iter().map(|&x| x * x).sum::<f32>()
+                / segment.audio.len() as f32)
+                .sqrt();
             intensities.push(rms as f64);
         }
 
@@ -344,7 +348,10 @@ impl SynthesisPipeline {
         };
 
         let f0_min = f0_contours.iter().cloned().fold(f64::INFINITY, f64::min);
-        let f0_max = f0_contours.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let f0_max = f0_contours
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, f64::max);
 
         let intensity_mean = if intensities.is_empty() {
             0.0
@@ -370,8 +377,7 @@ impl SynthesisPipeline {
                 centroid: 15000.0, // TODO: Extract from audio
                 bandwidth: 5000.0,
                 rolloff: 20000.0,
-                mfcc: vec
-![0.0; 13], // TODO: Extract MFCCs
+                mfcc: vec![0.0; 13], // TODO: Extract MFCCs
             },
         }
     }
@@ -384,10 +390,7 @@ impl SynthesisPipeline {
         let mut f0_contour = Vec::new();
 
         for frame in audio.chunks(frame_size) {
-            let zero_crossings = frame
-                .windows(2)
-                .filter(|w| w[0] * w[1] < 0.0)
-                .count();
+            let zero_crossings = frame.windows(2).filter(|w| w[0] * w[1] < 0.0).count();
 
             // Estimate F0 from zero-crossing rate
             let zcr = zero_crossings as f64 / frame.len() as f64;
@@ -428,14 +431,15 @@ impl SynthesisPipeline {
         // Generate sine wave with F0 modulation
         for (i, &f0) in f0_per_frame.iter().enumerate() {
             let t = i as f64 / 48000.0;
-            let sample = params.intensity as f32
-                * (2.0 * std::f64::consts::PI * f0 * t).sin() as f32;
+            let sample =
+                params.intensity as f32 * (2.0 * std::f64::consts::PI * f0 * t).sin() as f32;
 
             audio.push(sample);
         }
 
         // Apply spectral shaping (simplified)
-        audio = self.apply_spectral_shape(&audio, params.spectral_centroid, params.spectral_bandwidth);
+        audio =
+            self.apply_spectral_shape(&audio, params.spectral_centroid, params.spectral_bandwidth);
 
         Ok(audio)
     }
@@ -443,8 +447,7 @@ impl SynthesisPipeline {
     /// Interpolate F0 contour to target length
     fn interpolate_f0(&self, f0_contour: &[f64], target_length: usize) -> Vec<f64> {
         if f0_contour.is_empty() {
-            return vec
-![10000.0; target_length];
+            return vec![10000.0; target_length];
         }
 
         if f0_contour.len() == 1 {
@@ -500,8 +503,7 @@ impl SynthesisPipeline {
             .map_err(|e| SynthesisError::SegmenterError(e.to_string()))?;
 
         if segments.is_empty() {
-            return Ok(vec
-![]);
+            return Ok(vec![]);
         }
 
         // Select a random segment as source
@@ -516,13 +518,13 @@ impl SynthesisPipeline {
         )?;
 
         if grains.is_empty() {
-            return Ok(vec
-![]);
+            return Ok(vec![]);
         }
 
         // Synthesize by concatenating grains with overlap
         let target_samples = (duration * source_segment.sample_rate as f64) as usize;
-        let hop_samples = (params.hop_size_ms * source_segment.sample_rate as f64 / 1000.0) as usize;
+        let hop_samples =
+            (params.hop_size_ms * source_segment.sample_rate as f64 / 1000.0) as usize;
 
         let mut audio = vec![0.0f32; target_samples];
         let mut grain_idx = 0;
@@ -584,7 +586,9 @@ impl SynthesisPipeline {
             .min_by(|a, b| {
                 let diff_a = (a.duration - target_duration).abs();
                 let diff_b = (b.duration - target_duration).abs();
-                diff_a.partial_cmp(&diff_b).unwrap_or(std::cmp::Ordering::Equal)
+                diff_a
+                    .partial_cmp(&diff_b)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             })
             .unwrap();
 
@@ -666,7 +670,7 @@ mod tests {
     use tempfile::TempDir;
 
     use crate::vocabulary_mapper::{
-        AnnotationDataset, DurationStats, VocalizationContext, VocabularyOccurrence,
+        AnnotationDataset, DurationStats, VocabularyOccurrence, VocalizationContext,
     };
 
     /// Test 1: Create synthesis pipeline
@@ -674,7 +678,9 @@ mod tests {
     fn test_synthesis_pipeline_creation() {
         let temp_dir = TempDir::new().unwrap();
 
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         let segmenter = AudioSegmenter::new(
@@ -684,11 +690,7 @@ mod tests {
         );
 
         let synthesis_dir = temp_dir.path().join("synthesis");
-        let pipeline = SynthesisPipeline::new(
-            mapper,
-            segmenter,
-            &synthesis_dir,
-        );
+        let pipeline = SynthesisPipeline::new(mapper, segmenter, &synthesis_dir);
 
         assert_eq!(pipeline.output_dir, temp_dir.path().join("synthesis"));
     }
@@ -725,7 +727,9 @@ mod tests {
     #[test]
     fn test_f0_interpolation() {
         let temp_dir = TempDir::new().unwrap();
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
         let mapper = VocabularyMapper::new(annotations, 48000);
         let segmenter = AudioSegmenter::new(
             temp_dir.path().to_path_buf(),
@@ -734,14 +738,9 @@ mod tests {
         );
 
         let synthesis_dir = temp_dir.path().join("synthesis");
-        let pipeline = SynthesisPipeline::new(
-            mapper,
-            segmenter,
-            &synthesis_dir,
-        );
+        let pipeline = SynthesisPipeline::new(mapper, segmenter, &synthesis_dir);
 
-        let f0_contour = vec
-![100.0, 200.0, 300.0];
+        let f0_contour = vec![100.0, 200.0, 300.0];
         let interpolated = pipeline.interpolate_f0(&f0_contour, 10);
 
         assert_eq!(interpolated.len(), 10);
@@ -754,7 +753,9 @@ mod tests {
     #[test]
     fn test_metadata_driven_synthesis() {
         let temp_dir = TempDir::new().unwrap();
-        let annotations = AnnotationDataset { annotations: vec![] };
+        let annotations = AnnotationDataset {
+            annotations: vec![],
+        };
 
         let mut mapper = VocabularyMapper::new(annotations, 48000);
 
@@ -766,16 +767,13 @@ mod tests {
         // For this test, we'll just use a minimal setup
         use ndarray::arr2;
 
-        let cluster_labels = vec
-![0];
-        let file_paths = vec
-!["test.wav".to_string()];
-        let time_ranges = vec
-![(0.0, 0.1)];
-        let feature_series = vec
-![arr2(&[[1.0, 2.0], [3.0, 4.0]])];
+        let cluster_labels = vec![0];
+        let file_paths = vec!["test.wav".to_string()];
+        let time_ranges = vec![(0.0, 0.1)];
+        let feature_series = vec![arr2(&[[1.0, 2.0], [3.0, 4.0]])];
 
-        let _result = mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
+        let _result =
+            mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
 
         // Don't need to actually export for this test
 
@@ -786,11 +784,7 @@ mod tests {
         );
 
         let synthesis_dir = temp_dir.path().join("synthesis");
-        let pipeline = SynthesisPipeline::new(
-            mapper,
-            segmenter,
-            &synthesis_dir,
-        );
+        let pipeline = SynthesisPipeline::new(mapper, segmenter, &synthesis_dir);
 
         let params = MetadataDrivenParams::default();
         let result = pipeline.synthesize_metadata_driven("cluster_0", &params);

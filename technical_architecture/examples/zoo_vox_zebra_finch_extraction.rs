@@ -13,12 +13,11 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_zebra_finch_extraction
 
-use technical_architecture::{
-    ZooVoxFeatureExtractor, ZooVoxPhraseExtractor, ZooVoxExtractionConfig,
-    WithinCallAnalyzer, WithinCallConfig, SimilarityBasedLibraryBuilder,
-    PhrasePrototype, AcousticFeatures30D,
-};
 use technical_architecture::species::SpeciesConfigFactory;
+use technical_architecture::{
+    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer,
+    WithinCallConfig, ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxPhraseExtractor,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔════════════════════════════════════════════════════════════════╗");
@@ -42,8 +41,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let params = config.feature_params();
     println!("\n  Feature Parameters:");
-    println!("    Phrase duration: {:.0} - {:.0} ms", params.phrase_min_ms, params.phrase_max_ms);
-    println!("    Similarity threshold: {:.2}", params.similarity_threshold);
+    println!(
+        "    Phrase duration: {:.0} - {:.0} ms",
+        params.phrase_min_ms, params.phrase_max_ms
+    );
+    println!(
+        "    Similarity threshold: {:.2}",
+        params.similarity_threshold
+    );
     println!("    Feature dimensions: {}", params.feature_dim);
 
     let contexts = config.context_labels();
@@ -69,12 +74,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // - Motif patterns (repeated syllable sequences)
 
     let syllable_specs = [
-        ("Intro", 4500.0, 50.0, 0.05, "high_short"),          // Introduction note
-        ("Stack_A", 3500.0, 100.0, 0.1, "fm_rapid"),          // Rapid FM sweep
-        ("Stack_B", 2800.0, 80.0, 0.08, "fm_rapid"),          // Another FM sweep
-        ("Distance", 3200.0, 180.0, 0.18, "harmonic"),        // Distance call
-        ("Motif_1", 4000.0, 60.0, 0.06, "trill"),             // Trill syllable
-        ("Motif_2", 3800.0, 70.0, 0.07, "trill"),             // Another trill
+        ("Intro", 4500.0, 50.0, 0.05, "high_short"), // Introduction note
+        ("Stack_A", 3500.0, 100.0, 0.1, "fm_rapid"), // Rapid FM sweep
+        ("Stack_B", 2800.0, 80.0, 0.08, "fm_rapid"), // Another FM sweep
+        ("Distance", 3200.0, 180.0, 0.18, "harmonic"), // Distance call
+        ("Motif_1", 4000.0, 60.0, 0.06, "trill"),    // Trill syllable
+        ("Motif_2", 3800.0, 70.0, 0.07, "trill"),    // Another trill
     ];
 
     println!("  Syllable Types in Generated Song:");
@@ -88,7 +93,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let gap_duration = 0.04; // 40ms gaps between syllables
 
     // Calculate total duration
-    let total_syllable_duration: f64 = motif_pattern.iter()
+    let total_syllable_duration: f64 = motif_pattern
+        .iter()
         .map(|&i| syllable_specs[i].3)
         .sum::<f64>();
     let total_gap_duration = gap_duration * (motif_pattern.len() - 1) as f64;
@@ -110,7 +116,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         for i in 0..syllable_samples {
             let sample_idx = start_sample + i;
-            if sample_idx >= total_samples { break; }
+            if sample_idx >= total_samples {
+                break;
+            }
 
             let t = i as f64 / sample_rate as f64;
             let global_t = current_time + t;
@@ -144,7 +152,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let envelope = ((t / dur_sec) * std::f64::consts::PI).sin();
                     carrier * am * envelope * 0.5
                 }
-                _ => 0.0
+                _ => 0.0,
             };
 
             audio[sample_idx] = sample;
@@ -153,7 +161,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_time += dur_sec + gap_duration;
     }
 
-    println!("  Generated audio: {} samples ({:.2}s)", audio.len(), audio.len() as f64 / sample_rate as f64);
+    println!(
+        "  Generated audio: {} samples ({:.2}s)",
+        audio.len(),
+        audio.len() as f64 / sample_rate as f64
+    );
     println!();
 
     // ========================================================================
@@ -172,17 +184,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Display extracted phrases
     println!("  Phrase Candidates (first 10):");
-    println!("  {:<4} {:<12} {:<10} {:<10} {:<15}",
-        "#", "Key", "F0 (Hz)", "Dur (ms)", "HNR (dB)");
+    println!(
+        "  {:<4} {:<12} {:<10} {:<10} {:<15}",
+        "#", "Key", "F0 (Hz)", "Dur (ms)", "HNR (dB)"
+    );
     println!("  {}", "-".repeat(55));
 
     for (i, phrase) in phrases.iter().take(10).enumerate() {
-        println!("  {:<4} {:<12} {:<10.0} {:<10.0} {:<15.1}",
+        println!(
+            "  {:<4} {:<12} {:<10.0} {:<10.0} {:<15.1}",
             i + 1,
-            phrase.phrase_key.split("_").take(3).collect::<Vec<_>>().join("_"),
+            phrase
+                .phrase_key
+                .split("_")
+                .take(3)
+                .collect::<Vec<_>>()
+                .join("_"),
             phrase.features_30d.mean_f0_hz,
             phrase.features_30d.duration_ms,
-            phrase.features_30d.harmonic_to_noise_ratio);
+            phrase.features_30d.harmonic_to_noise_ratio
+        );
     }
     if phrases.len() > 10 {
         println!("  ... and {} more", phrases.len() - 10);
@@ -207,18 +228,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Display discovered phrase types
     println!("  Discovered Phrase Types:");
-    println!("  {:<4} {:<20} {:>8} {:>10} {:>10} {:>12}",
-        "#", "Type ID", "Count", "F0 (Hz)", "Dur (ms)", "Variability");
+    println!(
+        "  {:<4} {:<20} {:>8} {:>10} {:>10} {:>12}",
+        "#", "Type ID", "Count", "F0 (Hz)", "Dur (ms)", "Variability"
+    );
     println!("  {}", "-".repeat(70));
 
     for (i, pt) in result.phrase_types.iter().enumerate() {
-        println!("  {:<4} {:<20} {:>8} {:>10.0} {:>10.0} {:>12.4}",
+        println!(
+            "  {:<4} {:<20} {:>8} {:>10.0} {:>10.0} {:>12.4}",
             i + 1,
             pt.type_id.split('_').last().unwrap_or("?"),
             pt.occurrence_count,
             pt.centroid_features.mean_f0_hz,
             pt.centroid_features.duration_ms,
-            pt.intra_variability);
+            pt.intra_variability
+        );
     }
     println!();
 
@@ -228,15 +253,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 5: Acoustic Similarity Statistics\n");
     println!("──────────────────────────────────────");
 
-    println!("  Within-type similarity:  {:.4} (higher = more cohesive)", result.avg_within_type_similarity);
-    println!("  Between-type distance:   {:.4} (higher = more separated)", result.avg_between_type_distance);
+    println!(
+        "  Within-type similarity:  {:.4} (higher = more cohesive)",
+        result.avg_within_type_similarity
+    );
+    println!(
+        "  Between-type distance:   {:.4} (higher = more separated)",
+        result.avg_between_type_distance
+    );
 
-    let separation_ratio = if result.avg_within_type_similarity > 0.0 && result.avg_within_type_similarity < 1.0 {
-        result.avg_between_type_distance / (1.0 - result.avg_within_type_similarity)
-    } else {
-        f64::INFINITY
-    };
-    println!("  Separation ratio:        {:.2}x (higher = better discrimination)", separation_ratio);
+    let separation_ratio =
+        if result.avg_within_type_similarity > 0.0 && result.avg_within_type_similarity < 1.0 {
+            result.avg_between_type_distance / (1.0 - result.avg_within_type_similarity)
+        } else {
+            f64::INFINITY
+        };
+    println!(
+        "  Separation ratio:        {:.2}x (higher = better discrimination)",
+        separation_ratio
+    );
     println!();
 
     // ========================================================================
@@ -245,11 +280,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 6: Phrase Sequence Analysis\n");
     println!("────────────────────────────────");
 
-    println!("  Phrase Sequence ({} elements):", result.phrase_sequence.len());
+    println!(
+        "  Phrase Sequence ({} elements):",
+        result.phrase_sequence.len()
+    );
 
     // Group into lines of 8
     for chunk in result.phrase_sequence.chunks(8) {
-        let line: Vec<&str> = chunk.iter()
+        let line: Vec<&str> = chunk
+            .iter()
             .map(|s| s.split('_').last().unwrap_or("?"))
             .collect();
         println!("    {}", line.join(" → "));
@@ -258,11 +297,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Transition analysis
     println!("  Transition Matrix (top transitions):");
-    let mut transitions: Vec<_> = result.transition_matrix.iter()
+    let mut transitions: Vec<_> = result
+        .transition_matrix
+        .iter()
         .flat_map(|(from, inner)| {
-            inner.iter().map(move |(to, count)| {
-                (from.clone(), to.clone(), *count)
-            })
+            inner
+                .iter()
+                .map(move |(to, count)| (from.clone(), to.clone(), *count))
         })
         .collect();
     transitions.sort_by(|a, b| b.2.cmp(&a.2));
@@ -270,7 +311,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (from, to, count) in transitions.iter().take(8) {
         let from_short = from.split('_').last().unwrap_or("?");
         let to_short = to.split('_').last().unwrap_or("?");
-        println!("    type_{} → type_{}: {} occurrences", from_short, to_short, count);
+        println!(
+            "    type_{} → type_{}: {} occurrences",
+            from_short, to_short, count
+        );
     }
     println!();
 
@@ -290,7 +334,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  Discovered {} recurring motif(s):\n", motifs.len());
 
         for (i, motif) in motifs.iter().take(5).enumerate() {
-            let pattern: Vec<&str> = motif.pattern.iter()
+            let pattern: Vec<&str> = motif
+                .pattern
+                .iter()
                 .map(|s| s.split('_').last().unwrap_or("?"))
                 .collect();
 
@@ -317,28 +363,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let f = &pt.centroid_features;
 
         println!("  === FUNDAMENTAL (3 features) ===");
-        println!("    Mean F0:        {:>8.1} Hz  (typical: 2000-8000 Hz)", f.mean_f0_hz);
-        println!("    Duration:       {:>8.1} ms   (typical: 50-200 ms)", f.duration_ms);
+        println!(
+            "    Mean F0:        {:>8.1} Hz  (typical: 2000-8000 Hz)",
+            f.mean_f0_hz
+        );
+        println!(
+            "    Duration:       {:>8.1} ms   (typical: 50-200 ms)",
+            f.duration_ms
+        );
         println!("    F0 Range:       {:>8.1} Hz", f.f0_range_hz);
 
         println!("\n  === GRIT FACTORS (3 features) ===");
-        println!("    HNR:            {:>8.1} dB   (harmonic calls have higher HNR)", f.harmonic_to_noise_ratio);
-        println!("    Spectral Flat:  {:>8.3}     (lower = more tonal)", f.spectral_flatness);
+        println!(
+            "    HNR:            {:>8.1} dB   (harmonic calls have higher HNR)",
+            f.harmonic_to_noise_ratio
+        );
+        println!(
+            "    Spectral Flat:  {:>8.3}     (lower = more tonal)",
+            f.spectral_flatness
+        );
         println!("    Harmonicity:    {:>8.3}", f.harmonicity);
 
         println!("\n  === MOTION FACTORS (7 features) ===");
-        println!("    Attack Time:    {:>8.1} ms   (FM sweeps have faster attack)", f.attack_time_ms);
+        println!(
+            "    Attack Time:    {:>8.1} ms   (FM sweeps have faster attack)",
+            f.attack_time_ms
+        );
         println!("    Decay Time:     {:>8.1} ms", f.decay_time_ms);
         println!("    Sustain Level:  {:>8.3}", f.sustain_level);
-        println!("    Vibrato Rate:   {:>8.1} Hz  (trills have high rate ~80 Hz)", f.vibrato_rate_hz);
+        println!(
+            "    Vibrato Rate:   {:>8.1} Hz  (trills have high rate ~80 Hz)",
+            f.vibrato_rate_hz
+        );
         println!("    Vibrato Depth:  {:>8.2} st", f.vibrato_depth);
 
         println!("\n  === FINGERPRINT FACTORS (14 features) ===");
-        println!("    MFCC 1-3:       [{:.1}, {:.1}, {:.1}]", f.mfcc_1, f.mfcc_2, f.mfcc_3);
+        println!(
+            "    MFCC 1-3:       [{:.1}, {:.1}, {:.1}]",
+            f.mfcc_1, f.mfcc_2, f.mfcc_3
+        );
         println!("    Spectral Flux:  {:>8.1}", f.spectral_flux);
 
         println!("\n  === RHYTHM FACTORS (3 features) ===");
-        println!("    Median ICI:     {:>8.1} ms  (inter-call interval)", f.median_ici_ms);
+        println!(
+            "    Median ICI:     {:>8.1} ms  (inter-call interval)",
+            f.median_ici_ms
+        );
         println!("    Onset Rate:     {:>8.1} Hz", f.onset_rate_hz);
     }
     println!();
@@ -359,8 +429,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total Phrase Types:  {}", library.total_phrases);
     println!("  Total Occurrences:   {}", library.total_occurrences);
     println!("  Type Entropy:        {:.3} bits", library.type_entropy);
-    println!("  Frequency Range:     {:.0} - {:.0} Hz", library.frequency_range_hz.0, library.frequency_range_hz.1);
-    println!("  Duration Range:      {:.0} - {:.0} ms", library.typical_duration_ms.0, library.typical_duration_ms.1);
+    println!(
+        "  Frequency Range:     {:.0} - {:.0} Hz",
+        library.frequency_range_hz.0, library.frequency_range_hz.1
+    );
+    println!(
+        "  Duration Range:      {:.0} - {:.0} ms",
+        library.typical_duration_ms.0, library.typical_duration_ms.1
+    );
     println!("  Context Labels:      {}", library.context_labels.len());
     println!();
 

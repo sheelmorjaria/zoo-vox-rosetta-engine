@@ -15,12 +15,12 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_bat_generality
 
+use rand::Rng;
+use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use rand::Rng;
-use rayon::prelude::*;
 
 // ============================================================================
 // Data Structures
@@ -56,7 +56,7 @@ struct GeneralityMetrics {
     total_occurrences: usize,
     contexts_used: usize,
     total_contexts: usize,
-    generality_score: f64,  // 0.0 (context-specific) to 1.0 (universal)
+    generality_score: f64,   // 0.0 (context-specific) to 1.0 (universal)
     shannon_entropy: f64,    // 0.0 (specialized) to max (uniform)
     normalized_entropy: f64, // 0.0 to 1.0
     intra_context_cv: f64,   // Coefficient of variation within contexts
@@ -65,12 +65,12 @@ struct GeneralityMetrics {
 
 #[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 enum PhraseType {
-    UniversalGeneralist,  // Used in all contexts (like "the", "and")
-    Generalist,           // Used in most contexts
-    FlexibleSpecialist,   // Used in several contexts with bias
-    ContextSpecialist,    // Used primarily in one context
-    HighlySpecific,       // Used almost exclusively in one context
-    Rare,                 // Very low frequency
+    UniversalGeneralist, // Used in all contexts (like "the", "and")
+    Generalist,          // Used in most contexts
+    FlexibleSpecialist,  // Used in several contexts with bias
+    ContextSpecialist,   // Used primarily in one context
+    HighlySpecific,      // Used almost exclusively in one context
+    Rare,                // Very low frequency
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -141,9 +141,9 @@ struct UpSetPlotData {
 
 #[derive(Debug, Clone, serde::Serialize)]
 struct PhraseSetIntersection {
-    contexts: Vec<i32>,           // Which contexts are in this intersection
-    phrase_count: usize,          // Number of phrases in this intersection
-    example_phrases: Vec<i32>,    // Example phrase IDs
+    contexts: Vec<i32>,        // Which contexts are in this intersection
+    phrase_count: usize,       // Number of phrases in this intersection
+    example_phrases: Vec<i32>, // Example phrase IDs
 }
 
 // ============================================================================
@@ -219,8 +219,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut context_vec: Vec<_> = pcm.context_totals.iter().collect();
     context_vec.sort_by(|a, b| b.1.cmp(a.1));
     for (i, (ctx, count)) in context_vec.iter().enumerate().take(10) {
-        println!("      Context {:2}: {} observations ({:.1}%)",
-                 ctx, count, **count as f64 / total_obs as f64 * 100.0);
+        println!(
+            "      Context {:2}: {} observations ({:.1}%)",
+            ctx,
+            count,
+            **count as f64 / total_obs as f64 * 100.0
+        );
     }
     println!();
 
@@ -260,11 +264,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      ┌────────────────────────────┬──────────┬──────────┐");
     println!("      │ Type                       │ Count    │ Percentage│");
     println!("      ├────────────────────────────┼──────────┼──────────┤");
-    println!("      │ Universal Generalist       │ {:8} │ {:8.1}│", type_counts.0, type_counts.0 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Generalist                 │ {:8} │ {:8.1}│", type_counts.1, type_counts.1 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Flexible Specialist        │ {:8} │ {:8.1}│", type_counts.2, type_counts.2 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Context Specialist         │ {:8} │ {:8.1}│", type_counts.3, type_counts.3 as f64 / metrics.len() as f64 * 100.0);
-    println!("      │ Highly Specific            │ {:8} │ {:8.1}│", type_counts.4, type_counts.4 as f64 / metrics.len() as f64 * 100.0);
+    println!(
+        "      │ Universal Generalist       │ {:8} │ {:8.1}│",
+        type_counts.0,
+        type_counts.0 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Generalist                 │ {:8} │ {:8.1}│",
+        type_counts.1,
+        type_counts.1 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Flexible Specialist        │ {:8} │ {:8.1}│",
+        type_counts.2,
+        type_counts.2 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Context Specialist         │ {:8} │ {:8.1}│",
+        type_counts.3,
+        type_counts.3 as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "      │ Highly Specific            │ {:8} │ {:8.1}│",
+        type_counts.4,
+        type_counts.4 as f64 / metrics.len() as f64 * 100.0
+    );
     println!("      └────────────────────────────┴──────────┴──────────┘");
     println!();
 
@@ -294,12 +318,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     println!("   ✅ Permutation Test Results:");
-    println!("      ├─ Observed mean generality: {:.4}", perm_result.observed_mean_generality);
-    println!("      ├─ Null mean generality:      {:.4} ± {:.4}",
-             perm_result.null_mean_generality, perm_result.null_std_generality);
-    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
-    println!("      ├─ P-value:                   {:.6}", perm_result.p_value);
-    println!("      └─ Significant (α=0.05):      {}", if perm_result.significant { "YES ✨" } else { "NO" });
+    println!(
+        "      ├─ Observed mean generality: {:.4}",
+        perm_result.observed_mean_generality
+    );
+    println!(
+        "      ├─ Null mean generality:      {:.4} ± {:.4}",
+        perm_result.null_mean_generality, perm_result.null_std_generality
+    );
+    println!(
+        "      ├─ Z-score:                   {:.4}",
+        perm_result.z_score
+    );
+    println!(
+        "      ├─ P-value:                   {:.6}",
+        perm_result.p_value
+    );
+    println!(
+        "      └─ Significant (α=0.05):      {}",
+        if perm_result.significant {
+            "YES ✨"
+        } else {
+            "NO"
+        }
+    );
     println!();
 
     if perm_result.significant {
@@ -330,7 +372,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Shannon Entropy Distribution:");
     println!("      ├─ Mean:   {:.4} bits", summary.mean_shannon_entropy);
-    println!("      └─ Median: {:.4} bits", summary.median_shannon_entropy);
+    println!(
+        "      └─ Median: {:.4} bits",
+        summary.median_shannon_entropy
+    );
     println!();
 
     // ========================================================================
@@ -387,7 +432,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save visualization-specific files
     let upset_path = results_dir.join("upset_plot_data.json");
-    fs::write(&upset_path, serde_json::to_string_pretty(&results.visualizations.upset_plot_data)?)?;
+    fs::write(
+        &upset_path,
+        serde_json::to_string_pretty(&results.visualizations.upset_plot_data)?,
+    )?;
     println!("   💾 UpSet plot data: {}", upset_path.display());
 
     println!();
@@ -403,28 +451,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                           ║");
     println!("║  📊 KEY FINDINGS:                                                         ║");
-    println!("║     • Total phrases analyzed: {}                                        ║", n_phrases);
-    println!("║     • Behavioral contexts: {}                                            ║", n_contexts);
-    println!("║     • Generalist phrases (potential function words): {} ({:.1}%)        ║",
-             type_counts.0 + type_counts.1,
-             (type_counts.0 + type_counts.1) as f64 / metrics.len() as f64 * 100.0);
-    println!("║     • Specialist phrases (potential content words): {} ({:.1}%)        ║",
-             type_counts.3 + type_counts.4,
-             (type_counts.3 + type_counts.4) as f64 / metrics.len() as f64 * 100.0);
+    println!(
+        "║     • Total phrases analyzed: {}                                        ║",
+        n_phrases
+    );
+    println!(
+        "║     • Behavioral contexts: {}                                            ║",
+        n_contexts
+    );
+    println!(
+        "║     • Generalist phrases (potential function words): {} ({:.1}%)        ║",
+        type_counts.0 + type_counts.1,
+        (type_counts.0 + type_counts.1) as f64 / metrics.len() as f64 * 100.0
+    );
+    println!(
+        "║     • Specialist phrases (potential content words): {} ({:.1}%)        ║",
+        type_counts.3 + type_counts.4,
+        (type_counts.3 + type_counts.4) as f64 / metrics.len() as f64 * 100.0
+    );
     println!("║                                                                           ║");
     println!("║  🧪 STATISTICAL TEST:                                                     ║");
     if perm_result.significant {
-        println!("║     ✅ SIGNIFICANT: Phrase reuse is non-random (p={:.4})                ║", perm_result.p_value);
+        println!(
+            "║     ✅ SIGNIFICANT: Phrase reuse is non-random (p={:.4})                ║",
+            perm_result.p_value
+        );
         println!("║     This SUPPORTS the combinatorial syntax hypothesis                   ║");
     } else {
-        println!("║     ⚠️  NOT SIGNIFICANT: Cannot reject null hypothesis (p={:.4})         ║", perm_result.p_value);
+        println!(
+            "║     ⚠️  NOT SIGNIFICANT: Cannot reject null hypothesis (p={:.4})         ║",
+            perm_result.p_value
+        );
         println!("║     Insufficient evidence for combinatorial syntax                      ║");
     }
     println!("║                                                                           ║");
-    println!("║  ⏱️  Analysis time: {:.2}s                                                ║", elapsed.as_secs_f64());
+    println!(
+        "║  ⏱️  Analysis time: {:.2}s                                                ║",
+        elapsed.as_secs_f64()
+    );
     println!("║                                                                           ║");
     println!("║  📁 Results saved to:                                                     ║");
-    println!("║     {}                                              ║", results_dir.display());
+    println!(
+        "║     {}                                              ║",
+        results_dir.display()
+    );
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
@@ -489,11 +559,17 @@ fn load_symbolic_stream(
 
     // Otherwise load from JSON and separate files
     let clusters_path = results_dir.join("hdbscan_clusters.json");
-    let clusters_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&clusters_path)?)?;
+    let clusters_json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&clusters_path)?)?;
 
     let labels = clusters_json["clustering"]["labels"]
         .as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_i64()).map(|i| i as i32).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_i64())
+                .map(|i| i as i32)
+                .collect()
+        })
         .unwrap_or_default();
 
     let file_names_path = results_dir.join("bat_file_names.json");
@@ -529,7 +605,11 @@ fn build_phrase_context_matrix(
         }
 
         if let Some(&context) = file_context_map.get(file_name) {
-            *matrix.entry(phrase_id).or_default().entry(context).or_insert(0) += 1;
+            *matrix
+                .entry(phrase_id)
+                .or_default()
+                .entry(context)
+                .or_insert(0) += 1;
             *phrase_totals.entry(phrase_id).or_insert(0) += 1;
             *context_totals.entry(context).or_insert(0) += 1;
         }
@@ -577,7 +657,8 @@ fn calculate_generality_metrics(
         // Coefficient of variation (within-context consistency)
         let counts: Vec<f64> = context_counts.values().map(|&v| v as f64).collect();
         let mean = counts.iter().sum::<f64>() / counts.len() as f64;
-        let variance = counts.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / counts.len() as f64;
+        let variance =
+            counts.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / counts.len() as f64;
         let intra_context_cv = if mean > 0.0 {
             variance.sqrt() / mean
         } else {
@@ -674,7 +755,8 @@ fn display_example_phrases_by_type(metrics: &[GeneralityMetrics], pcm: &PhraseCo
             PhraseType::Rare => "Rare",
         };
 
-        let mut examples: Vec<_> = metrics.iter()
+        let mut examples: Vec<_> = metrics
+            .iter()
             .filter(|m| m.classification == phrase_type)
             .take(examples_per_type)
             .collect();
@@ -683,18 +765,24 @@ fn display_example_phrases_by_type(metrics: &[GeneralityMetrics], pcm: &PhraseCo
             println!("      {}:", type_name);
             for (i, m) in examples.iter().enumerate() {
                 // Get primary context
-                let mut contexts: Vec<_> = pcm.matrix.get(&m.phrase_id)
+                let mut contexts: Vec<_> = pcm
+                    .matrix
+                    .get(&m.phrase_id)
                     .map(|m| m.iter().collect())
                     .unwrap_or_default();
                 contexts.sort_by(|a, b| b.1.cmp(a.1));
 
-                let primary_ctx = contexts.first()
-                    .map(|(ctx, _)| **ctx)
-                    .unwrap_or(0);
+                let primary_ctx = contexts.first().map(|(ctx, _)| **ctx).unwrap_or(0);
 
-                println!("         {}. Phrase {:4}: gen={:.2}, ent={:.2}, freq={}, ctx={}",
-                         i + 1, m.phrase_id, m.generality_score,
-                         m.normalized_entropy, m.total_occurrences, primary_ctx);
+                println!(
+                    "         {}. Phrase {:4}: gen={:.2}, ent={:.2}, freq={}, ctx={}",
+                    i + 1,
+                    m.phrase_id,
+                    m.generality_score,
+                    m.normalized_entropy,
+                    m.total_occurrences,
+                    primary_ctx
+                );
             }
             println!();
         }
@@ -713,9 +801,12 @@ fn run_permutation_test(
     use rayon::prelude::*;
 
     // Calculate observed mean generality
-    let observed_gens: Vec<f64> = pcm.matrix.keys()
+    let observed_gens: Vec<f64> = pcm
+        .matrix
+        .keys()
         .map(|&phrase_id| {
-            pcm.matrix.get(&phrase_id)
+            pcm.matrix
+                .get(&phrase_id)
                 .map(|ctxs| ctxs.len() as f64 / n_contexts as f64)
                 .unwrap_or(0.0)
         })
@@ -749,7 +840,8 @@ fn run_permutation_test(
                 *phrase_context_counts.entry(*phrase_id).or_insert(0) += 1;
             }
 
-            let gen_scores: Vec<f64> = phrase_context_counts.values()
+            let gen_scores: Vec<f64> = phrase_context_counts
+                .values()
                 .map(|&n_ctx| n_ctx as f64 / n_contexts as f64)
                 .collect();
 
@@ -759,9 +851,11 @@ fn run_permutation_test(
 
     // Calculate statistics
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_variance = null_means.iter()
+    let null_variance = null_means
+        .iter()
         .map(|&x| (x - null_mean).powi(2))
-        .sum::<f64>() / null_means.len() as f64;
+        .sum::<f64>()
+        / null_means.len() as f64;
     let null_std = null_variance.sqrt();
 
     // Calculate z-score and p-value
@@ -798,7 +892,11 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     let mut sorted_gen = gen_scores.clone();
     sorted_gen.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let median_gen = sorted_gen[sorted_gen.len() / 2];
-    let var_gen = gen_scores.iter().map(|x| (x - mean_gen).powi(2)).sum::<f64>() / gen_scores.len() as f64;
+    let var_gen = gen_scores
+        .iter()
+        .map(|x| (x - mean_gen).powi(2))
+        .sum::<f64>()
+        / gen_scores.len() as f64;
 
     let entropies: Vec<f64> = metrics.iter().map(|m| m.shannon_entropy).collect();
     let mean_ent = entropies.iter().sum::<f64>() / entropies.len() as f64;
@@ -840,13 +938,9 @@ fn generate_visualization_data(
     ];
 
     // Generality and entropy distributions
-    let generality_distribution: Vec<f64> = metrics.iter()
-        .map(|m| m.generality_score)
-        .collect();
+    let generality_distribution: Vec<f64> = metrics.iter().map(|m| m.generality_score).collect();
 
-    let entropy_distribution: Vec<f64> = metrics.iter()
-        .map(|m| m.normalized_entropy)
-        .collect();
+    let entropy_distribution: Vec<f64> = metrics.iter().map(|m| m.normalized_entropy).collect();
 
     // Context overlap matrix (for heatmap)
     let all_contexts: Vec<i32> = {
@@ -855,15 +949,23 @@ fn generate_visualization_data(
         ctxs
     };
 
-    let context_overlap_matrix = all_contexts.iter().map(|&ctx_i| {
-        all_contexts.iter().map(|&ctx_j| {
-            // Count phrases shared between contexts i and j
-            let shared = pcm.matrix.values()
-                .filter(|ctxs| ctxs.contains_key(&ctx_i) && ctxs.contains_key(&ctx_j))
-                .count() as i32;
-            shared
-        }).collect()
-    }).collect();
+    let context_overlap_matrix = all_contexts
+        .iter()
+        .map(|&ctx_i| {
+            all_contexts
+                .iter()
+                .map(|&ctx_j| {
+                    // Count phrases shared between contexts i and j
+                    let shared = pcm
+                        .matrix
+                        .values()
+                        .filter(|ctxs| ctxs.contains_key(&ctx_i) && ctxs.contains_key(&ctx_j))
+                        .count() as i32;
+                    shared
+                })
+                .collect()
+        })
+        .collect();
 
     // UpSet plot data
     let upset_plot_data = generate_upset_data(pcm, &all_contexts)?;
@@ -881,9 +983,7 @@ fn generate_upset_data(
     pcm: &PhraseContextMatrix,
     contexts: &[i32],
 ) -> Result<UpSetPlotData, Box<dyn std::error::Error>> {
-    let context_names: Vec<String> = contexts.iter()
-        .map(|c| format!("Ctx_{}", c))
-        .collect();
+    let context_names: Vec<String> = contexts.iter().map(|c| format!("Ctx_{}", c)).collect();
 
     // Generate all possible intersections
     let mut phrase_sets: Vec<PhraseSetIntersection> = Vec::new();
@@ -896,12 +996,16 @@ fn generate_upset_data(
         let mut ctxs: Vec<i32> = context_counts.keys().cloned().collect();
         ctxs.sort();
         *context_set_map.entry(ctxs.clone()).or_insert(0) += 1;
-        context_set_examples.entry(ctxs).or_insert_with(Vec::new).push(phrase_id);
+        context_set_examples
+            .entry(ctxs)
+            .or_insert_with(Vec::new)
+            .push(phrase_id);
     }
 
     // Convert to intersections
     for (contexts, count) in context_set_map {
-        let examples = context_set_examples.get(&contexts)
+        let examples = context_set_examples
+            .get(&contexts)
             .map(|v| v.iter().take(5).cloned().collect())
             .unwrap_or_default();
 
@@ -929,7 +1033,10 @@ fn serialize_pcm(pcm: &PhraseContextMatrix) -> PhraseContextMatrix {
     pcm.clone()
 }
 
-fn save_generality_csv(metrics: &[GeneralityMetrics], path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+fn save_generality_csv(
+    metrics: &[GeneralityMetrics],
+    path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut wtr = csv::Writer::from_path(path)?;
 
     wtr.write_record(&[
@@ -967,7 +1074,10 @@ fn save_generality_csv(metrics: &[GeneralityMetrics], path: &Path) -> Result<(),
     Ok(())
 }
 
-fn save_matrix_csv(pcm: &PhraseContextMatrix, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+fn save_matrix_csv(
+    pcm: &PhraseContextMatrix,
+    path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
     use std::io::Write;
 
     let mut file = fs::File::create(path)?;
@@ -977,7 +1087,15 @@ fn save_matrix_csv(pcm: &PhraseContextMatrix, path: &Path) -> Result<(), Box<dyn
     contexts.sort();
 
     // Write header
-    writeln!(file, "phrase_id,{}", contexts.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(","))?;
+    writeln!(
+        file,
+        "phrase_id,{}",
+        contexts
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    )?;
 
     // Write rows
     let mut phrase_ids: Vec<_> = pcm.matrix.keys().cloned().collect();
@@ -985,8 +1103,14 @@ fn save_matrix_csv(pcm: &PhraseContextMatrix, path: &Path) -> Result<(), Box<dyn
 
     for phrase_id in phrase_ids {
         if let Some(context_counts) = pcm.matrix.get(&phrase_id) {
-            let counts: Vec<String> = contexts.iter()
-                .map(|c| context_counts.get(c).map(|n| n.to_string()).unwrap_or("0".to_string()))
+            let counts: Vec<String> = contexts
+                .iter()
+                .map(|c| {
+                    context_counts
+                        .get(c)
+                        .map(|n| n.to_string())
+                        .unwrap_or("0".to_string())
+                })
                 .collect();
             writeln!(file, "{},{}", phrase_id, counts.join(","))?;
         }
@@ -1003,7 +1127,10 @@ trait Shuffle<T> {
     fn shuffle(&mut self, rng: &mut rand::rngs::ThreadRng);
 }
 
-impl<T> Shuffle<T> for [T] where T: Clone {
+impl<T> Shuffle<T> for [T]
+where
+    T: Clone,
+{
     fn shuffle(&mut self, rng: &mut rand::rngs::ThreadRng) {
         for i in (1..self.len()).rev() {
             let j = rng.gen_range(0..i + 1);

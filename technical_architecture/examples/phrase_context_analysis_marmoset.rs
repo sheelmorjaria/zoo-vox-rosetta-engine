@@ -27,7 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_time = Instant::now();
 
     // Configuration
-    let corpus_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
+    let corpus_path =
+        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
     let results_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_results");
 
     fs::create_dir_all(&results_dir)?;
@@ -47,10 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let metadata = json["metadata"].as_object().ok_or("Metadata not found")?;
     let sessions_array = json["sessions"].as_array().ok_or("Sessions not found")?;
 
-    let total_phrases: usize = metadata["total_phrases"]
-        .as_u64().unwrap_or(0) as usize;
-    let vocabulary_size: usize = metadata["vocabulary_size"]
-        .as_u64().unwrap_or(0) as usize;
+    let total_phrases: usize = metadata["total_phrases"].as_u64().unwrap_or(0) as usize;
+    let vocabulary_size: usize = metadata["vocabulary_size"].as_u64().unwrap_or(0) as usize;
 
     println!("   📂 Loaded phrase-level corpus");
     println!("      • Total phrases: {}", total_phrases);
@@ -89,7 +88,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for phrase_value in arr {
                 if let Some(phrase_id) = phrase_value.as_i64() {
                     let phrase_id = phrase_id as i32;
-                    *matrix.entry(phrase_id).or_default().entry(call_type.clone()).or_insert(0) += 1;
+                    *matrix
+                        .entry(phrase_id)
+                        .or_default()
+                        .entry(call_type.clone())
+                        .or_insert(0) += 1;
                     *phrase_totals.entry(phrase_id).or_insert(0) += 1;
                     *context_totals.entry(call_type.clone()).or_insert(0) += 1;
                 }
@@ -100,8 +103,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let n_contexts = all_contexts.len();
     let total_observations: usize = phrase_totals.values().sum();
 
-    println!("   📊 Phrase-Context Matrix: {} phrases x {} contexts",
-             matrix.len(), n_contexts);
+    println!(
+        "   📊 Phrase-Context Matrix: {} phrases x {} contexts",
+        matrix.len(),
+        n_contexts
+    );
     println!();
     println!("   Contexts ({}):", n_contexts);
     for ctx in &all_contexts {
@@ -149,7 +155,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Sort by generality score (descending)
     phrase_metrics.sort_by(|a, b| {
-        b.generality_score.partial_cmp(&a.generality_score).unwrap_or(std::cmp::Ordering::Equal)
+        b.generality_score
+            .partial_cmp(&a.generality_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
 
     // Display top phrases by generality
@@ -159,16 +167,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ├────────────────────────────────────────────────────────────────────┤");
 
     for (i, metrics) in phrase_metrics.iter().take(20).enumerate() {
-        let contexts_str: Vec<String> = metrics.context_distribution.keys()
+        let contexts_str: Vec<String> = metrics
+            .context_distribution
+            .keys()
             .map(|k| k.clone())
             .collect();
 
-        println!("   │ {:6} │ {:.2} │ {:.2} │ {:5} │ {:25}…│",
-                 metrics.phrase_id,
-                 metrics.generality_score,
-                 metrics.normalized_entropy,
-                 metrics.total_occurrences,
-                 contexts_str.join(", ").chars().take(25).collect::<String>());
+        println!(
+            "   │ {:6} │ {:.2} │ {:.2} │ {:5} │ {:25}…│",
+            metrics.phrase_id,
+            metrics.generality_score,
+            metrics.normalized_entropy,
+            metrics.total_occurrences,
+            contexts_str.join(", ").chars().take(25).collect::<String>()
+        );
     }
 
     println!("   └────────────────────────────────────────────────────────────────────┘");
@@ -184,34 +196,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count phrases by generality levels
-    let universal_phrases = phrase_metrics.iter()
-        .filter(|p| p.generality_score >= 0.99).count();
-    let broad_phrases = phrase_metrics.iter()
-        .filter(|p| p.generality_score >= 0.5 && p.generality_score < 0.99).count();
-    let medium_phrases = phrase_metrics.iter()
-        .filter(|p| p.generality_score >= 0.2 && p.generality_score < 0.5).count();
-    let narrow_phrases = phrase_metrics.iter()
-        .filter(|p| p.generality_score < 0.2).count();
+    let universal_phrases = phrase_metrics
+        .iter()
+        .filter(|p| p.generality_score >= 0.99)
+        .count();
+    let broad_phrases = phrase_metrics
+        .iter()
+        .filter(|p| p.generality_score >= 0.5 && p.generality_score < 0.99)
+        .count();
+    let medium_phrases = phrase_metrics
+        .iter()
+        .filter(|p| p.generality_score >= 0.2 && p.generality_score < 0.5)
+        .count();
+    let narrow_phrases = phrase_metrics
+        .iter()
+        .filter(|p| p.generality_score < 0.2)
+        .count();
 
     println!("   Generality Distribution:");
-    println!("      • Universal (≥99%): {} phrases ({:.1}%)",
-             universal_phrases,
-             100.0 * universal_phrases as f64 / phrase_metrics.len() as f64);
-    println!("      • Broad (50-99%): {} phrases ({:.1}%)",
-             broad_phrases,
-             100.0 * broad_phrases as f64 / phrase_metrics.len() as f64);
-    println!("      • Medium (20-50%): {} phrases ({:.1}%)",
-             medium_phrases,
-             100.0 * medium_phrases as f64 / phrase_metrics.len() as f64);
-    println!("      • Narrow (<20%): {} phrases ({:.1}%)",
-             narrow_phrases,
-             100.0 * narrow_phrases as f64 / phrase_metrics.len() as f64);
+    println!(
+        "      • Universal (≥99%): {} phrases ({:.1}%)",
+        universal_phrases,
+        100.0 * universal_phrases as f64 / phrase_metrics.len() as f64
+    );
+    println!(
+        "      • Broad (50-99%): {} phrases ({:.1}%)",
+        broad_phrases,
+        100.0 * broad_phrases as f64 / phrase_metrics.len() as f64
+    );
+    println!(
+        "      • Medium (20-50%): {} phrases ({:.1}%)",
+        medium_phrases,
+        100.0 * medium_phrases as f64 / phrase_metrics.len() as f64
+    );
+    println!(
+        "      • Narrow (<20%): {} phrases ({:.1}%)",
+        narrow_phrases,
+        100.0 * narrow_phrases as f64 / phrase_metrics.len() as f64
+    );
     println!();
 
     // Calculate average entropy
-    let avg_entropy: f64 = phrase_metrics.iter()
+    let avg_entropy: f64 = phrase_metrics
+        .iter()
         .map(|p| p.normalized_entropy)
-        .sum::<f64>() / phrase_metrics.len() as f64;
+        .sum::<f64>()
+        / phrase_metrics.len() as f64;
 
     println!("   Average Normalized Entropy: {:.3}", avg_entropy);
     println!("      (0 = context-specific, 1 = evenly distributed)");
@@ -262,9 +292,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════╣");
     println!("║                                                                       ║");
     println!("║  📊 KEY FINDINGS:                                                     ║");
-    println!("║     • {} phrases analyzed across {} contexts                       ║", matrix.len(), n_contexts);
-    println!("║     • {} universal phrases (≥99% generality)                       ║", universal_phrases);
-    println!("║     • Average normalized entropy: {:.3}                                ║", avg_entropy);
+    println!(
+        "║     • {} phrases analyzed across {} contexts                       ║",
+        matrix.len(),
+        n_contexts
+    );
+    println!(
+        "║     • {} universal phrases (≥99% generality)                       ║",
+        universal_phrases
+    );
+    println!(
+        "║     • Average normalized entropy: {:.3}                                ║",
+        avg_entropy
+    );
     println!("║                                                                       ║");
     if universal_phrases > 0 {
         println!("║     ✅ Universal phrases found - supports combinatorial syntax        ║");
@@ -273,8 +313,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("║        syntax                                                          ║");
     }
     println!("║                                                                       ║");
-    println!("║  ⏱️  Analysis time: {:.2}s                                              ║", elapsed.as_secs_f64());
-    println!("║   📁 Results: {}                               ║", results_dir.display());
+    println!(
+        "║  ⏱️  Analysis time: {:.2}s                                              ║",
+        elapsed.as_secs_f64()
+    );
+    println!(
+        "║   📁 Results: {}                               ║",
+        results_dir.display()
+    );
     println!("╚═══════════════════════════════════════════════════════════════╝");
     println!();
 

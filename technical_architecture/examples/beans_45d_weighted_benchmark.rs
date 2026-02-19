@@ -12,11 +12,6 @@
 //! - Marine mammals: Weight FM slope and rhythm high
 //! - Insects: Weight high-frequency modulation high
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-    species::{FeatureWeights, SpeciesConfigFactory},
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -26,6 +21,10 @@ use std::io::{BufReader, BufWriter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    species::{FeatureWeights, SpeciesConfigFactory},
+    AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 
@@ -37,32 +36,33 @@ const FEATURE_DIM: usize = 45;
 fn get_species_weights_for_dataset(dataset: &str) -> FeatureWeights {
     match dataset {
         // Bird datasets - use zebra finch weights (songbird)
-        "Xeno-canto" | "iNaturalist" | "Enabirds" | "DCASE-2021-Task-5" |
-        "Rainforest Connection" | "CBI" | "Hainan Gibbons" => {
-            FeatureWeights::zebra_finch()
-        }
+        "Xeno-canto"
+        | "iNaturalist"
+        | "Enabirds"
+        | "DCASE-2021-Task-5"
+        | "Rainforest Connection"
+        | "CBI"
+        | "Hainan Gibbons" => FeatureWeights::zebra_finch(),
 
         // Marine mammal datasets - use dolphin weights
-        "Watkins" | "HICEAS" => {
-            FeatureWeights::dolphin()
-        }
+        "Watkins" | "HICEAS" => FeatureWeights::dolphin(),
 
         // Insect datasets - create insect-specific weights
         "HumBugDB" => {
             FeatureWeights {
-                spectral: 1.5,      // High frequency content
-                harmonic: 0.5,      // Less harmonic structure
-                temporal: 1.8,      // Wing beat timing
-                modulation: 2.0,    // High-frequency modulation
+                spectral: 1.5,   // High frequency content
+                harmonic: 0.5,   // Less harmonic structure
+                temporal: 1.8,   // Wing beat timing
+                modulation: 2.0, // High-frequency modulation
                 cepstral: 1.0,
-                formant: 0.3,       // Not relevant
+                formant: 0.3, // Not relevant
                 micro_dynamics: 1.5,
                 psychoacoustic: 1.0,
-                tfs: 1.5,           // Fine temporal structure
+                tfs: 1.5, // Fine temporal structure
                 overrides: vec![
-                    (0, 1.8),   // Spectral centroid - frequency center
-                    (10, 1.8),  // RMS - amplitude
-                    (12, 1.5),  // Attack - onset
+                    (0, 1.8),  // Spectral centroid - frequency center
+                    (10, 1.8), // RMS - amplitude
+                    (12, 1.5), // Attack - onset
                 ],
             }
         }
@@ -81,23 +81,23 @@ fn get_species_weights_for_dataset(dataset: &str) -> FeatureWeights {
 /// - Micro-dynamics (rhythm patterns)
 fn get_unified_bioacoustic_weights() -> FeatureWeights {
     FeatureWeights {
-        spectral: 1.5,      // Spectral shape important for all
-        harmonic: 1.2,      // Moderate importance
-        temporal: 1.8,      // Envelope shape critical
-        modulation: 2.0,    // FM important for vocalizations
-        cepstral: 1.0,      // Standard
-        formant: 1.0,       // Moderate
+        spectral: 1.5,       // Spectral shape important for all
+        harmonic: 1.2,       // Moderate importance
+        temporal: 1.8,       // Envelope shape critical
+        modulation: 2.0,     // FM important for vocalizations
+        cepstral: 1.0,       // Standard
+        formant: 1.0,        // Moderate
         micro_dynamics: 1.8, // Rhythm important for detection
         psychoacoustic: 1.2,
         tfs: 1.3,
         overrides: vec![
-            (0, 1.6),   // D0: spectral_centroid
-            (3, 1.8),   // D3: spectral_kurtosis
-            (10, 1.5),  // D10: RMS
-            (12, 1.6),  // D12: attack
-            (18, 2.2),  // D18: fm_slope - CRITICAL for vocalization detection
-            (30, 1.5),  // D30: onset_rate
-            (31, 1.6),  // D31: median_ici
+            (0, 1.6),  // D0: spectral_centroid
+            (3, 1.8),  // D3: spectral_kurtosis
+            (10, 1.5), // D10: RMS
+            (12, 1.6), // D12: attack
+            (18, 2.2), // D18: fm_slope - CRITICAL for vocalization detection
+            (30, 1.5), // D30: onset_rate
+            (31, 1.6), // D31: median_ici
         ],
     }
 }
@@ -192,7 +192,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let all_samples: Vec<Option<Sample>> = manifest.samples
+    let all_samples: Vec<Option<Sample>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -234,7 +235,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_time = extraction_start.elapsed();
     let valid_samples: Vec<_> = all_samples.into_iter().filter_map(|s| s).collect();
 
-    println!("Extracted {} valid samples in {:.1}s", valid_samples.len(), extraction_time.as_secs_f64());
+    println!(
+        "Extracted {} valid samples in {:.1}s",
+        valid_samples.len(),
+        extraction_time.as_secs_f64()
+    );
     println!();
 
     // Split into train/test
@@ -263,7 +268,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("  Train: {}, Test: {}", train_samples.len(), test_samples.len());
+    println!(
+        "  Train: {}, Test: {}",
+        train_samples.len(),
+        test_samples.len()
+    );
     println!();
 
     // Build prototypes
@@ -303,7 +312,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Filter test samples to detection task
-    let detection_test: Vec<_> = test_samples.iter()
+    let detection_test: Vec<_> = test_samples
+        .iter()
         .filter(|s| s.task == "detection")
         .collect();
 
@@ -311,12 +321,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Create engines
-    let mut engine_unweighted = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
-    let mut engine_weighted = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_unweighted =
+        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_weighted =
+        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Fit normalization on both
     {
-        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix =
+            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -379,7 +392,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ PER-DATASET RESULTS                                                         │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!("│ {:<20} {:>10} {:>10} {:>10}", "Dataset", "Unweighted", "Weighted", "Δ");
+    println!(
+        "│ {:<20} {:>10} {:>10} {:>10}",
+        "Dataset", "Unweighted", "Weighted", "Δ"
+    );
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
 
     let mut datasets: Vec<_> = unweighted_per_dataset.keys().collect();
@@ -390,8 +406,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let w = weighted_per_dataset.get(*dataset).unwrap_or(&0.0);
         let delta = (w - unw) / unw.max(0.001) * 100.0;
 
-        println!("│ {:<20} {:>9.1}% {:>9.1}% {:+>9.1}%",
-            dataset, unw * 100.0, w * 100.0, delta);
+        println!(
+            "│ {:<20} {:>9.1}% {:>9.1}% {:+>9.1}%",
+            dataset,
+            unw * 100.0,
+            w * 100.0,
+            delta
+        );
     }
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -425,16 +446,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         unweighted_f1,
         weighted_f1,
         improvement_pct: improvement,
-        per_dataset_improvements: unweighted_per_dataset.iter()
+        per_dataset_improvements: unweighted_per_dataset
+            .iter()
             .map(|(k, &unw)| {
                 let w = weighted_per_dataset.get(k).copied().unwrap_or(0.0);
-                (k.clone(), DatasetImprovement {
-                    dataset: k.clone(),
-                    unweighted_f1: unw,
-                    weighted_f1: w,
-                    improvement_pct: (w - unw) / unw.max(0.001) * 100.0,
-                    weight_type: "unified_bioacoustic".to_string(),
-                })
+                (
+                    k.clone(),
+                    DatasetImprovement {
+                        dataset: k.clone(),
+                        unweighted_f1: unw,
+                        weighted_f1: w,
+                        improvement_pct: (w - unw) / unw.max(0.001) * 100.0,
+                        weight_type: "unified_bioacoustic".to_string(),
+                    },
+                )
             })
             .collect(),
     };
@@ -481,12 +506,16 @@ fn evaluate_with_engine(
         let detected = best_sim >= threshold;
         let is_correct = best_dataset == sample.source_dataset;
 
-        *per_dataset_total.entry(sample.source_dataset.clone()).or_insert(0) += 1;
+        *per_dataset_total
+            .entry(sample.source_dataset.clone())
+            .or_insert(0) += 1;
 
         if detected {
             if is_correct {
                 tp += 1;
-                *per_dataset_correct.entry(sample.source_dataset.clone()).or_insert(0) += 1;
+                *per_dataset_correct
+                    .entry(sample.source_dataset.clone())
+                    .or_insert(0) += 1;
             } else {
                 fp += 1;
             }
@@ -495,17 +524,34 @@ fn evaluate_with_engine(
         }
     }
 
-    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-    let recall = if tp + fn_count > 0 { tp as f64 / (tp + fn_count) as f64 } else { 0.0 };
-    let f1 = if precision + recall > 0.0 { 2.0 * precision * recall / (precision + recall) } else { 0.0 };
+    let precision = if tp + fp > 0 {
+        tp as f64 / (tp + fp) as f64
+    } else {
+        0.0
+    };
+    let recall = if tp + fn_count > 0 {
+        tp as f64 / (tp + fn_count) as f64
+    } else {
+        0.0
+    };
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
 
-    let per_dataset_f1: HashMap<String, f64> = per_dataset_total.iter()
+    let per_dataset_f1: HashMap<String, f64> = per_dataset_total
+        .iter()
         .map(|(dataset, &total)| {
             let correct = per_dataset_correct.get(dataset).copied().unwrap_or(0);
             let dataset_f1 = if total > 0 {
                 let p = correct as f64 / total as f64;
                 let r = correct as f64 / total as f64;
-                if p + r > 0.0 { 2.0 * p * r / (p + r) } else { 0.0 }
+                if p + r > 0.0 {
+                    2.0 * p * r / (p + r)
+                } else {
+                    0.0
+                }
             } else {
                 0.0
             };
@@ -516,7 +562,10 @@ fn evaluate_with_engine(
     (f1, per_dataset_f1)
 }
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     use std::fs::File;
     use std::io::Read;
 

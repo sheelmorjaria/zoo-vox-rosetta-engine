@@ -5,8 +5,8 @@
 
 use crate::zoo_vox_data_models::{AcousticFeatures30D, AcousticFeatures45D};
 
-use rustfft::{FftPlanner, FftDirection};
 use rustfft::num_complex::Complex;
+use rustfft::{FftDirection, FftPlanner};
 use std::f64::consts::PI;
 
 /// Zoo Vox Rosetta feature extraction error type
@@ -185,9 +185,18 @@ impl ZooVoxFeatureExtractor {
         // === SPECTRAL SHAPE FACTORS (4) - NEW ===
         let spectrum = self.compute_spectrum(&audio);
         features.spectral_centroid = self.compute_spectral_centroid(&spectrum);
-        features.spectral_spread = self.compute_spectral_spread(&spectrum, features.spectral_centroid);
-        features.spectral_skewness = self.compute_spectral_skewness(&spectrum, features.spectral_centroid, features.spectral_spread);
-        features.spectral_kurtosis = self.compute_spectral_kurtosis(&spectrum, features.spectral_centroid, features.spectral_spread);
+        features.spectral_spread =
+            self.compute_spectral_spread(&spectrum, features.spectral_centroid);
+        features.spectral_skewness = self.compute_spectral_skewness(
+            &spectrum,
+            features.spectral_centroid,
+            features.spectral_spread,
+        );
+        features.spectral_kurtosis = self.compute_spectral_kurtosis(
+            &spectrum,
+            features.spectral_centroid,
+            features.spectral_spread,
+        );
 
         // === MODULATION FACTORS (3) - NEW ===
         features.spectral_tilt = self.compute_spectral_tilt(&spectrum);
@@ -226,7 +235,7 @@ impl ZooVoxFeatureExtractor {
 
         // Autocorrelation-based F0 estimation
         let min_lag = (self.sample_rate as f64 / 22000.0).floor() as usize; // Max freq ~22kHz
-        let max_lag = (self.sample_rate as f64 / 100.0).floor() as usize;   // Min freq ~100Hz
+        let max_lag = (self.sample_rate as f64 / 100.0).floor() as usize; // Min freq ~100Hz
 
         let max_lag = max_lag.min(audio.len() - 1);
         let min_lag = min_lag.max(1);
@@ -240,7 +249,8 @@ impl ZooVoxFeatureExtractor {
         let mut best_corr = 0.0;
 
         for lag in min_lag..max_lag {
-            let corr: f64 = audio.iter()
+            let corr: f64 = audio
+                .iter()
                 .take(audio.len() - lag)
                 .zip(audio.iter().skip(lag))
                 .map(|(a, b)| a * b)
@@ -303,7 +313,8 @@ impl ZooVoxFeatureExtractor {
         if f0 > 0.0 && f0 < self.sample_rate as f64 / 2.0 {
             let period = (self.sample_rate as f64 / f0) as usize;
             if period < audio.len() {
-                let harmonic_energy: f64 = audio.iter()
+                let harmonic_energy: f64 = audio
+                    .iter()
                     .take(audio.len() - period)
                     .zip(audio.iter().skip(period))
                     .map(|(a, b)| a * b)
@@ -413,7 +424,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let max_idx = envelope.iter()
+        let max_idx = envelope
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i);
@@ -442,7 +454,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let max_idx = envelope.iter()
+        let max_idx = envelope
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i);
@@ -488,7 +501,8 @@ impl ZooVoxFeatureExtractor {
         // FFT of F0 track
         let n = f0_track.len();
         let n_fft = n.next_power_of_two();
-        let mut fft_input: Vec<Complex<f64>> = f0_track.iter()
+        let mut fft_input: Vec<Complex<f64>> = f0_track
+            .iter()
             .map(|&x| Complex::new(x - mean_f0, 0.0))
             .chain(std::iter::repeat(Complex::new(0.0, 0.0)))
             .take(n_fft)
@@ -553,7 +567,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let diffs: f64 = f0_track.windows(2)
+        let diffs: f64 = f0_track
+            .windows(2)
             .map(|w| (w[1] - w[0]).abs())
             .sum::<f64>();
 
@@ -584,7 +599,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let diffs: f64 = amp_track.windows(2)
+        let diffs: f64 = amp_track
+            .windows(2)
             .map(|w| (w[1] - w[0]).abs())
             .sum::<f64>();
 
@@ -607,19 +623,13 @@ impl ZooVoxFeatureExtractor {
         let mel_filters = self.create_mel_filterbank(n_fft, n_filters);
 
         // Apply mel filterbank
-        let mel_spectrum: Vec<f64> = mel_filters.iter()
-            .map(|filter| {
-                filter.iter()
-                    .zip(spectrum.iter())
-                    .map(|(w, s)| w * s)
-                    .sum()
-            })
+        let mel_spectrum: Vec<f64> = mel_filters
+            .iter()
+            .map(|filter| filter.iter().zip(spectrum.iter()).map(|(w, s)| w * s).sum())
             .collect();
 
         // Log and DCT
-        let log_mel: Vec<f64> = mel_spectrum.iter()
-            .map(|&x| (x + 1e-10).ln())
-            .collect();
+        let log_mel: Vec<f64> = mel_spectrum.iter().map(|&x| (x + 1e-10).ln()).collect();
 
         // DCT-II for MFCCs
         let mut mfccs = Vec::with_capacity(n_mfcc);
@@ -651,7 +661,8 @@ impl ZooVoxFeatureExtractor {
             .collect();
 
         let hz_points: Vec<f64> = mel_points.iter().map(|&m| mel_to_hz(m)).collect();
-        let bin_points: Vec<usize> = hz_points.iter()
+        let bin_points: Vec<usize> = hz_points
+            .iter()
             .map(|&hz| ((n_fft as f64 + 1.0) * hz / self.sample_rate as f64).floor() as usize)
             .collect();
 
@@ -726,15 +737,13 @@ impl ZooVoxFeatureExtractor {
         let envelope = self.compute_envelope(audio);
 
         // Find peaks in derivative
-        let diff: Vec<f64> = envelope.windows(2)
-            .map(|w| w[1] - w[0])
-            .collect();
+        let diff: Vec<f64> = envelope.windows(2).map(|w| w[1] - w[0]).collect();
 
         let threshold = if diff.is_empty() {
             0.0
         } else {
-            diff.iter().sum::<f64>() / diff.len() as f64 +
-                diff.iter().map(|x| x * x).sum::<f64>().sqrt() / diff.len() as f64
+            diff.iter().sum::<f64>() / diff.len() as f64
+                + diff.iter().map(|x| x * x).sum::<f64>().sqrt() / diff.len() as f64
         };
 
         let mut onsets: Vec<usize> = Vec::new();
@@ -749,7 +758,8 @@ impl ZooVoxFeatureExtractor {
         }
 
         // Inter-onset intervals
-        let iois: Vec<f64> = onsets.windows(2)
+        let iois: Vec<f64> = onsets
+            .windows(2)
             .map(|w| (w[1] - w[0]) as f64 / self.sample_rate as f64 * 1000.0)
             .collect();
 
@@ -763,15 +773,13 @@ impl ZooVoxFeatureExtractor {
     fn compute_ici_cv(&self, audio: &[f64]) -> f64 {
         let envelope = self.compute_envelope(audio);
 
-        let diff: Vec<f64> = envelope.windows(2)
-            .map(|w| w[1] - w[0])
-            .collect();
+        let diff: Vec<f64> = envelope.windows(2).map(|w| w[1] - w[0]).collect();
 
         let threshold = if diff.is_empty() {
             0.0
         } else {
-            diff.iter().sum::<f64>() / diff.len() as f64 +
-                diff.iter().map(|x| x * x).sum::<f64>().sqrt() / diff.len() as f64
+            diff.iter().sum::<f64>() / diff.len() as f64
+                + diff.iter().map(|x| x * x).sum::<f64>().sqrt() / diff.len() as f64
         };
 
         let mut onsets: Vec<usize> = Vec::new();
@@ -785,7 +793,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let iois: Vec<f64> = onsets.windows(2)
+        let iois: Vec<f64> = onsets
+            .windows(2)
             .map(|w| (w[1] - w[0]) as f64 / self.sample_rate as f64 * 1000.0)
             .collect();
 
@@ -794,7 +803,8 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let variance: f64 = iois.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / iois.len() as f64;
+        let variance: f64 =
+            iois.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / iois.len() as f64;
 
         variance.sqrt() / mean
     }
@@ -814,7 +824,8 @@ impl ZooVoxFeatureExtractor {
         let n_fft = n_fft.max(2);
 
         // Prepare FFT input
-        let mut fft_input: Vec<Complex<f64>> = audio.iter()
+        let mut fft_input: Vec<Complex<f64>> = audio
+            .iter()
             .take(n_fft)
             .map(|&x| Complex::new(x, 0.0))
             .chain(std::iter::repeat(Complex::new(0.0, 0.0)))
@@ -865,7 +876,8 @@ impl ZooVoxFeatureExtractor {
         // Compute autocorrelation
         let mut autocorr = vec![0.0; lpc_order + 1];
         for i in 0..=lpc_order {
-            let sum: f64 = audio.iter()
+            let sum: f64 = audio
+                .iter()
                 .take(audio.len() - i)
                 .zip(audio.iter().skip(i))
                 .map(|(a, b)| a * b)
@@ -902,7 +914,8 @@ impl ZooVoxFeatureExtractor {
         // Find roots of LPC polynomial to get formants
         // Simplified: find peaks in LPC frequency response
         let n_fft = 2048;
-        let mut fft_input: Vec<Complex<f64>> = lpc.iter()
+        let mut fft_input: Vec<Complex<f64>> = lpc
+            .iter()
             .map(|&x| Complex::new(x, 0.0))
             .chain(std::iter::repeat(Complex::new(0.0, 0.0)))
             .take(n_fft)
@@ -967,9 +980,7 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let total_spacing: f64 = formants.windows(2)
-            .map(|w| (w[1].0 - w[0].0).abs())
-            .sum();
+        let total_spacing: f64 = formants.windows(2).map(|w| (w[1].0 - w[0].0).abs()).sum();
 
         total_spacing / (formants.len() - 1) as f64
     }
@@ -986,7 +997,8 @@ impl ZooVoxFeatureExtractor {
 
         let freq_per_bin = self.sample_rate as f64 / (2.0 * (spectrum.len() - 1) as f64);
 
-        let sum_weighted: f64 = spectrum.iter()
+        let sum_weighted: f64 = spectrum
+            .iter()
             .enumerate()
             .map(|(i, &mag)| i as f64 * freq_per_bin * mag)
             .sum();
@@ -1014,13 +1026,15 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let variance: f64 = spectrum.iter()
+        let variance: f64 = spectrum
+            .iter()
             .enumerate()
             .map(|(i, &mag)| {
                 let freq = i as f64 * freq_per_bin;
                 mag * (freq - centroid).powi(2)
             })
-            .sum::<f64>() / sum_mag;
+            .sum::<f64>()
+            / sum_mag;
 
         variance.sqrt()
     }
@@ -1038,13 +1052,15 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let skewness: f64 = spectrum.iter()
+        let skewness: f64 = spectrum
+            .iter()
             .enumerate()
             .map(|(i, &mag)| {
                 let freq = i as f64 * freq_per_bin;
                 mag * ((freq - centroid) / spread).powi(3)
             })
-            .sum::<f64>() / sum_mag;
+            .sum::<f64>()
+            / sum_mag;
 
         skewness
     }
@@ -1062,13 +1078,15 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let kurtosis: f64 = spectrum.iter()
+        let kurtosis: f64 = spectrum
+            .iter()
             .enumerate()
             .map(|(i, &mag)| {
                 let freq = i as f64 * freq_per_bin;
                 mag * ((freq - centroid) / spread).powi(4)
             })
-            .sum::<f64>() / sum_mag;
+            .sum::<f64>()
+            / sum_mag;
 
         // Excess kurtosis (subtract 3 for normal distribution)
         kurtosis - 3.0
@@ -1098,7 +1116,8 @@ impl ZooVoxFeatureExtractor {
             let high_bin = (high_freq / freq_per_bin).min(spectrum.len() as f64) as usize;
 
             if high_bin > low_bin {
-                let energy: f64 = spectrum[low_bin..high_bin].iter().sum::<f64>() / (high_bin - low_bin) as f64;
+                let energy: f64 =
+                    spectrum[low_bin..high_bin].iter().sum::<f64>() / (high_bin - low_bin) as f64;
                 if energy > 0.0 {
                     octave_energies.push(10.0 * energy.log10());
                     octave_freqs.push((low_freq + high_freq) / 2.0);
@@ -1116,7 +1135,8 @@ impl ZooVoxFeatureExtractor {
         let n = octave_energies.len() as f64;
         let sum_x: f64 = octave_freqs.iter().map(|f| f.log2()).sum();
         let sum_y: f64 = octave_energies.iter().sum();
-        let sum_xy: f64 = octave_freqs.iter()
+        let sum_xy: f64 = octave_freqs
+            .iter()
             .zip(octave_energies.iter())
             .map(|(f, e)| f.log2() * e)
             .sum();
@@ -1140,7 +1160,10 @@ impl ZooVoxFeatureExtractor {
         // Track F0 over time
         let mut f0_track: Vec<(f64, f64)> = Vec::new(); // (time, f0)
 
-        for (i, start) in (0..audio.len().saturating_sub(frame_size)).step_by(frame_size).enumerate() {
+        for (i, start) in (0..audio.len().saturating_sub(frame_size))
+            .step_by(frame_size)
+            .enumerate()
+        {
             let frame = &audio[start..start + frame_size];
             let f0 = self.estimate_f0(frame);
             if f0 > 0.0 {
@@ -1154,7 +1177,8 @@ impl ZooVoxFeatureExtractor {
         }
 
         // Compute slopes between consecutive frames
-        let slopes: Vec<f64> = f0_track.windows(2)
+        let slopes: Vec<f64> = f0_track
+            .windows(2)
             .map(|w| (w[1].1 - w[0].1) / (w[1].0 - w[0].0 + 1e-10))
             .collect();
 
@@ -1206,7 +1230,8 @@ impl ZooVoxFeatureExtractor {
         }
 
         // Correlation at F0 period (fundamental strength)
-        let corr_f0: f64 = audio.iter()
+        let corr_f0: f64 = audio
+            .iter()
             .take(audio.len() - period)
             .zip(audio.iter().skip(period))
             .map(|(a, b)| a * b)
@@ -1214,7 +1239,8 @@ impl ZooVoxFeatureExtractor {
             .abs();
 
         // Correlation at half period (subharmonic strength)
-        let corr_sub: f64 = audio.iter()
+        let corr_sub: f64 = audio
+            .iter()
             .take(audio.len() - half_period)
             .zip(audio.iter().skip(half_period))
             .map(|(a, b)| a * b)
@@ -1243,7 +1269,8 @@ impl ZooVoxFeatureExtractor {
         let probabilities: Vec<f64> = spectrum.iter().map(|x| x / total).collect();
 
         // Compute Shannon entropy
-        let entropy: f64 = probabilities.iter()
+        let entropy: f64 = probabilities
+            .iter()
             .filter(|&&p| p > 1e-10)
             .map(|&p| -p * p.ln())
             .sum();
@@ -1302,8 +1329,9 @@ impl PyZooVoxFeatureExtractor {
         audio: PyReadonlyArray1<f64>,
     ) -> PyResult<Py<PyArray1<f64>>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract(audio_slice)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
+        let features = self.inner.extract(audio_slice).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
+        })?;
 
         let vector = features.to_vector();
         Ok(PyArray1::from_vec(py, vector.to_vec()).into_py(py))
@@ -1328,8 +1356,9 @@ impl PyZooVoxFeatureExtractor {
         audio: PyReadonlyArray1<f64>,
     ) -> PyResult<Py<PyArray1<f64>>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract_45d(audio_slice)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
+        let features = self.inner.extract_45d(audio_slice).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
+        })?;
 
         let vector = features.to_vector();
         Ok(PyArray1::from_vec(py, vector.to_vec()).into_py(py))
@@ -1345,21 +1374,52 @@ impl PyZooVoxFeatureExtractor {
     fn feature_names_45d() -> Vec<String> {
         vec![
             // Base 30D features
-            "mean_f0_hz".to_string(), "duration_ms".to_string(), "f0_range_hz".to_string(),
-            "harmonic_to_noise_ratio".to_string(), "spectral_flatness".to_string(), "harmonicity".to_string(),
-            "attack_time_ms".to_string(), "decay_time_ms".to_string(), "sustain_level".to_string(),
-            "vibrato_rate_hz".to_string(), "vibrato_depth".to_string(), "jitter".to_string(), "shimmer".to_string(),
-            "mfcc_1".to_string(), "mfcc_2".to_string(), "mfcc_3".to_string(), "mfcc_4".to_string(),
-            "mfcc_5".to_string(), "mfcc_6".to_string(), "mfcc_7".to_string(), "mfcc_8".to_string(),
-            "mfcc_9".to_string(), "mfcc_10".to_string(), "mfcc_11".to_string(), "mfcc_12".to_string(),
-            "mfcc_13".to_string(), "spectral_flux".to_string(), "median_ici_ms".to_string(),
-            "onset_rate_hz".to_string(), "ici_cv".to_string(),
+            "mean_f0_hz".to_string(),
+            "duration_ms".to_string(),
+            "f0_range_hz".to_string(),
+            "harmonic_to_noise_ratio".to_string(),
+            "spectral_flatness".to_string(),
+            "harmonicity".to_string(),
+            "attack_time_ms".to_string(),
+            "decay_time_ms".to_string(),
+            "sustain_level".to_string(),
+            "vibrato_rate_hz".to_string(),
+            "vibrato_depth".to_string(),
+            "jitter".to_string(),
+            "shimmer".to_string(),
+            "mfcc_1".to_string(),
+            "mfcc_2".to_string(),
+            "mfcc_3".to_string(),
+            "mfcc_4".to_string(),
+            "mfcc_5".to_string(),
+            "mfcc_6".to_string(),
+            "mfcc_7".to_string(),
+            "mfcc_8".to_string(),
+            "mfcc_9".to_string(),
+            "mfcc_10".to_string(),
+            "mfcc_11".to_string(),
+            "mfcc_12".to_string(),
+            "mfcc_13".to_string(),
+            "spectral_flux".to_string(),
+            "median_ici_ms".to_string(),
+            "onset_rate_hz".to_string(),
+            "ici_cv".to_string(),
             // New 15D features
-            "formant_1_hz".to_string(), "formant_2_hz".to_string(), "formant_3_hz".to_string(),
-            "formant_1_bandwidth".to_string(), "formant_2_bandwidth".to_string(), "formant_dispersion".to_string(),
-            "spectral_centroid".to_string(), "spectral_spread".to_string(), "spectral_skewness".to_string(),
-            "spectral_kurtosis".to_string(), "spectral_tilt".to_string(), "fm_slope_hz_per_sec".to_string(),
-            "am_depth".to_string(), "subharmonic_ratio".to_string(), "spectral_entropy".to_string(),
+            "formant_1_hz".to_string(),
+            "formant_2_hz".to_string(),
+            "formant_3_hz".to_string(),
+            "formant_1_bandwidth".to_string(),
+            "formant_2_bandwidth".to_string(),
+            "formant_dispersion".to_string(),
+            "spectral_centroid".to_string(),
+            "spectral_spread".to_string(),
+            "spectral_skewness".to_string(),
+            "spectral_kurtosis".to_string(),
+            "spectral_tilt".to_string(),
+            "fm_slope_hz_per_sec".to_string(),
+            "am_depth".to_string(),
+            "subharmonic_ratio".to_string(),
+            "spectral_entropy".to_string(),
         ]
     }
 }
@@ -1406,7 +1466,12 @@ mod tests {
 
         // Check F0 is approximately correct (within 20%)
         let f0_ratio = features.mean_f0_hz / frequency;
-        assert!(f0_ratio > 0.8 && f0_ratio < 1.2, "F0 estimate: {} Hz, expected: {} Hz", features.mean_f0_hz, frequency);
+        assert!(
+            f0_ratio > 0.8 && f0_ratio < 1.2,
+            "F0 estimate: {} Hz, expected: {} Hz",
+            features.mean_f0_hz,
+            frequency
+        );
     }
 
     #[test]
@@ -1461,7 +1526,12 @@ mod tests {
 
         // Check F0 is approximately correct (within 20%)
         let f0_ratio = features.mean_f0_hz / frequency;
-        assert!(f0_ratio > 0.8 && f0_ratio < 1.2, "F0 estimate: {} Hz, expected: {} Hz", features.mean_f0_hz, frequency);
+        assert!(
+            f0_ratio > 0.8 && f0_ratio < 1.2,
+            "F0 estimate: {} Hz, expected: {} Hz",
+            features.mean_f0_hz,
+            frequency
+        );
     }
 
     #[test]
@@ -1486,10 +1556,16 @@ mod tests {
         let features = extractor.extract_45d(&audio).unwrap();
 
         // FM slope should be positive for upward sweep
-        assert!(features.fm_slope_hz_per_sec > 0.0, "FM slope should be positive for upward sweep");
+        assert!(
+            features.fm_slope_hz_per_sec > 0.0,
+            "FM slope should be positive for upward sweep"
+        );
 
         // Spectral centroid should be higher than start frequency
-        assert!(features.spectral_centroid > start_freq * 0.5, "Spectral centroid should reflect sweep range");
+        assert!(
+            features.spectral_centroid > start_freq * 0.5,
+            "Spectral centroid should reflect sweep range"
+        );
     }
 
     #[test]
@@ -1518,7 +1594,10 @@ mod tests {
 
         // Formant dispersion should be reasonable for harmonic series
         // (harmonic spacing = f0)
-        assert!(features.formant_dispersion >= 0.0, "Formant dispersion should be non-negative");
+        assert!(
+            features.formant_dispersion >= 0.0,
+            "Formant dispersion should be non-negative"
+        );
     }
 
     #[test]
@@ -1538,13 +1617,22 @@ mod tests {
         let features = extractor.extract_45d(&audio).unwrap();
 
         // Spectral centroid should be positive
-        assert!(features.spectral_centroid >= 0.0, "Spectral centroid should be non-negative");
+        assert!(
+            features.spectral_centroid >= 0.0,
+            "Spectral centroid should be non-negative"
+        );
 
         // Spectral spread should be positive
-        assert!(features.spectral_spread >= 0.0, "Spectral spread should be non-negative");
+        assert!(
+            features.spectral_spread >= 0.0,
+            "Spectral spread should be non-negative"
+        );
 
         // Spectral entropy should be high for noise
-        assert!(features.spectral_entropy > 0.5, "Spectral entropy should be high for broadband noise");
+        assert!(
+            features.spectral_entropy > 0.5,
+            "Spectral entropy should be high for broadband noise"
+        );
     }
 
     #[test]
@@ -1569,7 +1657,10 @@ mod tests {
         let features = extractor.extract_45d(&audio).unwrap();
 
         // AM depth should be significant for tremolo
-        assert!(features.am_depth > 0.3, "AM depth should be significant for modulated tone");
+        assert!(
+            features.am_depth > 0.3,
+            "AM depth should be significant for modulated tone"
+        );
     }
 
     #[test]

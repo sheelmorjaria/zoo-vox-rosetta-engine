@@ -193,15 +193,14 @@ impl RoughnessCalculator {
         let roughness_bin = (self.threshold_hz / bin_resolution).ceil() as usize;
 
         // Sum energy in roughness band (high frequencies)
-        let roughness_energy: f32 = spectrum.iter()
+        let roughness_energy: f32 = spectrum
+            .iter()
             .skip(roughness_bin.min(num_bins))
             .map(|&x| x * x)
             .sum();
 
         // Sum total energy
-        let total_energy: f32 = spectrum.iter()
-            .map(|&x| x * x)
-            .sum();
+        let total_energy: f32 = spectrum.iter().map(|&x| x * x).sum();
 
         if total_energy < 1e-10 {
             return 0.0;
@@ -289,7 +288,10 @@ impl RoughnessCalculator {
         }
 
         // Return magnitude spectrum (only positive frequencies)
-        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
+        complex[..n / 2]
+            .iter()
+            .map(|&(r, i)| (r * r + i * i).sqrt())
+            .collect()
     }
 }
 
@@ -376,7 +378,10 @@ mod tests {
         let calculator = PitchEntropyCalculator::default();
         let constant = vec![440.0; 100];
         let entropy = calculator.calculate(&constant);
-        assert!(entropy < 0.1, "Constant pitch should have near-zero entropy");
+        assert!(
+            entropy < 0.1,
+            "Constant pitch should have near-zero entropy"
+        );
     }
 
     #[test]
@@ -395,7 +400,10 @@ mod tests {
         // Uniform distribution across range
         let uniform: Vec<f32> = (0..100).map(|i| 100.0 + i as f32 * 5.0).collect();
         let entropy = calculator.calculate(&uniform);
-        assert!(entropy > 0.7, "Uniform distribution should have high entropy");
+        assert!(
+            entropy > 0.7,
+            "Uniform distribution should have high entropy"
+        );
     }
 
     #[test]
@@ -452,7 +460,10 @@ mod tests {
         let pure_tone = generate_sine_wave(200.0, 48000, 0.1);
         let roughness = calculator.calculate(&pure_tone);
         // Low frequency tone should have lower roughness (energy below threshold)
-        assert!(roughness < 0.5, "Low frequency tone should have lower roughness");
+        assert!(
+            roughness < 0.5,
+            "Low frequency tone should have lower roughness"
+        );
     }
 
     #[test]
@@ -541,7 +552,10 @@ mod tests {
         let high_tone = generate_sine_wave(10000.0, 48000, 0.1);
         let brightness = calculator.calculate(&high_tone);
         // High frequency tone should have higher brightness than low
-        assert!(brightness > 0.2, "High frequency should have measurable brightness");
+        assert!(
+            brightness > 0.2,
+            "High frequency should have measurable brightness"
+        );
     }
 
     #[test]
@@ -628,7 +642,10 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
     let mut rng: u32 = seed;
 
     (0..num_samples)

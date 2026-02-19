@@ -21,9 +21,8 @@
 //! Solution: Use consistent weights for Phase 1, species-specific for Phase 2.
 
 use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    species::FeatureWeights,
-    zoo_vox_within_call::WithinCallAnalyzer,
+    species::FeatureWeights, zoo_vox_within_call::WithinCallAnalyzer, AcousticSimilarityEngine,
+    SimilarityMetric,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -46,10 +45,8 @@ fn main() {
     println!();
 
     // Create engine with UNIFIED weights (or no weights = equal)
-    let mut global_engine = AcousticSimilarityEngine::with_metric(
-        FEATURE_DIM,
-        SimilarityMetric::Cosine,
-    );
+    let mut global_engine =
+        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Unified weights for global discrimination
     let unified_weights = FeatureWeights {
@@ -72,7 +69,7 @@ fn main() {
     println!();
 
     // Simulate comparing unknown sample to species prototypes
-    let unknown_sample = vec![0.5; FEATURE_DIM];  // Placeholder
+    let unknown_sample = vec![0.5; FEATURE_DIM]; // Placeholder
 
     let dolphin_prototype = vec![0.6; FEATURE_DIM];
     let finch_prototype = vec![0.4; FEATURE_DIM];
@@ -128,26 +125,50 @@ fn main() {
 
     println!("Applied Dolphin-specific weights:");
     let dolphin_weights = FeatureWeights::dolphin();
-    println!("  ├─ Modulation (FM slope): {:.1}x ← CRITICAL for whistles", dolphin_weights.modulation);
+    println!(
+        "  ├─ Modulation (FM slope): {:.1}x ← CRITICAL for whistles",
+        dolphin_weights.modulation
+    );
     println!("  ├─ Spectral: {:.1}x", dolphin_weights.spectral);
-    println!("  └─ Micro-dynamics: {:.1}x (long contours, less micro-structure)", dolphin_weights.micro_dynamics);
+    println!(
+        "  └─ Micro-dynamics: {:.1}x (long contours, less micro-structure)",
+        dolphin_weights.micro_dynamics
+    );
     println!();
 
     // Create analyzers for other species
     let _finch_analyzer = WithinCallAnalyzer::for_species("zebra_finch");
     let finch_weights = FeatureWeights::zebra_finch();
     println!("Applied Zebra Finch-specific weights:");
-    println!("  ├─ Harmonic: {:.1}x ← Harmonic stack structure in song", finch_weights.harmonic);
-    println!("  ├─ Temporal: {:.1}x ← Syllable timing important", finch_weights.temporal);
-    println!("  └─ Micro-dynamics: {:.1}x ← Syllable transitions", finch_weights.micro_dynamics);
+    println!(
+        "  ├─ Harmonic: {:.1}x ← Harmonic stack structure in song",
+        finch_weights.harmonic
+    );
+    println!(
+        "  ├─ Temporal: {:.1}x ← Syllable timing important",
+        finch_weights.temporal
+    );
+    println!(
+        "  └─ Micro-dynamics: {:.1}x ← Syllable transitions",
+        finch_weights.micro_dynamics
+    );
     println!();
 
     let _whale_analyzer = WithinCallAnalyzer::for_species("sperm_whale");
     let whale_weights = FeatureWeights::sperm_whale();
     println!("Applied Sperm Whale-specific weights:");
-    println!("  ├─ Temporal: {:.1}x ← TIMING IS EVERYTHING for codas", whale_weights.temporal);
-    println!("  ├─ Micro-dynamics: {:.1}x ← Click patterns", whale_weights.micro_dynamics);
-    println!("  └─ TFS: {:.1}x ← Temporal structure critical", whale_weights.tfs);
+    println!(
+        "  ├─ Temporal: {:.1}x ← TIMING IS EVERYTHING for codas",
+        whale_weights.temporal
+    );
+    println!(
+        "  ├─ Micro-dynamics: {:.1}x ← Click patterns",
+        whale_weights.micro_dynamics
+    );
+    println!(
+        "  └─ TFS: {:.1}x ← Temporal structure critical",
+        whale_weights.tfs
+    );
     println!();
 
     // =========================================================================

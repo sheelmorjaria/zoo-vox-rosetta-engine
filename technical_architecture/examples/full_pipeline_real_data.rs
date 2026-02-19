@@ -19,10 +19,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use technical_architecture::{
-    ParallelExtractionPipeline, ExtractionConfig,
-    VocalizationResult, ClusteredPhrase,
-    ExtractionPhraseCandidate as PhraseCandidate,
-    LinguisticAnalysis, MicroDynamicsExtractor,
+    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate,
+    LinguisticAnalysis, MicroDynamicsExtractor, ParallelExtractionPipeline, VocalizationResult,
 };
 
 // Configuration
@@ -59,8 +57,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let audio_files = discover_audio_files(vocalizations_path, MAX_FILES)?;
 
-    println!("✅ Found {} audio files (limited to {} for demo)",
-             audio_files.len(), MAX_FILES);
+    println!(
+        "✅ Found {} audio files (limited to {} for demo)",
+        audio_files.len(),
+        MAX_FILES
+    );
     println!();
 
     // Show file type distribution
@@ -88,19 +89,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start_time = std::time::Instant::now();
 
-    let (vocalization_results, clustered_phrases) =
-        process_audio_files_parallel(&audio_files)?;
+    let (vocalization_results, clustered_phrases) = process_audio_files_parallel(&audio_files)?;
 
     let processing_time = start_time.elapsed();
 
     println!("✅ Processing complete");
     println!("   Vocalizations processed: {}", vocalization_results.len());
-    println!("   Total phrases extracted: {}",
-             vocalization_results.iter().map(|v| v.phrases.len()).sum::<usize>());
+    println!(
+        "   Total phrases extracted: {}",
+        vocalization_results
+            .iter()
+            .map(|v| v.phrases.len())
+            .sum::<usize>()
+    );
     println!("   Clustered phrases: {}", clustered_phrases.len());
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
-    println!("   Throughput: {:.1} files/sec",
-             audio_files.len() as f64 / processing_time.as_secs_f64());
+    println!(
+        "   Throughput: {:.1} files/sec",
+        audio_files.len() as f64 / processing_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -143,12 +150,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("📊 SUMMARY:");
-    println!("   Files processed: {} / 871,045 ({:.2}%)",
-             audio_files.len(),
-             audio_files.len() as f64 / 871045.0 * 100.0);
+    println!(
+        "   Files processed: {} / 871,045 ({:.2}%)",
+        audio_files.len(),
+        audio_files.len() as f64 / 871045.0 * 100.0
+    );
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
-    println!("   Estimated time for full dataset: {:.1} hours",
-             (processing_time.as_secs_f64() / audio_files.len() as f64) * 871045.0 / 3600.0);
+    println!(
+        "   Estimated time for full dataset: {:.1} hours",
+        (processing_time.as_secs_f64() / audio_files.len() as f64) * 871045.0 / 3600.0
+    );
     println!();
     println!("✅ Results exported to: {}", output_path);
     println!();
@@ -179,17 +190,23 @@ fn discover_audio_files(
 
     for folder in date_folders {
         let folder_path = folder.path();
-        println!("  - Checking: {}", folder_path.file_name().unwrap_or_default().to_string_lossy());
+        println!(
+            "  - Checking: {}",
+            folder_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+        );
 
         // Collect audio files in this folder
         let mut files: Vec<_> = fs::read_dir(&folder_path)?
             .filter_map(|entry| entry.ok())
             .filter(|entry| {
                 let path = entry.path();
-                let is_audio = path.extension()
+                let is_audio = path
+                    .extension()
                     .and_then(|s| s.to_str())
-                    .map(|ext| ext.eq_ignore_ascii_case("flac") ||
-                                 ext.eq_ignore_ascii_case("wav"))
+                    .map(|ext| ext.eq_ignore_ascii_case("flac") || ext.eq_ignore_ascii_case("wav"))
                     .unwrap_or(false);
 
                 // For demo, limit to a subset per folder
@@ -223,15 +240,17 @@ fn process_audio_files_parallel(
 ) -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>), Box<dyn std::error::Error>> {
     use rayon::prelude::*;
 
-    println!("  Processing with {} workers...", std::thread::available_parallelism()
-             .unwrap_or_else(|_| std::num::NonZeroUsize::new(1).unwrap()).get());
+    println!(
+        "  Processing with {} workers...",
+        std::thread::available_parallelism()
+            .unwrap_or_else(|_| std::num::NonZeroUsize::new(1).unwrap())
+            .get()
+    );
 
     let results: Vec<Result<VocalizationResult, String>> = audio_files
         .par_iter()
         .enumerate()
-        .map(|(i, file_path)| {
-            process_single_audio_file(file_path, i)
-        })
+        .map(|(i, file_path)| process_single_audio_file(file_path, i))
         .collect();
 
     // Collect successful results
@@ -275,12 +294,10 @@ fn process_audio_files_parallel(
     Ok((vocalization_results, clustered_phrases))
 }
 
-fn process_single_audio_file(
-    file_path: &Path,
-    index: usize,
-) -> Result<VocalizationResult, String> {
+fn process_single_audio_file(file_path: &Path, index: usize) -> Result<VocalizationResult, String> {
     // Extract file name and infer context
-    let file_name = file_path.file_name()
+    let file_name = file_path
+        .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("unknown.flac");
 
@@ -307,7 +324,11 @@ fn process_single_audio_file(
 
     // Extract parameters from filename if available
     // Format: <Context>_<id>.flac or similar
-    let base_name = file_name.replace(".flac", "").replace(".FLAC", "").replace(".wav", "").replace(".WAV", "");
+    let base_name = file_name
+        .replace(".flac", "")
+        .replace(".FLAC", "")
+        .replace(".wav", "")
+        .replace(".WAV", "");
 
     // Create phrase candidates with synthetic 30D features
     // In production, these would come from actual audio analysis
@@ -376,7 +397,6 @@ fn display_linguistic_results(
     analysis: &technical_architecture::LinguisticAnalysis,
     _clustered_phrases: &[ClusteredPhrase],
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
     println!("║                  LINGUISTIC ANALYSIS RESULTS                            ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
@@ -387,13 +407,20 @@ fn display_linguistic_results(
     println!("   Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("   Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
     println!("   Efficiency: {:?}", analysis.zipf.efficiency);
-    println!("   Unique phrases: {}", analysis.zipf.phrase_frequencies.len());
+    println!(
+        "   Unique phrases: {}",
+        analysis.zipf.phrase_frequencies.len()
+    );
     println!();
 
     // Top 10 phrases
     println!("   Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
+        let freq = analysis
+            .zipf
+            .phrase_frequencies
+            .get(phrase_id)
+            .unwrap_or(&0);
         println!("     {:2}. {} (freq: {})", i + 1, phrase_id, freq);
     }
     println!();
@@ -407,8 +434,14 @@ fn display_linguistic_results(
 
     // 3. Phonotactics
     println!("3️⃣  PHONOTACTICS (Forbidden Transitions):");
-    println!("   Total transitions: {}", analysis.phonotactics.transition_matrix.len());
-    println!("   Forbidden transitions: {}", analysis.phonotactics.forbidden_transitions.len());
+    println!(
+        "   Total transitions: {}",
+        analysis.phonotactics.transition_matrix.len()
+    );
+    println!(
+        "   Forbidden transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
     println!();
 
     // 4. Pragmatics
@@ -418,14 +451,21 @@ fn display_linguistic_results(
 
     // 5. Atomicity
     println!("5️⃣  UPDATED ATOMICITY:");
-    let truly_atomic = analysis.updated_atomic_phrases.iter()
+    let truly_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
         .count();
 
-    println!("   Total phrases: {}", analysis.updated_atomic_phrases.len());
-    println!("   Truly atomic: {} ({:.1}%)",
-             truly_atomic,
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "   Total phrases: {}",
+        analysis.updated_atomic_phrases.len()
+    );
+    println!(
+        "   Truly atomic: {} ({:.1}%)",
+        truly_atomic,
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     println!("═══════════════════════════════════════════════════════════════════════════");
@@ -464,4 +504,3 @@ fn shellexpand_tilde(path: &str) -> String {
     }
     path.to_string()
 }
-

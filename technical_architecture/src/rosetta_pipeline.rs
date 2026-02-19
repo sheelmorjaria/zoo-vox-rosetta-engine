@@ -343,7 +343,8 @@ impl RosettaPipeline {
         let global_weights = FeatureWeights::unified();
 
         // Create global similarity engine
-        let mut global_engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, DistanceMetric::Cosine);
+        let mut global_engine =
+            AcousticSimilarityEngine::with_metric(FEATURE_DIM, DistanceMetric::Cosine);
         global_engine.set_feature_weights(&global_weights.to_weight_vector());
 
         // Create dynamic segmenter
@@ -450,7 +451,10 @@ impl RosettaPipeline {
     }
 
     /// Identify species by comparing to all loaded species prototypes
-    fn identify_species(&self, features: &[f32]) -> Result<(String, f64), Box<dyn std::error::Error>> {
+    fn identify_species(
+        &self,
+        features: &[f32],
+    ) -> Result<(String, f64), Box<dyn std::error::Error>> {
         if self.species_bundles.is_empty() {
             return Ok(("unknown".to_string(), 0.0));
         }
@@ -464,7 +468,8 @@ impl RosettaPipeline {
         for (species_name, bundle) in &self.species_bundles {
             // Compare to all centroids in this species' dictionary
             for centroid in bundle.semantic_dictionary.type_centroids.values() {
-                let proto: Array1<f64> = Array1::from_vec(centroid.iter().map(|&f| f as f64).collect());
+                let proto: Array1<f64> =
+                    Array1::from_vec(centroid.iter().map(|&f| f as f64).collect());
                 let dist = self.global_engine.distance(&query, &proto);
                 let sim = 1.0 - dist;
 
@@ -700,6 +705,9 @@ mod tests {
             pipeline.infer_intent("Tsik", &EnvState::Storm),
             "Emergency_Alert"
         );
-        assert_eq!(pipeline.infer_intent("Twitter", &EnvState::Quiet), "Social_Bonding");
+        assert_eq!(
+            pipeline.infer_intent("Twitter", &EnvState::Quiet),
+            "Social_Bonding"
+        );
     }
 }

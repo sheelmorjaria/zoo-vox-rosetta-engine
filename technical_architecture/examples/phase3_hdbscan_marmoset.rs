@@ -11,7 +11,8 @@ use technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Paths to checkpoint data
-    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir =
+        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let output_path = results_dir.join("hdbscan_clusters.json");
 
@@ -26,14 +27,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let load_start = Instant::now();
 
     let features_data = std::fs::read(&features_path)?;
-    println!("   ├─ Loaded {} MB of feature data", features_data.len() / 1_048_576);
+    println!(
+        "   ├─ Loaded {} MB of feature data",
+        features_data.len() / 1_048_576
+    );
 
     // Deserialize features
     let serializable_features: Vec<PhraseFeaturesSerializable> =
         bincode::deserialize(&features_data)?;
 
     let n_features = serializable_features.len();
-    println!("   └─ {} features loaded in {:.2}s", n_features, load_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ {} features loaded in {:.2}s",
+        n_features,
+        load_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Convert to 2D array for HDBSCAN
@@ -51,8 +59,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   └─ Converted to {}x{} array in {:.2}s",
-        n_features, n_dims, convert_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ Converted to {}x{} array in {:.2}s",
+        n_features,
+        n_dims,
+        convert_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Configure HDBSCAN
@@ -70,13 +82,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_start = Instant::now();
 
     // Create HDBSCAN clusterer
-    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
+    let hdbscan =
+        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     // Run clustering
     let labels = hdbscan.fit_predict(&feature_matrix)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!("   └─ Clustering completed in {:.2}s", cluster_time.as_secs_f64());
+    println!(
+        "   └─ Clustering completed in {:.2}s",
+        cluster_time.as_secs_f64()
+    );
     println!();
 
     // Analyze results
@@ -88,9 +104,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
-    println!("   Clustering rate:      {:.1}%",
-        (n_features - stats.noise_count) as f64 / n_features as f64 * 100.0);
+    println!(
+        "   Clustered phrases:    {}",
+        n_features - stats.noise_count
+    );
+    println!(
+        "   Clustering rate:      {:.1}%",
+        (n_features - stats.noise_count) as f64 / n_features as f64 * 100.0
+    );
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -104,7 +125,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
 
         // Top 10 clusters
-        let mut sorted_clusters: Vec<(i32, usize)> = stats.cluster_sizes.iter()
+        let mut sorted_clusters: Vec<(i32, usize)> = stats
+            .cluster_sizes
+            .iter()
             .enumerate()
             .map(|(i, &size)| (i as i32, size))
             .collect();
@@ -113,8 +136,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   Top 10 Clusters:");
         for (i, (cluster_id, size)) in sorted_clusters.iter().take(10).enumerate() {
             let percentage = size.clone() as f64 / n_features as f64 * 100.0;
-            println!("      {}. Cluster {}: {} phrases ({:.1}%)",
-                i + 1, cluster_id, size, percentage);
+            println!(
+                "      {}. Cluster {}: {} phrases ({:.1}%)",
+                i + 1,
+                cluster_id,
+                size,
+                percentage
+            );
         }
     }
 
@@ -137,8 +165,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Phase 3 Complete!");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    println!("   Discovered {} vocabulary items from {} phrases",
-        stats.n_clusters, n_features);
+    println!(
+        "   Discovered {} vocabulary items from {} phrases",
+        stats.n_clusters, n_features
+    );
     println!();
 
     Ok(())

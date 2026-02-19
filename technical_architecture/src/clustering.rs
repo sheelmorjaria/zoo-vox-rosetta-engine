@@ -151,15 +151,13 @@ impl DbscanClustering {
     /// Compute squared Euclidean distance between two points (as slices)
     #[inline]
     fn euclidean_distance_squared(&self, a: &[f64], b: &[f64]) -> f64 {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (x - y) * (x - y))
-            .sum()
+        a.iter().zip(b.iter()).map(|(x, y)| (x - y) * (x - y)).sum()
     }
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> ClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> =
+            std::collections::HashMap::new();
         let mut noise_count = 0;
 
         for &label in labels {
@@ -230,7 +228,8 @@ impl StandardScaler {
         for i in 0..n_features {
             let col = features.column(i);
             let mean = means[i];
-            let variance = col.iter().map(|&x| (x - mean) * (x - mean)).sum::<f64>() / col.len() as f64;
+            let variance =
+                col.iter().map(|&x| (x - mean) * (x - mean)).sum::<f64>() / col.len() as f64;
             scales[i] = variance.sqrt();
         }
 
@@ -317,7 +316,13 @@ impl MiniBatchKMeans {
     /// * `max_iter` - Maximum number of iterations (default: 100)
     /// * `tol` - Relative tolerance for convergence (default: 1e-4)
     /// * `random_state` - Random seed for reproducibility (optional)
-    pub fn new(n_clusters: usize, batch_size: usize, max_iter: usize, tol: f64, random_state: Option<u64>) -> Result<Self> {
+    pub fn new(
+        n_clusters: usize,
+        batch_size: usize,
+        max_iter: usize,
+        tol: f64,
+        random_state: Option<u64>,
+    ) -> Result<Self> {
         if n_clusters == 0 {
             return Err(ClusteringError::InvalidMinSamples { min_samples: 0 });
         }
@@ -384,7 +389,8 @@ impl MiniBatchKMeans {
                 if counts[k] > 0 {
                     for d in 0..n_dims {
                         let update = updates[k][d] / counts[k] as f64;
-                        centers[k][d] = (1.0 - learning_rate) * centers[k][d] + learning_rate * update;
+                        centers[k][d] =
+                            (1.0 - learning_rate) * centers[k][d] + learning_rate * update;
                     }
                 }
             }
@@ -462,7 +468,11 @@ impl MiniBatchKMeans {
     }
 
     /// Find nearest center for a sample
-    fn find_nearest_center(&self, sample: ndarray::ArrayView1<f64>, centers: &[Vec<f64>]) -> (usize, f64) {
+    fn find_nearest_center(
+        &self,
+        sample: ndarray::ArrayView1<f64>,
+        centers: &[Vec<f64>],
+    ) -> (usize, f64) {
         let mut nearest = 0;
         let mut min_dist = f64::MAX;
 
@@ -496,7 +506,8 @@ impl MiniBatchKMeans {
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> ClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> =
+            std::collections::HashMap::new();
 
         for &label in labels {
             *cluster_counts.entry(label).or_insert(0) += 1;
@@ -833,7 +844,10 @@ mod tests {
         let labels1 = kmeans1.fit_predict(&features).unwrap();
         let labels2 = kmeans2.fit_predict(&features).unwrap();
 
-        assert_eq!(labels1, labels2, "Should produce identical results with same seed");
+        assert_eq!(
+            labels1, labels2,
+            "Should produce identical results with same seed"
+        );
     }
 
     /// Test 16: MiniBatch K-Means cluster statistics

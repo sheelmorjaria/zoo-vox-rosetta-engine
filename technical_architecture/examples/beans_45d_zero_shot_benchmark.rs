@@ -11,10 +11,6 @@
 //! This tests whether the 45D features capture universal acoustic patterns
 //! that transfer across species boundaries.
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,6 +20,7 @@ use std::io::{BufReader, BufWriter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 
@@ -114,14 +111,12 @@ struct ConfusionPair {
 fn get_unseen_datasets() -> Vec<&'static str> {
     vec![
         // Birds (diverse vocalizations)
-        "Xeno-canto",           // Bird species from around the world
-        "iNaturalist",          // Citizen science bird recordings
-
+        "Xeno-canto",  // Bird species from around the world
+        "iNaturalist", // Citizen science bird recordings
         // Marine mammals (completely different acoustic domain)
-        "Watkins",              // Marine mammal sounds
-
+        "Watkins", // Marine mammal sounds
         // Primates (mammalian vocalizations)
-        "Hainan Gibbons",       // Gibbon calls
+        "Hainan Gibbons", // Gibbon calls
     ]
 }
 
@@ -173,7 +168,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let extracted_results: Vec<Option<Sample>> = manifest.samples
+    let extracted_results: Vec<Option<Sample>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -207,15 +203,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let extraction_time = extraction_start.elapsed();
 
-    let all_samples: Vec<_> = extracted_results.into_iter()
-        .filter_map(|s| s)
-        .collect();
+    let all_samples: Vec<_> = extracted_results.into_iter().filter_map(|s| s).collect();
 
     let n_valid = all_samples.len();
     println!("\nExtraction Complete:");
     println!("  ├─ Valid Samples: {}", n_valid);
     println!("  ├─ Time: {:.1}s", extraction_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} samples/sec", n_valid as f64 / extraction_time.as_secs_f64());
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        n_valid as f64 / extraction_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -233,7 +230,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for sample in &all_samples {
         let is_unseen = unseen_dataset_names.contains(sample.source_dataset.as_str());
 
-        let entry = dataset_counts.entry(sample.source_dataset.clone()).or_insert((0, 0));
+        let entry = dataset_counts
+            .entry(sample.source_dataset.clone())
+            .or_insert((0, 0));
         if is_unseen {
             unseen_samples.push(sample);
             entry.1 += 1;
@@ -243,13 +242,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let seen_dataset_names: Vec<String> = seen_samples.iter()
+    let seen_dataset_names: Vec<String> = seen_samples
+        .iter()
         .map(|s| s.source_dataset.clone())
         .collect::<HashSet<_>>()
         .into_iter()
         .collect();
 
-    let unseen_dataset_names_vec: Vec<String> = unseen_samples.iter()
+    let unseen_dataset_names_vec: Vec<String> = unseen_samples
+        .iter()
         .map(|s| s.source_dataset.clone())
         .collect::<HashSet<_>>()
         .into_iter()
@@ -257,11 +258,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Dataset Distribution:");
     let mut sorted_datasets: Vec<_> = dataset_counts.iter().collect();
-    sorted_datasets.sort_by(|a, b| (b.1.0 + b.1.1).cmp(&(a.1.0 + a.1.1)));
+    sorted_datasets.sort_by(|a, b| (b.1 .0 + b.1 .1).cmp(&(a.1 .0 + a.1 .1)));
 
     for (name, (seen, unseen)) in &sorted_datasets {
         let status = if *unseen > 0 { "UNSEEN" } else { "seen" };
-        println!("  ├─ {}: {} seen, {} unseen [{}]", name, seen, unseen, status);
+        println!(
+            "  ├─ {}: {} seen, {} unseen [{}]",
+            name, seen, unseen, status
+        );
     }
     println!();
 
@@ -279,8 +283,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[4/4] Phase 3: Zero-Shot k-NN Evaluation");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
-    println!("Evaluating {} unseen samples against {} seen samples...",
-        unseen_samples.len(), seen_samples.len());
+    println!(
+        "Evaluating {} unseen samples against {} seen samples...",
+        unseen_samples.len(),
+        seen_samples.len()
+    );
     println!();
 
     let eval_start = Instant::now();
@@ -288,7 +295,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create similarity engine and fit on seen samples only
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix = ndarray::Array2::<f64>::zeros((seen_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix =
+            ndarray::Array2::<f64>::zeros((seen_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in seen_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -302,17 +310,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let correct = Arc::new(AtomicUsize::new(0));
     let top3_correct = Arc::new(AtomicUsize::new(0));
     let top5_correct = Arc::new(AtomicUsize::new(0));
-    let per_dataset_correct: HashMap<String, Arc<AtomicUsize>> = unseen_dataset_names_vec.iter()
+    let per_dataset_correct: HashMap<String, Arc<AtomicUsize>> = unseen_dataset_names_vec
+        .iter()
         .map(|name| (name.clone(), Arc::new(AtomicUsize::new(0))))
         .collect();
-    let per_dataset_total: HashMap<String, Arc<AtomicUsize>> = unseen_dataset_names_vec.iter()
+    let per_dataset_total: HashMap<String, Arc<AtomicUsize>> = unseen_dataset_names_vec
+        .iter()
         .map(|name| (name.clone(), Arc::new(AtomicUsize::new(0))))
         .collect();
 
     // Track confusion
-    let confusion: HashMap<String, HashMap<String, Arc<AtomicUsize>>> = unseen_dataset_names_vec.iter()
+    let confusion: HashMap<String, HashMap<String, Arc<AtomicUsize>>> = unseen_dataset_names_vec
+        .iter()
         .map(|unseen| {
-            let inner: HashMap<String, Arc<AtomicUsize>> = seen_dataset_names.iter()
+            let inner: HashMap<String, Arc<AtomicUsize>> = seen_dataset_names
+                .iter()
                 .map(|seen| (seen.clone(), Arc::new(AtomicUsize::new(0))))
                 .collect();
             (unseen.clone(), inner)
@@ -326,7 +338,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let query = Array1::from_vec(unseen.features.clone());
 
         // Find k nearest neighbors from SEEN samples only
-        let mut distances: Vec<(usize, f64)> = seen_samples.iter()
+        let mut distances: Vec<(usize, f64)> = seen_samples
+            .iter()
             .enumerate()
             .map(|(j, seen)| {
                 let candidate = Array1::from_vec(seen.features.clone());
@@ -368,7 +381,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // For a true zero-shot measure, we check if the k nearest neighbors
         // all come from the same or similar acoustic domain
-        let neighbor_datasets: Vec<&str> = distances.iter()
+        let neighbor_datasets: Vec<&str> = distances
+            .iter()
             .take(k)
             .map(|(idx, _)| seen_samples[*idx].source_dataset.as_str())
             .collect();
@@ -395,7 +409,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if (i + 1) % 2000 == 0 {
-            println!("  Progress: {}/{} unseen samples evaluated", i + 1, eval_size);
+            println!(
+                "  Progress: {}/{} unseen samples evaluated",
+                i + 1,
+                eval_size
+            );
         }
     });
 
@@ -412,8 +430,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compute per-dataset accuracy
     let mut per_dataset_accuracy: HashMap<String, f64> = HashMap::new();
     for name in &unseen_dataset_names_vec {
-        let correct = per_dataset_correct.get(name).map(|c| c.load(Ordering::Relaxed)).unwrap_or(0);
-        let total = per_dataset_total.get(name).map(|c| c.load(Ordering::Relaxed)).unwrap_or(0);
+        let correct = per_dataset_correct
+            .get(name)
+            .map(|c| c.load(Ordering::Relaxed))
+            .unwrap_or(0);
+        let total = per_dataset_total
+            .get(name)
+            .map(|c| c.load(Ordering::Relaxed))
+            .unwrap_or(0);
         if total > 0 {
             per_dataset_accuracy.insert(name.clone(), correct as f64 / total as f64);
         }
@@ -451,9 +475,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Clustering Quality (k=10 neighbors from same dataset):");
-    println!("  ├─ Top-1 (all neighbors same dataset): {:.1}%", accuracy * 100.0);
-    println!("  ├─ Top-3 (≤3 unique datasets): {:.1}%", top3_accuracy * 100.0);
-    println!("  └─ Top-5 (≤5 unique datasets): {:.1}%", top5_accuracy * 100.0);
+    println!(
+        "  ├─ Top-1 (all neighbors same dataset): {:.1}%",
+        accuracy * 100.0
+    );
+    println!(
+        "  ├─ Top-3 (≤3 unique datasets): {:.1}%",
+        top3_accuracy * 100.0
+    );
+    println!(
+        "  └─ Top-5 (≤5 unique datasets): {:.1}%",
+        top5_accuracy * 100.0
+    );
     println!();
 
     println!("Per-Dataset Transfer (Top-1 clustering):");
@@ -466,7 +499,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Most Confused Dataset Pairs (unseen → predicted seen):");
     for pair in most_confused_pairs.iter().take(5) {
-        println!("  ├─ {} → {}: {} times", pair.true_dataset, pair.predicted_dataset, pair.count);
+        println!(
+            "  ├─ {} → {}: {} times",
+            pair.true_dataset, pair.predicted_dataset, pair.count
+        );
     }
     println!();
 
@@ -483,7 +519,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Configuration:");
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
     println!("  ├─ Seen Datasets: {} (train)", seen_dataset_names.len());
-    println!("  └─ Unseen Datasets: {} (test)", unseen_dataset_names_vec.len());
+    println!(
+        "  └─ Unseen Datasets: {} (test)",
+        unseen_dataset_names_vec.len()
+    );
     println!();
 
     println!("Samples:");
@@ -499,8 +538,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Zero-Shot Transfer Metrics:");
     println!("  ├─ Clustering Quality (Top-1): {:.1}%", accuracy * 100.0);
-    println!("  ├─ Clustering Quality (Top-3): {:.1}%", top3_accuracy * 100.0);
-    println!("  └─ Clustering Quality (Top-5): {:.1}%", top5_accuracy * 100.0);
+    println!(
+        "  ├─ Clustering Quality (Top-3): {:.1}%",
+        top3_accuracy * 100.0
+    );
+    println!(
+        "  └─ Clustering Quality (Top-5): {:.1}%",
+        top5_accuracy * 100.0
+    );
     println!();
 
     // Assessment
@@ -553,10 +598,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
-    let audio: Vec<f64> = bytes.chunks_exact(4)
+    let audio: Vec<f64> = bytes
+        .chunks_exact(4)
         .take(expected_samples)
         .map(|chunk| {
             let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);

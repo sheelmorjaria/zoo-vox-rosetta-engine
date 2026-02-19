@@ -50,7 +50,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let file_segments = load_file_segments(&phase0_results_dir)?;
     let total_segments: usize = file_segments.values().map(|v| v.len()).sum();
-    println!("   📂 Loaded {} files with {} total segments", file_segments.len(), total_segments);
+    println!(
+        "   📂 Loaded {} files with {} total segments",
+        file_segments.len(),
+        total_segments
+    );
     println!();
 
     // ========================================================================
@@ -83,12 +87,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      Files with segments: {}", file_segments.len());
     println!("      Files with annotations: {}", file_context_map.len());
     println!("      Matched files: {}", matched_files.len());
-    println!("      Missing files (annotation but no segment): {}", missing_files.len());
+    println!(
+        "      Missing files (annotation but no segment): {}",
+        missing_files.len()
+    );
 
     if !missing_files.is_empty() && missing_files.len() <= 20 {
         println!("      Missing files: {:?}", missing_files);
     } else if missing_files.len() > 20 {
-        println!("      First 20 missing files: {:?}", missing_files.iter().take(20).collect::<Vec<_>>());
+        println!(
+            "      First 20 missing files: {:?}",
+            missing_files.iter().take(20).collect::<Vec<_>>()
+        );
     }
     println!();
 
@@ -101,9 +111,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (_i, (ctx, seqs)) in contexts.iter().enumerate().take(10) {
         let total_phrases: usize = seqs.iter().map(|s| s.len()).sum();
-        let avg_phrase_count = if seqs.is_empty() { 0.0 } else { total_phrases as f64 / seqs.len() as f64 };
-        println!("      Context {}: {} file-sequences, {} total phrases (avg {:.1} per file)",
-                 ctx, seqs.len(), total_phrases, avg_phrase_count);
+        let avg_phrase_count = if seqs.is_empty() {
+            0.0
+        } else {
+            total_phrases as f64 / seqs.len() as f64
+        };
+        println!(
+            "      Context {}: {} file-sequences, {} total phrases (avg {:.1} per file)",
+            ctx,
+            seqs.len(),
+            total_phrases,
+            avg_phrase_count
+        );
     }
     println!();
 
@@ -138,7 +157,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save sequences by context
     let seq_path = results_dir.join("sequences_by_context.json");
-    fs::write(&seq_path, serde_json::to_string_pretty(&sequences_by_context)?)?;
+    fs::write(
+        &seq_path,
+        serde_json::to_string_pretty(&sequences_by_context)?,
+    )?;
     println!("   💾 Sequences saved: {}", seq_path.display());
     println!();
 
@@ -153,23 +175,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                           ║");
     println!("║  📊 SUMMARY OF FINDINGS:                                                  ║");
-    println!("║     • MSA conserved regions: {}                                          ║", report.msa_conserved_regions);
-    println!("║     • HMM hidden states: {}                                              ║", report.hmm_states);
-    println!("║     • Network motifs: {}                                                 ║", report.network_motifs);
-    println!("║     • Multi-context motifs: {}                                           ║", report.multi_context_motifs);
+    println!(
+        "║     • MSA conserved regions: {}                                          ║",
+        report.msa_conserved_regions
+    );
+    println!(
+        "║     • HMM hidden states: {}                                              ║",
+        report.hmm_states
+    );
+    println!(
+        "║     • Network motifs: {}                                                 ║",
+        report.network_motifs
+    );
+    println!(
+        "║     • Multi-context motifs: {}                                           ║",
+        report.multi_context_motifs
+    );
     println!("║                                                                           ║");
     if report.ml_improvement > 0.0 {
-        println!("║     ✅ Syntax features improve prediction by {:.1}%                    ║", report.ml_improvement * 100.0);
+        println!(
+            "║     ✅ Syntax features improve prediction by {:.1}%                    ║",
+            report.ml_improvement * 100.0
+        );
         println!("║        This SUPPORTS the combinatorial syntax hypothesis                ║");
     } else {
         println!("║     ⚠️  Syntax features do not improve prediction                        ║");
         println!("║        This DOES NOT support the combinatorial syntax hypothesis        ║");
     }
     println!("║                                                                           ║");
-    println!("║  ⏱️  Analysis time: {:.2}s                                                ║", elapsed.as_secs_f64());
+    println!(
+        "║  ⏱️  Analysis time: {:.2}s                                                ║",
+        elapsed.as_secs_f64()
+    );
     println!("║                                                                           ║");
     println!("║  📁 Results saved to:                                                     ║");
-    println!("║     {}                                              ║", results_dir.display());
+    println!(
+        "║     {}                                              ║",
+        results_dir.display()
+    );
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
@@ -230,7 +273,8 @@ fn load_file_segments(
     results_dir: &Path,
 ) -> Result<HashMap<String, Vec<i32>>, Box<dyn std::error::Error>> {
     let segments_path = results_dir.join("all_segments.json");
-    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     println!("   📖 Parsing segment data...");
 
@@ -241,9 +285,7 @@ fn load_file_segments(
     if let Some(arr) = segments_json.as_array() {
         for segment in arr {
             if let Some(file_name) = segment["file_name"].as_str() {
-                let cluster_id = segment["level1_cluster_id"]
-                    .as_i64()
-                    .unwrap_or(-1) as i32;
+                let cluster_id = segment["level1_cluster_id"].as_i64().unwrap_or(-1) as i32;
 
                 total_count += 1;
 
@@ -265,7 +307,10 @@ fn load_file_segments(
     println!("      Total segments: {}", total_count);
     println!("      Noise segments (skipped): {}", noise_count);
     println!("      Valid segments: {}", total_count - noise_count);
-    println!("      Unique files with valid segments: {}", file_segments.len());
+    println!(
+        "      Unique files with valid segments: {}",
+        file_segments.len()
+    );
 
     // Calculate average segments per file
     let avg_segments = if file_segments.is_empty() {
@@ -299,7 +344,8 @@ fn group_sequences_by_context(
 
             // Offset cluster IDs to avoid collision with gap marker (-999)
             // and create a sequence from this file's cluster IDs
-            let sequence: Vec<i32> = cluster_ids.iter()
+            let sequence: Vec<i32> = cluster_ids
+                .iter()
                 .map(|&id| id + 1000) // Use larger offset (1000) to be safe
                 .collect();
 
@@ -323,17 +369,22 @@ fn group_sequences_by_context(
     println!();
 
     // Validate unique cluster IDs
-    let all_ids: HashSet<i32> = file_segments.values()
+    let all_ids: HashSet<i32> = file_segments
+        .values()
         .flat_map(|ids| ids.iter().copied())
         .collect();
     println!("   📊 Cluster ID Statistics:");
     println!("      Unique cluster IDs (raw): {}", all_ids.len());
-    println!("      Cluster ID range: {} to {}",
-             all_ids.iter().min().unwrap_or(&-1),
-             all_ids.iter().max().unwrap_or(&-1));
-    println!("      After offset (1000): {} to {}",
-             all_ids.iter().min().unwrap_or(&-1) + 1000,
-             all_ids.iter().max().unwrap_or(&-1) + 1000);
+    println!(
+        "      Cluster ID range: {} to {}",
+        all_ids.iter().min().unwrap_or(&-1),
+        all_ids.iter().max().unwrap_or(&-1)
+    );
+    println!(
+        "      After offset (1000): {} to {}",
+        all_ids.iter().min().unwrap_or(&-1) + 1000,
+        all_ids.iter().max().unwrap_or(&-1) + 1000
+    );
     println!();
 
     Ok(sequences_by_context)

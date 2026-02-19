@@ -223,7 +223,7 @@ mod within_vocalization_tests {
         use super::*;
 
         #[test]
-        #[ignore]  // Expensive test - run manually
+        #[ignore] // Expensive test - run manually
         fn test_detect_phrases_in_bat_corpus() {
             // GIVEN: The full bat vocalization corpus
 

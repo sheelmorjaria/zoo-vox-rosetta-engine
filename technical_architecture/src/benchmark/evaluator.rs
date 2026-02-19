@@ -4,9 +4,7 @@
 //! performance on benchmark datasets.
 
 use crate::benchmark::dataset_loader::BenchmarkDataset;
-use crate::benchmark::metrics::{
-    ClassificationMetrics, FeatureAblationResults, MetricCalculator,
-};
+use crate::benchmark::metrics::{ClassificationMetrics, FeatureAblationResults, MetricCalculator};
 use crate::micro_dynamics_extractor::{FeatureDim, MicroDynamicsExtractor};
 
 /// Extraction report
@@ -49,7 +47,8 @@ impl FeatureEvaluator {
 
         for recording in &dataset.recordings {
             // Mock audio for testing (would load actual audio in production)
-            let mock_audio = vec![0.0; (recording.duration_ms * recording.sample_rate as f32 / 1000.0) as usize];
+            let mock_audio =
+                vec![0.0; (recording.duration_ms * recording.sample_rate as f32 / 1000.0) as usize];
 
             let start = std::time::Instant::now();
             let result = self.extractor.extract(&mock_audio);

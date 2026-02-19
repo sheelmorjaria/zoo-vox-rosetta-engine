@@ -24,7 +24,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate test audio (bat-like FM sweep: 40kHz → 20kHz, 150ms)
     println!("Generating test audio (bat FM sweep 40kHz→20kHz, 150ms)...");
     let audio = generate_fm_sweep(40000.0, 20000.0, 150.0, sample_rate);
-    println!("Audio length: {} samples ({:.1} ms)", audio.len(), audio.len() as f32 / sample_rate as f32 * 1000.0);
+    println!(
+        "Audio length: {} samples ({:.1} ms)",
+        audio.len(),
+        audio.len() as f32 / sample_rate as f32 * 1000.0
+    );
     println!();
 
     // Extract 56D features
@@ -41,15 +45,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Attack time: {:.2} ms", features56.base_30d.attack_time_ms);
     println!("Decay time: {:.2} ms", features56.base_30d.decay_time_ms);
     println!("Sustain level: {:.2}", features56.base_30d.sustain_level);
-    println!("Vibrato rate: {:.2} Hz", features56.base_30d.vibrato_rate_hz);
-    println!("Vibrato depth: {:.2} cents", features56.base_30d.vibrato_depth);
+    println!(
+        "Vibrato rate: {:.2} Hz",
+        features56.base_30d.vibrato_rate_hz
+    );
+    println!(
+        "Vibrato depth: {:.2} cents",
+        features56.base_30d.vibrato_depth
+    );
     println!();
 
     println!("--- Timbre Features ---");
     println!("Jitter: {:.4}", features56.base_30d.jitter);
     println!("Shimmer: {:.4}", features56.base_30d.shimmer);
     println!("Harmonicity: {:.2}", features56.base_30d.harmonicity);
-    println!("Spectral flatness: {:.2}", features56.base_30d.spectral_flatness);
+    println!(
+        "Spectral flatness: {:.2}",
+        features56.base_30d.spectral_flatness
+    );
     println!("HNR: {:.2} dB", features56.base_30d.harmonic_to_noise_ratio);
     println!();
 
@@ -65,7 +78,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Rhythm Factors (3D) ---");
     println!("Median ICI: {:.2} ms", features56.base_30d.median_ici_ms);
     println!("Onset rate: {:.2} Hz", features56.base_30d.onset_rate_hz);
-    println!("ICI CV: {:.2}", features56.base_30d.ici_coefficient_of_variation);
+    println!(
+        "ICI CV: {:.2}",
+        features56.base_30d.ici_coefficient_of_variation
+    );
     println!();
 
     // Display full delta MFCCs (13D)
@@ -101,7 +117,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Summary ===");
     println!("✓ 56D feature extraction successful!");
     println!("✓ All feature values are finite and valid");
-    println!("✓ Extraction time: {:.2} ms (<220ms target)", elapsed.as_millis() as f32);
+    println!(
+        "✓ Extraction time: {:.2} ms (<220ms target)",
+        elapsed.as_millis() as f32
+    );
     println!();
 
     println!("Feature breakdown:");
@@ -118,7 +137,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Generate an FM sweep (frequency modulated tone)
-fn generate_fm_sweep(start_freq_hz: f32, end_freq_hz: f32, duration_ms: f32, sample_rate: u32) -> Vec<f32> {
+fn generate_fm_sweep(
+    start_freq_hz: f32,
+    end_freq_hz: f32,
+    duration_ms: f32,
+    sample_rate: u32,
+) -> Vec<f32> {
     let num_samples = (duration_ms / 1000.0 * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
 
@@ -182,8 +206,14 @@ fn analyze_delta_patterns(features: &technical_architecture::MicroDynamicsFeatur
     // Calculate delta statistics
     let delta_sum: f32 = features.mfcc_delta.iter().sum();
     let delta_abs_sum: f32 = features.mfcc_delta.iter().map(|&d| d.abs()).sum();
-    let delta_max = features.mfcc_delta.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
-    let delta_min = features.mfcc_delta.iter().fold(f32::INFINITY, |a, &b| a.min(b));
+    let delta_max = features
+        .mfcc_delta
+        .iter()
+        .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+    let delta_min = features
+        .mfcc_delta
+        .iter()
+        .fold(f32::INFINITY, |a, &b| a.min(b));
 
     println!("Δ MFCC Statistics:");
     println!("  Sum: {:.6}", delta_sum);
@@ -196,8 +226,14 @@ fn analyze_delta_patterns(features: &technical_architecture::MicroDynamicsFeatur
     // Calculate delta-delta statistics
     let dd_sum: f32 = features.mfcc_delta_delta.iter().sum();
     let dd_abs_sum: f32 = features.mfcc_delta_delta.iter().map(|&d| d.abs()).sum();
-    let dd_max = features.mfcc_delta_delta.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
-    let dd_min = features.mfcc_delta_delta.iter().fold(f32::INFINITY, |a, &b| a.min(b));
+    let dd_max = features
+        .mfcc_delta_delta
+        .iter()
+        .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+    let dd_min = features
+        .mfcc_delta_delta
+        .iter()
+        .fold(f32::INFINITY, |a, &b| a.min(b));
 
     println!("ΔΔ MFCC Statistics:");
     println!("  Sum: {:.6}", dd_sum);

@@ -37,7 +37,7 @@ use crate::dynamic_segmenter::{DynamicPhraseCandidate, DynamicSegmenter, Dynamic
 use crate::species::{AtomicGranularity, HierarchicalThresholds};
 use crate::zoo_vox_data_models::{AcousticFeatures30D, PhrasePrototype};
 use crate::zoo_vox_features::ZooVoxFeatureExtractor;
-use crate::zoo_vox_within_call::{WithinCallAnalyzer, WithinCallAnalysisResult};
+use crate::zoo_vox_within_call::{WithinCallAnalysisResult, WithinCallAnalyzer};
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -184,10 +184,18 @@ impl PhraseDiscoveryPipeline {
     /// Create a new pipeline with the given configuration
     pub fn new(config: PhraseDiscoveryConfig) -> Self {
         let segmenter_config = match config.atomic_granularity {
-            AtomicGranularity::Motif => DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds),
-            AtomicGranularity::Syllable => DynamicSegmenterConfig::for_syllable_level(&config.hierarchical_thresholds),
-            AtomicGranularity::Note => DynamicSegmenterConfig::for_note_level(&config.hierarchical_thresholds),
-            AtomicGranularity::Contour => DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds),
+            AtomicGranularity::Motif => {
+                DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds)
+            }
+            AtomicGranularity::Syllable => {
+                DynamicSegmenterConfig::for_syllable_level(&config.hierarchical_thresholds)
+            }
+            AtomicGranularity::Note => {
+                DynamicSegmenterConfig::for_note_level(&config.hierarchical_thresholds)
+            }
+            AtomicGranularity::Contour => {
+                DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds)
+            }
         };
 
         let segmenter = DynamicSegmenter::new(segmenter_config, config.sample_rate);
@@ -243,14 +251,16 @@ impl PhraseDiscoveryPipeline {
 
         for (audio, source_file) in audio_segments {
             // Use Arc<Mutex<>> to allow Fn closure (as in the example)
-            let extractor = Arc::new(std::sync::Mutex::new(
-                ZooVoxFeatureExtractor::new(self.config.sample_rate)
-            ));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                self.config.sample_rate,
+            )));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64)
+                    .ok()
+                    .map(|f| f.to_vector().to_vec())
             };
 
             let result = self.segmenter.segment(audio, extract_fn, source_file);
@@ -278,33 +288,36 @@ impl PhraseDiscoveryPipeline {
         }
 
         // Step 2: Convert to PhrasePrototypes (45D -> 30D)
-        let prototypes: Vec<PhrasePrototype> = all_candidates.iter()
-            .map(|(candidate, source_file)| {
-                self.candidate_to_prototype(candidate, source_file)
-            })
+        let prototypes: Vec<PhrasePrototype> = all_candidates
+            .iter()
+            .map(|(candidate, source_file)| self.candidate_to_prototype(candidate, source_file))
             .collect();
 
         // Step 3: Acoustic Similarity Clustering (Discover Types)
         let cluster_start = std::time::Instant::now();
-        let analysis_result = self.analyzer.discover_phrases(
-            prototypes,
-            "pipeline",
-            &self.config.species,
-        );
+        let analysis_result =
+            self.analyzer
+                .discover_phrases(prototypes, "pipeline", &self.config.species);
         cluster_time = cluster_start.elapsed().as_millis();
 
         // Step 4: Build output
-        let phrase_types: Vec<PipelinePhraseType> = analysis_result.phrase_types.iter()
+        let phrase_types: Vec<PipelinePhraseType> = analysis_result
+            .phrase_types
+            .iter()
             .map(|pt| {
                 // Calculate durations from sample indices
                 let sample_rate = self.config.sample_rate as f64;
-                let durations: Vec<f64> = pt.instances.iter()
+                let durations: Vec<f64> = pt
+                    .instances
+                    .iter()
                     .map(|inst| {
                         let samples = (inst.end_sample - inst.start_sample) as f64;
                         samples / sample_rate * 1000.0 // Convert to ms
                     })
                     .collect();
-                let avg_dur = if durations.is_empty() { 0.0 } else {
+                let avg_dur = if durations.is_empty() {
+                    0.0
+                } else {
                     durations.iter().sum::<f64>() / durations.len() as f64
                 };
                 let min_dur = durations.iter().cloned().fold(f64::INFINITY, f64::min);
@@ -319,9 +332,7 @@ impl PhraseDiscoveryPipeline {
                     avg_duration_ms: avg_dur,
                     duration_range_ms: (min_dur, max_dur),
                     centroid_features: centroid,
-                    source_files: pt.instances.iter()
-                        .map(|i| i.source_id.clone())
-                        .collect(),
+                    source_files: pt.instances.iter().map(|i| i.source_id.clone()).collect(),
                 }
             })
             .collect();
@@ -394,7 +405,9 @@ impl PhraseDiscoveryPipeline {
     fn build_transitions(&self, sequence: &[String]) -> HashMap<(String, String), usize> {
         let mut transitions = HashMap::new();
         for window in sequence.windows(2) {
-            *transitions.entry((window[0].clone(), window[1].clone())).or_insert(0) += 1;
+            *transitions
+                .entry((window[0].clone(), window[1].clone()))
+                .or_insert(0) += 1;
         }
         transitions
     }

@@ -9,10 +9,10 @@
 
 use ndarray::Array2;
 use rayon::prelude::*;
-use std::collections::{HashMap, HashSet};
-use std::collections::BinaryHeap;
-use std::cmp::Reverse;
 use std::cmp::Ordering;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
+use std::collections::{HashMap, HashSet};
 
 // Wrapper for f64 that implements Ord (NaN-safe)
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -23,8 +23,16 @@ impl Eq for OrderedFloat {}
 impl PartialOrd for OrderedFloat {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Handle NaN by treating it as infinity
-        let a = if self.0.is_nan() { f64::INFINITY } else { self.0 };
-        let b = if other.0.is_nan() { f64::INFINITY } else { other.0 };
+        let a = if self.0.is_nan() {
+            f64::INFINITY
+        } else {
+            self.0
+        };
+        let b = if other.0.is_nan() {
+            f64::INFINITY
+        } else {
+            other.0
+        };
         a.partial_cmp(&b)
     }
 }
@@ -182,7 +190,11 @@ struct KdTree {
 }
 
 impl KdTree {
-    fn new(mut points: Vec<(usize, Vec<f64>)>, depth: usize, metric: DistanceMetric) -> Option<Box<KdTree>> {
+    fn new(
+        mut points: Vec<(usize, Vec<f64>)>,
+        depth: usize,
+        metric: DistanceMetric,
+    ) -> Option<Box<KdTree>> {
         if points.is_empty() {
             return None;
         }
@@ -224,7 +236,12 @@ impl KdTree {
             .collect()
     }
 
-    fn search(&self, query: &[f64], k: usize, heap: &mut BinaryHeap<Reverse<(OrderedFloat, usize)>>) {
+    fn search(
+        &self,
+        query: &[f64],
+        k: usize,
+        heap: &mut BinaryHeap<Reverse<(OrderedFloat, usize)>>,
+    ) {
         // Distance to this node
         let dist = match self.metric {
             DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(query, &self.points[0]),
@@ -284,9 +301,15 @@ impl HdbscanClustering {
     }
 
     /// Create a new HDBSCAN clustering algorithm with specified distance metric
-    pub fn with_metric(min_cluster_size: usize, min_samples: usize, metric: DistanceMetric) -> Result<Self> {
+    pub fn with_metric(
+        min_cluster_size: usize,
+        min_samples: usize,
+        metric: DistanceMetric,
+    ) -> Result<Self> {
         if min_cluster_size < 2 {
-            return Err(HdbscanError::InvalidMinClusterSize { min: min_cluster_size });
+            return Err(HdbscanError::InvalidMinClusterSize {
+                min: min_cluster_size,
+            });
         }
         if min_samples < 1 {
             return Err(HdbscanError::InvalidMinSamples { min: min_samples });
@@ -342,9 +365,8 @@ impl HdbscanClustering {
         println!("  ✅ Core distances computed");
 
         // Step 2: Pre-compute feature rows
-        let feature_rows: Vec<Vec<f64>> = (0..n_samples)
-            .map(|i| features.row(i).to_vec())
-            .collect();
+        let feature_rows: Vec<Vec<f64>> =
+            (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
         println!("  📊 Building MST with Binary Heap...");
 
@@ -376,9 +398,8 @@ impl HdbscanClustering {
         match kd_tree {
             Some(tree) => {
                 // Parallel KNN queries using KD-tree
-                let feature_rows: Vec<Vec<f64>> = (0..n_samples)
-                    .map(|i| features.row(i).to_vec())
-                    .collect();
+                let feature_rows: Vec<Vec<f64>> =
+                    (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
                 let core_distances: Vec<f64> = feature_rows
                     .par_iter()
@@ -450,20 +471,15 @@ impl HdbscanClustering {
 
         // Configure HNSW parameters
         // These are tuned for memory efficiency on large datasets
-        let nb_connection = 15;      // Number of bidirectional links for each node (default: 15)
-        let ef_construction = 100;   // Size of candidate list during construction (higher = better accuracy)
-        let max_layer = 16;          // Maximum number of layers (log₂(n) is typical)
-        let ef_search = 50;          // Size of candidate list during search
+        let nb_connection = 15; // Number of bidirectional links for each node (default: 15)
+        let ef_construction = 100; // Size of candidate list during construction (higher = better accuracy)
+        let max_layer = 16; // Maximum number of layers (log₂(n) is typical)
+        let ef_search = 50; // Size of candidate list during search
 
         // Create HNSW index with appropriate distance metric
         // For normalized vectors + L2, this is equivalent to cosine distance
-        let hnsw: Hnsw<f32, DistL2> = Hnsw::new(
-            nb_connection,
-            n_dims,
-            max_layer,
-            ef_construction,
-            DistL2 {},
-        );
+        let hnsw: Hnsw<f32, DistL2> =
+            Hnsw::new(nb_connection, n_dims, max_layer, ef_construction, DistL2 {});
 
         println!("  📝 Inserting {} points into HNSW index...", n_samples);
         let insert_start = std::time::Instant::now();
@@ -475,9 +491,15 @@ impl HdbscanClustering {
             hnsw.insert((point.as_slice(), i));
         }
 
-        println!("     └─ HNSW index built in {:.2}s", insert_start.elapsed().as_secs_f64());
+        println!(
+            "     └─ HNSW index built in {:.2}s",
+            insert_start.elapsed().as_secs_f64()
+        );
 
-        println!("  🔍 Querying {} nearest neighbors for each point...", min_samples);
+        println!(
+            "  🔍 Querying {} nearest neighbors for each point...",
+            min_samples
+        );
         let query_start = std::time::Instant::now();
 
         // Query KNN for each point using HNSW
@@ -503,10 +525,15 @@ impl HdbscanClustering {
             })
             .collect();
 
-        println!("     └─ KNN queries completed in {:.2}s ({:.3}ms per sample)",
-                 query_start.elapsed().as_secs_f64(),
-                 query_start.elapsed().as_millis() as f64 / n_samples as f64);
-        println!("  ✅ HNSW core distances computed in {:.2}s total", hnsw_start.elapsed().as_secs_f64());
+        println!(
+            "     └─ KNN queries completed in {:.2}s ({:.3}ms per sample)",
+            query_start.elapsed().as_secs_f64(),
+            query_start.elapsed().as_millis() as f64 / n_samples as f64
+        );
+        println!(
+            "  ✅ HNSW core distances computed in {:.2}s total",
+            hnsw_start.elapsed().as_secs_f64()
+        );
 
         Ok(core_distances)
     }
@@ -527,13 +554,15 @@ impl HdbscanClustering {
         let k = self.min_samples;
         let metric = self.metric;
 
-        println!("     ├─ Building k-NN graph (k={}): ~{} edges (vs {} for complete graph)",
-                 k, n * k, n * (n - 1) / 2);
+        println!(
+            "     ├─ Building k-NN graph (k={}): ~{} edges (vs {} for complete graph)",
+            k,
+            n * k,
+            n * (n - 1) / 2
+        );
 
         // Step 1: Build KD-tree for efficient k-NN queries
-        let points: Vec<(usize, Vec<f64>)> = (0..n)
-            .map(|i| (i, feature_rows[i].clone()))
-            .collect();
+        let points: Vec<(usize, Vec<f64>)> = (0..n).map(|i| (i, feature_rows[i].clone())).collect();
 
         let kd_tree = match KdTree::new(points, 0, metric) {
             Some(tree) => tree,
@@ -716,7 +745,7 @@ impl HdbscanClustering {
             .map(|label| {
                 let count = cluster_counts[&label];
                 if count < self.min_cluster_size {
-                    -1  // Noise
+                    -1 // Noise
                 } else {
                     label
                 }
@@ -730,9 +759,8 @@ impl HdbscanClustering {
         let min_samples = self.min_samples;
         let metric = self.metric;
 
-        let feature_rows: Vec<Vec<f64>> = (0..n_samples)
-            .map(|i| features.row(i).to_vec())
-            .collect();
+        let feature_rows: Vec<Vec<f64>> =
+            (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
         let core_distances: Vec<f64> = (0..n_samples)
             .into_par_iter()
@@ -742,8 +770,13 @@ impl HdbscanClustering {
                 for j in 0..n_samples {
                     if i != j {
                         let dist = match metric {
-                            DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(&feature_rows[i], &feature_rows[j]),
-                            DistanceMetric::Cosine => DistanceMetric::cosine_distance(&feature_rows[i], &feature_rows[j]),
+                            DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(
+                                &feature_rows[i],
+                                &feature_rows[j],
+                            ),
+                            DistanceMetric::Cosine => {
+                                DistanceMetric::cosine_distance(&feature_rows[i], &feature_rows[j])
+                            }
                         };
                         distances.push(dist);
                     }
@@ -886,12 +919,7 @@ mod tests {
 
     #[test]
     fn test_hdbscan_optimized_deterministic() {
-        let features = arr2(&[
-            [0.0, 0.0],
-            [0.1, 0.0],
-            [5.0, 5.0],
-            [5.1, 5.0],
-        ]);
+        let features = arr2(&[[0.0, 0.0], [0.1, 0.0], [5.0, 5.0], [5.1, 5.0]]);
 
         let hdbscan = HdbscanClustering::new(2, 2).unwrap();
 

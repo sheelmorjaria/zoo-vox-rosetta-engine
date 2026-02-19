@@ -5,11 +5,11 @@
 //
 // Usage: cargo run --release --example phase0_recluster_cosine
 
+use ndarray::Array2;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use ndarray::Array2;
-use serde::{Deserialize, Serialize};
 use technical_architecture::hdbscan::{DistanceMetric, HdbscanClustering};
 
 const LEVEL2_MIN_CLUSTER_SIZE: usize = 5;
@@ -73,9 +73,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let all_segments: Vec<PhraseSegment> = serde_json::from_str(&segments_json)?;
     let load_time = load_start.elapsed();
 
-    println!("      ✅ Loaded {} segments in {:.2}s", all_segments.len(), load_time.as_secs_f64());
-    println!("      ├─ Feature dimensions: {}D", all_segments[0].representative_features.len());
-    println!("      └─ Total files: {}", all_segments.iter().map(|s| &s.file_name).collect::<std::collections::HashSet<_>>().len());
+    println!(
+        "      ✅ Loaded {} segments in {:.2}s",
+        all_segments.len(),
+        load_time.as_secs_f64()
+    );
+    println!(
+        "      ├─ Feature dimensions: {}D",
+        all_segments[0].representative_features.len()
+    );
+    println!(
+        "      └─ Total files: {}",
+        all_segments
+            .iter()
+            .map(|s| &s.file_name)
+            .collect::<std::collections::HashSet<_>>()
+            .len()
+    );
     println!();
 
     // ========================================================================
@@ -117,13 +131,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let labels = hdbscan.fit_predict_hnsw(&features_array)?;
     let vocab_time = vocab_start.elapsed();
 
-    println!("      ✅ Clustering completed in {:.2}s", vocab_time.as_secs_f64());
+    println!(
+        "      ✅ Clustering completed in {:.2}s",
+        vocab_time.as_secs_f64()
+    );
 
     // Group segments by cluster
-    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> = std::collections::HashMap::new();
+    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> =
+        std::collections::HashMap::new();
     for (segment_idx, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            cluster_map.entry(label).or_insert_with(Vec::new).push(&all_segments[segment_idx]);
+            cluster_map
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(&all_segments[segment_idx]);
         }
     }
 
@@ -138,9 +159,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let durations: Vec<f64> = segments.iter().map(|s| s.duration_ms).collect();
         let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
-        let variance = durations.iter()
+        let variance = durations
+            .iter()
             .map(|&d| (d - avg_duration).powi(2))
-            .sum::<f64>() / durations.len() as f64;
+            .sum::<f64>()
+            / durations.len() as f64;
         let std_duration = variance.sqrt();
 
         vocabulary.push(VocabularyItem {
@@ -186,12 +209,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "RARE"
         };
 
-        println!("      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
-                 item.vocabulary_id,
-                 item.phrase_count,
-                 item.avg_duration_ms,
-                 item.std_duration_ms,
-                 vocab_type);
+        println!(
+            "      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
+            item.vocabulary_id,
+            item.phrase_count,
+            item.avg_duration_ms,
+            item.std_duration_ms,
+            vocab_type
+        );
     }
 
     println!("      └──────┴──────────────┴──────────────┴─────────────┴────────────┘");
@@ -220,18 +245,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save timestamp map
     let timestamp_map_path = results_dir.join("timestamp_map.json");
-    let timestamp_map: Vec<serde_json::Value> = all_segments.iter()
-        .map(|seg| serde_json::json!({
-            "file_name": seg.file_name,
-            "segment_id": seg.segment_id,
-            "vocabulary_id": seg.level1_cluster_id,
-            "start_time_ms": seg.start_time_ms,
-            "end_time_ms": seg.end_time_ms,
-            "duration_ms": seg.duration_ms,
-            "start_sample": seg.start_sample,
-            "end_sample": seg.end_sample,
-            "sample_rate": seg.sample_rate,
-        }))
+    let timestamp_map: Vec<serde_json::Value> = all_segments
+        .iter()
+        .map(|seg| {
+            serde_json::json!({
+                "file_name": seg.file_name,
+                "segment_id": seg.segment_id,
+                "vocabulary_id": seg.level1_cluster_id,
+                "start_time_ms": seg.start_time_ms,
+                "end_time_ms": seg.end_time_ms,
+                "duration_ms": seg.duration_ms,
+                "start_sample": seg.start_sample,
+                "end_sample": seg.end_sample,
+                "sample_rate": seg.sample_rate,
+            })
+        })
         .collect();
     let timestamp_json = serde_json::to_string_pretty(&timestamp_map)?;
     fs::write(&timestamp_map_path, timestamp_json)?;
@@ -249,7 +277,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let mut symbolic_stream: Vec<i32> = Vec::new();
-    let mut segment_to_vocab: std::collections::HashMap<usize, i32> = std::collections::HashMap::new();
+    let mut segment_to_vocab: std::collections::HashMap<usize, i32> =
+        std::collections::HashMap::new();
 
     for vocab in &vocabulary {
         for phrase in &vocab.example_phrases {
@@ -259,12 +288,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut sorted_segments: Vec<_> = all_segments.iter().collect();
     sorted_segments.sort_by(|a, b| {
-        a.file_index.cmp(&b.file_index)
+        a.file_index
+            .cmp(&b.file_index)
             .then_with(|| a.segment_id.cmp(&b.segment_id))
     });
 
     for segment in sorted_segments {
-        let vocab_id = segment_to_vocab.get(&segment.segment_id)
+        let vocab_id = segment_to_vocab
+            .get(&segment.segment_id)
             .copied()
             .unwrap_or(-1);
         symbolic_stream.push(vocab_id);
@@ -273,10 +304,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📝 Symbolic Stream Statistics:");
     println!("      ├─ Total symbols: {}", symbolic_stream.len());
     println!("      ├─ Unique vocabulary items: {}", vocabulary.len());
-    println!("      └─ Noise symbols: {}", symbolic_stream.iter().filter(|&&x| x == -1).count());
+    println!(
+        "      └─ Noise symbols: {}",
+        symbolic_stream.iter().filter(|&&x| x == -1).count()
+    );
 
     let stream_path = results_dir.join("symbolic_stream.txt");
-    let stream_text: String = symbolic_stream.iter()
+    let stream_text: String = symbolic_stream
+        .iter()
         .map(|id| id.to_string())
         .collect::<Vec<_>>()
         .join(" ");
@@ -289,10 +324,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                           ║");
     println!("║  SUMMARY:                                                                 ║");
-    println!("║     • Segments reused: {}                                              ║", all_segments.len());
-    println!("║     • Vocabulary items: {}                                               ║", vocabulary.len());
+    println!(
+        "║     • Segments reused: {}                                              ║",
+        all_segments.len()
+    );
+    println!(
+        "║     • Vocabulary items: {}                                               ║",
+        vocabulary.len()
+    );
     println!("║     • Distance metric: COSINE (pattern-based)                            ║");
-    println!("║     • Results directory: {}                               ║", results_dir.display());
+    println!(
+        "║     • Results directory: {}                               ║",
+        results_dir.display()
+    );
     println!("║                                                                           ║");
     println!("║  NEXT: Run phrase_context_analysis_bat_generality with new vocabulary     ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");

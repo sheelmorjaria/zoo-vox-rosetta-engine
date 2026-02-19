@@ -94,8 +94,11 @@ impl SpectralTiltCalculator {
 
         let sum_x: f32 = log_freqs.iter().sum();
         let sum_y: f32 = power_dbs.iter().sum();
-        let sum_xy: f32 = log_freqs.iter().zip(power_dbs.iter())
-            .map(|(x, y)| x * y).sum();
+        let sum_xy: f32 = log_freqs
+            .iter()
+            .zip(power_dbs.iter())
+            .map(|(x, y)| x * y)
+            .sum();
         let sum_x2: f32 = log_freqs.iter().map(|x| x * x).sum();
 
         let denominator = n * sum_x2 - sum_x * sum_x;
@@ -175,7 +178,10 @@ impl SpectralTiltCalculator {
             len <<= 1;
         }
 
-        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
+        complex[..n / 2]
+            .iter()
+            .map(|&(r, i)| (r * r + i * i).sqrt())
+            .collect()
     }
 }
 
@@ -217,35 +223,32 @@ impl SpectralKurtosisCalculator {
         }
 
         // Convert to power spectrum (normalize)
-        let power: Vec<f32> = spectrum.iter()
-            .map(|&x| x * x)
-            .collect();
+        let power: Vec<f32> = spectrum.iter().map(|&x| x * x).collect();
 
         let total_power: f32 = power.iter().sum();
         if total_power < 1e-10 {
             return 0.0;
         }
 
-        let normalized: Vec<f32> = power.iter()
-            .map(|&p| p / total_power)
-            .collect();
+        let normalized: Vec<f32> = power.iter().map(|&p| p / total_power).collect();
 
         // Calculate mean
         let mean = normalized.iter().sum::<f32>() / normalized.len() as f32;
 
         // Calculate variance
-        let variance = normalized.iter()
-            .map(|&x| (x - mean).powi(2))
-            .sum::<f32>() / normalized.len() as f32;
+        let variance =
+            normalized.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / normalized.len() as f32;
 
         if variance < 1e-10 {
             return 0.0;
         }
 
         // Calculate kurtosis (fourth moment)
-        let kurtosis = normalized.iter()
+        let kurtosis = normalized
+            .iter()
             .map(|&x| ((x - mean) / variance.sqrt()).powi(4))
-            .sum::<f32>() / normalized.len() as f32;
+            .sum::<f32>()
+            / normalized.len() as f32;
 
         // Excess kurtosis (subtract 3 for normal distribution baseline)
         kurtosis - 3.0
@@ -289,9 +292,7 @@ impl SpectralFlatnessCalculator {
         }
 
         // Convert to power spectrum
-        let power: Vec<f32> = spectrum.iter()
-            .map(|&x| (x * x).max(1e-10))
-            .collect();
+        let power: Vec<f32> = spectrum.iter().map(|&x| (x * x).max(1e-10)).collect();
 
         // Geometric mean
         let log_sum: f32 = power.iter().map(|&x| x.ln()).sum();
@@ -343,7 +344,10 @@ mod tests {
         let noise = generate_white_noise(48000, 0.1);
         let tilt = calculator.calculate(&noise);
         // White noise should have flat spectrum (tilt near 0)
-        assert!(tilt > -10.0 && tilt < 10.0, "White noise should have flat tilt");
+        assert!(
+            tilt > -10.0 && tilt < 10.0,
+            "White noise should have flat tilt"
+        );
     }
 
     #[test]
@@ -541,7 +545,10 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
     let mut rng: u32 = seed;
 
     (0..num_samples)
@@ -573,7 +580,11 @@ fn generate_square(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32
     (0..num_samples)
         .map(|i| {
             let phase = (i as f32 % period_samples) / period_samples;
-            if phase < 0.5 { 1.0 } else { -1.0 }
+            if phase < 0.5 {
+                1.0
+            } else {
+                -1.0
+            }
         })
         .collect()
 }

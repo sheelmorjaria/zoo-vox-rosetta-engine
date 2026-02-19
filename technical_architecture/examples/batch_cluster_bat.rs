@@ -10,8 +10,8 @@
 
 use std::path::{Path, PathBuf};
 use technical_architecture::{
-    batch_process_and_cluster, ExtractionPhraseCandidate,
-    ParallelExtractionPipeline, ClusteredPhrase,
+    batch_process_and_cluster, ClusteredPhrase, ExtractionPhraseCandidate,
+    ParallelExtractionPipeline,
 };
 
 // Configuration
@@ -64,10 +64,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count unique clusters
-    let unique_clusters: std::collections::HashSet<i32> = clustered_phrases
-        .iter()
-        .map(|cp| cp.cluster_id)
-        .collect();
+    let unique_clusters: std::collections::HashSet<i32> =
+        clustered_phrases.iter().map(|cp| cp.cluster_id).collect();
 
     println!("📊 Clustering Statistics:");
     println!("   Total clustered phrases: {}", clustered_phrases.len());

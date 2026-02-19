@@ -9,15 +9,6 @@
 //! The grading_score indicates how far an instance is from its type centroid.
 //! Low score = typical example, High score = outlier/graded instance.
 
-use technical_architecture::{
-    DynamicSegmenter, DynamicSegmenterConfig,
-    TypedPhraseCandidate, EmissionStrategy,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-    HierarchicalThresholds,
-    SpeciesConfigFactory,
-    species::FeatureWeights,
-};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -25,14 +16,17 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use technical_architecture::{
+    species::FeatureWeights, AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig,
+    EmissionStrategy, HierarchicalThresholds, SimilarityMetric, SpeciesConfigFactory,
+    TypedPhraseCandidate, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    let max_files: usize = args.get(1)
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(5000);
+    let max_files: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(5000);
 
     println!("╔══════════════════════════════════════════════════════════════════════════════╗");
     println!("║         Marmoset Grading Score Analysis                                       ║");
@@ -43,8 +37,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  • Continuous Path: Emit type ID + 45D vector (graded types)");
     println!();
 
-    let base_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/Vocalizations");
+    let base_dir =
+        PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
 
     // Get species config with feature weights
     let species_config = SpeciesConfigFactory::create("marmoset");
@@ -60,7 +54,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =========================================================================
     // Step 1: Extract Candidates
     // =========================================================================
-    println!("[1/4] Extracting phrase candidates from {} files...", max_files);
+    println!(
+        "[1/4] Extracting phrase candidates from {} files...",
+        max_files
+    );
 
     let files = discover_marmoset_files(&base_dir, max_files);
     println!("Found {} FLAC files", files.len());
@@ -91,16 +88,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let segmenter = DynamicSegmenter::new(segmenter_config.clone(), sample_rate);
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(sample_rate)));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                sample_rate,
+            )));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64)
+                    .ok()
+                    .map(|f| f.to_vector().to_vec())
             };
 
             let result = segmenter.segment(&audio, extract_fn, filename);
-            result.candidates.into_iter()
+            result
+                .candidates
+                .into_iter()
                 .map(|c| (c.features, c.duration_ms, filename.clone()))
                 .collect::<Vec<_>>()
         })
@@ -133,7 +136,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Discovered {} phrase types", phrase_types.len());
 
     // Calculate centroids for each type
-    let centroids: Vec<Vec<f64>> = phrase_types.iter()
+    let centroids: Vec<Vec<f64>> = phrase_types
+        .iter()
         .map(|pt| {
             let mut centroid = vec![0.0; FEATURE_DIM];
             for &idx in &pt.indices {
@@ -158,10 +162,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut type_variance: HashMap<String, f32> = HashMap::new();
     for (type_idx, pt) in phrase_types.iter().enumerate() {
         let centroid = &centroids[type_idx];
-        let distances: Vec<f64> = pt.indices.iter()
+        let distances: Vec<f64> = pt
+            .indices
+            .iter()
             .map(|&idx| cosine_distance(&all_candidates[idx].0, centroid))
             .collect();
-        let avg_distance = if distances.is_empty() { 0.0 } else {
+        let avg_distance = if distances.is_empty() {
+            0.0
+        } else {
             distances.iter().sum::<f64>() / distances.len() as f64
         };
         type_variance.insert(pt.type_id.clone(), avg_distance as f32);
@@ -199,7 +207,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Count discrete vs continuous emissions per type
     let mut type_stats: HashMap<String, EmissionStats> = HashMap::new();
     for tc in &typed_candidates {
-        let stats = type_stats.entry(tc.type_id.clone()).or_insert_with(EmissionStats::default);
+        let stats = type_stats
+            .entry(tc.type_id.clone())
+            .or_insert_with(EmissionStats::default);
         stats.total += 1;
         if tc.is_graded {
             stats.graded += 1;
@@ -222,7 +232,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ TYPE-BY-TYPE EMISSION STRATEGY                                              │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!("│ {:<10} {:>8} {:>10} {:>10} {:>12}", "Type", "Total", "Discrete", "Graded", "Strategy");
+    println!(
+        "│ {:<10} {:>8} {:>10} {:>10} {:>12}",
+        "Type", "Total", "Discrete", "Graded", "Strategy"
+    );
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
 
     for (type_id, stats) in &sorted_types {
@@ -235,8 +248,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "CONTINUOUS"
         };
 
-        println!("│ {:<10} {:>8} {:>10} {:>10} {:>12}",
-            type_id, stats.total, stats.discrete, stats.graded, strategy);
+        println!(
+            "│ {:<10} {:>8} {:>10} {:>10} {:>12}",
+            type_id, stats.total, stats.discrete, stats.graded, strategy
+        );
     }
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -250,13 +265,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("│ OVERALL EMISSION SUMMARY                                                    │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     println!("│ Total Candidates:    {}", total_candidates);
-    println!("│ Discrete Emissions:  {} ({:.1}%)", total_discrete, total_discrete as f64 / total_candidates as f64 * 100.0);
-    println!("│ Continuous Emissions: {} ({:.1}%)", total_graded, total_graded as f64 / total_candidates as f64 * 100.0);
+    println!(
+        "│ Discrete Emissions:  {} ({:.1}%)",
+        total_discrete,
+        total_discrete as f64 / total_candidates as f64 * 100.0
+    );
+    println!(
+        "│ Continuous Emissions: {} ({:.1}%)",
+        total_graded,
+        total_graded as f64 / total_candidates as f64 * 100.0
+    );
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     println!("│ BANDWIDTH SAVINGS:");
     println!("│ Without grading: {} type IDs", total_candidates);
-    println!("│ With grading: {} type IDs + {} vectors", total_discrete, total_graded);
-    println!("│ Data reduction: {:.1}%", (1.0 - total_graded as f64 / total_candidates as f64) * 100.0);
+    println!(
+        "│ With grading: {} type IDs + {} vectors",
+        total_discrete, total_graded
+    );
+    println!(
+        "│ Data reduction: {:.1}%",
+        (1.0 - total_graded as f64 / total_candidates as f64) * 100.0
+    );
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
@@ -276,8 +305,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let medium = scores.iter().filter(|&&s| s >= 0.03 && s < 0.07).count();
         let high = scores.iter().filter(|&&s| s >= 0.07).count();
 
-        println!("│ {}: min={:.3}, max={:.3}, avg={:.3}", type_id, min, max, avg);
-        println!("│   Low (<0.03): {}, Medium (0.03-0.07): {}, High (>0.07): {}", low, medium, high);
+        println!(
+            "│ {}: min={:.3}, max={:.3}, avg={:.3}",
+            type_id, min, max, avg
+        );
+        println!(
+            "│   Low (<0.03): {}, Medium (0.03-0.07): {}, High (>0.07): {}",
+            low, medium, high
+        );
     }
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -301,13 +336,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         total_candidates,
         discrete_emissions: total_discrete,
         continuous_emissions: total_graded,
-        type_stats: sorted_types.iter().map(|(k, v)| {
-            (k.clone(), TypeReport {
-                total: v.total,
-                discrete: v.discrete,
-                graded: v.graded,
+        type_stats: sorted_types
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    TypeReport {
+                        total: v.total,
+                        discrete: v.discrete,
+                        graded: v.graded,
+                    },
+                )
             })
-        }).collect(),
+            .collect(),
     };
 
     std::fs::create_dir_all("complete_analysis").ok();
@@ -392,12 +433,12 @@ fn discover_marmoset_files(base_dir: &Path, max_files: usize) -> Vec<(PathBuf, S
 
 fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     use std::fs::File;
+    use symphonia::core::audio::AudioBufferRef;
     use symphonia::core::codecs::DecoderOptions;
     use symphonia::core::formats::FormatOptions;
     use symphonia::core::io::MediaSourceStream;
     use symphonia::core::meta::MetadataOptions;
     use symphonia::core::probe::Hint;
-    use symphonia::core::audio::AudioBufferRef;
 
     let file = File::open(path)?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -406,7 +447,12 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     hint.with_extension("flac");
 
     let mut probed = symphonia::default::get_probe()
-        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
+        .format(
+            &hint,
+            mss,
+            &FormatOptions::default(),
+            &MetadataOptions::default(),
+        )
         .map_err(|e| format!("Probe failed: {}", e))?;
 
     let track = probed.format.default_track().ok_or("No track")?;

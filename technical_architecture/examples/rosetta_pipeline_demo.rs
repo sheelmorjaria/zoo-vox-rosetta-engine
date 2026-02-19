@@ -11,15 +11,14 @@
 //! **Phase 2b: Contextual Enrichment (Environmental/Syntax)**
 //! - Refines interpretation based on sensor data
 
+use std::collections::HashMap;
 use technical_architecture::{
     rosetta_pipeline::{
-        RosettaPipeline, RosettaBundle, RosettaResult,
-        SemanticPhraseDictionary, ContextEnrichedPhrase,
-        EnvState, FEATURE_DIM,
+        ContextEnrichedPhrase, EnvState, RosettaBundle, RosettaPipeline, RosettaResult,
+        SemanticPhraseDictionary, FEATURE_DIM,
     },
     species::FeatureWeights,
 };
-use std::collections::HashMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔══════════════════════════════════════════════════════════════════════════════╗");
@@ -87,8 +86,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         num_types: 768,
     };
 
-    println!("  ├─ Marmoset: {} types from {} phrases", marmoset_dict.num_types, marmoset_dict.total_phrases);
-    println!("  └─ Egyptian Fruit Bat: {} types from {} phrases", bat_dict.num_types, bat_dict.total_phrases);
+    println!(
+        "  ├─ Marmoset: {} types from {} phrases",
+        marmoset_dict.num_types, marmoset_dict.total_phrases
+    );
+    println!(
+        "  └─ Egyptian Fruit Bat: {} types from {} phrases",
+        bat_dict.num_types, bat_dict.total_phrases
+    );
     println!();
 
     // =========================================================================
@@ -117,14 +122,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    ├─ Version: {}", marmoset_bundle.version);
     println!("    ├─ Species: {}", marmoset_bundle.species);
     println!("    ├─ Feature weights: marmoset-specific");
-    println!("    └─ Dictionary: {} phrase types", marmoset_bundle.semantic_dictionary.num_types);
+    println!(
+        "    └─ Dictionary: {} phrase types",
+        marmoset_bundle.semantic_dictionary.num_types
+    );
     println!();
 
     println!("  Egyptian Fruit Bat Bundle:");
     println!("    ├─ Version: {}", bat_bundle.version);
     println!("    ├─ Species: {}", bat_bundle.species);
     println!("    ├─ Feature weights: bat-specific");
-    println!("    └─ Dictionary: {} phrase types", bat_bundle.semantic_dictionary.num_types);
+    println!(
+        "    └─ Dictionary: {} phrase types",
+        bat_bundle.semantic_dictionary.num_types
+    );
     println!();
 
     // =========================================================================
@@ -204,16 +215,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn print_result(result: &RosettaResult) {
-    println!("│ Species: {} (confidence: {:.1}%)", result.species, result.species_confidence * 100.0);
+    println!(
+        "│ Species: {} (confidence: {:.1}%)",
+        result.species,
+        result.species_confidence * 100.0
+    );
     println!("│ Processing time: {:.2}ms", result.processing_time_ms);
     println!("│ Phrases detected: {}", result.phrases.len());
 
     for phrase in &result.phrases {
         println!("│");
         println!("│ ┌─ Phrase: {}", phrase.phrase_type_id);
-        println!("│ │  Semantic Label: {} ({:.0}% confidence)",
-            phrase.semantic_label, phrase.label_confidence * 100.0);
-        println!("│ │  Grading Score: {:.2} (0=discrete, 1=graded)", phrase.grading_score);
+        println!(
+            "│ │  Semantic Label: {} ({:.0}% confidence)",
+            phrase.semantic_label,
+            phrase.label_confidence * 100.0
+        );
+        println!(
+            "│ │  Grading Score: {:.2} (0=discrete, 1=graded)",
+            phrase.grading_score
+        );
         println!("│ │  Environment: {:?}", phrase.environmental_state);
         println!("│ └─ Inferred Intent: {}", phrase.inferred_intent);
     }

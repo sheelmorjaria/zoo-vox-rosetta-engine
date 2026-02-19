@@ -190,16 +190,17 @@ mod tests {
 
         // Simulated vibrato: sine wave modulation
         let f0_contour: Vec<f32> = (0..20)
-            .map(|i| {
-                1000.0 + 50.0 * (2.0 * std::f32::consts::PI * i as f32 / 10.0).sin()
-            })
+            .map(|i| 1000.0 + 50.0 * (2.0 * std::f32::consts::PI * i as f32 / 10.0).sin())
             .collect();
 
         let (delta, delta_delta) = computer.compute(&f0_contour).unwrap();
 
         // Delta should oscillate (vibrato rate)
         let delta_variance: f32 = delta.iter().map(|d| d * d).sum::<f32>() / delta.len() as f32;
-        assert!(delta_variance > 0.0, "Delta should capture vibrato modulation");
+        assert!(
+            delta_variance > 0.0,
+            "Delta should capture vibrato modulation"
+        );
     }
 
     #[test]
@@ -226,15 +227,16 @@ mod tests {
         let computer = TemporalDeltaComputer::new(DeltaWidth::N2);
 
         // Glissando: smooth frequency sweep
-        let f0_contour: Vec<f32> = (0..20)
-            .map(|i| 1000.0 + (i as f32).powi(2) * 5.0)
-            .collect();
+        let f0_contour: Vec<f32> = (0..20).map(|i| 1000.0 + (i as f32).powi(2) * 5.0).collect();
 
         let (delta, delta_delta) = computer.compute(&f0_contour).unwrap();
 
         // Should detect acceleration
         let dd_sum: f32 = delta_delta.iter().sum();
-        assert!(dd_sum > 0.0, "Delta-delta should detect glissando acceleration");
+        assert!(
+            dd_sum > 0.0,
+            "Delta-delta should detect glissando acceleration"
+        );
     }
 
     #[test]
@@ -277,15 +279,16 @@ mod tests {
         let computer = TemporalDeltaComputer::new(DeltaWidth::N2);
 
         // Simulated attack: exponential rise
-        let envelope: Vec<f32> = (0..10)
-            .map(|i| 1.0 - (-0.5 * i as f32).exp())
-            .collect();
+        let envelope: Vec<f32> = (0..10).map(|i| 1.0 - (-0.5 * i as f32).exp()).collect();
 
         let (delta, delta_delta) = computer.compute(&envelope).unwrap();
 
         // Delta should be positive during attack
         let positive_delta: usize = delta.iter().filter(|&&d| d > 0.0).count();
-        assert!(positive_delta > delta.len() / 2, "Delta should detect attack");
+        assert!(
+            positive_delta > delta.len() / 2,
+            "Delta should detect attack"
+        );
     }
 
     #[test]
@@ -299,7 +302,10 @@ mod tests {
 
         // Delta should be negative during decay
         let negative_delta: usize = delta.iter().filter(|&&d| d < 0.0).count();
-        assert!(negative_delta > delta.len() / 2, "Delta should detect decay");
+        assert!(
+            negative_delta > delta.len() / 2,
+            "Delta should detect decay"
+        );
     }
 
     #[test]
@@ -461,6 +467,9 @@ mod tests {
 
         // Should still detect trend
         let delta_mean: f32 = delta.iter().sum::<f32>() / delta.len() as f32;
-        assert!((delta_mean - 2.0).abs() < 1.0, "Delta should be robust to noise");
+        assert!(
+            (delta_mean - 2.0).abs() < 1.0,
+            "Delta should be robust to noise"
+        );
     }
 }

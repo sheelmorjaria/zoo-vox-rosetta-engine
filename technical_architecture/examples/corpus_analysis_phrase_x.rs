@@ -14,7 +14,7 @@
 
 use std::collections::HashMap;
 use technical_architecture::{
-    CorpusStatistics, NGram, NGramMiner, PhraseX, PhraseXDiscoveryEngine, PMICalculator,
+    CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX, PhraseXDiscoveryEngine,
     SuffixEntropyCalculator,
 };
 
@@ -61,8 +61,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Corpus Statistics ===");
     println!("  Total sequences: {}", stats.total_sequences);
     println!("  Total symbols: {}", stats.total_symbols);
-    println!("  Vocabulary size: {} unique symbols", stats.vocabulary_size);
-    println!("  Avg sequence length: {:.1} symbols", stats.avg_sequence_length);
+    println!(
+        "  Vocabulary size: {} unique symbols",
+        stats.vocabulary_size
+    );
+    println!(
+        "  Avg sequence length: {:.1} symbols",
+        stats.avg_sequence_length
+    );
     println!();
 
     // ========================================================================
@@ -139,21 +145,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (i, phrase) in phrases.iter().take(5).enumerate() {
             println!(
                 "  {}. Rigidity={:.3}, Flexibility={:.3}, Freq={}",
-                i + 1, phrase.rigidity_score, phrase.flexibility_score, phrase.frequency
+                i + 1,
+                phrase.rigidity_score,
+                phrase.flexibility_score,
+                phrase.frequency
             );
         }
     } else {
         println!("  Found {} Phrase X candidates:", phrases_x.len());
         for (i, phrase) in phrases_x.iter().enumerate() {
-            println!(
-                "  {}. {}",
-                i + 1, phrase
-            );
+            println!("  {}. {}", i + 1, phrase);
             println!(
                 "     Rigidity: {:.3}, Flexibility: {:.3}, Frequency: {}",
                 phrase.rigidity_score, phrase.flexibility_score, phrase.frequency
             );
-            println!("     Suffix diversity: {} different following symbols", phrase.suffix_diversity());
+            println!(
+                "     Suffix diversity: {} different following symbols",
+                phrase.suffix_diversity()
+            );
 
             // Show context variability
             let contexts = engine.analyze_context_variability(phrase, &corpus);

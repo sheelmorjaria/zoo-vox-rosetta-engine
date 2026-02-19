@@ -11,8 +11,8 @@
 // - Cluster coherence (within classes)
 // - Classification potential (k-NN accuracy)
 
-use std::path::Path;
 use std::collections::HashMap;
+use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
@@ -22,7 +22,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Configuration
-    let output_dir = Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
+    let output_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
     std::fs::create_dir_all(output_dir)?;
 
     println!("📊 Analysis Configuration:");

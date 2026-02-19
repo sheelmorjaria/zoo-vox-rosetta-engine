@@ -16,13 +16,13 @@
 
 use std::collections::HashMap;
 use std::path::Path;
-use technical_architecture::micro_dynamics_extractor::MicroDynamicsExtractor;
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
+use technical_architecture::micro_dynamics_extractor::MicroDynamicsExtractor;
 
 /// Call type extracted from filename
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -90,7 +90,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -124,7 +125,11 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::S24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32),
+                    );
                 }
             }
             AudioBufferRef::S16(buf) => {
@@ -154,13 +159,21 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0),
+                    );
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2147483648.0) / 2147483648.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| (s as f32 - 2147483648.0) / 2147483648.0),
+                    );
                 }
             }
         }
@@ -173,7 +186,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 #[derive(Debug, Clone)]
 struct PhraseFeatures30D {
     phrase_id: String,
-    features: Vec<f32>,  // 30D feature vector
+    features: Vec<f32>, // 30D feature vector
 }
 
 /// Word type discovered from clustering
@@ -187,7 +200,7 @@ struct WordType30D {
 /// Word sequence for PMI calculation
 #[derive(Debug, Clone)]
 struct WordSequence30D {
-    words: Vec<usize>,  // Word IDs
+    words: Vec<usize>, // Word IDs
     phrase_id: String,
 }
 
@@ -220,7 +233,7 @@ fn extract_phrases_30d(
 
     for chunk in audio.chunks(samples_per_phrase) {
         if chunk.len() < samples_per_phrase / 2 {
-            continue;  // Skip too short chunks
+            continue; // Skip too short chunks
         }
 
         // Extract 30D features
@@ -239,9 +252,18 @@ fn extract_phrases_30d(
             features.spectral_flatness,
             features.harmonic_to_noise_ratio,
             // 13 MFCC coefficients
-            features.mfcc[0], features.mfcc[1], features.mfcc[2], features.mfcc[3],
-            features.mfcc[4], features.mfcc[5], features.mfcc[6], features.mfcc[7],
-            features.mfcc[8], features.mfcc[9], features.mfcc[10], features.mfcc[11],
+            features.mfcc[0],
+            features.mfcc[1],
+            features.mfcc[2],
+            features.mfcc[3],
+            features.mfcc[4],
+            features.mfcc[5],
+            features.mfcc[6],
+            features.mfcc[7],
+            features.mfcc[8],
+            features.mfcc[9],
+            features.mfcc[10],
+            features.mfcc[11],
             features.mfcc[12],
             features.spectral_flux,
             features.median_ici_ms,
@@ -360,12 +382,20 @@ fn extract_sequences_30d(
 
             // Find matching word type
             for word in word_types {
-                let dot_product: f32 = phrase.features.iter()
+                let dot_product: f32 = phrase
+                    .features
+                    .iter()
                     .zip(word.representative_features.iter())
-                    .map(|(a, b)| a * b).sum();
+                    .map(|(a, b)| a * b)
+                    .sum();
 
                 let norm_a: f32 = phrase.features.iter().map(|x| x * x).sum::<f32>().sqrt();
-                let norm_b: f32 = word.representative_features.iter().map(|x| x * x).sum::<f32>().sqrt();
+                let norm_b: f32 = word
+                    .representative_features
+                    .iter()
+                    .map(|x| x * x)
+                    .sum::<f32>()
+                    .sqrt();
 
                 if norm_a > 0.0 && norm_b > 0.0 {
                     let similarity = dot_product / (norm_a * norm_b);
@@ -437,7 +467,11 @@ fn calculate_pmi_30d(sequences: &[WordSequence30D]) -> (f64, f64) {
         }
     }
 
-    let avg_pmi = if pmi_count > 0 { pmi_sum / pmi_count as f64 } else { 0.0 };
+    let avg_pmi = if pmi_count > 0 {
+        pmi_sum / pmi_count as f64
+    } else {
+        0.0
+    };
 
     (avg_pmi, max_pmi)
 }
@@ -466,7 +500,8 @@ fn analyze_context_30d(
 
         match load_flac_file(path) {
             Ok(audio) => {
-                let phrase_id = path.file_name()
+                let phrase_id = path
+                    .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("unknown");
 
@@ -509,14 +544,17 @@ fn analyze_context_30d(
         num_vocalizations,
         total_phrases,
         vocabulary_size: word_types.len(),
-        avg_sequence_length: sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64 / sequences.len() as f64,
+        avg_sequence_length: sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64
+            / sequences.len() as f64,
         avg_pmi,
         max_pmi,
     })
 }
 
 /// Group files by call type
-fn discover_files_by_context(vocalizations_dir: &Path) -> Result<HashMap<CallType, Vec<String>>, Box<dyn std::error::Error>> {
+fn discover_files_by_context(
+    vocalizations_dir: &Path,
+) -> Result<HashMap<CallType, Vec<String>>, Box<dyn std::error::Error>> {
     let mut context_files: HashMap<CallType, Vec<String>> = HashMap::new();
 
     let entries = std::fs::read_dir(vocalizations_dir)?;
@@ -539,20 +577,17 @@ fn discover_files_by_context(vocalizations_dir: &Path) -> Result<HashMap<CallTyp
                 continue;
             }
 
-            let filename = file_path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             if !filename.ends_with(".flac") {
                 continue;
             }
 
             if let Some(call_type) = CallType::from_filename(filename) {
-                let full_path = file_path.to_str()
-                    .ok_or("Invalid path")?
-                    .to_string();
+                let full_path = file_path.to_str().ok_or("Invalid path")?.to_string();
 
-                context_files.entry(call_type)
+                context_files
+                    .entry(call_type)
                     .or_insert_with(Vec::new)
                     .push(full_path);
 
@@ -561,8 +596,11 @@ fn discover_files_by_context(vocalizations_dir: &Path) -> Result<HashMap<CallTyp
         }
     }
 
-    println!("Discovered {} FLAC files across {} call types",
-        total_files, context_files.len());
+    println!(
+        "Discovered {} FLAC files across {} call types",
+        total_files,
+        context_files.len()
+    );
 
     Ok(context_files)
 }
@@ -613,7 +651,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut results = Vec::new();
     let sample_size = 500;
 
-    println!("Analyzing call types (max {} vocalizations each)...", sample_size);
+    println!(
+        "Analyzing call types (max {} vocalizations each)...",
+        sample_size
+    );
     println!("---");
 
     for call_type in &all_call_types {
@@ -645,19 +686,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Summary table
     println!("Summary Table:");
     println!("===============");
-    println!("{:<20} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}",
-        "Call Type", "Vocs", "Phrases", "Vocab", "AvgLen", "AvgPMI", "MaxPMI");
+    println!(
+        "{:<20} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}",
+        "Call Type", "Vocs", "Phrases", "Vocab", "AvgLen", "AvgPMI", "MaxPMI"
+    );
     println!("{}", "-".repeat(80));
 
     for r in &results {
-        println!("{:<20} {:<10} {:<10} {:<10} {:<10.2} {:<10.3} {:<10.3}",
+        println!(
+            "{:<20} {:<10} {:<10} {:<10} {:<10.2} {:<10.3} {:<10.3}",
             r.context_id,
             r.num_vocalizations,
             r.total_phrases,
             r.vocabulary_size,
             r.avg_sequence_length,
             r.avg_pmi,
-            r.max_pmi);
+            r.max_pmi
+        );
     }
 
     println!();
@@ -676,7 +721,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             "LIMITED"
         };
-        println!("  {}. {:20} PMI={:.3} ({})", i + 1, r.context_id, r.avg_pmi, status);
+        println!(
+            "  {}. {:20} PMI={:.3} ({})",
+            i + 1,
+            r.context_id,
+            r.avg_pmi,
+            status
+        );
     }
 
     println!();
@@ -688,7 +739,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     sorted_by_vocab.sort_by(|a, b| b.vocabulary_size.cmp(&a.vocabulary_size));
 
     for (i, r) in sorted_by_vocab.iter().enumerate() {
-        println!("  {}. {:20} {} word types", i + 1, r.context_id, r.vocabulary_size);
+        println!(
+            "  {}. {:20} {} word types",
+            i + 1,
+            r.context_id,
+            r.vocabulary_size
+        );
     }
 
     println!();
@@ -697,11 +753,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let avg_pmi_mean: f64 = results.iter().map(|r| r.avg_pmi).sum::<f64>() / results.len() as f64;
     let avg_pmi_std: f64 = {
         let mean = avg_pmi_mean;
-        let variance = results.iter().map(|r| (r.avg_pmi - mean).powi(2)).sum::<f64>() / results.len() as f64;
+        let variance = results
+            .iter()
+            .map(|r| (r.avg_pmi - mean).powi(2))
+            .sum::<f64>()
+            / results.len() as f64;
         variance.sqrt()
     };
 
-    let vocab_mean: f64 = results.iter().map(|r| r.vocabulary_size as f64).sum::<f64>() / results.len() as f64;
+    let vocab_mean: f64 = results
+        .iter()
+        .map(|r| r.vocabulary_size as f64)
+        .sum::<f64>()
+        / results.len() as f64;
 
     println!("Statistical Summary Across Call Types:");
     println!("======================================");
@@ -715,7 +779,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=======================");
     if avg_pmi_std > 0.5 {
         println!("  ✓ SIGNIFICANT VARIATION in syntax across call types");
-        println!("    PMI varies by {:.3} across call types (std dev)", avg_pmi_std);
+        println!(
+            "    PMI varies by {:.3} across call types (std dev)",
+            avg_pmi_std
+        );
         println!("    → Marmoset vocalization syntax DOES change with call type");
     } else {
         println!("  ~ MINIMAL VARIATION in syntax across call types");
@@ -725,10 +792,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     if !sorted_by_pmi.is_empty() {
-        println!("  Highest PMI call type: {} ({:.3})",
-            sorted_by_pmi[0].context_id, sorted_by_pmi[0].avg_pmi);
-        println!("  Lowest PMI call type: {} ({:.3})",
-            sorted_by_pmi.last().unwrap().context_id, sorted_by_pmi.last().unwrap().avg_pmi);
+        println!(
+            "  Highest PMI call type: {} ({:.3})",
+            sorted_by_pmi[0].context_id, sorted_by_pmi[0].avg_pmi
+        );
+        println!(
+            "  Lowest PMI call type: {} ({:.3})",
+            sorted_by_pmi.last().unwrap().context_id,
+            sorted_by_pmi.last().unwrap().avg_pmi
+        );
     }
 
     Ok(())

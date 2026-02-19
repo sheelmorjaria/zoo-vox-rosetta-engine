@@ -8,10 +8,10 @@
 //
 // Usage: cargo run --release --example segment_marmoset_corpus_to_phrases
 
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
-use serde::{Serialize, Deserialize};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
@@ -34,14 +34,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let content = fs::read_to_string(input_path)?;
     let json: serde_json::Value = serde_json::from_str(&content)?;
 
-    let sessions_array = json["sessions"].as_array()
-        .ok_or("Sessions not found")?;
+    let sessions_array = json["sessions"].as_array().ok_or("Sessions not found")?;
 
     let cluster_to_phrase: HashMap<String, String> = json["cluster_to_phrase"]
         .as_object()
-        .map(|obj| obj.iter().filter_map(|(k, v)| {
-            v.as_str().map(|s| (k.clone(), s.to_string()))
-        }).collect())
+        .map(|obj| {
+            obj.iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                .collect()
+        })
         .unwrap_or_default();
 
     println!("   📂 Loaded {} sessions", sessions_array.len());
@@ -65,7 +66,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (session_idx, session_data) in sessions_array.iter().enumerate() {
         let frames: Vec<i32> = if let Some(arr) = session_data.as_array() {
-            arr.iter().filter_map(|v| v.as_i64()).map(|v| v as i32).collect()
+            arr.iter()
+                .filter_map(|v| v.as_i64())
+                .map(|v| v as i32)
+                .collect()
         } else {
             continue;
         };
@@ -79,13 +83,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         phrase_level_sessions.push(PhraseLevelSession {
             session_id: session_idx,
-            call_type: "Vocalization".to_string(),  // Default context
+            call_type: "Vocalization".to_string(), // Default context
             phrases,
             original_frame_count: frames.len(),
         });
 
         if (session_idx + 1) % 5 == 0 {
-            println!("      Processed {}/{} sessions", session_idx + 1, sessions_array.len());
+            println!(
+                "      Processed {}/{} sessions",
+                session_idx + 1,
+                sessions_array.len()
+            );
         }
     }
 
@@ -107,9 +115,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Statistics:");
     println!("      ├─ Total sessions: {}", phrase_level_sessions.len());
-    println!("      ├─ Total phrases (after segmentation): {}", total_phrases);
-    println!("      ├─ Average phrases per session: {:.1}", avg_phrases_per_session);
-    println!("      ├─ Average frames per phrase: {:.1}", avg_frames_per_phrase);
+    println!(
+        "      ├─ Total phrases (after segmentation): {}",
+        total_phrases
+    );
+    println!(
+        "      ├─ Average phrases per session: {:.1}",
+        avg_phrases_per_session
+    );
+    println!(
+        "      ├─ Average frames per phrase: {:.1}",
+        avg_frames_per_phrase
+    );
     println!();
 
     // Count phrase frequencies across all sessions
@@ -130,12 +147,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📚 Top 20 Most Common Phrases:");
     for (i, (phrase_id, count)) in freq_vec.iter().take(20).enumerate() {
-        let desc = cluster_to_phrase.get(&phrase_id.to_string())
+        let desc = cluster_to_phrase
+            .get(&phrase_id.to_string())
             .map(|s| s.as_str())
             .unwrap_or("Unknown");
 
-        println!("      {:2}. Phrase {:4} ({}): {} occurrences",
-                 i + 1, phrase_id, truncate(desc, 30), count);
+        println!(
+            "      {:2}. Phrase {:4} ({}): {} occurrences",
+            i + 1,
+            phrase_id,
+            truncate(desc, 30),
+            count
+        );
     }
     println!();
 
@@ -178,12 +201,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║                                                                           ║");
     println!("║  📊 RESULTS:                                                             ║");
     println!("║     • Frame-level corpus converted to phrase-level                         ║");
-    println!("║     • Sessions: {}                                                        ║", phrase_level_sessions.len());
-    println!("║     • Total phrases: {}                                                   ║", total_phrases);
-    println!("║     • Unique vocabulary: {}                                               ║", unique_phrases);
+    println!(
+        "║     • Sessions: {}                                                        ║",
+        phrase_level_sessions.len()
+    );
+    println!(
+        "║     • Total phrases: {}                                                   ║",
+        total_phrases
+    );
+    println!(
+        "║     • Unique vocabulary: {}                                               ║",
+        unique_phrases
+    );
     println!("║                                                                           ║");
     println!("║  📁 Output file:                                                           ║");
-    println!("║     {}                                              ║", output_path.display());
+    println!(
+        "║     {}                                              ║",
+        output_path.display()
+    );
     println!("║                                                                           ║");
     println!("║  ✅ This phrase-level corpus can now be used with:                         ║");
     println!("║     • phrase_context_analysis_marmoset_generality.rs                     ║");
@@ -203,7 +238,7 @@ fn consolidate_frames_to_phrases(frames: &[i32]) -> Vec<i32> {
     let mut phrases = Vec::new();
     let mut current_phrase = frames[0];
     let mut run_length = 1usize;
-    let min_phrase_frames = 3;  // Minimum frames to consider a valid phrase
+    let min_phrase_frames = 3; // Minimum frames to consider a valid phrase
 
     for &frame in &frames[1..] {
         if frame == current_phrase {
@@ -260,6 +295,6 @@ struct CorpusMetadata {
 struct PhraseLevelSession {
     session_id: usize,
     call_type: String,
-    phrases: Vec<i32>,  // Phrase-level sequence (not frame-level)
+    phrases: Vec<i32>, // Phrase-level sequence (not frame-level)
     original_frame_count: usize,
 }

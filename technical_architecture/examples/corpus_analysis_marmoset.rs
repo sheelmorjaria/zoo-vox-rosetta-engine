@@ -9,8 +9,7 @@
 use std::fs;
 use std::path::Path;
 use technical_architecture::{
-    CorpusStatistics, NGramMiner, PhraseXDiscoveryEngine, PMICalculator,
-    SuffixEntropyCalculator,
+    CorpusStatistics, NGramMiner, PMICalculator, PhraseXDiscoveryEngine, SuffixEntropyCalculator,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,7 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let cluster_to_phrase: std::collections::HashMap<usize, String> = corpus_data["cluster_to_phrase"]
+    let cluster_to_phrase: std::collections::HashMap<usize, String> = corpus_data
+        ["cluster_to_phrase"]
         .as_object()
         .unwrap()
         .iter()
@@ -63,7 +63,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Corpus loaded successfully");
     println!("   Sessions: {}", sessions.len());
-    println!("   Total phrases: {}", sessions.iter().map(|s| s.len()).sum::<usize>());
+    println!(
+        "   Total phrases: {}",
+        sessions.iter().map(|s| s.len()).sum::<usize>()
+    );
     println!("   Vocabulary size: {}", cluster_to_phrase.len());
     println!();
 
@@ -81,7 +84,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total sequences: {}", stats.total_sequences);
     println!("  Total symbols: {}", stats.total_symbols);
     println!("  Vocabulary size: {}", stats.vocabulary_size);
-    println!("  Avg sequence length: {:.1} symbols", stats.avg_sequence_length);
+    println!(
+        "  Avg sequence length: {:.1} symbols",
+        stats.avg_sequence_length
+    );
     println!("  Unique n-grams: {}", stats.unique_ngrams);
     println!();
 
@@ -103,28 +109,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (i, (ngram, count)) in sorted_ngrams.iter().take(15).enumerate() {
         // Convert cluster IDs to phrase names
-        let phrase_names: Vec<String> = ngram.symbols.iter()
-            .map(|id| cluster_to_phrase.get(id)
-                .and_then(|s| {
-                    // Parse F0 from phrase key
-                    if s.starts_with("F0_") {
-                        let rest = &s[3..];
-                        if let Some(idx) = rest.find("_DUR_") {
-                            Some(format!("F0={}", &rest[..idx]))
+        let phrase_names: Vec<String> = ngram
+            .symbols
+            .iter()
+            .map(|id| {
+                cluster_to_phrase
+                    .get(id)
+                    .and_then(|s| {
+                        // Parse F0 from phrase key
+                        if s.starts_with("F0_") {
+                            let rest = &s[3..];
+                            if let Some(idx) = rest.find("_DUR_") {
+                                Some(format!("F0={}", &rest[..idx]))
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| format!("ID{}", id)))
+                    })
+                    .unwrap_or_else(|| format!("ID{}", id))
+            })
             .collect();
 
-        println!("  {:>2}. {:30} | freq: {:>3}",
-                 i + 1,
-                 phrase_names.join(" → "),
-                 count);
+        println!(
+            "  {:>2}. {:30} | freq: {:>3}",
+            i + 1,
+            phrase_names.join(" → "),
+            count
+        );
     }
     println!();
 
@@ -142,27 +155,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Internal Rigidity Scores (Top 15):");
     for (i, (ngram, _count)) in sorted_ngrams.iter().take(15).enumerate() {
         let pmi = pmi_calculator.average_pmi(ngram).unwrap_or(0.0);
-        let phrase_names: Vec<String> = ngram.symbols.iter()
-            .map(|id| cluster_to_phrase.get(id)
-                .and_then(|s| {
-                    if s.starts_with("F0_") {
-                        let rest = &s[3..];
-                        if let Some(idx) = rest.find("_DUR_") {
-                            Some(format!("F0={}", &rest[..idx]))
+        let phrase_names: Vec<String> = ngram
+            .symbols
+            .iter()
+            .map(|id| {
+                cluster_to_phrase
+                    .get(id)
+                    .and_then(|s| {
+                        if s.starts_with("F0_") {
+                            let rest = &s[3..];
+                            if let Some(idx) = rest.find("_DUR_") {
+                                Some(format!("F0={}", &rest[..idx]))
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| format!("ID{}", id)))
+                    })
+                    .unwrap_or_else(|| format!("ID{}", id))
+            })
             .collect();
 
-        println!("  {:>2}. {:30} | PMI: {:.3}",
-                 i + 1,
-                 phrase_names.join(" → "),
-                 pmi);
+        println!(
+            "  {:>2}. {:30} | PMI: {:.3}",
+            i + 1,
+            phrase_names.join(" → "),
+            pmi
+        );
     }
     println!();
 
@@ -182,28 +202,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let entropy = entropy_calculator.suffix_entropy(ngram);
         let suffix_dist = entropy_calculator.suffix_distribution(ngram);
 
-        let phrase_names: Vec<String> = ngram.symbols.iter()
-            .map(|id| cluster_to_phrase.get(id)
-                .and_then(|s| {
-                    if s.starts_with("F0_") {
-                        let rest = &s[3..];
-                        if let Some(idx) = rest.find("_DUR_") {
-                            Some(format!("F0={}", &rest[..idx]))
+        let phrase_names: Vec<String> = ngram
+            .symbols
+            .iter()
+            .map(|id| {
+                cluster_to_phrase
+                    .get(id)
+                    .and_then(|s| {
+                        if s.starts_with("F0_") {
+                            let rest = &s[3..];
+                            if let Some(idx) = rest.find("_DUR_") {
+                                Some(format!("F0={}", &rest[..idx]))
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or_else(|| format!("ID{}", id)))
+                    })
+                    .unwrap_or_else(|| format!("ID{}", id))
+            })
             .collect();
 
-        println!("  {:>2}. {:30} | Entropy: {:.3} | Suffixes: {}",
-                 i + 1,
-                 phrase_names.join(" → "),
-                 entropy,
-                 suffix_dist.len());
+        println!(
+            "  {:>2}. {:30} | Entropy: {:.3} | Suffixes: {}",
+            i + 1,
+            phrase_names.join(" → "),
+            entropy,
+            suffix_dist.len()
+        );
     }
     println!();
 
@@ -238,80 +265,100 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
         println!("Top 10 phrase candidates:");
         for (i, phrase) in phrases.iter().take(10).enumerate() {
-            let phrase_names: Vec<String> = phrase.ngram.symbols.iter()
-                .map(|id| cluster_to_phrase.get(id)
-                    .and_then(|s| {
-                        if s.starts_with("F0_") {
-                            let rest = &s[3..];
-                            if let Some(idx) = rest.find("_DUR_") {
-                                Some(format!("F0={}", &rest[..idx]))
+            let phrase_names: Vec<String> = phrase
+                .ngram
+                .symbols
+                .iter()
+                .map(|id| {
+                    cluster_to_phrase
+                        .get(id)
+                        .and_then(|s| {
+                            if s.starts_with("F0_") {
+                                let rest = &s[3..];
+                                if let Some(idx) = rest.find("_DUR_") {
+                                    Some(format!("F0={}", &rest[..idx]))
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
                             }
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| format!("ID{}", id)))
+                        })
+                        .unwrap_or_else(|| format!("ID{}", id))
+                })
                 .collect();
 
-            println!("  {}. {:30} | Rigidity: {:.3} | Flexibility: {:.3} | Freq: {}",
-                     i + 1,
-                     phrase_names.join(" → "),
-                     phrase.rigidity_score,
-                     phrase.flexibility_score,
-                     phrase.frequency);
+            println!(
+                "  {}. {:30} | Rigidity: {:.3} | Flexibility: {:.3} | Freq: {}",
+                i + 1,
+                phrase_names.join(" → "),
+                phrase.rigidity_score,
+                phrase.flexibility_score,
+                phrase.frequency
+            );
         }
     } else {
         println!("✅ Found {} Phrase X candidates:", phrases_x.len());
         println!();
 
         for (i, phrase) in phrases_x.iter().take(20).enumerate() {
-            let phrase_names: Vec<String> = phrase.ngram.symbols.iter()
-                .map(|id| cluster_to_phrase.get(id)
-                    .and_then(|s| {
-                        if s.starts_with("F0_") {
-                            let rest = &s[3..];
-                            if let Some(idx) = rest.find("_DUR_") {
-                                Some(format!("F0={}", &rest[..idx]))
+            let phrase_names: Vec<String> = phrase
+                .ngram
+                .symbols
+                .iter()
+                .map(|id| {
+                    cluster_to_phrase
+                        .get(id)
+                        .and_then(|s| {
+                            if s.starts_with("F0_") {
+                                let rest = &s[3..];
+                                if let Some(idx) = rest.find("_DUR_") {
+                                    Some(format!("F0={}", &rest[..idx]))
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
                             }
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| format!("ID{}", id)))
+                        })
+                        .unwrap_or_else(|| format!("ID{}", id))
+                })
                 .collect();
 
             println!("  {}. Phrase: {}", i + 1, phrase_names.join(" → "));
-            println!("     Rigidity: {:.3} | Flexibility: {:.3} | Frequency: {}",
-                     phrase.rigidity_score,
-                     phrase.flexibility_score,
-                     phrase.frequency);
-            println!("     Suffix diversity: {} different following symbols",
-                     phrase.suffix_diversity());
+            println!(
+                "     Rigidity: {:.3} | Flexibility: {:.3} | Frequency: {}",
+                phrase.rigidity_score, phrase.flexibility_score, phrase.frequency
+            );
+            println!(
+                "     Suffix diversity: {} different following symbols",
+                phrase.suffix_diversity()
+            );
 
             // Show example contexts
             let contexts = engine.analyze_context_variability(phrase, &sessions);
             if !contexts.is_empty() {
                 println!("     Example contexts (showing {}):", contexts.len().min(3));
                 for (j, ctx) in contexts.iter().take(3).enumerate() {
-                    let ctx_names: Vec<String> = ctx.iter()
-                        .map(|id| cluster_to_phrase.get(id)
-                            .and_then(|s| {
-                                if s.starts_with("F0_") {
-                                    let rest = &s[3..];
-                                    if let Some(idx) = rest.find("_DUR_") {
-                                        Some(format!("F0={}", &rest[..idx]))
+                    let ctx_names: Vec<String> = ctx
+                        .iter()
+                        .map(|id| {
+                            cluster_to_phrase
+                                .get(id)
+                                .and_then(|s| {
+                                    if s.starts_with("F0_") {
+                                        let rest = &s[3..];
+                                        if let Some(idx) = rest.find("_DUR_") {
+                                            Some(format!("F0={}", &rest[..idx]))
+                                        } else {
+                                            None
+                                        }
                                     } else {
                                         None
                                     }
-                                } else {
-                                    None
-                                }
-                            })
-                            .unwrap_or_else(|| format!("ID{}", id)))
+                                })
+                                .unwrap_or_else(|| format!("ID{}", id))
+                        })
                         .collect();
                     println!("       {}: {:?}", j + 1, ctx_names);
                 }
@@ -330,10 +377,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Summary:");
-    println!("  • Corpus size: {} sessions, {} total phrases",
-             sessions.len(),
-             sessions.iter().map(|s| s.len()).sum::<usize>());
-    println!("  • Vocabulary: {} unique phrase types", cluster_to_phrase.len());
+    println!(
+        "  • Corpus size: {} sessions, {} total phrases",
+        sessions.len(),
+        sessions.iter().map(|s| s.len()).sum::<usize>()
+    );
+    println!(
+        "  • Vocabulary: {} unique phrase types",
+        cluster_to_phrase.len()
+    );
     println!("  • Phrase X candidates: {}", phrases_x.len());
     println!();
 

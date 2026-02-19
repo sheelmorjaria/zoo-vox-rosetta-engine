@@ -46,7 +46,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let symbolic_stream_path = Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
+    let symbolic_stream_path =
+        Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
 
     if !symbolic_stream_path.exists() {
         println!("   ⚠️  Symbolic stream not found!");
@@ -57,7 +58,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sequences_by_context = load_symbolic_stream(symbolic_stream_path)?;
 
-    let total_phrases: usize = sequences_by_context.values()
+    let total_phrases: usize = sequences_by_context
+        .values()
         .map(|seqs| seqs.iter().map(|s| s.len()).sum::<usize>())
         .sum();
 
@@ -91,8 +93,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             0.0
         };
-        println!("      • {}: {} phrases in {} sessions (avg {:.1} per session)",
-                 ctx, total_phrases_ctx, n_sessions, avg_len);
+        println!(
+            "      • {}: {} phrases in {} sessions (avg {:.1} per session)",
+            ctx, total_phrases_ctx, n_sessions, avg_len
+        );
     }
     println!();
 
@@ -113,14 +117,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ngram_results = analyze_ngrams(&sequences_by_context)?;
     println!("      • Unique 2-grams: {}", ngram_results.unique_bigrams);
     println!("      • Unique 3-grams: {}", ngram_results.unique_trigrams);
-    println!("      • Cross-context 2-grams: {}", ngram_results.cross_context_bigrams);
+    println!(
+        "      • Cross-context 2-grams: {}",
+        ngram_results.cross_context_bigrams
+    );
     println!();
 
     // 3.2: Network Motif Analysis
     println!("   3.2: Network Motif Analysis");
     let motif_results = analyze_motifs(&sequences_by_context)?;
     println!("      • Recurring motifs found: {}", motif_results.n_motifs);
-    println!("      • Multi-context motifs: {}", motif_results.multi_context_motifs);
+    println!(
+        "      • Multi-context motifs: {}",
+        motif_results.multi_context_motifs
+    );
     println!();
 
     // 3.3: Pattern Statistics
@@ -128,7 +138,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stats = calculate_pattern_statistics(&sequences_by_context)?;
     println!("      • Avg sequence length: {:.1}", stats.avg_length);
     println!("      • Length variance: {:.2}", stats.length_variance);
-    println!("      • Unique phrase ratio: {:.3}", stats.unique_phrase_ratio);
+    println!(
+        "      • Unique phrase ratio: {:.3}",
+        stats.unique_phrase_ratio
+    );
     println!();
 
     // ========================================================================
@@ -172,11 +185,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╠═════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                        ║");
     println!("║  📊 SUMMARY OF FINDINGS:                                               ║");
-    println!("║     • Unique 2-grams: {}                                             ║", ngram_results.unique_bigrams);
-    println!("║     • Unique 3-grams: {}                                             ║", ngram_results.unique_trigrams);
-    println!("║     • Cross-context 2-grams: {}                                      ║", ngram_results.cross_context_bigrams);
-    println!("║     • Recurring motifs: {}                                            ║", motif_results.n_motifs);
-    println!("║     • Multi-context motifs: {}                                        ║", motif_results.multi_context_motifs);
+    println!(
+        "║     • Unique 2-grams: {}                                             ║",
+        ngram_results.unique_bigrams
+    );
+    println!(
+        "║     • Unique 3-grams: {}                                             ║",
+        ngram_results.unique_trigrams
+    );
+    println!(
+        "║     • Cross-context 2-grams: {}                                      ║",
+        ngram_results.cross_context_bigrams
+    );
+    println!(
+        "║     • Recurring motifs: {}                                            ║",
+        motif_results.n_motifs
+    );
+    println!(
+        "║     • Multi-context motifs: {}                                        ║",
+        motif_results.multi_context_motifs
+    );
     println!("║                                                                        ║");
     println!("║  📝 INTERPRETATION:                                                     ║");
     println!("║     The current corpus structure assigns each phrase to exactly one    ║");
@@ -188,9 +216,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║     1. Extract phrases from WITHIN individual vocalizations            ║");
     println!("║     2. Then test if those phrases appear across different contexts      ║");
     println!("║                                                                        ║");
-    println!("║  ⏱️  Analysis time: {:.2}s                                               ║", elapsed.as_secs_f64());
+    println!(
+        "║  ⏱️  Analysis time: {:.2}s                                               ║",
+        elapsed.as_secs_f64()
+    );
     println!("║   📁 Results saved to:                                                  ║");
-    println!("║     {}                                                ║", results_dir.display());
+    println!(
+        "║     {}                                                ║",
+        results_dir.display()
+    );
     println!("╚═════════════════════════════════════════════════════════════════════╝");
     println!();
 
@@ -217,7 +251,11 @@ fn load_symbolic_stream(
                 .to_string();
 
             let phrases: Vec<i32> = if let Some(phrases_arr) = session_data["phrases"].as_array() {
-                phrases_arr.iter().filter_map(|v| v.as_i64()).map(|v| v as i32).collect()
+                phrases_arr
+                    .iter()
+                    .filter_map(|v| v.as_i64())
+                    .map(|v| v as i32)
+                    .collect()
             } else {
                 continue;
             };
@@ -359,9 +397,7 @@ fn calculate_pattern_statistics(
 
     let variance = if !all_lengths.is_empty() {
         let mean = avg_length;
-        all_lengths.iter()
-            .map(|&x| (x - mean).powi(2))
-            .sum::<f64>() / all_lengths.len() as f64
+        all_lengths.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / all_lengths.len() as f64
     } else {
         0.0
     };

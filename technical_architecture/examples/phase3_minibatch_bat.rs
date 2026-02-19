@@ -13,7 +13,8 @@ use std::time::Instant;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats");
     let audio_dir = data_dir.join("audio");
-    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
+    let results_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
     let features_path = results_dir.join("bat_features.bincode");
     let output_path = results_dir.join("minibatch_clusters.json");
 
@@ -51,9 +52,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features = extract_features_from_files_progress(wav_files_all, n_files)?;
 
     let extract_time = extract_start.elapsed();
-    println!("   └─ Extracted {} features in {:.2}s ({:.1} files/sec)",
-        features.len(), extract_time.as_secs_f64(),
-        features.len() as f64 / extract_time.as_secs_f64());
+    println!(
+        "   └─ Extracted {} features in {:.2}s ({:.1} files/sec)",
+        features.len(),
+        extract_time.as_secs_f64(),
+        features.len() as f64 / extract_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -80,10 +84,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::write(&features_path, &features_data)?;
 
     let save_time = save_start.elapsed();
-    println!("   └─ Saved {} features ({} MB) in {:.2}s",
+    println!(
+        "   └─ Saved {} features ({} MB) in {:.2}s",
         serializable_features.len(),
         features_data.len() / 1_048_576,
-        save_time.as_secs_f64());
+        save_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -108,8 +114,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   └─ Converted to {}x{} array in {:.2}s",
-        n_features, n_dims, convert_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ Converted to {}x{} array in {:.2}s",
+        n_features,
+        n_dims,
+        convert_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -120,10 +130,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Configuration for bat vocalizations
-    let n_clusters = 50;           // Number of vocabulary items to discover
-    let batch_size = 1000;         // Mini-batch size
-    let max_iter = 100;            // Maximum iterations
-    let tol = 1e-4;                // Convergence tolerance
+    let n_clusters = 50; // Number of vocabulary items to discover
+    let batch_size = 1000; // Mini-batch size
+    let max_iter = 100; // Maximum iterations
+    let tol = 1e-4; // Convergence tolerance
 
     println!("   Configuration:");
     println!("   ├─ n_clusters: {}", n_clusters);
@@ -150,8 +160,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_time = cluster_start.elapsed();
     let ms_per_sample = cluster_time.as_millis() as f64 / n_features as f64;
 
-    println!("   └─ Clustering completed in {:.2}s ({:.3}ms per sample)",
-        cluster_time.as_secs_f64(), ms_per_sample);
+    println!(
+        "   └─ Clustering completed in {:.2}s ({:.3}ms per sample)",
+        cluster_time.as_secs_f64(),
+        ms_per_sample
+    );
     println!();
 
     // ========================================================================
@@ -167,7 +180,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
+    println!(
+        "   Clustered phrases:    {}",
+        n_features - stats.noise_count
+    );
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -181,7 +197,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
 
         // Top 15 clusters
-        let mut sorted_clusters: Vec<(usize, usize)> = stats.cluster_sizes.iter()
+        let mut sorted_clusters: Vec<(usize, usize)> = stats
+            .cluster_sizes
+            .iter()
             .enumerate()
             .map(|(i, &size)| (i, size))
             .collect();
@@ -190,8 +208,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   Top 15 Clusters:");
         for (i, (cluster_id, size)) in sorted_clusters.iter().take(15).enumerate() {
             let percentage = size.clone() as f64 / n_features as f64 * 100.0;
-            println!("      {}. Cluster {}: {} phrases ({:.2}%)",
-                i + 1, cluster_id, size, percentage);
+            println!(
+                "      {}. Cluster {}: {} phrases ({:.2}%)",
+                i + 1,
+                cluster_id,
+                size,
+                percentage
+            );
         }
     }
     println!();
@@ -233,8 +256,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Feature extraction: 56D MicroDynamics (30D base + 13 Δ + 13 ΔΔ)");
     println!("   Audio files processed: {} / {}", n_features, n_files);
     println!("   Vocabulary items discovered: {}", stats.n_clusters);
-    println!("   Clustering time: {:.2}s ({:.3}ms per sample)",
-        cluster_time.as_secs_f64(), ms_per_sample);
+    println!(
+        "   Clustering time: {:.2}s ({:.3}ms per sample)",
+        cluster_time.as_secs_f64(),
+        ms_per_sample
+    );
     println!();
 
     println!("📁 Output:");
@@ -292,7 +318,9 @@ fn discover_wav_files(dir: &Path) -> Result<Vec<String>, Box<dyn std::error::Err
     Ok(wav_files)
 }
 
-fn extract_features_from_files(file_names: &[String]) -> Result<Vec<ExtractedFeatures>, Box<dyn std::error::Error>> {
+fn extract_features_from_files(
+    file_names: &[String],
+) -> Result<Vec<ExtractedFeatures>, Box<dyn std::error::Error>> {
     use rayon::prelude::*;
 
     let audio_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio");
@@ -303,7 +331,10 @@ fn extract_features_from_files(file_names: &[String]) -> Result<Vec<ExtractedFea
             match extract_single_feature(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
-                    eprintln!("Warning: Failed to extract features from {}: {}", file_name, e);
+                    eprintln!(
+                        "Warning: Failed to extract features from {}: {}",
+                        file_name, e
+                    );
                     None
                 }
             }
@@ -325,7 +356,8 @@ fn extract_single_feature(
     let sample_rate = spec.sample_rate;
 
     // Read samples as f32
-    let audio: Vec<f32> = reader.into_samples::<f32>()
+    let audio: Vec<f32> = reader
+        .into_samples::<f32>()
         .filter_map(|s| s.ok())
         .collect();
 
@@ -335,9 +367,7 @@ fn extract_single_feature(
 
     // Convert to mono if stereo
     let audio_mono = if spec.channels == 2 {
-        audio.chunks_exact(2)
-            .map(|c| (c[0] + c[1]) / 2.0)
-            .collect()
+        audio.chunks_exact(2).map(|c| (c[0] + c[1]) / 2.0).collect()
     } else {
         audio
     };
@@ -357,10 +387,7 @@ fn extract_single_feature(
         5000.0, // f0_range_hz (estimated)
     );
 
-    let mut features_vec: Vec<f64> = vector30d.to_array()
-        .iter()
-        .map(|&x| x as f64)
-        .collect();
+    let mut features_vec: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
 
     // Append 13 mfcc_delta features
     for delta in &features_56d.mfcc_delta {
@@ -408,14 +435,19 @@ fn extract_features_from_files_progress(
                 let remaining = (total_files - current) as f64 / rate;
                 let pct = (current as f64 / total_files as f64) * 100.0;
 
-                println!("   Progress: {}/{} files ({:.1}%) | {:.1} files/sec | {:.1}s remaining",
-                    current, total_files, pct, rate, remaining);
+                println!(
+                    "   Progress: {}/{} files ({:.1}%) | {:.1} files/sec | {:.1}s remaining",
+                    current, total_files, pct, rate, remaining
+                );
             }
 
             match extract_single_feature(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
-                    eprintln!("Warning: Failed to extract features from {}: {}", file_name, e);
+                    eprintln!(
+                        "Warning: Failed to extract features from {}: {}",
+                        file_name, e
+                    );
                     None
                 }
             }

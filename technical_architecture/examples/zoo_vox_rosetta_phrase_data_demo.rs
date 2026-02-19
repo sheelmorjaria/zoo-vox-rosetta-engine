@@ -8,11 +8,10 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_rosetta_phrase_data_demo
 
-use technical_architecture::{
-    ZooVoxFeatureExtractor, ZooVoxPhraseExtractor, ZooVoxLibraryBuilder,
-    ZooVoxExtractionConfig,
-};
 use technical_architecture::species::SpeciesConfigFactory;
+use technical_architecture::{
+    ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder, ZooVoxPhraseExtractor,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("========================================");
@@ -41,8 +40,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (species, freq, duration_ms, call_type) in &species_params {
-        println!("  {} - {:.0}Hz, {:.0}ms ({})",
-            species, freq, duration_ms, call_type);
+        println!(
+            "  {} - {:.0}Hz, {:.0}ms ({})",
+            species, freq, duration_ms, call_type
+        );
     }
     println!();
 
@@ -71,7 +72,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  F0 Range:       {:.1} Hz", features.f0_range_hz);
 
     println!("\n  === GRIT FACTORS (3 features) ===");
-    println!("  HNR:            {:.1} dB", features.harmonic_to_noise_ratio);
+    println!(
+        "  HNR:            {:.1} dB",
+        features.harmonic_to_noise_ratio
+    );
     println!("  Spectral Flat:  {:.3}", features.spectral_flatness);
     println!("  Harmonicity:    {:.3}", features.harmonicity);
 
@@ -85,14 +89,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Shimmer:        {:.4}", features.shimmer);
 
     println!("\n  === FINGERPRINT FACTORS (14 features) ===");
-    println!("  MFCC 1-3:       [{:.1}, {:.1}, {:.1}]",
-        features.mfcc_1, features.mfcc_2, features.mfcc_3);
+    println!(
+        "  MFCC 1-3:       [{:.1}, {:.1}, {:.1}]",
+        features.mfcc_1, features.mfcc_2, features.mfcc_3
+    );
     println!("  Spectral Flux:  {:.1}", features.spectral_flux);
 
     println!("\n  === RHYTHM FACTORS (3 features) ===");
     println!("  Median ICI:     {:.1} ms", features.median_ici_ms);
     println!("  Onset Rate:     {:.1} Hz", features.onset_rate_hz);
-    println!("  ICI CV:         {:.3}", features.ici_coefficient_of_variation);
+    println!(
+        "  ICI CV:         {:.3}",
+        features.ici_coefficient_of_variation
+    );
 
     // ========================================================================
     // Step 3: Extract phrases using species-specific segmentation
@@ -122,10 +131,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("  Extracted {} phrases", phrases.len());
     for (i, phrase) in phrases.iter().take(3).enumerate() {
-        println!("    Phrase {}: {} (F0={:.0}Hz, Dur={:.0}ms)",
-            i + 1, phrase.phrase_key,
+        println!(
+            "    Phrase {}: {} (F0={:.0}Hz, Dur={:.0}ms)",
+            i + 1,
+            phrase.phrase_key,
             phrase.features_30d.mean_f0_hz,
-            phrase.features_30d.duration_ms);
+            phrase.features_30d.duration_ms
+        );
     }
     if phrases.len() > 3 {
         println!("    ... and {} more", phrases.len() - 3);
@@ -136,8 +148,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     println!("\nStep 4: Building phrase library...\n");
 
-    let builder = ZooVoxLibraryBuilder::new()
-        .with_similarity_threshold(0.85);
+    let builder = ZooVoxLibraryBuilder::new().with_similarity_threshold(0.85);
 
     let library = builder.build_library(phrases, "marmoset", None)?;
 
@@ -145,24 +156,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total Phrases: {}", library.total_phrases);
     println!("  Total Occurrences: {}", library.total_occurrences);
     println!("  Type Entropy: {:.3} bits", library.type_entropy);
-    println!("  Frequency Range: {:.0} - {:.0} Hz",
-        library.frequency_range_hz.0, library.frequency_range_hz.1);
-    println!("  Duration Range: {:.0} - {:.0} ms",
-        library.typical_duration_ms.0, library.typical_duration_ms.1);
+    println!(
+        "  Frequency Range: {:.0} - {:.0} Hz",
+        library.frequency_range_hz.0, library.frequency_range_hz.1
+    );
+    println!(
+        "  Duration Range: {:.0} - {:.0} ms",
+        library.typical_duration_ms.0, library.typical_duration_ms.1
+    );
 
     // ========================================================================
     // Step 5: Show species configuration summary
     // ========================================================================
     println!("\nStep 5: Species Configuration Summary (Zoo Vox Rosetta v2.0)\n");
 
-    println!("  {:<15} {:<20} {:<12} {:<10}",
-        "Species", "Encoding Strategy", "Modality", "Contexts");
+    println!(
+        "  {:<15} {:<20} {:<12} {:<10}",
+        "Species", "Encoding Strategy", "Modality", "Contexts"
+    );
     println!("  {}", "-".repeat(60));
 
-    for species in &["sperm_whale", "zebra_finch", "meerkat", "dolphin",
-                      "orca", "egyptian_bat", "marmoset", "giant_otter", "macaque"] {
+    for species in &[
+        "sperm_whale",
+        "zebra_finch",
+        "meerkat",
+        "dolphin",
+        "orca",
+        "egyptian_bat",
+        "marmoset",
+        "giant_otter",
+        "macaque",
+    ] {
         let config = SpeciesConfigFactory::create(species);
-        println!("  {:<15} {:<20} {:<12} {:<10}",
+        println!(
+            "  {:<15} {:<20} {:<12} {:<10}",
             config.species(),
             format!("{:?}", config.encoding_strategy()),
             format!("{:?}", config.modality()),

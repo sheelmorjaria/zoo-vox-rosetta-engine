@@ -24,7 +24,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate test audio (marmoset-like phee call: 9kHz, 200ms)
     println!("Generating test audio (9kHz marmoset phee call, 200ms)...");
     let audio = generate_test_tone(9000.0, 200.0, sample_rate);
-    println!("Audio length: {} samples ({:.1} ms)", audio.len(), audio.len() as f32 / sample_rate as f32 * 1000.0);
+    println!(
+        "Audio length: {} samples ({:.1} ms)",
+        audio.len(),
+        audio.len() as f32 / sample_rate as f32 * 1000.0
+    );
     println!();
 
     // Extract 39D features
@@ -41,12 +45,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Attack time: {:.2} ms", features39.base_30d.attack_time_ms);
     println!("Decay time: {:.2} ms", features39.base_30d.decay_time_ms);
     println!("Sustain level: {:.2}", features39.base_30d.sustain_level);
-    println!("Vibrato rate: {:.2} Hz", features39.base_30d.vibrato_rate_hz);
-    println!("Vibrato depth: {:.2} cents", features39.base_30d.vibrato_depth);
+    println!(
+        "Vibrato rate: {:.2} Hz",
+        features39.base_30d.vibrato_rate_hz
+    );
+    println!(
+        "Vibrato depth: {:.2} cents",
+        features39.base_30d.vibrato_depth
+    );
     println!("Jitter: {:.4}", features39.base_30d.jitter);
     println!("Shimmer: {:.4}", features39.base_30d.shimmer);
     println!("Harmonicity: {:.2}", features39.base_30d.harmonicity);
-    println!("Spectral flatness: {:.2}", features39.base_30d.spectral_flatness);
+    println!(
+        "Spectral flatness: {:.2}",
+        features39.base_30d.spectral_flatness
+    );
     println!("HNR: {:.2} dB", features39.base_30d.harmonic_to_noise_ratio);
     println!();
 
@@ -62,7 +75,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Rhythm Factors (3D) ---");
     println!("Median ICI: {:.2} ms", features39.base_30d.median_ici_ms);
     println!("Onset rate: {:.2} Hz", features39.base_30d.onset_rate_hz);
-    println!("ICI CV: {:.2}", features39.base_30d.ici_coefficient_of_variation);
+    println!(
+        "ICI CV: {:.2}",
+        features39.base_30d.ici_coefficient_of_variation
+    );
     println!();
 
     // Display delta features (compact)
@@ -84,9 +100,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Display multi-scale onset rate features
     println!("--- Multi-Scale Onset Rate Features (6D) ---");
     println!("Mean: {:.2} Hz", features39.onset_rate_multi_scale.mean);
-    println!("Std dev: {:.2} Hz", features39.onset_rate_multi_scale.std_dev);
-    println!("Skewness: {:.4}", features39.onset_rate_multi_scale.skewness);
-    println!("Kurtosis: {:.4}", features39.onset_rate_multi_scale.kurtosis);
+    println!(
+        "Std dev: {:.2} Hz",
+        features39.onset_rate_multi_scale.std_dev
+    );
+    println!(
+        "Skewness: {:.4}",
+        features39.onset_rate_multi_scale.skewness
+    );
+    println!(
+        "Kurtosis: {:.4}",
+        features39.onset_rate_multi_scale.kurtosis
+    );
     println!("Range: {:.2} Hz", features39.onset_rate_multi_scale.range);
     println!("IQR: {:.2} Hz", features39.onset_rate_multi_scale.iqr);
     println!();
@@ -100,7 +125,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Summary ===");
     println!("✓ 39D feature extraction successful!");
     println!("✓ All feature values are finite and valid");
-    println!("✓ Extraction time: {:.2} ms (<200ms target)", elapsed.as_millis() as f32);
+    println!(
+        "✓ Extraction time: {:.2} ms (<200ms target)",
+        elapsed.as_millis() as f32
+    );
     println!();
 
     println!("Feature breakdown:");
@@ -160,7 +188,10 @@ fn validate_features(features: &technical_architecture::MicroDynamicsFeatures39D
         all_valid = false;
     }
     if !features.mfcc_delta_delta_mean.is_finite() {
-        println!("✗ ΔΔ MFCC mean not finite: {}", features.mfcc_delta_delta_mean);
+        println!(
+            "✗ ΔΔ MFCC mean not finite: {}",
+            features.mfcc_delta_delta_mean
+        );
         all_valid = false;
     }
 

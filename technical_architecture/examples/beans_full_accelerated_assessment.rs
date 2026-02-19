@@ -14,18 +14,18 @@
 //   1. First run: python download_beans_zero.py
 //   2. Then: cargo run --release --example beans_full_accelerated_assessment -- --manifest beans_zero_cache/beans_audio_manifest.json
 
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::Instant;
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use ndarray::Array2;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use ndarray::Array2;
 
 // ============================================================================
 // CLI Arguments (Simple)
@@ -113,7 +113,9 @@ impl Args {
                     println!("  --threads, -t <N>        Number of threads (0 = auto)");
                     println!("  --batch-size, -b <N>     Batch size (default: 100)");
                     println!("  --max-samples <N>        Max samples to process (0 = all)");
-                    println!("  --output, -o <DIR>       Output directory (default: beans_analysis)");
+                    println!(
+                        "  --output, -o <DIR>       Output directory (default: beans_analysis)"
+                    );
                     println!("  --features-56d           Extract 56D features instead of 30D");
                     println!("  --dbscan-eps <F>         DBSCAN epsilon (default: 0.5)");
                     println!("  --dbscan-min-samples <N> DBSCAN min samples (default: 5)");
@@ -254,7 +256,10 @@ pub struct FastFeatureExtractor {
 
 impl FastFeatureExtractor {
     pub fn new(sample_rate: u32, feature_dim: usize) -> Self {
-        Self { sample_rate, feature_dim }
+        Self {
+            sample_rate,
+            feature_dim,
+        }
     }
 
     /// Extract features from audio buffer
@@ -354,7 +359,11 @@ impl FastFeatureExtractor {
                 energy += audio[i] * audio[i] + audio[i + lag] * audio[i + lag];
             }
 
-            let norm_corr = if energy > 0.0 { 2.0 * corr / energy } else { 0.0 };
+            let norm_corr = if energy > 0.0 {
+                2.0 * corr / energy
+            } else {
+                0.0
+            };
 
             if norm_corr > best_corr {
                 best_corr = norm_corr;
@@ -386,10 +395,10 @@ impl FastFeatureExtractor {
 
         // Spectral flatness (Wiener entropy approximation)
         let flatness = {
-            let geometric_mean: f32 = audio.iter()
-                .map(|x| (x.abs() + 1e-10).ln())
-                .sum::<f32>() / audio.len() as f32;
-            let arithmetic_mean: f32 = audio.iter().map(|x| x.abs()).sum::<f32>() / audio.len() as f32;
+            let geometric_mean: f32 =
+                audio.iter().map(|x| (x.abs() + 1e-10).ln()).sum::<f32>() / audio.len() as f32;
+            let arithmetic_mean: f32 =
+                audio.iter().map(|x| x.abs()).sum::<f32>() / audio.len() as f32;
             (geometric_mean.exp() / (arithmetic_mean + 1e-10)) as f64
         };
 
@@ -404,7 +413,11 @@ impl FastFeatureExtractor {
             0.5
         };
 
-        (hnr.clamp(0.0, 50.0), flatness.clamp(0.0, 1.0), harmonicity.clamp(0.0, 1.0))
+        (
+            hnr.clamp(0.0, 50.0),
+            flatness.clamp(0.0, 1.0),
+            harmonicity.clamp(0.0, 1.0),
+        )
     }
 
     fn compute_envelope_features(&self, audio: &[f32]) -> (f64, f64, f64, f64, f64) {
@@ -416,13 +429,14 @@ impl FastFeatureExtractor {
         for i in 0..n {
             let start = i.saturating_sub(window / 2);
             let end = (i + window / 2).min(n);
-            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt()
-                / (end - start) as f32;
+            let rms: f32 =
+                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             envelope.push(rms);
         }
 
         // Find peak
-        let (peak_idx, &peak_val) = envelope.iter()
+        let (peak_idx, &peak_val) = envelope
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .unwrap_or((0, &0.0));
@@ -433,14 +447,16 @@ impl FastFeatureExtractor {
 
         // Attack time (to 90% of peak)
         let threshold_90 = peak_val * 0.9;
-        let attack_idx = envelope.iter()
+        let attack_idx = envelope
+            .iter()
             .position(|&x| x >= threshold_90)
             .unwrap_or(peak_idx);
         let attack_ms = (attack_idx as f64 / self.sample_rate as f64) * 1000.0;
 
         // Decay time (from peak to 10%)
         let threshold_10 = peak_val * 0.1;
-        let decay_idx = envelope.get(peak_idx..)
+        let decay_idx = envelope
+            .get(peak_idx..)
             .and_then(|e| e.iter().position(|&x| x <= threshold_10))
             .unwrap_or(envelope.len() - peak_idx - 1);
         let decay_ms = (decay_idx as f64 / self.sample_rate as f64) * 1000.0;
@@ -448,7 +464,9 @@ impl FastFeatureExtractor {
         // Sustain level (average after peak)
         let sustain = if peak_idx < envelope.len() / 2 {
             let sustain_start = peak_idx + (envelope.len() - peak_idx) / 2;
-            envelope[sustain_start..].iter().sum::<f32>() / (envelope.len() - sustain_start) as f32 / peak_val
+            envelope[sustain_start..].iter().sum::<f32>()
+                / (envelope.len() - sustain_start) as f32
+                / peak_val
         } else {
             0.5
         };
@@ -457,7 +475,8 @@ impl FastFeatureExtractor {
         let release_ms = decay_ms * 0.5;
 
         // Temporal centroid
-        let weighted_sum: f32 = envelope.iter()
+        let weighted_sum: f32 = envelope
+            .iter()
             .enumerate()
             .map(|(i, &e)| i as f32 * e)
             .sum();
@@ -494,8 +513,9 @@ impl FastFeatureExtractor {
         // Count zero-crossings (vibrato cycles)
         let mut zc = 0;
         for i in 1..derivative.len() {
-            if (derivative[i - 1] < 0.0 && derivative[i] >= 0.0) ||
-               (derivative[i - 1] >= 0.0 && derivative[i] < 0.0) {
+            if (derivative[i - 1] < 0.0 && derivative[i] >= 0.0)
+                || (derivative[i - 1] >= 0.0 && derivative[i] < 0.0)
+            {
                 zc += 1;
             }
         }
@@ -519,8 +539,8 @@ impl FastFeatureExtractor {
         for i in 0..n {
             let start = i.saturating_sub(window / 2);
             let end = (i + window / 2).min(n);
-            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt()
-                / (end - start) as f32;
+            let rms: f32 =
+                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             envelope.push(rms);
         }
         envelope
@@ -547,9 +567,11 @@ impl FastFeatureExtractor {
 
         let jitter = if periods.len() > 3 {
             let mean_period = periods.iter().sum::<usize>() as f64 / periods.len() as f64;
-            let period_var: f64 = periods.windows(2)
+            let period_var: f64 = periods
+                .windows(2)
                 .map(|w| (w[1] as f64 - w[0] as f64).abs())
-                .sum::<f64>() / (periods.len() - 1) as f64;
+                .sum::<f64>()
+                / (periods.len() - 1) as f64;
             (period_var / mean_period).clamp(0.0, 0.1)
         } else {
             0.01
@@ -559,9 +581,11 @@ impl FastFeatureExtractor {
         let envelope = self.compute_envelope(audio);
         let shimmer = if envelope.len() > 10 {
             let mean_amp = envelope.iter().sum::<f32>() / envelope.len() as f32;
-            let amp_var: f32 = envelope.windows(2)
+            let amp_var: f32 = envelope
+                .windows(2)
                 .map(|w| (w[1] - w[0]).abs())
-                .sum::<f32>() / (envelope.len() - 1) as f32;
+                .sum::<f32>()
+                / (envelope.len() - 1) as f32;
             (amp_var / (mean_amp + 1e-6)) as f64
         } else {
             0.03
@@ -632,23 +656,31 @@ impl FastFeatureExtractor {
         }
 
         // Inter-onset intervals
-        let icis: Vec<f64> = onsets.windows(2)
+        let icis: Vec<f64> = onsets
+            .windows(2)
             .map(|w| ((w[1] - w[0]) as f64 / self.sample_rate as f64) * 1000.0)
             .collect();
 
         let mean_ici = icis.iter().sum::<f64>() / icis.len() as f64;
 
         let std_ici = if icis.len() > 1 {
-            let variance = icis.iter()
-                .map(|x| (x - mean_ici).powi(2))
-                .sum::<f64>() / (icis.len() - 1) as f64;
+            let variance =
+                icis.iter().map(|x| (x - mean_ici).powi(2)).sum::<f64>() / (icis.len() - 1) as f64;
             variance.sqrt()
         } else {
             0.0
         };
 
-        let ici_cv = if mean_ici > 0.0 { std_ici / mean_ici } else { 0.0 };
-        let onset_rate = if mean_ici > 0.0 { 1000.0 / mean_ici } else { 0.0 };
+        let ici_cv = if mean_ici > 0.0 {
+            std_ici / mean_ici
+        } else {
+            0.0
+        };
+        let onset_rate = if mean_ici > 0.0 {
+            1000.0 / mean_ici
+        } else {
+            0.0
+        };
 
         (mean_ici, onset_rate, ici_cv)
     }
@@ -666,27 +698,40 @@ pub struct BatchedProcessor {
 
 impl BatchedProcessor {
     pub fn new(batch_size: usize, sample_rate: u32, feature_dim: usize) -> Self {
-        Self { batch_size, sample_rate, feature_dim }
+        Self {
+            batch_size,
+            sample_rate,
+            feature_dim,
+        }
     }
 
     /// Process all samples from manifest in parallel batches
-    pub fn process_manifest(&self, manifest: &Manifest, base_path: &Path) -> Vec<ExtractedFeatures> {
+    pub fn process_manifest(
+        &self,
+        manifest: &Manifest,
+        base_path: &Path,
+    ) -> Vec<ExtractedFeatures> {
         let n_samples = manifest.samples.len();
         let processed = Arc::new(AtomicUsize::new(0));
         let failed = Arc::new(AtomicUsize::new(0));
 
-        println!("Processing {} samples in batches of {}...", n_samples, self.batch_size);
+        println!(
+            "Processing {} samples in batches of {}...",
+            n_samples, self.batch_size
+        );
         println!();
 
         let start_time = Instant::now();
 
         // Process in parallel chunks
-        let all_features: Vec<ExtractedFeatures> = manifest.samples
+        let all_features: Vec<ExtractedFeatures> = manifest
+            .samples
             .par_chunks(self.batch_size)
             .flat_map(|chunk| {
                 let extractor = FastFeatureExtractor::new(self.sample_rate, self.feature_dim);
 
-                chunk.iter()
+                chunk
+                    .iter()
                     .filter_map(|sample| {
                         // Load audio from raw PCM file
                         let audio_path = base_path.join(&sample.audio_file);
@@ -768,7 +813,11 @@ impl BatchedProcessor {
 // Assessment Functions
 // ============================================================================
 
-fn run_dbscan_clustering(features: &Array2<f64>, eps: f64, min_samples: usize) -> Result<ClusteringResults> {
+fn run_dbscan_clustering(
+    features: &Array2<f64>,
+    eps: f64,
+    min_samples: usize,
+) -> Result<ClusteringResults> {
     let n = features.nrows();
     println!("Computing pairwise distances for {} samples...", n);
 
@@ -776,8 +825,9 @@ fn run_dbscan_clustering(features: &Array2<f64>, eps: f64, min_samples: usize) -
     let mut distances = vec![vec![0.0f64; n]; n];
 
     for i in 0..n {
-        for j in (i+1)..n {
-            let dist: f64 = features.row(i)
+        for j in (i + 1)..n {
+            let dist: f64 = features
+                .row(i)
                 .iter()
                 .zip(features.row(j).iter())
                 .map(|(a, b)| (a - b).powi(2))
@@ -844,15 +894,15 @@ fn run_dbscan_clustering(features: &Array2<f64>, eps: f64, min_samples: usize) -
             }
 
             // Intra-cluster distance
-            let cluster_samples: Vec<usize> = (0..n)
-                .filter(|&j| labels[j] == labels[i])
-                .collect();
+            let cluster_samples: Vec<usize> = (0..n).filter(|&j| labels[j] == labels[i]).collect();
 
             let a = if cluster_samples.len() > 1 {
-                cluster_samples.iter()
+                cluster_samples
+                    .iter()
                     .filter(|&&j| j != i)
                     .map(|&j| distances[i][j])
-                    .sum::<f64>() / (cluster_samples.len() - 1) as f64
+                    .sum::<f64>()
+                    / (cluster_samples.len() - 1) as f64
             } else {
                 0.0
             };
@@ -861,9 +911,7 @@ fn run_dbscan_clustering(features: &Array2<f64>, eps: f64, min_samples: usize) -
             let b = (0..n_clusters)
                 .filter(|&c| c as i32 != labels[i])
                 .map(|c| {
-                    let other: Vec<usize> = (0..n)
-                        .filter(|&j| labels[j] == c as i32)
-                        .collect();
+                    let other: Vec<usize> = (0..n).filter(|&j| labels[j] == c as i32).collect();
                     if other.is_empty() {
                         f64::INFINITY
                     } else {
@@ -877,7 +925,11 @@ fn run_dbscan_clustering(features: &Array2<f64>, eps: f64, min_samples: usize) -
             }
         }
 
-        if scores.is_empty() { 0.0 } else { scores.iter().sum::<f64>() / scores.len() as f64 }
+        if scores.is_empty() {
+            0.0
+        } else {
+            scores.iter().sum::<f64>() / scores.len() as f64
+        }
     } else {
         0.0
     };
@@ -902,7 +954,8 @@ fn evaluate_classification(
     let unique_labels: Vec<&String> = labels.iter().collect();
     let unique_labels: Vec<&String> = {
         let mut seen = std::collections::HashSet::new();
-        unique_labels.into_iter()
+        unique_labels
+            .into_iter()
             .filter(|l| seen.insert(*l))
             .collect()
     };
@@ -920,7 +973,8 @@ fn evaluate_classification(
 
     for i in 0..n_test {
         for j in 0..n_train {
-            let dist: f64 = features.row(n_train + i)
+            let dist: f64 = features
+                .row(n_train + i)
                 .iter()
                 .zip(features.row(j).iter())
                 .map(|(a, b)| (a - b).powi(2))
@@ -939,7 +993,8 @@ fn evaluate_classification(
         let mut class_total = vec![0usize; n_classes];
 
         for test_idx in 0..n_test {
-            let actual_label_idx = unique_labels.iter()
+            let actual_label_idx = unique_labels
+                .iter()
                 .position(|&l| l == &labels[n_train + test_idx])
                 .unwrap_or(0);
 
@@ -960,7 +1015,8 @@ fn evaluate_classification(
                 *votes.entry(neighbor_label).or_insert(0) += 1;
             }
 
-            let predicted = votes.into_iter()
+            let predicted = votes
+                .into_iter()
                 .max_by_key(|(_, count)| *count)
                 .map(|(label, _)| label)
                 .unwrap_or(&labels[0]);
@@ -978,29 +1034,55 @@ fn evaluate_classification(
         }
 
         // Compute per-class metrics
-        let precision = class_correct.iter().sum::<usize>() as f64 /
-            (class_total.iter().sum::<usize>() as f64 + 1e-10);
-        let recall = class_correct.iter().sum::<usize>() as f64 /
-            (class_total.iter().sum::<usize>() as f64 + 1e-10);
+        let precision = class_correct.iter().sum::<usize>() as f64
+            / (class_total.iter().sum::<usize>() as f64 + 1e-10);
+        let recall = class_correct.iter().sum::<usize>() as f64
+            / (class_total.iter().sum::<usize>() as f64 + 1e-10);
         let f1 = 2.0 * precision * recall / (precision + recall + 1e-10);
 
-        knn_results.insert(format!("{}_NN", k), KnnResult {
-            accuracy,
-            precision,
-            recall,
-            f1_score: f1,
-        });
+        knn_results.insert(
+            format!("{}_NN", k),
+            KnnResult {
+                accuracy,
+                precision,
+                recall,
+                f1_score: f1,
+            },
+        );
     }
 
     // Feature importance (variance-based)
     let feature_names = vec![
-        "f0_mean", "duration", "f0_range", "rms", "energy",
-        "hnr", "flatness", "harmonicity",
-        "attack", "decay", "sustain", "release", "centroid",
-        "vib_rate", "vib_depth", "jitter", "shimmer",
-        "spec_0", "spec_1", "spec_2", "spec_3", "spec_4",
-        "spec_5", "spec_6", "spec_7", "spec_8", "spec_9",
-        "ici", "onset_rate", "ici_cv",
+        "f0_mean",
+        "duration",
+        "f0_range",
+        "rms",
+        "energy",
+        "hnr",
+        "flatness",
+        "harmonicity",
+        "attack",
+        "decay",
+        "sustain",
+        "release",
+        "centroid",
+        "vib_rate",
+        "vib_depth",
+        "jitter",
+        "shimmer",
+        "spec_0",
+        "spec_1",
+        "spec_2",
+        "spec_3",
+        "spec_4",
+        "spec_5",
+        "spec_6",
+        "spec_7",
+        "spec_8",
+        "spec_9",
+        "ici",
+        "onset_rate",
+        "ici_cv",
     ];
 
     let feature_importance: Vec<(String, f64)> = (0..features.ncols().min(feature_names.len()))
@@ -1094,9 +1176,7 @@ fn main() -> Result<()> {
 
     let processor = BatchedProcessor::new(args.batch_size, manifest.resample_rate, feature_dim);
 
-    let features = pool.install(|| {
-        processor.process_manifest(&manifest, base_path)
-    });
+    let features = pool.install(|| processor.process_manifest(&manifest, base_path));
 
     if features.is_empty() {
         anyhow::bail!("No features extracted!");
@@ -1109,14 +1189,24 @@ fn main() -> Result<()> {
 
     let extraction_stats = ExtractionStats {
         total_extraction_time_ms: total_start.elapsed().as_secs_f64() * 1000.0,
-        avg_extraction_time_ms: extraction_times.iter().sum::<f64>() / extraction_times.len() as f64,
+        avg_extraction_time_ms: extraction_times.iter().sum::<f64>()
+            / extraction_times.len() as f64,
         min_extraction_time_ms: sorted_times.first().copied().unwrap_or(0.0),
         max_extraction_time_ms: sorted_times.last().copied().unwrap_or(0.0),
         successful_extractions: features.len(),
         failed_extractions: manifest.samples.len() - features.len(),
-        p50_extraction_time_ms: sorted_times.get(sorted_times.len() / 2).copied().unwrap_or(0.0),
-        p95_extraction_time_ms: sorted_times.get((sorted_times.len() as f64 * 0.95) as usize).copied().unwrap_or(0.0),
-        p99_extraction_time_ms: sorted_times.get((sorted_times.len() as f64 * 0.99) as usize).copied().unwrap_or(0.0),
+        p50_extraction_time_ms: sorted_times
+            .get(sorted_times.len() / 2)
+            .copied()
+            .unwrap_or(0.0),
+        p95_extraction_time_ms: sorted_times
+            .get((sorted_times.len() as f64 * 0.95) as usize)
+            .copied()
+            .unwrap_or(0.0),
+        p99_extraction_time_ms: sorted_times
+            .get((sorted_times.len() as f64 * 0.99) as usize)
+            .copied()
+            .unwrap_or(0.0),
     };
 
     // Build feature matrix
@@ -1137,7 +1227,8 @@ fn main() -> Result<()> {
     let std = {
         let mut s = vec![0.0; feature_dim];
         for j in 0..feature_dim {
-            let variance = feature_matrix.column(j)
+            let variance = feature_matrix
+                .column(j)
                 .mapv(|x| (x - mean[j]).powi(2))
                 .mean()
                 .unwrap_or(1.0);
@@ -1160,12 +1251,19 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let clustering_results = run_dbscan_clustering(&normalized, args.dbscan_eps, args.dbscan_min_samples)?;
+    let clustering_results =
+        run_dbscan_clustering(&normalized, args.dbscan_eps, args.dbscan_min_samples)?;
 
     println!("Clustering results:");
     println!("  ├─ Clusters: {}", clustering_results.n_clusters);
-    println!("  ├─ Noise: {} ({:.1}%)", clustering_results.n_noise, clustering_results.noise_percentage);
-    println!("  └─ Silhouette: {:.4}", clustering_results.silhouette_score);
+    println!(
+        "  ├─ Noise: {} ({:.1}%)",
+        clustering_results.n_noise, clustering_results.noise_percentage
+    );
+    println!(
+        "  └─ Silhouette: {:.4}",
+        clustering_results.silhouette_score
+    );
     println!();
 
     // === Phase 3: Classification ===
@@ -1175,26 +1273,31 @@ fn main() -> Result<()> {
     println!();
 
     // Get primary label column
-    let primary_label_col = manifest.label_columns.first()
+    let primary_label_col = manifest
+        .label_columns
+        .first()
         .map(|s| s.as_str())
         .unwrap_or("label");
 
-    let labels: Vec<String> = features.iter()
+    let labels: Vec<String> = features
+        .iter()
         .map(|f| f.labels.get(primary_label_col).cloned().unwrap_or_default())
         .collect();
 
-    let classification_results = evaluate_classification(
-        &normalized,
-        &labels,
-        &[1, 3, 5, 10, 20],
-    )?;
+    let classification_results = evaluate_classification(&normalized, &labels, &[1, 3, 5, 10, 20])?;
 
     println!();
     println!("Classification results:");
     for (k, result) in &classification_results.knn_results {
-        println!("  ├─ {}: accuracy={:.4}, f1={:.4}", k, result.accuracy, result.f1_score);
+        println!(
+            "  ├─ {}: accuracy={:.4}, f1={:.4}",
+            k, result.accuracy, result.f1_score
+        );
     }
-    println!("  └─ Best: {}-NN with {:.4} accuracy", classification_results.best_k, classification_results.best_accuracy);
+    println!(
+        "  └─ Best: {}-NN with {:.4} accuracy",
+        classification_results.best_k, classification_results.best_accuracy
+    );
     println!();
 
     // === Phase 4: Label Analysis ===
@@ -1206,7 +1309,8 @@ fn main() -> Result<()> {
     let mut label_analysis = HashMap::new();
 
     for label_col in &manifest.label_columns {
-        let labels_for_col: Vec<String> = features.iter()
+        let labels_for_col: Vec<String> = features
+            .iter()
             .map(|f| f.labels.get(label_col).cloned().unwrap_or_default())
             .collect();
 
@@ -1222,19 +1326,27 @@ fn main() -> Result<()> {
         println!("Label column '{}':", label_col);
         println!("  └─ {} classes", distribution.len());
         for (label, count) in distribution.iter().take(10) {
-            println!("     - {}: {} ({:.1}%)", label, count, *count as f64 / n_samples as f64 * 100.0);
+            println!(
+                "     - {}: {} ({:.1}%)",
+                label,
+                count,
+                *count as f64 / n_samples as f64 * 100.0
+            );
         }
         if distribution.len() > 10 {
             println!("     ... and {} more", distribution.len() - 10);
         }
         println!();
 
-        label_analysis.insert(label_col.clone(), LabelAnalysis {
-            n_classes: distribution.len(),
-            class_distribution: distribution,
-            per_class_accuracy: HashMap::new(),
-            confusion_matrix: None,
-        });
+        label_analysis.insert(
+            label_col.clone(),
+            LabelAnalysis {
+                n_classes: distribution.len(),
+                class_distribution: distribution,
+                per_class_accuracy: HashMap::new(),
+                confusion_matrix: None,
+            },
+        );
     }
 
     // === Final Results ===
@@ -1281,10 +1393,9 @@ fn main() -> Result<()> {
     serde_json::to_writer_pretty(writer, &results)?;
 
     // Save features
-    let features_path = args.output.join(format!(
-        "full_beans_{}d_features.json",
-        feature_dim
-    ));
+    let features_path = args
+        .output
+        .join(format!("full_beans_{}d_features.json", feature_dim));
 
     let file = File::create(&features_path)?;
     let writer = BufWriter::new(file);
@@ -1300,15 +1411,30 @@ fn main() -> Result<()> {
     println!();
     println!("Performance:");
     println!("  ├─ Total time: {:.2}s", results.processing_time_sec);
-    println!("  ├─ Throughput: {:.1} samples/sec", results.throughput_samples_per_sec);
-    println!("  ├─ Avg extraction: {:.2}ms/sample", results.extraction_stats.avg_extraction_time_ms);
+    println!(
+        "  ├─ Throughput: {:.1} samples/sec",
+        results.throughput_samples_per_sec
+    );
+    println!(
+        "  ├─ Avg extraction: {:.2}ms/sample",
+        results.extraction_stats.avg_extraction_time_ms
+    );
     println!("  └─ Speedup vs Python: {:.1}x", results.speedup_vs_python);
     println!();
     println!("Competence Assessment:");
     println!("  ├─ Level: {}", results.competence_level.to_uppercase());
-    println!("  ├─ Clusters found: {}", results.clustering_results.n_clusters);
-    println!("  ├─ Silhouette score: {:.4}", results.clustering_results.silhouette_score);
-    println!("  └─ Best k-NN: {}-NN @ {:.4}", results.classification_results.best_k, results.classification_results.best_accuracy);
+    println!(
+        "  ├─ Clusters found: {}",
+        results.clustering_results.n_clusters
+    );
+    println!(
+        "  ├─ Silhouette score: {:.4}",
+        results.clustering_results.silhouette_score
+    );
+    println!(
+        "  └─ Best k-NN: {}-NN @ {:.4}",
+        results.classification_results.best_k, results.classification_results.best_accuracy
+    );
     println!();
     println!("Output files:");
     println!("  ├─ Results: {}", results_path.display());

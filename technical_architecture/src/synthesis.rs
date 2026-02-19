@@ -1674,27 +1674,27 @@ impl Default for SourceMetadata {
             // === 30D → 45D Expansion Defaults ===
 
             // Resonance - typical marmoset-like formants
-            formant_1_hz: 1000.0,        // F1 around 1kHz
-            formant_2_hz: 2500.0,        // F2 around 2.5kHz
-            formant_3_hz: 4000.0,        // F3 around 4kHz
-            formant_1_bandwidth: 150.0,  // ~150Hz bandwidth
-            formant_2_bandwidth: 200.0,  // ~200Hz bandwidth
-            formant_dispersion: 1500.0,  // ~1.5kHz between formants
+            formant_1_hz: 1000.0,       // F1 around 1kHz
+            formant_2_hz: 2500.0,       // F2 around 2.5kHz
+            formant_3_hz: 4000.0,       // F3 around 4kHz
+            formant_1_bandwidth: 150.0, // ~150Hz bandwidth
+            formant_2_bandwidth: 200.0, // ~200Hz bandwidth
+            formant_dispersion: 1500.0, // ~1.5kHz between formants
 
             // Spectral Shape - neutral spectral distribution
-            spectral_centroid: 5000.0,   // ~5kHz centroid
-            spectral_spread: 2000.0,     // ~2kHz spread
-            spectral_skewness: 0.0,      // Symmetric distribution
-            spectral_kurtosis: 3.0,      // Normal distribution kurtosis
+            spectral_centroid: 5000.0, // ~5kHz centroid
+            spectral_spread: 2000.0,   // ~2kHz spread
+            spectral_skewness: 0.0,    // Symmetric distribution
+            spectral_kurtosis: 3.0,    // Normal distribution kurtosis
 
             // Modulation - minimal modulation
-            spectral_tilt: -6.0,         // -6dB/octave (natural roll-off)
-            fm_slope: 0.0,               // No FM
-            am_depth: 0.0,               // No AM
+            spectral_tilt: -6.0, // -6dB/octave (natural roll-off)
+            fm_slope: 0.0,       // No FM
+            am_depth: 0.0,       // No AM
 
             // Non-Linear - minimal non-linear content
-            subharmonic_ratio: 0.0,      // No subharmonics
-            spectral_entropy: 0.3,       // Moderate entropy (tonal signal)
+            subharmonic_ratio: 0.0, // No subharmonics
+            spectral_entropy: 0.3,  // Moderate entropy (tonal signal)
         }
     }
 }
@@ -4812,7 +4812,11 @@ mod corvid_roughness_tests {
         let vector = metadata.to_vector_45d();
 
         // Verify dimension count
-        assert_eq!(vector.len(), 45, "to_vector_45d should return exactly 45 features");
+        assert_eq!(
+            vector.len(),
+            45,
+            "to_vector_45d should return exactly 45 features"
+        );
 
         // Verify ordering matches documented structure
         // Fundamental (3): indices 0-2

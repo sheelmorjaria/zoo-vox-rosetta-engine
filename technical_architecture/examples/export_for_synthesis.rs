@@ -9,10 +9,7 @@
 //   cargo run --example export_for_synthesis --release --features parallel-extraction
 
 use std::path::Path;
-use technical_architecture::{
-    batch_process_and_cluster,
-    export_phrases_for_synthesis,
-};
+use technical_architecture::{batch_process_and_cluster, export_phrases_for_synthesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
@@ -57,15 +54,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count unique clusters
-    let unique_clusters: std::collections::HashSet<i32> = clustered_phrases
-        .iter()
-        .map(|cp| cp.cluster_id)
-        .collect();
+    let unique_clusters: std::collections::HashSet<i32> =
+        clustered_phrases.iter().map(|cp| cp.cluster_id).collect();
 
     println!("📊 Statistics:");
     println!("   Total clustered phrases: {}", clustered_phrases.len());
     println!("   Unique phrase types: {}", unique_clusters.len());
-    println!("   Vocalization results: {} sentences", vocalization_results.len());
+    println!(
+        "   Vocalization results: {} sentences",
+        vocalization_results.len()
+    );
     println!();
 
     // Export JSON metadata for synthesis

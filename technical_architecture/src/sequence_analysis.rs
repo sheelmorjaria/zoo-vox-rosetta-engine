@@ -166,7 +166,11 @@ impl MultipleSequenceAligner {
     }
 
     /// Progressive alignment following guide tree
-    fn progressive_align(&self, sequences: &[Vec<i32>], _guide_tree: &[Vec<usize>]) -> Result<Vec<Vec<i32>>> {
+    fn progressive_align(
+        &self,
+        sequences: &[Vec<i32>],
+        _guide_tree: &[Vec<usize>],
+    ) -> Result<Vec<Vec<i32>>> {
         // Simplified: align each sequence to the first one
         let mut aligned = Vec::new();
         let reference = &sequences[0];
@@ -280,7 +284,8 @@ impl MultipleSequenceAligner {
             }
 
             // Most common non-gap symbol
-            let best = counts.iter()
+            let best = counts
+                .iter()
                 .max_by_key(|(_, &count)| count)
                 .map(|(&sym, _)| sym)
                 .unwrap_or(-999);
@@ -335,14 +340,21 @@ impl MultipleSequenceAligner {
                 start = i;
                 in_region = true;
             } else if score < threshold && in_region {
-                regions.push((start, i - 1, conservation[start..i].iter().sum::<f64>() / (i - start) as f64));
+                regions.push((
+                    start,
+                    i - 1,
+                    conservation[start..i].iter().sum::<f64>() / (i - start) as f64,
+                ));
                 in_region = false;
             }
         }
 
         if in_region {
-            regions.push((start, conservation.len() - 1,
-                conservation[start..].iter().sum::<f64>() / (conservation.len() - start) as f64));
+            regions.push((
+                start,
+                conservation.len() - 1,
+                conservation[start..].iter().sum::<f64>() / (conservation.len() - start) as f64,
+            ));
         }
 
         regions
@@ -405,7 +417,12 @@ impl SequenceHmm {
     }
 
     /// Train HMM using Baum-Welch algorithm
-    pub fn train(&self, sequences: &[Vec<i32>], max_iterations: usize, tolerance: f64) -> Result<HmmAnalysisResult> {
+    pub fn train(
+        &self,
+        sequences: &[Vec<i32>],
+        max_iterations: usize,
+        tolerance: f64,
+    ) -> Result<HmmAnalysisResult> {
         if sequences.is_empty() {
             return Err(SequenceAnalysisError::InsufficientData { min: 1, actual: 0 });
         }
@@ -419,10 +436,18 @@ impl SequenceHmm {
 
         for iteration in 0..max_iterations {
             // E-step: Compute expected counts
-            let (gamma, xi, log_likelihood) = self.expectation_step(sequences, &transition, &emission, &initial)?;
+            let (gamma, xi, log_likelihood) =
+                self.expectation_step(sequences, &transition, &emission, &initial)?;
 
             // M-step: Update parameters
-            self.maximization_step(sequences, &gamma, &xi, &mut transition, &mut emission, &mut initial);
+            self.maximization_step(
+                sequences,
+                &gamma,
+                &xi,
+                &mut transition,
+                &mut emission,
+                &mut initial,
+            );
 
             // Check convergence
             if (log_likelihood - prev_log_likelihood).abs() < tolerance {
@@ -433,7 +458,8 @@ impl SequenceHmm {
         }
 
         // Find Viterbi paths for each sequence
-        let viterbi_paths = sequences.iter()
+        let viterbi_paths = sequences
+            .iter()
             .map(|seq| self.viterbi(seq, &transition, &emission, &initial))
             .collect::<Result<Vec<_>>>()?;
 
@@ -516,7 +542,9 @@ impl SequenceHmm {
                 for state in 0..self.n_states {
                     let mut sum = 0.0;
                     for next_state in 0..self.n_states {
-                        sum += transition[[state, next_state]] * emission[[next_state, symbol_idx]] * beta[[s + 1, next_state]];
+                        sum += transition[[state, next_state]]
+                            * emission[[next_state, symbol_idx]]
+                            * beta[[s + 1, next_state]];
                     }
                     beta[[s, state]] = sum;
                 }
@@ -565,7 +593,13 @@ impl SequenceHmm {
     }
 
     /// Viterbi algorithm - find most likely state sequence
-    fn viterbi(&self, sequence: &[i32], transition: &Array2<f64>, emission: &Array2<f64>, initial: &[f64]) -> Result<Vec<usize>> {
+    fn viterbi(
+        &self,
+        sequence: &[i32],
+        transition: &Array2<f64>,
+        emission: &Array2<f64>,
+        initial: &[f64],
+    ) -> Result<Vec<usize>> {
         let n = sequence.len();
         let mut viterbi = Array2::zeros((n, self.n_states));
         let mut backpointer = vec![vec![0; self.n_states]; n];
@@ -615,17 +649,25 @@ impl SequenceHmm {
     }
 
     /// Generate human-readable state descriptions
-    fn describe_states(&self, transition: &Array2<f64>, emission: &Array2<f64>) -> Vec<StateDescription> {
+    fn describe_states(
+        &self,
+        transition: &Array2<f64>,
+        emission: &Array2<f64>,
+    ) -> Vec<StateDescription> {
         let mut descriptions = Vec::new();
 
         for state in 0..self.n_states {
             // Find top emissions
-            let mut emissions: Vec<(usize, f64)> = emission.row(state).iter().enumerate()
+            let mut emissions: Vec<(usize, f64)> = emission
+                .row(state)
+                .iter()
+                .enumerate()
                 .map(|(i, &p)| (i, p))
                 .collect();
             emissions.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-            let top_emissions = emissions.iter()
+            let top_emissions = emissions
+                .iter()
                 .take(5)
                 .map(|(i, p)| (*i as i32, *p))
                 .collect();
@@ -785,9 +827,7 @@ impl NgramModel {
             return vec![sequence.to_vec()];
         }
 
-        sequence.windows(self.n)
-            .map(|w| w.to_vec())
-            .collect()
+        sequence.windows(self.n).map(|w| w.to_vec()).collect()
     }
 
     /// Compute cross-context perplexity
@@ -882,7 +922,8 @@ impl NetworkMotifAnalyzer {
         let significant_motifs = self.compute_significance(&motifs, &all_transitions)?;
 
         // Find multi-context motifs
-        let multi_context = significant_motifs.iter()
+        let multi_context = significant_motifs
+            .iter()
             .map(|m| (m.id, m.context_distribution.len() as f64))
             .collect();
 
@@ -933,7 +974,8 @@ impl NetworkMotifAnalyzer {
         let mut distribution = HashMap::new();
 
         for (ctx, transitions) in transitions_by_context {
-            let count = transitions.windows(self.motif_size.min(transitions.len()))
+            let count = transitions
+                .windows(self.motif_size.min(transitions.len()))
                 .filter(|w| w.to_vec() == *pattern)
                 .count();
             if count > 0 {
@@ -959,7 +1001,8 @@ impl NetworkMotifAnalyzer {
             let mut m = motif.clone();
             m.z_score = z_score;
 
-            if z_score > 2.0 { // Significant threshold
+            if z_score > 2.0 {
+                // Significant threshold
                 significant.push(m);
             }
         }
@@ -1107,7 +1150,11 @@ impl ContextClassifier {
     }
 
     /// Extract most predictive sequences
-    fn extract_predictive_sequences(&self, _features: &[Vec<f64>], _labels: &[usize]) -> Vec<(Vec<i32>, f64)> {
+    fn extract_predictive_sequences(
+        &self,
+        _features: &[Vec<f64>],
+        _labels: &[usize],
+    ) -> Vec<(Vec<i32>, f64)> {
         // Placeholder - would analyze feature importances
         vec![
             (vec![101, 102], 0.85),
@@ -1143,7 +1190,8 @@ impl SequenceAnalysisSuite {
         println!();
 
         // Flatten sequences for methods that need all data
-        let all_sequences: Vec<_> = sequences_by_context.values()
+        let all_sequences: Vec<_> = sequences_by_context
+            .values()
             .flat_map(|v| v.clone())
             .collect();
 
@@ -1170,11 +1218,16 @@ impl SequenceAnalysisSuite {
                     println!("      Found {} conserved regions", n_conserved);
 
                     for (start, end, score) in &msa_result.conserved_regions {
-                        println!("      Region [{}-{}]: conservation={:.2}", start, end, score);
+                        println!(
+                            "      Region [{}-{}]: conservation={:.2}",
+                            start, end, score
+                        );
                     }
 
                     report.msa_conserved_regions += n_conserved;
-                    report.msa_results.insert(format!("{}_vs_{}", ctx1, ctx2), msa_result);
+                    report
+                        .msa_results
+                        .insert(format!("{}_vs_{}", ctx1, ctx2), msa_result);
                 }
             }
         }
@@ -1189,13 +1242,18 @@ impl SequenceAnalysisSuite {
         println!();
 
         // Calculate required symbol capacity from unique phrase labels
-        let unique_symbols: HashSet<i32> = all_sequences.iter()
+        let unique_symbols: HashSet<i32> = all_sequences
+            .iter()
             .flat_map(|s| s.iter().copied())
             .collect();
         let n_symbols = unique_symbols.len().max(200); // At least 200, or actual unique count
         let n_states = 5.min(unique_symbols.len()); // Use 5 states or fewer if limited symbols
 
-        println!("   Symbol capacity: {} (unique symbols: {})", n_symbols, unique_symbols.len());
+        println!(
+            "   Symbol capacity: {} (unique symbols: {})",
+            n_symbols,
+            unique_symbols.len()
+        );
 
         let hmm = SequenceHmm::new(n_states, n_symbols);
 
@@ -1205,7 +1263,10 @@ impl SequenceAnalysisSuite {
 
                 for (i, desc) in hmm_result.state_descriptions.iter().enumerate() {
                     println!("   State {}:", i);
-                    println!("      Top emissions: {:?}", desc.top_emissions.iter().take(3).collect::<Vec<_>>());
+                    println!(
+                        "      Top emissions: {:?}",
+                        desc.top_emissions.iter().take(3).collect::<Vec<_>>()
+                    );
                     println!("      Persistence: {:.3}", desc.persistence);
                     println!("      Entropy: {:.3}", desc.emission_entropy);
                     println!("      Preferred next: {:?}", desc.preferred_next_state);
@@ -1235,7 +1296,8 @@ impl SequenceAnalysisSuite {
             println!("   Training on {} context...", train_ctx);
             ngram_model.train(train_seqs);
 
-            let test_data: HashMap<_, _> = sequences_by_context.iter()
+            let test_data: HashMap<_, _> = sequences_by_context
+                .iter()
                 .filter(|(ctx, _)| *ctx != train_ctx)
                 .map(|(ctx, seqs)| (ctx.clone(), seqs.clone()))
                 .collect();
@@ -1272,10 +1334,16 @@ impl SequenceAnalysisSuite {
         match motif_analyzer.find_motifs(&transitions_by_context) {
             Ok(motif_result) => {
                 println!("   Found {} motifs", motif_result.motifs.len());
-                println!("   Multi-context motifs: {}", motif_result.multi_context_motifs.len());
+                println!(
+                    "   Multi-context motifs: {}",
+                    motif_result.multi_context_motifs.len()
+                );
 
                 for &(motif_id, n_ctx) in &motif_result.multi_context_motifs {
-                    println!("      Motif {}: appears in {} contexts", motif_id, n_ctx as usize);
+                    println!(
+                        "      Motif {}: appears in {} contexts",
+                        motif_id, n_ctx as usize
+                    );
                 }
 
                 report.network_motifs = motif_result.motifs.len();
@@ -1299,9 +1367,18 @@ impl SequenceAnalysisSuite {
 
         match classifier.compare_feature_types(sequences_by_context) {
             Ok(ml_result) => {
-                println!("   Bag-of-Words Accuracy: {:.2}%", ml_result.bow_accuracy * 100.0);
-                println!("   N-Gram Syntax Accuracy: {:.2}%", ml_result.ngram_accuracy * 100.0);
-                println!("   Improvement: {:.2}%", ml_result.accuracy_improvement * 100.0);
+                println!(
+                    "   Bag-of-Words Accuracy: {:.2}%",
+                    ml_result.bow_accuracy * 100.0
+                );
+                println!(
+                    "   N-Gram Syntax Accuracy: {:.2}%",
+                    ml_result.ngram_accuracy * 100.0
+                );
+                println!(
+                    "   Improvement: {:.2}%",
+                    ml_result.accuracy_improvement * 100.0
+                );
 
                 println!();
                 println!("   Most predictive sequences:");
@@ -1329,11 +1406,26 @@ impl SequenceAnalysisSuite {
         println!("╠═══════════════════════════════════════════════════════════════════════════╣");
         println!("║                                                                           ║");
         println!("║  Evidence for Combinatorial Syntax:                                       ║");
-        println!("║  • MSA conserved regions: {}                                             ║", report.msa_conserved_regions);
-        println!("║  • HMM hidden states: {}                                                ║", report.hmm_states);
-        println!("║  • Network motifs: {}                                                    ║", report.network_motifs);
-        println!("║  • Multi-context motifs: {}                                              ║", report.multi_context_motifs);
-        println!("║  • ML syntax improvement: {:.1}%                                         ║", report.ml_improvement * 100.0);
+        println!(
+            "║  • MSA conserved regions: {}                                             ║",
+            report.msa_conserved_regions
+        );
+        println!(
+            "║  • HMM hidden states: {}                                                ║",
+            report.hmm_states
+        );
+        println!(
+            "║  • Network motifs: {}                                                    ║",
+            report.network_motifs
+        );
+        println!(
+            "║  • Multi-context motifs: {}                                              ║",
+            report.multi_context_motifs
+        );
+        println!(
+            "║  • ML syntax improvement: {:.1}%                                         ║",
+            report.ml_improvement * 100.0
+        );
         println!("║                                                                           ║");
         println!("╚═══════════════════════════════════════════════════════════════════════════╝");
         println!();
@@ -1342,7 +1434,10 @@ impl SequenceAnalysisSuite {
     }
 
     /// Get pairs of contexts for comparison
-    fn get_context_pairs(&self, contexts: &HashMap<String, Vec<Vec<i32>>>) -> Vec<(String, String)> {
+    fn get_context_pairs(
+        &self,
+        contexts: &HashMap<String, Vec<Vec<i32>>>,
+    ) -> Vec<(String, String)> {
         let ctx_names: Vec<_> = contexts.keys().cloned().collect();
         let mut pairs = Vec::new();
 

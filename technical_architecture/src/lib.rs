@@ -83,7 +83,9 @@ pub use metadata_synthesizer::{
 };
 
 #[cfg(feature = "python-bindings")]
-pub use metadata_synthesizer::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};
+pub use metadata_synthesizer::{
+    PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe,
+};
 
 // Micro-dynamics extractor exports (NEW)
 pub use micro_dynamics_extractor::{
@@ -99,51 +101,58 @@ pub use micro_dynamics_extractor::{PyMicroDynamicsExtractor, PyMicroDynamicsFeat
 pub use pitch::{AutocorrEstimator, F0Estimate, PitchAlgorithm, YinEstimator};
 
 // Delta features exports (NEW - Δ and ΔΔ MFCCs and temporal features)
-pub use delta::{DeltaFeatures, DeltaWidth, MfccDeltaComputer, TemporalDeltaComputer, TemporalFeatureType};
+pub use delta::{
+    DeltaFeatures, DeltaWidth, MfccDeltaComputer, TemporalDeltaComputer, TemporalFeatureType,
+};
 
 // Multi-scale aggregation exports (NEW - Statistical and hierarchical aggregation)
-pub use multi_scale::{HierarchicalAggregator, HierarchicalConfig, HierarchicalFeatures, MultiScaleFeatures, StatisticalAggregator};
+pub use multi_scale::{
+    HierarchicalAggregator, HierarchicalConfig, HierarchicalFeatures, MultiScaleFeatures,
+    StatisticalAggregator,
+};
 
 // Psychoacoustic features exports (NEW - 37D expansion)
-pub use psychoacoustics::{PitchEntropyCalculator, RoughnessCalculator, BrightnessCalculator};
+pub use psychoacoustics::{BrightnessCalculator, PitchEntropyCalculator, RoughnessCalculator};
 
 // Temporal features exports (NEW - 37D expansion)
 pub use temporal::{RhythmicStabilityCalculator, TemporalCentroidCalculator};
 
 // Advanced spectral features exports (NEW - 37D expansion)
-pub use spectral_advanced::{SpectralTiltCalculator, SpectralKurtosisCalculator, SpectralFlatnessCalculator};
+pub use spectral_advanced::{
+    SpectralFlatnessCalculator, SpectralKurtosisCalculator, SpectralTiltCalculator,
+};
 
 // Harmonic analysis exports (NEW - 37D expansion)
 pub use harmonics::{HarmonicDeviationCalculator, InharmonicityCalculator};
 
 // Formant analysis exports (NEW - 37D expansion)
-pub use formants::{FormantExtractor, FormantBandwidthCalculator};
+pub use formants::{FormantBandwidthCalculator, FormantExtractor};
 
 // Modulation dynamics exports (NEW - 37D expansion)
-pub use modulation::{FmDepthCalculator, FmRateCalculator, AmDepthCalculator};
+pub use modulation::{AmDepthCalculator, FmDepthCalculator, FmRateCalculator};
 
 // Benchmark and evaluation exports (NEW - Phase 5)
 pub use benchmark::{
-    ClassificationMetrics, ClassificationReport, ComparisonReport, ConfusionMatrix,
-    DatasetLoader, DatasetMetadata, DatasetType, ExtractionReport, FeatureAblationResults,
-    FeatureEvaluator, Label, MetricCalculator, Recording,
+    ClassificationMetrics, ClassificationReport, ComparisonReport, ConfusionMatrix, DatasetLoader,
+    DatasetMetadata, DatasetType, ExtractionReport, FeatureAblationResults, FeatureEvaluator,
+    Label, MetricCalculator, Recording,
 };
 
 // Change point detection exports (NEW - Phase 3)
 pub use change_point_detection::{ChangePointError, PeltSegmenter};
 
 // Clustering exports (NEW - Phase 3)
-pub use clustering::{ClusteringError, ClusterStats, DbscanClustering, StandardScaler};
+pub use clustering::{ClusterStats, ClusteringError, DbscanClustering, StandardScaler};
 
 // HDBSCAN exports (NEW - Hierarchical DBSCAN for variable density)
 pub use hdbscan::{DistanceMetric, HdbscanClustering, HdbscanError, HdbscanStats};
 
 // Acoustic Similarity exports (NEW - Pairwise similarity for continuous manifolds)
 pub use acoustic_similarity::{
-    AcousticSimilarityEngine, DistanceMetric as SimilarityMetric,
-    BetweenTypeDistance, ConfusionEntry, FeatureDiscrimination, FilePair,
-    KnnClassifier, KnnCvResults, KnnNeighbor, KnnResult,
-    NeighborhoodAnalysis, SearchResult, SimilarityAnalysis, SimilarityIndex,
+    AcousticSimilarityEngine, BetweenTypeDistance, ConfusionEntry,
+    DistanceMetric as SimilarityMetric, FeatureDiscrimination, FilePair, KnnClassifier,
+    KnnCvResults, KnnNeighbor, KnnResult, NeighborhoodAnalysis, SearchResult, SimilarityAnalysis,
+    SimilarityIndex,
 };
 
 #[cfg(feature = "python-bindings")]
@@ -151,9 +160,8 @@ pub use acoustic_similarity::PyAcousticSimilarityEngine;
 
 // Dynamic Segmenter exports (NEW - Change Point Detection for atomic phrase discovery)
 pub use dynamic_segmenter::{
-    AtomicPhraseAnalyzer, AtomicPhraseType, ChangePoint, DynamicPhraseCandidate,
-    DynamicSegmenter, DynamicSegmenterConfig, EmissionStrategy, SegmentationResult,
-    TypedPhraseCandidate,
+    AtomicPhraseAnalyzer, AtomicPhraseType, ChangePoint, DynamicPhraseCandidate, DynamicSegmenter,
+    DynamicSegmenterConfig, EmissionStrategy, SegmentationResult, TypedPhraseCandidate,
 };
 
 // Adaptive Segmentation exports (NEW - Onset detection for variable-length phrases)
@@ -161,8 +169,8 @@ pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationEr
 
 // Within-Vocalization Analysis exports (NEW - TDD-tested multi-phrase detection)
 pub use within_vocalization_analyzer::{
-    BoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary,
-    PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
+    BoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary, PhraseSegmentation,
+    WithinVocalizationAnalyzer, WithinVocalizationConfig,
 };
 
 // GMM exports (NEW - Phoneme discovery approach)
@@ -172,53 +180,85 @@ pub use gmm::{GaussianMixtureModel, GmmError};
 pub use hmm::{HiddenMarkovModel, HmmError};
 
 // DTW exports (NEW - Time-aware clustering)
-pub use dtw::{DtwDbscan, DtwMetric, FastDtw, DtwError, DtwClusterStats};
+pub use dtw::{DtwClusterStats, DtwDbscan, DtwError, DtwMetric, FastDtw};
 
 // Vocabulary to Synthesis exports (NEW - Mapping, segmentation, synthesis)
-pub use vocabulary_mapper::{
-    VocabularyMapper, AnnotationDataset, VocalizationContext, VocabularyItem,
-    VocabularyOccurrence, DurationStats, VocabularyStatistics, VocabularyError,
-};
 pub use audio_segmenter::{
-    AudioSegmenter, AudioSegmentForSynthesis, AudioGrain, GrainEnvelope, SegmentContext,
+    AudioGrain, AudioSegmentForSynthesis, AudioSegmenter, GrainEnvelope, SegmentContext,
     SegmenterError,
 };
 pub use synthesis_pipeline::{
-    SynthesisPipeline, SynthesisAssets, SynthesisError,
-    MetadataDrivenParams, GranularSynthesisParams, ConcatenativeParams,
-    GrainEnvelopeType,
+    ConcatenativeParams, GrainEnvelopeType, GranularSynthesisParams, MetadataDrivenParams,
+    SynthesisAssets, SynthesisError, SynthesisPipeline,
+};
+pub use vocabulary_mapper::{
+    AnnotationDataset, DurationStats, VocabularyError, VocabularyItem, VocabularyMapper,
+    VocabularyOccurrence, VocabularyStatistics, VocalizationContext,
 };
 
 // Lexicon to Syntax exports (NEW - Master pipeline)
 pub use lexicon_to_syntax::{
-    LexiconToSyntaxPipeline, LexiconToSyntaxResult, PipelineError,
-    SegmentedPhrase, PhraseFeatures, LexiconVocabularyItem, PhonemeModel,
-    LexiconStatistics, PipelineCheckpoint,
-    SegmentationConfig, VectorizationConfig, DiscoveryConfig, RefinementConfig,
+    DiscoveryConfig, LexiconStatistics, LexiconToSyntaxPipeline, LexiconToSyntaxResult,
+    LexiconVocabularyItem, PhonemeModel, PhraseFeatures, PipelineCheckpoint, PipelineError,
+    RefinementConfig, SegmentationConfig, SegmentedPhrase, VectorizationConfig,
 };
 
 // Parallel extraction exports (NEW - Phase 3)
 pub use parallel_extraction::{
-    AnnotationEntry, AtomicPhraseWithUsage, ClusteredPhrase, CompositionalityStats,
-    ExtractionConfig, ExtractionError, ForbiddenReason, ForbiddenTransition,
-    GapAnalysis, GrammarRule, LinguisticAnalysis, OverlapAnalysis,
-    ParallelExtractionPipeline, PhonotacticsAnalysis, PhraseUsageStats, PipelineResult,
-    PragmaticsAnalysis, ProsodyAnalysis, Rhythmicity, SentenceSegment,
-    TurnTakingPattern, VocalizationResult, ZipfAnalysis,
-    calculate_intra_cluster_similarity, calculate_inter_cluster_similarity,
-    CommunicationEfficiency,
-    // Phrase Audio Library (NEW)
-    PhraseAudioLibrary, PhraseAudioSegment, LibraryStatistics,
+    analyze_context,
+    analyze_social_network,
+    analyze_turn_taking,
+    batch_process_and_cluster,
+    calculate_inter_cluster_similarity,
+    calculate_intra_cluster_similarity,
     // DBSCAN Clustering for Phrase Discovery (NEW)
-    cluster_phrase_candidates, batch_process_and_cluster,
-    // Annotation and Turn-Taking Analysis (NEW)
-    EmitterAnnotation, VocalizationWithEmitter, TurnTakingAnalysis,
-    ConversationStats, ResponseTimeStats, SocialNetworkAnalysis, InteractionPair,
-    ContextAnalysis, ContextTurnStats, PragmaticsAnalysisWithEmitter,
-    load_annotations_from_csv, analyze_turn_taking, analyze_social_network, analyze_context,
+    cluster_phrase_candidates,
     // Synthesis Output (NEW - JSON Export & Audio Segmentation)
     export_phrases_for_synthesis,
-    SynthesisOutput, SynthesisMetadata, SynthesisPhrase, ClusterInfo,
+    load_annotations_from_csv,
+    AnnotationEntry,
+    AtomicPhraseWithUsage,
+    ClusterInfo,
+    ClusteredPhrase,
+    CommunicationEfficiency,
+    CompositionalityStats,
+    ContextAnalysis,
+    ContextTurnStats,
+    ConversationStats,
+    // Annotation and Turn-Taking Analysis (NEW)
+    EmitterAnnotation,
+    ExtractionConfig,
+    ExtractionError,
+    ForbiddenReason,
+    ForbiddenTransition,
+    GapAnalysis,
+    GrammarRule,
+    InteractionPair,
+    LibraryStatistics,
+    LinguisticAnalysis,
+    OverlapAnalysis,
+    ParallelExtractionPipeline,
+    PhonotacticsAnalysis,
+    // Phrase Audio Library (NEW)
+    PhraseAudioLibrary,
+    PhraseAudioSegment,
+    PhraseUsageStats,
+    PipelineResult,
+    PragmaticsAnalysis,
+    PragmaticsAnalysisWithEmitter,
+    ProsodyAnalysis,
+    ResponseTimeStats,
+    Rhythmicity,
+    SentenceSegment,
+    SocialNetworkAnalysis,
+    SynthesisMetadata,
+    SynthesisOutput,
+    SynthesisPhrase,
+    TurnTakingAnalysis,
+    TurnTakingPattern,
+    VocalizationResult,
+    VocalizationWithEmitter,
+    ZipfAnalysis,
 };
 
 // Rename to avoid conflict with metadata_synthesizer::PhraseCandidate
@@ -231,45 +271,38 @@ pub use corpus_analysis::{
 };
 
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
-pub use spectral::{
-    SpectralModule, ContourConfig, ContourFeatures, FrequencyContour, FMType,
-};
-pub use sequence::{
-    SequenceModule, SequenceAnalysis, Motif, NgramStats,
-};
+pub use sequence::{Motif, NgramStats, SequenceAnalysis, SequenceModule};
 pub use species::{
-    SpeciesConfig, SpeciesConfigFactory, EncodingStrategy, AnalysisModality, AnalysisModule,
-    FeatureParams, ContextRules, DecodingMethod, AtomicGranularity, HierarchicalThresholds,
+    AnalysisModality, AnalysisModule, AtomicGranularity, ContextRules, DecodingMethod,
+    EncodingStrategy, FeatureParams, HierarchicalThresholds, SpeciesConfig, SpeciesConfigFactory,
 };
+pub use spectral::{ContourConfig, ContourFeatures, FMType, FrequencyContour, SpectralModule};
 
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System exports
 pub use zoo_vox_data_models::{
-    AcousticFeatures30D, AcousticFeatures45D, ContextAssociation, PhrasePrototype,
-    SpeciesPhraseLibrary, CrossSpeciesPhraseDatabase, BehaviorAnnotation,
+    AcousticFeatures30D, AcousticFeatures45D, BehaviorAnnotation, ContextAssociation,
+    CrossSpeciesPhraseDatabase, PhrasePrototype, SpeciesPhraseLibrary,
 };
-pub use zoo_vox_features::{ZooVoxFeatureExtractor, FeatureError};
+pub use zoo_vox_features::{FeatureError, ZooVoxFeatureExtractor};
 
 #[cfg(feature = "python-bindings")]
 pub use zoo_vox_features::PyZooVoxFeatureExtractor;
 
 pub use zoo_vox_extraction::{
-    ZooVoxPhraseExtractor, ZooVoxExtractionConfig, ZooVoxExtractionError,
+    ZooVoxExtractionConfig, ZooVoxExtractionError, ZooVoxPhraseExtractor,
 };
-pub use zoo_vox_library::{
-    ZooVoxLibraryBuilder, LibraryError, create_sample_libraries,
-};
+pub use zoo_vox_library::{create_sample_libraries, LibraryError, ZooVoxLibraryBuilder};
 
 // Zoo Vox Rosetta v2.0 - Within-Call Phrase Discovery (Acoustic Similarity)
 pub use zoo_vox_within_call::{
-    WithinCallAnalyzer, WithinCallConfig, WithinCallAnalysisResult,
-    DiscoveredPhraseType, PhraseInstance, PhraseMotif,
-    SimilarityBasedLibraryBuilder,
+    DiscoveredPhraseType, PhraseInstance, PhraseMotif, SimilarityBasedLibraryBuilder,
+    WithinCallAnalysisResult, WithinCallAnalyzer, WithinCallConfig,
 };
 
 // Phrase Discovery Pipeline (Unified Segmentation + Similarity)
 pub use phrase_discovery::{
-    PhraseDiscoveryPipeline, PhraseDiscoveryConfig, PhraseDiscoveryResult,
-    PipelinePhraseType, PipelineStats,
+    PhraseDiscoveryConfig, PhraseDiscoveryPipeline, PhraseDiscoveryResult, PipelinePhraseType,
+    PipelineStats,
 };
 
 /// Zoo Vox Rosetta result type
@@ -494,9 +527,9 @@ mod hmm;
 mod dtw;
 
 // Vocabulary to Synthesis (NEW - Mapping, segmentation, and synthesis)
-mod vocabulary_mapper;
 mod audio_segmenter;
 mod synthesis_pipeline;
+mod vocabulary_mapper;
 
 // Lexicon to Syntax (NEW - Master pipeline: Segmentation → Vectorization → Discovery → Refinement)
 pub mod lexicon_to_syntax;
@@ -525,8 +558,8 @@ pub mod species;
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System
 // 30D/45D acoustic feature extraction, phrase segmentation, and library management
 pub mod zoo_vox_data_models;
-pub mod zoo_vox_features;
 pub mod zoo_vox_extraction;
+pub mod zoo_vox_features;
 pub mod zoo_vox_library;
 pub mod zoo_vox_within_call;
 

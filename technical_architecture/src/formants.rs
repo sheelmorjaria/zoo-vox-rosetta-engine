@@ -190,7 +190,10 @@ impl FormantExtractor {
             len <<= 1;
         }
 
-        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
+        complex[..n / 2]
+            .iter()
+            .map(|&(r, i)| (r * r + i * i).sqrt())
+            .collect()
     }
 
     /// Smooth spectrum using moving average
@@ -233,7 +236,8 @@ impl FormantExtractor {
                     (y_prev - y_next) / denominator
                 } else {
                     0.0
-                }.clamp(-0.5, 0.5);
+                }
+                .clamp(-0.5, 0.5);
 
                 let interpolated_bin = i as f32 + offset;
                 let interpolated_mag = y_curr - 0.25 * (y_prev - y_next) * offset;
@@ -515,7 +519,12 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate harmonic series
-fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+fn generate_harmonic_series(
+    f0: f32,
+    num_harmonics: usize,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
 

@@ -48,9 +48,9 @@ pub type Result<T> = std::result::Result<T, HmmError>;
 pub struct HiddenMarkovModel {
     n_states: usize,
     n_observations: usize,
-    initial_probs: Array1<f64>,     // (n_states,) - initial state distribution
-    transition_matrix: Array2<f64>,  // (n_states, n_states) - state transition probs
-    emission_probs: Array2<f64>,     // (n_states, n_observations) - emission probs
+    initial_probs: Array1<f64>, // (n_states,) - initial state distribution
+    transition_matrix: Array2<f64>, // (n_states, n_states) - state transition probs
+    emission_probs: Array2<f64>, // (n_states, n_observations) - emission probs
 }
 
 impl HiddenMarkovModel {
@@ -156,10 +156,7 @@ impl HiddenMarkovModel {
         tolerance: f64,
     ) -> Result<()> {
         if sequences.is_empty() {
-            return Err(HmmError::InsufficientData {
-                min: 1,
-                actual: 0,
-            });
+            return Err(HmmError::InsufficientData { min: 1, actual: 0 });
         }
 
         let mut prev_log_likelihood = f64::NEG_INFINITY;
@@ -251,8 +248,7 @@ impl HiddenMarkovModel {
         for i in 0..self.n_states {
             let obs = sequence[0];
             if obs < self.n_observations && self.emission_probs[[i, obs]] > 0.0 {
-                alpha[[0, i]] =
-                    self.initial_probs[i] * self.emission_probs[[i, obs]];
+                alpha[[0, i]] = self.initial_probs[i] * self.emission_probs[[i, obs]];
             }
         }
 
@@ -356,7 +352,14 @@ impl HiddenMarkovModel {
 
         // Compute log-likelihood
         let log_likelihood: f64 = (0..t_len)
-            .map(|t| alpha.row(t).iter().filter(|&&x| x > 0.0).map(|&x| x.ln()).sum::<f64>())
+            .map(|t| {
+                alpha
+                    .row(t)
+                    .iter()
+                    .filter(|&&x| x > 0.0)
+                    .map(|&x| x.ln())
+                    .sum::<f64>()
+            })
             .sum();
 
         Ok((alpha, beta, gamma, xi, log_likelihood))
@@ -427,8 +430,7 @@ impl HiddenMarkovModel {
         for i in 0..self.n_states {
             let obs = sequence[0];
             if obs < self.n_observations && self.emission_probs[[i, obs]] > 0.0 {
-                delta[[0, i]] =
-                    (self.initial_probs[i] * self.emission_probs[[i, obs]]).ln();
+                delta[[0, i]] = (self.initial_probs[i] * self.emission_probs[[i, obs]]).ln();
             } else {
                 delta[[0, i]] = f64::NEG_INFINITY;
             }
@@ -592,10 +594,7 @@ mod tests {
     /// Test 3: HMM decodes state sequence with Viterbi
     #[test]
     fn test_hmm_viterbi() {
-        let sequences = vec![
-            vec![0, 1, 0, 1, 0, 1],
-            vec![1, 0, 1, 0, 1, 0],
-        ];
+        let sequences = vec![vec![0, 1, 0, 1, 0, 1], vec![1, 0, 1, 0, 1, 0]];
 
         let mut hmm = HiddenMarkovModel::new(2, 2, 42).unwrap();
         hmm.fit(&sequences, 50, 1e-4).unwrap();
@@ -625,10 +624,7 @@ mod tests {
     /// Test 5: HMM computes sequence likelihood
     #[test]
     fn test_hmm_scoring() {
-        let sequences = vec![
-            vec![0, 1, 0, 1, 0, 1],
-            vec![1, 0, 1, 0, 1, 0],
-        ];
+        let sequences = vec![vec![0, 1, 0, 1, 0, 1], vec![1, 0, 1, 0, 1, 0]];
 
         let mut hmm = HiddenMarkovModel::new(2, 2, 42).unwrap();
         hmm.fit(&sequences, 50, 1e-4).unwrap();

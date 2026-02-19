@@ -93,7 +93,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // For this analysis, we need to extract features from audio files
     // Check if extraction results exist
-    let extraction_path = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized";
+    let extraction_path =
+        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized";
 
     let has_extraction = Path::new(extraction_path).exists();
 
@@ -190,31 +191,41 @@ struct BatTurn {
 // Analysis Functions
 // ============================================================================
 
-fn analyze_symbolic_turn_structure(
-    turns: &[BatTurn],
-) -> Result<(), Box<dyn std::error::Error>> {
+fn analyze_symbolic_turn_structure(turns: &[BatTurn]) -> Result<(), Box<dyn std::error::Error>> {
     println!("Symbolic Turn Structure Analysis:");
     println!();
 
     // Count turns by structure
-    let directed_turns = turns.iter()
+    let directed_turns = turns
+        .iter()
         .filter(|t| t.addressee != 0 && t.emitter != t.addressee)
         .count();
 
-    let broadcast_turns = turns.iter()
-        .filter(|t| t.addressee == 0)
-        .count();
+    let broadcast_turns = turns.iter().filter(|t| t.addressee == 0).count();
 
-    let self_addressed = turns.iter()
+    let self_addressed = turns
+        .iter()
         .filter(|t| t.emitter == t.addressee && t.addressee != 0)
         .count();
 
     let total = turns.len();
 
     println!("Turn Structure Distribution:");
-    println!("  Directed (A→B): {} ({:.1}%)", directed_turns, 100.0 * directed_turns as f64 / total as f64);
-    println!("  Broadcast (A→?): {} ({:.1}%)", broadcast_turns, 100.0 * broadcast_turns as f64 / total as f64);
-    println!("  Self-addressed (A→A): {} ({:.1}%)", self_addressed, 100.0 * self_addressed as f64 / total as f64);
+    println!(
+        "  Directed (A→B): {} ({:.1}%)",
+        directed_turns,
+        100.0 * directed_turns as f64 / total as f64
+    );
+    println!(
+        "  Broadcast (A→?): {} ({:.1}%)",
+        broadcast_turns,
+        100.0 * broadcast_turns as f64 / total as f64
+    );
+    println!(
+        "  Self-addressed (A→A): {} ({:.1}%)",
+        self_addressed,
+        100.0 * self_addressed as f64 / total as f64
+    );
     println!();
 
     // Analyze context distribution
@@ -228,8 +239,13 @@ fn analyze_symbolic_turn_structure(
 
     println!("Top 15 Contexts by Frequency:");
     for (i, (ctx, count)) in sorted_contexts.iter().take(15).enumerate() {
-        println!("  {:2}. Context {:3}: {} turns ({:.1}%)",
-                 i + 1, ctx, count, 100.0 * **count as f64 / total as f64);
+        println!(
+            "  {:2}. Context {:3}: {} turns ({:.1}%)",
+            i + 1,
+            ctx,
+            count,
+            100.0 * **count as f64 / total as f64
+        );
     }
     println!();
 
@@ -251,21 +267,26 @@ fn analyze_within_turn_transitions(
     let mut addressee_counts: HashMap<usize, usize> = HashMap::new();
 
     for turn in turns {
-        *transition_counts.entry((turn.emitter_cluster, turn.addressee_cluster))
+        *transition_counts
+            .entry((turn.emitter_cluster, turn.addressee_cluster))
             .or_insert(0) += 1;
         *emitter_counts.entry(turn.emitter_cluster).or_insert(0) += 1;
         *addressee_counts.entry(turn.addressee_cluster).or_insert(0) += 1;
     }
 
     println!("Transition Statistics:");
-    println!("  Unique emitter→addressee pairs: {}", transition_counts.len());
+    println!(
+        "  Unique emitter→addressee pairs: {}",
+        transition_counts.len()
+    );
     println!("  Unique emitters: {}", emitter_counts.len());
     println!("  Unique addressees: {}", addressee_counts.len());
     println!();
 
     // Calculate PMI for top transitions
     let total_transitions: usize = transition_counts.values().sum();
-    let mut pmi_scores: Vec<_> = transition_counts.iter()
+    let mut pmi_scores: Vec<_> = transition_counts
+        .iter()
         .map(|((e, a), count)| {
             let p_ea = *count as f64 / total_transitions as f64;
             let p_e = *emitter_counts.get(e).unwrap_or(&1) as f64 / total_transitions as f64;
@@ -284,8 +305,14 @@ fn analyze_within_turn_transitions(
     println!();
 
     for (i, ((e, a), count, pmi)) in pmi_scores.iter().take(20).enumerate() {
-        println!("  {:2}. Emitter {} → Addressee {} | PMI: {:.3} | Count: {}",
-                 i + 1, e, a, pmi, count);
+        println!(
+            "  {:2}. Emitter {} → Addressee {} | PMI: {:.3} | Count: {}",
+            i + 1,
+            e,
+            a,
+            pmi,
+            count
+        );
     }
     println!();
 
@@ -294,15 +321,23 @@ fn analyze_within_turn_transitions(
     let mut context_addressee_trans: HashMap<(usize, usize), usize> = HashMap::new();
 
     for turn in turns {
-        *context_emitter_trans.entry((turn.context_cluster, turn.emitter_cluster))
+        *context_emitter_trans
+            .entry((turn.context_cluster, turn.emitter_cluster))
             .or_insert(0) += 1;
-        *context_addressee_trans.entry((turn.context_cluster, turn.addressee_cluster))
+        *context_addressee_trans
+            .entry((turn.context_cluster, turn.addressee_cluster))
             .or_insert(0) += 1;
     }
 
     println!("Context-Dependent Communication Patterns:");
-    println!("  Unique context→emitter pairs: {}", context_emitter_trans.len());
-    println!("  Unique context→addressee pairs: {}", context_addressee_trans.len());
+    println!(
+        "  Unique context→emitter pairs: {}",
+        context_emitter_trans.len()
+    );
+    println!(
+        "  Unique context→addressee pairs: {}",
+        context_addressee_trans.len()
+    );
     println!();
 
     Ok(())
@@ -336,8 +371,13 @@ fn detect_addressing_signals(
 
     for (i, (emitter_id, count)) in sorted_emitters.iter().take(15).enumerate() {
         let pct = 100.0 * **count as f64 / turns.len() as f64;
-        println!("  {:2}. Emitter cluster {}: {} turns ({:.1}%)",
-                 i + 1, emitter_id, count, pct);
+        println!(
+            "  {:2}. Emitter cluster {}: {} turns ({:.1}%)",
+            i + 1,
+            emitter_id,
+            count,
+            pct
+        );
     }
     println!();
 
@@ -362,8 +402,13 @@ fn detect_addressing_signals(
     println!();
 
     for (i, ((prev_addr, curr_emit), count)) in response_patterns.iter().take(15).enumerate() {
-        println!("  {:2}. Addressee {} becomes Emitter {}: {} times",
-                 i + 1, prev_addr, curr_emit, count);
+        println!(
+            "  {:2}. Addressee {} becomes Emitter {}: {} times",
+            i + 1,
+            prev_addr,
+            curr_emit,
+            count
+        );
     }
     println!();
 
@@ -381,8 +426,13 @@ fn detect_addressing_signals(
 
     for (i, (addr_id, count)) in sorted_addressees.iter().take(10).enumerate() {
         let pct = 100.0 * **count as f64 / turns.len() as f64;
-        println!("  {:2}. Addressee cluster {}: {} times ({:.1}%)",
-                 i + 1, addr_id, count, pct);
+        println!(
+            "  {:2}. Addressee cluster {}: {} times ({:.1}%)",
+            i + 1,
+            addr_id,
+            count,
+            pct
+        );
     }
     println!();
 
@@ -390,8 +440,10 @@ fn detect_addressing_signals(
         let top_pct = 100.0 * **top_count as f64 / turns.len() as f64;
         if top_pct > 20.0 {
             println!("⚠️  POTENTIAL 'COLONY LEADER' DETECTED:");
-            println!("     Addressee cluster {} receives {:.1}% of all communications",
-                     top_addr, top_pct);
+            println!(
+                "     Addressee cluster {} receives {:.1}% of all communications",
+                top_addr, top_pct
+            );
             println!("     This could be a matriarch, leader, or central information hub");
             println!();
         }
@@ -400,9 +452,7 @@ fn detect_addressing_signals(
     Ok(())
 }
 
-fn analyze_conversational_contingency(
-    turns: &[BatTurn],
-) -> Result<(), Box<dyn std::error::Error>> {
+fn analyze_conversational_contingency(turns: &[BatTurn]) -> Result<(), Box<dyn std::error::Error>> {
     println!("Conversational Contingency Analysis:");
     println!();
 
@@ -410,7 +460,8 @@ fn analyze_conversational_contingency(
     let mut conversations: HashMap<(i32, i32), Vec<&BatTurn>> = HashMap::new();
 
     for turn in turns {
-        conversations.entry((turn.emitter, turn.addressee))
+        conversations
+            .entry((turn.emitter, turn.addressee))
             .or_insert_with(Vec::new)
             .push(turn);
     }
@@ -420,7 +471,8 @@ fn analyze_conversational_contingency(
     println!();
 
     // Find longest conversations
-    let mut conversation_lengths: Vec<_> = conversations.iter()
+    let mut conversation_lengths: Vec<_> = conversations
+        .iter()
         .map(|(pair, turns)| (pair, turns.len()))
         .collect();
 
@@ -431,8 +483,13 @@ fn analyze_conversational_contingency(
     println!();
 
     for (i, ((e, a), count)) in conversation_lengths.iter().take(20).enumerate() {
-        println!("  {:2}. Emitter {} → Addressee {}: {} turns",
-                 i + 1, e, a, count);
+        println!(
+            "  {:2}. Emitter {} → Addressee {}: {} turns",
+            i + 1,
+            e,
+            a,
+            count
+        );
     }
     println!();
 
@@ -450,16 +507,20 @@ fn analyze_conversational_contingency(
         }
     }
 
-    reciprocal_pairs.sort_by(|a, b| (b.1.0 + b.1.1).cmp(&(a.1.0 + a.1.1)));
+    reciprocal_pairs.sort_by(|a, b| (b.1 .0 + b.1 .1).cmp(&(a.1 .0 + a.1 .1)));
 
-    let true_reciprocal = reciprocal_pairs.iter()
+    let true_reciprocal = reciprocal_pairs
+        .iter()
         .filter(|(_, (f, r))| *f > 0 && *r > 0)
         .count();
 
     println!("Reciprocity Analysis:");
     println!("  Total unique pairs: {}", reciprocal_pairs.len());
     println!("  Truly reciprocal (both directions): {}", true_reciprocal);
-    println!("  One-way communication only: {}", reciprocal_pairs.len() - true_reciprocal);
+    println!(
+        "  One-way communication only: {}",
+        reciprocal_pairs.len() - true_reciprocal
+    );
     println!();
 
     if true_reciprocal > 0 {
@@ -476,8 +537,20 @@ fn analyze_conversational_contingency(
                     100.0 * *forward as f64 / *reverse as f64
                 };
 
-                println!("  {:2}. {} ↔ {}: {} total ({}→{}: {}, {}→{}: {}) - {:.0}% balanced",
-                         i + 1, e, a, total, e, a, forward, a, e, reverse, balance);
+                println!(
+                    "  {:2}. {} ↔ {}: {} total ({}→{}: {}, {}→{}: {}) - {:.0}% balanced",
+                    i + 1,
+                    e,
+                    a,
+                    total,
+                    e,
+                    a,
+                    forward,
+                    a,
+                    e,
+                    reverse,
+                    balance
+                );
             }
         }
         println!();
@@ -492,7 +565,8 @@ fn analyze_conversational_contingency(
     }
 
     // Calculate entropy for each conversation
-    let mut coherence_scores: Vec<_> = context_coherence.iter()
+    let mut coherence_scores: Vec<_> = context_coherence
+        .iter()
         .map(|((e, a), contexts)| {
             let total = contexts.len();
             let mut context_dist: HashMap<i32, f64> = HashMap::new();
@@ -522,9 +596,22 @@ fn analyze_conversational_contingency(
     println!();
 
     for (i, ((e, a), entropy, total)) in coherence_scores.iter().take(15).enumerate() {
-        let coherence = if *entropy < 1.0 { "HIGH" } else if *entropy < 2.0 { "MEDIUM" } else { "LOW" };
-        println!("  {:2.} {} → {}: entropy={:.3} ({} coherence) - {} turns",
-                 i + 1, e, a, entropy, coherence, total);
+        let coherence = if *entropy < 1.0 {
+            "HIGH"
+        } else if *entropy < 2.0 {
+            "MEDIUM"
+        } else {
+            "LOW"
+        };
+        println!(
+            "  {:2.} {} → {}: entropy={:.3} ({} coherence) - {} turns",
+            i + 1,
+            e,
+            a,
+            entropy,
+            coherence,
+            total
+        );
     }
     println!();
 

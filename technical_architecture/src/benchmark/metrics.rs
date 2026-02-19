@@ -3,7 +3,6 @@
 //! This module provides metrics for evaluating classification performance
 //! including accuracy, precision, recall, F1, and confusion matrix.
 
-
 /// Classification metrics
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ClassificationMetrics {
@@ -34,7 +33,8 @@ impl ConfusionMatrix {
     }
 
     pub fn accuracy(&self) -> f32 {
-        let total = self.true_positives + self.false_positives + self.true_negatives + self.false_negatives;
+        let total =
+            self.true_positives + self.false_positives + self.true_negatives + self.false_negatives;
         if total == 0 {
             return 0.0;
         }

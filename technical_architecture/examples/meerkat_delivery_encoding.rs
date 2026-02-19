@@ -110,8 +110,7 @@ fn load_phrase_data(path: &str) -> Vec<(String, f64, usize)> {
     let file = File::open(path).expect("Failed to open phrase data");
     let reader = BufReader::new(file);
 
-    let json: serde_json::Value =
-        serde_json::from_reader(reader).expect("Failed to parse JSON");
+    let json: serde_json::Value = serde_json::from_reader(reader).expect("Failed to parse JSON");
 
     let mut results = Vec::new();
 
@@ -373,19 +372,40 @@ fn pearson_correlation(x: &[f64], y: &[f64]) -> CorrelationResult {
     };
 
     let interpretation = if r > 0.7 {
-        format!("Strong positive (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Strong positive (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else if r > 0.4 {
-        format!("Moderate positive (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Moderate positive (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else if r > 0.2 {
-        format!("Weak positive (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Weak positive (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else if r > -0.2 {
-        format!("Negligible (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Negligible (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else if r > -0.4 {
-        format!("Weak negative (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Weak negative (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else if r > -0.7 {
-        format!("Moderate negative (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Moderate negative (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     } else {
-        format!("Strong negative (R²={:.1}% variance explained)", r_squared * 100.0)
+        format!(
+            "Strong negative (R²={:.1}% variance explained)",
+            r_squared * 100.0
+        )
     };
 
     CorrelationResult {
@@ -527,12 +547,22 @@ fn analyze_delivery_encoding(
     // ANOVA for duration
     let duration_anova = compute_anova(&duration_by_context);
     println!("\n   📈 ANOVA: Duration by Context");
-    println!("      ├─ F({}, {}) = {:.2}", duration_anova.df_between, duration_anova.df_within, duration_anova.f_statistic);
+    println!(
+        "      ├─ F({}, {}) = {:.2}",
+        duration_anova.df_between, duration_anova.df_within, duration_anova.f_statistic
+    );
     println!("      ├─ p-value = {:.4}", duration_anova.p_value);
-    println!("      ├─ Effect size (η²) = {:.4}", duration_anova.effect_size);
+    println!(
+        "      ├─ Effect size (η²) = {:.4}",
+        duration_anova.effect_size
+    );
     println!(
         "      └─ Significant: {}",
-        if duration_anova.significant { "YES ✓" } else { "NO ✗" }
+        if duration_anova.significant {
+            "YES ✓"
+        } else {
+            "NO ✗"
+        }
     );
 
     // Convert phrase counts to f64 for ANOVA
@@ -542,12 +572,22 @@ fn analyze_delivery_encoding(
         .collect();
     let phrase_count_anova = compute_anova(&phrases_f64);
     println!("\n   📈 ANOVA: Phrase Count by Context");
-    println!("      ├─ F({}, {}) = {:.2}", phrase_count_anova.df_between, phrase_count_anova.df_within, phrase_count_anova.f_statistic);
+    println!(
+        "      ├─ F({}, {}) = {:.2}",
+        phrase_count_anova.df_between, phrase_count_anova.df_within, phrase_count_anova.f_statistic
+    );
     println!("      ├─ p-value = {:.4}", phrase_count_anova.p_value);
-    println!("      ├─ Effect size (η²) = {:.4}", phrase_count_anova.effect_size);
+    println!(
+        "      ├─ Effect size (η²) = {:.4}",
+        phrase_count_anova.effect_size
+    );
     println!(
         "      └─ Significant: {}",
-        if phrase_count_anova.significant { "YES ✓" } else { "NO ✗" }
+        if phrase_count_anova.significant {
+            "YES ✓"
+        } else {
+            "NO ✗"
+        }
     );
 
     // Duration-Phrase correlation (like bat ANCOVA)
@@ -557,8 +597,15 @@ fn analyze_delivery_encoding(
 
     println!("\n   📈 Correlation: Duration vs Phrase Count (ANCOVA-style)");
     println!("      ├─ r = {:.4}", duration_phrase_correlation.r);
-    println!("      ├─ R² = {:.4} ({:.1}% variance explained)", duration_phrase_correlation.r_squared, duration_phrase_correlation.r_squared * 100.0);
-    println!("      ├─ p-value = {:.4}", duration_phrase_correlation.p_value);
+    println!(
+        "      ├─ R² = {:.4} ({:.1}% variance explained)",
+        duration_phrase_correlation.r_squared,
+        duration_phrase_correlation.r_squared * 100.0
+    );
+    println!(
+        "      ├─ p-value = {:.4}",
+        duration_phrase_correlation.p_value
+    );
     println!("      ├─ n = {}", duration_phrase_correlation.n_samples);
     println!("      └─ {}", duration_phrase_correlation.interpretation);
 
@@ -601,17 +648,29 @@ impl DeliveryEncodingAnalysis {
         // Duration ANOVA
         if self.duration_anova.significant {
             println!("\n   ✅ DURATION DIFFERS BY CONTEXT (p < 0.05)");
-            println!("      Effect size: {:.1}% of variance explained", self.duration_anova.effect_size * 100.0);
+            println!(
+                "      Effect size: {:.1}% of variance explained",
+                self.duration_anova.effect_size * 100.0
+            );
         } else {
-            println!("\n   ❌ Duration does NOT differ by context (p = {:.4})", self.duration_anova.p_value);
+            println!(
+                "\n   ❌ Duration does NOT differ by context (p = {:.4})",
+                self.duration_anova.p_value
+            );
         }
 
         // Phrase count ANOVA
         if self.phrase_count_anova.significant {
             println!("\n   ✅ PHRASE COUNT DIFFERS BY CONTEXT (p < 0.05)");
-            println!("      Effect size: {:.1}% of variance explained", self.phrase_count_anova.effect_size * 100.0);
+            println!(
+                "      Effect size: {:.1}% of variance explained",
+                self.phrase_count_anova.effect_size * 100.0
+            );
         } else {
-            println!("\n   ❌ Phrase count does NOT differ by context (p = {:.4})", self.phrase_count_anova.p_value);
+            println!(
+                "\n   ❌ Phrase count does NOT differ by context (p = {:.4})",
+                self.phrase_count_anova.p_value
+            );
         }
 
         // Duration-repetition correlation
@@ -636,8 +695,10 @@ impl DeliveryEncodingAnalysis {
             println!("      are used or their sequence.");
             println!();
             if self.duration_phrase_correlation.r > 0.5 {
-                println!("      The strong duration-repetition correlation (r={:.2}) suggests",
-                    self.duration_phrase_correlation.r);
+                println!(
+                    "      The strong duration-repetition correlation (r={:.2}) suggests",
+                    self.duration_phrase_correlation.r
+                );
                 println!("      longer calls naturally contain more phrases, and different");
                 println!("      contexts may require different call lengths.");
             }
@@ -733,7 +794,8 @@ fn main() {
 
     let phrase_path = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/within_call_results/meerkat_within_call_analyses.json";
     let labels_dir = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/lbl/08000Hz";
-    let output_dir = "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/delivery_encoding_results";
+    let output_dir =
+        "/mnt/c/Users/sheel/Desktop/data/MeerKAT_10s_2024-06-12/delivery_encoding_results";
 
     println!("\n┌─────────────────────────────────────────────────────────────────┐");
     println!("│ Step 1: Loading Data                                            │");
@@ -741,7 +803,10 @@ fn main() {
 
     println!("   📂 Loading within-call phrase data...");
     let call_data = load_phrase_data(phrase_path);
-    println!("      └─ Loaded {} calls with duration/phrase data", call_data.len());
+    println!(
+        "      └─ Loaded {} calls with duration/phrase data",
+        call_data.len()
+    );
 
     let labels = load_labels_via_python(labels_dir);
     println!("      └─ Loaded {} file labels", labels.len());

@@ -85,10 +85,13 @@ fn group_by_context(annotations: &[BatAnnotation]) -> HashMap<i32, Vec<PathBuf>>
     let mut grouped: HashMap<i32, Vec<PathBuf>> = HashMap::new();
 
     for annotation in annotations {
-        let file_path = Path::new(BAT_DATA_DIR).join("audio").join(&annotation.file_name);
+        let file_path = Path::new(BAT_DATA_DIR)
+            .join("audio")
+            .join(&annotation.file_name);
 
         if file_path.exists() {
-            grouped.entry(annotation.context)
+            grouped
+                .entry(annotation.context)
                 .or_insert_with(Vec::new)
                 .push(file_path);
         }
@@ -129,9 +132,12 @@ fn generate_synthetic_bat_vocalization(context: i32, sample_rate: u32) -> Vec<f3
                 .map(|i| {
                     let t = i as f32 / sample_rate as f32;
                     let env = (-t * 5.0).exp(); // Exponential decay
-                    let signal = (0..5).map(|h| {
-                        (2.0 * std::f32::consts::PI * base_freq * (h + 1) as f32 * t).sin()
-                    }).sum::<f32>() / 5.0;
+                    let signal = (0..5)
+                        .map(|h| {
+                            (2.0 * std::f32::consts::PI * base_freq * (h + 1) as f32 * t).sin()
+                        })
+                        .sum::<f32>()
+                        / 5.0;
                     signal * env * 0.7
                 })
                 .collect()
@@ -156,28 +162,29 @@ fn generate_synthetic_bat_vocalization(context: i32, sample_rate: u32) -> Vec<f3
 /// RFE-Optimized 15D feature names (in order returned by extract_rfe_optimized)
 fn rfe_feature_names() -> &'static [&'static str] {
     &[
-        "hnr",               // 1. Harmonic-to-noise ratio
-        "formant_f2",        // 2. Second formant frequency
-        "fm_depth_hz",       // 3. FM modulation depth
-        "mfcc_1",            // 4. First MFCC coefficient
-        "sustain_level",     // 5. Sustain level
-        "vibrato_depth",     // 6. Vibrato depth
-        "formant_f3",        // 7. Third formant frequency
-        "mfcc_2",            // 8. Second MFCC coefficient
-        "spectral_flatness", // 9. Spectral flatness
-        "decay_time_ms",     // 10. Decay time
-        "harmonic_deviation",// 11. Harmonic deviation
-        "shimmer",           // 12. Shimmer
-        "formant_f1",        // 13. First formant frequency
-        "mfcc_13",           // 14. Thirteenth MFCC coefficient
-        "spectral_tilt",     // 15. Spectral tilt
+        "hnr",                // 1. Harmonic-to-noise ratio
+        "formant_f2",         // 2. Second formant frequency
+        "fm_depth_hz",        // 3. FM modulation depth
+        "mfcc_1",             // 4. First MFCC coefficient
+        "sustain_level",      // 5. Sustain level
+        "vibrato_depth",      // 6. Vibrato depth
+        "formant_f3",         // 7. Third formant frequency
+        "mfcc_2",             // 8. Second MFCC coefficient
+        "spectral_flatness",  // 9. Spectral flatness
+        "decay_time_ms",      // 10. Decay time
+        "harmonic_deviation", // 11. Harmonic deviation
+        "shimmer",            // 12. Shimmer
+        "formant_f1",         // 13. First formant frequency
+        "mfcc_13",            // 14. Thirteenth MFCC coefficient
+        "spectral_tilt",      // 15. Spectral tilt
     ]
 }
 
 /// Extract RFE-Optimized 15D features from audio
 fn extract_rfe_optimized_features(audio: &[f32], sample_rate: u32) -> anyhow::Result<Vec<f32>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
-    extractor.extract_rfe_optimized(audio)
+    extractor
+        .extract_rfe_optimized(audio)
         .map_err(|e| anyhow::anyhow!("RFE feature extraction failed: {}", e))
 }
 
@@ -192,7 +199,8 @@ fn analyze_rfe_features(feature_vectors: &[Vec<f32>]) -> HashMap<String, f64> {
 
     // Compute statistics for each feature
     for (idx, &name) in feature_names.iter().enumerate() {
-        let values: Vec<f64> = feature_vectors.iter()
+        let values: Vec<f64> = feature_vectors
+            .iter()
             .filter_map(|f| f.get(idx).map(|&v| v as f64))
             .collect();
 
@@ -201,9 +209,8 @@ fn analyze_rfe_features(feature_vectors: &[Vec<f32>]) -> HashMap<String, f64> {
             let min_val = values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
             let max_val = values.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
             let std_val = if values.len() > 1 {
-                let variance = values.iter()
-                    .map(|&x| (x - mean_val).powi(2))
-                    .sum::<f64>() / (values.len() - 1) as f64;
+                let variance = values.iter().map(|&x| (x - mean_val).powi(2)).sum::<f64>()
+                    / (values.len() - 1) as f64;
                 variance.sqrt()
             } else {
                 0.0
@@ -236,7 +243,8 @@ fn print_context_info(context: i32) -> String {
         11 => "Aggressive",
         12 => "Neutral/Spatial",
         _ => "Other",
-    }.to_string()
+    }
+    .to_string()
 }
 
 /// Main function
@@ -253,7 +261,12 @@ fn main() -> anyhow::Result<()> {
 
     println!("Found {} contexts with audio files:", grouped.len());
     for (&context, files) in grouped.iter() {
-        println!("  Context {} ({}): {} files", context, print_context_info(context), files.len());
+        println!(
+            "  Context {} ({}): {} files",
+            context,
+            print_context_info(context),
+            files.len()
+        );
     }
 
     println!("\n=== RFE-Optimized 15D Features ===");
@@ -270,13 +283,15 @@ fn main() -> anyhow::Result<()> {
     let mut all_results = Vec::new();
 
     for (&context, audio_files) in grouped.iter() {
-        println!("\n--- Context {} ({}) ---", context, print_context_info(context));
+        println!(
+            "\n--- Context {} ({}) ---",
+            context,
+            print_context_info(context)
+        );
         println!("Processing {} audio files...", audio_files.len());
 
         // Limit to first 10 files per context for demonstration
-        let files_to_process: Vec<_> = audio_files.iter()
-            .take(10)
-            .collect();
+        let files_to_process: Vec<_> = audio_files.iter().take(10).collect();
 
         if files_to_process.is_empty() {
             println!("No files to process for this context");
@@ -305,14 +320,23 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        println!("Extracted 15D RFE-optimized features for {} vocalizations", feature_vectors.len());
+        println!(
+            "Extracted 15D RFE-optimized features for {} vocalizations",
+            feature_vectors.len()
+        );
 
         // Analyze RFE features
         let analysis = analyze_rfe_features(&feature_vectors);
 
         println!("\nTop RFE Features for this context:");
         // Show key features
-        let key_features = ["fm_depth_hz", "hnr", "formant_f2", "formant_f3", "harmonic_deviation"];
+        let key_features = [
+            "fm_depth_hz",
+            "hnr",
+            "formant_f2",
+            "formant_f3",
+            "harmonic_deviation",
+        ];
         for feature in key_features {
             if let Some(mean_val) = analysis.get(&format!("mean_{}", feature)) {
                 if let Some(std_val) = analysis.get(&format!("std_{}", feature)) {
@@ -344,35 +368,46 @@ fn main() -> anyhow::Result<()> {
 
     for (context, vocab_size, avg_cluster, analysis) in &all_results {
         let context_name = print_context_info(*context);
-        let hnr = analysis.get("mean_hnr")
+        let hnr = analysis
+            .get("mean_hnr")
             .map(|v| format!("{:.2}", v))
             .unwrap_or("N/A".to_string());
-        let fm_depth = analysis.get("mean_fm_depth_hz")
+        let fm_depth = analysis
+            .get("mean_fm_depth_hz")
             .map(|v| format!("{:.1}", v))
             .unwrap_or("N/A".to_string());
-        let formant_f2 = analysis.get("mean_formant_f2")
+        let formant_f2 = analysis
+            .get("mean_formant_f2")
             .map(|v| format!("{:.1}", v))
             .unwrap_or("N/A".to_string());
-        let harmonic_dev = analysis.get("mean_harmonic_deviation")
+        let harmonic_dev = analysis
+            .get("mean_harmonic_deviation")
             .map(|v| format!("{:.4}", v))
             .unwrap_or("N/A".to_string());
 
-        println!("{:8} | {:14} | {:16.2} | {:8} | {:13} | {:15} | {}",
-            context, vocab_size, avg_cluster, hnr, fm_depth, formant_f2, harmonic_dev);
+        println!(
+            "{:8} | {:14} | {:16.2} | {:8} | {:13} | {:15} | {}",
+            context, vocab_size, avg_cluster, hnr, fm_depth, formant_f2, harmonic_dev
+        );
     }
 
     // Summary
     println!("\n=== Summary ===");
     println!("Processed {} contexts", all_results.len());
 
-    let total_vocabulary: usize = all_results.iter()
+    let total_vocabulary: usize = all_results
+        .iter()
         .map(|(_, vocab_size, _, _)| vocab_size)
         .sum();
-    let total_phrases: usize = all_results.iter()
+    let total_phrases: usize = all_results
+        .iter()
         .map(|(_, _, cluster_size, _)| (*cluster_size * 3.0) as usize)
         .sum();
 
-    println!("Total vocabulary items across all contexts: {}", total_vocabulary);
+    println!(
+        "Total vocabulary items across all contexts: {}",
+        total_vocabulary
+    );
     println!("Total phrases analyzed: {}", total_phrases);
     println!("\n✓ RFE-Optimized 15D features successfully used for bat vocalization analysis");
     println!("\nKey Benefits of RFE-Optimized 15D:");

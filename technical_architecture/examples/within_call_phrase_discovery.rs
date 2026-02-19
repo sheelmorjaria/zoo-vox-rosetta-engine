@@ -27,10 +27,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
-use technical_architecture::{
-    AcousticSimilarityEngine,
-    MicroDynamicsExtractor,
-};
+use technical_architecture::{AcousticSimilarityEngine, MicroDynamicsExtractor};
 
 // =============================================================================
 // Configuration
@@ -148,10 +145,8 @@ impl PhraseSegmenter {
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 = audio[start..end].iter()
-                .map(|x| x * x)
-                .sum::<f32>()
-                .sqrt() / (end - start) as f32;
+            let rms: f32 =
+                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
@@ -196,7 +191,8 @@ impl PhraseSegmenter {
                                 id: phrase_count,
                                 start_ms: start_sample as f64 / sample_rate * 1000.0,
                                 end_ms: end_sample as f64 / sample_rate * 1000.0,
-                                duration_ms: (end_sample - start_sample) as f64 / sample_rate * 1000.0,
+                                duration_ms: (end_sample - start_sample) as f64 / sample_rate
+                                    * 1000.0,
                                 start_sample,
                                 end_sample,
                                 features: Vec::new(),
@@ -237,7 +233,8 @@ impl PhraseSegmenter {
         }
 
         // Filter by max duration and renumber
-        candidates.into_iter()
+        candidates
+            .into_iter()
             .filter(|c| c.duration_ms <= self.config.max_phrase_ms)
             .enumerate()
             .map(|(i, mut c)| {
@@ -341,13 +338,17 @@ impl WithinCallAnalyzer {
                     features.harmonic_to_noise_ratio as f64,
                 ];
                 // Add MFCCs
-                phrase.features.extend(features.mfcc.iter().map(|&v| v as f64));
+                phrase
+                    .features
+                    .extend(features.mfcc.iter().map(|&v| v as f64));
                 // Add spectral_flux
                 phrase.features.push(features.spectral_flux as f64);
                 // Add rhythm features
                 phrase.features.push(features.median_ici_ms as f64);
                 phrase.features.push(features.onset_rate_hz as f64);
-                phrase.features.push(features.ici_coefficient_of_variation as f64);
+                phrase
+                    .features
+                    .push(features.ici_coefficient_of_variation as f64);
             }
         }
 
@@ -357,7 +358,10 @@ impl WithinCallAnalyzer {
         let mut similarity_matrix = vec![vec![0.0f64; n]; n];
         let mut distance_matrix = vec![vec![0.0f64; n]; n];
 
-        let actual_dim = phrases.first().map(|p| p.features.len()).unwrap_or(self.feature_dim);
+        let actual_dim = phrases
+            .first()
+            .map(|p| p.features.len())
+            .unwrap_or(self.feature_dim);
         let engine = AcousticSimilarityEngine::new(actual_dim);
 
         for i in 0..n {
@@ -382,17 +386,20 @@ impl WithinCallAnalyzer {
         for (phrase, &ptype) in phrases.iter_mut().zip(phrase_types.iter()) {
             phrase.phrase_type = Some(ptype);
 
-            let same_type: Vec<usize> = phrase_types.iter()
+            let same_type: Vec<usize> = phrase_types
+                .iter()
                 .enumerate()
                 .filter(|(_, &t)| t == ptype)
                 .map(|(i, _)| i)
                 .collect();
 
             if same_type.len() > 1 {
-                let avg_sim: f64 = same_type.iter()
+                let avg_sim: f64 = same_type
+                    .iter()
                     .filter(|&&idx| idx != phrase.id)
                     .map(|&idx| similarity_matrix[phrase.id][idx])
-                    .sum::<f64>() / (same_type.len() - 1) as f64;
+                    .sum::<f64>()
+                    / (same_type.len() - 1) as f64;
                 phrase.type_confidence = Some(avg_sim);
             } else {
                 phrase.type_confidence = Some(1.0);
@@ -420,7 +427,8 @@ impl WithinCallAnalyzer {
         WithinCallAnalysis {
             file_name: file_name.to_string(),
             call_type: call_type.map(|s| s.to_string()),
-            total_duration_ms: audio.len() as f64 / self.segmenter.config.sample_rate as f64 * 1000.0,
+            total_duration_ms: audio.len() as f64 / self.segmenter.config.sample_rate as f64
+                * 1000.0,
             phrases,
             n_phrase_types,
             phrase_types,
@@ -553,7 +561,8 @@ impl WithinCallAnalyzer {
 
         for (from, to_counts) in transitions {
             let total = type_counts.get(&from).copied().unwrap_or(1) as f64;
-            let probs: HashMap<i32, f64> = to_counts.into_iter()
+            let probs: HashMap<i32, f64> = to_counts
+                .into_iter()
                 .map(|(to, count)| (to, count as f64 / total))
                 .collect();
             prob_matrix.insert(from, probs);
@@ -590,17 +599,13 @@ impl WithinCallAnalyzer {
             0.0
         };
 
-        let avg_within_type_similarity = self.compute_within_type_similarity(
-            phrase_types, similarity_matrix
-        );
+        let avg_within_type_similarity =
+            self.compute_within_type_similarity(phrase_types, similarity_matrix);
 
-        let avg_between_type_distance = self.compute_between_type_distance(
-            phrase_types, distance_matrix
-        );
+        let avg_between_type_distance =
+            self.compute_between_type_distance(phrase_types, distance_matrix);
 
-        let total_duration_ms: f64 = phrases.iter()
-            .map(|p| p.duration_ms)
-            .sum();
+        let total_duration_ms: f64 = phrases.iter().map(|p| p.duration_ms).sum();
         let phrase_rate = if total_duration_ms > 0.0 {
             n_phrases as f64 / (total_duration_ms / 1000.0)
         } else {
@@ -639,7 +644,11 @@ impl WithinCallAnalyzer {
             }
         }
 
-        if count > 0 { total_sim / count as f64 } else { 1.0 }
+        if count > 0 {
+            total_sim / count as f64
+        } else {
+            1.0
+        }
     }
 
     fn compute_between_type_distance(
@@ -659,7 +668,11 @@ impl WithinCallAnalyzer {
             }
         }
 
-        if count > 0 { total_dist / count as f64 } else { 0.0 }
+        if count > 0 {
+            total_dist / count as f64
+        } else {
+            0.0
+        }
     }
 }
 
@@ -678,8 +691,14 @@ impl WithinCallAnalysis {
         println!("\n📊 Phrase Statistics:");
         println!("   • Total phrases: {}", self.stats.n_phrases);
         println!("   • Unique phrase types: {}", self.n_phrase_types);
-        println!("   • Average phrase duration: {:.1} ms", self.stats.avg_phrase_duration_ms);
-        println!("   • Phrase rate: {:.2} phrases/sec", self.stats.phrase_rate);
+        println!(
+            "   • Average phrase duration: {:.1} ms",
+            self.stats.avg_phrase_duration_ms
+        );
+        println!(
+            "   • Phrase rate: {:.2} phrases/sec",
+            self.stats.phrase_rate
+        );
         println!("   • Type entropy: {:.3} bits", self.stats.type_entropy);
 
         println!("\n📊 Phrase Type Distribution:");
@@ -691,7 +710,9 @@ impl WithinCallAnalysis {
         }
 
         println!("\n📊 Phrase Sequence:");
-        let seq_str: String = self.phrase_sequence.iter()
+        let seq_str: String = self
+            .phrase_sequence
+            .iter()
             .map(|t| format!("{}", t))
             .collect::<Vec<_>>()
             .join(" → ");
@@ -700,17 +721,28 @@ impl WithinCallAnalysis {
         if !self.motifs.is_empty() {
             println!("\n📊 Discovered Motifs:");
             for motif in self.motifs.iter().take(5) {
-                let pattern_str: String = motif.pattern.iter()
+                let pattern_str: String = motif
+                    .pattern
+                    .iter()
                     .map(|t| format!("{}", t))
                     .collect::<Vec<_>>()
                     .join("-");
-                println!("   • Pattern [{}]: {} occurrences", pattern_str, motif.occurrences);
+                println!(
+                    "   • Pattern [{}]: {} occurrences",
+                    pattern_str, motif.occurrences
+                );
             }
         }
 
         println!("\n📊 Similarity Metrics:");
-        println!("   • Avg within-type similarity: {:.4}", self.stats.avg_within_type_similarity);
-        println!("   • Avg between-type distance: {:.4}", self.stats.avg_between_type_distance);
+        println!(
+            "   • Avg within-type similarity: {:.4}",
+            self.stats.avg_within_type_similarity
+        );
+        println!(
+            "   • Avg between-type distance: {:.4}",
+            self.stats.avg_between_type_distance
+        );
     }
 }
 
@@ -737,7 +769,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
     let sample_rate = decoder.codec_params().sample_rate.unwrap_or(48000);
 
@@ -792,13 +825,21 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|s| (s.0 as f32 - 8_388_608.0) / 8_388_608.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|s| (s.0 as f32 - 8_388_608.0) / 8_388_608.0),
+                    );
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2_147_483_648.0) / 2_147_483_648.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| (s as f32 - 2_147_483_648.0) / 2_147_483_648.0),
+                    );
                 }
             }
             AudioBufferRef::F64(buf) => {
@@ -844,7 +885,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/within_call_results");
 
     if !vocalizations_dir.exists() {
-        println!("❌ Vocalizations directory not found: {}", vocalizations_dir.display());
+        println!(
+            "❌ Vocalizations directory not found: {}",
+            vocalizations_dir.display()
+        );
         return Ok(());
     }
 
@@ -852,7 +896,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Find FLAC files recursively
     let mut flac_files: Vec<PathBuf> = Vec::new();
-    fn find_flac_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    fn find_flac_files(
+        dir: &Path,
+        files: &mut Vec<PathBuf>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
@@ -898,7 +945,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let checkpoint_interval = if total_files > 10000 { 10000 } else { 1000 };
     let all_analyses: Mutex<Vec<WithinCallAnalysis>> = Mutex::new(Vec::new());
 
-    println!("🚀 Starting PARALLEL analysis with {} threads...", rayon::current_num_threads());
+    println!(
+        "🚀 Starting PARALLEL analysis with {} threads...",
+        rayon::current_num_threads()
+    );
     println!("   Total files: {}", total_files);
     println!("   Checkpoints every {} files", checkpoint_interval);
     println!();
@@ -915,7 +965,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let results: Vec<Option<WithinCallAnalysis>> = batch
             .par_iter()
             .map(|path| {
-                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+                let filename = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("unknown");
                 let analyzer = WithinCallAnalyzer::new(config.clone(), 30);
 
                 match load_flac_file(path) {
@@ -953,17 +1006,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let phrases = phrases_count.load(Ordering::Relaxed);
         let errors = errors_count.load(Ordering::Relaxed);
 
-        println!("   [{}/{}] {:.1}% | {:.0} files/min | ETA: {:.0}s | Phrases: {} | Errors: {}",
-                 processed_val, total_files,
-                 processed_val as f64 / total_files as f64 * 100.0,
-                 rate * 60.0,
-                 remaining,
-                 phrases,
-                 errors);
+        println!(
+            "   [{}/{}] {:.1}% | {:.0} files/min | ETA: {:.0}s | Phrases: {} | Errors: {}",
+            processed_val,
+            total_files,
+            processed_val as f64 / total_files as f64 * 100.0,
+            rate * 60.0,
+            remaining,
+            phrases,
+            errors
+        );
 
         // Checkpoint save
-        if (batch_idx + 1) * batch_size >= checkpoint_interval &&
-           ((batch_idx + 1) * batch_size) % checkpoint_interval == 0 {
+        if (batch_idx + 1) * batch_size >= checkpoint_interval
+            && ((batch_idx + 1) * batch_size) % checkpoint_interval == 0
+        {
             let checkpoint_path = output_dir.join(format!("checkpoint_{}.json", processed_val));
             let analyses = all_analyses.lock().unwrap();
             if let Ok(json) = serde_json::to_string_pretty(&*analyses) {
@@ -982,9 +1039,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total_phrases: usize = all_analyses.iter().map(|a| a.stats.n_phrases).sum();
     let total_types: usize = all_analyses.iter().map(|a| a.n_phrase_types).sum();
-    let avg_entropy: f64 = all_analyses.iter()
+    let avg_entropy: f64 = all_analyses
+        .iter()
         .map(|a| a.stats.type_entropy)
-        .sum::<f64>() / all_analyses.len().max(1) as f64;
+        .sum::<f64>()
+        / all_analyses.len().max(1) as f64;
 
     println!("\n   📊 Across {} vocalizations:", all_analyses.len());
     println!("      • Total phrases detected: {}", total_phrases);

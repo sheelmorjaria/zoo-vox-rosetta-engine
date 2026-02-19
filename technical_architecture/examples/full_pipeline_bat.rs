@@ -16,34 +16,41 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use technical_architecture::{
-    ParallelExtractionPipeline,
-    VocalizationResult, ClusteredPhrase,
-    LinguisticAnalysis, PhraseAudioLibrary, PhraseAudioSegment,
-    ExtractionPhraseCandidate as PhraseCandidate,
+    analyze_context,
+    analyze_social_network,
+    analyze_turn_taking,
     // Annotation and turn-taking analysis
-    load_annotations_from_csv, analyze_turn_taking, analyze_social_network, analyze_context,
+    load_annotations_from_csv,
+    ClusteredPhrase,
     EmitterAnnotation,
+    ExtractionPhraseCandidate as PhraseCandidate,
+    LinguisticAnalysis,
+    ParallelExtractionPipeline,
+    PhraseAudioLibrary,
+    PhraseAudioSegment,
+    VocalizationResult,
 };
 
 // Hound for WAV decoding (simpler and faster than symphonia for WAV)
 use hound;
 
 /// Load WAV file using hound
-fn load_wav_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_wav_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     let reader = hound::WavReader::open(path.as_ref())?;
     let spec = reader.spec();
     let sample_rate = spec.sample_rate;
 
     // Read samples as f32
-    let audio: Vec<f32> = reader.into_samples::<f32>()
+    let audio: Vec<f32> = reader
+        .into_samples::<f32>()
         .filter_map(|s| s.ok())
         .collect();
 
     // Convert to mono if stereo
     let audio_mono = if spec.channels == 2 {
-        audio.chunks_exact(2)
-            .map(|c| (c[0] + c[1]) / 2.0)
-            .collect()
+        audio.chunks_exact(2).map(|c| (c[0] + c[1]) / 2.0).collect()
     } else {
         audio
     };
@@ -53,13 +60,16 @@ fn load_wav_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32)
 
 /// Load audio file (currently WAV-only via hound)
 /// TODO: Add symphonia support for FLAC/MP3/AAC/OGG
-fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     load_wav_file(path)
 }
 
 // Configuration
 const BAT_AUDIO_DIR: &str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio";
-const BAT_ANNOTATIONS_CSV: &str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv";
+const BAT_ANNOTATIONS_CSV: &str =
+    "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv";
 const MAX_PHRASE_TYPES: usize = 172; // All phrase directories
 const MAX_FILES_PER_PHRASE: usize = 100; // Process only 100 files for testing
 
@@ -90,7 +100,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let phrase_directories = discover_phrase_directories(bat_audio_path, MAX_PHRASE_TYPES)?;
 
-    println!("✅ Found {} phrase type directories", phrase_directories.len());
+    println!(
+        "✅ Found {} phrase type directories",
+        phrase_directories.len()
+    );
     println!();
 
     // ========================================================================
@@ -109,20 +122,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Convert to sorted vector for analysis
-    let mut annotations_vec: Vec<EmitterAnnotation> = annotations_map
-        .values()
-        .cloned()
-        .collect();
+    let mut annotations_vec: Vec<EmitterAnnotation> = annotations_map.values().cloned().collect();
 
     // Sort by file name to ensure temporal order
     annotations_vec.sort_by(|a, b| {
         // Extract numeric part from filename for sorting
-        let a_num: usize = a.file_name.trim_end_matches(".wav")
+        let a_num: usize = a
+            .file_name
+            .trim_end_matches(".wav")
             .trim_end_matches(".WAV")
-            .parse().unwrap_or(0);
-        let b_num: usize = b.file_name.trim_end_matches(".wav")
+            .parse()
+            .unwrap_or(0);
+        let b_num: usize = b
+            .file_name
+            .trim_end_matches(".wav")
             .trim_end_matches(".WAV")
-            .parse().unwrap_or(0);
+            .parse()
+            .unwrap_or(0);
         a_num.cmp(&b_num)
     });
 
@@ -150,7 +166,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         process_bat_dataset_parallel(&phrase_directories)?;
 
     // Add all audio segments to the phrase library
-    println!("  Adding {} audio segments to phrase library...", audio_segments.len());
+    println!(
+        "  Adding {} audio segments to phrase library...",
+        audio_segments.len()
+    );
     pipeline.add_segments_to_library(audio_segments);
 
     let processing_time = start_time.elapsed();
@@ -158,12 +177,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Processing complete");
     println!("   Files processed: {}", total_files);
     println!("   Vocalizations: {}", vocalization_results.len());
-    println!("   Total phrases extracted: {}",
-             vocalization_results.iter().map(|v| v.phrases.len()).sum::<usize>());
+    println!(
+        "   Total phrases extracted: {}",
+        vocalization_results
+            .iter()
+            .map(|v| v.phrases.len())
+            .sum::<usize>()
+    );
     println!("   Clustered phrases: {}", clustered_phrases.len());
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
-    println!("   Throughput: {:.1} files/sec",
-             total_files as f64 / processing_time.as_secs_f64());
+    println!(
+        "   Throughput: {:.1} files/sec",
+        total_files as f64 / processing_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -183,7 +209,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  Sample Rate: {} Hz", stats.sr);
         println!("  Total Segments: {}", stats.total_segments);
         println!("  Unique Phrases: {}", stats.total_phrases);
-        println!("  Max Segments Per Phrase: {}", stats.max_segments_per_phrase);
+        println!(
+            "  Max Segments Per Phrase: {}",
+            stats.max_segments_per_phrase
+        );
         println!();
 
         println!("  Top 10 Phrase Types:");
@@ -192,9 +221,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         println!();
 
-        println!("  Library contains {} audio segments ({} MB estimated)",
-                 stats.total_segments,
-                 stats.total_segments * 1000 * 4 / 1_000_000); // Rough estimate
+        println!(
+            "  Library contains {} audio segments ({} MB estimated)",
+            stats.total_segments,
+            stats.total_segments * 1000 * 4 / 1_000_000
+        ); // Rough estimate
         println!();
     }
 
@@ -267,9 +298,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("📊 SUMMARY:");
     println!("   Phrase types processed: {}", phrase_directories.len());
-    println!("   Files processed: {} / 91,080 ({:.2}%)",
-             total_files,
-             total_files as f64 / 91080.0 * 100.0);
+    println!(
+        "   Files processed: {} / 91,080 ({:.2}%)",
+        total_files,
+        total_files as f64 / 91080.0 * 100.0
+    );
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
     println!();
     println!("✅ Results exported to:");
@@ -299,11 +332,23 @@ fn discover_phrase_directories(
 
 fn process_bat_dataset_parallel(
     phrase_directories: &[PathBuf],
-) -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>, usize, Vec<PhraseAudioSegment>), Box<dyn std::error::Error>> {
+) -> Result<
+    (
+        Vec<VocalizationResult>,
+        Vec<ClusteredPhrase>,
+        usize,
+        Vec<PhraseAudioSegment>,
+    ),
+    Box<dyn std::error::Error>,
+> {
     use rayon::prelude::*;
 
-    println!("  Processing with {} workers...", std::thread::available_parallelism()
-             .unwrap_or_else(|_| std::num::NonZeroUsize::new(1).unwrap()).get());
+    println!(
+        "  Processing with {} workers...",
+        std::thread::available_parallelism()
+            .unwrap_or_else(|_| std::num::NonZeroUsize::new(1).unwrap())
+            .get()
+    );
 
     let mut total_files = 0;
     let mut all_vocalization_results = Vec::new();
@@ -315,7 +360,9 @@ fn process_bat_dataset_parallel(
         let mut wav_files: Vec<_> = fs::read_dir(audio_dir)?
             .filter_map(|entry| entry.ok())
             .filter(|entry| {
-                entry.path().extension()
+                entry
+                    .path()
+                    .extension()
                     .and_then(|s| s.to_str())
                     .map(|ext| ext.eq_ignore_ascii_case("wav"))
                     .unwrap_or(false)
@@ -336,9 +383,7 @@ fn process_bat_dataset_parallel(
         let results: Vec<_> = wav_files
             .par_iter()
             .enumerate()
-            .filter_map(|(i, file_path)| {
-                process_single_bat_file(file_path, i).ok()
-            })
+            .filter_map(|(i, file_path)| process_single_bat_file(file_path, i).ok())
             .collect();
 
         // Collect results and create clustered phrases
@@ -370,7 +415,12 @@ fn process_bat_dataset_parallel(
 
     println!();
 
-    Ok((all_vocalization_results, all_clustered_phrases, total_files, all_audio_segments))
+    Ok((
+        all_vocalization_results,
+        all_clustered_phrases,
+        total_files,
+        all_audio_segments,
+    ))
 }
 
 fn process_single_bat_file(
@@ -379,7 +429,8 @@ fn process_single_bat_file(
 ) -> Result<(VocalizationResult, Option<PhraseAudioSegment>), Box<dyn std::error::Error>> {
     use technical_architecture::MicroDynamicsExtractor;
 
-    let file_name = file_path.file_name()
+    let file_name = file_path
+        .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("unknown");
 
@@ -392,7 +443,8 @@ fn process_single_bat_file(
 
     // Extract 56D features using the real MicroDynamicsExtractor
     let extractor = MicroDynamicsExtractor::new(sample_rate);
-    let features_56d = extractor.extract_56d(&audio_mono)
+    let features_56d = extractor
+        .extract_56d(&audio_mono)
         .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
     // Calculate actual duration from audio
@@ -410,10 +462,7 @@ fn process_single_bat_file(
         5000.0, // f0_range_hz (estimated)
     );
 
-    let mut features_vec: Vec<f64> = vector30d.to_array()
-        .iter()
-        .map(|&x| x as f64)
-        .collect();
+    let mut features_vec: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
 
     // Append 13 mfcc_delta features
     for delta in &features_56d.mfcc_delta {
@@ -449,18 +498,21 @@ fn process_single_bat_file(
         0.0,
         duration_ms,
         10000.0, // mean_f0_hz (estimated)
-        5000.0, // f0_range_hz (estimated)
+        5000.0,  // f0_range_hz (estimated)
         rms as f64,
         "egyptian_fruit_bat".to_string(),
         "vocalization".to_string(),
     );
 
-    Ok((VocalizationResult {
-        file_name: file_name.to_string(),
-        species: "egyptian_fruit_bat".to_string(),
-        sentences: vec![],
-        phrases: vec![phrase],
-    }, Some(audio_segment)))
+    Ok((
+        VocalizationResult {
+            file_name: file_name.to_string(),
+            species: "egyptian_fruit_bat".to_string(),
+            sentences: vec![],
+            phrases: vec![phrase],
+        },
+        Some(audio_segment),
+    ))
 }
 
 // ============================================================================
@@ -471,7 +523,6 @@ fn display_linguistic_results(
     analysis: &technical_architecture::LinguisticAnalysis,
     _clustered_phrases: &[ClusteredPhrase],
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
     println!("║                  LINGUISTIC ANALYSIS RESULTS                            ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
@@ -482,13 +533,20 @@ fn display_linguistic_results(
     println!("   Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("   Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
     println!("   Efficiency: {:?}", analysis.zipf.efficiency);
-    println!("   Unique phrases: {}", analysis.zipf.phrase_frequencies.len());
+    println!(
+        "   Unique phrases: {}",
+        analysis.zipf.phrase_frequencies.len()
+    );
     println!();
 
     // Top 10 phrases
     println!("   Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
+        let freq = analysis
+            .zipf
+            .phrase_frequencies
+            .get(phrase_id)
+            .unwrap_or(&0);
         println!("     {:2}. {} (freq: {})", i + 1, phrase_id, freq);
     }
     println!();
@@ -502,8 +560,14 @@ fn display_linguistic_results(
 
     // 3. Phonotactics
     println!("3️⃣  PHONOTACTICS (Forbidden Transitions):");
-    println!("   Total transitions: {}", analysis.phonotactics.transition_matrix.len());
-    println!("   Forbidden transitions: {}", analysis.phonotactics.forbidden_transitions.len());
+    println!(
+        "   Total transitions: {}",
+        analysis.phonotactics.transition_matrix.len()
+    );
+    println!(
+        "   Forbidden transitions: {}",
+        analysis.phonotactics.forbidden_transitions.len()
+    );
     println!();
 
     // 4. Pragmatics
@@ -513,14 +577,21 @@ fn display_linguistic_results(
 
     // 5. Atomicity
     println!("5️⃣  UPDATED ATOMICITY:");
-    let truly_atomic = analysis.updated_atomic_phrases.iter()
+    let truly_atomic = analysis
+        .updated_atomic_phrases
+        .iter()
         .filter(|p| p.is_truly_atomic)
         .count();
 
-    println!("   Total phrases: {}", analysis.updated_atomic_phrases.len());
-    println!("   Truly atomic: {} ({:.1}%)",
-             truly_atomic,
-             truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0);
+    println!(
+        "   Total phrases: {}",
+        analysis.updated_atomic_phrases.len()
+    );
+    println!(
+        "   Truly atomic: {} ({:.1}%)",
+        truly_atomic,
+        truly_atomic as f64 / analysis.updated_atomic_phrases.len() as f64 * 100.0
+    );
     println!();
 
     println!("═══════════════════════════════════════════════════════════════════════════");
@@ -542,36 +613,71 @@ fn display_turn_taking_results(
     // 1. Turn-Taking Metrics
     println!("1️⃣  TURN-TAKING METRICS:");
     println!("   Turn-switch rate: {:.1}%", turn_taking.turn_switch_rate);
-    println!("   Total conversations: {}", turn_taking.total_conversations);
+    println!(
+        "   Total conversations: {}",
+        turn_taking.total_conversations
+    );
     println!("   A→B→A conversations: {}", turn_taking.aba_conversations);
-    println!("   Dyadic conversations (2 individuals): {}", turn_taking.dyadic_conversations);
+    println!(
+        "   Dyadic conversations (2 individuals): {}",
+        turn_taking.dyadic_conversations
+    );
     println!("   Pattern: {:?}", turn_taking.pattern);
     println!();
 
     // 2. Conversation Statistics
     println!("2️⃣  CONVERSATION STATISTICS:");
-    println!("   Mean length: {:.2} turns", turn_taking.conversation_stats.mean_length);
-    println!("   Median length: {:.1} turns", turn_taking.conversation_stats.median_length);
-    println!("   Min length: {} turn", turn_taking.conversation_stats.min_length);
-    println!("   Max length: {} turns", turn_taking.conversation_stats.max_length);
-    println!("   Multi-turn conversations (>2): {}", turn_taking.conversation_stats.multi_turn_count);
-    println!("   Long conversations (>10): {}", turn_taking.conversation_stats.long_conversation_count);
+    println!(
+        "   Mean length: {:.2} turns",
+        turn_taking.conversation_stats.mean_length
+    );
+    println!(
+        "   Median length: {:.1} turns",
+        turn_taking.conversation_stats.median_length
+    );
+    println!(
+        "   Min length: {} turn",
+        turn_taking.conversation_stats.min_length
+    );
+    println!(
+        "   Max length: {} turns",
+        turn_taking.conversation_stats.max_length
+    );
+    println!(
+        "   Multi-turn conversations (>2): {}",
+        turn_taking.conversation_stats.multi_turn_count
+    );
+    println!(
+        "   Long conversations (>10): {}",
+        turn_taking.conversation_stats.long_conversation_count
+    );
     println!();
 
     // 3. Response Time
     println!("3️⃣  RESPONSE TIME ANALYSIS:");
-    println!("   Mean gap: {:.2} files", turn_taking.response_time_stats.mean_gap);
-    println!("   Median gap: {:.1} files", turn_taking.response_time_stats.median_gap);
-    println!("   Immediate responses: {} ({:.1}%)",
-             turn_taking.response_time_stats.immediate_response_count,
-             turn_taking.response_time_stats.immediate_response_pct);
+    println!(
+        "   Mean gap: {:.2} files",
+        turn_taking.response_time_stats.mean_gap
+    );
+    println!(
+        "   Median gap: {:.1} files",
+        turn_taking.response_time_stats.median_gap
+    );
+    println!(
+        "   Immediate responses: {} ({:.1}%)",
+        turn_taking.response_time_stats.immediate_response_count,
+        turn_taking.response_time_stats.immediate_response_pct
+    );
     println!();
 
     // 4. Social Network
     println!("4️⃣  SOCIAL NETWORK ANALYSIS:");
     println!("   Unique emitters: {}", social_network.unique_emitters);
     println!("   Unique addressees: {}", social_network.unique_addressees);
-    println!("   Unique interaction pairs: {}", social_network.unique_pairs);
+    println!(
+        "   Unique interaction pairs: {}",
+        social_network.unique_pairs
+    );
     println!();
 
     // Top 5 emitters
@@ -581,17 +687,30 @@ fn display_turn_taking_results(
     let total_vocalizations: usize = social_network.emitter_frequencies.values().sum();
     for (i, (emitter, count)) in emitter_vec.iter().take(5).enumerate() {
         let percentage = **count as f64 / total_vocalizations as f64 * 100.0;
-        println!("     {:2}. Emitter {:5}: {:>6} vocalizations ({:5.2}%)",
-                 i + 1, emitter, count, percentage);
+        println!(
+            "     {:2}. Emitter {:5}: {:>6} vocalizations ({:5.2}%)",
+            i + 1,
+            emitter,
+            count,
+            percentage
+        );
     }
     println!();
 
     // Top 5 interaction pairs
     println!("   Top 5 Interaction Pairs:");
-    println!("     {:>12} → {:>12} {:>10}", "Emitter", "Addressee", "Count");
+    println!(
+        "     {:>12} → {:>12} {:>10}",
+        "Emitter", "Addressee", "Count"
+    );
     for (i, interaction) in social_network.top_interactions.iter().take(5).enumerate() {
-        println!("     {:2}. Emitter {:>5} → Addressee {:>5} {:>10}",
-                 i + 1, interaction.emitter, interaction.addressee, interaction.count);
+        println!(
+            "     {:2}. Emitter {:>5} → Addressee {:>5} {:>10}",
+            i + 1,
+            interaction.emitter,
+            interaction.addressee,
+            interaction.count
+        );
     }
     println!();
 
@@ -601,15 +720,20 @@ fn display_turn_taking_results(
     println!();
 
     println!("   Context-specific turn-switch rates:");
-    println!("     {:>10} {:>15} {:>15} {:>10}", "Context", "Vocalizations", "Turn Switches", "Rate");
+    println!(
+        "     {:>10} {:>15} {:>15} {:>10}",
+        "Context", "Vocalizations", "Turn Switches", "Rate"
+    );
     let mut context_vec: Vec<_> = context_analysis.context_turn_switch_rates.iter().collect();
     context_vec.sort_by(|a, b| a.0.cmp(b.0));
     for (_context_id, stats) in context_vec.iter() {
-        println!("     {:>10} {:>15} {:>15} {:>9.1}%",
-                 stats.context_id,
-                 stats.vocalization_count,
-                 stats.turn_switch_count,
-                 stats.turn_switch_rate);
+        println!(
+            "     {:>10} {:>15} {:>15} {:>9.1}%",
+            stats.context_id,
+            stats.vocalization_count,
+            stats.turn_switch_count,
+            stats.turn_switch_rate
+        );
     }
     println!();
 
@@ -646,9 +770,11 @@ fn export_phrase_library(
     fs::write(output_path, json_output)?;
 
     println!("✅ Phrase library exported to: {}", output_path);
-    println!("   File size: {} bytes ({} MB)",
-             file_size,
-             file_size / 1_000_000);
+    println!(
+        "   File size: {} bytes ({} MB)",
+        file_size,
+        file_size / 1_000_000
+    );
 
     Ok(())
 }

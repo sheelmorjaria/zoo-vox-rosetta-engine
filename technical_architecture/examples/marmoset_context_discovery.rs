@@ -5,11 +5,6 @@
 //!
 //! Dataset: ~/birdsong_analysis/data/Vocalizations/
 
-use technical_architecture::{
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-    species::FeatureWeights,
-};
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
@@ -18,9 +13,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    species::FeatureWeights, AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
-const MAX_FILES: usize = 5000;  // Process first 5000 files
+const MAX_FILES: usize = 5000; // Process first 5000 files
 
 // =============================================================================
 // Marmoset Call Types (from filenames)
@@ -81,9 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| {
-            e.path().extension().map_or(false, |ext| {
-                ext == "flac" || ext == "wav"
-            })
+            e.path()
+                .extension()
+                .map_or(false, |ext| ext == "flac" || ext == "wav")
         })
         .take(MAX_FILES)
         .collect();
@@ -114,7 +112,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =========================================================================
     // STEP 2: Feature Extraction
     // =========================================================================
-    println!("[2/4] Extracting 45D features from {} files...", total_files);
+    println!(
+        "[2/4] Extracting 45D features from {} files...",
+        total_files
+    );
 
     let extract_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
@@ -170,8 +171,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total_phrases = all_phrases.len();
     let error_count = errors.load(Ordering::Relaxed);
 
-    println!("\nExtracted {} features from {} files in {:.1}s",
-        total_phrases, total_files - error_count, extract_time.as_secs_f64());
+    println!(
+        "\nExtracted {} features from {} files in {:.1}s",
+        total_phrases,
+        total_files - error_count,
+        extract_time.as_secs_f64()
+    );
     println!("  ({} files had errors)", error_count);
     println!();
 
@@ -208,7 +213,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Simple clustering using similarity
     let similarity_threshold = 0.85;
-    println!("  Clustering with similarity threshold {:.0}%...", similarity_threshold * 100.0);
+    println!(
+        "  Clustering with similarity threshold {:.0}%...",
+        similarity_threshold * 100.0
+    );
 
     let mut phrase_types: Vec<Vec<usize>> = Vec::new();
     let mut type_centroids: Vec<Vec<f32>> = Vec::new();
@@ -243,7 +251,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let num_types = phrase_types.len();
-    println!("  Found {} phrase types from {} phrases", num_types, total_phrases);
+    println!(
+        "  Found {} phrase types from {} phrases",
+        num_types, total_phrases
+    );
 
     // Build semantic dictionary
     let mut type_to_labels: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -264,7 +275,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (type_id, label_counts) in &type_to_labels {
         let total: usize = label_counts.values().sum();
         if total > 0 {
-            let probs: HashMap<String, f32> = label_counts.iter()
+            let probs: HashMap<String, f32> = label_counts
+                .iter()
                 .map(|(label, &count)| (label.clone(), count as f32 / total as f32))
                 .collect();
             type_to_label_probs.insert(type_id.clone(), probs);
@@ -282,7 +294,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Sort types by occurrence count
-    let mut type_sizes: Vec<_> = phrase_types.iter().enumerate()
+    let mut type_sizes: Vec<_> = phrase_types
+        .iter()
+        .enumerate()
         .map(|(i, members)| (i, members.len()))
         .collect();
     type_sizes.sort_by_key(|(_, size)| std::cmp::Reverse(*size));
@@ -297,7 +311,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut labels: Vec<_> = label_probs.iter().collect();
             labels.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
 
-            let primary = labels.first()
+            let primary = labels
+                .first()
                 .map(|(l, p)| format!("{} ({:.0}%)", l, **p * 100.0))
                 .unwrap_or_else(|| "Unknown".to_string());
 
@@ -322,7 +337,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save type centroids for propagation
     let centroids_path = format!("{}/marmoset_type_centroids.json", output_dir);
-    let centroids_data: HashMap<String, Vec<f32>> = type_centroids.iter()
+    let centroids_data: HashMap<String, Vec<f32>> = type_centroids
+        .iter()
         .enumerate()
         .map(|(i, c)| (format!("Type_{}", i), c.clone()))
         .collect();
@@ -388,18 +404,23 @@ fn load_wav_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> {
     let data_start = 44;
 
     let samples: Vec<f64> = if bits_per_sample == 16 {
-        buffer[data_start..].chunks_exact(2)
+        buffer[data_start..]
+            .chunks_exact(2)
             .map(|c| i16::from_le_bytes([c[0], c[1]]) as f64 / 32768.0)
             .collect()
     } else if bits_per_sample == 32 {
-        buffer[data_start..].chunks_exact(4)
+        buffer[data_start..]
+            .chunks_exact(4)
             .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f64)
             .collect()
     } else {
         return Err(format!("Unsupported bits per sample: {}", bits_per_sample).into());
     };
 
-    Ok(AudioData { samples, sample_rate })
+    Ok(AudioData {
+        samples,
+        sample_rate,
+    })
 }
 
 fn load_flac_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> {
@@ -421,7 +442,8 @@ fn load_flac_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> 
     let metadata_opts = MetadataOptions::default();
     let decoder_opts = DecoderOptions::default();
 
-    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed =
+        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;
@@ -487,5 +509,8 @@ fn load_flac_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> 
         }
     }
 
-    Ok(AudioData { samples: all_samples, sample_rate })
+    Ok(AudioData {
+        samples: all_samples,
+        sample_rate,
+    })
 }

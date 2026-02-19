@@ -18,8 +18,8 @@ pub struct HierarchicalConfig {
 impl Default for HierarchicalConfig {
     fn default() -> Self {
         Self {
-            frame_duration_ms: 25.0,  // Standard 25ms frame
-            hop_duration_ms: 10.0,    // 15ms overlap (60%)
+            frame_duration_ms: 25.0, // Standard 25ms frame
+            hop_duration_ms: 10.0,   // 15ms overlap (60%)
         }
     }
 }
@@ -41,7 +41,10 @@ impl HierarchicalAggregator {
 
     /// Create with custom configuration
     pub fn with_config(sample_rate: u32, config: HierarchicalConfig) -> Self {
-        Self { config, sample_rate }
+        Self {
+            config,
+            sample_rate,
+        }
     }
 
     /// Extract hierarchical features across multiple time scales
@@ -77,7 +80,8 @@ impl HierarchicalAggregator {
             if frame.len() > 100 {
                 // Simplified: just use some statistics
                 let mean = frame.iter().sum::<f32>() / frame.len() as f32;
-                let variance = frame.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / frame.len() as f32;
+                let variance =
+                    frame.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / frame.len() as f32;
 
                 // Mock 13 MFCCs
                 let mfccs = (0..13)
@@ -100,8 +104,13 @@ impl HierarchicalAggregator {
         // Compute MFCC multi-scale per coefficient
         let mut mfcc_multi_scale: Vec<MultiScaleFeatures> = Vec::new();
         for coeff_idx in 0..13 {
-            if let Some(_coeff_values) = mfcc_frames.get(0).map(|f| f.len()).filter(|&l| l > coeff_idx) {
-                let values: Vec<f32> = mfcc_frames.iter()
+            if let Some(_coeff_values) = mfcc_frames
+                .get(0)
+                .map(|f| f.len())
+                .filter(|&l| l > coeff_idx)
+            {
+                let values: Vec<f32> = mfcc_frames
+                    .iter()
                     .filter_map(|f| f.get(coeff_idx).copied())
                     .collect();
                 mfcc_multi_scale.push(StatisticalAggregator::compute_all(&values));
@@ -121,7 +130,8 @@ impl HierarchicalAggregator {
             return Ok(vec![]);
         }
 
-        let frame_samples = (self.config.frame_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let frame_samples =
+            (self.config.frame_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
         let hop_samples = (self.config.hop_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
 
         if frame_samples == 0 || hop_samples == 0 {
@@ -152,10 +162,7 @@ impl HierarchicalAggregator {
     }
 
     /// Aggregate frame-level features into multi-scale representation
-    pub fn aggregate_frames(
-        &self,
-        feature_frames: &[Vec<f32>],
-    ) -> Vec<MultiScaleFeatures> {
+    pub fn aggregate_frames(&self, feature_frames: &[Vec<f32>]) -> Vec<MultiScaleFeatures> {
         if feature_frames.is_empty() {
             return vec![];
         }
@@ -229,7 +236,7 @@ impl HierarchicalFeatures {
 
     /// Get dimensionality of feature vector
     pub fn dimensionality(&self) -> usize {
-        6 + (13 * 6) + 6  // F0 + MFCCs + onset_rate
+        6 + (13 * 6) + 6 // F0 + MFCCs + onset_rate
     }
 }
 
@@ -326,7 +333,9 @@ mod tests {
     #[test]
     fn test_extract_hierarchical_long() {
         let aggregator = HierarchicalAggregator::new(48000);
-        let audio: Vec<f32> = (0..48000).map(|i| (i as f32 / 48000.0) * 2.0 - 1.0).collect();
+        let audio: Vec<f32> = (0..48000)
+            .map(|i| (i as f32 / 48000.0) * 2.0 - 1.0)
+            .collect();
         let extractor = MicroDynamicsExtractor::new(48000);
 
         let result = aggregator.extract_hierarchical(&audio, &extractor).unwrap();
@@ -391,11 +400,7 @@ mod tests {
     #[test]
     fn test_aggregate_frames_multiple() {
         let aggregator = HierarchicalAggregator::new(48000);
-        let frames = vec![
-            vec![1.0, 2.0],
-            vec![1.1, 2.1],
-            vec![0.9, 1.9],
-        ];
+        let frames = vec![vec![1.0, 2.0], vec![1.1, 2.1], vec![0.9, 1.9]];
 
         let result = aggregator.aggregate_frames(&frames);
         assert_eq!(result.len(), 2);
@@ -424,11 +429,7 @@ mod tests {
     #[test]
     fn test_aggregate_frames_variance() {
         let aggregator = HierarchicalAggregator::new(48000);
-        let frames = vec![
-            vec![0.0],
-            vec![1.0],
-            vec![2.0],
-        ];
+        let frames = vec![vec![0.0], vec![1.0], vec![2.0]];
 
         let result = aggregator.aggregate_frames(&frames);
 

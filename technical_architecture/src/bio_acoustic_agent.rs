@@ -149,17 +149,51 @@ impl SourceMetadata {
     /// Convert to vector
     pub fn to_vector(&self) -> Vec<f32> {
         vec![
-            self.mean_f0_hz, self.duration_ms, self.f0_range_hz, self.f0_contour_slope,
-            self.pitch_stability, self.harmonic_to_noise_ratio, self.inharmonicity,
-            self.harmonic_1, self.harmonic_2, self.harmonic_3, self.attack_time_ms,
-            self.decay_time_ms, self.sustain_level, self.release_time_ms, self.rms_energy,
-            self.fm_rate_hz, self.fm_depth_hz, self.am_rate_hz, self.am_depth,
-            self.tremolo_rate, self.mfcc_1, self.mfcc_2, self.mfcc_3, self.mfcc_4,
-            self.mfcc_5, self.formant_1_hz, self.formant_2_hz, self.formant_3_hz,
-            self.bandwidth_1, self.bandwidth_2, self.jitter, self.shimmer,
-            self.hnr_variation, self.cpp, self.entropy, self.loudness, self.sharpness,
-            self.roughness, self.tonality, self.fluctuation_strength, self.acf_peak,
-            self.acf_strength, self.sfm, self.periodicity, self.tfs_entropy,
+            self.mean_f0_hz,
+            self.duration_ms,
+            self.f0_range_hz,
+            self.f0_contour_slope,
+            self.pitch_stability,
+            self.harmonic_to_noise_ratio,
+            self.inharmonicity,
+            self.harmonic_1,
+            self.harmonic_2,
+            self.harmonic_3,
+            self.attack_time_ms,
+            self.decay_time_ms,
+            self.sustain_level,
+            self.release_time_ms,
+            self.rms_energy,
+            self.fm_rate_hz,
+            self.fm_depth_hz,
+            self.am_rate_hz,
+            self.am_depth,
+            self.tremolo_rate,
+            self.mfcc_1,
+            self.mfcc_2,
+            self.mfcc_3,
+            self.mfcc_4,
+            self.mfcc_5,
+            self.formant_1_hz,
+            self.formant_2_hz,
+            self.formant_3_hz,
+            self.bandwidth_1,
+            self.bandwidth_2,
+            self.jitter,
+            self.shimmer,
+            self.hnr_variation,
+            self.cpp,
+            self.entropy,
+            self.loudness,
+            self.sharpness,
+            self.roughness,
+            self.tonality,
+            self.fluctuation_strength,
+            self.acf_peak,
+            self.acf_strength,
+            self.sfm,
+            self.periodicity,
+            self.tfs_entropy,
         ]
     }
 }
@@ -209,10 +243,12 @@ impl AcousticModality {
             Self::Harmonic
         }
         // Low HNR + High spectral flatness + Short duration = Transient
-        else if meta.harmonic_to_noise_ratio < 10.0 && meta.entropy > 0.5 && meta.duration_ms < 100.0 {
+        else if meta.harmonic_to_noise_ratio < 10.0
+            && meta.entropy > 0.5
+            && meta.duration_ms < 100.0
+        {
             Self::Transient
-        }
-        else {
+        } else {
             Self::Mixed
         }
     }
@@ -263,7 +299,8 @@ impl AcousticInventory {
 
     /// Set default response strategy
     pub fn set_response_strategy(&mut self, input_label: &str, response_label: &str) {
-        self.response_strategies.insert(input_label.to_string(), response_label.to_string());
+        self.response_strategies
+            .insert(input_label.to_string(), response_label.to_string());
     }
 
     /// Get recommended response for an input
@@ -280,7 +317,10 @@ impl AcousticInventory {
     }
 
     /// Save to JSON file
-    pub fn save<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save<P: AsRef<std::path::Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let file = std::fs::File::create(path)?;
         let writer = std::io::BufWriter::new(file);
         serde_json::to_writer_pretty(writer, self)?;
@@ -402,9 +442,9 @@ impl ContextDeltaCalculator {
         match env {
             EnvState::Wind => {
                 // "Long_Range_Contact" - Cut through noise
-                delta.delta_mean_f0_hz = 200.0;      // Pitch up for propagation
-                delta.delta_sustain_level = 0.2;     // Louder
-                delta.delta_loudness = 0.15;         // More energy
+                delta.delta_mean_f0_hz = 200.0; // Pitch up for propagation
+                delta.delta_sustain_level = 0.2; // Louder
+                delta.delta_loudness = 0.15; // More energy
             }
             EnvState::Rain => {
                 // Moderate adaptation
@@ -413,9 +453,9 @@ impl ContextDeltaCalculator {
             }
             EnvState::Storm => {
                 // Emergency signal - broader band
-                delta.delta_entropy = 0.2;           // More noise-like (penetrates)
-                delta.delta_loudness = 0.25;         // Much louder
-                delta.delta_sharpness = 0.3;         // More cutting
+                delta.delta_entropy = 0.2; // More noise-like (penetrates)
+                delta.delta_loudness = 0.25; // Much louder
+                delta.delta_sharpness = 0.3; // More cutting
             }
             EnvState::Quiet | EnvState::Unknown => {
                 // No environmental adaptation needed
@@ -426,7 +466,7 @@ impl ContextDeltaCalculator {
         match context {
             InteractionContext::Reply => {
                 // Individual identity marker
-                delta.delta_mean_f0_hz -= 150.0;     // Slightly lower pitch (identity)
+                delta.delta_mean_f0_hz -= 150.0; // Slightly lower pitch (identity)
             }
             InteractionContext::Initiator => {
                 // Clear, strong signal
@@ -528,11 +568,15 @@ impl FormantBarrierValidator {
         let target_modality = AcousticModality::from_metadata(target);
 
         if source_modality != target_modality {
-            if source_modality == AcousticModality::Harmonic && target_modality == AcousticModality::Transient {
+            if source_modality == AcousticModality::Harmonic
+                && target_modality == AcousticModality::Transient
+            {
                 violations.push(
                     "FORMANT BARRIER VIOLATION: Cannot create a Transient (click) from a Harmonic (tone) via warping".to_string()
                 );
-            } else if source_modality == AcousticModality::Transient && target_modality == AcousticModality::Harmonic {
+            } else if source_modality == AcousticModality::Transient
+                && target_modality == AcousticModality::Harmonic
+            {
                 violations.push(
                     "FORMANT BARRIER VIOLATION: Cannot create a Harmonic (tone) from a Transient (click) via warping".to_string()
                 );
@@ -563,8 +607,8 @@ impl FormantBarrierValidator {
 
         matches!(
             (source_modality, target_modality),
-            (AcousticModality::Harmonic, AcousticModality::Transient) |
-            (AcousticModality::Transient, AcousticModality::Harmonic)
+            (AcousticModality::Harmonic, AcousticModality::Transient)
+                | (AcousticModality::Transient, AcousticModality::Harmonic)
         )
     }
 }
@@ -710,7 +754,8 @@ impl BioAcousticAgent {
     /// 4. Returns complete synthesis plan
     pub fn plan_synthesis(&self, request: SynthesisRequest) -> Result<SynthesisPlan, String> {
         // Step 1: Retrieve prototype
-        let prototype = self.inventory
+        let prototype = self
+            .inventory
             .get_prototype(&request.label)
             .ok_or_else(|| format!("No prototype found for label: {}", request.label))?;
 
@@ -718,9 +763,10 @@ impl BioAcousticAgent {
         let source_audio = prototype.audio_buffer.clone();
 
         // Step 2: Calculate deltas
-        let mut deltas = vec![
-            ContextDeltaCalculator::calculate(request.environment, request.context),
-        ];
+        let mut deltas = vec![ContextDeltaCalculator::calculate(
+            request.environment,
+            request.context,
+        )];
 
         // Add grading delta if specified
         if let Some(grading) = request.grading_override {
@@ -810,13 +856,19 @@ mod tests {
         let mut harmonic = SourceMetadata::default();
         harmonic.harmonic_to_noise_ratio = 20.0;
         harmonic.entropy = 0.2;
-        assert_eq!(AcousticModality::from_metadata(&harmonic), AcousticModality::Harmonic);
+        assert_eq!(
+            AcousticModality::from_metadata(&harmonic),
+            AcousticModality::Harmonic
+        );
 
         let mut transient = SourceMetadata::default();
         transient.harmonic_to_noise_ratio = 5.0;
         transient.entropy = 0.7;
         transient.duration_ms = 50.0;
-        assert_eq!(AcousticModality::from_metadata(&transient), AcousticModality::Transient);
+        assert_eq!(
+            AcousticModality::from_metadata(&transient),
+            AcousticModality::Transient
+        );
     }
 
     #[test]

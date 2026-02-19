@@ -10,7 +10,8 @@ use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir =
+        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let clusters_path = results_dir.join("minibatch_clusters.json");
     let models_output = results_dir.join("gmm_hmm_models.json");
@@ -25,8 +26,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load features
     println!("📂 Loading features...");
     let features_data = std::fs::read(&features_path)?;
-    let serializable_features: Vec<technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable> =
-        bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<
+        technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable,
+    > = bincode::deserialize(&features_data)?;
     println!("   └─ {} features loaded", serializable_features.len());
     println!();
 
@@ -43,8 +45,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|v| v.as_i64().unwrap() as i32)
         .collect();
 
-    println!("   └─ {} labels loaded ({} clusters)",
-        labels.len(), n_clusters);
+    println!(
+        "   └─ {} labels loaded ({} clusters)",
+        labels.len(),
+        n_clusters
+    );
     println!();
 
     // Group features by cluster
@@ -79,7 +84,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   └─ Grouped in {:.2}s", group_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ Grouped in {:.2}s",
+        group_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // Count phrases per cluster
@@ -92,9 +100,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     for cluster_id in 0..n_clusters as i32 {
         let count = cluster_counts.get(&cluster_id).copied().unwrap_or(0);
-        let n_sequences = cluster_features.get(&cluster_id).map(|v| v.len()).unwrap_or(0);
-        println!("   Cluster {}: {} phrases, {} sequences",
-            cluster_id, count, n_sequences);
+        let n_sequences = cluster_features
+            .get(&cluster_id)
+            .map(|v| v.len())
+            .unwrap_or(0);
+        println!(
+            "   Cluster {}: {} phrases, {} sequences",
+            cluster_id, count, n_sequences
+        );
     }
     println!();
 
@@ -106,8 +119,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut models = Vec::new();
 
     // GMM-HMM configuration
-    let n_states = 2;  // Onset → Offset (2 states per phoneme)
-    let n_components = 3;  // 3 Gaussian components per state
+    let n_states = 2; // Onset → Offset (2 states per phoneme)
+    let n_components = 3; // 3 Gaussian components per state
     let max_iterations = 50;
     let convergence_threshold = 1e-4;
 
@@ -151,7 +164,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .unwrap_or(2);
 
             // Filter sequences to consistent length
-            let filtered: Vec<_> = sequences.iter()
+            let filtered: Vec<_> = sequences
+                .iter()
                 .filter(|seq| seq.nrows() == most_common_length)
                 .cloned()
                 .collect();
@@ -224,7 +238,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let train_time = train_start.elapsed();
     println!();
-    println!("   └─ Training completed in {:.2}s", train_time.as_secs_f64());
+    println!(
+        "   └─ Training completed in {:.2}s",
+        train_time.as_secs_f64()
+    );
     println!("   └─ {} models trained", models.len());
     println!();
 
@@ -245,8 +262,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Phase 4 Complete!");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    println!("   Trained {} GMM-HMM models from {} clusters",
-        models.len(), n_clusters);
+    println!(
+        "   Trained {} GMM-HMM models from {} clusters",
+        models.len(),
+        n_clusters
+    );
     println!("   Completed in {:.2}s", train_time.as_secs_f64());
     println!();
 
@@ -255,8 +275,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Phase 1: Segmentation → 1,407,135 phrases");
     println!("   Phase 2: Vectorization → 383 MB features");
     println!("   Phase 3: Discovery → 50 clusters (12.89s)");
-    println!("   Phase 4: Refinement → {} models ({:.2}s)",
-        models.len(), train_time.as_secs_f64());
+    println!(
+        "   Phase 4: Refinement → {} models ({:.2}s)",
+        models.len(),
+        train_time.as_secs_f64()
+    );
     println!();
 
     Ok(())

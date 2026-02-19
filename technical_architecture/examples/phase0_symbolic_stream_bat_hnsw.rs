@@ -80,8 +80,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let batch_end = (batch_start + batch_size).min(total_files);
         let batch_files: Vec<_> = wav_files[batch_start..batch_end].iter().collect();
 
-        println!("   🔄 Processing batch {} (files {}-{})...",
-                 batch_idx + 1, batch_start, batch_end - 1);
+        println!(
+            "   🔄 Processing batch {} (files {}-{})...",
+            batch_idx + 1,
+            batch_start,
+            batch_end - 1
+        );
 
         let batch_results = extract_features_with_metadata_batch(batch_files.clone())?;
         let valid_count = batch_results.len();
@@ -92,9 +96,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             all_metadata.push(result.metadata);
         }
 
-        println!("      └─ Extracted {} features ({:.1}% success rate)",
-                 valid_count,
-                 valid_count as f64 / batch_files.len() as f64 * 100.0);
+        println!(
+            "      └─ Extracted {} features ({:.1}% success rate)",
+            valid_count,
+            valid_count as f64 / batch_files.len() as f64 * 100.0
+        );
     }
 
     let extract_time = extract_start.elapsed();
@@ -103,9 +109,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("   ✅ Feature extraction complete!");
     println!("      ├─ Total features: {}", n_features);
-    println!("      ├─ Time: {:.2}s ({:.1} files/sec)",
-             extract_time.as_secs_f64(),
-             total_files as f64 / extract_time.as_secs_f64());
+    println!(
+        "      ├─ Time: {:.2}s ({:.1} files/sec)",
+        extract_time.as_secs_f64(),
+        total_files as f64 / extract_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -130,10 +138,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("   ✅ Converted to {}x{} array in {:.2}s",
-             n_features, n_dims, convert_start.elapsed().as_secs_f64());
-    println!("   📊 Memory: ~{} MB for feature matrix",
-             (n_features * n_dims * 8) / 1_048_576);
+    println!(
+        "   ✅ Converted to {}x{} array in {:.2}s",
+        n_features,
+        n_dims,
+        convert_start.elapsed().as_secs_f64()
+    );
+    println!(
+        "   📊 Memory: ~{} MB for feature matrix",
+        (n_features * n_dims * 8) / 1_048_576
+    );
     println!();
 
     // ========================================================================
@@ -150,7 +164,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let min_samples = 30;
 
     println!("   🏗️  HDBSCAN Configuration:");
-    println!("      ├─ min_cluster_size: {} (minimum phrases per word type)", min_cluster_size);
+    println!(
+        "      ├─ min_cluster_size: {} (minimum phrases per word type)",
+        min_cluster_size
+    );
     println!("      ├─ min_samples: {} (density threshold)", min_samples);
     println!("      ├─ Algorithm: Hierarchical Density-Based with HNSW ANN");
     println!("      └─ Output: Cluster IDs (each ID = discovered word/syllable type)");
@@ -159,19 +176,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_start = Instant::now();
 
     // Use HNSW-optimized HDBSCAN
-    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(
-        min_cluster_size,
-        min_samples,
-    )?;
+    let hdbscan =
+        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     println!("   🔍 Running HDBSCAN with HNSW optimization...");
     println!("      └─ Memory-efficient O(log n) nearest neighbor queries");
     let labels = hdbscan.fit_predict_hnsw(&feature_matrix)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!("   ✅ Clustering complete in {:.2}s ({:.3}ms per sample)",
-             cluster_time.as_secs_f64(),
-             cluster_time.as_millis() as f64 / n_features as f64);
+    println!(
+        "   ✅ Clustering complete in {:.2}s ({:.3}ms per sample)",
+        cluster_time.as_secs_f64(),
+        cluster_time.as_millis() as f64 / n_features as f64
+    );
     println!();
 
     // ========================================================================
@@ -188,8 +205,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Clustering Results:");
     println!("      ├─ Total phrases analyzed: {}", n_features);
     println!("      ├─ Vocabulary items discovered: {}", stats.n_clusters);
-    println!("      ├─ Noise points (unclassified): {}", stats.noise_count);
-    println!("      └─ Classified phrases: {}", n_features - stats.noise_count);
+    println!(
+        "      ├─ Noise points (unclassified): {}",
+        stats.noise_count
+    );
+    println!(
+        "      └─ Classified phrases: {}",
+        n_features - stats.noise_count
+    );
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -204,7 +227,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
 
         // Top 20 discovered word types
-        let mut sorted_clusters: Vec<(i32, usize)> = stats.cluster_sizes.iter()
+        let mut sorted_clusters: Vec<(i32, usize)> = stats
+            .cluster_sizes
+            .iter()
             .enumerate()
             .map(|(i, &size)| (i as i32, size))
             .collect();
@@ -218,8 +243,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (i, (cluster_id, size)) in sorted_clusters.iter().take(20).enumerate() {
             let percentage = size.clone() as f64 / n_features as f64 * 100.0;
             let word_type = classify_cluster_by_size(*size);
-            println!("      │   {:3}    │    {:5}     │  {:5.2}  │ {:10} │",
-                     i + 1, size, percentage, word_type);
+            println!(
+                "      │   {:3}    │    {:5}     │  {:5.2}  │ {:10} │",
+                i + 1,
+                size,
+                percentage,
+                word_type
+            );
         }
         println!("      └──────────┴──────────────┴──────────┴────────────┘");
     }
@@ -242,12 +272,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut symbolic_stream_entries: Vec<SymbolicStreamEntry> = Vec::new();
     let mut symbol_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
 
-    for (i, (((file_name, &label), metadata))) in all_file_names.iter()
+    for (i, (((file_name, &label), metadata))) in all_file_names
+        .iter()
         .zip(labels.iter())
         .zip(all_metadata.iter())
         .enumerate()
     {
-        let symbol = if label == -1 { 0 } else { label + cluster_offset };
+        let symbol = if label == -1 {
+            0
+        } else {
+            label + cluster_offset
+        };
         *symbol_counts.entry(symbol).or_insert(0) += 1;
 
         symbolic_stream_entries.push(SymbolicStreamEntry {
@@ -264,11 +299,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📝 Symbolic Stream Statistics:");
     println!("      ├─ Total symbols: {}", symbolic_stream_entries.len());
     println!("      ├─ Unique symbols: {}", symbol_counts.len());
-    println!("      ├─ Symbol 0 (noise): {} occurrences",
-             symbol_counts.get(&0).unwrap_or(&0));
-    println!("      └─ Symbol range: {} - {}",
-             cluster_offset,
-             cluster_offset + stats.n_clusters as i32 - 1);
+    println!(
+        "      ├─ Symbol 0 (noise): {} occurrences",
+        symbol_counts.get(&0).unwrap_or(&0)
+    );
+    println!(
+        "      └─ Symbol range: {} - {}",
+        cluster_offset,
+        cluster_offset + stats.n_clusters as i32 - 1
+    );
     println!();
 
     // Display first 50 symbols of the stream with timestamps
@@ -278,12 +317,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      ├──────┼────────────┼─────────┼──────────────┼────────────┤");
 
     for entry in symbolic_stream_entries.iter().take(50) {
-        println!("      │ {:4} │ {:10} │   {:3}  │ {:8}     │ {:8}   │",
-                 entry.index,
-                 truncate(&entry.file_name, 10),
-                 entry.symbol,
-                 entry.timestamp_ms as i64,
-                 entry.duration_ms as i64);
+        println!(
+            "      │ {:4} │ {:10} │   {:3}  │ {:8}     │ {:8}   │",
+            entry.index,
+            truncate(&entry.file_name, 10),
+            entry.symbol,
+            entry.timestamp_ms as i64,
+            entry.duration_ms as i64
+        );
     }
     println!("      └──────┴────────────┴─────────┴──────────────┴────────────┘");
     println!();
@@ -335,17 +376,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(&results_path, serde_json::to_string_pretty(&results_output)?)?;
-    println!("   💾 Full results with timestamps: {}", results_path.display());
+    fs::write(
+        &results_path,
+        serde_json::to_string_pretty(&results_output)?,
+    )?;
+    println!(
+        "   💾 Full results with timestamps: {}",
+        results_path.display()
+    );
 
     // Save pure symbolic stream (just the sequence)
     let stream_path = results_dir.join("symbolic_stream.txt");
-    let stream_text: String = symbolic_stream_entries.iter()
+    let stream_text: String = symbolic_stream_entries
+        .iter()
         .map(|e| e.symbol.to_string())
         .collect::<Vec<_>>()
         .join(",");
     fs::write(&stream_path, &stream_text)?;
-    println!("   💾 Symbolic stream (sequence only): {}", stream_path.display());
+    println!(
+        "   💾 Symbolic stream (sequence only): {}",
+        stream_path.display()
+    );
 
     // Save timestamp map for audio extraction
     let timestamp_map_path = results_dir.join("timestamp_map.json");
@@ -357,8 +408,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "by_file": build_file_to_symbols_map(&symbolic_stream_entries),
         }
     });
-    fs::write(&timestamp_map_path, serde_json::to_string_pretty(&timestamp_map)?)?;
-    println!("   💾 Timestamp map for extraction: {}", timestamp_map_path.display());
+    fs::write(
+        &timestamp_map_path,
+        serde_json::to_string_pretty(&timestamp_map)?,
+    )?;
+    println!(
+        "   💾 Timestamp map for extraction: {}",
+        timestamp_map_path.display()
+    );
     println!();
 
     // ========================================================================
@@ -372,14 +429,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  ✅ Raw audio converted to symbolic stream with timestamps                 ║");
     println!("║                                                                           ║");
     println!("║  📊 SUMMARY:                                                              ║");
-    println!("║     • Input:  {} WAV files                                           ║", total_files);
+    println!(
+        "║     • Input:  {} WAV files                                           ║",
+        total_files
+    );
     println!("║     • Features: 30D MicroDynamics                                     ║");
-    println!("║     • Vocabulary items discovered: {}                               ║", stats.n_clusters);
-    println!("║     • Noise points: {} ({:.1}%)                                    ║",
-             stats.noise_count,
-             stats.noise_count as f64 / n_features as f64 * 100.0);
-    println!("║     • Clustering time: {:.2}s                                          ║",
-             cluster_time.as_secs_f64());
+    println!(
+        "║     • Vocabulary items discovered: {}                               ║",
+        stats.n_clusters
+    );
+    println!(
+        "║     • Noise points: {} ({:.1}%)                                    ║",
+        stats.noise_count,
+        stats.noise_count as f64 / n_features as f64 * 100.0
+    );
+    println!(
+        "║     • Clustering time: {:.2}s                                          ║",
+        cluster_time.as_secs_f64()
+    );
     println!("║                                                                           ║");
     println!("║  🎯 TIMESTAMP INFO:                                                       ║");
     println!("║     • Each discovered word includes:                                     ║");
@@ -421,7 +488,7 @@ struct AudioMetadata {
 #[derive(Clone, serde::Serialize)]
 struct ExtractedFeatureWithMetadata {
     file_name: String,
-    features: Vec<f64>,  // 30D features
+    features: Vec<f64>, // 30D features
     metadata: AudioMetadata,
 }
 
@@ -431,8 +498,8 @@ struct SymbolicStreamEntry {
     file_name: String,
     cluster_id: i32,
     symbol: i32,
-    timestamp_ms: f64,    // Start time within the WAV file
-    duration_ms: f64,     // Duration of this audio segment
+    timestamp_ms: f64, // Start time within the WAV file
+    duration_ms: f64,  // Duration of this audio segment
     sample_rate: u32,
 }
 
@@ -497,7 +564,8 @@ fn extract_single_feature_with_metadata(
     let sample_rate = spec.sample_rate;
 
     // Read samples
-    let audio: Vec<f32> = reader.into_samples::<f32>()
+    let audio: Vec<f32> = reader
+        .into_samples::<f32>()
         .filter_map(|s| s.ok())
         .collect();
 
@@ -507,9 +575,7 @@ fn extract_single_feature_with_metadata(
 
     // Convert to mono if stereo
     let audio_mono = if spec.channels == 2 {
-        audio.chunks_exact(2)
-            .map(|c| (c[0] + c[1]) / 2.0)
-            .collect()
+        audio.chunks_exact(2).map(|c| (c[0] + c[1]) / 2.0).collect()
     } else {
         audio
     };
@@ -524,19 +590,16 @@ fn extract_single_feature_with_metadata(
     let vector30d = features_56d.base_30d.to_vector30d(
         10000.0, // mean_f0_hz for bat
         duration_ms as f32,
-        5000.0,  // f0_range_hz for bat
+        5000.0, // f0_range_hz for bat
     );
 
-    let features_30d: Vec<f64> = vector30d.to_array()
-        .iter()
-        .map(|&x| x as f64)
-        .collect();
+    let features_30d: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
 
     Ok(ExtractedFeatureWithMetadata {
         file_name: file_name.to_string(),
         features: features_30d,
         metadata: AudioMetadata {
-            start_time_ms: 0.0,  // Start of file (could be adjusted for segmented audio)
+            start_time_ms: 0.0, // Start of file (could be adjusted for segmented audio)
             duration_ms,
             sample_rate,
         },
@@ -562,29 +625,35 @@ fn truncate(s: &str, max_len: usize) -> String {
 }
 
 fn build_symbol_to_entries_map(entries: &[SymbolicStreamEntry]) -> serde_json::Value {
-    let mut map: std::collections::HashMap<i32, Vec<serde_json::Value>> = std::collections::HashMap::new();
+    let mut map: std::collections::HashMap<i32, Vec<serde_json::Value>> =
+        std::collections::HashMap::new();
 
     for entry in entries {
-        map.entry(entry.symbol).or_insert_with(Vec::new).push(serde_json::json!({
-            "file": entry.file_name,
-            "start_ms": entry.timestamp_ms,
-            "duration_ms": entry.duration_ms,
-        }));
+        map.entry(entry.symbol)
+            .or_insert_with(Vec::new)
+            .push(serde_json::json!({
+                "file": entry.file_name,
+                "start_ms": entry.timestamp_ms,
+                "duration_ms": entry.duration_ms,
+            }));
     }
 
     serde_json::to_value(map).unwrap()
 }
 
 fn build_file_to_symbols_map(entries: &[SymbolicStreamEntry]) -> serde_json::Value {
-    let mut map: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
+    let mut map: std::collections::HashMap<String, Vec<serde_json::Value>> =
+        std::collections::HashMap::new();
 
     for entry in entries {
-        map.entry(entry.file_name.clone()).or_insert_with(Vec::new).push(serde_json::json!({
-            "symbol": entry.symbol,
-            "cluster_id": entry.cluster_id,
-            "start_ms": entry.timestamp_ms,
-            "duration_ms": entry.duration_ms,
-        }));
+        map.entry(entry.file_name.clone())
+            .or_insert_with(Vec::new)
+            .push(serde_json::json!({
+                "symbol": entry.symbol,
+                "cluster_id": entry.cluster_id,
+                "start_ms": entry.timestamp_ms,
+                "duration_ms": entry.duration_ms,
+            }));
     }
 
     serde_json::to_value(map).unwrap()

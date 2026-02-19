@@ -7,10 +7,6 @@
 //! - Modulation Factors (3): Tilt, FM Slope, AM Depth
 //! - Non-Linear Factors (2): Subharmonic Ratio, Spectral Entropy
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array2;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -21,6 +17,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 
@@ -126,7 +123,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Phase 1: Parallel Feature Extraction (45D)");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
-    println!("Extracting {} samples using FFT-based ZooVoxFeatureExtractor...", total_samples);
+    println!(
+        "Extracting {} samples using FFT-based ZooVoxFeatureExtractor...",
+        total_samples
+    );
     println!("  (Parallel with 32 threads)");
     println!();
 
@@ -134,7 +134,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let processed = Arc::new(AtomicUsize::new(0));
 
     // Extract features in parallel
-    let features_results: Vec<Option<ExtractedFeatures>> = manifest.samples
+    let features_results: Vec<Option<ExtractedFeatures>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -168,16 +169,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let extraction_time = start_time.elapsed();
-    let valid_features: Vec<_> = features_results.iter()
-        .filter_map(|f| f.clone())
-        .collect();
+    let valid_features: Vec<_> = features_results.iter().filter_map(|f| f.clone()).collect();
 
     let n_valid = valid_features.len();
     println!("\nExtraction complete:");
     println!("  ├─ Processed: {} samples", total_samples);
     println!("  ├─ Failed: {} samples", total_samples - n_valid);
     println!("  ├─ Time: {:.2}s", extraction_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} samples/sec", total_samples as f64 / extraction_time.as_secs_f64());
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        total_samples as f64 / extraction_time.as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -220,10 +222,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let n_types = types.len();
 
     // Compute entropy
-    let type_entropy: f64 = types.iter()
+    let type_entropy: f64 = types
+        .iter()
         .map(|t| {
             let p = t.count as f64 / n as f64;
-            if p > 0.0 { -p * p.log2() } else { 0.0 }
+            if p > 0.0 {
+                -p * p.log2()
+            } else {
+                0.0
+            }
         })
         .sum();
 
@@ -234,7 +241,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Similarity statistics
     let (intra_sim, inter_dist) = compute_similarity_stats(&valid_features, &types);
-    let separation = if intra_sim > 0.0 { Some(inter_dist / (1.0 - intra_sim + 1e-10)) } else { None };
+    let separation = if intra_sim > 0.0 {
+        Some(inter_dist / (1.0 - intra_sim + 1e-10))
+    } else {
+        None
+    };
 
     println!("Similarity Statistics:");
     println!("  ├─ Avg Intra-Type Similarity: {:.4}", intra_sim);
@@ -250,18 +261,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // New feature ranges
     let feature_names = [
-        "formant_1_hz", "formant_2_hz", "formant_3_hz",
-        "formant_1_bandwidth", "formant_2_bandwidth", "formant_dispersion",
-        "spectral_centroid", "spectral_spread", "spectral_skewness", "spectral_kurtosis",
-        "spectral_tilt", "fm_slope_hz_per_sec", "am_depth",
-        "subharmonic_ratio", "spectral_entropy",
+        "formant_1_hz",
+        "formant_2_hz",
+        "formant_3_hz",
+        "formant_1_bandwidth",
+        "formant_2_bandwidth",
+        "formant_dispersion",
+        "spectral_centroid",
+        "spectral_spread",
+        "spectral_skewness",
+        "spectral_kurtosis",
+        "spectral_tilt",
+        "fm_slope_hz_per_sec",
+        "am_depth",
+        "subharmonic_ratio",
+        "spectral_entropy",
     ];
 
     println!("New 15D Feature Ranges:");
     let mut new_feature_ranges = HashMap::new();
     for (i, name) in feature_names.iter().enumerate() {
-        let min = if new_feature_mins[i] == f64::MAX { 0.0 } else { new_feature_mins[i] };
-        let max = if new_feature_maxs[i] == f64::MIN { 0.0 } else { new_feature_maxs[i] };
+        let min = if new_feature_mins[i] == f64::MAX {
+            0.0
+        } else {
+            new_feature_mins[i]
+        };
+        let max = if new_feature_maxs[i] == f64::MIN {
+            0.0
+        } else {
+            new_feature_maxs[i]
+        };
         println!("  ├─ {}: [{:.2}, {:.2}]", name, min, max);
         new_feature_ranges.insert(name.to_string(), (min, max));
     }
@@ -337,8 +366,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Features: 45D");
     println!();
     println!("Performance:");
-    println!("  ├─ Total time: {:.1}s ({:.1} min)", total_time.as_secs_f64(), total_time.as_secs_f64() / 60.0);
-    println!("  └─ Throughput: {:.1} samples/sec", total_samples as f64 / total_time.as_secs_f64());
+    println!(
+        "  ├─ Total time: {:.1}s ({:.1} min)",
+        total_time.as_secs_f64(),
+        total_time.as_secs_f64() / 60.0
+    );
+    println!(
+        "  └─ Throughput: {:.1} samples/sec",
+        total_samples as f64 / total_time.as_secs_f64()
+    );
     println!();
     println!("Type Discovery:");
     println!("  ├─ Types: {}", n_types);
@@ -456,7 +492,9 @@ fn build_global_types_streaming(
         if let Some(type_idx) = best_type {
             let n_in_type = types[type_idx].count + 1;
             types[type_idx].count = n_in_type;
-            types[type_idx].sample_ids.push(features[i].sample_id.clone());
+            types[type_idx]
+                .sample_ids
+                .push(features[i].sample_id.clone());
 
             for (j, val) in features[i].features.iter().enumerate().take(FEATURE_DIM) {
                 types[type_idx].centroid[j] +=
@@ -541,7 +579,11 @@ fn compute_similarity_stats(features: &[ExtractedFeatures], types: &[AcousticTyp
         }
     }
 
-    let avg_intra_sim = if intra_count > 0 { intra_sim_sum / intra_count as f64 } else { 0.0 };
+    let avg_intra_sim = if intra_count > 0 {
+        intra_sim_sum / intra_count as f64
+    } else {
+        0.0
+    };
 
     // Compute inter-type distance
     let mut inter_dist_sum = 0.0;
@@ -556,7 +598,11 @@ fn compute_similarity_stats(features: &[ExtractedFeatures], types: &[AcousticTyp
         }
     }
 
-    let avg_inter_dist = if inter_count > 0 { inter_dist_sum / inter_count as f64 } else { 0.0 };
+    let avg_inter_dist = if inter_count > 0 {
+        inter_dist_sum / inter_count as f64
+    } else {
+        0.0
+    };
 
     (avg_intra_sim, avg_inter_dist)
 }
@@ -598,7 +644,8 @@ fn compute_knn_accuracy(features: &[ExtractedFeatures], k: usize) -> f64 {
         distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
         // Vote among top k
-        let neighbors: Vec<&ExtractedFeatures> = distances.iter()
+        let neighbors: Vec<&ExtractedFeatures> = distances
+            .iter()
             .take(k)
             .filter_map(|(idx, _)| features.get(*idx))
             .collect();
@@ -611,7 +658,8 @@ fn compute_knn_accuracy(features: &[ExtractedFeatures], k: usize) -> f64 {
             }
         }
 
-        let predicted = dataset_counts.iter()
+        let predicted = dataset_counts
+            .iter()
             .max_by_key(|(_, &c)| c)
             .map(|(d, _)| *d);
 
@@ -626,12 +674,16 @@ fn compute_knn_accuracy(features: &[ExtractedFeatures], k: usize) -> f64 {
     correct_count as f64 / test_size as f64
 }
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     // Load raw f32 audio file
     let bytes = std::fs::read(path)?;
 
     // Convert bytes to f32 samples
-    let audio: Vec<f64> = bytes.chunks_exact(4)
+    let audio: Vec<f64> = bytes
+        .chunks_exact(4)
         .take(expected_samples)
         .map(|chunk| {
             let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
@@ -666,7 +718,8 @@ fn load_audio_from_npy(path: &str) -> Result<Vec<f64>, Box<dyn std::error::Error
 
         // Data is float32 little-endian
         let data = &bytes[data_start..];
-        let audio: Vec<f64> = data.chunks_exact(4)
+        let audio: Vec<f64> = data
+            .chunks_exact(4)
             .map(|chunk| {
                 let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
                 val as f64
@@ -697,7 +750,8 @@ fn load_audio_from_npy(path: &str) -> Result<Vec<f64>, Box<dyn std::error::Error
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed =
+        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;

@@ -52,7 +52,12 @@ impl OnsetDetector {
     /// * `frame_size_ms` - Analysis frame size in milliseconds (default: 10ms)
     /// * `hop_size_ms` - Hop size between frames in milliseconds (default: 2ms)
     /// * `threshold` - Onset detection threshold 0-1 (default: 0.3)
-    pub fn new(sample_rate: u32, frame_size_ms: f64, hop_size_ms: f64, threshold: f64) -> Result<Self> {
+    pub fn new(
+        sample_rate: u32,
+        frame_size_ms: f64,
+        hop_size_ms: f64,
+        threshold: f64,
+    ) -> Result<Self> {
         if sample_rate < 8000 {
             return Err(SegmentationError::SampleRateTooLow(sample_rate));
         }
@@ -110,7 +115,9 @@ impl OnsetDetector {
 
         for i in (0..audio.len().saturating_sub(frame_size)).step_by(hop_size) {
             let frame = &audio[i..i + frame_size];
-            let rms = (frame.iter().map(|&x| x as f64 * x as f64).sum::<f64>() / frame.len() as f64).sqrt();
+            let rms = (frame.iter().map(|&x| x as f64 * x as f64).sum::<f64>()
+                / frame.len() as f64)
+                .sqrt();
             envelope.push(rms);
         }
 
@@ -138,7 +145,8 @@ impl OnsetDetector {
 
             if let Some(prev) = &prev_spectrum {
                 // Spectral flux = sum of positive differences
-                let frame_flux: f64 = spectrum.iter()
+                let frame_flux: f64 = spectrum
+                    .iter()
                     .zip(prev.iter())
                     .map(|(curr, prev)| (curr - prev).max(0.0))
                     .sum();
@@ -187,8 +195,16 @@ impl OnsetDetector {
         let mut onset_fn = Vec::with_capacity(len);
 
         for i in 0..len {
-            let norm_energy = if energy_max > 0.0 { energy[i] / energy_max } else { 0.0 };
-            let norm_flux = if flux_max > 0.0 { spectral_flux[i] / flux_max } else { 0.0 };
+            let norm_energy = if energy_max > 0.0 {
+                energy[i] / energy_max
+            } else {
+                0.0
+            };
+            let norm_flux = if flux_max > 0.0 {
+                spectral_flux[i] / flux_max
+            } else {
+                0.0
+            };
 
             // Combine: weighted sum (energy 40%, spectral flux 60%)
             onset_fn.push(0.4 * norm_energy + 0.6 * norm_flux);
@@ -210,10 +226,14 @@ impl OnsetDetector {
             let above_threshold = onset_fn[i] > self.threshold;
 
             if is_peak && above_threshold {
-                let sample_pos = (i as f64 * self.hop_size_ms * self.sample_rate as f64 / 1000.0) as usize;
+                let sample_pos =
+                    (i as f64 * self.hop_size_ms * self.sample_rate as f64 / 1000.0) as usize;
 
                 // Enforce minimum distance between onsets
-                if peaks.last().map_or(true, |&last| sample_pos - last >= min_distance) {
+                if peaks
+                    .last()
+                    .map_or(true, |&last| sample_pos - last >= min_distance)
+                {
                     peaks.push(sample_pos);
                 }
             }
@@ -244,7 +264,12 @@ impl AdaptiveSegmenter {
     /// * `min_segment_ms` - Minimum segment duration in ms (default: 10ms)
     /// * `max_segment_ms` - Maximum segment duration in ms (default: 1000ms)
     /// * `onset_threshold` - Onset detection threshold 0-1 (default: 0.3)
-    pub fn new(sample_rate: u32, min_segment_ms: f64, max_segment_ms: f64, onset_threshold: f64) -> Result<Self> {
+    pub fn new(
+        sample_rate: u32,
+        min_segment_ms: f64,
+        max_segment_ms: f64,
+        onset_threshold: f64,
+    ) -> Result<Self> {
         if sample_rate < 8000 {
             return Err(SegmentationError::SampleRateTooLow(sample_rate));
         }
@@ -272,8 +297,8 @@ impl AdaptiveSegmenter {
         // Detect onsets
         let detector = OnsetDetector::new(
             self.sample_rate,
-            10.0,  // frame_size_ms
-            2.0,   // hop_size_ms
+            10.0, // frame_size_ms
+            2.0,  // hop_size_ms
             self.onset_threshold,
         )?;
 
@@ -335,7 +360,7 @@ mod tests {
     #[test]
     fn test_onset_detection() {
         let sample_rate = 48000;
-        let detector = OnsetDetector::new(sample_rate, 10.0, 2.0, 0.7).unwrap();  // Even higher threshold
+        let detector = OnsetDetector::new(sample_rate, 10.0, 2.0, 0.7).unwrap(); // Even higher threshold
 
         // Create synthetic signal with clear onsets
         let mut audio = vec![0.0f32; sample_rate as usize];
@@ -345,15 +370,26 @@ mod tests {
         for &onset in &onset_samples {
             for i in onset..onset + 2400 {
                 // Add a tone burst (50ms)
-                audio[i] = (0.5 * (2.0 * std::f64::consts::PI * 440.0 * (i - onset) as f64 / sample_rate as f64).sin()) as f32;
+                audio[i] = (0.5
+                    * (2.0 * std::f64::consts::PI * 440.0 * (i - onset) as f64
+                        / sample_rate as f64)
+                        .sin()) as f32;
             }
         }
 
         let onsets = detector.detect_onsets(&audio).unwrap();
 
         // Should detect roughly the right number of onsets
-        assert!(onsets.len() >= 1, "Should detect at least 1 onset, got {}", onsets.len());
-        assert!(onsets.len() <= 25, "Should detect at most 25 onsets, got {}", onsets.len());
+        assert!(
+            onsets.len() >= 1,
+            "Should detect at least 1 onset, got {}",
+            onsets.len()
+        );
+        assert!(
+            onsets.len() <= 25,
+            "Should detect at most 25 onsets, got {}",
+            onsets.len()
+        );
     }
 
     /// Test 2: Onset detector rejects invalid parameters
@@ -385,19 +421,21 @@ mod tests {
     #[test]
     fn test_adaptive_segmentation() {
         let sample_rate = 48000;
-        let segmenter = AdaptiveSegmenter::new(sample_rate, 10.0, 1000.0, 0.5).unwrap();  // Higher threshold
+        let segmenter = AdaptiveSegmenter::new(sample_rate, 10.0, 1000.0, 0.5).unwrap(); // Higher threshold
 
         // Create synthetic signal with varying segment lengths
         let mut audio = vec![0.0f32; sample_rate as usize];
 
         // Add 3 segments of different lengths
-        let segment_starts = [0, 12000, 24000];  // 0ms, 250ms, 500ms
+        let segment_starts = [0, 12000, 24000]; // 0ms, 250ms, 500ms
         let segment_lengths = [4800, 7200, 9600]; // 100ms, 150ms, 200ms
 
         for (idx, &start) in segment_starts.iter().enumerate() {
             let end = start + segment_lengths[idx];
             for i in start..end {
-                audio[i] = (0.3 * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sample_rate as f64).sin()) as f32;
+                audio[i] = (0.3
+                    * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sample_rate as f64).sin())
+                    as f32;
             }
         }
 
@@ -405,7 +443,11 @@ mod tests {
 
         // Should detect some segments (not necessarily all 3)
         assert!(segments.len() >= 1, "Should detect at least 1 segment");
-        assert!(segments.len() <= 20, "Should detect at most 20 segments, got {}", segments.len());
+        assert!(
+            segments.len() <= 20,
+            "Should detect at most 20 segments, got {}",
+            segments.len()
+        );
     }
 
     /// Test 5: Adaptive segmenter rejects invalid parameters
@@ -426,7 +468,7 @@ mod tests {
         let detector = OnsetDetector::new(48000, 10.0, 2.0, 0.3).unwrap();
 
         // Create silence followed by tone
-        let mut audio = vec![0.0f32; 9600];  // 200ms of silence
+        let mut audio = vec![0.0f32; 9600]; // 200ms of silence
         for i in 4800..9600 {
             // Add tone for 100ms (second half)
             audio[i] = 0.5;
@@ -441,8 +483,12 @@ mod tests {
         let mid_point = envelope.len() / 2;
         if mid_point > 0 && envelope.len() > mid_point {
             let before_energy = envelope[..mid_point].iter().sum::<f64>() / mid_point as f64;
-            let after_energy = envelope[mid_point..].iter().sum::<f64>() / (envelope.len() - mid_point) as f64;
-            assert!(after_energy >= before_energy, "Energy should increase after onset");
+            let after_energy =
+                envelope[mid_point..].iter().sum::<f64>() / (envelope.len() - mid_point) as f64;
+            assert!(
+                after_energy >= before_energy,
+                "Energy should increase after onset"
+            );
         }
     }
 }

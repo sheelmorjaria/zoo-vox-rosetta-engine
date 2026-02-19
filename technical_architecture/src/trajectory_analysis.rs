@@ -14,8 +14,8 @@
 //! - Macaque voice quality variations
 //! - Any species with continuous rather than discrete call types
 
-use serde::{Deserialize, Serialize};
 use ndarray::{Array1, Array2};
+use serde::{Deserialize, Serialize};
 
 /// Default feature dimension (45D with new Resonance, Spectral Shape, Modulation, Non-Linear factors)
 pub const DEFAULT_FEATURE_DIM: usize = 45;
@@ -129,7 +129,8 @@ impl TrajectoryAnalyzer {
 
     /// Add a reference point (type centroid) for the manifold
     pub fn add_reference_point(&mut self, type_name: &str, features: Vec<f64>) {
-        self.reference_points.push((type_name.to_string(), features));
+        self.reference_points
+            .push((type_name.to_string(), features));
     }
 
     /// Fit the analyzer on a set of features (compute normalization statistics)
@@ -241,7 +242,8 @@ impl TrajectoryAnalyzer {
         let start_norm = self.normalize_features(start_features);
         let end_norm = self.normalize_features(end_features);
 
-        let direction: Vec<f64> = end_norm.iter()
+        let direction: Vec<f64> = end_norm
+            .iter()
             .zip(start_norm.iter())
             .map(|(e, s)| e - s)
             .collect();
@@ -255,17 +257,20 @@ impl TrajectoryAnalyzer {
         };
 
         // Compute curvature (simplified: based on deviation from linear path)
-        let midpoint: Vec<f64> = start_norm.iter()
+        let midpoint: Vec<f64> = start_norm
+            .iter()
             .zip(end_norm.iter())
             .map(|(s, e)| (s + e) / 2.0)
             .collect();
 
         // Distance from midpoint to linear interpolation at 0.5
-        let linear_midpoint: Vec<f64> = normalized_direction.iter()
+        let linear_midpoint: Vec<f64> = normalized_direction
+            .iter()
             .map(|d| d * magnitude / 2.0)
             .collect();
 
-        let curvature = midpoint.iter()
+        let curvature = midpoint
+            .iter()
             .zip(linear_midpoint.iter())
             .map(|(m, l)| (m - l).powi(2))
             .sum::<f64>()
@@ -295,7 +300,8 @@ impl TrajectoryAnalyzer {
             return features.to_vec();
         }
 
-        features.iter()
+        features
+            .iter()
             .zip(self.feature_means.iter())
             .zip(self.feature_stds.iter())
             .map(|((&f, &mean), &std)| (f - mean) / std)
@@ -303,15 +309,26 @@ impl TrajectoryAnalyzer {
     }
 
     /// Compute manifold coordinate from normalized features
-    fn compute_manifold_coordinate(&self, features: &[f64]) -> Result<ManifoldCoordinate, TrajectoryError> {
+    fn compute_manifold_coordinate(
+        &self,
+        features: &[f64],
+    ) -> Result<ManifoldCoordinate, TrajectoryError> {
         let (x, y, z) = if let Some(embedding) = &self.embedding_matrix {
             // Use learned embedding
             let feature_array = Array1::from_vec(features.to_vec());
             let projected = feature_array.dot(embedding);
 
             let x = projected[0];
-            let y = if projected.len() > 1 { projected[1] } else { 0.0 };
-            let z = if projected.len() > 2 { Some(projected[2]) } else { None };
+            let y = if projected.len() > 1 {
+                projected[1]
+            } else {
+                0.0
+            };
+            let z = if projected.len() > 2 {
+                Some(projected[2])
+            } else {
+                None
+            };
 
             (x, y, z)
         } else {
@@ -381,7 +398,11 @@ impl TrajectoryAnalyzer {
             }
         }
 
-        if min_dist == f64::INFINITY { 0.0 } else { min_dist }
+        if min_dist == f64::INFINITY {
+            0.0
+        } else {
+            min_dist
+        }
     }
 
     /// Euclidean distance between two feature vectors
@@ -581,17 +602,12 @@ mod tests {
     #[test]
     fn test_analyze_transition() {
         let mut analyzer = TrajectoryAnalyzer::default();
-        let features = vec![
-            vec![1.0, 0.0, 0.0],
-            vec![0.0, 1.0, 0.0],
-        ];
+        let features = vec![vec![1.0, 0.0, 0.0], vec![0.0, 1.0, 0.0]];
         analyzer.fit(&features).unwrap();
 
-        let result = analyzer.analyze_transition(
-            &[1.0, 0.0, 0.0],
-            &[0.0, 1.0, 0.0],
-            100.0,
-        ).unwrap();
+        let result = analyzer
+            .analyze_transition(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], 100.0)
+            .unwrap();
 
         assert!(result.trajectory.is_some());
         let trajectory = result.trajectory.unwrap();
@@ -616,19 +632,13 @@ mod tests {
     #[test]
     fn test_trajectory_curvature() {
         let mut analyzer = TrajectoryAnalyzer::default();
-        let features = vec![
-            vec![0.0, 0.0],
-            vec![1.0, 0.0],
-            vec![1.0, 1.0],
-        ];
+        let features = vec![vec![0.0, 0.0], vec![1.0, 0.0], vec![1.0, 1.0]];
         analyzer.fit(&features).unwrap();
 
         // Linear trajectory should have low curvature
-        let linear = analyzer.analyze_transition(
-            &[0.0, 0.0],
-            &[1.0, 0.0],
-            100.0,
-        ).unwrap();
+        let linear = analyzer
+            .analyze_transition(&[0.0, 0.0], &[1.0, 0.0], 100.0)
+            .unwrap();
 
         assert!(linear.trajectory.unwrap().curvature >= 0.0);
     }

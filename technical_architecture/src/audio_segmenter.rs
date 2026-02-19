@@ -226,7 +226,10 @@ impl AudioSegmenter {
     ///
     /// # Returns
     /// Vector of extracted audio segments
-    pub fn extract_segments(&self, vocabulary: &VocabularyItem) -> Result<Vec<AudioSegmentForSynthesis>> {
+    pub fn extract_segments(
+        &self,
+        vocabulary: &VocabularyItem,
+    ) -> Result<Vec<AudioSegmentForSynthesis>> {
         let mut segments = Vec::new();
 
         for (idx, occurrence) in vocabulary.occurrences.iter().enumerate() {
@@ -291,14 +294,14 @@ impl AudioSegmenter {
         // For testing purposes, just return silence
         // In production, use hound or symphonia
         if !path.exists() {
-            return Err(SegmenterError::AudioLoadError(
-                format!("Audio file not found: {:?}", path),
-            ));
+            return Err(SegmenterError::AudioLoadError(format!(
+                "Audio file not found: {:?}",
+                path
+            )));
         }
 
         // Return dummy audio (1 second of silence at 48kHz)
-        Ok((vec
-![0.0f32; 48000], 48000))
+        Ok((vec![0.0f32; 48000], 48000))
     }
 
     /// Generate grains for granular synthesis
@@ -320,10 +323,7 @@ impl AudioSegmenter {
 
         let mut grains = Vec::new();
 
-        for (idx, start) in (0..segment.audio.len())
-            .step_by(hop_samples)
-            .enumerate()
-        {
+        for (idx, start) in (0..segment.audio.len()).step_by(hop_samples).enumerate() {
             let end = (start + grain_size_samples).min(segment.audio.len());
 
             if end - start < grain_size_samples / 2 {
@@ -356,7 +356,10 @@ impl AudioSegmenter {
     fn apply_envelope(&self, audio: &[f32], envelope: &GrainEnvelope) -> Vec<f32> {
         match envelope {
             GrainEnvelope::None => audio.to_vec(),
-            GrainEnvelope::Linear { fade_in_ms, fade_out_ms } => {
+            GrainEnvelope::Linear {
+                fade_in_ms,
+                fade_out_ms,
+            } => {
                 let fade_in_samples = (fade_in_ms * 1000.0) as usize;
                 let fade_out_samples = (fade_out_ms * 1000.0) as usize;
                 let len = audio.len();
@@ -396,7 +399,9 @@ impl AudioSegmenter {
                     .iter()
                     .enumerate()
                     .map(|(i, &x)| {
-                        x * (0.5 * (1.0 - (2.0 * std::f64::consts::PI * i as f64 / (len - 1) as f64).cos()))
+                        x * (0.5
+                            * (1.0
+                                - (2.0 * std::f64::consts::PI * i as f64 / (len - 1) as f64).cos()))
                             as f32
                     })
                     .collect()
@@ -467,15 +472,14 @@ impl AudioSegmenter {
         let json = r#"{"status": "metadata_export_simplified"}"#;
 
         let file_path = output_dir.join("synthesis_metadata.json");
-        std::fs::write(&file_path, json)
-            .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
+        std::fs::write(&file_path, json).map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         Ok(file_path)
     }
 
     /// Export audio as WAV file
     fn export_wav(&self, audio: &[f32], sample_rate: u32, path: &Path) -> Result<()> {
-        use hound::{WavWriter, WavSpec};
+        use hound::{WavSpec, WavWriter};
 
         let spec = WavSpec {
             channels: 1,
@@ -491,11 +495,13 @@ impl AudioSegmenter {
 
         for &sample in audio {
             let sample_i16 = (sample * i16::MAX as f32) as i16;
-            writer.write_sample(sample_i16)
+            writer
+                .write_sample(sample_i16)
                 .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
         }
 
-        writer.finalize()
+        writer
+            .finalize()
             .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         Ok(())
@@ -618,7 +624,9 @@ mod tests {
             48000,
         );
 
-        use crate::vocabulary_mapper::{DurationStats, VocabularyItem, VocabularyOccurrence, VocalizationContext};
+        use crate::vocabulary_mapper::{
+            DurationStats, VocabularyItem, VocabularyOccurrence, VocalizationContext,
+        };
 
         let vocab_item = VocabularyItem {
             vocab_id: "cluster_0".to_string(),

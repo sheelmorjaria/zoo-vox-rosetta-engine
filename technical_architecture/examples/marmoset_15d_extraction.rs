@@ -21,25 +21,23 @@
 // Usage: cargo run --example marmoset_15d_extraction --release
 
 use std::path::Path;
-use technical_architecture::{
-    MicroDynamicsExtractor, MicroDynamicsFeatures15D,
-};
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
+use technical_architecture::{MicroDynamicsExtractor, MicroDynamicsFeatures15D};
 
 /// Marmoset call types for demonstration
 #[derive(Debug, Clone, Copy)]
 enum MarmosetCallType {
-    Phee,      // Long-distance harmonic communication
-    Twitter,   // Rapid high-pitched social calls
-    Trill,     // Rapid frequency-modulated calls
-    Tsik,      // Short sharp alarm calls
-    Seep,      // Soft contact calls
-    Infant,    // Infant distress calls
+    Phee,    // Long-distance harmonic communication
+    Twitter, // Rapid high-pitched social calls
+    Trill,   // Rapid frequency-modulated calls
+    Tsik,    // Short sharp alarm calls
+    Seep,    // Soft contact calls
+    Infant,  // Infant distress calls
 }
 
 impl MarmosetCallType {
@@ -99,7 +97,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -151,7 +150,10 @@ fn interpret_features(features: &MicroDynamicsFeatures15D) -> MarmosetCallType {
     }
 
     // Short duration + sharp attack + low sustain → Tsik
-    if features.attack_time_ms < 10.0 && features.sustain_level < 0.3 && features.decay_time_ms < 50.0 {
+    if features.attack_time_ms < 10.0
+        && features.sustain_level < 0.3
+        && features.decay_time_ms < 50.0
+    {
         return MarmosetCallType::Tsik;
     }
 
@@ -174,8 +176,10 @@ fn display_features(features: &MicroDynamicsFeatures15D, filename: &str) {
     let call_type = interpret_features(features);
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
-    println!("│ File: {} (30 chars max)                         │",
-             &filename[..filename.len().min(30)]);
+    println!(
+        "│ File: {} (30 chars max)                         │",
+        &filename[..filename.len().min(30)]
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
@@ -191,57 +195,102 @@ fn display_features(features: &MicroDynamicsFeatures15D, filename: &str) {
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ ENERGY FEATURES (2D)                                                     │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  RMS Energy        (Fisher: 1.914 #1)    {:>10.4}                       │", features.rms_energy);
-    println!("│  Vibrato Depth     (Fisher: 0.631 #6)    {:>10.4} cents                │", features.vibrato_depth);
+    println!(
+        "│  RMS Energy        (Fisher: 1.914 #1)    {:>10.4}                       │",
+        features.rms_energy
+    );
+    println!(
+        "│  Vibrato Depth     (Fisher: 0.631 #6)    {:>10.4} cents                │",
+        features.vibrato_depth
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ MFCC FEATURES (4D)                                                       │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  MFCC[0]           (Fisher: 1.844 #2)    {:>10.4}                       │", features.mfcc_0);
-    println!("│  MFCC[1]           (Fisher: 1.389 #3)    {:>10.4}                       │", features.mfcc_1);
-    println!("│  MFCC[3]           (Fisher: 0.268 #8)    {:>10.4}                       │", features.mfcc_3);
-    println!("│  MFCC[4]           (Fisher: 0.257 #9)    {:>10.4}                       │", features.mfcc_4);
+    println!(
+        "│  MFCC[0]           (Fisher: 1.844 #2)    {:>10.4}                       │",
+        features.mfcc_0
+    );
+    println!(
+        "│  MFCC[1]           (Fisher: 1.389 #3)    {:>10.4}                       │",
+        features.mfcc_1
+    );
+    println!(
+        "│  MFCC[3]           (Fisher: 0.268 #8)    {:>10.4}                       │",
+        features.mfcc_3
+    );
+    println!(
+        "│  MFCC[4]           (Fisher: 0.257 #9)    {:>10.4}                       │",
+        features.mfcc_4
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ TIMBRE FEATURES (2D)                                                      │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  Spectral Flux     (Fisher: 0.701 #4)    {:>10.4}                       │", features.spectral_flux);
-    println!("│  HNR               (Fisher: 0.639 #5)    {:>10.4} dB                    │", features.hnr);
+    println!(
+        "│  Spectral Flux     (Fisher: 0.701 #4)    {:>10.4}                       │",
+        features.spectral_flux
+    );
+    println!(
+        "│  HNR               (Fisher: 0.639 #5)    {:>10.4} dB                    │",
+        features.hnr
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ TEMPORAL FEATURES (3D)                                                    │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  Decay Time        (Fisher: 0.427 #7)    {:>10.4} ms                   │", features.decay_time_ms);
-    println!("│  Sustain Level     (Fisher: 0.192 #11)   {:>10.4}                       │", features.sustain_level);
-    println!("│  Attack Time       (Fisher: 0.184 #13)   {:>10.4} ms                   │", features.attack_time_ms);
+    println!(
+        "│  Decay Time        (Fisher: 0.427 #7)    {:>10.4} ms                   │",
+        features.decay_time_ms
+    );
+    println!(
+        "│  Sustain Level     (Fisher: 0.192 #11)   {:>10.4}                       │",
+        features.sustain_level
+    );
+    println!(
+        "│  Attack Time       (Fisher: 0.184 #13)   {:>10.4} ms                   │",
+        features.attack_time_ms
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ RHYTHM FEATURES (2D)                                                      │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  ICI CV            (Fisher: 0.215 #10)   {:>10.4}                       │", features.ici_cv);
-    println!("│  Onset Rate        (Fisher: 0.190 #12)   {:>10.4} Hz                    │", features.onset_rate_hz);
+    println!(
+        "│  ICI CV            (Fisher: 0.215 #10)   {:>10.4}                       │",
+        features.ici_cv
+    );
+    println!(
+        "│  Onset Rate        (Fisher: 0.190 #12)   {:>10.4} Hz                    │",
+        features.onset_rate_hz
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ MODULATION FEATURES (1D)                                                  │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  Vibrato Rate      (Fisher: 0.154 #14)   {:>10.4} Hz                    │", features.vibrato_rate_hz);
+    println!(
+        "│  Vibrato Rate      (Fisher: 0.154 #14)   {:>10.4} Hz                    │",
+        features.vibrato_rate_hz
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ PERTURBATION FEATURES (1D)                                               │");
     println!("├─────────────────────────────────────────────────────────────────────────┤");
-    println!("│  Shimmer           (Fisher: 0.140 #15)   {:>10.4}                       │", features.shimmer);
+    println!(
+        "│  Shimmer           (Fisher: 0.140 #15)   {:>10.4}                       │",
+        features.shimmer
+    );
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 }
@@ -269,7 +318,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_rate = 96000; // Common for marmoset recordings
     let extractor = MicroDynamicsExtractor::new(sample_rate);
 
-    println!("Created MicroDynamicsExtractor with sample rate: {} Hz", sample_rate);
+    println!(
+        "Created MicroDynamicsExtractor with sample rate: {} Hz",
+        sample_rate
+    );
     println!();
 
     // Check if we have a specific file to analyze
@@ -287,9 +339,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         match load_flac_file(file_path) {
             Ok(audio) => {
-                println!("Loaded {} samples ({} ms)",
-                         audio.len(),
-                         audio.len() as f32 / sample_rate as f32 * 1000.0);
+                println!(
+                    "Loaded {} samples ({} ms)",
+                    audio.len(),
+                    audio.len() as f32 / sample_rate as f32 * 1000.0
+                );
                 println!();
 
                 // Extract 15D features
@@ -302,9 +356,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         // Display features
-                        display_features(&features, file_path.file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("unknown"));
+                        display_features(
+                            &features,
+                            file_path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("unknown"),
+                        );
                     }
                     Err(e) => {
                         println!("❌ Feature extraction failed: {}", e);
@@ -364,7 +422,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     display_features(&features, &format!("SYNTHETIC_{}.flac", call_type.name()));
                 }
                 Err(e) => {
-                    println!("❌ Feature extraction failed for {}: {}", call_type.name(), e);
+                    println!(
+                        "❌ Feature extraction failed for {}: {}",
+                        call_type.name(),
+                        e
+                    );
                 }
             }
 

@@ -6,7 +6,7 @@
 // Reference: Killick, R., Fearnhead, P., & Eckley, I. A. (2012).
 // "Optimal detection of changepoints with a linear computational cost"
 
-use ndarray::{Array2, Axis, s};
+use ndarray::{s, Array2, Axis};
 use std::f64;
 
 // =============================================================================
@@ -147,17 +147,19 @@ mod tests {
 
     /// Create a step signal (one clear changepoint)
     fn create_step_signal(n: usize, step_at: usize, low: f64, high: f64) -> Array2<f64> {
-        Array2::from_shape_fn((n, 1), |(i, _)| {
-            if i < step_at { low } else { high }
-        })
+        Array2::from_shape_fn((n, 1), |(i, _)| if i < step_at { low } else { high })
     }
 
     /// Create a multi-step signal (multiple changepoints)
     fn create_multi_step_signal(n: usize) -> Array2<f64> {
         Array2::from_shape_fn((n, 1), |(i, _)| {
-            if i < n / 3 { 0.0 }
-            else if i < 2 * n / 3 { 10.0 }
-            else { 20.0 }
+            if i < n / 3 {
+                0.0
+            } else if i < 2 * n / 3 {
+                10.0
+            } else {
+                20.0
+            }
         })
     }
 
@@ -207,10 +209,12 @@ mod tests {
         assert_eq!(changepoints[changepoints.len() - 1], 100);
 
         // Should detect changepoint near the step (within tolerance)
-        let detected_step = changepoints.iter()
-            .find(|&&cp| cp >= 45 && cp <= 55);
+        let detected_step = changepoints.iter().find(|&&cp| cp >= 45 && cp <= 55);
 
-        assert!(detected_step.is_some(), "Should detect changepoint near frame 50");
+        assert!(
+            detected_step.is_some(),
+            "Should detect changepoint near frame 50"
+        );
     }
 
     // ===== Test 4: Multi-step signal (multiple changepoints) =====
@@ -268,10 +272,12 @@ mod tests {
         // Should detect change between 45-55 frames
         assert!(changepoints.len() >= 2);
 
-        let closest = changepoints.iter()
-            .find(|&&cp| cp >= 45 && cp <= 55);
+        let closest = changepoints.iter().find(|&&cp| cp >= 45 && cp <= 55);
 
-        assert!(closest.is_some(), "Should detect changepoint in expected range");
+        assert!(
+            closest.is_some(),
+            "Should detect changepoint in expected range"
+        );
     }
 
     // ===== Test 8: Segment cost calculation =====

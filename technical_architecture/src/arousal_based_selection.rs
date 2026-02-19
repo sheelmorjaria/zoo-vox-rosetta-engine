@@ -250,7 +250,9 @@ impl ArousalInferrer {
         evidence: &ArousalEvidence,
         timestamp_ms: u64,
     ) -> InferredArousalState {
-        let thresholds = self.config.species_thresholds
+        let thresholds = self
+            .config
+            .species_thresholds
             .get(species)
             .cloned()
             .unwrap_or_else(|| ArousalThresholds {
@@ -275,12 +277,16 @@ impl ArousalInferrer {
 
         // Weighted average of scores
         let weights = [0.25, 0.15, 0.20, 0.10, 0.20, 0.10];
-        let scores = [f0_score, variability_score, rate_score, duration_score, energy_score, bandwidth_score];
+        let scores = [
+            f0_score,
+            variability_score,
+            rate_score,
+            duration_score,
+            energy_score,
+            bandwidth_score,
+        ];
 
-        let combined_score: f64 = weights.iter()
-            .zip(scores.iter())
-            .map(|(w, s)| w * s)
-            .sum();
+        let combined_score: f64 = weights.iter().zip(scores.iter()).map(|(w, s)| w * s).sum();
 
         // Map to arousal level
         let level = ArousalLevel::from_value(combined_score);
@@ -323,7 +329,8 @@ impl ArousalInferrer {
         } else if rate < thresholds.rate_high {
             0.3 + 0.2 * (rate - thresholds.rate_low) / (thresholds.rate_high - thresholds.rate_low)
         } else if rate < thresholds.rate_urgent {
-            0.5 + 0.3 * (rate - thresholds.rate_high) / (thresholds.rate_urgent - thresholds.rate_high)
+            0.5 + 0.3 * (rate - thresholds.rate_high)
+                / (thresholds.rate_urgent - thresholds.rate_high)
         } else {
             0.8 + 0.2 * ((rate - thresholds.rate_urgent) / thresholds.rate_urgent).min(1.0)
         }
@@ -347,11 +354,14 @@ impl ArousalInferrer {
         if energy < thresholds.energy_low {
             0.2
         } else if energy < thresholds.energy_high {
-            0.3 + 0.2 * (energy - thresholds.energy_low) / (thresholds.energy_high - thresholds.energy_low)
+            0.3 + 0.2 * (energy - thresholds.energy_low)
+                / (thresholds.energy_high - thresholds.energy_low)
         } else if energy < thresholds.energy_urgent {
-            0.5 + 0.3 * (energy - thresholds.energy_high) / (thresholds.energy_urgent - thresholds.energy_high)
+            0.5 + 0.3 * (energy - thresholds.energy_high)
+                / (thresholds.energy_urgent - thresholds.energy_high)
         } else {
-            0.8 + 0.2 * ((energy - thresholds.energy_urgent) / (1.0 - thresholds.energy_urgent)).min(1.0)
+            0.8 + 0.2
+                * ((energy - thresholds.energy_urgent) / (1.0 - thresholds.energy_urgent)).min(1.0)
         }
     }
 
@@ -367,9 +377,7 @@ impl ArousalInferrer {
             return 0.0;
         }
         let mean = scores.iter().sum::<f64>() / scores.len() as f64;
-        let variance = scores.iter()
-            .map(|s| (s - mean).powi(2))
-            .sum::<f64>() / scores.len() as f64;
+        let variance = scores.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / scores.len() as f64;
         variance
     }
 }
@@ -431,7 +439,12 @@ impl ArousalBasedSelector {
     pub fn sources_by_arousal(&self, level: ArousalLevel) -> Vec<&ArousalTaggedSource> {
         self.sources_by_arousal
             .get(&level)
-            .map(|indices| indices.iter().filter_map(|&i| self.sources.get(i)).collect())
+            .map(|indices| {
+                indices
+                    .iter()
+                    .filter_map(|&i| self.sources.get(i))
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -528,7 +541,11 @@ impl ArousalBasedSelector {
     }
 
     /// Calculate arousal match score
-    fn calculate_arousal_match(&self, source_arousal: ArousalLevel, target_arousal: ArousalLevel) -> f64 {
+    fn calculate_arousal_match(
+        &self,
+        source_arousal: ArousalLevel,
+        target_arousal: ArousalLevel,
+    ) -> f64 {
         if source_arousal == target_arousal {
             1.0
         } else {
@@ -612,11 +629,11 @@ mod tests {
     fn test_infer_low_arousal() {
         let inferrer = ArousalInferrer::new();
         let evidence = ArousalEvidence {
-            f0_mean: 4000.0,    // Low F0
-            f0_variability: 200.0, // Low variability
-            call_rate: 0.3,     // Slow rate
-            duration_ms: 600.0, // Long duration
-            energy: 0.2,        // Low energy
+            f0_mean: 4000.0,            // Low F0
+            f0_variability: 200.0,      // Low variability
+            call_rate: 0.3,             // Slow rate
+            duration_ms: 600.0,         // Long duration
+            energy: 0.2,                // Low energy
             spectral_bandwidth: 1000.0, // Narrow bandwidth
         };
 
@@ -628,11 +645,11 @@ mod tests {
     fn test_infer_urgent_arousal() {
         let inferrer = ArousalInferrer::new();
         let evidence = ArousalEvidence {
-            f0_mean: 16000.0,   // Very high F0
-            f0_variability: 2000.0, // High variability
-            call_rate: 5.0,     // Very fast rate
-            duration_ms: 50.0,  // Short duration
-            energy: 0.95,       // High energy
+            f0_mean: 16000.0,           // Very high F0
+            f0_variability: 2000.0,     // High variability
+            call_rate: 5.0,             // Very fast rate
+            duration_ms: 50.0,          // Short duration
+            energy: 0.95,               // High energy
             spectral_bandwidth: 5000.0, // Wide bandwidth
         };
 
@@ -644,11 +661,11 @@ mod tests {
     fn test_infer_neutral_arousal() {
         let inferrer = ArousalInferrer::new();
         let evidence = ArousalEvidence {
-            f0_mean: 7000.0,    // Medium F0
+            f0_mean: 7000.0, // Medium F0
             f0_variability: 500.0,
             call_rate: 1.0,
             duration_ms: 300.0,
-            energy: 0.45,       // Medium energy
+            energy: 0.45, // Medium energy
             spectral_bandwidth: 2500.0,
         };
 
@@ -660,7 +677,7 @@ mod tests {
     fn test_infer_high_arousal() {
         let inferrer = ArousalInferrer::new();
         let evidence = ArousalEvidence {
-            f0_mean: 12000.0,   // High F0
+            f0_mean: 12000.0, // High F0
             f0_variability: 800.0,
             call_rate: 2.5,
             duration_ms: 150.0,
@@ -896,7 +913,7 @@ mod tests {
 
         // Consistent evidence should give high confidence
         let consistent_evidence = ArousalEvidence {
-            f0_mean: 15000.0,  // All point to high arousal
+            f0_mean: 15000.0, // All point to high arousal
             f0_variability: 1500.0,
             call_rate: 4.0,
             duration_ms: 80.0,
@@ -909,12 +926,12 @@ mod tests {
 
         // Mixed evidence should give lower confidence
         let mixed_evidence = ArousalEvidence {
-            f0_mean: 5000.0,  // Low
-            f0_variability: 1500.0,  // High
-            call_rate: 0.3,  // Low
-            duration_ms: 80.0,  // Urgent
-            energy: 0.9,  // High
-            spectral_bandwidth: 4500.0,  // High
+            f0_mean: 5000.0,            // Low
+            f0_variability: 1500.0,     // High
+            call_rate: 0.3,             // Low
+            duration_ms: 80.0,          // Urgent
+            energy: 0.9,                // High
+            spectral_bandwidth: 4500.0, // High
         };
 
         let mixed_state = inferrer.infer_arousal("marmoset", &mixed_evidence, 0);
@@ -927,11 +944,11 @@ mod tests {
 
         // Bat high arousal should use bat thresholds
         let evidence = ArousalEvidence {
-            f0_mean: 50000.0,   // Mid-high for bat (20-100kHz range)
+            f0_mean: 50000.0, // Mid-high for bat (20-100kHz range)
             f0_variability: 1000.0,
-            call_rate: 2.0,     // High rate
+            call_rate: 2.0, // High rate
             duration_ms: 150.0,
-            energy: 0.6,        // Medium-high energy
+            energy: 0.6, // Medium-high energy
             spectral_bandwidth: 5000.0,
         };
 

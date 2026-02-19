@@ -70,7 +70,10 @@ impl DatasetLoader {
     pub fn load(&self) -> Result<BenchmarkDataset, String> {
         // Check if dataset path exists
         if !self.dataset_path.exists() {
-            return Err(format!("Dataset path does not exist: {:?}", self.dataset_path));
+            return Err(format!(
+                "Dataset path does not exist: {:?}",
+                self.dataset_path
+            ));
         }
 
         // For testing purposes, create a mock dataset
@@ -394,7 +397,10 @@ mod tests {
         let dataset = loader.load().unwrap();
 
         // Check the file name contains .wav
-        assert!(dataset.recordings[0].file_path.to_string_lossy().contains(".wav"));
+        assert!(dataset.recordings[0]
+            .file_path
+            .to_string_lossy()
+            .contains(".wav"));
 
         std::fs::remove_dir_all(test_path).ok();
     }

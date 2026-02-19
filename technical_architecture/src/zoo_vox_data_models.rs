@@ -3,8 +3,8 @@
 //! This module defines the core data structures used throughout the
 //! Zoo Vox Rosetta Engine for representing phrases, features, and context.
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -132,28 +132,59 @@ impl AcousticFeatures45D {
     pub fn to_vector(&self) -> [f64; 45] {
         [
             // Fundamental (3)
-            self.mean_f0_hz, self.duration_ms, self.f0_range_hz,
+            self.mean_f0_hz,
+            self.duration_ms,
+            self.f0_range_hz,
             // Grit (3)
-            self.harmonic_to_noise_ratio, self.spectral_flatness, self.harmonicity,
+            self.harmonic_to_noise_ratio,
+            self.spectral_flatness,
+            self.harmonicity,
             // Motion (7)
-            self.attack_time_ms, self.decay_time_ms, self.sustain_level,
-            self.vibrato_rate_hz, self.vibrato_depth, self.jitter, self.shimmer,
+            self.attack_time_ms,
+            self.decay_time_ms,
+            self.sustain_level,
+            self.vibrato_rate_hz,
+            self.vibrato_depth,
+            self.jitter,
+            self.shimmer,
             // Fingerprint (14)
-            self.mfcc_1, self.mfcc_2, self.mfcc_3, self.mfcc_4, self.mfcc_5,
-            self.mfcc_6, self.mfcc_7, self.mfcc_8, self.mfcc_9, self.mfcc_10,
-            self.mfcc_11, self.mfcc_12, self.mfcc_13, self.spectral_flux,
+            self.mfcc_1,
+            self.mfcc_2,
+            self.mfcc_3,
+            self.mfcc_4,
+            self.mfcc_5,
+            self.mfcc_6,
+            self.mfcc_7,
+            self.mfcc_8,
+            self.mfcc_9,
+            self.mfcc_10,
+            self.mfcc_11,
+            self.mfcc_12,
+            self.mfcc_13,
+            self.spectral_flux,
             // Rhythm (3)
-            self.median_ici_ms, self.onset_rate_hz, self.ici_coefficient_of_variation,
+            self.median_ici_ms,
+            self.onset_rate_hz,
+            self.ici_coefficient_of_variation,
             // Resonance (6) - NEW
-            self.formant_1_hz, self.formant_2_hz, self.formant_3_hz,
-            self.formant_1_bandwidth, self.formant_2_bandwidth, self.formant_dispersion,
+            self.formant_1_hz,
+            self.formant_2_hz,
+            self.formant_3_hz,
+            self.formant_1_bandwidth,
+            self.formant_2_bandwidth,
+            self.formant_dispersion,
             // Spectral Shape (4) - NEW
-            self.spectral_centroid, self.spectral_spread,
-            self.spectral_skewness, self.spectral_kurtosis,
+            self.spectral_centroid,
+            self.spectral_spread,
+            self.spectral_skewness,
+            self.spectral_kurtosis,
             // Modulation (3) - NEW
-            self.spectral_tilt, self.fm_slope_hz_per_sec, self.am_depth,
+            self.spectral_tilt,
+            self.fm_slope_hz_per_sec,
+            self.am_depth,
             // Non-Linear (2) - NEW
-            self.subharmonic_ratio, self.spectral_entropy,
+            self.subharmonic_ratio,
+            self.spectral_entropy,
         ]
     }
 
@@ -368,18 +399,40 @@ impl AcousticFeatures30D {
     pub fn to_vector(&self) -> [f64; 30] {
         [
             // Fundamental
-            self.mean_f0_hz, self.duration_ms, self.f0_range_hz,
+            self.mean_f0_hz,
+            self.duration_ms,
+            self.f0_range_hz,
             // Grit
-            self.harmonic_to_noise_ratio, self.spectral_flatness, self.harmonicity,
+            self.harmonic_to_noise_ratio,
+            self.spectral_flatness,
+            self.harmonicity,
             // Motion
-            self.attack_time_ms, self.decay_time_ms, self.sustain_level,
-            self.vibrato_rate_hz, self.vibrato_depth, self.jitter, self.shimmer,
+            self.attack_time_ms,
+            self.decay_time_ms,
+            self.sustain_level,
+            self.vibrato_rate_hz,
+            self.vibrato_depth,
+            self.jitter,
+            self.shimmer,
             // Fingerprint
-            self.mfcc_1, self.mfcc_2, self.mfcc_3, self.mfcc_4, self.mfcc_5,
-            self.mfcc_6, self.mfcc_7, self.mfcc_8, self.mfcc_9, self.mfcc_10,
-            self.mfcc_11, self.mfcc_12, self.mfcc_13, self.spectral_flux,
+            self.mfcc_1,
+            self.mfcc_2,
+            self.mfcc_3,
+            self.mfcc_4,
+            self.mfcc_5,
+            self.mfcc_6,
+            self.mfcc_7,
+            self.mfcc_8,
+            self.mfcc_9,
+            self.mfcc_10,
+            self.mfcc_11,
+            self.mfcc_12,
+            self.mfcc_13,
+            self.spectral_flux,
             // Rhythm
-            self.median_ici_ms, self.onset_rate_hz, self.ici_coefficient_of_variation,
+            self.median_ici_ms,
+            self.onset_rate_hz,
+            self.ici_coefficient_of_variation,
         ]
     }
 
@@ -573,11 +626,13 @@ pub struct PhrasePrototype {
 
 // Serialization helpers for species types
 mod encoding_strategy_serde {
-    use serde::{self, Deserialize, Serializer, Deserializer};
     use crate::species::EncodingStrategy;
+    use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(strategy: &EncodingStrategy, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer {
+    where
+        S: Serializer,
+    {
         serializer.serialize_str(match strategy {
             EncodingStrategy::Combinatorial => "combinatorial",
             EncodingStrategy::Quantitative => "quantitative",
@@ -590,7 +645,9 @@ mod encoding_strategy_serde {
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<EncodingStrategy, D::Error>
-    where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
         let s = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
             "combinatorial" => EncodingStrategy::Combinatorial,
@@ -605,11 +662,13 @@ mod encoding_strategy_serde {
 }
 
 mod encoding_modality_serde {
-    use serde::{self, Deserialize, Serializer, Deserializer};
     use crate::species::AnalysisModality;
+    use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(modality: &AnalysisModality, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer {
+    where
+        S: Serializer,
+    {
         serializer.serialize_str(match modality {
             AnalysisModality::Temporal => "temporal",
             AnalysisModality::Spectral => "spectral",
@@ -618,7 +677,9 @@ mod encoding_modality_serde {
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<AnalysisModality, D::Error>
-    where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
         let s = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
             "spectral" => AnalysisModality::Spectral,
@@ -773,7 +834,9 @@ impl SpeciesPhraseLibrary {
         // Calculate entropy
         if self.total_occurrences > 0 {
             let total = self.total_occurrences as f64;
-            let entropy: f64 = self.phrases.iter()
+            let entropy: f64 = self
+                .phrases
+                .iter()
                 .map(|p| {
                     let p_prob = p.occurrence_count as f64 / total;
                     if p_prob > 0.0 {
@@ -788,15 +851,21 @@ impl SpeciesPhraseLibrary {
     }
 
     /// Find similar phrases
-    pub fn find_similar(&self, query: &AcousticFeatures30D, threshold: f64) -> Vec<&PhrasePrototype> {
-        self.phrases.iter()
+    pub fn find_similar(
+        &self,
+        query: &AcousticFeatures30D,
+        threshold: f64,
+    ) -> Vec<&PhrasePrototype> {
+        self.phrases
+            .iter()
             .filter(|p| p.features_30d.cosine_similarity(query) >= threshold)
             .collect()
     }
 
     /// Get phrases by context
     pub fn get_by_context(&self, context: &str) -> Vec<&PhrasePrototype> {
-        self.phrases.iter()
+        self.phrases
+            .iter()
             .filter(|p| p.primary_context.as_deref() == Some(context))
             .collect()
     }
@@ -859,17 +928,24 @@ impl CrossSpeciesPhraseDatabase {
             .push(species);
 
         // Add library
-        self.species_libraries.insert(library.species.clone(), library);
+        self.species_libraries
+            .insert(library.species.clone(), library);
     }
 
     /// Get total phrase count
     pub fn total_phrases(&self) -> usize {
-        self.species_libraries.values().map(|l| l.total_phrases).sum()
+        self.species_libraries
+            .values()
+            .map(|l| l.total_phrases)
+            .sum()
     }
 
     /// Get total occurrence count
     pub fn total_occurrences(&self) -> u64 {
-        self.species_libraries.values().map(|l| l.total_occurrences).sum()
+        self.species_libraries
+            .values()
+            .map(|l| l.total_occurrences)
+            .sum()
     }
 
     /// Save to JSON file
@@ -1046,12 +1122,12 @@ mod tests {
     #[test]
     fn test_features_45d_from_vector() {
         let mut vec = [0.0; 45];
-        vec[0] = 7000.0;  // F0
-        vec[1] = 50.0;    // Duration
-        vec[30] = 600.0;  // Formant 1
+        vec[0] = 7000.0; // F0
+        vec[1] = 50.0; // Duration
+        vec[30] = 600.0; // Formant 1
         vec[36] = 3000.0; // Spectral Centroid
-        vec[40] = -12.0;  // Spectral Tilt
-        vec[43] = 0.2;    // Subharmonic Ratio
+        vec[40] = -12.0; // Spectral Tilt
+        vec[43] = 0.2; // Subharmonic Ratio
 
         let features = AcousticFeatures45D::from_vector(vec);
         assert!((features.mean_f0_hz - 7000.0).abs() < 1e-10);

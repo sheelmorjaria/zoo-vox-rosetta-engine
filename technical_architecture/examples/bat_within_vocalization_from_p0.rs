@@ -36,9 +36,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let segments = load_segments(&phase0_dir)?;
-    println!("   📂 Loaded {} segments from {} files",
-             segments.len(),
-             segments.keys().collect::<HashSet<_>>().len());
+    println!(
+        "   📂 Loaded {} segments from {} files",
+        segments.len(),
+        segments.keys().collect::<HashSet<_>>().len()
+    );
     println!();
 
     // ========================================================================
@@ -176,7 +178,9 @@ struct Annotation {
     file_name: String,
 }
 
-fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+fn load_annotations(
+    path: impl AsRef<Path>,
+) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut mapping = HashMap::new();
 
@@ -197,9 +201,12 @@ fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<
     Ok(mapping)
 }
 
-fn load_segments(phase0_dir: &Path) -> Result<HashMap<String, Vec<Segment>>, Box<dyn std::error::Error>> {
+fn load_segments(
+    phase0_dir: &Path,
+) -> Result<HashMap<String, Vec<Segment>>, Box<dyn std::error::Error>> {
     let segments_path = phase0_dir.join("all_segments.json");
-    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     let mut file_segments: HashMap<String, Vec<Segment>> = HashMap::new();
 
@@ -267,13 +274,19 @@ fn analyze_within_vocalization_sequences(
         let cluster_sequence: Vec<i32> = segments.iter().map(|s| s.level1_cluster_id).collect();
 
         if let Some(ctx) = context {
-            context_sequences.entry(ctx).or_insert_with(Vec::new).push(cluster_sequence.clone());
+            context_sequences
+                .entry(ctx)
+                .or_insert_with(Vec::new)
+                .push(cluster_sequence.clone());
 
             // Extract n-grams for this context
             for window in cluster_sequence.windows(2) {
                 let bigram = window.to_vec();
                 all_bigrams.push(bigram.clone());
-                context_bigrams.entry(ctx).or_insert_with(Vec::new).push(bigram);
+                context_bigrams
+                    .entry(ctx)
+                    .or_insert_with(Vec::new)
+                    .push(bigram);
             }
             for window in cluster_sequence.windows(3) {
                 all_trigrams.push(window.to_vec());
@@ -323,7 +336,9 @@ fn analyze_within_vocalization_sequences(
     })
 }
 
-fn analyze_transitions(file_sequences: &[FileSequence]) -> Result<Vec<Transition>, Box<dyn std::error::Error>> {
+fn analyze_transitions(
+    file_sequences: &[FileSequence],
+) -> Result<Vec<Transition>, Box<dyn std::error::Error>> {
     let mut transition_map: HashMap<(i32, i32), Transition> = HashMap::new();
 
     for seq in file_sequences {
@@ -367,14 +382,15 @@ fn find_common_patterns(
             for window in seq.cluster_sequence.windows(pattern_len) {
                 let pattern = window.to_vec();
 
-                let entry = pattern_counts
-                    .entry(pattern.clone())
-                    .or_insert_with(|| SequencePattern {
-                        pattern: pattern.clone(),
-                        occurrences: 0,
-                        files: Vec::new(),
-                        contexts: HashSet::new(),
-                    });
+                let entry =
+                    pattern_counts
+                        .entry(pattern.clone())
+                        .or_insert_with(|| SequencePattern {
+                            pattern: pattern.clone(),
+                            occurrences: 0,
+                            files: Vec::new(),
+                            contexts: HashSet::new(),
+                        });
 
                 entry.occurrences += 1;
                 entry.files.push(seq.file_name.clone());
@@ -397,8 +413,11 @@ fn find_common_patterns(
             .then_with(|| b.contexts.len().cmp(&a.contexts.len()))
     });
 
-    println!("   📊 Found {} patterns with {}+ occurrences in 2+ contexts",
-             patterns.len(), min_occurrences);
+    println!(
+        "   📊 Found {} patterns with {}+ occurrences in 2+ contexts",
+        patterns.len(),
+        min_occurrences
+    );
 
     Ok(patterns)
 }
@@ -416,9 +435,11 @@ fn analyze_context_patterns(
         let avg_length = lengths.iter().sum::<f64>() / lengths.len() as f64;
 
         // Calculate standard deviation
-        let variance = lengths.iter()
+        let variance = lengths
+            .iter()
             .map(|&l| (l - avg_length).powi(2))
-            .sum::<f64>() / lengths.len() as f64;
+            .sum::<f64>()
+            / lengths.len() as f64;
         let std_dev = variance.sqrt();
 
         // Analyze bigrams
@@ -588,21 +609,46 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    println!("   Unique clusters: {}", analysis.cluster_statistics.unique_clusters);
+    println!(
+        "   Unique clusters: {}",
+        analysis.cluster_statistics.unique_clusters
+    );
     println!("   Total files analyzed: {}", analysis.file_sequences.len());
     println!();
 
     println!("   Most Common Starting Clusters:");
-    for (i, (cluster, count)) in analysis.cluster_statistics.most_common_starting_clusters.iter().enumerate().take(10) {
-        println!("      {:2}. Cluster {:>3}: starts {} sequences ({:.1}%)",
-                 i + 1, cluster, count, *count as f64 * 100.0 / analysis.file_sequences.len() as f64);
+    for (i, (cluster, count)) in analysis
+        .cluster_statistics
+        .most_common_starting_clusters
+        .iter()
+        .enumerate()
+        .take(10)
+    {
+        println!(
+            "      {:2}. Cluster {:>3}: starts {} sequences ({:.1}%)",
+            i + 1,
+            cluster,
+            count,
+            *count as f64 * 100.0 / analysis.file_sequences.len() as f64
+        );
     }
     println!();
 
     println!("   Most Common Ending Clusters:");
-    for (i, (cluster, count)) in analysis.cluster_statistics.most_common_ending_clusters.iter().enumerate().take(10) {
-        println!("      {:2}. Cluster {:>3}: ends {} sequences ({:.1}%)",
-                 i + 1, cluster, count, *count as f64 * 100.0 / analysis.file_sequences.len() as f64);
+    for (i, (cluster, count)) in analysis
+        .cluster_statistics
+        .most_common_ending_clusters
+        .iter()
+        .enumerate()
+        .take(10)
+    {
+        println!(
+            "      {:2}. Cluster {:>3}: ends {} sequences ({:.1}%)",
+            i + 1,
+            cluster,
+            count,
+            *count as f64 * 100.0 / analysis.file_sequences.len() as f64
+        );
     }
     println!();
 
@@ -612,7 +658,10 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    println!("{:<5} {:<15} {:<15} {:>12} {:>20}", "Rank", "From", "To", "Count", "Contexts");
+    println!(
+        "{:<5} {:<15} {:<15} {:>12} {:>20}",
+        "Rank", "From", "To", "Count", "Contexts"
+    );
     println!("{}", "-".repeat(75));
 
     for (i, trans) in analysis.transitions.iter().take(20).enumerate() {
@@ -622,12 +671,14 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
             format!("{} contexts", trans.contexts.len())
         };
 
-        println!("{:<5} {:<15} {:<15} {:>12} {:>20}",
-                 i + 1,
-                 format!("Cluster {}", trans.from_cluster),
-                 format!("Cluster {}", trans.to_cluster),
-                 trans.count,
-                 ctx_str);
+        println!(
+            "{:<5} {:<15} {:<15} {:>12} {:>20}",
+            i + 1,
+            format!("Cluster {}", trans.from_cluster),
+            format!("Cluster {}", trans.to_cluster),
+            trans.count,
+            ctx_str
+        );
     }
     println!();
 
@@ -637,17 +688,22 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    println!("{:<5} {:<30} {:>12} {:>12} {:>15}", "Rank", "Pattern", "Occurrences", "Files", "Contexts");
+    println!(
+        "{:<5} {:<30} {:>12} {:>12} {:>15}",
+        "Rank", "Pattern", "Occurrences", "Files", "Contexts"
+    );
     println!("{}", "-".repeat(80));
 
     for (i, pattern) in analysis.common_patterns.iter().take(20).enumerate() {
         let pattern_str = format!("{:?}", pattern.pattern);
-        println!("{:<5} {:<30} {:>12} {:>12} {:>15}",
-                 i + 1,
-                 truncate_string(&pattern_str, 28),
-                 pattern.occurrences,
-                 pattern.files.len(),
-                 format!("{} ctx", pattern.contexts.len()));
+        println!(
+            "{:<5} {:<30} {:>12} {:>12} {:>15}",
+            i + 1,
+            truncate_string(&pattern_str, 28),
+            pattern.occurrences,
+            pattern.files.len(),
+            format!("{} ctx", pattern.contexts.len())
+        );
     }
     println!();
 
@@ -660,19 +716,23 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     let mut context_entries: Vec<_> = analysis.context_patterns.values().collect();
     context_entries.sort_by(|a, b| b.num_files.cmp(&a.num_files));
 
-    println!("{:<10} {:>12} {:>15} {:>15} {:>12} {:>12} {:>15}",
-             "Context", "Files", "Avg Length", "Std Dev", "Bigrams", "Unique", "Entropy");
+    println!(
+        "{:<10} {:>12} {:>15} {:>15} {:>12} {:>12} {:>15}",
+        "Context", "Files", "Avg Length", "Std Dev", "Bigrams", "Unique", "Entropy"
+    );
     println!("{}", "-".repeat(100));
 
     for stats in context_entries {
-        println!("{:<10} {:>12} {:>15.2} {:>15.2} {:>12} {:>12} {:>15.3}",
-                 stats.context_id,
-                 stats.num_files,
-                 stats.avg_sequence_length,
-                 stats.sequence_length_std,
-                 stats.total_bigrams,
-                 stats.unique_bigrams,
-                 stats.bigram_entropy);
+        println!(
+            "{:<10} {:>12} {:>15.2} {:>15.2} {:>12} {:>12} {:>15.3}",
+            stats.context_id,
+            stats.num_files,
+            stats.avg_sequence_length,
+            stats.sequence_length_std,
+            stats.total_bigrams,
+            stats.unique_bigrams,
+            stats.bigram_entropy
+        );
     }
     println!();
 
@@ -682,12 +742,22 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    println!("   Overall bigram entropy: {:.3} bits", analysis.entropy_analysis.overall_bigram_entropy);
-    println!("   Overall trigram entropy: {:.3} bits", analysis.entropy_analysis.overall_trigram_entropy);
+    println!(
+        "   Overall bigram entropy: {:.3} bits",
+        analysis.entropy_analysis.overall_bigram_entropy
+    );
+    println!(
+        "   Overall trigram entropy: {:.3} bits",
+        analysis.entropy_analysis.overall_trigram_entropy
+    );
     println!();
 
     println!("   Context-specific entropies:");
-    let mut ctx_entropies: Vec<_> = analysis.entropy_analysis.context_bigram_entropies.iter().collect();
+    let mut ctx_entropies: Vec<_> = analysis
+        .entropy_analysis
+        .context_bigram_entropies
+        .iter()
+        .collect();
     ctx_entropies.sort_by(|a, b| a.0.cmp(b.0));
 
     for (ctx, entropy) in ctx_entropies {
@@ -695,7 +765,10 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     }
     println!();
 
-    println!("   Predictability Index: {:.3}", analysis.entropy_analysis.predictability_index);
+    println!(
+        "   Predictability Index: {:.3}",
+        analysis.entropy_analysis.predictability_index
+    );
     println!("      (>0 = context reduces uncertainty, <0 = context adds uncertainty)");
     println!();
 
@@ -705,14 +778,24 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let avg_len = analysis.context_patterns.values()
+    let avg_len = analysis
+        .context_patterns
+        .values()
         .map(|s| s.avg_sequence_length)
-        .sum::<f64>() / analysis.context_patterns.len() as f64;
+        .sum::<f64>()
+        / analysis.context_patterns.len() as f64;
 
-    let avg_entropy = analysis.entropy_analysis.context_bigram_entropies.values()
-        .sum::<f64>() / analysis.entropy_analysis.context_bigram_entropies.len() as f64;
+    let avg_entropy = analysis
+        .entropy_analysis
+        .context_bigram_entropies
+        .values()
+        .sum::<f64>()
+        / analysis.entropy_analysis.context_bigram_entropies.len() as f64;
 
-    println!("   Average sequence length: {:.2} phrases per vocalization", avg_len);
+    println!(
+        "   Average sequence length: {:.2} phrases per vocalization",
+        avg_len
+    );
     println!("   Average bigram entropy: {:.3} bits", avg_entropy);
     println!();
 
@@ -732,25 +815,40 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!();
 
     if analysis.entropy_analysis.predictability_index > 0.1 {
-        println!("   ✅ POSITIVE predictability index ({:.3}):", analysis.entropy_analysis.predictability_index);
+        println!(
+            "   ✅ POSITIVE predictability index ({:.3}):",
+            analysis.entropy_analysis.predictability_index
+        );
         println!("      → Knowing the context REDUCES uncertainty about next phrase");
         println!("      → Supports context-specific syntax");
     } else if analysis.entropy_analysis.predictability_index < -0.1 {
-        println!("   ❌ NEGATIVE predictability index ({:.3}):", analysis.entropy_analysis.predictability_index);
+        println!(
+            "   ❌ NEGATIVE predictability index ({:.3}):",
+            analysis.entropy_analysis.predictability_index
+        );
         println!("      → Context knowledge does NOT help prediction");
         println!("      → Syntax is NOT context-specific");
     } else {
-        println!("   ⚠️  NEUTRAL predictability index ({:.3}):", analysis.entropy_analysis.predictability_index);
+        println!(
+            "   ⚠️  NEUTRAL predictability index ({:.3}):",
+            analysis.entropy_analysis.predictability_index
+        );
         println!("      → Context has minimal effect on sequence predictability");
     }
     println!();
 
     if analysis.common_patterns.len() > 10 {
-        println!("   ✅ {} cross-context patterns found:", analysis.common_patterns.len());
+        println!(
+            "   ✅ {} cross-context patterns found:",
+            analysis.common_patterns.len()
+        );
         println!("      → Some sequences are shared across behavioral contexts");
         println!("      → May represent UNIVERSAL syntactic structures");
     } else {
-        println!("   ⚠️  Only {} cross-context patterns found:", analysis.common_patterns.len());
+        println!(
+            "   ⚠️  Only {} cross-context patterns found:",
+            analysis.common_patterns.len()
+        );
         println!("      → Few universal sequences across contexts");
         println!("      → Each context may have its own patterns");
     }

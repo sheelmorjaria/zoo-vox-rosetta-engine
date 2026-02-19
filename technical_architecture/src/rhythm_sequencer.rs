@@ -153,9 +153,12 @@ impl RhythmPattern {
             return 0.0;
         }
         let mean = self.mean_interval();
-        let variance: f64 = self.intervals.iter()
+        let variance: f64 = self
+            .intervals
+            .iter()
             .map(|i| (i.duration_ms - mean).powi(2))
-            .sum::<f64>() / self.intervals.len() as f64;
+            .sum::<f64>()
+            / self.intervals.len() as f64;
         variance.sqrt()
     }
 
@@ -242,9 +245,11 @@ impl RhythmFeatures {
         let mean_interval_ms = total_duration_ms / interval_count as f64;
 
         let std_interval_ms = if interval_count > 1 {
-            let variance: f64 = intervals.iter()
+            let variance: f64 = intervals
+                .iter()
                 .map(|&d| (d - mean_interval_ms).powi(2))
-                .sum::<f64>() / (interval_count - 1) as f64;
+                .sum::<f64>()
+                / (interval_count - 1) as f64;
             variance.sqrt()
         } else {
             0.0
@@ -274,7 +279,8 @@ impl RhythmFeatures {
             let n = interval_count as f64;
             let sum_x: f64 = (0..interval_count).map(|i| i as f64).sum();
             let sum_y: f64 = intervals.iter().sum();
-            let sum_xy: f64 = intervals.iter()
+            let sum_xy: f64 = intervals
+                .iter()
                 .enumerate()
                 .map(|(i, &y)| i as f64 * y)
                 .sum();
@@ -379,97 +385,110 @@ impl RhythmSequencer {
     /// Initialize species-typical rhythm templates
     fn initialize_templates(&mut self) {
         // Marmoset templates
-        self.species_templates.insert("marmoset".to_string(), vec![
-            RhythmTemplate {
-                name: "duet_alternating".to_string(),
-                species: "marmoset".to_string(),
-                mean_interval_ms: 500.0,
-                interval_std_ms: 100.0,
-                typical_count: 6,
-                context: "duet".to_string(),
-            },
-            RhythmTemplate {
-                name: "food_call_sequence".to_string(),
-                species: "marmoset".to_string(),
-                mean_interval_ms: 300.0,
-                interval_std_ms: 50.0,
-                typical_count: 4,
-                context: "food_discovery".to_string(),
-            },
-            RhythmTemplate {
-                name: "alarm_sequence".to_string(),
-                species: "marmoset".to_string(),
-                mean_interval_ms: 150.0,
-                interval_std_ms: 30.0,
-                typical_count: 8,
-                context: "alarm".to_string(),
-            },
-        ]);
+        self.species_templates.insert(
+            "marmoset".to_string(),
+            vec![
+                RhythmTemplate {
+                    name: "duet_alternating".to_string(),
+                    species: "marmoset".to_string(),
+                    mean_interval_ms: 500.0,
+                    interval_std_ms: 100.0,
+                    typical_count: 6,
+                    context: "duet".to_string(),
+                },
+                RhythmTemplate {
+                    name: "food_call_sequence".to_string(),
+                    species: "marmoset".to_string(),
+                    mean_interval_ms: 300.0,
+                    interval_std_ms: 50.0,
+                    typical_count: 4,
+                    context: "food_discovery".to_string(),
+                },
+                RhythmTemplate {
+                    name: "alarm_sequence".to_string(),
+                    species: "marmoset".to_string(),
+                    mean_interval_ms: 150.0,
+                    interval_std_ms: 30.0,
+                    typical_count: 8,
+                    context: "alarm".to_string(),
+                },
+            ],
+        );
 
         // Bat templates
-        self.species_templates.insert("bat".to_string(), vec![
-            RhythmTemplate {
-                name: "echolocation_burst".to_string(),
-                species: "bat".to_string(),
-                mean_interval_ms: 35.0,
-                interval_std_ms: 10.0,
-                typical_count: 10,
-                context: "navigation".to_string(),
-            },
-            RhythmTemplate {
-                name: "social_call_sequence".to_string(),
-                species: "bat".to_string(),
-                mean_interval_ms: 200.0,
-                interval_std_ms: 50.0,
-                typical_count: 5,
-                context: "social".to_string(),
-            },
-        ]);
+        self.species_templates.insert(
+            "bat".to_string(),
+            vec![
+                RhythmTemplate {
+                    name: "echolocation_burst".to_string(),
+                    species: "bat".to_string(),
+                    mean_interval_ms: 35.0,
+                    interval_std_ms: 10.0,
+                    typical_count: 10,
+                    context: "navigation".to_string(),
+                },
+                RhythmTemplate {
+                    name: "social_call_sequence".to_string(),
+                    species: "bat".to_string(),
+                    mean_interval_ms: 200.0,
+                    interval_std_ms: 50.0,
+                    typical_count: 5,
+                    context: "social".to_string(),
+                },
+            ],
+        );
 
         // Dolphin templates
-        self.species_templates.insert("dolphin".to_string(), vec![
-            RhythmTemplate {
-                name: "signature_whistle_exchange".to_string(),
-                species: "dolphin".to_string(),
-                mean_interval_ms: 500.0,
-                interval_std_ms: 200.0,
-                typical_count: 3,
-                context: "identification".to_string(),
-            },
-            RhythmTemplate {
-                name: "hunting_sequence".to_string(),
-                species: "dolphin".to_string(),
-                mean_interval_ms: 100.0,
-                interval_std_ms: 30.0,
-                typical_count: 8,
-                context: "foraging".to_string(),
-            },
-        ]);
+        self.species_templates.insert(
+            "dolphin".to_string(),
+            vec![
+                RhythmTemplate {
+                    name: "signature_whistle_exchange".to_string(),
+                    species: "dolphin".to_string(),
+                    mean_interval_ms: 500.0,
+                    interval_std_ms: 200.0,
+                    typical_count: 3,
+                    context: "identification".to_string(),
+                },
+                RhythmTemplate {
+                    name: "hunting_sequence".to_string(),
+                    species: "dolphin".to_string(),
+                    mean_interval_ms: 100.0,
+                    interval_std_ms: 30.0,
+                    typical_count: 8,
+                    context: "foraging".to_string(),
+                },
+            ],
+        );
 
         // Zebra finch templates
-        self.species_templates.insert("zebra_finch".to_string(), vec![
-            RhythmTemplate {
-                name: "song_motif".to_string(),
-                species: "zebra_finch".to_string(),
-                mean_interval_ms: 50.0,
-                interval_std_ms: 15.0,
-                typical_count: 7,
-                context: "song".to_string(),
-            },
-            RhythmTemplate {
-                name: "distance_call".to_string(),
-                species: "zebra_finch".to_string(),
-                mean_interval_ms: 800.0,
-                interval_std_ms: 200.0,
-                typical_count: 2,
-                context: "contact".to_string(),
-            },
-        ]);
+        self.species_templates.insert(
+            "zebra_finch".to_string(),
+            vec![
+                RhythmTemplate {
+                    name: "song_motif".to_string(),
+                    species: "zebra_finch".to_string(),
+                    mean_interval_ms: 50.0,
+                    interval_std_ms: 15.0,
+                    typical_count: 7,
+                    context: "song".to_string(),
+                },
+                RhythmTemplate {
+                    name: "distance_call".to_string(),
+                    species: "zebra_finch".to_string(),
+                    mean_interval_ms: 800.0,
+                    interval_std_ms: 200.0,
+                    typical_count: 2,
+                    context: "contact".to_string(),
+                },
+            ],
+        );
     }
 
     /// Add a known pattern
     pub fn add_pattern(&mut self, pattern: RhythmPattern) {
-        let species_patterns = self.patterns_by_species
+        let species_patterns = self
+            .patterns_by_species
             .entry(pattern.species.clone())
             .or_insert_with(Vec::new);
 
@@ -525,7 +544,8 @@ impl RhythmSequencer {
         }
 
         // Find best match
-        let (best_id, best_score) = similarity_scores.iter()
+        let (best_id, best_score) = similarity_scores
+            .iter()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(k, &v)| (k.clone(), v))
             .unwrap_or(("".to_string(), 0.0));
@@ -559,16 +579,28 @@ impl RhythmSequencer {
     }
 
     /// Compute similarity between features and a pattern
-    fn compute_pattern_similarity(&self, features: &RhythmFeatures, pattern: &RhythmPattern) -> f64 {
+    fn compute_pattern_similarity(
+        &self,
+        features: &RhythmFeatures,
+        pattern: &RhythmPattern,
+    ) -> f64 {
         let pattern_features = RhythmFeatures::from_intervals(
-            &pattern.intervals.iter().map(|i| i.duration_ms).collect::<Vec<_>>()
+            &pattern
+                .intervals
+                .iter()
+                .map(|i| i.duration_ms)
+                .collect::<Vec<_>>(),
         );
 
         self.compute_feature_similarity(features, &pattern_features)
     }
 
     /// Compute similarity between features and a template
-    fn compute_template_similarity(&self, features: &RhythmFeatures, template: &RhythmTemplate) -> f64 {
+    fn compute_template_similarity(
+        &self,
+        features: &RhythmFeatures,
+        template: &RhythmTemplate,
+    ) -> f64 {
         // Create synthetic features from template
         let template_features = RhythmFeatures {
             mean_interval_ms: template.mean_interval_ms,
@@ -593,7 +625,8 @@ impl RhythmSequencer {
         // Weighted combination of feature similarities
         let mean_sim = self.gaussian_similarity(a.mean_interval_ms, b.mean_interval_ms, 200.0);
         let cv_sim = self.gaussian_similarity(a.cv, b.cv, 0.3);
-        let count_sim = self.gaussian_similarity(a.interval_count as f64, b.interval_count as f64, 3.0);
+        let count_sim =
+            self.gaussian_similarity(a.interval_count as f64, b.interval_count as f64, 3.0);
         let regularity_sim = self.gaussian_similarity(a.regularity, b.regularity, 0.2);
 
         // Weighted average
@@ -614,8 +647,7 @@ impl RhythmSequencer {
     ) -> Option<Vec<f64>> {
         let templates = self.species_templates.get(species)?;
 
-        let template = templates.iter()
-            .find(|t| t.name == template_name)?;
+        let template = templates.iter().find(|t| t.name == template_name)?;
 
         let count = num_intervals.unwrap_or(template.typical_count);
 
@@ -884,7 +916,11 @@ mod tests {
 
         // Check intervals are roughly around the template mean (500ms)
         for &i in &intervals {
-            assert!(i > 300.0 && i < 700.0, "Interval {} outside expected range", i);
+            assert!(
+                i > 300.0 && i < 700.0,
+                "Interval {} outside expected range",
+                i
+            );
         }
     }
 
@@ -966,7 +1002,9 @@ mod tests {
 
         // Dolphin should have signature whistle template
         let dolphin = sequencer.get_templates("dolphin");
-        assert!(dolphin.iter().any(|t| t.name == "signature_whistle_exchange"));
+        assert!(dolphin
+            .iter()
+            .any(|t| t.name == "signature_whistle_exchange"));
     }
 
     #[test]

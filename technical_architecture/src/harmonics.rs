@@ -218,7 +218,10 @@ impl HarmonicDeviationCalculator {
             len <<= 1;
         }
 
-        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
+        complex[..n / 2]
+            .iter()
+            .map(|&(r, i)| (r * r + i * i).sqrt())
+            .collect()
     }
 }
 
@@ -293,9 +296,7 @@ impl InharmonicityCalculator {
             let start = harmonic_bin.saturating_sub(width);
             let end = (harmonic_bin + width + 1).min(num_bins);
 
-            let h_energy: f32 = spectrum[start..end].iter()
-                .map(|&x| x * x)
-                .sum();
+            let h_energy: f32 = spectrum[start..end].iter().map(|&x| x * x).sum();
 
             // Energy between harmonics (midpoint to next harmonic)
             let next_harmonic_freq = f0 * (h + 1) as f32;
@@ -307,9 +308,7 @@ impl InharmonicityCalculator {
                 let mid_start = mid_bin.saturating_sub(mid_width);
                 let mid_end = (mid_bin + mid_width + 1).min(num_bins);
 
-                let ih_energy: f32 = spectrum[mid_start..mid_end].iter()
-                    .map(|&x| x * x)
-                    .sum();
+                let ih_energy: f32 = spectrum[mid_start..mid_end].iter().map(|&x| x * x).sum();
 
                 harmonic_energy += h_energy;
                 inter_harmonic_energy += ih_energy;
@@ -477,8 +476,8 @@ mod tests {
         let mut audio = vec![0.0; 4800];
         for (i, sample) in audio.iter_mut().enumerate() {
             let t = i as f32 / 48000.0;
-            *sample = 0.5 * (2.0 * PI * 440.0 * t).sin()
-                    + 0.5 * (2.0 * PI * 523.25 * t).sin(); // 440 Hz + C5 (not harmonic)
+            *sample = 0.5 * (2.0 * PI * 440.0 * t).sin() + 0.5 * (2.0 * PI * 523.25 * t).sin();
+            // 440 Hz + C5 (not harmonic)
         }
         let inharm = calculator.calculate(&audio);
         // Two non-harmonic tones should have some inharmonicity
@@ -498,7 +497,12 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate perfect harmonic series
-fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+fn generate_harmonic_series(
+    f0: f32,
+    num_harmonics: usize,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
 
@@ -515,7 +519,13 @@ fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, dur
 }
 
 /// Helper: Generate inharmonic series (detuned harmonics)
-fn generate_inharmonic_series(f0: f32, num_partials: usize, detune: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+fn generate_inharmonic_series(
+    f0: f32,
+    num_partials: usize,
+    detune: f32,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
 
@@ -536,7 +546,10 @@ fn generate_inharmonic_series(f0: f32, num_partials: usize, detune: f32, sample_
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
     let mut rng: u32 = seed;
 
     (0..num_samples)

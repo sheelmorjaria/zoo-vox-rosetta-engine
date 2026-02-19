@@ -12,29 +12,27 @@
 // This approach avoids the O(n²) memory issue by using similarity-based
 // grouping instead of full pairwise distance matrices.
 
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::Instant;
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 use ndarray::Array2;
+use serde::{Deserialize, Serialize};
 
 // Import acoustic similarity engine from the library
 // Note: Library re-exports DistanceMetric as SimilarityMetric
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-};
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric};
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CHUNK_SIZE: usize = 5000;        // Process 5000 samples per chunk
+const CHUNK_SIZE: usize = 5000; // Process 5000 samples per chunk
 const SIMILARITY_THRESHOLD: f64 = 0.85; // For type grouping
 const FEATURE_DIM: usize = 30;
 const K_NEIGHBORS: usize = 10;
@@ -129,7 +127,10 @@ struct FastFeatureExtractor {
 
 impl FastFeatureExtractor {
     fn new(sample_rate: u32, feature_dim: usize) -> Self {
-        Self { sample_rate, feature_dim }
+        Self {
+            sample_rate,
+            feature_dim,
+        }
     }
 
     fn extract(&self, audio: &[f32]) -> Result<Vec<f64>> {
@@ -187,16 +188,24 @@ impl FastFeatureExtractor {
 
         // Rhythm features
         let (ici, onset_rate, ici_cv) = self.compute_rhythm(audio);
-        if 27 < self.feature_dim { features[27] = ici; }
-        if 28 < self.feature_dim { features[28] = onset_rate; }
-        if 29 < self.feature_dim { features[29] = ici_cv; }
+        if 27 < self.feature_dim {
+            features[27] = ici;
+        }
+        if 28 < self.feature_dim {
+            features[28] = onset_rate;
+        }
+        if 29 < self.feature_dim {
+            features[29] = ici_cv;
+        }
 
         Ok(features)
     }
 
     fn estimate_f0(&self, audio: &[f32]) -> Option<f64> {
         let n = audio.len();
-        if n < 100 { return None; }
+        if n < 100 {
+            return None;
+        }
 
         // Autocorrelation-based F0 estimation
         let mut best_lag = 0;
@@ -205,8 +214,14 @@ impl FastFeatureExtractor {
         let max_lag = (self.sample_rate as f64 / 100.0).min(n as f64 / 2.0) as usize;
 
         let mean = audio.iter().map(|&x| x as f64).sum::<f64>() / n as f64;
-        let variance: f64 = audio.iter().map(|&x| (x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
-        if variance < 1e-10 { return None; }
+        let variance: f64 = audio
+            .iter()
+            .map(|&x| (x as f64 - mean).powi(2))
+            .sum::<f64>()
+            / n as f64;
+        if variance < 1e-10 {
+            return None;
+        }
 
         for lag in min_lag..max_lag {
             let mut corr = 0.0;
@@ -258,7 +273,7 @@ impl FastFeatureExtractor {
         let mut spectrum = vec![0.0f64; n / 2];
 
         // Simple DFT for magnitude spectrum (simplified)
-        for k in 0..n/2 {
+        for k in 0..n / 2 {
             let mut real = 0.0;
             let mut imag = 0.0;
             for t in 0..audio.len().min(n) {
@@ -273,14 +288,18 @@ impl FastFeatureExtractor {
     }
 
     fn compute_hnr(&self, spectrum: &[f64]) -> f64 {
-        if spectrum.is_empty() { return 0.0; }
+        if spectrum.is_empty() {
+            return 0.0;
+        }
         let total: f64 = spectrum.iter().sum();
-        if total == 0.0 { return 0.0; }
+        if total == 0.0 {
+            return 0.0;
+        }
 
         // Simplified HNR based on spectral peaks
         let mut peaks = 0;
-        for i in 1..spectrum.len()-1 {
-            if spectrum[i] > spectrum[i-1] && spectrum[i] > spectrum[i+1] {
+        for i in 1..spectrum.len() - 1 {
+            if spectrum[i] > spectrum[i - 1] && spectrum[i] > spectrum[i + 1] {
                 peaks += 1;
             }
         }
@@ -288,12 +307,19 @@ impl FastFeatureExtractor {
     }
 
     fn compute_flatness(&self, spectrum: &[f64]) -> f64 {
-        if spectrum.is_empty() { return 0.0; }
+        if spectrum.is_empty() {
+            return 0.0;
+        }
 
         let nonzero: Vec<f64> = spectrum.iter().cloned().filter(|&x| x > 1e-10).collect();
-        if nonzero.is_empty() { return 0.0; }
+        if nonzero.is_empty() {
+            return 0.0;
+        }
 
-        let geometric_mean = nonzero.iter().product::<f64>().powf(1.0 / nonzero.len() as f64);
+        let geometric_mean = nonzero
+            .iter()
+            .product::<f64>()
+            .powf(1.0 / nonzero.len() as f64);
         let arithmetic_mean = nonzero.iter().sum::<f64>() / nonzero.len() as f64;
 
         if arithmetic_mean > 0.0 {
@@ -305,12 +331,14 @@ impl FastFeatureExtractor {
 
     fn compute_harmonicity(&self, spectrum: &[f64]) -> f64 {
         // Simplified harmonicity based on spectral periodicity
-        if spectrum.len() < 10 { return 0.0; }
+        if spectrum.len() < 10 {
+            return 0.0;
+        }
 
         let mut autocorr = 0.0;
         let mut energy = 0.0;
 
-        for i in 0..spectrum.len()-10 {
+        for i in 0..spectrum.len() - 10 {
             energy += spectrum[i] * spectrum[i];
             for lag in 1..=10 {
                 if i + lag < spectrum.len() {
@@ -319,18 +347,26 @@ impl FastFeatureExtractor {
             }
         }
 
-        if energy > 0.0 { (autocorr / energy).min(1.0).max(0.0) } else { 0.0 }
+        if energy > 0.0 {
+            (autocorr / energy).min(1.0).max(0.0)
+        } else {
+            0.0
+        }
     }
 
     fn compute_envelope(&self, audio: &[f32]) -> (f64, f64, f64, f64) {
         let n = audio.len();
-        if n < 10 { return (0.0, 0.0, 0.0, 0.0); }
+        if n < 10 {
+            return (0.0, 0.0, 0.0, 0.0);
+        }
 
         // Compute amplitude envelope
         let envelope: Vec<f64> = audio.iter().map(|&x| x.abs() as f64).collect();
 
         let max_amp = envelope.iter().cloned().fold(0.0f64, f64::max);
-        if max_amp == 0.0 { return (0.0, 0.0, 0.0, 0.0); }
+        if max_amp == 0.0 {
+            return (0.0, 0.0, 0.0, 0.0);
+        }
 
         let threshold_90 = max_amp * 0.9;
         let threshold_10 = max_amp * 0.1;
@@ -354,7 +390,9 @@ impl FastFeatureExtractor {
         let attack = (attack_end - attack_start) as f64 / self.sample_rate as f64 * 1000.0;
 
         // Decay: time from peak to sustain
-        let peak_idx = envelope.iter().enumerate()
+        let peak_idx = envelope
+            .iter()
+            .enumerate()
             .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
             .map(|(i, _)| i)
             .unwrap_or(0);
@@ -373,8 +411,11 @@ impl FastFeatureExtractor {
         let sustain_end = (n as f64 * 0.7) as usize;
         let sustain = if sustain_end > sustain_start {
             envelope[sustain_start..sustain_end].iter().sum::<f64>()
-                / (sustain_end - sustain_start) as f64 / max_amp
-        } else { 0.0 };
+                / (sustain_end - sustain_start) as f64
+                / max_amp
+        } else {
+            0.0
+        };
 
         // Release: time from sustain to end
         let release_start = (n as f64 * 0.7) as usize;
@@ -384,9 +425,13 @@ impl FastFeatureExtractor {
     }
 
     fn compute_centroid(&self, spectrum: &[f64]) -> f64 {
-        if spectrum.is_empty() { return 0.0; }
+        if spectrum.is_empty() {
+            return 0.0;
+        }
 
-        let weighted_sum: f64 = spectrum.iter().enumerate()
+        let weighted_sum: f64 = spectrum
+            .iter()
+            .enumerate()
             .map(|(i, &mag)| i as f64 * mag)
             .sum();
         let total_mag: f64 = spectrum.iter().sum();
@@ -435,9 +480,11 @@ impl FastFeatureExtractor {
         let vib_rate = crossings as f64 / duration / 2.0;
 
         // Vibrato depth (standard deviation of F0)
-        let variance: f64 = f0_contour.iter()
+        let variance: f64 = f0_contour
+            .iter()
             .map(|f| (f - mean_f0).powi(2))
-            .sum::<f64>() / f0_contour.len() as f64;
+            .sum::<f64>()
+            / f0_contour.len() as f64;
         let vib_depth = variance.sqrt();
 
         (vib_rate.min(50.0), vib_depth.min(1000.0))
@@ -446,7 +493,9 @@ impl FastFeatureExtractor {
     fn compute_jitter(&self, audio: &[f32]) -> f64 {
         // Period-to-period variation
         let n = audio.len();
-        if n < 100 { return 0.0; }
+        if n < 100 {
+            return 0.0;
+        }
 
         // Find zero crossings
         let mut periods = Vec::new();
@@ -461,12 +510,16 @@ impl FastFeatureExtractor {
             }
         }
 
-        if periods.len() < 3 { return 0.0; }
+        if periods.len() < 3 {
+            return 0.0;
+        }
 
         let mean_period = periods.iter().sum::<usize>() as f64 / periods.len() as f64;
-        let variance: f64 = periods.iter()
+        let variance: f64 = periods
+            .iter()
             .map(|p| (*p as f64 - mean_period).powi(2))
-            .sum::<f64>() / periods.len() as f64;
+            .sum::<f64>()
+            / periods.len() as f64;
 
         (variance.sqrt() / mean_period).min(1.0).max(0.0)
     }
@@ -474,7 +527,9 @@ impl FastFeatureExtractor {
     fn compute_shimmer(&self, audio: &[f32]) -> f64 {
         // Amplitude variation between periods
         let n = audio.len();
-        if n < 100 { return 0.0; }
+        if n < 100 {
+            return 0.0;
+        }
 
         // Find peak amplitudes per period
         let mut peaks = Vec::new();
@@ -494,34 +549,47 @@ impl FastFeatureExtractor {
             }
         }
 
-        if peaks.len() < 3 { return 0.0; }
+        if peaks.len() < 3 {
+            return 0.0;
+        }
 
         let mean_peak = peaks.iter().sum::<f64>() / peaks.len() as f64;
-        if mean_peak == 0.0 { return 0.0; }
+        if mean_peak == 0.0 {
+            return 0.0;
+        }
 
-        let variance: f64 = peaks.iter()
-            .map(|p| (p - mean_peak).powi(2))
-            .sum::<f64>() / peaks.len() as f64;
+        let variance: f64 =
+            peaks.iter().map(|p| (p - mean_peak).powi(2)).sum::<f64>() / peaks.len() as f64;
 
         (variance.sqrt() / mean_peak).min(1.0).max(0.0)
     }
 
     fn compute_spectral_band(&self, spectrum: &[f64], band_idx: usize) -> f64 {
-        if spectrum.is_empty() { return 0.0; }
+        if spectrum.is_empty() {
+            return 0.0;
+        }
 
         let n_bands = 10;
         let band_size = spectrum.len() / n_bands;
         let start = band_idx * band_size;
-        let end = if band_idx == n_bands - 1 { spectrum.len() } else { start + band_size };
+        let end = if band_idx == n_bands - 1 {
+            spectrum.len()
+        } else {
+            start + band_size
+        };
 
-        if end <= start || end > spectrum.len() { return 0.0; }
+        if end <= start || end > spectrum.len() {
+            return 0.0;
+        }
 
         spectrum[start..end].iter().sum::<f64>() / (end - start) as f64
     }
 
     fn compute_rhythm(&self, audio: &[f32]) -> (f64, f64, f64) {
         let n = audio.len();
-        if n < 100 { return (0.0, 0.0, 0.0); }
+        if n < 100 {
+            return (0.0, 0.0, 0.0);
+        }
 
         // Onset detection using energy derivative
         let window = (self.sample_rate as f64 * 0.01) as usize;
@@ -530,7 +598,10 @@ impl FastFeatureExtractor {
         let mut prev_energy = 0.0;
         for start in (0..n).step_by(window) {
             let end = (start + window).min(n);
-            let energy = audio[start..end].iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>();
+            let energy = audio[start..end]
+                .iter()
+                .map(|x| (*x as f64) * (*x as f64))
+                .sum::<f64>();
 
             if energy > prev_energy * 2.0 && prev_energy > 0.0 {
                 onsets.push(start);
@@ -543,16 +614,26 @@ impl FastFeatureExtractor {
         }
 
         // Inter-onset intervals
-        let mut icis: Vec<f64> = onsets.windows(2)
+        let mut icis: Vec<f64> = onsets
+            .windows(2)
             .map(|w| (w[1] - w[0]) as f64 / self.sample_rate as f64 * 1000.0)
             .collect();
 
         let mean_ici = icis.iter().sum::<f64>() / icis.len() as f64;
-        let variance = icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
+        let variance =
+            icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
         let std_ici = variance.sqrt();
-        let ici_cv = if mean_ici > 0.0 { std_ici / mean_ici } else { 0.0 };
+        let ici_cv = if mean_ici > 0.0 {
+            std_ici / mean_ici
+        } else {
+            0.0
+        };
 
-        let onset_rate = if mean_ici > 0.0 { 1000.0 / mean_ici } else { 0.0 };
+        let onset_rate = if mean_ici > 0.0 {
+            1000.0 / mean_ici
+        } else {
+            0.0
+        };
 
         (mean_ici, onset_rate, ici_cv)
     }
@@ -570,7 +651,12 @@ struct ChunkedSimilarityProcessor {
 }
 
 impl ChunkedSimilarityProcessor {
-    fn new(chunk_size: usize, sample_rate: u32, feature_dim: usize, similarity_threshold: f64) -> Self {
+    fn new(
+        chunk_size: usize,
+        sample_rate: u32,
+        feature_dim: usize,
+        similarity_threshold: f64,
+    ) -> Self {
         Self {
             chunk_size,
             sample_rate,
@@ -588,8 +674,10 @@ impl ChunkedSimilarityProcessor {
         let n_samples = manifest.samples.len();
         let n_chunks = (n_samples + self.chunk_size - 1) / self.chunk_size;
 
-        println!("Processing {} samples in {} chunks of {}...",
-            n_samples, n_chunks, self.chunk_size);
+        println!(
+            "Processing {} samples in {} chunks of {}...",
+            n_samples, n_chunks, self.chunk_size
+        );
         println!();
 
         let all_features = Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -655,11 +743,14 @@ impl ChunkedSimilarityProcessor {
             };
 
             // Progress output
-            println!("  Chunk {}/{}: {} samples, {} types, {:.2}s",
-                chunk_id + 1, n_chunks,
+            println!(
+                "  Chunk {}/{}: {} samples, {} types, {:.2}s",
+                chunk_id + 1,
+                n_chunks,
                 chunk_features.len(),
                 types.len(),
-                chunk_time / 1000.0);
+                chunk_time / 1000.0
+            );
 
             all_features.lock().unwrap().extend(chunk_features);
             chunk_results.lock().unwrap().push(result);
@@ -679,7 +770,10 @@ impl ChunkedSimilarityProcessor {
         println!();
 
         let features = Arc::try_unwrap(all_features).unwrap().into_inner().unwrap();
-        let results = Arc::try_unwrap(chunk_results).unwrap().into_inner().unwrap();
+        let results = Arc::try_unwrap(chunk_results)
+            .unwrap()
+            .into_inner()
+            .unwrap();
 
         // Build global types from all features
         let global_types = self.build_global_types(&features);
@@ -706,10 +800,8 @@ impl ChunkedSimilarityProcessor {
         }
 
         // Create similarity engine
-        let mut engine = AcousticSimilarityEngine::with_metric(
-            self.feature_dim,
-            SimilarityMetric::Cosine,
-        );
+        let mut engine =
+            AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
         engine.fit_normalization(&matrix);
 
         // Group by similarity
@@ -747,7 +839,12 @@ impl ChunkedSimilarityProcessor {
             // Compute centroid
             let mut centroid = vec![0.0; self.feature_dim];
             for &idx in &group_indices {
-                for (j, val) in features[idx].features.iter().enumerate().take(self.feature_dim) {
+                for (j, val) in features[idx]
+                    .features
+                    .iter()
+                    .enumerate()
+                    .take(self.feature_dim)
+                {
                     centroid[j] += val;
                 }
             }
@@ -768,7 +865,10 @@ impl ChunkedSimilarityProcessor {
                 type_id: format!("type_{}", types.len()),
                 centroid,
                 count: group_indices.len(),
-                sample_ids: group_indices.iter().map(|&idx| features[idx].sample_id.clone()).collect(),
+                sample_ids: group_indices
+                    .iter()
+                    .map(|&idx| features[idx].sample_id.clone())
+                    .collect(),
                 avg_distance_to_centroid: avg_dist,
             });
         }
@@ -777,11 +877,14 @@ impl ChunkedSimilarityProcessor {
         types.sort_by(|a, b| b.count.cmp(&a.count));
 
         // Build distribution
-        let distribution: Vec<(String, usize)> = types.iter()
-            .map(|t| (t.type_id.clone(), t.count))
-            .collect();
+        let distribution: Vec<(String, usize)> =
+            types.iter().map(|t| (t.type_id.clone(), t.count)).collect();
 
-        let avg_sim = if sim_count > 0 { total_sim / sim_count as f64 } else { 0.0 };
+        let avg_sim = if sim_count > 0 {
+            total_sim / sim_count as f64
+        } else {
+            0.0
+        };
 
         (types, distribution, avg_sim)
     }
@@ -791,7 +894,10 @@ impl ChunkedSimilarityProcessor {
             return Vec::new();
         }
 
-        println!("Building global type assignments from {} samples...", features.len());
+        println!(
+            "Building global type assignments from {} samples...",
+            features.len()
+        );
 
         let n = features.len();
 
@@ -804,17 +910,18 @@ impl ChunkedSimilarityProcessor {
         }
 
         // Normalize
-        let mut engine = AcousticSimilarityEngine::with_metric(
-            self.feature_dim,
-            SimilarityMetric::Cosine,
-        );
+        let mut engine =
+            AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
         engine.fit_normalization(&matrix);
 
         // Use incremental clustering with centroids
         let mut types: Vec<AcousticType> = Vec::new();
         let mut assignments = vec![0usize; n];
 
-        println!("  Assigning samples to types (threshold: {:.2})...", self.similarity_threshold);
+        println!(
+            "  Assigning samples to types (threshold: {:.2})...",
+            self.similarity_threshold
+        );
 
         for i in 0..n {
             let sample = matrix.row(i).to_owned();
@@ -837,12 +944,20 @@ impl ChunkedSimilarityProcessor {
                 // Add to existing type
                 assignments[i] = type_idx;
                 types[type_idx].count += 1;
-                types[type_idx].sample_ids.push(features[i].sample_id.clone());
+                types[type_idx]
+                    .sample_ids
+                    .push(features[i].sample_id.clone());
 
                 // Update centroid (moving average)
                 let n_in_type = types[type_idx].count;
-                for (j, val) in features[i].features.iter().enumerate().take(self.feature_dim) {
-                    types[type_idx].centroid[j] += (val - types[type_idx].centroid[j]) / n_in_type as f64;
+                for (j, val) in features[i]
+                    .features
+                    .iter()
+                    .enumerate()
+                    .take(self.feature_dim)
+                {
+                    types[type_idx].centroid[j] +=
+                        (val - types[type_idx].centroid[j]) / n_in_type as f64;
                 }
             } else {
                 // Create new type
@@ -859,8 +974,12 @@ impl ChunkedSimilarityProcessor {
             }
 
             if (i + 1) % 10000 == 0 {
-                println!("    Processed {}/{} samples, {} types so far",
-                    i + 1, n, types.len());
+                println!(
+                    "    Processed {}/{} samples, {} types so far",
+                    i + 1,
+                    n,
+                    types.len()
+                );
             }
         }
 
@@ -926,10 +1045,15 @@ fn compute_global_statistics(
     // Type entropy
     let total: usize = types.iter().map(|t| t.count).sum();
     let entropy = if total > 0 {
-        types.iter()
+        types
+            .iter()
             .map(|t| {
                 let p = t.count as f64 / total as f64;
-                if p > 0.0 { -p * p.log2() } else { 0.0 }
+                if p > 0.0 {
+                    -p * p.log2()
+                } else {
+                    0.0
+                }
             })
             .sum()
     } else {
@@ -954,13 +1078,17 @@ fn compute_global_statistics(
     let mut intra_sim = 0.0;
     let mut intra_count = 0;
 
-    for t in types.iter().take(50) {  // Sample top 50 types
-        if t.count < 2 { continue; }
+    for t in types.iter().take(50) {
+        // Sample top 50 types
+        if t.count < 2 {
+            continue;
+        }
 
         let centroid = ndarray::Array1::from_vec(t.centroid.clone());
         let mut type_sim = 0.0;
 
-        for sample_id in t.sample_ids.iter().take(10) {  // Sample 10 per type
+        for sample_id in t.sample_ids.iter().take(10) {
+            // Sample 10 per type
             if let Some(f) = features.iter().find(|f| &f.sample_id == sample_id) {
                 let sample = ndarray::Array1::from_vec(f.features.clone());
                 type_sim += engine.similarity(&centroid, &sample);
@@ -971,14 +1099,18 @@ fn compute_global_statistics(
         intra_count += 1;
     }
 
-    let avg_intra = if intra_count > 0 { intra_sim / intra_count as f64 } else { 0.0 };
+    let avg_intra = if intra_count > 0 {
+        intra_sim / intra_count as f64
+    } else {
+        0.0
+    };
 
     // Inter-type distance
     let mut inter_dist = 0.0;
     let mut inter_count = 0;
 
     for i in 0..types.len().min(50) {
-        for j in (i+1)..types.len().min(50) {
+        for j in (i + 1)..types.len().min(50) {
             let a = ndarray::Array1::from_vec(types[i].centroid.clone());
             let b = ndarray::Array1::from_vec(types[j].centroid.clone());
             inter_dist += engine.distance(&a, &b);
@@ -986,7 +1118,11 @@ fn compute_global_statistics(
         }
     }
 
-    let avg_inter = if inter_count > 0 { inter_dist / inter_count as f64 } else { 0.0 };
+    let avg_inter = if inter_count > 0 {
+        inter_dist / inter_count as f64
+    } else {
+        0.0
+    };
 
     // Separation ratio
     let separation = if avg_intra > 0.0 && avg_intra < 1.0 {
@@ -998,12 +1134,16 @@ fn compute_global_statistics(
     (entropy, avg_intra, avg_inter, separation)
 }
 
-fn evaluate_knn_classification(
-    features: &[ExtractedFeatures],
-) -> (f64, usize) {
+fn evaluate_knn_classification(features: &[ExtractedFeatures]) -> (f64, usize) {
     // Get primary label
-    let labels: Vec<String> = features.iter()
-        .map(|f| f.labels.get("source_dataset").cloned().unwrap_or_else(|| "unknown".to_string()))
+    let labels: Vec<String> = features
+        .iter()
+        .map(|f| {
+            f.labels
+                .get("source_dataset")
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string())
+        })
         .collect();
 
     // Create feature matrix
@@ -1034,7 +1174,10 @@ fn evaluate_knn_classification(
         m
     };
 
-    let eval_labels: Vec<String> = eval_indices.iter().map(|&idx| labels[idx].clone()).collect();
+    let eval_labels: Vec<String> = eval_indices
+        .iter()
+        .map(|&idx| labels[idx].clone())
+        .collect();
 
     // Build simple k-NN using acoustic similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
@@ -1049,7 +1192,11 @@ fn evaluate_knn_classification(
 
     for fold in 0..n_folds {
         let test_start = fold * fold_size;
-        let test_end = if fold == n_folds - 1 { eval_size } else { (fold + 1) * fold_size };
+        let test_end = if fold == n_folds - 1 {
+            eval_size
+        } else {
+            (fold + 1) * fold_size
+        };
 
         for i in test_start..test_end {
             let query = eval_features.row(i).to_owned();
@@ -1073,7 +1220,8 @@ fn evaluate_knn_classification(
                 *votes.entry(label.clone()).or_insert(0) += 1;
             }
 
-            let predicted = votes.into_iter()
+            let predicted = votes
+                .into_iter()
                 .max_by_key(|(_, count)| *count)
                 .map(|(label, _)| label)
                 .unwrap_or_else(|| "unknown".to_string());
@@ -1094,7 +1242,9 @@ fn evaluate_knn_classification(
     (accuracy, K_NEIGHBORS)
 }
 
-fn analyze_labels(features: &[ExtractedFeatures]) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn analyze_labels(
+    features: &[ExtractedFeatures],
+) -> (HashMap<String, usize>, HashMap<String, usize>) {
     let mut source_datasets = HashMap::new();
     let mut task_types = HashMap::new();
 
@@ -1166,7 +1316,8 @@ fn main() -> Result<()> {
         SIMILARITY_THRESHOLD,
     );
 
-    let (features, global_types, chunk_results) = processor.process_all_chunks(&manifest, base_path);
+    let (features, global_types, chunk_results) =
+        processor.process_all_chunks(&manifest, base_path);
 
     // === Phase 2: Global Statistics ===
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -1190,8 +1341,13 @@ fn main() -> Result<()> {
     // Top types
     println!("Top 10 Types by Occurrence:");
     for (i, t) in global_types.iter().take(10).enumerate() {
-        println!("  {:2}. {} - {} samples, avg dist: {:.4}",
-            i + 1, t.type_id, t.count, t.avg_distance_to_centroid);
+        println!(
+            "  {:2}. {} - {} samples, avg dist: {:.4}",
+            i + 1,
+            t.type_id,
+            t.count,
+            t.avg_distance_to_centroid
+        );
     }
     println!();
 
@@ -1266,16 +1422,29 @@ fn main() -> Result<()> {
     println!();
 
     println!("Performance:");
-    println!("  ├─ Total time: {:.2}s ({:.1} min)", assessment.total_time_sec, assessment.total_time_sec / 60.0);
-    println!("  ├─ Throughput: {:.1} samples/sec", assessment.throughput_samples_per_sec);
+    println!(
+        "  ├─ Total time: {:.2}s ({:.1} min)",
+        assessment.total_time_sec,
+        assessment.total_time_sec / 60.0
+    );
+    println!(
+        "  ├─ Throughput: {:.1} samples/sec",
+        assessment.throughput_samples_per_sec
+    );
     println!("  └─ Chunks processed: {}", assessment.total_chunks);
     println!();
 
     println!("Type Discovery (Acoustic Similarity):");
     println!("  ├─ Global types: {}", assessment.global_types);
     println!("  ├─ Type entropy: {:.3} bits", assessment.type_entropy);
-    println!("  ├─ Intra-type similarity: {:.4}", assessment.avg_intra_type_similarity);
-    println!("  ├─ Inter-type distance: {:.4}", assessment.avg_inter_type_distance);
+    println!(
+        "  ├─ Intra-type similarity: {:.4}",
+        assessment.avg_intra_type_similarity
+    );
+    println!(
+        "  ├─ Inter-type distance: {:.4}",
+        assessment.avg_inter_type_distance
+    );
     println!("  └─ Separation ratio: {:.2}x", assessment.separation_ratio);
     println!();
 

@@ -6,10 +6,10 @@
 // 3. Evaluates classification competence (species, individual, call type)
 // 4. Compares 56D vs 30D baseline performance
 
-use std::path::Path;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
-use std::collections::HashMap;
+use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
@@ -17,7 +17,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let output_dir = Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
+    let output_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/src/technical_architecture/beans_analysis");
     std::fs::create_dir_all(output_dir)?;
 
     println!("📊 Configuration:");

@@ -13,11 +13,6 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_fingerprint
 
-use technical_architecture::{
-    DynamicSegmenter, DynamicSegmenterConfig, DynamicPhraseCandidate,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -28,6 +23,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
+    SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 const SAMPLE_RATE: u32 = 44100;
@@ -55,10 +54,10 @@ struct PhraseFingerprint {
     duration_ms: f64,
     mean_f0_hz: f64,
     f0_range_hz: (f64, f64),
-    spectral_flatness: f64,      // 0 = tonal, 1 = noise
-    spectral_centroid: f64,      // Brightness
-    harmonic_ratio: f64,         // Harmonicity
-    energy: f64,                 // RMS energy
+    spectral_flatness: f64, // 0 = tonal, 1 = noise
+    spectral_centroid: f64, // Brightness
+    harmonic_ratio: f64,    // Harmonicity
+    energy: f64,            // RMS energy
 
     // Call type
     primary_call_type: String,
@@ -123,9 +122,9 @@ struct VisualizationData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct VisualizationPoint {
-    x: f64,  // Duration
-    y: f64,  // F0
-    color: f64,  // Spectral flatness
+    x: f64,     // Duration
+    y: f64,     // F0
+    color: f64, // Spectral flatness
     size: f64,  // Occurrence count
     label: String,
     call_type: String,
@@ -188,48 +187,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let all_candidates: Vec<(DynamicPhraseCandidate, String, String, Vec<f64>)> = annotations_subset
-        .par_iter()
-        .flat_map(|ann| {
-            let count = processed.fetch_add(1, Ordering::Relaxed);
-            if count % 100 == 0 {
-                println!("  Progress: {}/{}", count + 1, max_files);
-            }
-
-            let audio_path = vocalizations_dir.join(&ann.filename);
-            if let Ok(audio) = load_audio(&audio_path) {
-                if audio.len() < 500 {
-                    return Vec::new();
+    let all_candidates: Vec<(DynamicPhraseCandidate, String, String, Vec<f64>)> =
+        annotations_subset
+            .par_iter()
+            .flat_map(|ann| {
+                let count = processed.fetch_add(1, Ordering::Relaxed);
+                if count % 100 == 0 {
+                    println!("  Progress: {}/{}", count + 1, max_files);
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
-                let result = segmenter.segment(
-                    &audio,
-                    |frame, sr| {
-                        let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
-                        let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
-                    },
-                    &ann.filename,
-                );
+                let audio_path = vocalizations_dir.join(&ann.filename);
+                if let Ok(audio) = load_audio(&audio_path) {
+                    if audio.len() < 500 {
+                        return Vec::new();
+                    }
 
-                result.candidates.into_iter()
-                    .map(|c| {
-                        // Compute additional acoustic properties from audio segment
-                        let start_sample = ((c.start_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
-                        let end_sample = ((c.end_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
-                        let segment = &audio[start_sample..end_sample.min(audio.len())];
+                    let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                        SAMPLE_RATE,
+                    )));
+                    let result = segmenter.segment(
+                        &audio,
+                        |frame, sr| {
+                            let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
+                            let mut ext = extractor.lock().unwrap();
+                            ext.extract_45d(&frame_f64)
+                                .ok()
+                                .map(|f| f.to_vector().to_vec())
+                        },
+                        &ann.filename,
+                    );
 
-                        let acoustic = compute_acoustic_properties(segment, SAMPLE_RATE);
+                    result
+                        .candidates
+                        .into_iter()
+                        .map(|c| {
+                            // Compute additional acoustic properties from audio segment
+                            let start_sample =
+                                ((c.start_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
+                            let end_sample = ((c.end_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
+                            let segment = &audio[start_sample..end_sample.min(audio.len())];
 
-                        (c, ann.call_type.clone(), ann.name.clone(), acoustic)
-                    })
-                    .collect()
-            } else {
-                Vec::new()
-            }
-        })
-        .collect();
+                            let acoustic = compute_acoustic_properties(segment, SAMPLE_RATE);
+
+                            (c, ann.call_type.clone(), ann.name.clone(), acoustic)
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
+                }
+            })
+            .collect();
 
     println!("\nExtracted {} phrase candidates", all_candidates.len());
 
@@ -254,7 +261,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut vis_points: Vec<VisualizationPoint> = Vec::new();
 
     for cluster in &clusters {
-        let members: Vec<&(DynamicPhraseCandidate, String, String, Vec<f64>)> = cluster.member_indices.iter()
+        let members: Vec<&(DynamicPhraseCandidate, String, String, Vec<f64>)> = cluster
+            .member_indices
+            .iter()
             .map(|&idx| &all_candidates[idx])
             .collect();
 
@@ -282,7 +291,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let avg_flatness = flatnesses.iter().sum::<f64>() / flatnesses.len() as f64;
         let avg_centroid = centroids.iter().sum::<f64>() / centroids.len() as f64;
 
-        let primary_call_type = call_types.iter()
+        let primary_call_type = call_types
+            .iter()
             .max_by_key(|(_, &c)| c)
             .map(|(ct, _)| ct.clone())
             .unwrap_or_else(|| "unknown".to_string());
@@ -324,19 +334,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     let mut call_type_data: HashMap<String, Vec<&PhraseFingerprint>> = HashMap::new();
     for fp in &fingerprints {
-        call_type_data.entry(fp.primary_call_type.clone())
+        call_type_data
+            .entry(fp.primary_call_type.clone())
             .or_insert_with(Vec::new)
             .push(fp);
     }
 
-    let call_type_clusters: Vec<CallTypeCluster> = call_type_data.iter()
+    let call_type_clusters: Vec<CallTypeCluster> = call_type_data
+        .iter()
         .map(|(call_type, fps)| {
             let count = fps.iter().map(|fp| fp.occurrence_count).sum::<usize>();
             let avg_dur = fps.iter().map(|fp| fp.duration_ms).sum::<f64>() / fps.len() as f64;
             let avg_f0 = fps.iter().map(|fp| fp.mean_f0_hz).sum::<f64>() / fps.len() as f64;
-            let avg_flat = fps.iter().map(|fp| fp.spectral_flatness).sum::<f64>() / fps.len() as f64;
+            let avg_flat =
+                fps.iter().map(|fp| fp.spectral_flatness).sum::<f64>() / fps.len() as f64;
 
-            let all_f0s: Vec<f64> = fps.iter().flat_map(|fp| vec![fp.f0_range_hz.0, fp.f0_range_hz.1]).collect();
+            let all_f0s: Vec<f64> = fps
+                .iter()
+                .flat_map(|fp| vec![fp.f0_range_hz.0, fp.f0_range_hz.1])
+                .collect();
             let all_durs: Vec<f64> = fps.iter().map(|fp| fp.duration_ms).collect();
 
             CallTypeCluster {
@@ -362,16 +378,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Analyze acoustic niches
     // ========================================================================
     let duration_range = (
-        fingerprints.iter().map(|fp| fp.duration_ms).fold(f64::INFINITY, f64::min),
-        fingerprints.iter().map(|fp| fp.duration_ms).fold(f64::NEG_INFINITY, f64::max),
+        fingerprints
+            .iter()
+            .map(|fp| fp.duration_ms)
+            .fold(f64::INFINITY, f64::min),
+        fingerprints
+            .iter()
+            .map(|fp| fp.duration_ms)
+            .fold(f64::NEG_INFINITY, f64::max),
     );
     let f0_range = (
-        fingerprints.iter().map(|fp| fp.mean_f0_hz).fold(f64::INFINITY, f64::min),
-        fingerprints.iter().map(|fp| fp.mean_f0_hz).fold(f64::NEG_INFINITY, f64::max),
+        fingerprints
+            .iter()
+            .map(|fp| fp.mean_f0_hz)
+            .fold(f64::INFINITY, f64::min),
+        fingerprints
+            .iter()
+            .map(|fp| fp.mean_f0_hz)
+            .fold(f64::NEG_INFINITY, f64::max),
     );
     let flatness_range = (
-        fingerprints.iter().map(|fp| fp.spectral_flatness).fold(f64::INFINITY, f64::min),
-        fingerprints.iter().map(|fp| fp.spectral_flatness).fold(f64::NEG_INFINITY, f64::max),
+        fingerprints
+            .iter()
+            .map(|fp| fp.spectral_flatness)
+            .fold(f64::INFINITY, f64::min),
+        fingerprints
+            .iter()
+            .map(|fp| fp.spectral_flatness)
+            .fold(f64::NEG_INFINITY, f64::max),
     );
 
     // Identify dominant niches
@@ -380,12 +414,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut niches = Vec::new();
 
     // Short/high-pitched niche
-    let short_high: Vec<_> = fingerprints.iter()
+    let short_high: Vec<_> = fingerprints
+        .iter()
         .filter(|fp| fp.duration_ms < 150.0 && fp.mean_f0_hz > 3000.0)
         .collect();
     if !short_high.is_empty() {
         let occ: usize = short_high.iter().map(|fp| fp.occurrence_count).sum();
-        let call_types: Vec<String> = short_high.iter()
+        let call_types: Vec<String> = short_high
+            .iter()
             .map(|fp| fp.primary_call_type.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -394,12 +430,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             name: "Short High-Pitched Calls".to_string(),
             call_types,
             duration_range: (
-                short_high.iter().map(|fp| fp.duration_ms).fold(f64::INFINITY, f64::min),
-                short_high.iter().map(|fp| fp.duration_ms).fold(f64::NEG_INFINITY, f64::max),
+                short_high
+                    .iter()
+                    .map(|fp| fp.duration_ms)
+                    .fold(f64::INFINITY, f64::min),
+                short_high
+                    .iter()
+                    .map(|fp| fp.duration_ms)
+                    .fold(f64::NEG_INFINITY, f64::max),
             ),
             f0_range: (
-                short_high.iter().map(|fp| fp.mean_f0_hz).fold(f64::INFINITY, f64::min),
-                short_high.iter().map(|fp| fp.mean_f0_hz).fold(f64::NEG_INFINITY, f64::max),
+                short_high
+                    .iter()
+                    .map(|fp| fp.mean_f0_hz)
+                    .fold(f64::INFINITY, f64::min),
+                short_high
+                    .iter()
+                    .map(|fp| fp.mean_f0_hz)
+                    .fold(f64::NEG_INFINITY, f64::max),
             ),
             occurrence_percent: occ as f64 / total_occurrences as f64 * 100.0,
             description: "Brief, high-frequency calls (Tet, Tuck, Wsst)".to_string(),
@@ -407,12 +455,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Long harmonic niche
-    let long_harmonic: Vec<_> = fingerprints.iter()
+    let long_harmonic: Vec<_> = fingerprints
+        .iter()
         .filter(|fp| fp.duration_ms > 300.0 && fp.spectral_flatness < 0.3)
         .collect();
     if !long_harmonic.is_empty() {
         let occ: usize = long_harmonic.iter().map(|fp| fp.occurrence_count).sum();
-        let call_types: Vec<String> = long_harmonic.iter()
+        let call_types: Vec<String> = long_harmonic
+            .iter()
             .map(|fp| fp.primary_call_type.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -421,12 +471,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             name: "Long Harmonic Songs".to_string(),
             call_types,
             duration_range: (
-                long_harmonic.iter().map(|fp| fp.duration_ms).fold(f64::INFINITY, f64::min),
-                long_harmonic.iter().map(|fp| fp.duration_ms).fold(f64::NEG_INFINITY, f64::max),
+                long_harmonic
+                    .iter()
+                    .map(|fp| fp.duration_ms)
+                    .fold(f64::INFINITY, f64::min),
+                long_harmonic
+                    .iter()
+                    .map(|fp| fp.duration_ms)
+                    .fold(f64::NEG_INFINITY, f64::max),
             ),
             f0_range: (
-                long_harmonic.iter().map(|fp| fp.mean_f0_hz).fold(f64::INFINITY, f64::min),
-                long_harmonic.iter().map(|fp| fp.mean_f0_hz).fold(f64::NEG_INFINITY, f64::max),
+                long_harmonic
+                    .iter()
+                    .map(|fp| fp.mean_f0_hz)
+                    .fold(f64::INFINITY, f64::min),
+                long_harmonic
+                    .iter()
+                    .map(|fp| fp.mean_f0_hz)
+                    .fold(f64::NEG_INFINITY, f64::max),
             ),
             occurrence_percent: occ as f64 / total_occurrences as f64 * 100.0,
             description: "Extended, tonal songs (Song motifs)".to_string(),
@@ -462,7 +524,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("│ Call Type  │ Count │ Duration    │ F0 Range        │ Character            │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     for ctc in call_type_clusters.iter().take(8) {
-        println!("│ {:<10} │ {:>5} │ {:>6.0}-{:<4.0}ms │ {:>5.0}-{:<6.0}Hz │ {:<20} │",
+        println!(
+            "│ {:<10} │ {:>5} │ {:>6.0}-{:<4.0}ms │ {:>5.0}-{:<6.0}Hz │ {:<20} │",
             ctc.call_type,
             ctc.count,
             ctc.duration_range.0,
@@ -477,10 +540,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Niche analysis
     println!("\nACOUSTIC NICHES:");
     for niche in &niches {
-        println!("  • {}: {:.1}% of vocalizations", niche.name, niche.occurrence_percent);
-        println!("    Duration: {:.0}-{:.0}ms, F0: {:.0}-{:.0}Hz",
-            niche.duration_range.0, niche.duration_range.1,
-            niche.f0_range.0, niche.f0_range.1);
+        println!(
+            "  • {}: {:.1}% of vocalizations",
+            niche.name, niche.occurrence_percent
+        );
+        println!(
+            "    Duration: {:.0}-{:.0}ms, F0: {:.0}-{:.0}Hz",
+            niche.duration_range.0, niche.duration_range.1, niche.f0_range.0, niche.f0_range.1
+        );
         println!("    Call types: {}", niche.call_types.join(", "));
     }
 
@@ -527,7 +594,8 @@ fn compute_acoustic_properties(audio: &[f32], sample_rate: u32) -> Vec<f64> {
     }
 
     // Mean F0 (simplified - using zero crossings as proxy)
-    let zero_crossings: usize = audio.windows(2)
+    let zero_crossings: usize = audio
+        .windows(2)
         .filter(|w| (w[0] >= 0.0 && w[1] < 0.0) || (w[0] < 0.0 && w[1] >= 0.0))
         .count();
     let mean_f0 = if zero_crossings > 0 {
@@ -538,9 +606,7 @@ fn compute_acoustic_properties(audio: &[f32], sample_rate: u32) -> Vec<f64> {
 
     // Spectral flatness (simplified - using RMS variation)
     let rms: f64 = (audio.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / n as f64).sqrt();
-    let variance: f64 = audio.iter()
-        .map(|x| (*x as f64 - rms).powi(2))
-        .sum::<f64>() / n as f64;
+    let variance: f64 = audio.iter().map(|x| (*x as f64 - rms).powi(2)).sum::<f64>() / n as f64;
     let spectral_flatness = if rms > 1e-6 {
         (variance.sqrt() / rms).min(1.0)
     } else {
@@ -659,12 +725,14 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => {
-            reader.into_samples::<f32>().filter_map(|s| s.ok()).collect()
-        }
+        hound::SampleFormat::Float => reader
+            .into_samples::<f32>()
+            .filter_map(|s| s.ok())
+            .collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
-            reader.into_samples::<i32>()
+            reader
+                .into_samples::<i32>()
                 .filter_map(|s| s.ok())
                 .map(|s| s as f32 / max_val)
                 .collect()

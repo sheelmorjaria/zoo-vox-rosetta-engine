@@ -18,45 +18,45 @@
 
 use std::collections::HashMap;
 use std::path::Path;
-use technical_architecture::micro_dynamics_extractor::MicroDynamicsExtractor;
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
+use technical_architecture::micro_dynamics_extractor::MicroDynamicsExtractor;
 
 /// Feature names for 29D MicroDynamics (excluding vibrato_depth which is calculated separately)
 const FEATURE_NAMES: &[&str] = &[
-    "attack_time_ms",      // 0
-    "decay_time_ms",       // 1
-    "sustain_level",       // 2
-    "vibrato_rate_hz",     // 3
-    "jitter",              // 4
-    "shimmer",             // 5
-    "harmonicity",         // 6
-    "spectral_flatness",   // 7
-    "hnr",                 // 8
-    "mfcc_0",              // 9
-    "mfcc_1",              // 10
-    "mfcc_2",              // 11
-    "mfcc_3",              // 12
-    "mfcc_4",              // 13
-    "mfcc_5",              // 14
-    "mfcc_6",              // 15
-    "mfcc_7",              // 16
-    "mfcc_8",              // 17
-    "mfcc_9",              // 18
-    "mfcc_10",             // 19
-    "mfcc_11",             // 20
-    "mfcc_12",             // 21
-    "spectral_flux",       // 22
-    "median_ici_ms",       // 23
-    "onset_rate_hz",       // 24
-    "ici_cv",              // 25
-    "duration_ms",         // 26
-    "rms_energy",          // 27
-    "vibrato_depth",       // 28 (extracted but may be 0.0 for some calls)
+    "attack_time_ms",    // 0
+    "decay_time_ms",     // 1
+    "sustain_level",     // 2
+    "vibrato_rate_hz",   // 3
+    "jitter",            // 4
+    "shimmer",           // 5
+    "harmonicity",       // 6
+    "spectral_flatness", // 7
+    "hnr",               // 8
+    "mfcc_0",            // 9
+    "mfcc_1",            // 10
+    "mfcc_2",            // 11
+    "mfcc_3",            // 12
+    "mfcc_4",            // 13
+    "mfcc_5",            // 14
+    "mfcc_6",            // 15
+    "mfcc_7",            // 16
+    "mfcc_8",            // 17
+    "mfcc_9",            // 18
+    "mfcc_10",           // 19
+    "mfcc_11",           // 20
+    "mfcc_12",           // 21
+    "spectral_flux",     // 22
+    "median_ici_ms",     // 23
+    "onset_rate_hz",     // 24
+    "ici_cv",            // 25
+    "duration_ms",       // 26
+    "rms_energy",        // 27
+    "vibrato_depth",     // 28 (extracted but may be 0.0 for some calls)
 ];
 
 /// Call type label
@@ -108,7 +108,7 @@ impl CallType {
 /// Labeled feature vector
 #[derive(Debug, Clone)]
 struct LabeledFeatures {
-    features: Vec<f32>,  // 30D
+    features: Vec<f32>, // 30D
     label: CallType,
     file_id: String,
 }
@@ -133,7 +133,8 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -167,7 +168,11 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::S24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32),
+                    );
                 }
             }
             AudioBufferRef::S16(buf) => {
@@ -197,13 +202,21 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0),
+                    );
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2147483648.0) / 2147483648.0));
+                    audio_samples.extend(
+                        samples
+                            .iter()
+                            .map(|&s| (s as f32 - 2147483648.0) / 2147483648.0),
+                    );
                 }
             }
         }
@@ -213,7 +226,10 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Extract 29D features from audio
-fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_30d_features(
+    audio: &[f32],
+    sample_rate: u32,
+) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     let features = extractor.extract(audio)?;
 
@@ -228,33 +244,33 @@ fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box
         features.spectral_flatness,       // 7
         features.harmonic_to_noise_ratio, // 8
         // 13 MFCC coefficients
-        features.mfcc[0],                 // 9
-        features.mfcc[1],                 // 10
-        features.mfcc[2],                 // 11
-        features.mfcc[3],                 // 12
-        features.mfcc[4],                 // 13
-        features.mfcc[5],                 // 14
-        features.mfcc[6],                 // 15
-        features.mfcc[7],                 // 16
-        features.mfcc[8],                 // 17
-        features.mfcc[9],                 // 18
-        features.mfcc[10],                // 19
-        features.mfcc[11],                // 20
-        features.mfcc[12],                // 21
-        features.spectral_flux,           // 22
-        features.median_ici_ms,           // 23
-        features.onset_rate_hz,           // 24
+        features.mfcc[0],                      // 9
+        features.mfcc[1],                      // 10
+        features.mfcc[2],                      // 11
+        features.mfcc[3],                      // 12
+        features.mfcc[4],                      // 13
+        features.mfcc[5],                      // 14
+        features.mfcc[6],                      // 15
+        features.mfcc[7],                      // 16
+        features.mfcc[8],                      // 17
+        features.mfcc[9],                      // 18
+        features.mfcc[10],                     // 19
+        features.mfcc[11],                     // 20
+        features.mfcc[12],                     // 21
+        features.spectral_flux,                // 22
+        features.median_ici_ms,                // 23
+        features.onset_rate_hz,                // 24
         features.ici_coefficient_of_variation, // 25
-        features.vibrato_depth,           // 26
+        features.vibrato_depth,                // 26
         // Duration and energy
-        (audio.len() as f32 / sample_rate as f32) * 1000.0,  // 27
-        (audio.iter().map(|&x| x * x).sum::<f32>() / audio.len() as f32).sqrt(),  // 28
+        (audio.len() as f32 / sample_rate as f32) * 1000.0, // 27
+        (audio.iter().map(|&x| x * x).sum::<f32>() / audio.len() as f32).sqrt(), // 28
     ])
 }
 
 /// Normalize features to zero mean and unit variance
 fn normalize_features(data: &mut [LabeledFeatures]) {
-    let n_features = 29;  // Updated to match actual feature count
+    let n_features = 29; // Updated to match actual feature count
     let n_samples = data.len();
 
     // Compute mean
@@ -278,7 +294,7 @@ fn normalize_features(data: &mut [LabeledFeatures]) {
     for val in std.iter_mut() {
         *val = (*val / n_samples as f32).sqrt();
         if *val < 1e-6 {
-            *val = 1.0;  // Avoid division by zero
+            *val = 1.0; // Avoid division by zero
         }
     }
 
@@ -298,9 +314,11 @@ fn fisher_score(data: &[LabeledFeatures], feature_idx: usize) -> f64 {
     // Organize data by class
     for sample in data {
         let val = sample.features[feature_idx] as f64;
-        class_stats.entry(sample.label)
+        class_stats
+            .entry(sample.label)
             .or_insert_with(|| (Vec::new(), 0.0))
-            .0.push(val);
+            .0
+            .push(val);
     }
 
     if class_stats.len() < 2 {
@@ -344,7 +362,7 @@ fn fisher_score(data: &[LabeledFeatures], feature_idx: usize) -> f64 {
 
 /// Recursive Feature Elimination
 fn rfe_analysis(data: &[LabeledFeatures], n_features_to_select: usize) -> Vec<(usize, f64)> {
-    let mut remaining_features: Vec<usize> = (0..29).collect();  // Updated to 29
+    let mut remaining_features: Vec<usize> = (0..29).collect(); // Updated to 29
     let mut rankings: Vec<(usize, f64)> = Vec::new();
 
     println!("RFE Progress:");
@@ -352,7 +370,8 @@ fn rfe_analysis(data: &[LabeledFeatures], n_features_to_select: usize) -> Vec<(u
 
     while remaining_features.len() > n_features_to_select {
         // Compute Fisher scores for remaining features
-        let mut scores: Vec<(usize, f64)> = remaining_features.iter()
+        let mut scores: Vec<(usize, f64)> = remaining_features
+            .iter()
             .map(|&idx| (idx, fisher_score(data, idx)))
             .collect();
 
@@ -366,8 +385,12 @@ fn rfe_analysis(data: &[LabeledFeatures], n_features_to_select: usize) -> Vec<(u
         // Remove from remaining features
         remaining_features.retain(|&x| x != worst_idx);
 
-        println!("  Eliminated: {:20} (Score: {:.6}) | Remaining: {}",
-            FEATURE_NAMES[worst_idx], worst_score, remaining_features.len());
+        println!(
+            "  Eliminated: {:20} (Score: {:.6}) | Remaining: {}",
+            FEATURE_NAMES[worst_idx],
+            worst_score,
+            remaining_features.len()
+        );
     }
 
     // Add final remaining features with their scores
@@ -409,9 +432,7 @@ fn load_marmoset_dataset(
                 continue;
             }
 
-            let filename = file_path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             if !filename.ends_with(".flac") {
                 continue;
@@ -424,20 +445,18 @@ fn load_marmoset_dataset(
                 }
 
                 match load_flac_file(&file_path) {
-                    Ok(audio) => {
-                        match extract_30d_features(&audio, 96000) {
-                            Ok(features) => {
-                                let file_id = filename.to_string();
-                                all_data.push(LabeledFeatures {
-                                    features,
-                                    label: call_type,
-                                    file_id,
-                                });
-                                *class_counts.entry(call_type).or_insert(0) += 1;
-                            }
-                            Err(_) => continue,
+                    Ok(audio) => match extract_30d_features(&audio, 96000) {
+                        Ok(features) => {
+                            let file_id = filename.to_string();
+                            all_data.push(LabeledFeatures {
+                                features,
+                                label: call_type,
+                                file_id,
+                            });
+                            *class_counts.entry(call_type).or_insert(0) += 1;
                         }
-                    }
+                        Err(_) => continue,
+                    },
                     Err(_) => continue,
                 }
             }
@@ -450,8 +469,11 @@ fn load_marmoset_dataset(
         }
     }
 
-    println!("Loaded {} samples across {} call types",
-        all_data.len(), class_counts.len());
+    println!(
+        "Loaded {} samples across {} call types",
+        all_data.len(),
+        class_counts.len()
+    );
 
     for (call_type, count) in &class_counts {
         println!("  {:20}: {} samples", call_type.name(), count);
@@ -503,7 +525,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("========================================================================");
     println!();
 
-    println!("{:<3} {:<20} {:>15} {:>20}", "Rank", "Feature", "Fisher Score", "Interpretation");
+    println!(
+        "{:<3} {:<20} {:>15} {:>20}",
+        "Rank", "Feature", "Fisher Score", "Interpretation"
+    );
     println!("{}", "-".repeat(70));
 
     let interpretations = [
@@ -542,7 +567,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             interpretations[9]
         };
 
-        println!("{:<3} {:<20} {:>15.6}  {}", i + 1, FEATURE_NAMES[*feat_idx], score, interpretation);
+        println!(
+            "{:<3} {:<20} {:>15.6}  {}",
+            i + 1,
+            FEATURE_NAMES[*feat_idx],
+            score,
+            interpretation
+        );
     }
 
     println!();
@@ -573,13 +604,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Energy"
         };
 
-        category_scores.entry(category).or_insert_with(Vec::new).push(*score);
+        category_scores
+            .entry(category)
+            .or_insert_with(Vec::new)
+            .push(*score);
     }
 
-    println!("{:<25} {:>15} {:>15}", "Category", "Avg Fisher Score", "Rank");
+    println!(
+        "{:<25} {:>15} {:>15}",
+        "Category", "Avg Fisher Score", "Rank"
+    );
     println!("{}", "-".repeat(55));
 
-    let mut category_rankings: Vec<(&str, f64)> = category_scores.iter()
+    let mut category_rankings: Vec<(&str, f64)> = category_scores
+        .iter()
         .map(|(cat, scores)| {
             let avg_score: f64 = scores.iter().sum::<f64>() / scores.len() as f64;
             (*cat, avg_score)
@@ -603,7 +641,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Most Discriminative Features for Marmoset Call Types:");
     println!("=======================================================");
     for (i, (feat_idx, score)) in top_features.iter().enumerate() {
-        println!("  {}. {} (Fisher Score: {:.6})", i + 1, FEATURE_NAMES[*feat_idx], score);
+        println!(
+            "  {}. {} (Fisher Score: {:.6})",
+            i + 1,
+            FEATURE_NAMES[*feat_idx],
+            score
+        );
     }
 
     println!();

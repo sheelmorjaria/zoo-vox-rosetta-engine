@@ -83,7 +83,10 @@ impl NGram {
 
     /// Get the last symbol (for suffix analysis)
     pub fn last(&self) -> usize {
-        *self.symbols.last().expect("n-gram should have at least 2 symbols")
+        *self
+            .symbols
+            .last()
+            .expect("n-gram should have at least 2 symbols")
     }
 
     /// Get all internal transitions (for PMI calculation)
@@ -125,8 +128,7 @@ pub struct PhraseX {
 impl PhraseX {
     /// Check if this phrase meets the thresholds for "Phrase X"
     pub fn is_phrase_x(&self, rigidity_threshold: f64, flexibility_threshold: f64) -> bool {
-        self.rigidity_score >= rigidity_threshold
-            && self.flexibility_score >= flexibility_threshold
+        self.rigidity_score >= rigidity_threshold && self.flexibility_score >= flexibility_threshold
     }
 
     /// Get the most common following symbol
@@ -306,10 +308,7 @@ impl PMICalculator {
             .unigram_probs
             .get(&b)
             .ok_or_else(|| CorpusError::SymbolNotFound(b))?;
-        let p_ab = self
-            .bigram_probs
-            .get(&(a, b))
-            .unwrap_or(&0.0);
+        let p_ab = self.bigram_probs.get(&(a, b)).unwrap_or(&0.0);
 
         if *p_a == 0.0 || *p_b == 0.0 || *p_ab == 0.0 {
             return Ok(f64::NEG_INFINITY); // No association
@@ -539,9 +538,7 @@ impl PhraseXDiscoveryEngine {
             let flexibility_score = self.entropy_calculator.suffix_entropy(&ngram);
 
             // Get suffix distribution
-            let suffix_distribution = self
-                .entropy_calculator
-                .suffix_distribution(&ngram);
+            let suffix_distribution = self.entropy_calculator.suffix_distribution(&ngram);
 
             let phrase = PhraseX {
                 ngram: ngram.clone(),
@@ -657,7 +654,8 @@ impl CorpusStatistics {
         let miner = NGramMiner::default();
         let _unique_ngrams = miner.extract_from_corpus(sequences).len();
         // We need to deduplicate
-        let unique_ngrams_set: HashSet<_> = miner.extract_from_corpus(sequences).into_iter().collect();
+        let unique_ngrams_set: HashSet<_> =
+            miner.extract_from_corpus(sequences).into_iter().collect();
 
         Ok(Self {
             total_sequences,

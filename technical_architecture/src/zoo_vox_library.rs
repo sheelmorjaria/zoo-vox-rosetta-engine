@@ -3,14 +3,14 @@
 //! Builds and manages phrase libraries from extracted phrases,
 //! handling phrase typing, deduplication, and context association.
 
-use std::collections::HashMap;
 use chrono::Utc;
+use std::collections::HashMap;
 
-use crate::zoo_vox_data_models::{
-    AcousticFeatures30D, PhrasePrototype, SpeciesPhraseLibrary,
-    CrossSpeciesPhraseDatabase, ContextAssociation,
-};
 use crate::species::SpeciesConfigFactory;
+use crate::zoo_vox_data_models::{
+    AcousticFeatures30D, ContextAssociation, CrossSpeciesPhraseDatabase, PhrasePrototype,
+    SpeciesPhraseLibrary,
+};
 
 /// Zoo Vox Rosetta library error type
 #[derive(Debug)]
@@ -67,14 +67,16 @@ impl ZooVoxLibraryBuilder {
         let typed_phrases = self.type_phrases(phrases);
 
         // Calculate statistics
-        let total_occurrences: u64 = typed_phrases.iter()
+        let total_occurrences: u64 = typed_phrases
+            .iter()
             .map(|p| p.occurrence_count as u64)
             .sum();
 
         // Calculate entropy
         let type_entropy = if total_occurrences > 0 {
             let total = total_occurrences as f64;
-            typed_phrases.iter()
+            typed_phrases
+                .iter()
                 .map(|p| {
                     let p_prob = p.occurrence_count as f64 / total;
                     if p_prob > 0.0 {
@@ -89,7 +91,8 @@ impl ZooVoxLibraryBuilder {
         };
 
         // Get frequency and duration ranges
-        let f0_values: Vec<f64> = typed_phrases.iter()
+        let f0_values: Vec<f64> = typed_phrases
+            .iter()
             .filter(|p| p.features_30d.mean_f0_hz > 0.0)
             .map(|p| p.features_30d.mean_f0_hz)
             .collect();
@@ -102,7 +105,8 @@ impl ZooVoxLibraryBuilder {
             (0.0, 0.0)
         };
 
-        let dur_values: Vec<f64> = typed_phrases.iter()
+        let dur_values: Vec<f64> = typed_phrases
+            .iter()
             .map(|p| p.features_30d.duration_ms)
             .collect();
 
@@ -115,7 +119,8 @@ impl ZooVoxLibraryBuilder {
         };
 
         // Collect context labels
-        let context_labels: Vec<String> = typed_phrases.iter()
+        let context_labels: Vec<String> = typed_phrases
+            .iter()
             .filter_map(|p| p.primary_context.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -152,7 +157,8 @@ impl ZooVoxLibraryBuilder {
         // Group by phrase_key first
         let mut key_groups: HashMap<String, Vec<PhrasePrototype>> = HashMap::new();
         for phrase in phrases {
-            key_groups.entry(phrase.phrase_key.clone())
+            key_groups
+                .entry(phrase.phrase_key.clone())
                 .or_insert_with(Vec::new)
                 .push(phrase);
         }
@@ -194,33 +200,37 @@ impl ZooVoxLibraryBuilder {
         let mut context_counts: HashMap<String, u32> = HashMap::new();
         for phrase in phrases {
             for ctx in &phrase.contexts {
-                *context_counts.entry(ctx.context_label.clone()).or_insert(0) += ctx.occurrence_count;
+                *context_counts.entry(ctx.context_label.clone()).or_insert(0) +=
+                    ctx.occurrence_count;
             }
         }
 
-        let merged_contexts: Vec<ContextAssociation> = context_counts.iter()
-            .map(|(label, &count)| {
-                ContextAssociation {
-                    context_label: label.clone(),
-                    context_category: "merged".to_string(),
-                    occurrence_count: count,
-                    ..Default::default()
-                }
+        let merged_contexts: Vec<ContextAssociation> = context_counts
+            .iter()
+            .map(|(label, &count)| ContextAssociation {
+                context_label: label.clone(),
+                context_category: "merged".to_string(),
+                occurrence_count: count,
+                ..Default::default()
             })
             .collect();
 
         // Find primary context (most occurrences)
-        let primary_context = context_counts.iter()
+        let primary_context = context_counts
+            .iter()
             .max_by_key(|(_, &count)| count)
             .map(|(label, _)| label.clone());
 
         // Average typical position
-        let typical_position = phrases.iter()
+        let typical_position = phrases
+            .iter()
             .map(|p| p.typical_position as f64)
-            .sum::<f64>() / phrases.len() as f64;
+            .sum::<f64>()
+            / phrases.len() as f64;
 
         // Collect co-occurring phrases
-        let co_occurring: Vec<String> = phrases.iter()
+        let co_occurring: Vec<String> = phrases
+            .iter()
             .flat_map(|p| p.co_occurring_phrases.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -245,8 +255,10 @@ impl ZooVoxLibraryBuilder {
             co_occurring_phrases: co_occurring,
             occurrence_count: phrases.iter().map(|p| p.occurrence_count).sum(),
             entropy_contribution: phrases.iter().map(|p| p.entropy_contribution).sum(),
-            signal_to_noise_ratio: phrases.iter().map(|p| p.signal_to_noise_ratio).sum::<f64>() / phrases.len() as f64,
-            extraction_confidence: phrases.iter().map(|p| p.extraction_confidence).sum::<f64>() / phrases.len() as f64,
+            signal_to_noise_ratio: phrases.iter().map(|p| p.signal_to_noise_ratio).sum::<f64>()
+                / phrases.len() as f64,
+            extraction_confidence: phrases.iter().map(|p| p.extraction_confidence).sum::<f64>()
+                / phrases.len() as f64,
             created_at: Utc::now(),
             notes: None,
         }
@@ -378,15 +390,13 @@ mod tests {
     fn test_build_library_with_phrases() {
         let builder = ZooVoxLibraryBuilder::new();
 
-        let mut phrase = PhrasePrototype::new(
-            "marmoset_001",
-            "F0_6800_DUR_65",
-            "marmoset",
-        );
+        let mut phrase = PhrasePrototype::new("marmoset_001", "F0_6800_DUR_65", "marmoset");
         phrase.occurrence_count = 100;
         phrase.primary_context = Some("contact".to_string());
 
-        let library = builder.build_library(vec![phrase], "marmoset", None).unwrap();
+        let library = builder
+            .build_library(vec![phrase], "marmoset", None)
+            .unwrap();
 
         assert_eq!(library.total_phrases, 1);
         assert_eq!(library.total_occurrences, 100);

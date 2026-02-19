@@ -117,7 +117,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut segments = load_segments_raw(&phase0_dir)?;
     println!("   📂 Loaded {} segments", segments.len());
-    println!("   📊 Feature dimension: {}D", segments.first().map(|s| s.features.len()).unwrap_or(0));
+    println!(
+        "   📊 Feature dimension: {}D",
+        segments.first().map(|s| s.features.len()).unwrap_or(0)
+    );
     println!();
 
     // ========================================================================
@@ -166,7 +169,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let silhouette_score = compute_silhouette_score(&segments, &cluster_stats);
 
     println!("   📊 Cluster Statistics:");
-    println!("   {:<10} {:>12} {:>15} {:>15} {:>12}", "Cluster", "Segments", "Within-Dist", "Max-Dist", "Files");
+    println!(
+        "   {:<10} {:>12} {:>15} {:>15} {:>12}",
+        "Cluster", "Segments", "Within-Dist", "Max-Dist", "Files"
+    );
     println!("{}", "-".repeat(75));
 
     let mut sorted_stats: Vec<_> = cluster_stats.values().collect();
@@ -179,12 +185,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             format!("{}", stats.file_distribution.len())
         };
 
-        println!("   {:<10} {:>12} {:>15.4} {:>15.4} {:>12}",
-                 stats.cluster_id,
-                 stats.segment_count,
-                 stats.within_cluster_distance,
-                 stats.max_distance,
-                 files_display);
+        println!(
+            "   {:<10} {:>12} {:>15.4} {:>15.4} {:>12}",
+            stats.cluster_id,
+            stats.segment_count,
+            stats.within_cluster_distance,
+            stats.max_distance,
+            files_display
+        );
     }
     println!();
 
@@ -231,7 +239,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    save_reclustered_data(&segments, &results_dir, &cluster_stats, &transition_analysis, silhouette_score)?;
+    save_reclustered_data(
+        &segments,
+        &results_dir,
+        &cluster_stats,
+        &transition_analysis,
+        silhouette_score,
+    )?;
 
     println!("   💾 All results saved to: {}", results_dir.display());
     println!();
@@ -243,7 +257,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Data Loading
 // ============================================================================
 
-fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+fn load_annotations(
+    path: impl AsRef<Path>,
+) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut mapping = HashMap::new();
 
@@ -266,13 +282,21 @@ fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<
 
 fn load_segments_raw(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::Error>> {
     let segments_path = phase0_dir.join("all_segments.json");
-    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     let mut segments = Vec::new();
 
     if let Some(arr) = segments_json.as_array() {
         for segment in arr {
-            if let (Some(segment_id), Some(file_name), Some(start), Some(end), Some(cluster_id), Some(features)) = (
+            if let (
+                Some(segment_id),
+                Some(file_name),
+                Some(start),
+                Some(end),
+                Some(cluster_id),
+                Some(features),
+            ) = (
                 segment["segment_id"].as_u64(),
                 segment["file_name"].as_str(),
                 segment["start_time_ms"].as_f64(),
@@ -283,7 +307,8 @@ fn load_segments_raw(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::err
                 let duration = end - start;
 
                 // Convert features to Vec<f32>
-                let feature_vec: Vec<f32> = features.iter()
+                let feature_vec: Vec<f32> = features
+                    .iter()
                     .filter_map(|v| v.as_f64().map(|f| f as f32))
                     .collect();
 
@@ -303,8 +328,11 @@ fn load_segments_raw(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::err
 
     // Sort by file and start time (for later analysis)
     segments.sort_by(|a, b| {
-        a.file_name.cmp(&b.file_name)
-            .then_with(|| a.start_time_ms.partial_cmp(&b.start_time_ms).unwrap_or(std::cmp::Ordering::Equal))
+        a.file_name.cmp(&b.file_name).then_with(|| {
+            a.start_time_ms
+                .partial_cmp(&b.start_time_ms)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     });
 
     Ok(segments)
@@ -373,7 +401,10 @@ fn determine_optimal_clusters(
     min_clusters: usize,
     max_clusters: usize,
 ) -> Result<usize, Box<dyn std::error::Error>> {
-    println!("   📊 Running elbow method on sample ({} clusters)...", max_clusters);
+    println!(
+        "   📊 Running elbow method on sample ({} clusters)...",
+        max_clusters
+    );
 
     // Sample segments for speed (use 10% or max 5000)
     let sample_size = segments.len().min(5000);
@@ -465,7 +496,8 @@ fn initialize_centroids_kmeans_plus_plus(
 
         for &idx in indices {
             let seg = &segments[idx];
-            let min_dist = centroids.iter()
+            let min_dist = centroids
+                .iter()
                 .map(|c| euclidean_distance_f32(&seg.features, c))
                 .fold(f64::INFINITY, |a, b| a.min(b));
 
@@ -588,7 +620,11 @@ fn ward_agglomerative_clustering(
         return Ok(());
     }
 
-    println!("   🔄 Ward clustering: {} segments → {} clusters", segments.len(), n_clusters);
+    println!(
+        "   🔄 Ward clustering: {} segments → {} clusters",
+        segments.len(),
+        n_clusters
+    );
 
     let n = segments.len();
 
@@ -604,7 +640,8 @@ fn ward_agglomerative_clustering(
 
     // Initialize with k-means++ for better starting points
     let mut all_indices: Vec<usize> = (0..n).collect();
-    let mut centroids = initialize_centroids_kmeans_plus_plus(&all_indices, segments, precluster_size.min(n));
+    let mut centroids =
+        initialize_centroids_kmeans_plus_plus(&all_indices, segments, precluster_size.min(n));
 
     // Assign initial clusters
     let mut cluster_assignments = vec![0usize; n];
@@ -692,11 +729,10 @@ fn ward_agglomerative_clustering(
             let n2 = cluster_sizes[c2];
 
             // New centroid: weighted average
-            let new_centroid: Vec<f32> = centroids[c1].iter()
+            let new_centroid: Vec<f32> = centroids[c1]
+                .iter()
                 .zip(centroids[c2].iter())
-                .map(|(&v1, &v2)| {
-                    (v1 * n1 as f32 + v2 * n2 as f32) / ((n1 + n2) as f32)
-                })
+                .map(|(&v1, &v2)| (v1 * n1 as f32 + v2 * n2 as f32) / ((n1 + n2) as f32))
                 .collect();
 
             // Update c1 with merged centroid
@@ -716,7 +752,10 @@ fn ward_agglomerative_clustering(
 
         // Print progress
         if active_clusters.len() % 10 == 0 || active_clusters.len() <= n_clusters + 5 {
-            println!("      Merging... {} clusters remaining", active_clusters.len());
+            println!(
+                "      Merging... {} clusters remaining",
+                active_clusters.len()
+            );
         }
     }
 
@@ -755,7 +794,10 @@ fn compute_cluster_statistics(segments: &[Segment]) -> HashMap<i32, ClusterStats
     for seg in segments {
         if let Some(cluster_id) = seg.new_cluster_id {
             if cluster_id >= 0 {
-                cluster_data.entry(cluster_id).or_insert_with(Vec::new).push(seg);
+                cluster_data
+                    .entry(cluster_id)
+                    .or_insert_with(Vec::new)
+                    .push(seg);
             }
         }
     }
@@ -789,7 +831,9 @@ fn compute_cluster_statistics(segments: &[Segment]) -> HashMap<i32, ClusterStats
         }
 
         let within_cluster_distance = distances.iter().sum::<f64>() / distances.len() as f64;
-        let max_distance = distances.into_iter().fold(f64::NEG_INFINITY, |a, b| a.max(b)) as f32;
+        let max_distance = distances
+            .into_iter()
+            .fold(f64::NEG_INFINITY, |a, b| a.max(b)) as f32;
 
         // File distribution
         let mut file_dist: HashMap<String, usize> = HashMap::new();
@@ -797,14 +841,17 @@ fn compute_cluster_statistics(segments: &[Segment]) -> HashMap<i32, ClusterStats
             *file_dist.entry(seg.file_name.clone()).or_insert(0) += 1;
         }
 
-        stats.insert(cluster_id, ClusterStats {
+        stats.insert(
             cluster_id,
-            segment_count: segs.len(),
-            centroid,
-            within_cluster_distance,
-            max_distance,
-            file_distribution: file_dist,
-        });
+            ClusterStats {
+                cluster_id,
+                segment_count: segs.len(),
+                centroid,
+                within_cluster_distance,
+                max_distance,
+                file_distribution: file_dist,
+            },
+        );
     }
 
     stats
@@ -839,11 +886,7 @@ fn compute_silhouette_score(
             }
 
             // Silhouette for this point
-            let s = if b > a {
-                (b - a) / b.max(a)
-            } else {
-                0.0
-            };
+            let s = if b > a { (b - a) / b.max(a) } else { 0.0 };
 
             total_silhouette += s;
             count += 1;
@@ -886,7 +929,10 @@ fn analyze_transitions(
     // Group segments by file
     let mut file_segments: HashMap<String, Vec<&Segment>> = HashMap::new();
     for seg in segments {
-        file_segments.entry(seg.file_name.clone()).or_insert_with(Vec::new).push(seg);
+        file_segments
+            .entry(seg.file_name.clone())
+            .or_insert_with(Vec::new)
+            .push(seg);
     }
 
     let mut bigram_counts: HashMap<(i32, i32), usize> = HashMap::new();
@@ -909,7 +955,10 @@ fn analyze_transitions(
                 total_transitions += 1;
 
                 if let Some(&ctx) = annotations.get(&file_name) {
-                    context_bigrams.entry(ctx).or_insert_with(Vec::new).push((from_id, to_id));
+                    context_bigrams
+                        .entry(ctx)
+                        .or_insert_with(Vec::new)
+                        .push((from_id, to_id));
                 }
             }
         }
@@ -961,14 +1010,17 @@ fn analyze_transitions(
         // Count files in this context
         let num_files = annotations.values().filter(|&&c| c == context_id).count();
 
-        context_patterns.insert(context_id, ContextPattern {
+        context_patterns.insert(
             context_id,
-            num_files,
-            num_transitions,
-            unique_bigrams: unique_bigrams.len(),
-            top_bigrams,
-            entropy,
-        });
+            ContextPattern {
+                context_id,
+                num_files,
+                num_transitions,
+                unique_bigrams: unique_bigrams.len(),
+                top_bigrams,
+                entropy,
+            },
+        );
     }
 
     Ok(TransitionAnalysis {
@@ -991,12 +1043,21 @@ fn display_transition_results(analysis: &TransitionAnalysis) {
     sorted_bigrams.sort_by(|a, b| b.1.cmp(&a.1));
 
     println!("   📊 Top 20 Bigram Transitions:");
-    println!("   {:<8} {:<8} {:>12} {:>12}", "From", "To", "Count", "Proportion");
+    println!(
+        "   {:<8} {:<8} {:>12} {:>12}",
+        "From", "To", "Count", "Proportion"
+    );
     println!("{}", "-".repeat(50));
 
     for ((from, to), count) in sorted_bigrams.iter().take(20) {
         let proportion = **count as f64 / analysis.total_transitions as f64;
-        println!("   {:<8} {:<8} {:>12} {:>11.3}%", from, to, count, proportion * 100.0);
+        println!(
+            "   {:<8} {:<8} {:>12} {:>11.3}%",
+            from,
+            to,
+            count,
+            proportion * 100.0
+        );
     }
     println!();
 
@@ -1005,24 +1066,32 @@ fn display_transition_results(analysis: &TransitionAnalysis) {
     sorted_contexts.sort_by(|a, b| b.num_transitions.cmp(&a.num_transitions));
 
     println!("   📊 Context-Specific Patterns:");
-    println!("   {:<10} {:>10} {:>12} {:>12} {:>12}", "Context", "Files", "Transitions", "Unique", "Entropy");
+    println!(
+        "   {:<10} {:>10} {:>12} {:>12} {:>12}",
+        "Context", "Files", "Transitions", "Unique", "Entropy"
+    );
     println!("{}", "-".repeat(60));
 
     for pattern in sorted_contexts.iter().take(10) {
-        println!("   {:<10} {:>10} {:>12} {:>12} {:>12.3}",
-                 pattern.context_id,
-                 pattern.num_files,
-                 pattern.num_transitions,
-                 pattern.unique_bigrams,
-                 pattern.entropy);
+        println!(
+            "   {:<10} {:>10} {:>12} {:>12} {:>12.3}",
+            pattern.context_id,
+            pattern.num_files,
+            pattern.num_transitions,
+            pattern.unique_bigrams,
+            pattern.entropy
+        );
     }
     println!();
 
     // Calculate average entropy
     let avg_entropy = if !analysis.context_patterns.is_empty() {
-        analysis.context_patterns.values()
+        analysis
+            .context_patterns
+            .values()
             .map(|p| p.entropy)
-            .sum::<f64>() / analysis.context_patterns.len() as f64
+            .sum::<f64>()
+            / analysis.context_patterns.len() as f64
     } else {
         0.0
     };
@@ -1071,12 +1140,19 @@ fn test_combinatorial_syntax(
 
     // Test 2: Transition Diversity
     let transition_analysis = analyze_transitions(segments, annotations)?;
-    let diversity_ratio = transition_analysis.bigram_counts.len() as f64 / transition_analysis.total_transitions as f64;
+    let diversity_ratio = transition_analysis.bigram_counts.len() as f64
+        / transition_analysis.total_transitions as f64;
 
     println!("   Test 2: Transition Diversity");
     println!("   ─────────────────────────────");
-    println!("   Unique bigrams: {}", transition_analysis.bigram_counts.len());
-    println!("   Total transitions: {}", transition_analysis.total_transitions);
+    println!(
+        "   Unique bigrams: {}",
+        transition_analysis.bigram_counts.len()
+    );
+    println!(
+        "   Total transitions: {}",
+        transition_analysis.total_transitions
+    );
     println!("   Diversity ratio: {:.4}", diversity_ratio);
 
     let diversity_test = if diversity_ratio > 0.1 {
@@ -1091,12 +1167,16 @@ fn test_combinatorial_syntax(
 
     // Test 3: Context Specificity
     let context_specific_bigrams = count_context_specific_bigrams(&transition_analysis);
-    let context_specificity = context_specific_bigrams as f64 / transition_analysis.bigram_counts.len() as f64;
+    let context_specificity =
+        context_specific_bigrams as f64 / transition_analysis.bigram_counts.len() as f64;
 
     println!("   Test 3: Context Specificity");
     println!("   ─────────────────────────────");
     println!("   Context-specific bigrams: {}", context_specific_bigrams);
-    println!("   Total bigrams: {}", transition_analysis.bigram_counts.len());
+    println!(
+        "   Total bigrams: {}",
+        transition_analysis.bigram_counts.len()
+    );
     println!("   Specificity ratio: {:.4}", context_specificity);
 
     let specificity_test = if context_specificity > 0.3 {
@@ -1111,9 +1191,12 @@ fn test_combinatorial_syntax(
 
     // Test 4: Cross-Context Consistency
     let avg_entropy = if !transition_analysis.context_patterns.is_empty() {
-        transition_analysis.context_patterns.values()
+        transition_analysis
+            .context_patterns
+            .values()
             .map(|p| p.entropy)
-            .sum::<f64>() / transition_analysis.context_patterns.len() as f64
+            .sum::<f64>()
+            / transition_analysis.context_patterns.len() as f64
     } else {
         0.0
     };
@@ -1138,9 +1221,15 @@ fn test_combinatorial_syntax(
     println!("   ╚═══════════════════════════════════════════════════════════════╝");
     println!();
 
-    let passes = [quality_test == "✅ PASS", diversity_test == "✅ PASS",
-                  specificity_test == "✅ PASS", consistency_test.contains("✅ PASS")]
-        .iter().filter(|&&x| x).count();
+    let passes = [
+        quality_test == "✅ PASS",
+        diversity_test == "✅ PASS",
+        specificity_test == "✅ PASS",
+        consistency_test.contains("✅ PASS"),
+    ]
+    .iter()
+    .filter(|&&x| x)
+    .count();
 
     if passes >= 3 {
         println!("   ✅ STRONG EVIDENCE for Combinatorial Syntax");
@@ -1196,7 +1285,8 @@ fn save_reclustered_data(
     silhouette_score: f64,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Save re-clustered segments
-    let reclustered: Vec<ReclusteredSegment> = segments.iter()
+    let reclustered: Vec<ReclusteredSegment> = segments
+        .iter()
         .map(|seg| ReclusteredSegment {
             segment_id: seg.segment_id,
             file_name: seg.file_name.clone(),
@@ -1213,9 +1303,13 @@ fn save_reclustered_data(
     // Save cluster statistics
     let mut stats_export = Vec::new();
     for stats in cluster_stats.values() {
-        let total_duration: f64 = stats.file_distribution.keys()
+        let total_duration: f64 = stats
+            .file_distribution
+            .keys()
             .filter_map(|file| {
-                segments.iter().find(|s| &s.file_name == file && s.new_cluster_id == Some(stats.cluster_id))
+                segments
+                    .iter()
+                    .find(|s| &s.file_name == file && s.new_cluster_id == Some(stats.cluster_id))
             })
             .map(|s| s.duration_ms)
             .sum::<f64>();
@@ -1236,7 +1330,10 @@ fn save_reclustered_data(
             avg_duration_ms: avg_duration,
             within_cluster_distance: stats.within_cluster_distance,
             unique_files: stats.file_distribution.len(),
-            top_files: file_counts.into_iter().map(|(f, c)| (f.clone(), *c)).collect(),
+            top_files: file_counts
+                .into_iter()
+                .map(|(f, c)| (f.clone(), *c))
+                .collect(),
         });
     }
 
@@ -1253,22 +1350,30 @@ fn save_reclustered_data(
     let transition_export = TransitionAnalysisExport {
         unique_bigrams: transition_analysis.bigram_counts.len(),
         unique_trigrams: transition_analysis.trigram_counts.len(),
-        top_transitions: sorted_transitions.iter().take(100).map(|((from, to), count)| {
-            TransitionExport {
+        top_transitions: sorted_transitions
+            .iter()
+            .take(100)
+            .map(|((from, to), count)| TransitionExport {
                 from_cluster: *from,
                 to_cluster: *to,
                 count: **count as usize,
                 proportion: **count as f64 / transition_analysis.total_transitions as f64,
-            }
-        }).collect(),
+            })
+            .collect(),
         context_diversity: transition_analysis.context_patterns.len() as f64,
-        avg_transition_entropy: transition_analysis.context_patterns.values()
+        avg_transition_entropy: transition_analysis
+            .context_patterns
+            .values()
             .map(|p| p.entropy)
-            .sum::<f64>() / transition_analysis.context_patterns.len() as f64,
+            .sum::<f64>()
+            / transition_analysis.context_patterns.len() as f64,
     };
 
     let transitions_path = results_dir.join("transition_analysis.json");
-    fs::write(&transitions_path, serde_json::to_string_pretty(&transition_export)?)?;
+    fs::write(
+        &transitions_path,
+        serde_json::to_string_pretty(&transition_export)?,
+    )?;
     println!("   💾 Transition analysis: {}", transitions_path.display());
 
     // Save summary report

@@ -8,10 +8,6 @@
 //! - Split at sample level: 70% train/prototype, 30% test/eval
 //! - Evaluate detection on held-out samples from detection datasets
 
-use technical_architecture::{
-    AcousticSimilarityEngine, SimilarityMetric,
-    ZooVoxFeatureExtractor,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -21,6 +17,7 @@ use std::io::{BufReader, BufWriter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{AcousticSimilarityEngine, SimilarityMetric, ZooVoxFeatureExtractor};
 
 const FEATURE_DIM: usize = 45;
 
@@ -190,8 +187,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Display configuration
     println!("Configuration:");
     println!("  ├─ Train Ratio: {}%", TRAIN_RATIO * 100.0);
-    println!("  ├─ Prototype Datasets: {} total", PROTOTYPE_DATASETS.len());
-    println!("  └─ Detection Eval Datasets: {:?}", DETECTION_EVAL_DATASETS);
+    println!(
+        "  ├─ Prototype Datasets: {} total",
+        PROTOTYPE_DATASETS.len()
+    );
+    println!(
+        "  └─ Detection Eval Datasets: {:?}",
+        DETECTION_EVAL_DATASETS
+    );
     println!();
 
     // Load manifest
@@ -217,7 +220,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let extraction_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let all_samples: Vec<Option<Sample>> = manifest.samples
+    let all_samples: Vec<Option<Sample>> = manifest
+        .samples
         .par_iter()
         .enumerate()
         .map(|(idx, entry)| {
@@ -253,9 +257,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let extraction_time = extraction_start.elapsed();
 
-    let valid_samples: Vec<_> = all_samples.into_iter()
-        .filter_map(|s| s)
-        .collect();
+    let valid_samples: Vec<_> = all_samples.into_iter().filter_map(|s| s).collect();
 
     println!("\nExtraction Complete:");
     println!("  ├─ Valid Samples: {}", valid_samples.len());
@@ -301,19 +303,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Split Summary:");
     println!("  ├─ Train samples (prototypes): {}", train_samples.len());
     println!("  ├─ Test samples (evaluation): {}", test_samples.len());
-    println!("  └─ Ratio: {:.1}% / {:.1}%",
+    println!(
+        "  └─ Ratio: {:.1}% / {:.1}%",
         train_samples.len() as f64 / valid_samples.len() as f64 * 100.0,
-        test_samples.len() as f64 / valid_samples.len() as f64 * 100.0);
+        test_samples.len() as f64 / valid_samples.len() as f64 * 100.0
+    );
     println!();
 
     // Separate test samples by task
-    let detection_test: Vec<&Sample> = test_samples.iter()
+    let detection_test: Vec<&Sample> = test_samples
+        .iter()
         .filter(|s| s.task == "detection")
         .filter(|s| DETECTION_EVAL_DATASETS.contains(&s.source_dataset.as_str()))
         .cloned()
         .collect();
 
-    let captioning_test: Vec<&Sample> = test_samples.iter()
+    let captioning_test: Vec<&Sample> = test_samples
+        .iter()
         .filter(|s| s.task == "captioning")
         .cloned()
         .collect();
@@ -334,24 +340,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let detection_results = evaluate_zero_shot_detection(&detection_test, &train_samples);
 
     println!("Detection Results:");
-    println!("  ├─ Precision: {:.1}%", detection_results.precision * 100.0);
+    println!(
+        "  ├─ Precision: {:.1}%",
+        detection_results.precision * 100.0
+    );
     println!("  ├─ Recall: {:.1}%", detection_results.recall * 100.0);
     println!("  ├─ F1 Score: {:.1}%", detection_results.f1_score * 100.0);
-    println!("  └─ Best F1 @ threshold {:.2}: {:.1}%",
-        detection_results.best_f1_threshold, detection_results.best_f1_score * 100.0);
+    println!(
+        "  └─ Best F1 @ threshold {:.2}: {:.1}%",
+        detection_results.best_f1_threshold,
+        detection_results.best_f1_score * 100.0
+    );
     println!();
 
     println!("Per-Dataset Detection Metrics:");
     let mut sorted_species: Vec<_> = detection_results.per_species_metrics.iter().collect();
     sorted_species.sort_by(|a, b| b.1.f1.partial_cmp(&a.1.f1).unwrap());
     for (_, metrics) in sorted_species {
-        println!("  ├─ {}: P={:.1}% R={:.1}% F1={:.1}% ({} train, {} test)",
+        println!(
+            "  ├─ {}: P={:.1}% R={:.1}% F1={:.1}% ({} train, {} test)",
             metrics.species,
             metrics.precision * 100.0,
             metrics.recall * 100.0,
             metrics.f1 * 100.0,
             metrics.n_train_samples,
-            metrics.n_test_samples);
+            metrics.n_test_samples
+        );
     }
     println!();
 
@@ -366,9 +380,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let captioning_results = evaluate_zero_shot_captioning(&captioning_test, &train_samples);
 
     println!("Captioning Results:");
-    println!("  ├─ Avg Semantic Similarity: {:.3}", captioning_results.avg_semantic_similarity);
+    println!(
+        "  ├─ Avg Semantic Similarity: {:.3}",
+        captioning_results.avg_semantic_similarity
+    );
     println!("  ├─ BLEU-4 Score: {:.3}", captioning_results.bleu4_score);
-    println!("  └─ ROUGE-L Score: {:.3}", captioning_results.rouge_l_score);
+    println!(
+        "  └─ ROUGE-L Score: {:.3}",
+        captioning_results.rouge_l_score
+    );
     println!();
 
     // ========================================================================
@@ -395,7 +415,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Configuration:");
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
-    println!("  ├─ Train/Test Split: {:.0}%/{:.0}%", TRAIN_RATIO * 100.0, (1.0 - TRAIN_RATIO) * 100.0);
+    println!(
+        "  ├─ Train/Test Split: {:.0}%/{:.0}%",
+        TRAIN_RATIO * 100.0,
+        (1.0 - TRAIN_RATIO) * 100.0
+    );
     println!("  └─ Prototype Datasets: {}", PROTOTYPE_DATASETS.len());
     println!();
 
@@ -406,19 +430,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Detection Task:");
-    println!("  ├─ Precision: {:.1}%", results.detection.precision * 100.0);
+    println!(
+        "  ├─ Precision: {:.1}%",
+        results.detection.precision * 100.0
+    );
     println!("  ├─ Recall: {:.1}%", results.detection.recall * 100.0);
     println!("  └─ F1 Score: {:.1}%", results.detection.f1_score * 100.0);
     println!();
 
     println!("Captioning Task:");
-    println!("  ├─ Semantic Similarity: {:.1}%", results.captioning.avg_semantic_similarity * 100.0);
+    println!(
+        "  ├─ Semantic Similarity: {:.1}%",
+        results.captioning.avg_semantic_similarity * 100.0
+    );
     println!("  ├─ BLEU-4: {:.3}", results.captioning.bleu4_score);
     println!("  └─ ROUGE-L: {:.3}", results.captioning.rouge_l_score);
     println!();
 
     println!("Performance:");
-    println!("  └─ Total Time: {:.1}s ({:.1} min)", total_time.as_secs_f64(), total_time.as_secs_f64() / 60.0);
+    println!(
+        "  └─ Total Time: {:.1}s ({:.1} min)",
+        total_time.as_secs_f64(),
+        total_time.as_secs_f64() / 60.0
+    );
     println!();
 
     // Assessment
@@ -490,13 +524,17 @@ fn evaluate_zero_shot_detection(
         train_counts.insert(dataset.clone(), *count);
     }
 
-    println!("Built {} species prototypes from {} train samples",
-        mean_prototypes.len(), train_samples.len());
+    println!(
+        "Built {} species prototypes from {} train samples",
+        mean_prototypes.len(),
+        train_samples.len()
+    );
 
     // Create similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix =
+            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -544,9 +582,21 @@ fn evaluate_zero_shot_detection(
             }
         }
 
-        let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-        let recall = if tp + fn_count > 0 { tp as f64 / (tp + fn_count) as f64 } else { 0.0 };
-        let f1 = if precision + recall > 0.0 { 2.0 * precision * recall / (precision + recall) } else { 0.0 };
+        let precision = if tp + fp > 0 {
+            tp as f64 / (tp + fp) as f64
+        } else {
+            0.0
+        };
+        let recall = if tp + fn_count > 0 {
+            tp as f64 / (tp + fn_count) as f64
+        } else {
+            0.0
+        };
+        let f1 = if precision + recall > 0.0 {
+            2.0 * precision * recall / (precision + recall)
+        } else {
+            0.0
+        };
 
         if f1 > best_f1 {
             best_f1 = f1;
@@ -566,8 +616,9 @@ fn evaluate_zero_shot_detection(
 
     // Initialize per-species metrics
     for sample in test_samples {
-        per_species_metrics.entry(sample.source_dataset.clone()).or_insert(
-            SpeciesDetectionMetrics {
+        per_species_metrics
+            .entry(sample.source_dataset.clone())
+            .or_insert(SpeciesDetectionMetrics {
                 species: sample.source_dataset.clone(),
                 n_train_samples: *train_counts.get(&sample.source_dataset).unwrap_or(&0),
                 n_test_samples: 0,
@@ -576,8 +627,7 @@ fn evaluate_zero_shot_detection(
                 recall: 0.0,
                 f1: 0.0,
                 avg_similarity: 0.0,
-            }
-        );
+            });
     }
 
     for sample in test_samples {
@@ -630,9 +680,21 @@ fn evaluate_zero_shot_detection(
         }
     }
 
-    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-    let recall = if tp + fn_count > 0 { tp as f64 / (tp + fn_count) as f64 } else { 0.0 };
-    let f1_score = if precision + recall > 0.0 { 2.0 * precision * recall / (precision + recall) } else { 0.0 };
+    let precision = if tp + fp > 0 {
+        tp as f64 / (tp + fp) as f64
+    } else {
+        0.0
+    };
+    let recall = if tp + fn_count > 0 {
+        tp as f64 / (tp + fn_count) as f64
+    } else {
+        0.0
+    };
+    let f1_score = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
 
     DetectionResults {
         train_ratio: TRAIN_RATIO,
@@ -659,17 +721,22 @@ fn evaluate_zero_shot_captioning(
     train_samples: &[&Sample],
 ) -> CaptioningResults {
     // Build caption database from TRAIN samples only
-    let caption_db: Vec<(&Sample, Vec<f64>)> = train_samples.iter()
+    let caption_db: Vec<(&Sample, Vec<f64>)> = train_samples
+        .iter()
         .filter(|s| s.caption.is_some())
         .map(|s| (*s, s.features.clone()))
         .collect();
 
-    println!("Built caption database with {} entries from train set", caption_db.len());
+    println!(
+        "Built caption database with {} entries from train set",
+        caption_db.len()
+    );
 
     // Create similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix =
+            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -692,7 +759,8 @@ fn evaluate_zero_shot_captioning(
         let true_caption = sample.caption.as_deref().unwrap_or("");
 
         // Find k nearest neighbors from TRAIN set only
-        let mut distances: Vec<(usize, f64)> = caption_db.iter()
+        let mut distances: Vec<(usize, f64)> = caption_db
+            .iter()
             .enumerate()
             .map(|(j, (_, features))| {
                 let candidate = Array1::from_vec(features.clone());
@@ -722,15 +790,15 @@ fn evaluate_zero_shot_captioning(
         n_evaluated += 1;
 
         // Per-dataset metrics
-        let entry = per_dataset_metrics.entry(sample.source_dataset.clone()).or_insert(
-            DatasetCaptionMetrics {
+        let entry = per_dataset_metrics
+            .entry(sample.source_dataset.clone())
+            .or_insert(DatasetCaptionMetrics {
                 dataset: sample.source_dataset.clone(),
                 n_samples: 0,
                 avg_similarity: 0.0,
                 bleu4: 0.0,
                 rouge_l: 0.0,
-            }
-        );
+            });
         entry.n_samples += 1;
         entry.avg_similarity += similarity;
         entry.bleu4 += bleu;
@@ -771,10 +839,14 @@ fn evaluate_zero_shot_captioning(
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(
+    path: &str,
+    expected_samples: usize,
+) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
-    let audio: Vec<f64> = bytes.chunks_exact(4)
+    let audio: Vec<f64> = bytes
+        .chunks_exact(4)
         .take(expected_samples)
         .map(|chunk| {
             let val = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);

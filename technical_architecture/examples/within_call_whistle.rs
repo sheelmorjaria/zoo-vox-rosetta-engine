@@ -67,24 +67,33 @@ impl PhraseSegmenter {
 
     pub fn segment(&self, audio: &[f32]) -> Vec<PhraseCandidate> {
         let n = audio.len();
-        if n == 0 { return vec![]; }
+        if n == 0 {
+            return vec![];
+        }
 
         let sample_rate = self.config.sample_rate as f64;
         let window_samples = (sample_rate * 0.002) as usize; // 2ms windows for high sample rate
-        if window_samples == 0 { return vec![]; }
+        if window_samples == 0 {
+            return vec![];
+        }
         let n_windows = n / window_samples;
-        if n_windows == 0 { return vec![]; }
+        if n_windows == 0 {
+            return vec![];
+        }
 
         let mut energy_profile = Vec::with_capacity(n_windows);
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
+            let rms: f32 =
+                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
         let max_energy = energy_profile.iter().cloned().fold(0.0f32, f32::max);
-        if max_energy == 0.0 { return vec![]; }
+        if max_energy == 0.0 {
+            return vec![];
+        }
         let threshold = max_energy * self.config.energy_threshold as f32;
 
         let min_phrase_windows = (self.config.min_phrase_ms / 2.0).max(1.0) as usize;
@@ -117,7 +126,9 @@ impl PhraseSegmenter {
                             id: phrase_count,
                             start_ms: start_sample as f64 / sample_rate * 1000.0,
                             end_ms: end_sample as f64 / sample_rate * 1000.0,
-                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
+                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64
+                                / sample_rate
+                                * 1000.0,
                             start_sample,
                             end_sample,
                             n_samples: end_sample.saturating_sub(start_sample),
@@ -144,7 +155,8 @@ impl PhraseSegmenter {
                     id: phrase_count,
                     start_ms: start_sample as f64 / sample_rate * 1000.0,
                     end_ms: end_sample as f64 / sample_rate * 1000.0,
-                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
+                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate
+                        * 1000.0,
                     start_sample,
                     end_sample,
                     n_samples: end_sample.saturating_sub(start_sample),
@@ -155,10 +167,14 @@ impl PhraseSegmenter {
             }
         }
 
-        candidates.into_iter()
+        candidates
+            .into_iter()
             .filter(|c| c.duration_ms <= self.config.max_phrase_ms && c.n_samples > 0)
             .enumerate()
-            .map(|(i, mut c)| { c.id = i; c })
+            .map(|(i, mut c)| {
+                c.id = i;
+                c
+            })
             .collect()
     }
 }
@@ -178,7 +194,9 @@ impl SimpleFeatureExtractor {
 
     pub fn extract(&self, audio: &[f32]) -> Vec<f64> {
         let n = audio.len();
-        if n == 0 { return vec![0.0; 15]; }
+        if n == 0 {
+            return vec![0.0; 15];
+        }
 
         let mut features = vec![0.0f64; 15];
 
@@ -189,15 +207,21 @@ impl SimpleFeatureExtractor {
         features[1] = (audio.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / n as f64).sqrt();
 
         // Zero Crossing Rate
-        let zcr = audio.windows(2)
+        let zcr = audio
+            .windows(2)
             .filter(|w| (w[0] >= 0.0 && w[1] < 0.0) || (w[0] < 0.0 && w[1] >= 0.0))
-            .count() as f64 / n as f64;
+            .count() as f64
+            / n as f64;
         features[2] = zcr;
         features[3] = zcr * 2.0;
 
         // Mean and variance
         let mean: f64 = audio.iter().map(|x| *x as f64).sum::<f64>() / n as f64;
-        let var: f64 = audio.iter().map(|x| (*x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
+        let var: f64 = audio
+            .iter()
+            .map(|x| (*x as f64 - mean).powi(2))
+            .sum::<f64>()
+            / n as f64;
         features[4] = var.sqrt();
         features[5] = mean;
 
@@ -208,7 +232,9 @@ impl SimpleFeatureExtractor {
         let max_val = audio.iter().map(|x| x.abs()).fold(0.0f32, f32::max);
         if max_val > 0.0 {
             // Peak position (normalized)
-            let peak_pos = audio.iter().enumerate()
+            let peak_pos = audio
+                .iter()
+                .enumerate()
                 .max_by(|a, b| a.1.abs().partial_cmp(&b.1.abs()).unwrap())
                 .map(|(i, _)| i)
                 .unwrap_or(0);
@@ -216,7 +242,10 @@ impl SimpleFeatureExtractor {
 
             // Attack time (normalized)
             let threshold = max_val * 0.9;
-            let attack_sample = audio.iter().position(|&x| x.abs() >= threshold).unwrap_or(n);
+            let attack_sample = audio
+                .iter()
+                .position(|&x| x.abs() >= threshold)
+                .unwrap_or(n);
             features[8] = attack_sample as f64 / n as f64;
 
             // Decay time (normalized)
@@ -236,9 +265,11 @@ impl SimpleFeatureExtractor {
         let mut freqs = Vec::new();
         for i in (0..n.saturating_sub(window_size)).step_by(window_size) {
             let window = &audio[i..i + window_size];
-            let zc = window.windows(2)
+            let zc = window
+                .windows(2)
                 .filter(|w| (w[0] >= 0.0 && w[1] < 0.0) || (w[0] < 0.0 && w[1] >= 0.0))
-                .count() as f64 / window_size as f64;
+                .count() as f64
+                / window_size as f64;
             freqs.push(zc);
         }
         if freqs.len() >= 2 {
@@ -251,38 +282,49 @@ impl SimpleFeatureExtractor {
         let mut envelope = Vec::new();
         for i in (0..n.saturating_sub(window_size)).step_by(window_size / 2) {
             let window = &audio[i..i + window_size];
-            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / window_size as f64).sqrt();
+            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>()
+                / window_size as f64)
+                .sqrt();
             envelope.push(rms);
         }
         if envelope.len() >= 2 {
             let emean = envelope.iter().sum::<f64>() / envelope.len() as f64;
-            let evar = envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
+            let evar =
+                envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
             features[11] = evar.sqrt() / (emean + 1e-10);
         }
 
         // Center of mass
         let total_abs: f64 = audio.iter().map(|x| x.abs() as f64).sum();
         if total_abs > 0.0 {
-            let com: f64 = audio.iter().enumerate()
+            let com: f64 = audio
+                .iter()
+                .enumerate()
                 .map(|(i, x)| i as f64 * x.abs() as f64)
-                .sum::<f64>() / total_abs;
+                .sum::<f64>()
+                / total_abs;
             features[12] = com / n as f64;
         }
 
         // Skewness
         let std_dev = features[4];
         if std_dev > 1e-10 {
-            let skewness: f64 = audio.iter()
+            let skewness: f64 = audio
+                .iter()
                 .map(|x| ((*x as f64 - mean) / std_dev).powi(3))
-                .sum::<f64>() / n as f64;
+                .sum::<f64>()
+                / n as f64;
             features[13] = skewness;
         }
 
         // Kurtosis
         if std_dev > 1e-10 {
-            let kurtosis: f64 = audio.iter()
+            let kurtosis: f64 = audio
+                .iter()
                 .map(|x| ((*x as f64 - mean) / std_dev).powi(4))
-                .sum::<f64>() / n as f64 - 3.0;
+                .sum::<f64>()
+                / n as f64
+                - 3.0;
             features[14] = kurtosis;
         }
 
@@ -367,7 +409,8 @@ pub fn load_audio(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn Error>> {
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed =
+        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;
@@ -396,10 +439,7 @@ pub fn load_audio(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn Error>> {
                 let n_channels = spec.channels.count() as usize;
 
                 if decode_buf.is_none() {
-                    decode_buf = Some(SampleBuffer::<f32>::new(
-                        decoded.capacity() as u64,
-                        *spec,
-                    ));
+                    decode_buf = Some(SampleBuffer::<f32>::new(decoded.capacity() as u64, *spec));
                 }
 
                 if let Some(ref mut buf) = decode_buf {
@@ -464,7 +504,8 @@ fn analyze_file(
     similarity_threshold: f64,
 ) -> Result<FileAnalysis, Box<dyn Error>> {
     let file_name = path.file_name().unwrap().to_string_lossy().to_string();
-    let session = path.parent()
+    let session = path
+        .parent()
         .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".to_string());
 
@@ -504,9 +545,7 @@ fn analyze_file(
     clusterer.assign_types(&mut phrases);
 
     // Build sequence and stats
-    let phrase_sequence: Vec<i32> = phrases.iter()
-        .filter_map(|p| p.phrase_type)
-        .collect();
+    let phrase_sequence: Vec<i32> = phrases.iter().filter_map(|p| p.phrase_type).collect();
 
     let mut type_counts: HashMap<i32, usize> = HashMap::new();
     for phrase in &phrases {
@@ -521,7 +560,8 @@ fn analyze_file(
 
     let type_entropy = if !type_counts.is_empty() {
         let total: usize = type_counts.values().sum();
-        type_counts.values()
+        type_counts
+            .values()
             .map(|&c| {
                 let p = c as f64 / total as f64;
                 -p * p.log2()
@@ -541,7 +581,11 @@ fn analyze_file(
         stats: FileStats {
             n_phrases,
             total_duration_ms,
-            avg_phrase_duration_ms: if n_phrases > 0 { total_duration_ms / n_phrases as f64 } else { 0.0 },
+            avg_phrase_duration_ms: if n_phrases > 0 {
+                total_duration_ms / n_phrases as f64
+            } else {
+                0.0
+            },
             type_entropy,
         },
     })
@@ -567,7 +611,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             for sub_entry in std::fs::read_dir(&path)? {
                 let sub_entry = sub_entry?;
                 let sub_path = sub_entry.path();
-                if sub_path.extension().map(|ext| ext == "wav").unwrap_or(false) {
+                if sub_path
+                    .extension()
+                    .map(|ext| ext == "wav")
+                    .unwrap_or(false)
+                {
                     wav_files.push(sub_path);
                 }
             }
@@ -579,11 +627,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Whistle analysis parameters
     let config = SegmentationConfig {
-        min_phrase_ms: 20.0,      // 20ms minimum for whistle segments
-        max_phrase_ms: 300.0,     // 300ms maximum
-        energy_threshold: 0.05,   // 5% threshold
-        min_gap_ms: 10.0,         // 10ms minimum gap
-        sample_rate: 192000,      // Will be overwritten by actual rate
+        min_phrase_ms: 20.0,    // 20ms minimum for whistle segments
+        max_phrase_ms: 300.0,   // 300ms maximum
+        energy_threshold: 0.05, // 5% threshold
+        min_gap_ms: 10.0,       // 10ms minimum gap
+        sample_rate: 192000,    // Will be overwritten by actual rate
     };
     let similarity_threshold = 0.70;
 
@@ -594,7 +642,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for (i, path) in wav_files.iter().enumerate() {
         let file_name = path.file_name().unwrap().to_string_lossy();
-        print!("\r[{}/{}] Analyzing: {:.50}...", i + 1, wav_files.len(), file_name);
+        print!(
+            "\r[{}/{}] Analyzing: {:.50}...",
+            i + 1,
+            wav_files.len(),
+            file_name
+        );
         std::io::stdout().flush()?;
 
         match analyze_file(path, config.clone(), similarity_threshold) {
@@ -618,14 +671,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Summary
     let n_files = file_analyses.len();
-    let avg_phrases = if n_files > 0 { total_phrases as f64 / n_files as f64 } else { 0.0 };
+    let avg_phrases = if n_files > 0 {
+        total_phrases as f64 / n_files as f64
+    } else {
+        0.0
+    };
     let avg_types = if n_files > 0 {
-        file_analyses.iter().map(|f| f.n_phrase_types as f64).sum::<f64>() / n_files as f64
+        file_analyses
+            .iter()
+            .map(|f| f.n_phrase_types as f64)
+            .sum::<f64>()
+            / n_files as f64
     } else {
         0.0
     };
     let avg_entropy = if n_files > 0 {
-        file_analyses.iter().map(|f| f.stats.type_entropy).sum::<f64>() / n_files as f64
+        file_analyses
+            .iter()
+            .map(|f| f.stats.type_entropy)
+            .sum::<f64>()
+            / n_files as f64
     } else {
         0.0
     };
@@ -638,9 +703,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("║                                                                           ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║  Statistics:                                                              ║");
-    println!("║    • Files analyzed:       {:>10}", format!("{}", n_files));
-    println!("║    • Total phrases:        {:>10}", format!("{}", total_phrases));
-    println!("║    • Unique phrase types:  {:>10}", format!("{}", all_types.len()));
+    println!(
+        "║    • Files analyzed:       {:>10}",
+        format!("{}", n_files)
+    );
+    println!(
+        "║    • Total phrases:        {:>10}",
+        format!("{}", total_phrases)
+    );
+    println!(
+        "║    • Unique phrase types:  {:>10}",
+        format!("{}", all_types.len())
+    );
     println!("║    • Avg phrases/file:     {:>10.2}", avg_phrases);
     println!("║    • Avg types/file:       {:>10.2}", avg_types);
     println!("║    • Avg type entropy:     {:>10.3} bits", avg_entropy);
@@ -650,10 +724,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("║                                                                           ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║  Analysis Parameters:                                                    ║");
-    println!("║    • Min phrase duration:  {:>10.0} ms", config.min_phrase_ms);
-    println!("║    • Max phrase duration:  {:>10.0} ms", config.max_phrase_ms);
-    println!("║    • Min gap:              {:>10.0} ms", config.min_gap_ms);
-    println!("║    • Similarity threshold: {:>10.2}", similarity_threshold);
+    println!(
+        "║    • Min phrase duration:  {:>10.0} ms",
+        config.min_phrase_ms
+    );
+    println!(
+        "║    • Max phrase duration:  {:>10.0} ms",
+        config.max_phrase_ms
+    );
+    println!(
+        "║    • Min gap:              {:>10.0} ms",
+        config.min_gap_ms
+    );
+    println!(
+        "║    • Similarity threshold: {:>10.2}",
+        similarity_threshold
+    );
     println!("║                                                                           ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
@@ -668,7 +754,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         file_analyses,
         summary: format!(
             "Analyzed {} whistle recordings, found {} phrases across {} types",
-            n_files, total_phrases, all_types.len()
+            n_files,
+            total_phrases,
+            all_types.len()
         ),
     };
 

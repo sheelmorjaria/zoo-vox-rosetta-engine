@@ -10,7 +10,8 @@ use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
+    let results_dir =
+        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
     let features_path = results_dir.join("bat_features.bincode");
     let clusters_path = results_dir.join("minibatch_clusters.json");
     let models_output = results_dir.join("gmm_hmm_models.json");
@@ -30,14 +31,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !features_path.exists() {
-        println!("   ⚠️  Features file not found: {}", features_path.display());
+        println!(
+            "   ⚠️  Features file not found: {}",
+            features_path.display()
+        );
         println!("   Please run Phase 3 first to extract features and generate clusters.");
         return Err("Features file not found".into());
     }
 
     let features_data = std::fs::read(&features_path)?;
-    let serializable_features: Vec<SerializableFeatures> =
-        bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<SerializableFeatures> = bincode::deserialize(&features_data)?;
 
     println!("   └─ {} features loaded", serializable_features.len());
     println!();
@@ -50,7 +53,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !clusters_path.exists() {
-        println!("   ⚠️  Clusters file not found: {}", clusters_path.display());
+        println!(
+            "   ⚠️  Clusters file not found: {}",
+            clusters_path.display()
+        );
         println!("   Please run Phase 3 first to generate clusters.");
         return Err("Clusters file not found".into());
     }
@@ -66,8 +72,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|v| v.as_i64().unwrap() as i32)
         .collect();
 
-    println!("   └─ {} labels loaded ({} clusters)",
-        labels.len(), n_clusters);
+    println!(
+        "   └─ {} labels loaded ({} clusters)",
+        labels.len(),
+        n_clusters
+    );
     println!();
 
     // ========================================================================
@@ -101,7 +110,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .push(feature_vec);
     }
 
-    println!("   └─ Grouped in {:.2}s", group_start.elapsed().as_secs_f64());
+    println!(
+        "   └─ Grouped in {:.2}s",
+        group_start.elapsed().as_secs_f64()
+    );
     println!();
 
     // ========================================================================
@@ -121,9 +133,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ─────────────────────────────────");
     for cluster_id in 0..n_clusters as i32 {
         let count = cluster_counts.get(&cluster_id).copied().unwrap_or(0);
-        let n_sequences = cluster_features.get(&cluster_id).map(|v| v.len()).unwrap_or(0);
-        println!("      {:3}    |  {:5}  |    {:3}",
-            cluster_id, count, n_sequences);
+        let n_sequences = cluster_features
+            .get(&cluster_id)
+            .map(|v| v.len())
+            .unwrap_or(0);
+        println!(
+            "      {:3}    |  {:5}  |    {:3}",
+            cluster_id, count, n_sequences
+        );
     }
     println!();
 
@@ -139,8 +156,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut models = Vec::new();
 
     // GMM-HMM configuration for bat vocalizations
-    let n_states = 2;  // Onset → Offset (2 states per phoneme)
-    let n_components = 3;  // 3 Gaussian components per state
+    let n_states = 2; // Onset → Offset (2 states per phoneme)
+    let n_components = 3; // 3 Gaussian components per state
     let max_iterations = 50;
     let convergence_threshold = 1e-4;
 
@@ -174,7 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // that captures the temporal characteristics of FM sweeps
 
             let n_samples = sequences.len();
-            let n_dims = 56;  // 56D features (30D base + 13 mfcc_delta + 13 mfcc_delta_delta)
+            let n_dims = 56; // 56D features (30D base + 13 mfcc_delta + 13 mfcc_delta_delta)
 
             // Calculate statistics across all sequences
             let mut means = vec![0.0f64; n_dims];
@@ -208,17 +225,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             // Calculate average duration
-            let avg_duration_ms: f64 = sequences.iter()
-                .map(|s| s.duration_ms)
-                .sum::<f64>() / sequences.len() as f64;
+            let avg_duration_ms: f64 =
+                sequences.iter().map(|s| s.duration_ms).sum::<f64>() / sequences.len() as f64;
 
             // Calculate average sample rate
             let avg_sample_rate: u32 = if sequences.is_empty() {
                 250000
             } else {
-                sequences.iter()
-                    .map(|s| s.sample_rate)
-                    .sum::<u32>() / sequences.len() as u32
+                sequences.iter().map(|s| s.sample_rate).sum::<u32>() / sequences.len() as u32
             };
 
             let model_json = serde_json::json!({
@@ -249,7 +263,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let train_time = train_start.elapsed();
     println!();
-    println!("   └─ Training completed in {:.2}s", train_time.as_secs_f64());
+    println!(
+        "   └─ Training completed in {:.2}s",
+        train_time.as_secs_f64()
+    );
     println!("   └─ {} models trained", models.len());
     println!();
 
@@ -299,8 +316,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Phase 1: Segmentation → WAV files (pre-segmented)");
     println!("   Phase 2: Vectorization → 56D MicroDynamics features (30D base + 13 Δ + 13 ΔΔ)");
     println!("   Phase 3: Discovery → {} clusters", n_clusters);
-    println!("   Phase 4: Refinement → {} GMM-HMM models ({:.2}s)",
-        models.len(), train_time.as_secs_f64());
+    println!(
+        "   Phase 4: Refinement → {} GMM-HMM models ({:.2}s)",
+        models.len(),
+        train_time.as_secs_f64()
+    );
     println!();
 
     println!("📝 Next Steps:");

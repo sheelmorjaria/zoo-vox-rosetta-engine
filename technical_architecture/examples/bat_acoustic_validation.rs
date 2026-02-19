@@ -89,7 +89,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let transition_analysis = analyze_true_transitions(&segments, &annotations, &acoustic_analysis)?;
+    let transition_analysis =
+        analyze_true_transitions(&segments, &annotations, &acoustic_analysis)?;
 
     // ========================================================================
     // Save Results
@@ -206,7 +207,9 @@ struct DominantPattern {
 // Data Loading
 // ============================================================================
 
-fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+fn load_annotations(
+    path: impl AsRef<Path>,
+) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut mapping = HashMap::new();
 
@@ -229,13 +232,21 @@ fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<
 
 fn load_segments(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::Error>> {
     let segments_path = phase0_dir.join("all_segments.json");
-    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     let mut segments = Vec::new();
 
     if let Some(arr) = segments_json.as_array() {
         for segment in arr {
-            if let (Some(segment_id), Some(file_name), Some(start), Some(end), Some(cluster_id), Some(features)) = (
+            if let (
+                Some(segment_id),
+                Some(file_name),
+                Some(start),
+                Some(end),
+                Some(cluster_id),
+                Some(features),
+            ) = (
                 segment["segment_id"].as_u64(),
                 segment["file_name"].as_str(),
                 segment["start_time_ms"].as_f64(),
@@ -246,7 +257,8 @@ fn load_segments(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::
                 let duration = end - start;
 
                 // Convert features to Vec<f32>
-                let feature_vec: Vec<f32> = features.iter()
+                let feature_vec: Vec<f32> = features
+                    .iter()
                     .filter_map(|v| v.as_f64().map(|f| f as f32))
                     .collect();
 
@@ -265,8 +277,11 @@ fn load_segments(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::
 
     // Sort by file and start time
     segments.sort_by(|a, b| {
-        a.file_name.cmp(&b.file_name)
-            .then_with(|| a.start_time_ms.partial_cmp(&b.start_time_ms).unwrap_or(std::cmp::Ordering::Equal))
+        a.file_name.cmp(&b.file_name).then_with(|| {
+            a.start_time_ms
+                .partial_cmp(&b.start_time_ms)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     });
 
     Ok(segments)
@@ -313,29 +328,38 @@ fn analyze_vocabulary_structure(
     println!();
 
     // Count Level 2 clusters
-    let level2_clusters: HashSet<i32> = vocabulary.iter()
-        .map(|v| v.level2_cluster_id)
-        .collect();
+    let level2_clusters: HashSet<i32> = vocabulary.iter().map(|v| v.level2_cluster_id).collect();
 
     println!("      Level 2 clusters: {}", level2_clusters.len());
-    println!("      Total phrases in vocabulary: {}", vocabulary.iter().map(|v| v.phrase_count).sum::<usize>());
+    println!(
+        "      Total phrases in vocabulary: {}",
+        vocabulary.iter().map(|v| v.phrase_count).sum::<usize>()
+    );
     println!();
 
     // For each vocabulary entry
     for vocab in vocabulary {
-        println!("   Vocabulary {} (Level 2 Cluster {}):", vocab.vocabulary_id, vocab.level2_cluster_id);
+        println!(
+            "   Vocabulary {} (Level 2 Cluster {}):",
+            vocab.vocabulary_id, vocab.level2_cluster_id
+        );
         println!("      Phrase count: {}", vocab.phrase_count);
-        println!("      Avg duration: {:.2} ms (±{:.2} ms)", vocab.avg_duration_ms, vocab.std_duration_ms);
+        println!(
+            "      Avg duration: {:.2} ms (±{:.2} ms)",
+            vocab.avg_duration_ms, vocab.std_duration_ms
+        );
         println!();
     }
 
     // Check Level 1 distribution
-    let level1_counts: HashMap<i32, usize> = segments.iter()
-        .map(|s| s.level1_cluster_id)
-        .fold(HashMap::new(), |mut acc, id| {
-            *acc.entry(id).or_insert(0) += 1;
-            acc
-        });
+    let level1_counts: HashMap<i32, usize> =
+        segments
+            .iter()
+            .map(|s| s.level1_cluster_id)
+            .fold(HashMap::new(), |mut acc, id| {
+                *acc.entry(id).or_insert(0) += 1;
+                acc
+            });
 
     println!("   📊 Level 1 Cluster Distribution:");
     println!("      Unique Level 1 clusters: {}", level1_counts.len());
@@ -346,8 +370,13 @@ fn analyze_vocabulary_structure(
 
     println!("      Top 20 Level 1 clusters by size:");
     for (i, (cluster_id, count)) in sorted_counts.iter().take(20).enumerate() {
-        println!("         {:2}. Cluster {:>3}: {} segments ({:.1}%)",
-                 i + 1, cluster_id, count, *count as f64 * 100.0 / segments.len() as f64);
+        println!(
+            "         {:2}. Cluster {:>3}: {} segments ({:.1}%)",
+            i + 1,
+            cluster_id,
+            count,
+            *count as f64 * 100.0 / segments.len() as f64
+        );
     }
     println!();
 
@@ -361,7 +390,10 @@ fn detect_position_bias(segments: &[Segment]) -> Result<(), Box<dyn std::error::
     // Group segments by file
     let mut file_segments: HashMap<String, Vec<&Segment>> = HashMap::new();
     for seg in segments {
-        file_segments.entry(seg.file_name.clone()).or_insert_with(Vec::new).push(seg);
+        file_segments
+            .entry(seg.file_name.clone())
+            .or_insert_with(Vec::new)
+            .push(seg);
     }
 
     // For each file, check position vs cluster ID correlation
@@ -392,7 +424,10 @@ fn detect_position_bias(segments: &[Segment]) -> Result<(), Box<dyn std::error::
     let n = position_cluster_pairs.len();
     let sum_pos: usize = position_cluster_pairs.iter().map(|(p, _)| p).sum();
     let sum_cluster: i32 = position_cluster_pairs.iter().map(|(_, c)| c).sum();
-    let sum_pos_cluster: i32 = position_cluster_pairs.iter().map(|(p, c)| *c as i32 * *p as i32).sum();
+    let sum_pos_cluster: i32 = position_cluster_pairs
+        .iter()
+        .map(|(p, c)| *c as i32 * *p as i32)
+        .sum();
 
     let mean_pos = sum_pos as f64 / n as f64;
     let mean_cluster = sum_cluster as f64 / n as f64;
@@ -438,14 +473,19 @@ fn detect_position_bias(segments: &[Segment]) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis, Box<dyn std::error::Error>> {
+fn validate_acoustic_coherence(
+    segments: &[Segment],
+) -> Result<AcousticAnalysis, Box<dyn std::error::Error>> {
     println!("   📊 Computing Acoustic Distances...");
     println!();
 
     // Group segments by cluster
     let mut cluster_segments: HashMap<i32, Vec<&Segment>> = HashMap::new();
     for seg in segments {
-        cluster_segments.entry(seg.level1_cluster_id).or_insert_with(Vec::new).push(seg);
+        cluster_segments
+            .entry(seg.level1_cluster_id)
+            .or_insert_with(Vec::new)
+            .push(seg);
     }
 
     let feature_dim = segments.first().map(|s| s.features.len()).unwrap_or(0);
@@ -460,12 +500,16 @@ fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis,
     cluster_ids.sort();
 
     // Analyze first 20 clusters with sufficient data
-    let clusters_to_analyze: Vec<_> = cluster_ids.into_iter()
+    let clusters_to_analyze: Vec<_> = cluster_ids
+        .into_iter()
         .filter(|&id| cluster_segments.get(&id).map(|v| v.len()).unwrap_or(0) >= 10)
         .take(20)
         .collect();
 
-    println!("      Analyzing {} clusters with 10+ segments...", clusters_to_analyze.len());
+    println!(
+        "      Analyzing {} clusters with 10+ segments...",
+        clusters_to_analyze.len()
+    );
     println!();
 
     let mut within_stats = Vec::new();
@@ -490,9 +534,8 @@ fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis,
 
             if !distances.is_empty() {
                 let mean = distances.iter().sum::<f64>() / distances.len() as f64;
-                let variance = distances.iter()
-                    .map(|&d| (d - mean).powi(2))
-                    .sum::<f64>() / distances.len() as f64;
+                let variance = distances.iter().map(|&d| (d - mean).powi(2)).sum::<f64>()
+                    / distances.len() as f64;
                 let std = variance.sqrt();
 
                 within_stats.push(ClusterDistanceStats {
@@ -541,8 +584,13 @@ fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis,
 
     // Calculate silhouette-like score
     let silhouette = if !within_stats.is_empty() && !between_distances.is_empty() {
-        let avg_within = within_stats.iter().map(|s| s.mean_distance).sum::<f64>() / within_stats.len() as f64;
-        let avg_between = between_distances.iter().map(|d| d.mean_distance).sum::<f64>() / between_distances.len() as f64;
+        let avg_within =
+            within_stats.iter().map(|s| s.mean_distance).sum::<f64>() / within_stats.len() as f64;
+        let avg_between = between_distances
+            .iter()
+            .map(|d| d.mean_distance)
+            .sum::<f64>()
+            / between_distances.len() as f64;
         (avg_between - avg_within) / avg_between.max(avg_within)
     } else {
         0.0
@@ -550,28 +598,37 @@ fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis,
 
     // Display results
     println!("   📊 Within-Cluster Distances (Top 10 clusters):");
-    println!("   {:<10} {:>12} {:>12} {:>12} {:>12} {:>12}",
-             "Cluster", "Segments", "Mean", "Std", "Min", "Max");
+    println!(
+        "   {:<10} {:>12} {:>12} {:>12} {:>12} {:>12}",
+        "Cluster", "Segments", "Mean", "Std", "Min", "Max"
+    );
     println!("{}", "-".repeat(75));
 
     for stat in within_stats.iter().take(10) {
-        println!("   {:<10} {:>12} {:>12.4} {:>12.4} {:>12.4} {:>12.4}",
-                 stat.cluster_id,
-                 stat.segment_count,
-                 stat.mean_distance,
-                 stat.std_distance,
-                 stat.min_distance,
-                 stat.max_distance);
+        println!(
+            "   {:<10} {:>12} {:>12.4} {:>12.4} {:>12.4} {:>12.4}",
+            stat.cluster_id,
+            stat.segment_count,
+            stat.mean_distance,
+            stat.std_distance,
+            stat.min_distance,
+            stat.max_distance
+        );
     }
     println!();
 
     println!("   📊 Between-Cluster Distances (Sample):");
-    println!("   {:<10} {:<10} {:>12}", "Cluster A", "Cluster B", "Mean Distance");
+    println!(
+        "   {:<10} {:<10} {:>12}",
+        "Cluster A", "Cluster B", "Mean Distance"
+    );
     println!("{}", "-".repeat(40));
 
     for dist in between_distances.iter().take(15) {
-        println!("   {:<10} {:<10} {:>12.4}",
-                 dist.cluster_a, dist.cluster_b, dist.mean_distance);
+        println!(
+            "   {:<10} {:<10} {:>12.4}",
+            dist.cluster_a, dist.cluster_b, dist.mean_distance
+        );
     }
     println!();
 
@@ -609,7 +666,10 @@ fn analyze_true_transitions(
     // Group segments by file
     let mut file_segments: HashMap<String, Vec<&Segment>> = HashMap::new();
     for seg in segments {
-        file_segments.entry(seg.file_name.clone()).or_insert_with(Vec::new).push(seg);
+        file_segments
+            .entry(seg.file_name.clone())
+            .or_insert_with(Vec::new)
+            .push(seg);
     }
 
     // For each file, compute feature-based transitions
@@ -639,7 +699,10 @@ fn analyze_true_transitions(
             all_transitions.push(transition.clone());
 
             if let Some(ctx) = context {
-                context_transitions.entry(ctx).or_insert_with(Vec::new).push(transition);
+                context_transitions
+                    .entry(ctx)
+                    .or_insert_with(Vec::new)
+                    .push(transition);
             }
         }
     }
@@ -671,17 +734,17 @@ fn analyze_true_transitions(
         // Find dominant patterns (by feature distance)
         let mut pattern_counts: HashMap<(i32, i32), usize> = HashMap::new();
         for trans in &transitions {
-            *pattern_counts.entry((trans.from_cluster, trans.to_cluster)).or_insert(0) += 1;
+            *pattern_counts
+                .entry((trans.from_cluster, trans.to_cluster))
+                .or_insert(0) += 1;
         }
 
         let mut dominant_patterns: Vec<DominantPattern> = pattern_counts
             .into_iter()
-            .map(|((from_cluster, to_cluster), count)| {
-                DominantPattern {
-                    cluster_sequence: vec![from_cluster, to_cluster],
-                    frequency: count,
-                    proportion: count as f64 / transitions.len() as f64,
-                }
+            .map(|((from_cluster, to_cluster), count)| DominantPattern {
+                cluster_sequence: vec![from_cluster, to_cluster],
+                frequency: count,
+                proportion: count as f64 / transitions.len() as f64,
             })
             .collect();
 
@@ -695,12 +758,15 @@ fn analyze_true_transitions(
             0.0
         };
 
-        context_patterns.insert(context_id, ContextPattern {
+        context_patterns.insert(
             context_id,
-            num_files: transitions.len(),
-            dominant_patterns,
-            pattern_diversity: diversity,
-        });
+            ContextPattern {
+                context_id,
+                num_files: transitions.len(),
+                dominant_patterns,
+                pattern_diversity: diversity,
+            },
+        );
     }
 
     // Calculate cross-context similarity
@@ -713,9 +779,8 @@ fn analyze_true_transitions(
     let cross_context_similarity = if entropy_by_context.len() > 1 {
         let entropies: Vec<f64> = entropy_by_context.values().copied().collect();
         let mean = avg_entropy;
-        let variance = entropies.iter()
-            .map(|&e| (e - mean).powi(2))
-            .sum::<f64>() / entropies.len() as f64;
+        let variance =
+            entropies.iter().map(|&e| (e - mean).powi(2)).sum::<f64>() / entropies.len() as f64;
         1.0 / (1.0 + variance) // Higher similarity when variance is low
     } else {
         0.0
@@ -732,22 +797,29 @@ fn analyze_true_transitions(
 
     // Display results
     println!("   📊 Context-Specific Transition Patterns:");
-    println!("   {:<10} {:>12} {:>15} {:>15}", "Context", "Files", "Diversity", "Dominant Pattern");
+    println!(
+        "   {:<10} {:>12} {:>15} {:>15}",
+        "Context", "Files", "Diversity", "Dominant Pattern"
+    );
     println!("{}", "-".repeat(55));
 
     let mut sorted_patterns: Vec<_> = context_patterns.values().collect();
     sorted_patterns.sort_by(|a, b| b.num_files.cmp(&a.num_files));
 
     for pattern in sorted_patterns.iter().take(10) {
-        let dominant = pattern.dominant_patterns.first()
+        let dominant = pattern
+            .dominant_patterns
+            .first()
             .map(|p| format!("{:?}", p.cluster_sequence))
             .unwrap_or_else(|| "N/A".to_string());
 
-        println!("   {:<10} {:>12} {:>15.3} {:>15}",
-                 pattern.context_id,
-                 pattern.num_files,
-                 pattern.pattern_diversity,
-                 truncate_string(&dominant, 13));
+        println!(
+            "   {:<10} {:>12} {:>15.3} {:>15}",
+            pattern.context_id,
+            pattern.num_files,
+            pattern.pattern_diversity,
+            truncate_string(&dominant, 13)
+        );
     }
     println!();
 
@@ -757,7 +829,10 @@ fn analyze_true_transitions(
     }
     println!();
 
-    println!("   📊 Cross-Context Similarity: {:.4}", cross_context_similarity);
+    println!(
+        "   📊 Cross-Context Similarity: {:.4}",
+        cross_context_similarity
+    );
     println!("   📊 Syntax Evidence Score: {:.4}", syntax_evidence_score);
     println!();
 
@@ -808,16 +883,26 @@ fn truncate_string(s: &str, max_len: usize) -> String {
     }
 }
 
-fn print_recommendations(acoustic_analysis: &AcousticAnalysis, transition_analysis: &TransitionAnalysis) {
-    println!("   Based on {} segments analyzed across {} clusters:",
-             acoustic_analysis.total_segments_analyzed,
-             acoustic_analysis.cluster_count);
+fn print_recommendations(
+    acoustic_analysis: &AcousticAnalysis,
+    transition_analysis: &TransitionAnalysis,
+) {
+    println!(
+        "   Based on {} segments analyzed across {} clusters:",
+        acoustic_analysis.total_segments_analyzed, acoustic_analysis.cluster_count
+    );
     println!();
 
     // Cluster quality assessment
     println!("   📊 Cluster Quality Assessment:");
-    println!("      Silhouette Score: {:.4}", acoustic_analysis.silhouette_score);
-    println!("      Assessment: {}", acoustic_analysis.coherence_assessment);
+    println!(
+        "      Silhouette Score: {:.4}",
+        acoustic_analysis.silhouette_score
+    );
+    println!(
+        "      Assessment: {}",
+        acoustic_analysis.coherence_assessment
+    );
     println!();
 
     if acoustic_analysis.silhouette_score < 0.2 {
@@ -860,8 +945,14 @@ fn print_recommendations(acoustic_analysis: &AcousticAnalysis, transition_analys
 
     // Syntax evidence
     println!("   📊 Syntax Evidence Assessment:");
-    println!("      Syntax Evidence Score: {:.4}", transition_analysis.syntax_evidence_score);
-    println!("      Cross-Context Similarity: {:.4}", transition_analysis.cross_context_similarity);
+    println!(
+        "      Syntax Evidence Score: {:.4}",
+        transition_analysis.syntax_evidence_score
+    );
+    println!(
+        "      Cross-Context Similarity: {:.4}",
+        transition_analysis.cross_context_similarity
+    );
     println!();
 
     if transition_analysis.syntax_evidence_score > 0.5 {

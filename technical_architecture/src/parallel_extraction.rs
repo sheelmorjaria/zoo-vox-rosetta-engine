@@ -5,7 +5,7 @@
 //
 // This replaces Python's parallel_unified_extraction.py with 10-50x performance improvement.
 
-use crate::{MicroDynamicsExtractor, PeltSegmenter, DbscanClustering, StandardScaler};
+use crate::{DbscanClustering, MicroDynamicsExtractor, PeltSegmenter, StandardScaler};
 use ndarray::Array2;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -16,11 +16,8 @@ use std::path::Path;
 #[cfg(feature = "symphonia")]
 use symphonia::{
     core::{
-        codecs::DecoderOptions,
-        formats::FormatOptions,
-        io::MediaSourceStream,
-        meta::MetadataOptions,
-        probe::Hint,
+        codecs::DecoderOptions, formats::FormatOptions, io::MediaSourceStream,
+        meta::MetadataOptions, probe::Hint,
     },
     default::get_probe,
 };
@@ -75,7 +72,9 @@ pub type Result<T> = std::result::Result<T, ExtractionError>;
 /// - WAV files: Uses hound (faster, simpler)
 /// - FLAC/MP3/AAC/OGG: Uses symphonia
 #[cfg(all(feature = "hound", feature = "symphonia"))]
-fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     let path_ref = path.as_ref();
 
     // Check file extension to determine format
@@ -102,21 +101,22 @@ fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u3
 
 /// Load WAV file using hound
 #[cfg(feature = "hound")]
-fn load_wav_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_wav_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     let reader = hound::WavReader::open(path.as_ref())?;
     let spec = reader.spec();
     let sample_rate = spec.sample_rate;
 
     // Read samples as f32
-    let audio: Vec<f32> = reader.into_samples::<f32>()
+    let audio: Vec<f32> = reader
+        .into_samples::<f32>()
         .filter_map(|s| s.ok())
         .collect();
 
     // Convert to mono if stereo
     let audio_mono = if spec.channels == 2 {
-        audio.chunks_exact(2)
-            .map(|c| (c[0] + c[1]) / 2.0)
-            .collect()
+        audio.chunks_exact(2).map(|c| (c[0] + c[1]) / 2.0).collect()
     } else if spec.channels > 2 {
         let num_channels = spec.channels as usize;
         (0..audio.len() / num_channels)
@@ -139,9 +139,11 @@ fn load_wav_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32)
 /// by collecting samples directly from decoded AudioBufferRefs. For production
 /// use with FLAC-only files, consider using the simpler `lewton` crate.
 #[cfg(feature = "symphonia")]
-fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
-    use symphonia::core::audio::AudioBufferRef;
+fn load_symphonia_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     use std::fs::File;
+    use symphonia::core::audio::AudioBufferRef;
 
     let path_ref = path.as_ref();
 
@@ -157,15 +159,13 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
     };
     let metadata_opts = MetadataOptions::default();
 
-    let mut probed = get_probe().format(
-        &hint,
-        mss,
-        &format_opts,
-        &metadata_opts
-    ).map_err(|e| format!("Failed to probe audio format: {}", e))?;
+    let mut probed = get_probe()
+        .format(&hint, mss, &format_opts, &metadata_opts)
+        .map_err(|e| format!("Failed to probe audio format: {}", e))?;
 
     // Get default track
-    let track = probed.format
+    let track = probed
+        .format
         .default_track()
         .ok_or("No default audio track found")?;
 
@@ -177,7 +177,9 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
         .make(&track.codec_params, &DecoderOptions::default())
         .map_err(|e| format!("Failed to create decoder: {}", e))?;
 
-    let sample_rate = track.codec_params.sample_rate
+    let sample_rate = track
+        .codec_params
+        .sample_rate
         .ok_or("Sample rate not found")?;
 
     // Get channels from codec_params
@@ -194,7 +196,10 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
             Ok(packet) => packet,
             Err(symphonia::core::errors::Error::ResetRequired) => continue,
             Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break
+            }
             Err(e) => return Err(format!("Failed to read packet: {}", e).into()),
         };
 
@@ -221,7 +226,8 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::S16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i16::MAX as f32).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / i16::MAX as f32).collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -229,9 +235,10 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::S24(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|s| {
-                                s.inner() as f32 / (i32::MAX >> 8) as f32
-                            }).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|s| s.inner() as f32 / (i32::MAX >> 8) as f32)
+                                .collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -239,7 +246,8 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::S32(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -247,7 +255,8 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::U8(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -255,7 +264,10 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::U16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 32768.0) / 32768.0).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|&s| (s as f32 - 32768.0) / 32768.0)
+                                .collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -263,9 +275,13 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::U24(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|s| {
-                                (s.inner() as f32 - (u32::MAX >> 8) as f32) / (u32::MAX >> 8) as f32
-                            }).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|s| {
+                                    (s.inner() as f32 - (u32::MAX >> 8) as f32)
+                                        / (u32::MAX >> 8) as f32
+                                })
+                                .collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -273,7 +289,12 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::U32(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - u32::MAX as f32 / 2.0) / (u32::MAX as f32 / 2.0)).collect();
+                            let samples: Vec<f32> = plane
+                                .iter()
+                                .map(|&s| {
+                                    (s as f32 - u32::MAX as f32 / 2.0) / (u32::MAX as f32 / 2.0)
+                                })
+                                .collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -281,7 +302,8 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
                     AudioBufferRef::S8(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i8::MAX as f32).collect();
+                            let samples: Vec<f32> =
+                                plane.iter().map(|&s| s as f32 / i8::MAX as f32).collect();
                             all_samples.extend(samples);
                             break;
                         }
@@ -315,19 +337,25 @@ fn load_symphonia_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>
 
 /// Fallback: Only hound available
 #[cfg(all(feature = "hound", not(feature = "symphonia")))]
-fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     load_wav_file(path)
 }
 
 /// Fallback: Only symphonia available
 #[cfg(all(not(feature = "hound"), feature = "symphonia"))]
-fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(
+    path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     load_symphonia_file(path)
 }
 
 /// Fallback: No audio loading available
 #[cfg(not(any(feature = "hound", feature = "symphonia")))]
-fn load_audio_file<P: AsRef<Path>>(_path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(
+    _path: P,
+) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     Err("Audio loading not available: enable 'hound' or 'symphonia' feature".into())
 }
 
@@ -409,10 +437,14 @@ impl PhraseAudioSegment {
         context: String,
     ) -> Self {
         let duration_ms = end_time_ms - start_time_ms;
-        let occurrence_id = format!("{}_{}", phrase_key, std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_micros());
+        let occurrence_id = format!(
+            "{}_{}",
+            phrase_key,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_micros()
+        );
 
         Self {
             audio,
@@ -498,7 +530,10 @@ impl PhraseAudioLibrary {
         let phrase_key = segment.phrase_key.clone();
 
         // Get or create segment list for this phrase
-        let segments = self.phrase_segments.entry(phrase_key.clone()).or_insert_with(Vec::new);
+        let segments = self
+            .phrase_segments
+            .entry(phrase_key.clone())
+            .or_insert_with(Vec::new);
 
         // Check if we've reached the maximum
         if segments.len() >= self.max_segments_per_phrase {
@@ -521,10 +556,11 @@ impl PhraseAudioLibrary {
 
     /// Get the best quality segment for a phrase key.
     pub fn get_best_segment(&self, phrase_key: &str) -> Option<&PhraseAudioSegment> {
-        self.phrase_segments.get(phrase_key)
-            .and_then(|segments| segments.iter().max_by(|a, b| {
-                a.quality_score.partial_cmp(&b.quality_score).unwrap()
-            }))
+        self.phrase_segments.get(phrase_key).and_then(|segments| {
+            segments
+                .iter()
+                .max_by(|a, b| a.quality_score.partial_cmp(&b.quality_score).unwrap())
+        })
     }
 
     /// Get all phrase keys in the library.
@@ -1074,7 +1110,8 @@ impl ParallelExtractionPipeline {
         let grammar_rules = self.extract_grammar_rules(&successful_results, &clustered_phrases);
 
         // Step 6: Detect compositionality
-        let compositionality = self.detect_compositionality(&successful_results, &clustered_phrases);
+        let compositionality =
+            self.detect_compositionality(&successful_results, &clustered_phrases);
 
         let processing_time = start_time.elapsed().as_secs_f64();
 
@@ -1102,7 +1139,8 @@ impl ParallelExtractionPipeline {
         let (audio, sample_rate) = self.load_audio(&annotation.file_name, audio_dir)?;
 
         // Extract 30D features for entire audio
-        let all_features = self.feature_extractor
+        let all_features = self
+            .feature_extractor
             .extract(&audio)
             .map_err(|e| ExtractionError::FeatureExtractionFailed(e.to_string()))?;
 
@@ -1110,11 +1148,14 @@ impl ParallelExtractionPipeline {
         let feature_matrix = self.features_to_matrix(&all_features);
 
         // Segment audio into sentences using PELT
-        let sentence_changepoints = self.segmenter.segment(&feature_matrix)
+        let sentence_changepoints = self
+            .segmenter
+            .segment(&feature_matrix)
             .map_err(|e| ExtractionError::SegmentationFailed(e.to_string()))?;
 
         let hop_length = (sample_rate as f64 * 0.01) as usize; // 10ms hop
-        let sentences = self.changepoints_to_sentences(&sentence_changepoints, hop_length, sample_rate);
+        let sentences =
+            self.changepoints_to_sentences(&sentence_changepoints, hop_length, sample_rate);
 
         // Extract phrases using sliding windows
         let phrases = self.extract_phrases(
@@ -1156,7 +1197,12 @@ impl ParallelExtractionPipeline {
     }
 
     /// Convert changepoints to sentence segments
-    fn changepoints_to_sentences(&self, changepoints: &[usize], hop_length: usize, sample_rate: u32) -> Vec<SentenceSegment> {
+    fn changepoints_to_sentences(
+        &self,
+        changepoints: &[usize],
+        hop_length: usize,
+        sample_rate: u32,
+    ) -> Vec<SentenceSegment> {
         let mut sentences = Vec::new();
 
         for window in changepoints.windows(2) {
@@ -1202,11 +1248,14 @@ impl ParallelExtractionPipeline {
                 let window_audio = &audio[start..end];
 
                 // Check RMS threshold
-                let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>() / window_samples as f32).sqrt();
+                let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>()
+                    / window_samples as f32)
+                    .sqrt();
 
                 if rms >= self.config.rms_threshold as f32 {
                     // Extract 56D features from REAL audio (30D base + 13 Δ + 13 ΔΔ)
-                    let extracted_features = self.feature_extractor
+                    let extracted_features = self
+                        .feature_extractor
                         .extract_56d(window_audio)
                         .map_err(|e| ExtractionError::FeatureExtractionFailed(e.to_string()))?;
 
@@ -1225,10 +1274,8 @@ impl ParallelExtractionPipeline {
                             5000.0, // f0_range_hz (estimated)
                         );
 
-                        let mut features: Vec<f64> = vector30d.to_array()
-                            .iter()
-                            .map(|&x| x as f64)
-                            .collect();
+                        let mut features: Vec<f64> =
+                            vector30d.to_array().iter().map(|&x| x as f64).collect();
 
                         // Append 13 mfcc_delta features
                         for delta in &extracted_features.mfcc_delta {
@@ -1295,11 +1342,14 @@ impl ParallelExtractionPipeline {
                 let window_audio = &audio[start..end];
 
                 // Check RMS threshold
-                let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>() / window_samples as f32).sqrt();
+                let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>()
+                    / window_samples as f32)
+                    .sqrt();
 
                 if rms >= self.config.rms_threshold as f32 {
                     // Extract 56D features from REAL audio (30D base + 13 Δ + 13 ΔΔ)
-                    let extracted_features = self.feature_extractor
+                    let extracted_features = self
+                        .feature_extractor
                         .extract_56d(window_audio)
                         .map_err(|e| ExtractionError::FeatureExtractionFailed(e.to_string()))?;
 
@@ -1318,10 +1368,8 @@ impl ParallelExtractionPipeline {
                             5000.0, // f0_range_hz (estimated)
                         );
 
-                        let mut features: Vec<f64> = vector30d.to_array()
-                            .iter()
-                            .map(|&x| x as f64)
-                            .collect();
+                        let mut features: Vec<f64> =
+                            vector30d.to_array().iter().map(|&x| x as f64).collect();
 
                         // Append 13 mfcc_delta features
                         for delta in &extracted_features.mfcc_delta {
@@ -1336,8 +1384,8 @@ impl ParallelExtractionPipeline {
                         // Final dimension: 30 + 13 + 13 = 56
 
                         // Create phrase key
-                        let phrase_key = format!("F0_{:.0}_DUR_{:.0}",
-                                                10000.0 / 100.0, duration_ms);
+                        let phrase_key =
+                            format!("F0_{:.0}_DUR_{:.0}", 10000.0 / 100.0, duration_ms);
 
                         // Create phrase candidate
                         phrases.push(PhraseCandidate {
@@ -1361,7 +1409,7 @@ impl ParallelExtractionPipeline {
                             start_ms,
                             end_ms,
                             10000.0, // mean_f0_hz (estimated)
-                            5000.0, // f0_range_hz (estimated)
+                            5000.0,  // f0_range_hz (estimated)
                             rms as f64,
                             species.to_string(),
                             context.to_string(),
@@ -1412,16 +1460,17 @@ impl ParallelExtractionPipeline {
 
         // Normalize features
         let mut scaler = StandardScaler::new();
-        let normalized = scaler.fit_transform(&array)
+        let normalized = scaler
+            .fit_transform(&array)
             .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
 
         // Cluster
-        let dbscan = DbscanClustering::new(
-            self.config.dbscan_epsilon,
-            self.config.dbscan_min_samples,
-        ).map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
+        let dbscan =
+            DbscanClustering::new(self.config.dbscan_epsilon, self.config.dbscan_min_samples)
+                .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
 
-        let labels = dbscan.fit_predict(&normalized)
+        let labels = dbscan
+            .fit_predict(&normalized)
             .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
 
         // Group by cluster and create atomic phrases
@@ -1460,7 +1509,12 @@ impl ParallelExtractionPipeline {
             // Calculate similarities
             let cluster_features = normalized.select(ndarray::Axis(0), &cluster_indices);
             let intra_sim = calculate_intra_cluster_similarity(&cluster_features);
-            let inter_sim = calculate_inter_cluster_similarity(&normalized, &cluster_indices, &labels, cluster_id);
+            let inter_sim = calculate_inter_cluster_similarity(
+                &normalized,
+                &cluster_indices,
+                &labels,
+                cluster_id,
+            );
 
             // Collect contexts from cluster members
             let contexts: Vec<i32> = cluster_indices
@@ -1482,13 +1536,8 @@ impl ParallelExtractionPipeline {
             };
 
             // Create clustered phrase with atomicity
-            let clustered = ClusteredPhrase::new(
-                centroid_phrase,
-                cluster_id,
-                intra_sim,
-                inter_sim,
-                contexts,
-            );
+            let clustered =
+                ClusteredPhrase::new(centroid_phrase, cluster_id, intra_sim, inter_sim, contexts);
 
             clustered_phrases.push(clustered);
         }
@@ -1528,7 +1577,8 @@ impl ParallelExtractionPipeline {
 
         // Calculate statistics
         let total_unique_phrases = phrase_usage.len();
-        let reusable_phrases = phrase_usage.values()
+        let reusable_phrases = phrase_usage
+            .values()
             .filter(|stats| stats.sentence_count > 1)
             .count();
 
@@ -1580,7 +1630,9 @@ impl ParallelExtractionPipeline {
                     let from_cluster = self.get_cluster_id(&window[0].phrase_id, clustered_phrases);
                     let to_cluster = self.get_cluster_id(&window[1].phrase_id, clustered_phrases);
 
-                    *transition_counts.entry((from_cluster, to_cluster)).or_insert(0) += 1;
+                    *transition_counts
+                        .entry((from_cluster, to_cluster))
+                        .or_insert(0) += 1;
                     *cluster_counts.entry(from_cluster).or_insert(0) += 1;
                 }
             }
@@ -1616,108 +1668,117 @@ impl ParallelExtractionPipeline {
 /// This function takes all phrase candidates from all files and clusters them
 /// based on their 56D feature similarity (30D base + 13 Δ + 13 ΔΔ), discovering reusable phrase types.
 pub fn cluster_phrase_candidates(
-        candidates: Vec<PhraseCandidate>,
-        eps: f64,
-        min_samples: usize,
-    ) -> Result<Vec<ClusteredPhrase>> {
-        if candidates.is_empty() {
-            return Ok(Vec::new());
-        }
-
-        // Extract feature matrix from candidates
-        let feature_dim = candidates[0].features.len();
-        let n_samples = candidates.len();
-
-        // Build feature matrix
-        let mut features = Vec::with_capacity(n_samples * feature_dim);
-        for candidate in &candidates {
-            if candidate.features.len() != feature_dim {
-                return Err(ExtractionError::ClusteringFailed(
-                    format!("Feature dimension mismatch: expected {}, got {}",
-                           feature_dim, candidate.features.len())
-                ));
-            }
-            features.extend(&candidate.features);
-        }
-
-        // Create Array2 from features
-        let feature_matrix = Array2::from_shape_vec(
-            (n_samples, feature_dim),
-            features
-        ).map_err(|e| ExtractionError::ClusteringFailed(format!("Failed to create feature matrix: {}", e)))?;
-
-        // Normalize features using StandardScaler
-        let mut scaler = StandardScaler::new();
-        let normalized_features = scaler.fit_transform(&feature_matrix)
-            .map_err(|e| ExtractionError::ClusteringFailed(format!("Failed to normalize features: {}", e)))?;
-
-        // Run DBSCAN clustering
-        let dbscan = crate::DbscanClustering::new(eps, min_samples)
-            .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
-
-        let cluster_labels = dbscan.fit_predict(&normalized_features)
-            .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
-
-        // Group candidates by cluster
-        let mut clustered_phrases = Vec::new();
-        let mut cluster_members: std::collections::HashMap<i32, Vec<&PhraseCandidate>> = std::collections::HashMap::new();
-
-        for (candidate, &label) in candidates.iter().zip(&cluster_labels) {
-            if label >= 0 { // Only include non-noise points
-                cluster_members.entry(label).or_insert_with(Vec::new).push(candidate);
-            }
-        }
-
-        // Create clustered phrases
-        for (cluster_id, members) in cluster_members {
-            if members.len() < min_samples {
-                continue; // Skip small clusters
-            }
-
-            // Calculate intra-cluster similarity
-            let mut intra_sim_sum = 0.0;
-            let mut intra_sim_count = 0;
-
-            for (i, member1) in members.iter().enumerate() {
-                for member2 in members.iter().skip(i + 1) {
-                    let sim = cosine_similarity(&member1.features, &member2.features);
-                    intra_sim_sum += sim;
-                    intra_sim_count += 1;
-                }
-            }
-
-            let intra_cluster_similarity = if intra_sim_count > 0 {
-                intra_sim_sum / intra_sim_count as f64
-            } else {
-                1.0
-            };
-
-            // Calculate inter-cluster similarity (simplified)
-            let inter_cluster_similarity = 0.2; // Placeholder
-
-            // Check atomicity
-            let is_atomic = intra_cluster_similarity > 0.2 && inter_cluster_similarity < 0.6;
-
-            // Collect contexts
-            let contexts: Vec<i32> = members.iter()
-                .map(|m| m.context.parse::<i32>().unwrap_or(0))
-                .collect();
-
-            // Create a clustered phrase for each member
-            for member in members {
-                clustered_phrases.push(ClusteredPhrase {
-                    phrase: member.clone(),
-                    cluster_id,
-                    intra_cluster_similarity,
-                    inter_cluster_similarity,
-                    is_atomic,
-                    contexts: contexts.clone(),
-                });
-            }
-        }
-
-        Ok(clustered_phrases)
+    candidates: Vec<PhraseCandidate>,
+    eps: f64,
+    min_samples: usize,
+) -> Result<Vec<ClusteredPhrase>> {
+    if candidates.is_empty() {
+        return Ok(Vec::new());
     }
+
+    // Extract feature matrix from candidates
+    let feature_dim = candidates[0].features.len();
+    let n_samples = candidates.len();
+
+    // Build feature matrix
+    let mut features = Vec::with_capacity(n_samples * feature_dim);
+    for candidate in &candidates {
+        if candidate.features.len() != feature_dim {
+            return Err(ExtractionError::ClusteringFailed(format!(
+                "Feature dimension mismatch: expected {}, got {}",
+                feature_dim,
+                candidate.features.len()
+            )));
+        }
+        features.extend(&candidate.features);
+    }
+
+    // Create Array2 from features
+    let feature_matrix =
+        Array2::from_shape_vec((n_samples, feature_dim), features).map_err(|e| {
+            ExtractionError::ClusteringFailed(format!("Failed to create feature matrix: {}", e))
+        })?;
+
+    // Normalize features using StandardScaler
+    let mut scaler = StandardScaler::new();
+    let normalized_features = scaler.fit_transform(&feature_matrix).map_err(|e| {
+        ExtractionError::ClusteringFailed(format!("Failed to normalize features: {}", e))
+    })?;
+
+    // Run DBSCAN clustering
+    let dbscan = crate::DbscanClustering::new(eps, min_samples)
+        .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
+
+    let cluster_labels = dbscan
+        .fit_predict(&normalized_features)
+        .map_err(|e| ExtractionError::ClusteringFailed(e.to_string()))?;
+
+    // Group candidates by cluster
+    let mut clustered_phrases = Vec::new();
+    let mut cluster_members: std::collections::HashMap<i32, Vec<&PhraseCandidate>> =
+        std::collections::HashMap::new();
+
+    for (candidate, &label) in candidates.iter().zip(&cluster_labels) {
+        if label >= 0 {
+            // Only include non-noise points
+            cluster_members
+                .entry(label)
+                .or_insert_with(Vec::new)
+                .push(candidate);
+        }
+    }
+
+    // Create clustered phrases
+    for (cluster_id, members) in cluster_members {
+        if members.len() < min_samples {
+            continue; // Skip small clusters
+        }
+
+        // Calculate intra-cluster similarity
+        let mut intra_sim_sum = 0.0;
+        let mut intra_sim_count = 0;
+
+        for (i, member1) in members.iter().enumerate() {
+            for member2 in members.iter().skip(i + 1) {
+                let sim = cosine_similarity(&member1.features, &member2.features);
+                intra_sim_sum += sim;
+                intra_sim_count += 1;
+            }
+        }
+
+        let intra_cluster_similarity = if intra_sim_count > 0 {
+            intra_sim_sum / intra_sim_count as f64
+        } else {
+            1.0
+        };
+
+        // Calculate inter-cluster similarity (simplified)
+        let inter_cluster_similarity = 0.2; // Placeholder
+
+        // Check atomicity
+        let is_atomic = intra_cluster_similarity > 0.2 && inter_cluster_similarity < 0.6;
+
+        // Collect contexts
+        let contexts: Vec<i32> = members
+            .iter()
+            .map(|m| m.context.parse::<i32>().unwrap_or(0))
+            .collect();
+
+        // Create a clustered phrase for each member
+        for member in members {
+            clustered_phrases.push(ClusteredPhrase {
+                phrase: member.clone(),
+                cluster_id,
+                intra_cluster_similarity,
+                inter_cluster_similarity,
+                is_atomic,
+                contexts: contexts.clone(),
+            });
+        }
+    }
+
+    Ok(clustered_phrases)
+}
 
 /// Batch process and cluster phrases with checkpointing
 ///
@@ -1732,103 +1793,106 @@ pub fn cluster_phrase_candidates(
 /// * `checkpoint_dir` - Directory for checkpoint files
 /// * `max_files` - Optional maximum number of files to process (None = all files)
 pub fn batch_process_and_cluster(
-        audio_dir: &Path,
-        batch_size: usize,
-        eps: f64,
-        min_samples: usize,
-        checkpoint_dir: &Path,
-        max_files: Option<usize>,
-    ) -> Result<(Vec<ClusteredPhrase>, Vec<VocalizationResult>)> {
-        
-        
+    audio_dir: &Path,
+    batch_size: usize,
+    eps: f64,
+    min_samples: usize,
+    checkpoint_dir: &Path,
+    max_files: Option<usize>,
+) -> Result<(Vec<ClusteredPhrase>, Vec<VocalizationResult>)> {
+    // Create checkpoint directory
+    std::fs::create_dir_all(checkpoint_dir).map_err(|e| ExtractionError::IoError(e))?;
 
-        // Create checkpoint directory
-        std::fs::create_dir_all(checkpoint_dir)
-            .map_err(|e| ExtractionError::IoError(e))?;
+    // Discover all WAV files
+    let mut wav_files: Vec<_> = std::fs::read_dir(audio_dir)
+        .map_err(|e| ExtractionError::IoError(e))?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .and_then(|s| s.to_str())
+                .map(|ext| ext.eq_ignore_ascii_case("wav"))
+                .unwrap_or(false)
+        })
+        .map(|entry| entry.path())
+        .collect();
 
-        // Discover all WAV files
-        let mut wav_files: Vec<_> = std::fs::read_dir(audio_dir)
-            .map_err(|e| ExtractionError::IoError(e))?
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension()
-                    .and_then(|s| s.to_str())
-                    .map(|ext| ext.eq_ignore_ascii_case("wav"))
-                    .unwrap_or(false)
+    wav_files.sort();
+
+    // Limit files if max_files is specified
+    let total_files = if let Some(max) = max_files {
+        wav_files.truncate(max);
+        max
+    } else {
+        wav_files.len()
+    };
+
+    let num_batches = (total_files + batch_size - 1) / batch_size;
+
+    println!("📦 Batch processing:");
+    println!("   Total files: {}", total_files);
+    println!("   Batch size: {}", batch_size);
+    println!("   Number of batches: {}", num_batches);
+
+    // Check for existing checkpoint
+    let checkpoint_file = checkpoint_dir.join("candidates_checkpoint.json");
+    let mut all_candidates = if checkpoint_file.exists() {
+        println!("📂 Resuming from checkpoint...");
+        load_candidates_from_checkpoint(&checkpoint_file)?
+    } else {
+        Vec::new()
+    };
+
+    let start_batch = all_candidates.len() / batch_size;
+
+    // Process each batch
+    for batch_idx in start_batch..num_batches {
+        let batch_start = batch_idx * batch_size;
+        let batch_end = std::cmp::min(batch_start + batch_size, total_files);
+        let batch_files = &wav_files[batch_start..batch_end];
+
+        println!(
+            "🔄 Processing batch {}/{} (files {}-{})...",
+            batch_idx + 1,
+            num_batches,
+            batch_start,
+            batch_end
+        );
+
+        // Process batch in parallel
+        let batch_candidates: Vec<_> = batch_files
+            .par_iter()
+            .enumerate()
+            .filter_map(|(i, file_path)| {
+                process_single_file_for_clustering(file_path, batch_start + i).ok()
             })
-            .map(|entry| entry.path())
+            .flatten()
             .collect();
 
-        wav_files.sort();
+        println!("   Extracted {} candidates", batch_candidates.len());
+        all_candidates.extend(batch_candidates);
 
-        // Limit files if max_files is specified
-        let total_files = if let Some(max) = max_files {
-            wav_files.truncate(max);
-            max
-        } else {
-            wav_files.len()
-        };
-
-        let num_batches = (total_files + batch_size - 1) / batch_size;
-
-        println!("📦 Batch processing:");
-        println!("   Total files: {}", total_files);
-        println!("   Batch size: {}", batch_size);
-        println!("   Number of batches: {}", num_batches);
-
-        // Check for existing checkpoint
-        let checkpoint_file = checkpoint_dir.join("candidates_checkpoint.json");
-        let mut all_candidates = if checkpoint_file.exists() {
-            println!("📂 Resuming from checkpoint...");
-            load_candidates_from_checkpoint(&checkpoint_file)?
-        } else {
-            Vec::new()
-        };
-
-        let start_batch = all_candidates.len() / batch_size;
-
-        // Process each batch
-        for batch_idx in start_batch..num_batches {
-            let batch_start = batch_idx * batch_size;
-            let batch_end = std::cmp::min(batch_start + batch_size, total_files);
-            let batch_files = &wav_files[batch_start..batch_end];
-
-            println!("🔄 Processing batch {}/{} (files {}-{})...",
-                     batch_idx + 1, num_batches, batch_start, batch_end);
-
-            // Process batch in parallel
-            let batch_candidates: Vec<_> = batch_files
-                .par_iter()
-                .enumerate()
-                .filter_map(|(i, file_path)| {
-                    process_single_file_for_clustering(file_path, batch_start + i).ok()
-                })
-                .flatten()
-                .collect();
-
-            println!("   Extracted {} candidates", batch_candidates.len());
-            all_candidates.extend(batch_candidates);
-
-            // Save checkpoint after each batch
-            if (batch_idx + 1) % 10 == 0 || batch_idx == num_batches - 1 {
-                println!("💾 Saving checkpoint...");
-                save_candidates_to_checkpoint(&all_candidates, &checkpoint_file)?;
-            }
+        // Save checkpoint after each batch
+        if (batch_idx + 1) % 10 == 0 || batch_idx == num_batches - 1 {
+            println!("💾 Saving checkpoint...");
+            save_candidates_to_checkpoint(&all_candidates, &checkpoint_file)?;
         }
-
-        println!();
-        println!("🔬 Clustering {} candidates...", all_candidates.len());
-
-        // Cluster all candidates
-        let clustered_phrases = cluster_phrase_candidates(all_candidates, eps, min_samples)?;
-
-        println!("✅ Found {} clustered phrases", clustered_phrases.len());
-
-        // Convert candidates to vocalization results
-        let vocalization_results = convert_candidates_to_results(&clustered_phrases);
-
-        Ok((clustered_phrases, vocalization_results))
     }
+
+    println!();
+    println!("🔬 Clustering {} candidates...", all_candidates.len());
+
+    // Cluster all candidates
+    let clustered_phrases = cluster_phrase_candidates(all_candidates, eps, min_samples)?;
+
+    println!("✅ Found {} clustered phrases", clustered_phrases.len());
+
+    // Convert candidates to vocalization results
+    let vocalization_results = convert_candidates_to_results(&clustered_phrases);
+
+    Ok((clustered_phrases, vocalization_results))
+}
 
 /// Process a single file for clustering (extracts phrase candidates)
 fn process_single_file_for_clustering(
@@ -1837,7 +1901,8 @@ fn process_single_file_for_clustering(
 ) -> std::result::Result<Vec<PhraseCandidate>, Box<dyn std::error::Error>> {
     use crate::MicroDynamicsExtractor;
 
-    let file_name = file_path.file_name()
+    let file_name = file_path
+        .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("unknown");
 
@@ -1866,10 +1931,7 @@ fn process_single_file_for_clustering(
         5000.0, // f0_range_hz (estimated)
     );
 
-    let mut features_vec: Vec<f64> = vector30d.to_array()
-        .iter()
-        .map(|&x| x as f64)
-        .collect();
+    let mut features_vec: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
 
     // Append 13 mfcc_delta features
     for delta in &features_56d.mfcc_delta {
@@ -1917,13 +1979,10 @@ fn cosine_similarity(a: &[f64], b: &[f64]) -> f64 {
 }
 
 /// Save candidates to checkpoint file
-fn save_candidates_to_checkpoint(
-    candidates: &[PhraseCandidate],
-    path: &Path,
-) -> Result<()> {
-    use std::io::BufWriter;
-    use std::fs::File;
+fn save_candidates_to_checkpoint(candidates: &[PhraseCandidate], path: &Path) -> Result<()> {
     use serde_json;
+    use std::fs::File;
+    use std::io::BufWriter;
 
     let file = File::create(path)?;
     let writer = BufWriter::new(file);
@@ -1932,12 +1991,10 @@ fn save_candidates_to_checkpoint(
 }
 
 /// Load candidates from checkpoint file
-fn load_candidates_from_checkpoint(
-    path: &Path,
-) -> Result<Vec<PhraseCandidate>> {
-    use std::io::BufReader;
-    use std::fs::File;
+fn load_candidates_from_checkpoint(path: &Path) -> Result<Vec<PhraseCandidate>> {
     use serde_json;
+    use std::fs::File;
+    use std::io::BufReader;
 
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -1946,13 +2003,13 @@ fn load_candidates_from_checkpoint(
 }
 
 /// Convert clustered phrases to vocalization results
-fn convert_candidates_to_results(
-    clustered_phrases: &[ClusteredPhrase],
-) -> Vec<VocalizationResult> {
-    let mut results: std::collections::HashMap<String, VocalizationResult> = std::collections::HashMap::new();
+fn convert_candidates_to_results(clustered_phrases: &[ClusteredPhrase]) -> Vec<VocalizationResult> {
+    let mut results: std::collections::HashMap<String, VocalizationResult> =
+        std::collections::HashMap::new();
 
     for cp in clustered_phrases {
-        results.entry(cp.phrase.file_name.clone())
+        results
+            .entry(cp.phrase.file_name.clone())
             .or_insert_with(|| VocalizationResult {
                 file_name: cp.phrase.file_name.clone(),
                 species: cp.phrase.species.clone(),
@@ -2357,10 +2414,7 @@ impl ParallelExtractionPipeline {
         let pragmatics = self.analyze_pragmatics(results)?;
 
         // 5. Updated Atomicity with Usage Frequency
-        let updated_atomic_phrases = self.analyze_updated_atomicity(
-            clustered_phrases,
-            &zipf,
-        );
+        let updated_atomic_phrases = self.analyze_updated_atomicity(clustered_phrases, &zipf);
 
         Ok(LinguisticAnalysis {
             zipf,
@@ -2399,10 +2453,13 @@ impl ParallelExtractionPipeline {
         }
 
         // Step 2: Rank phrases by frequency (1 = most common)
-        let mut ranked_phrases: Vec<(String, usize)> =
-            phrase_frequencies.iter().map(|(k, v)| (k.clone(), *v)).collect();
+        let mut ranked_phrases: Vec<(String, usize)> = phrase_frequencies
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect();
         ranked_phrases.sort_by(|a, b| b.1.cmp(&a.1)); // Descending by frequency
-        let ranked_phrase_ids: Vec<String> = ranked_phrases.iter().map(|(k, _)| k.clone()).collect();
+        let ranked_phrase_ids: Vec<String> =
+            ranked_phrases.iter().map(|(k, _)| k.clone()).collect();
 
         // Step 3: Calculate Zipf slope using log-log linear regression
         let n = ranked_phrases.len();
@@ -2525,9 +2582,7 @@ impl ParallelExtractionPipeline {
         let n = gaps.len() as f64;
         let mean_gap_ms = gaps.iter().sum::<f64>() / n;
 
-        let variance = gaps.iter()
-            .map(|g| (g - mean_gap_ms).powi(2))
-            .sum::<f64>() / n;
+        let variance = gaps.iter().map(|g| (g - mean_gap_ms).powi(2)).sum::<f64>() / n;
 
         let gap_std_ms = variance.sqrt();
         let gap_cv = if mean_gap_ms > 1e-10 {
@@ -2558,7 +2613,10 @@ impl ParallelExtractionPipeline {
     /// Analyze phonotactics (Forbidden Transitions)
     ///
     /// Identifies sound combinations that are physically difficult or statistically rare.
-    pub fn analyze_phonotactics(&self, results: &[VocalizationResult]) -> Result<PhonotacticsAnalysis> {
+    pub fn analyze_phonotactics(
+        &self,
+        results: &[VocalizationResult],
+    ) -> Result<PhonotacticsAnalysis> {
         use std::collections::HashMap;
 
         let mut transition_counts: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -2642,7 +2700,10 @@ impl ParallelExtractionPipeline {
     /// Analyze pragmatics (Turn-Taking)
     ///
     /// Analyzes conversation flow, gaps, and overlaps.
-    pub fn analyze_pragmatics(&self, _results: &[VocalizationResult]) -> Result<PragmaticsAnalysis> {
+    pub fn analyze_pragmatics(
+        &self,
+        _results: &[VocalizationResult],
+    ) -> Result<PragmaticsAnalysis> {
         // For now, provide a simplified analysis
         // Full implementation would require speaker identification
 
@@ -2691,7 +2752,8 @@ impl ParallelExtractionPipeline {
         clustered_phrases
             .iter()
             .map(|cp| {
-                let frequency = *zipf.phrase_frequencies
+                let frequency = *zipf
+                    .phrase_frequencies
                     .get(&cp.phrase.phrase_id)
                     .unwrap_or(&1);
 
@@ -2762,9 +2824,7 @@ pub fn load_annotations_from_csv<P: AsRef<Path>>(
 }
 
 /// Perform turn-taking analysis with emitter information
-pub fn analyze_turn_taking(
-    annotations: &[EmitterAnnotation],
-) -> TurnTakingAnalysis {
+pub fn analyze_turn_taking(annotations: &[EmitterAnnotation]) -> TurnTakingAnalysis {
     if annotations.is_empty() {
         return TurnTakingAnalysis {
             turn_switch_rate: 0.0,
@@ -2811,7 +2871,8 @@ pub fn analyze_turn_taking(
     let total_conversations = conversations.len();
 
     // 3. Count A→B→A patterns
-    let aba_conversations = conversations.iter()
+    let aba_conversations = conversations
+        .iter()
         .filter(|conv| {
             let emitters: Vec<i32> = conv.iter().map(|(_, emitter)| *emitter).collect();
             emitters.len() >= 3 && {
@@ -2823,7 +2884,8 @@ pub fn analyze_turn_taking(
         .count();
 
     // 4. Count dyadic conversations (exactly 2 unique emitters)
-    let dyadic_conversations = conversations.iter()
+    let dyadic_conversations = conversations
+        .iter()
         .filter(|conv| {
             let emitters: std::collections::HashSet<i32> =
                 conv.iter().map(|(_, emitter)| *emitter).collect();
@@ -2833,19 +2895,18 @@ pub fn analyze_turn_taking(
 
     // 5. Conversation length statistics
     let conv_lengths: Vec<usize> = conversations.iter().map(|c| c.len()).collect();
-    let (mean_length, median_length, min_length, max_length) =
-        if !conv_lengths.is_empty() {
-            let sum: usize = conv_lengths.iter().sum();
-            let mean = sum as f64 / conv_lengths.len() as f64;
-            let mut sorted = conv_lengths.clone();
-            sorted.sort();
-            let median = sorted[sorted.len() / 2] as f64;
-            let min = *sorted.first().unwrap_or(&0);
-            let max = *sorted.last().unwrap_or(&0);
-            (mean, median, min, max)
-        } else {
-            (0.0, 0.0, 0, 0)
-        };
+    let (mean_length, median_length, min_length, max_length) = if !conv_lengths.is_empty() {
+        let sum: usize = conv_lengths.iter().sum();
+        let mean = sum as f64 / conv_lengths.len() as f64;
+        let mut sorted = conv_lengths.clone();
+        sorted.sort();
+        let median = sorted[sorted.len() / 2] as f64;
+        let min = *sorted.first().unwrap_or(&0);
+        let max = *sorted.last().unwrap_or(&0);
+        (mean, median, min, max)
+    } else {
+        (0.0, 0.0, 0, 0)
+    };
 
     let multi_turn_count = conv_lengths.iter().filter(|&&l| l > 2).count();
     let long_conversation_count = conv_lengths.iter().filter(|&&l| l > 10).count();
@@ -2955,9 +3016,7 @@ fn detect_conversations(annotations: &[EmitterAnnotation]) -> Vec<Vec<(usize, i3
 }
 
 /// Perform social network analysis
-pub fn analyze_social_network(
-    annotations: &[EmitterAnnotation],
-) -> SocialNetworkAnalysis {
+pub fn analyze_social_network(annotations: &[EmitterAnnotation]) -> SocialNetworkAnalysis {
     if annotations.is_empty() {
         return SocialNetworkAnalysis {
             unique_emitters: 0,
@@ -3018,9 +3077,7 @@ pub fn analyze_social_network(
 }
 
 /// Perform context analysis
-pub fn analyze_context(
-    annotations: &[EmitterAnnotation],
-) -> ContextAnalysis {
+pub fn analyze_context(annotations: &[EmitterAnnotation]) -> ContextAnalysis {
     if annotations.is_empty() {
         return ContextAnalysis {
             unique_contexts: 0,
@@ -3036,7 +3093,10 @@ pub fn analyze_context(
     let mut context_groups: HashMap<i32, Vec<&EmitterAnnotation>> = HashMap::new();
     for ann in annotations {
         *context_frequencies.entry(ann.context).or_insert(0) += 1;
-        context_groups.entry(ann.context).or_insert_with(Vec::new).push(ann);
+        context_groups
+            .entry(ann.context)
+            .or_insert_with(Vec::new)
+            .push(ann);
     }
 
     // Calculate turn-switch rate for each context
@@ -3150,8 +3210,8 @@ pub fn extract_audio_segments(
     clustered_phrases: &[ClusteredPhrase],
     output_dir: &Path,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use hound::{WavSpec, WavWriter};
     use std::fs::create_dir_all;
-    use hound::{WavWriter, WavSpec};
 
     // Create output directories
     let phrases_dir = output_dir.join("phrases");
@@ -3180,20 +3240,27 @@ pub fn extract_audio_segments(
             // Load source audio
             let audio_path = audio_dir.join(&cp.phrase.file_name);
             if !audio_path.exists() {
-                eprintln!("   ⚠️  Warning: Audio file not found: {}", audio_path.display());
+                eprintln!(
+                    "   ⚠️  Warning: Audio file not found: {}",
+                    audio_path.display()
+                );
                 continue;
             }
 
-            let (audio, sr) = load_wav_file(&audio_path)
-                .map_err(|e| format!("Failed to load audio: {}", e))?;
+            let (audio, sr) =
+                load_wav_file(&audio_path).map_err(|e| format!("Failed to load audio: {}", e))?;
 
             // Calculate sample positions
             let start_sample = (cp.phrase.start_ms / 1000.0 * sr as f64) as usize;
             let end_sample = (cp.phrase.end_ms / 1000.0 * sr as f64) as usize;
 
             // Validate bounds
-            if start_sample >= audio.len() || end_sample > audio.len() || start_sample >= end_sample {
-                eprintln!("   ⚠️  Warning: Invalid time range for {}", cp.phrase.phrase_id);
+            if start_sample >= audio.len() || end_sample > audio.len() || start_sample >= end_sample
+            {
+                eprintln!(
+                    "   ⚠️  Warning: Invalid time range for {}",
+                    cp.phrase.phrase_id
+                );
                 continue;
             }
 
@@ -3526,14 +3593,12 @@ mod tests {
             },
         ];
 
-        let results = vec![
-            VocalizationResult {
-                file_name: "test.wav".to_string(),
-                species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![],
-            }
-        ];
+        let results = vec![VocalizationResult {
+            file_name: "test.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![],
+        }];
 
         let rules = pipeline.extract_grammar_rules(&results, &clustered_phrases);
 
@@ -3570,26 +3635,24 @@ mod tests {
         let config = ExtractionConfig::default();
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
-        let clustered_phrases = vec![
-            ClusteredPhrase {
-                phrase: PhraseCandidate {
-                    phrase_id: "phrase_1".to_string(),
-                    file_name: "test.wav".to_string(),
-                    start_ms: 0.0,
-                    end_ms: 100.0,
-                    duration_ms: 100.0,
-                    features: vec![0.0; 30],
-                    rms_amplitude: 0.5,
-                    species: "marmoset".to_string(),
-                    context: "contact".to_string(),
-                },
-                cluster_id: 0,
-                intra_cluster_similarity: 0.8,
-                inter_cluster_similarity: 0.3,
-                is_atomic: true,
-                contexts: vec![1],
+        let clustered_phrases = vec![ClusteredPhrase {
+            phrase: PhraseCandidate {
+                phrase_id: "phrase_1".to_string(),
+                file_name: "test.wav".to_string(),
+                start_ms: 0.0,
+                end_ms: 100.0,
+                duration_ms: 100.0,
+                features: vec![0.0; 30],
+                rms_amplitude: 0.5,
+                species: "marmoset".to_string(),
+                context: "contact".to_string(),
             },
-        ];
+            cluster_id: 0,
+            intra_cluster_similarity: 0.8,
+            inter_cluster_similarity: 0.3,
+            is_atomic: true,
+            contexts: vec![1],
+        }];
 
         let cluster_id = pipeline.get_cluster_id("phrase_1", &clustered_phrases);
         assert_eq!(cluster_id, 0);
@@ -3604,14 +3667,18 @@ mod tests {
         use ndarray::Array2;
 
         // All identical vectors should have similarity = 1.0
-        let features = Array2::from_shape_vec((3, 4), vec![
-            1.0, 2.0, 3.0, 4.0,
-            1.0, 2.0, 3.0, 4.0,
-            1.0, 2.0, 3.0, 4.0,
-        ]).unwrap();
+        let features = Array2::from_shape_vec(
+            (3, 4),
+            vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0],
+        )
+        .unwrap();
 
         let sim = calculate_intra_cluster_similarity(&features);
-        assert!((sim - 1.0).abs() < 1e-10, "Identical vectors should have sim=1.0, got {}", sim);
+        assert!(
+            (sim - 1.0).abs() < 1e-10,
+            "Identical vectors should have sim=1.0, got {}",
+            sim
+        );
     }
 
     // ===== Test 12: Intra-cluster similarity with single member =====
@@ -3620,9 +3687,7 @@ mod tests {
         use ndarray::Array2;
 
         // Single member should return 1.0 (perfect coherence)
-        let features = Array2::from_shape_vec((1, 4), vec![
-            1.0, 2.0, 3.0, 4.0,
-        ]).unwrap();
+        let features = Array2::from_shape_vec((1, 4), vec![1.0, 2.0, 3.0, 4.0]).unwrap();
 
         let sim = calculate_intra_cluster_similarity(&features);
         assert_eq!(sim, 1.0, "Single member cluster should have sim=1.0");
@@ -3634,13 +3699,14 @@ mod tests {
         use ndarray::Array2;
 
         // Orthogonal vectors should have similarity near 0.0
-        let features = Array2::from_shape_vec((2, 3), vec![
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-        ]).unwrap();
+        let features = Array2::from_shape_vec((2, 3), vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0]).unwrap();
 
         let sim = calculate_intra_cluster_similarity(&features);
-        assert!((sim - 0.0).abs() < 1e-10, "Orthogonal vectors should have sim=0.0, got {}", sim);
+        assert!(
+            (sim - 0.0).abs() < 1e-10,
+            "Orthogonal vectors should have sim=0.0, got {}",
+            sim
+        );
     }
 
     // ===== Test 14: Inter-cluster similarity with no other clusters =====
@@ -3648,17 +3714,22 @@ mod tests {
     fn test_inter_cluster_similarity_no_other_clusters() {
         use ndarray::Array2;
 
-        let all_features = Array2::from_shape_vec((3, 4), vec![
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-        ]).unwrap();
+        let all_features = Array2::from_shape_vec(
+            (3, 4),
+            vec![1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        )
+        .unwrap();
 
         let cluster_indices = vec![0];
         let labels = vec![0]; // Only one cluster
         let cluster_id = 0;
 
-        let sim = calculate_inter_cluster_similarity(&all_features, &cluster_indices, &labels, cluster_id);
+        let sim = calculate_inter_cluster_similarity(
+            &all_features,
+            &cluster_indices,
+            &labels,
+            cluster_id,
+        );
         assert_eq!(sim, 0.0, "No other clusters should return sim=0.0");
     }
 
@@ -3668,21 +3739,33 @@ mod tests {
         use ndarray::Array2;
 
         // Create two well-separated clusters
-        let all_features = Array2::from_shape_vec((4, 3), vec![
-            1.0, 0.0, 0.0,  // Cluster 0
-            1.0, 0.0, 0.0,  // Cluster 0
-            0.0, 1.0, 0.0,  // Cluster 1
-            0.0, 1.0, 0.0,  // Cluster 1
-        ]).unwrap();
+        let all_features = Array2::from_shape_vec(
+            (4, 3),
+            vec![
+                1.0, 0.0, 0.0, // Cluster 0
+                1.0, 0.0, 0.0, // Cluster 0
+                0.0, 1.0, 0.0, // Cluster 1
+                0.0, 1.0, 0.0, // Cluster 1
+            ],
+        )
+        .unwrap();
 
         let cluster_indices = vec![0, 1]; // Cluster 0
         let labels = vec![0, 0, 1, 1];
         let cluster_id = 0;
 
-        let sim = calculate_inter_cluster_similarity(&all_features, &cluster_indices, &labels, cluster_id);
+        let sim = calculate_inter_cluster_similarity(
+            &all_features,
+            &cluster_indices,
+            &labels,
+            cluster_id,
+        );
         // Centroid of cluster 0 is [1.0, 0.0, 0.0]
         // Similarity to cluster 1 members [0.0, 1.0, 0.0] should be 0.0
-        assert!((sim - 0.0).abs() < 1e-10, "Well-separated clusters should have low similarity");
+        assert!(
+            (sim - 0.0).abs() < 1e-10,
+            "Well-separated clusters should have low similarity"
+        );
     }
 
     // ===== Test 16: Atomic phrase determination - atomic =====
@@ -3691,12 +3774,16 @@ mod tests {
         use ndarray::Array2;
 
         // High intra-similarity, low inter-similarity = ATOMIC
-        let all_features = Array2::from_shape_vec((4, 3), vec![
-            1.0, 0.0, 0.0,  // Cluster 0
-            1.0, 0.0, 0.0,  // Cluster 0
-            0.0, 1.0, 0.0,  // Cluster 1
-            0.0, 1.0, 0.0,  // Cluster 1
-        ]).unwrap();
+        let all_features = Array2::from_shape_vec(
+            (4, 3),
+            vec![
+                1.0, 0.0, 0.0, // Cluster 0
+                1.0, 0.0, 0.0, // Cluster 0
+                0.0, 1.0, 0.0, // Cluster 1
+                0.0, 1.0, 0.0, // Cluster 1
+            ],
+        )
+        .unwrap();
 
         let cluster_indices = vec![0, 1];
         let labels = vec![0, 0, 1, 1];
@@ -3704,10 +3791,23 @@ mod tests {
 
         let cluster_features = all_features.select(ndarray::Axis(0), &cluster_indices);
         let intra_sim = calculate_intra_cluster_similarity(&cluster_features);
-        let inter_sim = calculate_inter_cluster_similarity(&all_features, &cluster_indices, &labels, cluster_id);
+        let inter_sim = calculate_inter_cluster_similarity(
+            &all_features,
+            &cluster_indices,
+            &labels,
+            cluster_id,
+        );
 
-        assert!(intra_sim > 0.2, "Intra-similarity should be > 0.2, got {}", intra_sim);
-        assert!(inter_sim < 0.6, "Inter-similarity should be < 0.6, got {}", inter_sim);
+        assert!(
+            intra_sim > 0.2,
+            "Intra-similarity should be > 0.2, got {}",
+            intra_sim
+        );
+        assert!(
+            inter_sim < 0.6,
+            "Inter-similarity should be < 0.6, got {}",
+            inter_sim
+        );
 
         let is_atomic = intra_sim > 0.2 && inter_sim < 0.6;
         assert!(is_atomic, "This should be an atomic phrase");
@@ -3828,8 +3928,10 @@ mod tests {
 
         assert_eq!(comp.total_unique_phrases, 3, "Should have 3 unique phrases");
         assert_eq!(comp.reusable_phrases, 1, "Only phrase_1 is reusable");
-        assert!((comp.compositionality_ratio - (1.0 / 3.0)).abs() < 1e-10,
-                "Compositionality ratio should be 1/3");
+        assert!(
+            (comp.compositionality_ratio - (1.0 / 3.0)).abs() < 1e-10,
+            "Compositionality ratio should be 1/3"
+        );
         assert!(comp.phrase_usage.contains_key("phrase_1"));
         assert_eq!(comp.phrase_usage.get("phrase_1").unwrap().sentence_count, 2);
     }
@@ -3840,26 +3942,22 @@ mod tests {
         let config = ExtractionConfig::default();
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
-        let results = vec![
-            VocalizationResult {
+        let results = vec![VocalizationResult {
+            file_name: "test1.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![PhraseCandidate {
+                phrase_id: "phrase_1".to_string(),
                 file_name: "test1.wav".to_string(),
+                start_ms: 0.0,
+                end_ms: 100.0,
+                duration_ms: 100.0,
+                features: vec![0.0; 30],
+                rms_amplitude: 0.5,
                 species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![
-                    PhraseCandidate {
-                        phrase_id: "phrase_1".to_string(),
-                        file_name: "test1.wav".to_string(),
-                        start_ms: 0.0,
-                        end_ms: 100.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "1".to_string(),
-                    },
-                ],
-            },
-        ];
+                context: "1".to_string(),
+            }],
+        }];
 
         let clustered_phrases = vec![];
 
@@ -3867,7 +3965,10 @@ mod tests {
 
         assert_eq!(comp.total_unique_phrases, 1);
         assert_eq!(comp.reusable_phrases, 0, "No phrases are reused");
-        assert_eq!(comp.compositionality_ratio, 0.0, "Compositionality should be 0.0");
+        assert_eq!(
+            comp.compositionality_ratio, 0.0,
+            "Compositionality should be 0.0"
+        );
     }
 
     // ===== Test 22: ClusteredPhrase with atomicity =====
@@ -3889,8 +3990,8 @@ mod tests {
         let atomic_phrase = ClusteredPhrase::new(
             phrase.clone(),
             0,
-            0.8,  // High intra-similarity
-            0.3,  // Low inter-similarity
+            0.8, // High intra-similarity
+            0.3, // Low inter-similarity
             vec![1, 2, 3],
         );
 
@@ -3903,23 +4004,29 @@ mod tests {
         let non_atomic_phrase = ClusteredPhrase::new(
             phrase.clone(),
             1,
-            0.1,  // Low intra-similarity
+            0.1, // Low intra-similarity
             0.3,
             vec![1],
         );
 
-        assert!(!non_atomic_phrase.is_atomic, "Low intra-similarity should not be atomic");
+        assert!(
+            !non_atomic_phrase.is_atomic,
+            "Low intra-similarity should not be atomic"
+        );
 
         // Test non-atomic case (high inter-similarity)
         let non_atomic_phrase2 = ClusteredPhrase::new(
             phrase,
             2,
             0.8,
-            0.7,  // High inter-similarity
+            0.7, // High inter-similarity
             vec![1],
         );
 
-        assert!(!non_atomic_phrase2.is_atomic, "High inter-similarity should not be atomic");
+        assert!(
+            !non_atomic_phrase2.is_atomic,
+            "High inter-similarity should not be atomic"
+        );
     }
 
     // ===== Test 23: Zipf's Law - Phrase Frequency Extraction =====
@@ -4029,10 +4136,18 @@ mod tests {
         let zipf = pipeline.analyze_zipf_law(&clustered_phrases).unwrap();
 
         // Slope should be negative (frequency decreases with rank)
-        assert!(zipf.slope_alpha < 0.0, "Zipf slope should be negative, got {}", zipf.slope_alpha);
+        assert!(
+            zipf.slope_alpha < 0.0,
+            "Zipf slope should be negative, got {}",
+            zipf.slope_alpha
+        );
 
         // Correlation should be reasonably high for a power-law distribution
-        assert!(zipf.correlation_r2 > 0.5, "Correlation R² should be > 0.5, got {}", zipf.correlation_r2);
+        assert!(
+            zipf.correlation_r2 > 0.5,
+            "Correlation R² should be > 0.5, got {}",
+            zipf.correlation_r2
+        );
     }
 
     // ===== Test 25: Zipf's Law - Slope Alpha Calculation =====
@@ -4070,15 +4185,22 @@ mod tests {
         let zipf = pipeline.analyze_zipf_law(&clustered_phrases).unwrap();
 
         // Slope should be between -0.5 and -1.5 for Zipfian distribution
-        assert!(zipf.slope_alpha >= -1.5 && zipf.slope_alpha <= -0.5,
-                "Zipf slope should be between -0.5 and -1.5, got {}", zipf.slope_alpha);
+        assert!(
+            zipf.slope_alpha >= -1.5 && zipf.slope_alpha <= -0.5,
+            "Zipf slope should be between -0.5 and -1.5, got {}",
+            zipf.slope_alpha
+        );
 
         // Should be classified as Efficient or Optimal
         match zipf.efficiency {
-            CommunicationEfficiency::Optimal { slope } | CommunicationEfficiency::Efficient { slope } => {
+            CommunicationEfficiency::Optimal { slope }
+            | CommunicationEfficiency::Efficient { slope } => {
                 assert!(slope <= -0.5 && slope >= -1.5);
             }
-            _ => panic!("Expected Optimal or Efficient efficiency, got {:?}", zipf.efficiency),
+            _ => panic!(
+                "Expected Optimal or Efficient efficiency, got {:?}",
+                zipf.efficiency
+            ),
         }
     }
 
@@ -4105,53 +4227,55 @@ mod tests {
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
         // Create phrases with regular gaps (isochronous)
-        let results = vec![
-            VocalizationResult {
-                file_name: "test.wav".to_string(),
-                species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![
-                    PhraseCandidate {
-                        phrase_id: "p1".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 0.0,
-                        end_ms: 100.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "p2".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 200.0, // 100ms gap
-                        end_ms: 300.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "p3".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 400.0, // 100ms gap (regular!)
-                        end_ms: 500.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                ],
-            },
-        ];
+        let results = vec![VocalizationResult {
+            file_name: "test.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![
+                PhraseCandidate {
+                    phrase_id: "p1".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 0.0,
+                    end_ms: 100.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "p2".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 200.0, // 100ms gap
+                    end_ms: 300.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "p3".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 400.0, // 100ms gap (regular!)
+                    end_ms: 500.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+            ],
+        }];
 
         let prosody = pipeline.analyze_prosody(&results).unwrap();
 
         // Low CV indicates rhythmic/isochronous
-        assert!(prosody.gap_cv < 0.3, "Expected low CV (< 0.3) for regular gaps, got {}", prosody.gap_cv);
+        assert!(
+            prosody.gap_cv < 0.3,
+            "Expected low CV (< 0.3) for regular gaps, got {}",
+            prosody.gap_cv
+        );
         assert_eq!(prosody.mean_gap_ms, 100.0);
 
         // Should be classified as Isochronous or Rhythmic
@@ -4159,7 +4283,10 @@ mod tests {
             Rhythmicity::Isochronous { cv } | Rhythmicity::Rhythmic { cv } => {
                 assert!(cv < 0.5);
             }
-            _ => panic!("Expected Isochronous or Rhythmic rhythm, got {:?}", prosody.rhythm),
+            _ => panic!(
+                "Expected Isochronous or Rhythmic rhythm, got {:?}",
+                prosody.rhythm
+            ),
         }
     }
 
@@ -4170,53 +4297,55 @@ mod tests {
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
         // Create phrases with irregular gaps (arrhythmic)
-        let results = vec![
-            VocalizationResult {
-                file_name: "test.wav".to_string(),
-                species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![
-                    PhraseCandidate {
-                        phrase_id: "p1".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 0.0,
-                        end_ms: 100.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "p2".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 150.0, // 50ms gap
-                        end_ms: 250.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "p3".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 600.0, // 350ms gap (very irregular!)
-                        end_ms: 700.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                ],
-            },
-        ];
+        let results = vec![VocalizationResult {
+            file_name: "test.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![
+                PhraseCandidate {
+                    phrase_id: "p1".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 0.0,
+                    end_ms: 100.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "p2".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 150.0, // 50ms gap
+                    end_ms: 250.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "p3".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 600.0, // 350ms gap (very irregular!)
+                    end_ms: 700.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+            ],
+        }];
 
         let prosody = pipeline.analyze_prosody(&results).unwrap();
 
         // High CV indicates arrhythmic
-        assert!(prosody.gap_cv > 0.7, "Expected high CV (> 0.7) for irregular gaps, got {}", prosody.gap_cv);
+        assert!(
+            prosody.gap_cv > 0.7,
+            "Expected high CV (> 0.7) for irregular gaps, got {}",
+            prosody.gap_cv
+        );
     }
 
     // ===== Test 29: Phonotactics - Transition Matrix =====
@@ -4226,48 +4355,46 @@ mod tests {
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
         // Create phrases with specific transitions: A -> B -> C
-        let results = vec![
-            VocalizationResult {
-                file_name: "test.wav".to_string(),
-                species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![
-                    PhraseCandidate {
-                        phrase_id: "A".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 0.0,
-                        end_ms: 100.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "B".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 100.0,
-                        end_ms: 200.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                    PhraseCandidate {
-                        phrase_id: "C".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 200.0,
-                        end_ms: 300.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "contact".to_string(),
-                    },
-                ],
-            },
-        ];
+        let results = vec![VocalizationResult {
+            file_name: "test.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![
+                PhraseCandidate {
+                    phrase_id: "A".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 0.0,
+                    end_ms: 100.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "B".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 100.0,
+                    end_ms: 200.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+                PhraseCandidate {
+                    phrase_id: "C".to_string(),
+                    file_name: "test.wav".to_string(),
+                    start_ms: 200.0,
+                    end_ms: 300.0,
+                    duration_ms: 100.0,
+                    features: vec![0.0; 30],
+                    rms_amplitude: 0.5,
+                    species: "marmoset".to_string(),
+                    context: "contact".to_string(),
+                },
+            ],
+        }];
 
         let phonotactics = pipeline.analyze_phonotactics(&results).unwrap();
 
@@ -4352,8 +4479,14 @@ mod tests {
         let updated = pipeline.analyze_updated_atomicity(&clustered_phrases, &zipf);
 
         // Find the frequent and rare phrases
-        let frequent_phrase = updated.iter().find(|p| p.phrase_id == "frequent_atomic").unwrap();
-        let rare_phrase = updated.iter().find(|p| p.phrase_id == "rare_atomic").unwrap();
+        let frequent_phrase = updated
+            .iter()
+            .find(|p| p.phrase_id == "frequent_atomic")
+            .unwrap();
+        let rare_phrase = updated
+            .iter()
+            .find(|p| p.phrase_id == "rare_atomic")
+            .unwrap();
 
         // Both should be phonologically atomic
         assert!(frequent_phrase.is_phonologically_atomic);
@@ -4374,55 +4507,54 @@ mod tests {
         let config = ExtractionConfig::default();
         let pipeline = ParallelExtractionPipeline::with_config(config).unwrap();
 
-        let results = vec![
-            VocalizationResult {
+        let results = vec![VocalizationResult {
+            file_name: "test.wav".to_string(),
+            species: "marmoset".to_string(),
+            sentences: vec![],
+            phrases: vec![PhraseCandidate {
+                phrase_id: "phrase_1".to_string(),
                 file_name: "test.wav".to_string(),
+                start_ms: 0.0,
+                end_ms: 100.0,
+                duration_ms: 100.0,
+                features: vec![0.0; 30],
+                rms_amplitude: 0.5,
                 species: "marmoset".to_string(),
-                sentences: vec![],
-                phrases: vec![
-                    PhraseCandidate {
-                        phrase_id: "phrase_1".to_string(),
-                        file_name: "test.wav".to_string(),
-                        start_ms: 0.0,
-                        end_ms: 100.0,
-                        duration_ms: 100.0,
-                        features: vec![0.0; 30],
-                        rms_amplitude: 0.5,
-                        species: "marmoset".to_string(),
-                        context: "1".to_string(),
-                    },
-                ],
-            },
-        ];
+                context: "1".to_string(),
+            }],
+        }];
 
-        let clustered_phrases = vec![
-            ClusteredPhrase {
-                phrase: PhraseCandidate {
-                    phrase_id: "phrase_1".to_string(),
-                    file_name: "test.wav".to_string(),
-                    start_ms: 0.0,
-                    end_ms: 100.0,
-                    duration_ms: 100.0,
-                    features: vec![0.0; 30],
-                    rms_amplitude: 0.5,
-                    species: "marmoset".to_string(),
-                    context: "1".to_string(),
-                },
-                cluster_id: 0,
-                intra_cluster_similarity: 0.8,
-                inter_cluster_similarity: 0.3,
-                is_atomic: true,
-                contexts: vec![1],
+        let clustered_phrases = vec![ClusteredPhrase {
+            phrase: PhraseCandidate {
+                phrase_id: "phrase_1".to_string(),
+                file_name: "test.wav".to_string(),
+                start_ms: 0.0,
+                end_ms: 100.0,
+                duration_ms: 100.0,
+                features: vec![0.0; 30],
+                rms_amplitude: 0.5,
+                species: "marmoset".to_string(),
+                context: "1".to_string(),
             },
-        ];
+            cluster_id: 0,
+            intra_cluster_similarity: 0.8,
+            inter_cluster_similarity: 0.3,
+            is_atomic: true,
+            contexts: vec![1],
+        }];
 
-        let analysis = pipeline.analyze_linguistics(&results, &clustered_phrases).unwrap();
+        let analysis = pipeline
+            .analyze_linguistics(&results, &clustered_phrases)
+            .unwrap();
 
         // Should have all analysis components
         assert!(!analysis.zipf.phrase_frequencies.is_empty());
         assert!(analysis.prosody.gap_cv >= 0.0);
         assert!(analysis.phonotactics.mean_spectral_delta >= 0.0);
-        assert!(matches!(analysis.pragmatics.pattern, TurnTakingPattern::Unknown));
+        assert!(matches!(
+            analysis.pragmatics.pattern,
+            TurnTakingPattern::Unknown
+        ));
         assert!(!analysis.updated_atomic_phrases.is_empty());
     }
 
@@ -4501,11 +4633,11 @@ mod tests {
             sr,
             "F0_6400_DUR_5".to_string(),
             "test.wav".to_string(),
-            100.0, // start_time_ms
-            105.0, // end_time_ms
+            100.0,  // start_time_ms
+            105.0,  // end_time_ms
             6400.0, // mean_f0_hz
-            200.0, // f0_range_hz
-            0.5, // rms_amplitude
+            200.0,  // f0_range_hz
+            0.5,    // rms_amplitude
             "marmoset".to_string(),
             "contact".to_string(),
         );
@@ -4784,7 +4916,8 @@ mod tests {
         assert!(json.is_ok());
 
         // Deserialize
-        let deserialized: std::result::Result<PhraseAudioLibrary, _> = serde_json::from_str(&json.unwrap());
+        let deserialized: std::result::Result<PhraseAudioLibrary, _> =
+            serde_json::from_str(&json.unwrap());
         assert!(deserialized.is_ok());
 
         let lib = deserialized.unwrap();

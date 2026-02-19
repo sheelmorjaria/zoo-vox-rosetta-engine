@@ -14,12 +14,6 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_dynamic_phrases
 
-use technical_architecture::{
-    DynamicSegmenter, DynamicSegmenterConfig, DynamicPhraseCandidate,
-    AtomicPhraseAnalyzer, AtomicPhraseType,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-};
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -30,6 +24,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    AcousticSimilarityEngine, AtomicPhraseAnalyzer, AtomicPhraseType, DynamicPhraseCandidate,
+    DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 const SAMPLE_RATE: u32 = 44100;
@@ -121,10 +119,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Configuration:");
     println!("  ├─ Data Directory: {:?}", data_dir);
-    println!("  ├─ Frame Duration: {}ms", segmenter_config.frame_duration_ms);
-    println!("  ├─ Min Phrase Duration: {}ms", segmenter_config.min_phrase_duration_ms);
-    println!("  ├─ Max Phrase Duration: {}ms", segmenter_config.max_phrase_duration_ms);
-    println!("  ├─ Change Threshold: {}", segmenter_config.change_threshold);
+    println!(
+        "  ├─ Frame Duration: {}ms",
+        segmenter_config.frame_duration_ms
+    );
+    println!(
+        "  ├─ Min Phrase Duration: {}ms",
+        segmenter_config.min_phrase_duration_ms
+    );
+    println!(
+        "  ├─ Max Phrase Duration: {}ms",
+        segmenter_config.max_phrase_duration_ms
+    );
+    println!(
+        "  ├─ Change Threshold: {}",
+        segmenter_config.change_threshold
+    );
     println!("  ├─ Peak Prominence: {}", segmenter_config.peak_prominence);
     println!("  └─ Feature Dimension: {}D", FEATURE_DIM);
     println!();
@@ -176,7 +186,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .flat_map(|ann| {
             let count = processed.fetch_add(1, Ordering::Relaxed);
             if count % 100 == 0 {
-                println!("  Progress: {}/{} files", count + 1, max_files.min(total_files));
+                println!(
+                    "  Progress: {}/{} files",
+                    count + 1,
+                    max_files.min(total_files)
+                );
             }
 
             let audio_path = vocalizations_dir.join(&ann.filename);
@@ -191,7 +205,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let audio = resample_audio(&audio, 44100, SAMPLE_RATE);
 
                 // Create feature extractor for this segment
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                    SAMPLE_RATE,
+                )));
 
                 // Segment using dynamic approach
                 let result = segmenter.segment(
@@ -200,13 +216,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Convert frame to f64 for feature extraction
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64)
+                            .ok()
+                            .map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
 
                 // Add metadata to candidates
-                result.candidates.into_iter()
+                result
+                    .candidates
+                    .into_iter()
                     .map(|cand| (cand, ann.call_type.clone(), ann.name.clone()))
                     .collect()
             } else {
@@ -219,9 +239,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\nSegmentation Complete:");
     println!("  ├─ Candidates Extracted: {}", all_candidates.len());
-    println!("  ├─ Vocalizations Processed: {}", max_files.min(total_files));
+    println!(
+        "  ├─ Vocalizations Processed: {}",
+        max_files.min(total_files)
+    );
     println!("  ├─ Time: {:.1}s", segmentation_time.as_secs_f64());
-    println!("  └─ Throughput: {:.1} candidates/sec", all_candidates.len() as f64 / segmentation_time.as_secs_f64().max(1.0));
+    println!(
+        "  └─ Throughput: {:.1} candidates/sec",
+        all_candidates.len() as f64 / segmentation_time.as_secs_f64().max(1.0)
+    );
     println!();
 
     // ========================================================================
@@ -290,14 +316,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 phrase_id: atomic_phrases.len(),
                 member_indices: cluster_indices,
                 centroid: vec![0.0; FEATURE_DIM], // Computed below
-                intra_similarity: 0.0, // Computed below
-                inter_cluster_distance: 0.0, // Computed below
-                separation_score: 0.0, // Computed below
+                intra_similarity: 0.0,            // Computed below
+                inter_cluster_distance: 0.0,      // Computed below
+                separation_score: 0.0,            // Computed below
             });
         }
 
         if (i + 1) % 5000 == 0 {
-            println!("  Progress: {}/{} candidates, {} phrases", i + 1, all_candidates.len(), atomic_phrases.len());
+            println!(
+                "  Progress: {}/{} candidates, {} phrases",
+                i + 1,
+                all_candidates.len(),
+                atomic_phrases.len()
+            );
         }
     }
 
@@ -318,7 +349,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             count += 1;
         }
 
-        phrase.intra_similarity = if count > 0 { total_sim / count as f64 } else { 0.0 };
+        phrase.intra_similarity = if count > 0 {
+            total_sim / count as f64
+        } else {
+            0.0
+        };
         phrase.centroid = centroid;
     }
 
@@ -338,7 +373,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         atomic_phrases[i].inter_cluster_distance = min_dist;
-        atomic_phrases[i].separation_score = min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
+        atomic_phrases[i].separation_score =
+            min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
     }
 
     let clustering_time = clustering_start.elapsed();
@@ -361,22 +397,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     sorted_phrases.sort_by(|a, b| b.separation_score.partial_cmp(&a.separation_score).unwrap());
 
     // High quality phrases
-    let high_quality_phrases: Vec<_> = sorted_phrases.iter()
+    let high_quality_phrases: Vec<_> = sorted_phrases
+        .iter()
         .filter(|p| p.intra_similarity > 0.70 && p.separation_score > 1.2)
         .collect();
 
     // Compute statistics
-    let avg_cluster_size = atomic_phrases.iter().map(|p| p.member_indices.len()).sum::<usize>() as f64
+    let avg_cluster_size = atomic_phrases
+        .iter()
+        .map(|p| p.member_indices.len())
+        .sum::<usize>() as f64
         / atomic_phrases.len().max(1) as f64;
-    let avg_intra_similarity = atomic_phrases.iter().map(|p| p.intra_similarity).sum::<f64>()
+    let avg_intra_similarity = atomic_phrases
+        .iter()
+        .map(|p| p.intra_similarity)
+        .sum::<f64>()
         / atomic_phrases.len().max(1) as f64;
-    let avg_inter_distance = atomic_phrases.iter().map(|p| p.inter_cluster_distance).sum::<f64>()
+    let avg_inter_distance = atomic_phrases
+        .iter()
+        .map(|p| p.inter_cluster_distance)
+        .sum::<f64>()
         / atomic_phrases.len().max(1) as f64;
-    let avg_separation = atomic_phrases.iter().map(|p| p.separation_score).sum::<f64>()
+    let avg_separation = atomic_phrases
+        .iter()
+        .map(|p| p.separation_score)
+        .sum::<f64>()
         / atomic_phrases.len().max(1) as f64;
 
     // Duration statistics
-    let durations: Vec<f32> = all_candidates.iter().map(|(c, _, _)| c.duration_ms).collect();
+    let durations: Vec<f32> = all_candidates
+        .iter()
+        .map(|(c, _, _)| c.duration_ms)
+        .collect();
     let avg_duration = durations.iter().sum::<f32>() as f64 / durations.len().max(1) as f64;
     let avg_phrases_per_voc = all_candidates.len() as f64 / max_files.min(total_files) as f64;
 
@@ -389,17 +441,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             d if d < 200.0 => "100-200ms",
             d if d < 500.0 => "200-500ms",
             _ => "500ms+",
-        }.to_string();
+        }
+        .to_string();
         *duration_dist.entry(bucket).or_insert(0) += 1;
     }
 
     // Reuse statistics
-    let reuse_stats: Vec<f64> = atomic_phrases.iter().map(|p| {
-        let files: HashSet<_> = p.member_indices.iter()
-            .map(|&idx| all_candidates[idx].0.source_file.clone())
-            .collect();
-        files.len() as f64
-    }).collect();
+    let reuse_stats: Vec<f64> = atomic_phrases
+        .iter()
+        .map(|p| {
+            let files: HashSet<_> = p
+                .member_indices
+                .iter()
+                .map(|&idx| all_candidates[idx].0.source_file.clone())
+                .collect();
+            files.len() as f64
+        })
+        .collect();
     let avg_reuse = reuse_stats.iter().sum::<f64>() / atomic_phrases.len().max(1) as f64;
 
     println!("DYNAMIC PHRASE STATISTICS");
@@ -408,24 +466,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Total Vocalizations: {}", max_files.min(total_files));
     println!("Total Phrase Candidates: {}", all_candidates.len());
     println!("Atomic Phrases Discovered: {}", atomic_phrases.len());
-    println!("High Quality Phrases (intra > 0.70, separation > 1.2): {}", high_quality_phrases.len());
+    println!(
+        "High Quality Phrases (intra > 0.70, separation > 1.2): {}",
+        high_quality_phrases.len()
+    );
     println!();
 
     println!("Segmentation Metrics:");
-    println!("  ├─ Avg Phrases per Vocalization: {:.1}", avg_phrases_per_voc);
+    println!(
+        "  ├─ Avg Phrases per Vocalization: {:.1}",
+        avg_phrases_per_voc
+    );
     println!("  └─ Avg Phrase Duration: {:.1}ms", avg_duration);
     println!();
 
     println!("Duration Distribution:");
     let mut sorted_duration: Vec<_> = duration_dist.iter().collect();
-    sorted_duration.sort_by_key(|(k, _)| {
-        match k.as_str() {
-            "0-50ms" => 0,
-            "50-100ms" => 1,
-            "100-200ms" => 2,
-            "200-500ms" => 3,
-            _ => 4,
-        }
+    sorted_duration.sort_by_key(|(k, _)| match k.as_str() {
+        "0-50ms" => 0,
+        "50-100ms" => 1,
+        "100-200ms" => 2,
+        "200-500ms" => 3,
+        _ => 4,
     });
     for (bucket, count) in sorted_duration {
         println!("  ├─ {}: {}", bucket, count);
@@ -434,7 +496,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Cluster Quality Metrics:");
     println!("  ├─ Avg Cluster Size: {:.1}", avg_cluster_size);
-    println!("  ├─ Avg Intra-Cluster Similarity: {:.3}", avg_intra_similarity);
+    println!(
+        "  ├─ Avg Intra-Cluster Similarity: {:.3}",
+        avg_intra_similarity
+    );
     println!("  ├─ Avg Inter-Cluster Distance: {:.3}", avg_inter_distance);
     println!("  ├─ Avg Separation Score: {:.2}", avg_separation);
     println!("  └─ Avg Reuse Score: {:.1} files/phrase", avg_reuse);
@@ -444,52 +509,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let top_phrases: Vec<PhraseSummary> = sorted_phrases.iter().take(10).map(|p| {
-        // Get call types for this phrase
-        let mut call_types: HashMap<String, usize> = HashMap::new();
-        let mut birds: HashSet<String> = HashSet::new();
-        let mut files: HashSet<String> = HashSet::new();
-        let mut durations: Vec<f32> = Vec::new();
+    let top_phrases: Vec<PhraseSummary> = sorted_phrases
+        .iter()
+        .take(10)
+        .map(|p| {
+            // Get call types for this phrase
+            let mut call_types: HashMap<String, usize> = HashMap::new();
+            let mut birds: HashSet<String> = HashSet::new();
+            let mut files: HashSet<String> = HashSet::new();
+            let mut durations: Vec<f32> = Vec::new();
 
-        for &idx in &p.member_indices {
-            let (cand, call_type, bird) = &all_candidates[idx];
-            *call_types.entry(call_type.clone()).or_insert(0) += 1;
-            birds.insert(bird.clone());
-            files.insert(cand.source_file.clone());
-            durations.push(cand.duration_ms);
-        }
+            for &idx in &p.member_indices {
+                let (cand, call_type, bird) = &all_candidates[idx];
+                *call_types.entry(call_type.clone()).or_insert(0) += 1;
+                birds.insert(bird.clone());
+                files.insert(cand.source_file.clone());
+                durations.push(cand.duration_ms);
+            }
 
-        let primary_call_type = call_types.iter()
-            .max_by_key(|(_, &c)| c)
-            .map(|(ct, _)| ct.clone())
-            .unwrap_or_else(|| "Unknown".to_string());
+            let primary_call_type = call_types
+                .iter()
+                .max_by_key(|(_, &c)| c)
+                .map(|(ct, _)| ct.clone())
+                .unwrap_or_else(|| "Unknown".to_string());
 
-        let min_dur = durations.iter().cloned().fold(f32::INFINITY, f32::min);
-        let max_dur = durations.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
-        let avg_dur = durations.iter().sum::<f32>() / durations.len() as f32;
+            let min_dur = durations.iter().cloned().fold(f32::INFINITY, f32::min);
+            let max_dur = durations.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+            let avg_dur = durations.iter().sum::<f32>() / durations.len() as f32;
 
-        PhraseSummary {
-            phrase_id: p.phrase_id,
-            size: p.member_indices.len(),
-            avg_duration_ms: avg_dur as f64,
-            intra_similarity: p.intra_similarity,
-            separation: p.separation_score,
-            reuse_score: files.len() as f64,
-            primary_call_type,
-            unique_birds: birds.len(),
-            unique_files: files.len(),
-            duration_range_ms: (min_dur, max_dur),
-        }
-    }).collect();
+            PhraseSummary {
+                phrase_id: p.phrase_id,
+                size: p.member_indices.len(),
+                avg_duration_ms: avg_dur as f64,
+                intra_similarity: p.intra_similarity,
+                separation: p.separation_score,
+                reuse_score: files.len() as f64,
+                primary_call_type,
+                unique_birds: birds.len(),
+                unique_files: files.len(),
+                duration_range_ms: (min_dur, max_dur),
+            }
+        })
+        .collect();
 
     for (i, summary) in top_phrases.iter().enumerate() {
         println!("{}. Phrase #{}", i + 1, summary.phrase_id);
         println!("   ├─ Size: {} segments", summary.size);
-        println!("   ├─ Duration: {:.1}ms (range: {:.1} - {:.1}ms)",
-            summary.avg_duration_ms, summary.duration_range_ms.0, summary.duration_range_ms.1);
+        println!(
+            "   ├─ Duration: {:.1}ms (range: {:.1} - {:.1}ms)",
+            summary.avg_duration_ms, summary.duration_range_ms.0, summary.duration_range_ms.1
+        );
         println!("   ├─ Intra-Similarity: {:.3}", summary.intra_similarity);
         println!("   ├─ Separation: {:.2}", summary.separation);
-        println!("   ├─ Reuse: {} files, {} birds", summary.unique_files, summary.unique_birds);
+        println!(
+            "   ├─ Reuse: {} files, {} birds",
+            summary.unique_files, summary.unique_birds
+        );
         println!("   └─ Primary Call Type: {}", summary.primary_call_type);
         println!();
     }
@@ -502,7 +577,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for phrase in &atomic_phrases {
         for &idx in &phrase.member_indices {
             let (_, call_type, _) = &all_candidates[idx];
-            *phrase_call_distribution.entry(call_type.clone()).or_insert(0) += 1;
+            *phrase_call_distribution
+                .entry(call_type.clone())
+                .or_insert(0) += 1;
         }
     }
 
@@ -585,12 +662,14 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => {
-            reader.into_samples::<f32>().filter_map(|s| s.ok()).collect()
-        }
+        hound::SampleFormat::Float => reader
+            .into_samples::<f32>()
+            .filter_map(|s| s.ok())
+            .collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
-            reader.into_samples::<i32>()
+            reader
+                .into_samples::<i32>()
                 .filter_map(|s| s.ok())
                 .map(|s| s as f32 / max_val)
                 .collect()
@@ -622,7 +701,10 @@ fn resample_audio(audio: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
         .collect()
 }
 
-fn compute_centroid(indices: &[usize], candidates: &[(DynamicPhraseCandidate, String, String)]) -> Vec<f64> {
+fn compute_centroid(
+    indices: &[usize],
+    candidates: &[(DynamicPhraseCandidate, String, String)],
+) -> Vec<f64> {
     if indices.is_empty() {
         return vec![0.0; FEATURE_DIM];
     }

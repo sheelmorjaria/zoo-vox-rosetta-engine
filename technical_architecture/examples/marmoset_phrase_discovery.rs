@@ -11,13 +11,6 @@
 //! Usage:
 //!   cargo run --release --example marmoset_phrase_discovery
 
-use technical_architecture::{
-    PhraseDiscoveryConfig,
-    DynamicSegmenter, DynamicSegmenterConfig,
-    ZooVoxFeatureExtractor,
-    AcousticSimilarityEngine, SimilarityMetric,
-    HierarchicalThresholds,
-};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -28,22 +21,24 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
+use technical_architecture::{
+    AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, HierarchicalThresholds,
+    PhraseDiscoveryConfig, SimilarityMetric, ZooVoxFeatureExtractor,
+};
 
 const FEATURE_DIM: usize = 45;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    let max_files: usize = args.get(1)
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1000); // Default to 1000 files
+    let max_files: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(1000); // Default to 1000 files
 
     println!("╔══════════════════════════════════════════════════════════════════════════════╗");
     println!("║            Marmoset Phrase Discovery Pipeline                                 ║");
     println!("╚══════════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let base_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/Vocalizations");
+    let base_dir =
+        PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
 
     let config = PhraseDiscoveryConfig::marmoset();
     println!("Configuration:");
@@ -108,19 +103,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Segment
             let segmenter = DynamicSegmenter::new(segmenter_config.clone(), sample_rate);
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(sample_rate)));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
+                sample_rate,
+            )));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64)
+                    .ok()
+                    .map(|f| f.to_vector().to_vec())
             };
 
             let result = segmenter.segment(&audio, extract_fn, filename);
 
             // Return (features, duration_ms, filename, call_type)
-            result.candidates.into_iter()
-                .map(|c| (c.features, c.duration_ms, filename.clone(), call_type.clone()))
+            result
+                .candidates
+                .into_iter()
+                .map(|c| {
+                    (
+                        c.features,
+                        c.duration_ms,
+                        filename.clone(),
+                        call_type.clone(),
+                    )
+                })
                 .collect::<Vec<_>>()
         })
         .collect();
@@ -170,7 +178,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate vocabulary reduction
     let vocab_reduction = n_samples as f64 / phrase_types.len().max(1) as f64;
-    println!("Vocabulary reduction: {:.1}x ({} → {})", vocab_reduction, n_samples, phrase_types.len());
+    println!(
+        "Vocabulary reduction: {:.1}x ({} → {})",
+        vocab_reduction,
+        n_samples,
+        phrase_types.len()
+    );
 
     // =========================================================================
     // Step 4: Syntax Analysis
@@ -188,7 +201,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Find which type this belongs to
         for (type_idx, pt) in phrase_types.iter().enumerate() {
             if pt.indices.contains(&idx) {
-                file_phrases.entry(source_file.clone())
+                file_phrases
+                    .entry(source_file.clone())
                     .or_insert_with(Vec::new)
                     .push((idx, type_idx, pt.type_id.clone()));
                 break;
@@ -215,10 +229,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let type_entropy = if total_transitions > 0 {
-        type_counts.values()
+        type_counts
+            .values()
             .map(|&count| {
                 let p = count as f64 / total_transitions as f64;
-                if p > 0.0 { -p * p.log2() } else { 0.0 }
+                if p > 0.0 {
+                    -p * p.log2()
+                } else {
+                    0.0
+                }
             })
             .sum()
     } else {
@@ -276,8 +295,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("│ TOP 10 PHRASE TYPES                                                         │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     for (i, pt) in sorted_types.iter().take(10).enumerate() {
-        println!("│ {}. {} - {} instances, avg {:.1}ms",
-            i + 1, pt.type_id, pt.indices.len(), pt.avg_duration_ms);
+        println!(
+            "│ {}. {} - {} instances, avg {:.1}ms",
+            i + 1,
+            pt.type_id,
+            pt.indices.len(),
+            pt.avg_duration_ms
+        );
     }
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -388,12 +412,12 @@ fn discover_marmoset_files(base_dir: &Path, max_files: usize) -> Vec<(PathBuf, S
 
 fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     use std::fs::File;
+    use symphonia::core::audio::AudioBufferRef;
     use symphonia::core::codecs::DecoderOptions;
     use symphonia::core::formats::FormatOptions;
     use symphonia::core::io::MediaSourceStream;
     use symphonia::core::meta::MetadataOptions;
     use symphonia::core::probe::Hint;
-    use symphonia::core::audio::AudioBufferRef;
 
     let file = File::open(path)?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -402,7 +426,12 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     hint.with_extension("flac");
 
     let mut probed = symphonia::default::get_probe()
-        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
+        .format(
+            &hint,
+            mss,
+            &FormatOptions::default(),
+            &MetadataOptions::default(),
+        )
         .map_err(|e| format!("Probe failed: {}", e))?;
 
     let track = probed.format.default_track().ok_or("No track")?;
@@ -483,9 +512,8 @@ fn cluster_by_similarity(
         }
 
         // Calculate average duration
-        let avg_dur: f32 = indices.iter()
-            .map(|&idx| candidates[idx].1)
-            .sum::<f32>() / indices.len() as f32;
+        let avg_dur: f32 =
+            indices.iter().map(|&idx| candidates[idx].1).sum::<f32>() / indices.len() as f32;
 
         types.push(PhraseType {
             type_id: format!("Type_{}", types.len() + 1),
