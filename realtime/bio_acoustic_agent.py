@@ -46,8 +46,10 @@ logger = logging.getLogger(__name__)
 # Enums (matching Rust)
 # =============================================================================
 
+
 class EnvState(Enum):
     """Environmental state from sensors"""
+
     QUIET = "Quiet"
     WIND = "Wind"
     RAIN = "Rain"
@@ -57,6 +59,7 @@ class EnvState(Enum):
 
 class InteractionContext(Enum):
     """Context of the vocalization"""
+
     INITIATOR = "Initiator"
     REPLY = "Reply"
     SOLO = "Solo"
@@ -65,18 +68,21 @@ class InteractionContext(Enum):
 
 class AcousticModality(Enum):
     """Acoustic modality for Formant Barrier checks"""
-    HARMONIC = "Harmonic"   # Tonal (e.g., Phee, whistles)
+
+    HARMONIC = "Harmonic"  # Tonal (e.g., Phee, whistles)
     TRANSIENT = "Transient"  # Short (e.g., Tsik, clicks)
-    MIXED = "Mixed"          # Mixed (e.g., trills)
+    MIXED = "Mixed"  # Mixed (e.g., trills)
 
 
 # =============================================================================
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class SourceMetadata:
     """45D source metadata for synthesis control"""
+
     # Fundamental
     mean_f0_hz: float = 0.0
     duration_ms: float = 0.0
@@ -104,29 +110,31 @@ class SourceMetadata:
     sharpness: float = 0.0
 
     @classmethod
-    def from_dict(cls, data: Dict[str, float]) -> 'SourceMetadata':
+    def from_dict(cls, data: Dict[str, float]) -> "SourceMetadata":
         return cls(
-            mean_f0_hz=data.get('mean_f0_hz', 0.0),
-            duration_ms=data.get('duration_ms', 0.0),
-            f0_range_hz=data.get('f0_range_hz', 0.0),
-            harmonic_to_noise_ratio=data.get('harmonic_to_noise_ratio', 0.0),
-            entropy=data.get('entropy', 0.0),
-            attack_time_ms=data.get('attack_time_ms', 0.0),
-            sustain_level=data.get('sustain_level', 0.5),
-            rms_energy=data.get('rms_energy', 0.0),
-            fm_depth_hz=data.get('fm_depth_hz', 0.0),
-            am_depth=data.get('am_depth', 0.0),
-            jitter=data.get('jitter', 0.0),
-            shimmer=data.get('shimmer', 0.0),
-            loudness=data.get('loudness', 0.5),
-            sharpness=data.get('sharpness', 0.0),
+            mean_f0_hz=data.get("mean_f0_hz", 0.0),
+            duration_ms=data.get("duration_ms", 0.0),
+            f0_range_hz=data.get("f0_range_hz", 0.0),
+            harmonic_to_noise_ratio=data.get("harmonic_to_noise_ratio", 0.0),
+            entropy=data.get("entropy", 0.0),
+            attack_time_ms=data.get("attack_time_ms", 0.0),
+            sustain_level=data.get("sustain_level", 0.5),
+            rms_energy=data.get("rms_energy", 0.0),
+            fm_depth_hz=data.get("fm_depth_hz", 0.0),
+            am_depth=data.get("am_depth", 0.0),
+            jitter=data.get("jitter", 0.0),
+            shimmer=data.get("shimmer", 0.0),
+            loudness=data.get("loudness", 0.5),
+            sharpness=data.get("sharpness", 0.0),
         )
 
     def get_modality(self) -> AcousticModality:
         """Determine modality from metadata"""
         if self.harmonic_to_noise_ratio > 15.0 and self.entropy < 0.3:
             return AcousticModality.HARMONIC
-        elif self.harmonic_to_noise_ratio < 10.0 and self.entropy > 0.5 and self.duration_ms < 100.0:
+        elif (
+            self.harmonic_to_noise_ratio < 10.0 and self.entropy > 0.5 and self.duration_ms < 100.0
+        ):
             return AcousticModality.TRANSIENT
         return AcousticModality.MIXED
 
@@ -134,6 +142,7 @@ class SourceMetadata:
 @dataclass
 class MicroDynamicsDelta:
     """Delta transformation for synthesis"""
+
     delta_mean_f0_hz: float = 0.0
     delta_duration_ms: float = 0.0
     delta_f0_range_hz: float = 0.0
@@ -154,7 +163,8 @@ class MicroDynamicsDelta:
             mean_f0_hz=source.mean_f0_hz + self.delta_mean_f0_hz,
             duration_ms=source.duration_ms + self.delta_duration_ms,
             f0_range_hz=source.f0_range_hz + self.delta_f0_range_hz,
-            harmonic_to_noise_ratio=source.harmonic_to_noise_ratio + self.delta_harmonic_to_noise_ratio,
+            harmonic_to_noise_ratio=source.harmonic_to_noise_ratio
+            + self.delta_harmonic_to_noise_ratio,
             entropy=max(0.0, min(1.0, source.entropy + self.delta_entropy)),
             attack_time_ms=source.attack_time_ms + self.delta_attack_time_ms,
             sustain_level=max(0.0, min(1.0, source.sustain_level + self.delta_sustain_level)),
@@ -171,6 +181,7 @@ class MicroDynamicsDelta:
 @dataclass
 class AcousticPrototype:
     """Acoustic prototype with audio buffer and metadata"""
+
     label: str
     audio_buffer: Optional[bytes] = None  # Raw audio bytes
     sample_rate: int = 48000
@@ -179,19 +190,20 @@ class AcousticPrototype:
     modality: AcousticModality = AcousticModality.MIXED
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'AcousticPrototype':
+    def from_dict(cls, data: Dict) -> "AcousticPrototype":
         return cls(
-            label=data['label'],
-            sample_rate=data.get('sample_rate', 48000),
-            metadata=SourceMetadata.from_dict(data.get('metadata', {})),
-            sample_count=data.get('sample_count', 1),
-            modality=AcousticModality(data.get('modality', 'Mixed')),
+            label=data["label"],
+            sample_rate=data.get("sample_rate", 48000),
+            metadata=SourceMetadata.from_dict(data.get("metadata", {})),
+            sample_count=data.get("sample_count", 1),
+            modality=AcousticModality(data.get("modality", "Mixed")),
         )
 
 
 @dataclass
 class ValidationResult:
     """Result of formant barrier validation"""
+
     is_valid: bool
     violations: List[str]
     recommended_action: str
@@ -200,6 +212,7 @@ class ValidationResult:
 @dataclass
 class SynthesisPlan:
     """Complete synthesis plan for execution"""
+
     source_label: str
     source_metadata: SourceMetadata
     delta: MicroDynamicsDelta
@@ -211,6 +224,7 @@ class SynthesisPlan:
 # =============================================================================
 # Context Delta Calculator (Acoustic Algebra)
 # =============================================================================
+
 
 class ContextDeltaCalculator:
     """
@@ -232,9 +246,9 @@ class ContextDeltaCalculator:
         # Environmental adaptations
         if env == EnvState.WIND:
             # "Long_Range_Contact" - Cut through noise
-            delta.delta_mean_f0_hz = 200.0      # Pitch up for propagation
-            delta.delta_sustain_level = 0.2     # Louder
-            delta.delta_loudness = 0.15         # More energy
+            delta.delta_mean_f0_hz = 200.0  # Pitch up for propagation
+            delta.delta_sustain_level = 0.2  # Louder
+            delta.delta_loudness = 0.15  # More energy
 
         elif env == EnvState.RAIN:
             # Moderate adaptation
@@ -243,14 +257,14 @@ class ContextDeltaCalculator:
 
         elif env == EnvState.STORM:
             # Emergency signal - broader band
-            delta.delta_entropy = 0.2           # More noise-like
-            delta.delta_loudness = 0.25         # Much louder
-            delta.delta_sharpness = 0.3         # More cutting
+            delta.delta_entropy = 0.2  # More noise-like
+            delta.delta_loudness = 0.25  # Much louder
+            delta.delta_sharpness = 0.3  # More cutting
 
         # Interaction context adaptations
         if context == InteractionContext.REPLY:
             # Individual identity marker
-            delta.delta_mean_f0_hz -= 150.0     # Slightly lower pitch
+            delta.delta_mean_f0_hz -= 150.0  # Slightly lower pitch
 
         elif context == InteractionContext.INITIATOR:
             # Clear, strong signal
@@ -300,6 +314,7 @@ class ContextDeltaCalculator:
 # Formant Barrier Validator
 # =============================================================================
 
+
 class FormantBarrierValidator:
     """
     Prevents "Semantic Violations" - attempting synthesis beyond physical limits.
@@ -307,8 +322,8 @@ class FormantBarrierValidator:
     Key rule: cannot cross from Harmonic to Transient via warping alone.
     """
 
-    MAX_HNR_DELTA = 15.0       # Max HNR change (dB)
-    MAX_ENTROPY_DELTA = 0.4    # Max spectral flatness change
+    MAX_HNR_DELTA = 15.0  # Max HNR change (dB)
+    MAX_ENTROPY_DELTA = 0.4  # Max spectral flatness change
 
     @classmethod
     def validate(cls, source: SourceMetadata, target: SourceMetadata) -> ValidationResult:
@@ -334,11 +349,17 @@ class FormantBarrierValidator:
         target_modality = target.get_modality()
 
         if source_modality != target_modality:
-            if source_modality == AcousticModality.HARMONIC and target_modality == AcousticModality.TRANSIENT:
+            if (
+                source_modality == AcousticModality.HARMONIC
+                and target_modality == AcousticModality.TRANSIENT
+            ):
                 violations.append(
                     "FORMANT BARRIER: Cannot create Transient from Harmonic via warping"
                 )
-            elif source_modality == AcousticModality.TRANSIENT and target_modality == AcousticModality.HARMONIC:
+            elif (
+                source_modality == AcousticModality.TRANSIENT
+                and target_modality == AcousticModality.HARMONIC
+            ):
                 violations.append(
                     "FORMANT BARRIER: Cannot create Harmonic from Transient via warping"
                 )
@@ -362,17 +383,18 @@ class FormantBarrierValidator:
 # COGNITIVE GLUE: Semiotic & Context Enhancement (Phase 3 & 4)
 # =============================================================================
 
+
 class ResponseModification(Enum):
     """How the response should be modified based on semiotic analysis"""
 
-    NORMAL = "normal"                      # Standard response
+    NORMAL = "normal"  # Standard response
     DECEPTION_ACKNOWLEDGE = "deception_ack"  # Acknowledge but don't echo deception
-    DECEPTION_IGNORE = "deception_ignore"    # Ignore deceptive signal
-    EMERGENCE_LOG = "emergence_log"          # Log novel phrase for review
-    EMERGENCE_ECHO = "emergence_echo"        # Echo novel behavior for observation
-    DIRECTED_REPLY = "directed_reply"        # Reply to specific target
-    URGENCY_BOOST = "urgency_boost"          # Boost response intensity
-    URGENCY_REDUCE = "urgency_reduce"        # Reduce response intensity (calming)
+    DECEPTION_IGNORE = "deception_ignore"  # Ignore deceptive signal
+    EMERGENCE_LOG = "emergence_log"  # Log novel phrase for review
+    EMERGENCE_ECHO = "emergence_echo"  # Echo novel behavior for observation
+    DIRECTED_REPLY = "directed_reply"  # Reply to specific target
+    URGENCY_BOOST = "urgency_boost"  # Boost response intensity
+    URGENCY_REDUCE = "urgency_reduce"  # Reduce response intensity (calming)
 
 
 @dataclass
@@ -384,9 +406,9 @@ class SemioticEnrichment:
     """
 
     # Core semiotic scores
-    deception_score: float = 0.0        # 0.0-1.0: Is this call deceptive?
-    emergence_score: float = 0.0        # 0.0-1.0: Is this a novel behavior?
-    directed_score: float = 0.0         # 0.0-1.0: Is this intentionally directed?
+    deception_score: float = 0.0  # 0.0-1.0: Is this call deceptive?
+    emergence_score: float = 0.0  # 0.0-1.0: Is this a novel behavior?
+    directed_score: float = 0.0  # 0.0-1.0: Is this intentionally directed?
 
     # Classification flags
     deception_detected: bool = False
@@ -416,7 +438,7 @@ class ProbabilisticContextState:
     Managed by Rust Fast Path, updated by Python Slow Path priors.
     """
 
-    current_context: str = "neutral"        # silence, contact, alarm, food, neutral
+    current_context: str = "neutral"  # silence, contact, alarm, food, neutral
     context_confidence: float = 0.0
     predicted_next_context: str = "neutral"
     transition_probability: float = 0.0
@@ -442,9 +464,9 @@ class EffectivenessScore:
     context: str
 
     # Proxy metrics
-    animal_stayed: bool = False           # Did animal stay in area?
-    expected_response: bool = False       # Did animal respond with expected call?
-    looked_at_speaker: bool = False       # Did animal look at speaker?
+    animal_stayed: bool = False  # Did animal stay in area?
+    expected_response: bool = False  # Did animal respond with expected call?
+    looked_at_speaker: bool = False  # Did animal look at speaker?
 
     # Computed effectiveness
     effectiveness: float = 0.0
@@ -481,6 +503,7 @@ class SemioticEnhancer:
 
         try:
             from semiotics.semiotic_engine import SemioticEngine, SemioticContext
+
             self._engine = SemioticEngine(self._database_path)
             self._SemioticContext = SemioticContext
             self._initialized = True
@@ -602,7 +625,9 @@ class SemioticEnhancer:
 
         return enrichment
 
-    def _determine_response_modification(self, enrichment: SemioticEnrichment) -> ResponseModification:
+    def _determine_response_modification(
+        self, enrichment: SemioticEnrichment
+    ) -> ResponseModification:
         """Determine how to modify response based on semiotic analysis"""
 
         if enrichment.deception_detected:
@@ -629,6 +654,7 @@ class SemioticEnhancer:
         # Default to marmoset - in production would use actual detection
         try:
             from data_models import Species
+
             return Species.MARMOSET
         except ImportError:
             return "marmoset"
@@ -637,6 +663,7 @@ class SemioticEnhancer:
         """Get placeholder acoustic features"""
         try:
             from data_models import AcousticFeatures
+
             return AcousticFeatures()
         except ImportError:
             return None
@@ -678,8 +705,10 @@ class ProbabilisticContextAdapter:
 
         try:
             from realtime.probabilistic_context_machine import (
-                ProbabilisticContextMachine, ContextState
+                ProbabilisticContextMachine,
+                ContextState,
             )
+
             self._machine = ProbabilisticContextMachine(
                 history_length=5,
                 confidence_threshold=self._confidence_threshold,
@@ -715,14 +744,14 @@ class ProbabilisticContextAdapter:
 
             # Build AudioFeatures from dict
             features = AudioFeatures(
-                rms=audio_features.get('rms', 0.0),
-                spectral_centroid=audio_features.get('spectral_centroid', 0.0),
-                bandwidth=audio_features.get('bandwidth', 0.0),
-                zero_crossing_rate=audio_features.get('zero_crossing_rate', 0.0),
-                harmonic_ratio=audio_features.get('harmonic_ratio', 0.0),
-                fundamental_freq=audio_features.get('f0', 0.0),
-                spectral_flatness=audio_features.get('spectral_flatness', 0.0),
-                temporal_envelope=np.array([audio_features.get('rms', 0.0)]),
+                rms=audio_features.get("rms", 0.0),
+                spectral_centroid=audio_features.get("spectral_centroid", 0.0),
+                bandwidth=audio_features.get("bandwidth", 0.0),
+                zero_crossing_rate=audio_features.get("zero_crossing_rate", 0.0),
+                harmonic_ratio=audio_features.get("harmonic_ratio", 0.0),
+                fundamental_freq=audio_features.get("f0", 0.0),
+                spectral_flatness=audio_features.get("spectral_flatness", 0.0),
+                temporal_envelope=np.array([audio_features.get("rms", 0.0)]),
                 mfcc_features=np.zeros(13),
             )
 
@@ -751,8 +780,8 @@ class ProbabilisticContextAdapter:
         """Fallback heuristic context detection"""
 
         state = ProbabilisticContextState()
-        f0 = audio_features.get('f0', 0.0)
-        rms = audio_features.get('rms', 0.0)
+        f0 = audio_features.get("f0", 0.0)
+        rms = audio_features.get("rms", 0.0)
 
         # Simple heuristic based on F0 and energy
         if rms < 0.01:
@@ -833,9 +862,9 @@ class EffectivenessTracker:
             input_label=input_label,
             response_label=response_label,
             context=context,
-            animal_stayed=animal_reaction.get('stayed', False),
-            expected_response=animal_reaction.get('expected_response', False),
-            looked_at_speaker=animal_reaction.get('looked_at_speaker', False),
+            animal_stayed=animal_reaction.get("stayed", False),
+            expected_response=animal_reaction.get("expected_response", False),
+            looked_at_speaker=animal_reaction.get("looked_at_speaker", False),
             timestamp=time.time(),
         )
 
@@ -892,6 +921,7 @@ class EffectivenessTracker:
 # Acoustic Inventory
 # =============================================================================
 
+
 class AcousticInventory:
     """
     Upgraded semantic dictionary with audio prototypes.
@@ -928,52 +958,53 @@ class AcousticInventory:
     def save(self, path: Path) -> None:
         """Save inventory to JSON"""
         data = {
-            'species': self.species,
-            'prototypes': {
+            "species": self.species,
+            "prototypes": {
                 label: {
-                    'label': p.label,
-                    'sample_rate': p.sample_rate,
-                    'metadata': {
-                        'mean_f0_hz': p.metadata.mean_f0_hz,
-                        'duration_ms': p.metadata.duration_ms,
-                        'f0_range_hz': p.metadata.f0_range_hz,
-                        'harmonic_to_noise_ratio': p.metadata.harmonic_to_noise_ratio,
-                        'entropy': p.metadata.entropy,
-                        'attack_time_ms': p.metadata.attack_time_ms,
-                        'sustain_level': p.metadata.sustain_level,
-                        'jitter': p.metadata.jitter,
-                        'shimmer': p.metadata.shimmer,
-                        'loudness': p.metadata.loudness,
+                    "label": p.label,
+                    "sample_rate": p.sample_rate,
+                    "metadata": {
+                        "mean_f0_hz": p.metadata.mean_f0_hz,
+                        "duration_ms": p.metadata.duration_ms,
+                        "f0_range_hz": p.metadata.f0_range_hz,
+                        "harmonic_to_noise_ratio": p.metadata.harmonic_to_noise_ratio,
+                        "entropy": p.metadata.entropy,
+                        "attack_time_ms": p.metadata.attack_time_ms,
+                        "sustain_level": p.metadata.sustain_level,
+                        "jitter": p.metadata.jitter,
+                        "shimmer": p.metadata.shimmer,
+                        "loudness": p.metadata.loudness,
                     },
-                    'sample_count': p.sample_count,
-                    'modality': p.modality.value,
+                    "sample_count": p.sample_count,
+                    "modality": p.modality.value,
                 }
                 for label, p in self.prototypes.items()
             },
-            'response_strategies': self.response_strategies,
+            "response_strategies": self.response_strategies,
         }
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
     @classmethod
-    def load(cls, path: Path) -> 'AcousticInventory':
+    def load(cls, path: Path) -> "AcousticInventory":
         """Load inventory from JSON"""
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = json.load(f)
 
-        inventory = cls(species=data.get('species', 'unknown'))
+        inventory = cls(species=data.get("species", "unknown"))
 
-        for label, pdata in data.get('prototypes', {}).items():
+        for label, pdata in data.get("prototypes", {}).items():
             prototype = AcousticPrototype.from_dict(pdata)
             inventory.prototypes[label] = prototype
 
-        inventory.response_strategies = data.get('response_strategies', {})
+        inventory.response_strategies = data.get("response_strategies", {})
         return inventory
 
 
 # =============================================================================
 # Bio-Acoustic Interaction Agent
 # =============================================================================
+
 
 class BioAcousticAgent:
     """
@@ -1140,6 +1171,7 @@ class BioAcousticAgent:
 # Enhanced Bio-Acoustic Agent with Cognitive Glue
 # =============================================================================
 
+
 @dataclass
 class EnhancedSynthesisPlan:
     """
@@ -1186,7 +1218,7 @@ class EnhancedSynthesisPlan:
         if self.semiotic.deception_detected:
             return False  # Don't echo deceptive signals
         if self.semiotic.emergence_detected:
-            return True   # Echo novel behaviors for observation
+            return True  # Echo novel behaviors for observation
         return True
 
     @property
@@ -1437,60 +1469,67 @@ class EnhancedBioAcousticAgent:
 # Factory Functions
 # =============================================================================
 
+
 def create_default_marmoset_inventory() -> AcousticInventory:
     """Create a default marmoset inventory with typical call types"""
     inventory = AcousticInventory(species="marmoset")
 
     # Phee - contact call
-    inventory.add_prototype(AcousticPrototype(
-        label="Phee",
-        metadata=SourceMetadata(
-            mean_f0_hz=7000.0,
-            duration_ms=300.0,
-            f0_range_hz=500.0,
-            harmonic_to_noise_ratio=20.0,
-            entropy=0.15,
-            attack_time_ms=20.0,
-            sustain_level=0.7,
-            jitter=0.02,
-            loudness=0.6,
-        ),
-        modality=AcousticModality.HARMONIC,
-    ))
+    inventory.add_prototype(
+        AcousticPrototype(
+            label="Phee",
+            metadata=SourceMetadata(
+                mean_f0_hz=7000.0,
+                duration_ms=300.0,
+                f0_range_hz=500.0,
+                harmonic_to_noise_ratio=20.0,
+                entropy=0.15,
+                attack_time_ms=20.0,
+                sustain_level=0.7,
+                jitter=0.02,
+                loudness=0.6,
+            ),
+            modality=AcousticModality.HARMONIC,
+        )
+    )
 
     # Tsik - alarm call
-    inventory.add_prototype(AcousticPrototype(
-        label="Tsik",
-        metadata=SourceMetadata(
-            mean_f0_hz=9000.0,
-            duration_ms=80.0,
-            f0_range_hz=200.0,
-            harmonic_to_noise_ratio=8.0,
-            entropy=0.6,
-            attack_time_ms=5.0,
-            sustain_level=0.4,
-            jitter=0.15,
-            loudness=0.8,
-        ),
-        modality=AcousticModality.TRANSIENT,
-    ))
+    inventory.add_prototype(
+        AcousticPrototype(
+            label="Tsik",
+            metadata=SourceMetadata(
+                mean_f0_hz=9000.0,
+                duration_ms=80.0,
+                f0_range_hz=200.0,
+                harmonic_to_noise_ratio=8.0,
+                entropy=0.6,
+                attack_time_ms=5.0,
+                sustain_level=0.4,
+                jitter=0.15,
+                loudness=0.8,
+            ),
+            modality=AcousticModality.TRANSIENT,
+        )
+    )
 
     # Twitter - social bonding
-    inventory.add_prototype(AcousticPrototype(
-        label="Twitter",
-        metadata=SourceMetadata(
-            mean_f0_hz=8000.0,
-            duration_ms=200.0,
-            f0_range_hz=1500.0,
-            harmonic_to_noise_ratio=15.0,
-            entropy=0.3,
-            attack_time_ms=10.0,
-            sustain_level=0.5,
-            jitter=0.05,
-            loudness=0.5,
-        ),
-        modality=AcousticModality.MIXED,
-    ))
+    inventory.add_prototype(
+        AcousticPrototype(
+            label="Twitter",
+            metadata=SourceMetadata(
+                mean_f0_hz=8000.0,
+                duration_ms=200.0,
+                f0_range_hz=1500.0,
+                harmonic_to_noise_ratio=15.0,
+                entropy=0.3,
+                attack_time_ms=10.0,
+                sustain_level=0.5,
+                jitter=0.05,
+                loudness=0.5,
+            ),
+            modality=AcousticModality.MIXED,
+        )
+    )
 
     # Set response strategies
     inventory.set_response_strategy("Tsik", "Phee")  # Calm alarm with contact
@@ -1560,11 +1599,13 @@ if __name__ == "__main__":
             semantic_label="Phee",
             inferred_intent="Contact",
             environment=EnvState.WIND,
-            audio_features={'f0': 7000.0, 'rms': 0.3},
+            audio_features={"f0": 7000.0, "rms": 0.3},
         )
         print(f"  Should respond: {plan.should_respond}")
         print(f"  Response: {plan.actual_response_label}")
-        print(f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})")
+        print(
+            f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})"
+        )
         print(f"  Context: {plan.context_state.current_context}")
         print(f"  Planning time: {plan.total_planning_time_ms:.2f}ms")
         print()
@@ -1577,11 +1618,13 @@ if __name__ == "__main__":
             inferred_intent="Warning",
             environment=EnvState.QUIET,
             social_context={"immediate_threat": False},  # No actual threat!
-            audio_features={'f0': 9000.0, 'rms': 0.5},
+            audio_features={"f0": 9000.0, "rms": 0.5},
         )
         print(f"  Should respond: {plan.should_respond}")
         print(f"  Response: {plan.actual_response_label}")
-        print(f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})")
+        print(
+            f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})"
+        )
         print(f"  Modification: {plan.response_modification.value}")
         print(f"  Context: {plan.context_state.current_context}")
         print()
@@ -1593,11 +1636,13 @@ if __name__ == "__main__":
             semantic_label="Twitter",
             inferred_intent="Social",
             social_context={"novel_situation": True},
-            audio_features={'f0': 8000.0, 'rms': 0.4},
+            audio_features={"f0": 8000.0, "rms": 0.4},
         )
         print(f"  Should respond: {plan.should_respond}")
         print(f"  Response: {plan.actual_response_label}")
-        print(f"  Emergence: {plan.semiotic.emergence_detected} ({plan.semiotic.emergence_score:.2f})")
+        print(
+            f"  Emergence: {plan.semiotic.emergence_detected} ({plan.semiotic.emergence_score:.2f})"
+        )
         print(f"  Innovation potential: {plan.semiotic.innovation_potential:.2f}")
         print()
 
@@ -1637,14 +1682,18 @@ if __name__ == "__main__":
         print("Test 1: Synthesize 'Phee' in windy conditions")
         plan = agent.quick_synthesize("Phee", EnvState.WIND)
         print(f"  Description: {plan.description}")
-        print(f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, +{plan.delta.delta_loudness:.2f} loudness")
+        print(
+            f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, +{plan.delta.delta_loudness:.2f} loudness"
+        )
         print(f"  Valid: {plan.validation.is_valid}\n")
 
         # Test 2: Plan synthesis with high emotional intensity
         print("Test 2: Synthesize 'Tsik' with high urgency (grading=0.9)")
         plan = agent.plan_synthesis("Tsik", grading=0.9)
         print(f"  Description: {plan.description}")
-        print(f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, +{plan.delta.delta_shimmer:.2f} shimmer")
+        print(
+            f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, +{plan.delta.delta_shimmer:.2f} shimmer"
+        )
         print(f"  Valid: {plan.validation.is_valid}\n")
 
         # Test 3: Response generation

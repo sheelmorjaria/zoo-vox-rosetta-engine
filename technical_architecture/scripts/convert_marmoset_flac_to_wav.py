@@ -27,7 +27,7 @@ OUTPUT_DIR = Path.home() / "birdsong_analysis" / "data" / "marmoset_wav_subset"
 def load_annotations() -> pd.DataFrame:
     """Load the annotations file."""
     print(f"Loading annotations from {ANNOTATIONS_FILE}...")
-    df = pd.read_csv(ANNOTATIONS_FILE, sep='\t')
+    df = pd.read_csv(ANNOTATIONS_FILE, sep="\t")
     print(f"Loaded {len(df)} annotations")
     return df
 
@@ -41,14 +41,14 @@ def get_representative_subset(df: pd.DataFrame, n_files: int = 5000) -> pd.DataF
     print(f"\nCreating representative subset of {n_files} files...")
 
     # Group by call type and sample proportionally
-    call_types = df['label'].unique()
+    call_types = df["label"].unique()
     print(f"Found {len(call_types)} call types: {list(call_types)}")
 
     sampled_dfs = []
 
     for call_type in call_types:
         # Get all files of this call type
-        call_type_df = df[df['label'] == call_type].copy()
+        call_type_df = df[df["label"] == call_type].copy()
 
         # Sample proportionally based on call type frequency
         proportion = len(call_type_df) / len(df)
@@ -58,14 +58,14 @@ def get_representative_subset(df: pd.DataFrame, n_files: int = 5000) -> pd.DataF
         n_samples = min(n_samples, len(call_type_df))
 
         # Sample evenly across different dates (parent_name)
-        call_type_df['date'] = call_type_df['parent_name'].str.extract(r'(\d{4}_\d+)_\d+')
+        call_type_df["date"] = call_type_df["parent_name"].str.extract(r"(\d{4}_\d+)_\d+")
 
         # Get unique dates and sample from each
-        unique_dates = call_type_df['date'].dropna().unique()
+        unique_dates = call_type_df["date"].dropna().unique()
         samples_per_date = max(5, n_samples // len(unique_dates))
 
         for date in unique_dates:
-            date_df = call_type_df[call_type_df['date'] == date]
+            date_df = call_type_df[call_type_df["date"] == date]
             n_from_date = min(samples_per_date, len(date_df))
             sampled = date_df.sample(n=n_from_date, random_state=42)
             sampled_dfs.append(sampled)
@@ -78,16 +78,12 @@ def get_representative_subset(df: pd.DataFrame, n_files: int = 5000) -> pd.DataF
 
     print(f"Selected {len(result)} files")
     print(f"Call type distribution in subset:")
-    print(result['label'].value_counts())
+    print(result["label"].value_counts())
 
     return result
 
 
-def convert_flac_to_wav(
-    flac_path: Path,
-    wav_path: Path,
-    sample_rate: int = 48000
-) -> bool:
+def convert_flac_to_wav(flac_path: Path, wav_path: Path, sample_rate: int = 48000) -> bool:
     """Convert a FLAC file to WAV format."""
     try:
         from pydub import AudioSegment
@@ -135,8 +131,8 @@ def main():
             print(f"  Processed {idx + 1}/{len(subset_df)} files ({success_count} successful)")
 
         # Construct paths
-        flac_path = VOCALIZATIONS_DIR / row['parent_name'] / row['file_name']
-        wav_path = OUTPUT_DIR / f"{row['parent_name']}_{row['file_name']}".replace('.flac', '.wav')
+        flac_path = VOCALIZATIONS_DIR / row["parent_name"] / row["file_name"]
+        wav_path = OUTPUT_DIR / f"{row['parent_name']}_{row['file_name']}".replace(".flac", ".wav")
 
         # Skip if already converted
         if wav_path.exists():
@@ -156,7 +152,7 @@ def main():
 
     # Create a manifest file for the Rust example
     manifest_file = OUTPUT_DIR / "manifest.txt"
-    with open(manifest_file, 'w') as f:
+    with open(manifest_file, "w") as f:
         for wav_file in sorted(OUTPUT_DIR.glob("*.wav")):
             f.write(f"{wav_file}\n")
 

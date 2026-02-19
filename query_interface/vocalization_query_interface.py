@@ -982,9 +982,9 @@ class VocalizationQueryInterface:
                 continue
 
             # Calculate grading proxy from acoustic features
-            jitter = getattr(af, 'jitter', 0.0) or 0.0
-            spectral_flatness = getattr(af, 'spectral_flatness', 0.0) or 0.0
-            f0_range = getattr(af, 'f0_range_hz', 0.0) or 0.0
+            jitter = getattr(af, "jitter", 0.0) or 0.0
+            spectral_flatness = getattr(af, "spectral_flatness", 0.0) or 0.0
+            f0_range = getattr(af, "f0_range_hz", 0.0) or 0.0
 
             # Normalize to 0-1 range (approximate)
             grading_score = min(1.0, (jitter * 5.0 + spectral_flatness + f0_range / 5000.0) / 3.0)
@@ -1134,6 +1134,7 @@ def get_database_statistics() -> Dict[str, Any]:
 # =============================================================================
 # Semantic Search Convenience Functions
 # =============================================================================
+
 
 def search_by_semantic_label(
     label: str,

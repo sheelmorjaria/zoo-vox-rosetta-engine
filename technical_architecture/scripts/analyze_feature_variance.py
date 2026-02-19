@@ -9,11 +9,11 @@ from pathlib import Path
 checkpoint_path = Path("/tmp/bat_checkpoint/candidates_checkpoint.json")
 
 print("📂 Loading checkpoint data...")
-with open(checkpoint_path, 'r') as f:
+with open(checkpoint_path, "r") as f:
     data = json.load(f)
 
 # Extract features (data might be a list directly)
-candidates = data if isinstance(data, list) else data.get('candidates', [])
+candidates = data if isinstance(data, list) else data.get("candidates", [])
 print(f"📊 Total candidates: {len(candidates)}")
 
 if not candidates:
@@ -23,16 +23,16 @@ if not candidates:
 # Convert to numpy array
 features_list = []
 for c in candidates:
-    if 'features' in c and c['features']:
-        features_list.append(c['features'])
+    if "features" in c and c["features"]:
+        features_list.append(c["features"])
 
 features = np.array(features_list)
 print(f"📐 Feature matrix shape: {features.shape}")
 
 # Analyze variance per dimension
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("30D FEATURE VARIANCE ANALYSIS")
-print("="*70)
+print("=" * 70)
 
 # Variance per dimension
 variances = np.var(features, axis=0)
@@ -49,13 +49,13 @@ print(f"   Std of variances: {np.std(variances):.6f}")
 top_indices = np.argsort(variances)[-10:][::-1]
 print(f"\n🔝 Top 10 Dimensions by Variance:")
 for i, idx in enumerate(top_indices):
-    print(f"   {i+1:2}. Dimension {idx:2}: var={variances[idx]:.6f}, mean={means[idx]:.6f}")
+    print(f"   {i + 1:2}. Dimension {idx:2}: var={variances[idx]:.6f}, mean={means[idx]:.6f}")
 
 # Dimensions with lowest variance
 bottom_indices = np.argsort(variances)[:10]
 print(f"\n🔻 Bottom 10 Dimensions by Variance:")
 for i, idx in enumerate(bottom_indices):
-    print(f"   {i+1:2}. Dimension {idx:2}: var={variances[idx]:.6f}, mean={means[idx]:.6f}")
+    print(f"   {i + 1:2}. Dimension {idx:2}: var={variances[idx]:.6f}, mean={means[idx]:.6f}")
 
 # Scale analysis (for DBSCAN eps selection)
 # Calculate average pairwise distance for a sample
@@ -104,9 +104,9 @@ high_corr_count = np.sum(np.abs(upper_corr) > 0.8)
 print(f"   High correlations (>0.8): {high_corr_count} pairs")
 
 # Recommendations
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("DBSCAN PARAMETER RECOMMENDATIONS")
-print("="*70)
+print("=" * 70)
 
 # eps recommendation: fraction of median distance
 median_dist = np.median(upper_tri)
@@ -133,4 +133,4 @@ print(f"   Dimensions with variance < 0.001: {low_variance_dims}/30")
 if low_variance_dims > 0:
     print(f"   These dimensions contribute little to clustering!")
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
