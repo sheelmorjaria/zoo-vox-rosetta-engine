@@ -103,6 +103,89 @@ impl Default for SemioticScores {
     }
 }
 
+/// Visual attention target for multi-modal fusion
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GazeTarget {
+    /// Looking at the speaker/device
+    Speaker,
+    /// Looking at another animal of same species
+    Conspecific,
+    /// Looking at food source
+    Food,
+    /// Looking away or unknown
+    Unknown,
+}
+
+impl Default for GazeTarget {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+/// Multi-modal visual attention data
+#[derive(Debug, Clone)]
+pub struct VisualAttention {
+    /// Visual attention level (0.0-1.0)
+    /// 0.0 = no attention, 1.0 = high attention
+    pub level: f32,
+
+    /// What the animal is looking at
+    pub gaze_target: GazeTarget,
+
+    /// Confidence in gaze detection (0.0-1.0)
+    pub gaze_confidence: f32,
+
+    /// Movement intensity (0.0-1.0)
+    pub movement_intensity: f32,
+
+    /// Whether face is detected
+    pub face_detected: bool,
+
+    /// Timestamp of visual data
+    pub timestamp: Instant,
+}
+
+impl Default for VisualAttention {
+    fn default() -> Self {
+        Self {
+            level: 0.0,
+            gaze_target: GazeTarget::Unknown,
+            gaze_confidence: 0.0,
+            movement_intensity: 0.0,
+            face_detected: false,
+            timestamp: Instant::now(),
+        }
+    }
+}
+
+impl VisualAttention {
+    /// Check if animal is looking at the speaker with high attention
+    pub fn is_looking_at_speaker(&self) -> bool {
+        self.gaze_target == GazeTarget::Speaker && self.gaze_confidence > 0.5
+    }
+
+    /// Get attention boost factor for response loudness
+    /// Returns 0.0-0.2 boost based on attention level
+    pub fn get_loudness_boost(&self) -> f32 {
+        if self.is_looking_at_speaker() {
+            // 20% boost when looking at speaker with high attention
+            0.2 * self.level
+        } else {
+            0.0
+        }
+    }
+
+    /// Get priority boost for directed communication
+    /// Higher priority when animal is looking at speaker
+    pub fn get_priority_boost(&self) -> f32 {
+        if self.gaze_target == GazeTarget::Speaker {
+            0.3 * self.gaze_confidence
+        } else {
+            0.0
+        }
+    }
+}
+
 /// The shared semiotic state updated by Python, read by Rust
 #[derive(Debug, Clone)]
 pub struct SemioticState {
@@ -133,6 +216,13 @@ pub struct SemioticState {
     /// Effectiveness score of last response (0.0-1.0)
     pub last_effectiveness: f32,
 
+    /// Multi-modal visual attention data
+    pub visual_attention: VisualAttention,
+
+    /// Combined directed score (semiotic + visual)
+    /// Higher when animal is looking at speaker during contact call
+    pub combined_directed_score: f32,
+
     /// Timestamp of last update (for staleness detection)
     pub last_update: Instant,
 
@@ -152,6 +242,8 @@ impl Default for SemioticState {
             deception_detected: false,
             emergence_detected: false,
             last_effectiveness: 0.5,
+            visual_attention: VisualAttention::default(),
+            combined_directed_score: 0.0,
             last_update: Instant::now(),
             update_count: 0,
         }
@@ -207,6 +299,74 @@ impl SemioticState {
             }
             _ => default_response.to_string(),
         }
+    }
+
+    /// Compute combined directed score from semiotic + visual attention
+    ///
+    /// This is the key multi-modal fusion method:
+    /// - If animal is looking at speaker during contact call: boosted directed score
+    /// - If animal is looking elsewhere: use semiotic score only
+    pub fn compute_combined_directed_score(&mut self) {
+        let semiotic_directed = self.scores.directed;
+        let visual_boost = self.visual_attention.get_priority_boost();
+
+        // Combine with weighted average
+        // Visual attention adds 30% weight when looking at speaker
+        if self.visual_attention.is_looking_at_speaker() {
+            self.combined_directed_score = (semiotic_directed * 0.7) + (visual_boost + 0.7).min(1.0) * 0.3;
+        } else {
+            self.combined_directed_score = semiotic_directed;
+        }
+    }
+
+    /// Get loudness delta for multi-modal response
+    ///
+    /// Returns additional loudness boost when:
+    /// - Animal is looking at speaker (ensure it's heard)
+    /// - Contact call context with directed communication
+    pub fn get_multimodal_loudness_boost(&self) -> f32 {
+        let mut boost = 0.0;
+
+        // Visual attention boost (up to 20%)
+        boost += self.visual_attention.get_loudness_boost();
+
+        // Directed communication boost (up to 10%)
+        if self.combined_directed_score > 0.7 && self.context == ContextState::Contact {
+            boost += 0.1;
+        }
+
+        boost
+    }
+
+    /// Check if this is a high-priority directed communication
+    ///
+    /// True when:
+    /// - Animal is looking at speaker
+    /// - Combined directed score is high
+    /// - Context is contact call
+    pub fn is_high_priority_directed(&self) -> bool {
+        self.visual_attention.is_looking_at_speaker()
+            && self.combined_directed_score > 0.7
+            && self.context == ContextState::Contact
+    }
+
+    /// Get response priority level (0-3)
+    ///
+    /// 0 = Normal
+    /// 1 = Elevated (directed communication)
+    /// 2 = High (looking at speaker + contact call)
+    /// 3 = Critical (high priority directed + high attention)
+    pub fn get_response_priority(&self) -> u8 {
+        if self.is_high_priority_directed() && self.visual_attention.level > 0.8 {
+            return 3;
+        }
+        if self.is_high_priority_directed() {
+            return 2;
+        }
+        if self.combined_directed_score > 0.5 {
+            return 1;
+        }
+        0
     }
 }
 
@@ -317,6 +477,19 @@ impl SharedSemioticState {
         }
     }
 
+    /// Update visual attention (partial update for multi-modal fusion)
+    ///
+    /// Called by Python when new visual data is available.
+    /// Also recomputes combined directed score.
+    pub fn update_visual_attention(&self, visual: VisualAttention) {
+        if let Ok(mut state) = self.inner.write() {
+            state.visual_attention = visual;
+            state.compute_combined_directed_score();
+            state.last_update = Instant::now();
+            state.update_count += 1;
+        }
+    }
+
     /// Get update statistics
     pub fn stats(&self) -> (u64, bool) {
         match self.inner.read() {
@@ -389,8 +562,35 @@ impl SemioticStateBuilder {
         self
     }
 
+    /// Set visual attention level (0.0-1.0)
+    pub fn visual_attention_level(mut self, level: f32) -> Self {
+        self.state.visual_attention.level = level;
+        self
+    }
+
+    /// Set gaze target
+    pub fn gaze_target(mut self, target: GazeTarget) -> Self {
+        self.state.visual_attention.gaze_target = target;
+        self
+    }
+
+    /// Set gaze confidence (0.0-1.0)
+    pub fn gaze_confidence(mut self, confidence: f32) -> Self {
+        self.state.visual_attention.gaze_confidence = confidence;
+        self
+    }
+
+    /// Set full visual attention
+    pub fn visual_attention(mut self, visual: VisualAttention) -> Self {
+        self.state.visual_attention = visual;
+        self
+    }
+
     pub fn build(self) -> SemioticState {
-        self.state
+        // Compute combined directed score before returning
+        let mut state = self.state;
+        state.compute_combined_directed_score();
+        state
     }
 }
 
@@ -545,5 +745,125 @@ mod tests {
 
         // Scores should be preserved
         assert_eq!(read.scores.deception, 0.8);
+    }
+
+    #[test]
+    fn test_visual_attention_looking_at_speaker() {
+        let visual = VisualAttention {
+            level: 0.8,
+            gaze_target: GazeTarget::Speaker,
+            gaze_confidence: 0.9,
+            ..Default::default()
+        };
+
+        assert!(visual.is_looking_at_speaker());
+        assert!((visual.get_loudness_boost() - 0.16).abs() < 0.01); // 0.2 * 0.8
+        assert!((visual.get_priority_boost() - 0.27).abs() < 0.01); // 0.3 * 0.9
+    }
+
+    #[test]
+    fn test_visual_attention_not_looking_at_speaker() {
+        let visual = VisualAttention {
+            level: 0.8,
+            gaze_target: GazeTarget::Conspecific,
+            gaze_confidence: 0.9,
+            ..Default::default()
+        };
+
+        assert!(!visual.is_looking_at_speaker());
+        assert_eq!(visual.get_loudness_boost(), 0.0);
+        assert_eq!(visual.get_priority_boost(), 0.0);
+    }
+
+    #[test]
+    fn test_multimodal_directed_score_boost() {
+        // Without visual attention
+        let state = SemioticStateBuilder::new()
+            .directed(0.7)
+            .context(ContextState::Contact, 0.8)
+            .build();
+        let baseline_score = state.combined_directed_score;
+
+        // With visual attention (looking at speaker)
+        let state = SemioticStateBuilder::new()
+            .directed(0.7)
+            .context(ContextState::Contact, 0.8)
+            .visual_attention_level(0.9)
+            .gaze_target(GazeTarget::Speaker)
+            .gaze_confidence(0.9)
+            .build();
+
+        // Combined score should be higher with visual attention
+        assert!(state.combined_directed_score > baseline_score);
+        assert!(state.is_high_priority_directed());
+    }
+
+    #[test]
+    fn test_multimodal_loudness_boost() {
+        // Contact call with high visual attention
+        let state = SemioticStateBuilder::new()
+            .directed(0.8)
+            .context(ContextState::Contact, 0.9)
+            .visual_attention_level(0.9)
+            .gaze_target(GazeTarget::Speaker)
+            .gaze_confidence(0.9)
+            .build();
+
+        // Should get loudness boost
+        let boost = state.get_multimodal_loudness_boost();
+        assert!(boost > 0.15); // At least 15% boost
+    }
+
+    #[test]
+    fn test_response_priority_levels() {
+        // Level 0: Normal
+        let state = SemioticState::default();
+        assert_eq!(state.get_response_priority(), 0);
+
+        // Level 1: Directed communication
+        let state = SemioticStateBuilder::new()
+            .directed(0.7)
+            .build();
+        assert_eq!(state.get_response_priority(), 1);
+
+        // Level 2: Looking at speaker + contact call
+        let state = SemioticStateBuilder::new()
+            .directed(0.8)
+            .context(ContextState::Contact, 0.9)
+            .visual_attention_level(0.8)
+            .gaze_target(GazeTarget::Speaker)
+            .gaze_confidence(0.9)
+            .build();
+        assert_eq!(state.get_response_priority(), 2);
+
+        // Level 3: Critical - high priority + very high attention
+        let state = SemioticStateBuilder::new()
+            .directed(0.9)
+            .context(ContextState::Contact, 0.95)
+            .visual_attention_level(0.95)
+            .gaze_target(GazeTarget::Speaker)
+            .gaze_confidence(0.95)
+            .build();
+        assert_eq!(state.get_response_priority(), 3);
+    }
+
+    #[test]
+    fn test_visual_attention_update() {
+        let state = SharedSemioticState::new();
+
+        // Update visual attention
+        let visual = VisualAttention {
+            level: 0.9,
+            gaze_target: GazeTarget::Speaker,
+            gaze_confidence: 0.85,
+            ..Default::default()
+        };
+        state.update_visual_attention(visual);
+
+        let read = state.read();
+        assert_eq!(read.visual_attention.level, 0.9);
+        assert_eq!(read.visual_attention.gaze_target, GazeTarget::Speaker);
+        assert!(read.visual_attention.is_looking_at_speaker());
+        assert!(read.combined_directed_score > 0.0); // Should have computed combined score
     }
 }
