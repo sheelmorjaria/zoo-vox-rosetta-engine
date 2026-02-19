@@ -1103,10 +1103,11 @@ impl SimilarityIndex {
 
         let distances = self.engine.find_similar(query, &candidates, k);
 
-        distances
+        let mut results: Vec<SearchResult> = distances
             .into_iter()
             .map(|(idx, dist)| {
-                let sim = 1.0 - (-dist).exp();
+                // Convert distance to similarity: exp(-dist) gives higher values for smaller distances
+                let sim = (-dist).exp();
                 SearchResult {
                     file_name: self.file_names[idx].clone(),
                     call_type: self.call_types[idx].clone(),
@@ -1115,7 +1116,11 @@ impl SimilarityIndex {
                     index: idx,
                 }
             })
-            .collect()
+            .collect();
+
+        // Sort by similarity descending (highest similarity first)
+        results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+        results
     }
 
     /// Find phrases similar to a specific file
