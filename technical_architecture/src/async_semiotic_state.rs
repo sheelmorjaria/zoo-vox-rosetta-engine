@@ -31,6 +31,8 @@
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
+use log::{info, warn};
+
 // =============================================================================
 // Semiotic State Types (mirrors Python)
 // =============================================================================
@@ -490,6 +492,60 @@ impl SharedSemioticState {
         }
     }
 
+    /// Reset state to default (for crash recovery)
+    ///
+    /// Called by Python when it restarts after a crash to clear stale state
+    /// and establish a clean baseline for re-synchronization.
+    pub fn reset(&self) {
+        if let Ok(mut state) = self.inner.write() {
+            *state = SemioticState::default();
+            info!("SemioticState reset for crash recovery");
+        }
+    }
+
+    /// Sync state from Python (for warm restart)
+    ///
+    /// After Python restarts, it can push its recovered state to Rust
+    /// without requiring a full system reboot.
+    pub fn sync_from_python(&self, new_state: SemioticState) {
+        if let Ok(mut state) = self.inner.write() {
+            *state = new_state;
+            state.last_update = Instant::now();
+            state.update_count += 1;
+            info!(
+                "SemioticState synced from Python (update #{})",
+                state.update_count
+            );
+        }
+    }
+
+    /// Mark state as stale (for graceful degradation)
+    ///
+    /// Called when Python heartbeat is lost, indicating the cognitive
+    /// layer may be unresponsive. Rust can continue operating with
+    /// degraded capabilities.
+    pub fn mark_stale(&self) {
+        if let Ok(mut state) = self.inner.write() {
+            // Reduce confidence in all scores
+            state.scores.confidence *= 0.5;
+            state.context_confidence *= 0.5;
+            state.visual_attention.gaze_confidence *= 0.5;
+            warn!("SemioticState marked stale - Python heartbeat lost");
+        }
+    }
+
+    /// Check if state is healthy (not stale, reasonable confidence)
+    pub fn is_healthy(&self) -> bool {
+        match self.inner.read() {
+            Ok(state) => {
+                !state.is_stale(Duration::from_secs(5))
+                    && state.scores.confidence > 0.3
+                    && state.update_count > 0
+            }
+            Err(_) => false,
+        }
+    }
+
     /// Get update statistics
     pub fn stats(&self) -> (u64, bool) {
         match self.inner.read() {
@@ -865,5 +921,115 @@ mod tests {
         assert_eq!(read.visual_attention.gaze_target, GazeTarget::Speaker);
         assert!(read.visual_attention.is_looking_at_speaker());
         assert!(read.combined_directed_score > 0.0); // Should have computed combined score
+    }
+
+    #[test]
+    fn test_crash_recovery_reset() {
+        let state = SharedSemioticState::new();
+
+        // Set up complex state
+        let complex_state = SemioticStateBuilder::new()
+            .deception(0.8)
+            .emergence(0.3)
+            .directed(0.9)
+            .context(ContextState::Alarm, 0.95)
+            .visual_attention_level(0.8)
+            .gaze_target(GazeTarget::Speaker)
+            .build();
+        state.update(complex_state);
+
+        // Verify state is set
+        let before = state.read();
+        assert_eq!(before.context, ContextState::Alarm);
+        assert_eq!(before.update_count, 1);
+
+        // Simulate crash - reset state
+        state.reset();
+
+        // Verify state is now default
+        let after = state.read();
+        assert_eq!(after.context, ContextState::Neutral);
+        assert_eq!(after.scores.deception, 0.0);
+        assert_eq!(after.visual_attention.level, 0.0);
+        assert_eq!(after.update_count, 0); // Reset clears update count
+    }
+
+    #[test]
+    fn test_sync_from_python_after_restart() {
+        let state = SharedSemioticState::new();
+
+        // Initial state
+        let initial = state.read();
+        assert_eq!(initial.update_count, 0);
+
+        // Python restarts and syncs recovered state
+        let recovered_state = SemioticStateBuilder::new()
+            .deception(0.5)
+            .directed(0.8)
+            .context(ContextState::Contact, 0.9)
+            .effectiveness(0.75)
+            .build();
+
+        state.sync_from_python(recovered_state);
+
+        // Verify sync worked
+        let synced = state.read();
+        assert_eq!(synced.context, ContextState::Contact);
+        assert_eq!(synced.scores.deception, 0.5);
+        assert_eq!(synced.scores.directed, 0.8);
+        assert_eq!(synced.last_effectiveness, 0.75);
+        assert_eq!(synced.update_count, 1);
+    }
+
+    #[test]
+    fn test_mark_stale_graceful_degradation() {
+        let state = SharedSemioticState::new();
+
+        // Set up high confidence state
+        let high_confidence = SemioticStateBuilder::new()
+            .directed(0.9)
+            .confidence(0.9)
+            .context(ContextState::Contact, 0.9)
+            .gaze_confidence(0.9)
+            .build();
+        state.update(high_confidence);
+
+        // Verify high confidence
+        let before = state.read();
+        assert!((before.scores.confidence - 0.9).abs() < 0.01);
+        assert!((before.context_confidence - 0.9).abs() < 0.01);
+
+        // Python heartbeat lost - mark stale
+        state.mark_stale();
+
+        // Verify confidence reduced (graceful degradation)
+        let after = state.read();
+        assert!((after.scores.confidence - 0.45).abs() < 0.01); // 0.9 * 0.5
+        assert!((after.context_confidence - 0.45).abs() < 0.01); // 0.9 * 0.5
+        assert!((after.visual_attention.gaze_confidence - 0.45).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_is_healthy_check() {
+        let state = SharedSemioticState::new();
+
+        // Fresh state with no updates is not healthy
+        assert!(!state.is_healthy());
+
+        // Update with good state
+        let good_state = SemioticStateBuilder::new()
+            .confidence(0.8)
+            .build();
+        state.update(good_state);
+
+        // Now should be healthy
+        assert!(state.is_healthy());
+
+        // Mark stale multiple times to drop confidence below 0.3
+        state.mark_stale(); // 0.8 * 0.5 = 0.4
+        state.mark_stale(); // 0.4 * 0.5 = 0.2
+
+        // Low confidence = not healthy
+        assert!(!state.is_healthy());
     }
 }
