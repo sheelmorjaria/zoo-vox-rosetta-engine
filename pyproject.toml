@@ -88,3 +88,7 @@ asyncio_mode = "auto"
 markers = [
     "asyncio: mark test as async"
 ]
+ignore = [
+    "tests/archive",
+    "tests/archive_experimental",
+]
