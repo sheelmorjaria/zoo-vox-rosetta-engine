@@ -250,7 +250,7 @@ impl DictionaryLoader {
             if let Some(centroid) = dict.centroids.get(type_id) {
                 label_types
                     .entry(primary_label)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push((type_id.clone(), centroid.clone()));
             }
         }

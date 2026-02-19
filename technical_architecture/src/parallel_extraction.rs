@@ -217,64 +217,58 @@ fn load_symphonia_file<P: AsRef<Path>>(
                 match audio_buf {
                     AudioBufferRef::F32(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane.iter().copied().collect();
                             all_samples.extend(samples);
-                            break; // Only take first channel
                         }
                     }
                     AudioBufferRef::S16(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> =
                                 plane.iter().map(|&s| s as f32 / i16::MAX as f32).collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::S24(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane
                                 .iter()
                                 .map(|s| s.inner() as f32 / (i32::MAX >> 8) as f32)
                                 .collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::S32(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> =
                                 plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::U8(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> =
                                 plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::U16(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane
                                 .iter()
                                 .map(|&s| (s as f32 - 32768.0) / 32768.0)
                                 .collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::U24(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane
                                 .iter()
                                 .map(|s| {
@@ -283,12 +277,11 @@ fn load_symphonia_file<P: AsRef<Path>>(
                                 })
                                 .collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::U32(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane
                                 .iter()
                                 .map(|&s| {
@@ -296,24 +289,21 @@ fn load_symphonia_file<P: AsRef<Path>>(
                                 })
                                 .collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::S8(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> =
                                 plane.iter().map(|&s| s as f32 / i8::MAX as f32).collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                     AudioBufferRef::F64(buf) => {
                         let audio_buffer = buf.as_ref();
-                        for plane in audio_buffer.planes().planes() {
+                        if let Some(plane) = audio_buffer.planes().planes().first() {
                             let samples: Vec<f32> = plane.iter().map(|&s| s as f32).collect();
                             all_samples.extend(samples);
-                            break;
                         }
                     }
                 }
