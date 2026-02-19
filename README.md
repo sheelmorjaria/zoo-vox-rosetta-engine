@@ -4031,14 +4031,15 @@ if phrase.is_novel() {
 
 ### Test Coverage
 
-- **Rust Tests**: 11 in `bio_acoustic_agent.rs`, 3 in `dictionary_loader.rs`, **17 in `async_semiotic_state.rs`**
+- **Rust Tests**: 11 in `bio_acoustic_agent.rs`, 3 in `dictionary_loader.rs`, 17 in `async_semiotic_state.rs`, **30 in `computational_ethology.rs`**
 - **Python Tests**: 8 in `bio_acoustic_agent.py`
 
 ```bash
 # Run Bio-Acoustic Agent tests
 cargo test bio_acoustic_agent --lib
 cargo test dictionary_loader --lib
-cargo test async_semiotic_state --lib  # NEW: 17 tests for state sharing
+cargo test async_semiotic_state --lib  # 17 tests for state sharing
+cargo test computational_ethology --lib  # 30 tests for linguistic validation
 
 # Run demo
 cargo run --release --example bio_acoustic_agent_demo
@@ -4052,9 +4053,109 @@ cargo run --release --example latency_benchmark
 | File | Purpose |
 |------|---------|
 | `technical_architecture/src/bio_acoustic_agent.rs` | Core agent with AcousticInventory, modality detection |
-| `technical_architecture/src/async_semiotic_state.rs` | **NEW**: Thread-safe Python-Rust state sharing |
+| `technical_architecture/src/async_semiotic_state.rs` | Thread-safe Python-Rust state sharing |
 | `technical_architecture/src/dictionary_loader.rs` | Load discovery outputs into inventory |
+| `technical_architecture/src/computational_ethology.rs` | **NEW**: Linguistic structure validation |
 | `realtime/bio_acoustic_agent.py` | Python cognitive layer with SemioticEnhancer |
+
+---
+
+## Computational Ethology: Linguistic Structure Validation [NEW]
+
+Validates discovered phrase structure using corpus linguistics techniques without requiring live animal subjects. Proves the system discovers language-like patterns through statistical analysis.
+
+### Validation Metrics
+
+| Metric | Formula | Good Threshold | Purpose |
+|--------|---------|----------------|---------|
+| **Zipf Correlation** | \|corr(log rank, log freq)\| | > 0.8 | Language-like power law distribution |
+| **Reuse Ratio** | Total occurrences / Unique types | > 2.0 | Common words vs unique noise |
+| **Singleton Rate** | Types with count=1 / Total types | < 30% | Clustering quality |
+| **Perplexity Ratio** | Real / Shuffled | < 0.8 | Syntax detection |
+| **PMI** | log(P(phrase,context) / P(phrase)×P(context)) | > 0 | Semantic associations |
+
+### Usage
+
+```rust
+use technical_architecture::computational_ethology::{
+    validate_linguistic_structure, compare_configurations,
+    PhraseType, PhraseSequence, ValidationConfig,
+};
+
+// Create phrase types from discovered clusters
+let phrase_types: Vec<PhraseType> = clusters.iter()
+    .map(|c| PhraseType {
+        id: c.id.clone(),
+        occurrence_count: c.members.len(),
+        contexts: c.context_counts.clone(),
+        ..Default::default()
+    })
+    .collect();
+
+// Create sequences from vocalization segmentation
+let sequences: Vec<PhraseSequence> = vocalizations.iter()
+    .map(|v| PhraseSequence {
+        source_id: v.id.clone(),
+        phrases: v.phrase_ids.clone(),
+        metadata_tags: v.metadata.clone(),
+    })
+    .collect();
+
+// Validate linguistic structure
+let config = ValidationConfig::default();
+let result = validate_linguistic_structure(&phrase_types, &sequences, &config)?;
+
+println!("Zipf correlation: {:.3} {}", result.zipf_correlation,
+    if result.is_zipfian { "(PASS)" } else { "(FAIL)" });
+println!("Singleton rate: {:.1}%", result.singleton_rate * 100.0);
+println!("Has syntax: {} (perplexity ratio: {:.2})",
+    result.has_syntax, result.real_perplexity / result.random_perplexity);
+println!("Validation score: {:.2}/1.0", result.validation_score);
+```
+
+### Comparing Configurations
+
+Validate that species-specific weights outperform unified weights:
+
+```rust
+let comparison = compare_configurations(
+    &unified_phrase_types, &unified_sequences,
+    &specific_phrase_types, &specific_sequences,
+    &config,
+)?;
+
+println!("Winner: Configuration {}", comparison.winner);
+println!("Zipf improvement: +{:.3}", comparison.zipf_improvement);
+println!("Reuse improvement: +{:.2}", comparison.reuse_improvement);
+```
+
+### Validation Criteria
+
+A good linguistic structure should have:
+
+| Criterion | Requirement | Scientific Meaning |
+|-----------|-------------|-------------------|
+| Zipfian | correlation > 0.8 | Follows natural language power law |
+| Low Singletons | < 30% single-use types | Clustering finds common patterns |
+| Syntax | perplexity ratio < 0.8 | Non-random phrase ordering |
+| High Reuse | ratio > 2.0 | Patterns repeat across corpus |
+
+### Test Coverage
+
+30 tests covering all metrics:
+
+```
+test computational_ethology::tests::test_zipf_correlation_perfect_zipfian ... ok
+test computational_ethology::tests::test_zipf_correlation_random_distribution ... ok
+test computational_ethology::tests::test_reuse_ratio_high_reuse ... ok
+test computational_ethology::tests::test_singleton_rate_zero ... ok
+test computational_ethology::tests::test_perplexity_perfectly_predictable ... ok
+test computational_ethology::tests::test_pmi_strong_association ... ok
+test computational_ethology::tests::test_levenshtein_identical ... ok
+test computational_ethology::tests::test_jaccard_index_half_overlap ... ok
+test computational_ethology::tests::test_validate_linguistic_structure_good_corpus ... ok
+test computational_ethology::tests::test_compare_configurations ... ok
+```
 
 ---
 
@@ -5184,6 +5285,11 @@ use technical_architecture::{
     ThermalState, RainIntensity, TemperatureClassification,
     IacucComplianceEngine, MultiNodeCoordinator,
     WebDashboard, TimeSeriesArchiver,
+    // Computational Ethology
+    computational_ethology::{
+        validate_linguistic_structure, compare_configurations,
+        PhraseType, PhraseSequence, ValidationConfig, ValidationResult,
+    },
 };
 
 // === Safety-Critical Components ===
