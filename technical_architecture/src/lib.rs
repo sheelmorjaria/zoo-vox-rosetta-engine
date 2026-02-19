@@ -581,6 +581,9 @@ pub mod annotation_aligner;
 // Rosetta Pipeline (Integrated Zoo Vox Rosetta Engine)
 pub mod rosetta_pipeline;
 
+// Bio-Acoustic Interaction Agent (Synthesis Integration)
+pub mod bio_acoustic_agent;
+
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechArchConfig {
