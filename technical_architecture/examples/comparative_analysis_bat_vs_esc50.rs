@@ -12,8 +12,8 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use technical_architecture::{
-    DiscoveryConfig, LexiconToSyntaxPipeline, RefinementConfig, SegmentationConfig,
-    VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, RefinementConfig,
+    SegmentationConfig, VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -74,6 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fft_size: 2048,
         hop_size: 512,
         normalize: true,
+        feature_dimension: FeatureDimension::D30, // 30D base features
     };
 
     let discovery_config = DiscoveryConfig {

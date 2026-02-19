@@ -198,9 +198,9 @@ pub use vocabulary_mapper::{
 
 // Lexicon to Syntax exports (NEW - Master pipeline)
 pub use lexicon_to_syntax::{
-    DiscoveryConfig, LexiconStatistics, LexiconToSyntaxPipeline, LexiconToSyntaxResult,
-    LexiconVocabularyItem, PhonemeModel, PhraseFeatures, PipelineCheckpoint, PipelineError,
-    RefinementConfig, SegmentationConfig, SegmentedPhrase, VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconStatistics, LexiconToSyntaxPipeline,
+    LexiconToSyntaxResult, LexiconVocabularyItem, PhonemeModel, PhraseFeatures, PipelineCheckpoint,
+    PipelineError, RefinementConfig, SegmentationConfig, SegmentedPhrase, VectorizationConfig,
 };
 
 // Parallel extraction exports (NEW - Phase 3)

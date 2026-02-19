@@ -20,6 +20,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_marmoset_generality
 
+use rand::Rng;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -716,7 +717,7 @@ fn cluster_phrases(
     let min_cluster_size = (n_samples as f64).sqrt().max(5.0) as usize;
     let min_samples = (min_cluster_size * 3) / 4;
 
-    let hdbscan = HdbscanClustering::new(min_cluster_size, min_samples);
+    let hdbscan = HdbscanClustering::new(min_cluster_size, min_samples)?;
     let labels = hdbscan.fit_predict(&feature_matrix)?;
 
     // Compute cluster centroids

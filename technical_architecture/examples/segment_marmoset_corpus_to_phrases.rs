@@ -203,7 +203,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║     • Frame-level corpus converted to phrase-level                         ║");
     println!(
         "║     • Sessions: {}                                                        ║",
-        phrase_level_sessions.len()
+        output_corpus.metadata.num_sessions
     );
     println!(
         "║     • Total phrases: {}                                                   ║",

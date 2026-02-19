@@ -10,8 +10,8 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use technical_architecture::{
-    DiscoveryConfig, LexiconToSyntaxPipeline, PipelineCheckpoint, RefinementConfig,
-    SegmentationConfig, VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, PipelineCheckpoint,
+    RefinementConfig, SegmentationConfig, VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -80,10 +80,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Phase 2: Vectorization Configuration
     let vectorization_config = VectorizationConfig {
-        n_mels: 30,      // 30-dimensional MicroDynamics features
-        fft_size: 2048,  // FFT size for spectral analysis
-        hop_size: 512,   // Hop size for frame analysis
-        normalize: true, // Normalize features
+        n_mels: 30,                               // 30-dimensional MicroDynamics features
+        fft_size: 2048,                           // FFT size for spectral analysis
+        hop_size: 512,                            // Hop size for frame analysis
+        normalize: true,                          // Normalize features
+        feature_dimension: FeatureDimension::D30, // 30D base features
     };
 
     println!("📊 Vectorization Config:");
