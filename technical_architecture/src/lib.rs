@@ -620,6 +620,9 @@ pub mod bio_acoustic_agent;
 // Dictionary Loader (Field Deployment Persistence)
 pub mod dictionary_loader;
 
+// Async Semiotic State (Python-Rust Decoupling)
+pub mod async_semiotic_state;
+
 /// Configuration for the Technical Architect
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechArchConfig {
