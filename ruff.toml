@@ -18,3 +18,10 @@ select = [
     "F",   # pyflakes
     "I",   # isort
 ]
+
+# Per-file ignores
+[lint.per-file-ignores]
+# F821: Undefined names - these are Rust bindings available at runtime
+"tests/test_rust_python_integration.py" = ["F821"]
+# E501: Line too long - these are report template strings
+"technical_architecture/bat_rfe_analysis.py" = ["E501"]

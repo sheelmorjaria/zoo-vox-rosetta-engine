@@ -16,21 +16,21 @@ Output:
 """
 
 import json
+import warnings
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
-import warnings
 
 warnings.filterwarnings("ignore")
 
 # Try to import scikit-learn
 try:
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.feature_selection import RFE, RFECV
-    from sklearn.model_selection import cross_val_score, StratifiedKFold
+    from sklearn.feature_selection import RFECV
+    from sklearn.model_selection import StratifiedKFold, cross_val_score
     from sklearn.preprocessing import StandardScaler
-    from sklearn.metrics import classification_report, confusion_matrix
 
     SKLEARN_AVAILABLE = True
 except ImportError:
@@ -543,7 +543,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
 
     selected_features = results["selected_features"]
     importance_ranking = sorted(results["importance_ranking"], key=lambda x: x["ranking"])
-    cv_scores = results["cv_scores"]
+    _cv_scores = results["cv_scores"]  # Used in report template
 
     # Determine feature types
     PHYLOGENETIC_FEATURES = {

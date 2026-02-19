@@ -502,7 +502,7 @@ class SemioticEnhancer:
             return
 
         try:
-            from semiotics.semiotic_engine import SemioticEngine, SemioticContext
+            from semiotics.semiotic_engine import SemioticContext, SemioticEngine
 
             self._engine = SemioticEngine(self._database_path)
             self._SemioticContext = SemioticContext
@@ -705,8 +705,8 @@ class ProbabilisticContextAdapter:
 
         try:
             from realtime.probabilistic_context_machine import (
-                ProbabilisticContextMachine,
                 ContextState,
+                ProbabilisticContextMachine,
             )
 
             self._machine = ProbabilisticContextMachine(
@@ -739,8 +739,9 @@ class ProbabilisticContextAdapter:
             return self._heuristic_context(audio_features)
 
         try:
-            from realtime.probabilistic_context_machine import AudioFeatures
             import numpy as np
+
+            from realtime.probabilistic_context_machine import AudioFeatures
 
             # Build AudioFeatures from dict
             features = AudioFeatures(
@@ -1075,9 +1076,15 @@ class BioAcousticAgent:
 
         # Step 5: Build description
         if validation.is_valid:
-            desc = f"Synthesize '{label}' with {environment.value} environment, {context.value} context. Valid."
+            desc = (
+                f"Synthesize '{label}' with {environment.value} environment, "
+                f"{context.value} context. Valid."
+            )
         else:
-            desc = f"Synthesize '{label}' with {environment.value} environment. WARNING: {validation.recommended_action}"
+            desc = (
+                f"Synthesize '{label}' with {environment.value} environment. "
+                f"WARNING: {validation.recommended_action}"
+            )
 
         return SynthesisPlan(
             source_label=label,
@@ -1683,7 +1690,8 @@ if __name__ == "__main__":
         plan = agent.quick_synthesize("Phee", EnvState.WIND)
         print(f"  Description: {plan.description}")
         print(
-            f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, +{plan.delta.delta_loudness:.2f} loudness"
+            f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, "
+            f"+{plan.delta.delta_loudness:.2f} loudness"
         )
         print(f"  Valid: {plan.validation.is_valid}\n")
 
@@ -1692,7 +1700,8 @@ if __name__ == "__main__":
         plan = agent.plan_synthesis("Tsik", grading=0.9)
         print(f"  Description: {plan.description}")
         print(
-            f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, +{plan.delta.delta_shimmer:.2f} shimmer"
+            f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, "
+            f"+{plan.delta.delta_shimmer:.2f} shimmer"
         )
         print(f"  Valid: {plan.validation.is_valid}\n")
 
