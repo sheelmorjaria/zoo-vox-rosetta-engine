@@ -8,9 +8,10 @@ This script:
 3. Converts FLAC files to WAV format using pydub/ffmpeg
 """
 
-import pandas as pd
-from pathlib import Path
 import random
+from pathlib import Path
+
+import pandas as pd
 
 # Set random seed for reproducibility
 random.seed(42)

@@ -2,8 +2,9 @@
 """Analyze feature variance from checkpoint data to understand clustering behavior."""
 
 import json
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 # Load checkpoint data
 checkpoint_path = Path("/tmp/bat_checkpoint/candidates_checkpoint.json")

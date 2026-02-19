@@ -21,7 +21,7 @@
 //! License: CC BY-ND 4.0 International
 
 use anyhow::Result;
-use log::{info, warn};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -360,7 +360,7 @@ pub fn calculate_pmi(
             if pmi.is_finite() {
                 pmi_scores
                     .entry(phrase_id.clone())
-                    .or_insert_with(HashMap::new)
+                    .or_default()
                     .insert(context.clone(), pmi);
             }
         }
