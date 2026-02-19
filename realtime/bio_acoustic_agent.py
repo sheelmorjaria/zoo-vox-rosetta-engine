@@ -18,10 +18,22 @@ Integration Flow:
     Calculate: ContextDeltaCalculator → MicroDynamicsDelta
     Check: FormantBarrierValidator → Validation
     Synthesize: GranularConcatenativeSynthesizer → Audio Output
+
+Enhanced Architecture (8-Phase):
+    Phase 1: Multi-Modal Fusion (data_fusion.py) - Python Slow Path
+    Phase 2: Rosetta Pipeline (Rust) - Fast Path
+    Phase 3: Semiotic Analysis (semiotic_engine.py) - Python Slow Path [NEW]
+    Phase 4: Probabilistic Context (probabilistic_context_machine.py) - Fast Path
+    Phase 5: Adaptive Decision (adaptive_context_switcher.py) - Python Slow Path
+    Phase 6: Synthesis Planning (bio_acoustic_agent.rs) - Fast Path
+    Phase 7: Granular Synthesis (synthesis.rs) - Fast Path
+    Phase 8: Online Learning (cognitive_layer.py) - Python Slow Path [NEW]
 """
 
 import json
 import logging
+import time
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -347,6 +359,536 @@ class FormantBarrierValidator:
 
 
 # =============================================================================
+# COGNITIVE GLUE: Semiotic & Context Enhancement (Phase 3 & 4)
+# =============================================================================
+
+class ResponseModification(Enum):
+    """How the response should be modified based on semiotic analysis"""
+
+    NORMAL = "normal"                      # Standard response
+    DECEPTION_ACKNOWLEDGE = "deception_ack"  # Acknowledge but don't echo deception
+    DECEPTION_IGNORE = "deception_ignore"    # Ignore deceptive signal
+    EMERGENCE_LOG = "emergence_log"          # Log novel phrase for review
+    EMERGENCE_ECHO = "emergence_echo"        # Echo novel behavior for observation
+    DIRECTED_REPLY = "directed_reply"        # Reply to specific target
+    URGENCY_BOOST = "urgency_boost"          # Boost response intensity
+    URGENCY_REDUCE = "urgency_reduce"        # Reduce response intensity (calming)
+
+
+@dataclass
+class SemioticEnrichment:
+    """
+    Semiotic analysis results for enhancing synthesis decisions.
+
+    Populated by SemioticEnhancer (Phase 3) - Python Slow Path (10-20 Hz)
+    """
+
+    # Core semiotic scores
+    deception_score: float = 0.0        # 0.0-1.0: Is this call deceptive?
+    emergence_score: float = 0.0        # 0.0-1.0: Is this a novel behavior?
+    directed_score: float = 0.0         # 0.0-1.0: Is this intentionally directed?
+
+    # Classification flags
+    deception_detected: bool = False
+    emergence_detected: bool = False
+    directed_communication: bool = False
+
+    # Context
+    communication_target: Optional[str] = None
+    context_alignment: float = 0.0
+    innovation_potential: float = 0.0
+
+    # Recommended action
+    response_modification: ResponseModification = ResponseModification.NORMAL
+
+    # Confidence
+    confidence: float = 0.0
+
+    # Timing
+    analysis_time_ms: float = 0.0
+
+
+@dataclass
+class ProbabilisticContextState:
+    """
+    Current probabilistic context state.
+
+    Managed by Rust Fast Path, updated by Python Slow Path priors.
+    """
+
+    current_context: str = "neutral"        # silence, contact, alarm, food, neutral
+    context_confidence: float = 0.0
+    predicted_next_context: str = "neutral"
+    transition_probability: float = 0.0
+
+    # State history for smoothing
+    context_history: List[str] = field(default_factory=list)
+    confidence_history: List[float] = field(default_factory=list)
+
+    # Timestamp
+    last_update_ms: float = 0.0
+
+
+@dataclass
+class EffectivenessScore:
+    """
+    Tracks effectiveness of responses for learning.
+
+    Populated by EffectivenessTracker (Phase 8) - Python Slow Path
+    """
+
+    input_label: str
+    response_label: str
+    context: str
+
+    # Proxy metrics
+    animal_stayed: bool = False           # Did animal stay in area?
+    expected_response: bool = False       # Did animal respond with expected call?
+    looked_at_speaker: bool = False       # Did animal look at speaker?
+
+    # Computed effectiveness
+    effectiveness: float = 0.0
+    timestamp: float = 0.0
+
+
+class SemioticEnhancer:
+    """
+    Phase 3: Semiotic Analysis Integration
+
+    Bridges bio_acoustic_agent with semiotic_engine for:
+    - Deception detection
+    - Emergence tracking
+    - Directed communication scoring
+
+    Runs at 10-20 Hz (Python Slow Path)
+    """
+
+    # Thresholds matching semiotic_engine.py
+    DECEPTION_THRESHOLD = 0.7
+    EMERGENCE_THRESHOLD = 0.6
+    DIRECTED_THRESHOLD = 0.8
+
+    def __init__(self, database_path: str = "./src/vocalization_database.json"):
+        self._engine = None
+        self._database_path = database_path
+        self._initialized = False
+        self._analysis_times: deque = deque(maxlen=100)  # Track latency
+
+    def _lazy_init(self):
+        """Lazily initialize the semiotic engine"""
+        if self._initialized:
+            return
+
+        try:
+            from semiotics.semiotic_engine import SemioticEngine, SemioticContext
+            self._engine = SemioticEngine(self._database_path)
+            self._SemioticContext = SemioticContext
+            self._initialized = True
+            logger.info("SemioticEngine initialized successfully")
+        except ImportError as e:
+            logger.warning(f"SemioticEngine not available: {e}")
+            self._initialized = False
+        except Exception as e:
+            logger.error(f"Failed to initialize SemioticEngine: {e}")
+            self._initialized = False
+
+    def analyze(
+        self,
+        semantic_label: str,
+        inferred_intent: str,
+        social_context: Dict[str, Any] = None,
+        behavioral_context: Dict[str, Any] = None,
+        cross_sensory_data: Dict[str, Any] = None,
+    ) -> SemioticEnrichment:
+        """
+        Analyze semiotic state of a vocalization.
+
+        Args:
+            semantic_label: The semantic label from RosettaPipeline (e.g., "Phee")
+            inferred_intent: The inferred intent (e.g., "Contact")
+            social_context: Social context dict (dominance, resource_competition, etc.)
+            behavioral_context: Behavioral context dict (current_behavior, joint_attention, etc.)
+            cross_sensory_data: Cross-modal data (visual_attention, etc.)
+
+        Returns:
+            SemioticEnrichment with deception/emergence scores
+        """
+        start_time = time.perf_counter()
+
+        self._lazy_init()
+
+        enrichment = SemioticEnrichment()
+
+        # If semiotic engine not available, use heuristic analysis
+        if not self._initialized or self._engine is None:
+            return self._heuristic_analysis(
+                semantic_label, inferred_intent, social_context, enrichment
+            )
+
+        try:
+            # Build semiotic context
+            context = self._SemioticContext(
+                species=self._infer_species(semantic_label),
+                acoustic_features=self._get_placeholder_features(),
+                social_context=social_context or {},
+                behavioral_context=behavioral_context or {},
+                cross_sensory_data=cross_sensory_data or {},
+            )
+
+            # Get phrase from database (or use placeholder)
+            phrase = self._get_phrase_by_label(semantic_label)
+            if phrase is None:
+                return self._heuristic_analysis(
+                    semantic_label, inferred_intent, social_context, enrichment
+                )
+
+            # Run semiotic analysis
+            result = self._engine.analyze_semiotics(phrase, context)
+
+            # Map results to enrichment
+            enrichment.deception_score = result.deception_score
+            enrichment.emergence_score = result.emergence_score
+            enrichment.directed_score = result.directed_score
+            enrichment.deception_detected = result.deception_score > self.DECEPTION_THRESHOLD
+            enrichment.emergence_detected = result.emergence_score > self.EMERGENCE_THRESHOLD
+            enrichment.directed_communication = result.directed_score > self.DIRECTED_THRESHOLD
+            enrichment.communication_target = result.communication_target
+            enrichment.context_alignment = result.context_alignment
+            enrichment.innovation_potential = result.innovation_potential
+            enrichment.confidence = result.confidence
+
+            # Determine response modification
+            enrichment.response_modification = self._determine_response_modification(enrichment)
+
+        except Exception as e:
+            logger.error(f"Semiotic analysis failed: {e}")
+            return self._heuristic_analysis(
+                semantic_label, inferred_intent, social_context, enrichment
+            )
+
+        # Track latency
+        enrichment.analysis_time_ms = (time.perf_counter() - start_time) * 1000
+        self._analysis_times.append(enrichment.analysis_time_ms)
+
+        return enrichment
+
+    def _heuristic_analysis(
+        self,
+        semantic_label: str,
+        inferred_intent: str,
+        social_context: Dict[str, Any],
+        enrichment: SemioticEnrichment,
+    ) -> SemioticEnrichment:
+        """Fallback heuristic analysis when semiotic engine unavailable"""
+
+        # Heuristic deception detection
+        # Alarm call without threat context = potential deception
+        if semantic_label in ["Tsik", "Alarm"] and inferred_intent == "Warning":
+            if social_context and not social_context.get("immediate_threat", True):
+                enrichment.deception_score = 0.6
+                enrichment.deception_detected = True
+                enrichment.response_modification = ResponseModification.DECEPTION_ACKNOWLEDGE
+
+        # Heuristic emergence detection
+        # Novel context = potential emergence
+        if social_context and social_context.get("novel_situation", False):
+            enrichment.emergence_score = 0.7
+            enrichment.emergence_detected = True
+            enrichment.response_modification = ResponseModification.EMERGENCE_LOG
+
+        # Default confidence for heuristic
+        enrichment.confidence = 0.5
+        enrichment.analysis_time_ms = 1.0  # Fast fallback
+
+        return enrichment
+
+    def _determine_response_modification(self, enrichment: SemioticEnrichment) -> ResponseModification:
+        """Determine how to modify response based on semiotic analysis"""
+
+        if enrichment.deception_detected:
+            # Don't echo deceptive signals
+            if enrichment.deception_score > 0.85:
+                return ResponseModification.DECEPTION_IGNORE
+            else:
+                return ResponseModification.DECEPTION_ACKNOWLEDGE
+
+        if enrichment.emergence_detected:
+            # Log novel behaviors
+            if enrichment.innovation_potential > 0.7:
+                return ResponseModification.EMERGENCE_ECHO
+            else:
+                return ResponseModification.EMERGENCE_LOG
+
+        if enrichment.directed_communication:
+            return ResponseModification.DIRECTED_REPLY
+
+        return ResponseModification.NORMAL
+
+    def _infer_species(self, semantic_label: str) -> Any:
+        """Infer species from semantic label"""
+        # Default to marmoset - in production would use actual detection
+        try:
+            from data_models import Species
+            return Species.MARMOSET
+        except ImportError:
+            return "marmoset"
+
+    def _get_placeholder_features(self) -> Any:
+        """Get placeholder acoustic features"""
+        try:
+            from data_models import AcousticFeatures
+            return AcousticFeatures()
+        except ImportError:
+            return None
+
+    def _get_phrase_by_label(self, label: str) -> Optional[Any]:
+        """Get phrase from database by semantic label"""
+        # Placeholder - in production would query database
+        return None
+
+    def get_avg_latency_ms(self) -> float:
+        """Get average analysis latency in milliseconds"""
+        if not self._analysis_times:
+            return 0.0
+        return sum(self._analysis_times) / len(self._analysis_times)
+
+
+class ProbabilisticContextAdapter:
+    """
+    Phase 4: Probabilistic Context Machine Adapter
+
+    Interfaces with probabilistic_context_machine.py for context detection.
+    Rust holds state (Fast Path), Python updates priors (Slow Path).
+
+    Runs at audio block rate (Rust) with Python updates at 10-20 Hz
+    """
+
+    def __init__(self, history_length: int = 5, confidence_threshold: float = 0.7):
+        self._machine = None
+        self._initialized = False
+        self._confidence_threshold = confidence_threshold
+
+        # Local state cache (synced with Rust)
+        self._current_state = ProbabilisticContextState()
+
+    def _lazy_init(self):
+        """Lazily initialize the probabilistic context machine"""
+        if self._initialized:
+            return
+
+        try:
+            from realtime.probabilistic_context_machine import (
+                ProbabilisticContextMachine, ContextState
+            )
+            self._machine = ProbabilisticContextMachine(
+                history_length=5,
+                confidence_threshold=self._confidence_threshold,
+            )
+            self._ContextState = ContextState
+            self._initialized = True
+            logger.info("ProbabilisticContextMachine initialized successfully")
+        except ImportError as e:
+            logger.warning(f"ProbabilisticContextMachine not available: {e}")
+            self._initialized = False
+        except Exception as e:
+            logger.error(f"Failed to initialize ProbabilisticContextMachine: {e}")
+            self._initialized = False
+
+    def detect_context(self, audio_features: Dict[str, float]) -> ProbabilisticContextState:
+        """
+        Detect current context from audio features.
+
+        Args:
+            audio_features: Dict with keys like 'rms', 'spectral_centroid', 'f0', etc.
+
+        Returns:
+            ProbabilisticContextState with detected context
+        """
+        self._lazy_init()
+
+        if not self._initialized or self._machine is None:
+            return self._heuristic_context(audio_features)
+
+        try:
+            from realtime.probabilistic_context_machine import AudioFeatures
+            import numpy as np
+
+            # Build AudioFeatures from dict
+            features = AudioFeatures(
+                rms=audio_features.get('rms', 0.0),
+                spectral_centroid=audio_features.get('spectral_centroid', 0.0),
+                bandwidth=audio_features.get('bandwidth', 0.0),
+                zero_crossing_rate=audio_features.get('zero_crossing_rate', 0.0),
+                harmonic_ratio=audio_features.get('harmonic_ratio', 0.0),
+                fundamental_freq=audio_features.get('f0', 0.0),
+                spectral_flatness=audio_features.get('spectral_flatness', 0.0),
+                temporal_envelope=np.array([audio_features.get('rms', 0.0)]),
+                mfcc_features=np.zeros(13),
+            )
+
+            # Detect context
+            state, confidence = self._machine.detect_context(features)
+
+            # Update local state
+            self._current_state.current_context = state.value
+            self._current_state.context_confidence = confidence
+            self._current_state.context_history.append(state.value)
+            self._current_state.confidence_history.append(confidence)
+            self._current_state.last_update_ms = time.perf_counter() * 1000
+
+            # Predict next context
+            predicted = self._machine.predict_next_context()
+            if predicted:
+                self._current_state.predicted_next_context = predicted.value
+
+        except Exception as e:
+            logger.error(f"Context detection failed: {e}")
+            return self._heuristic_context(audio_features)
+
+        return self._current_state
+
+    def _heuristic_context(self, audio_features: Dict[str, float]) -> ProbabilisticContextState:
+        """Fallback heuristic context detection"""
+
+        state = ProbabilisticContextState()
+        f0 = audio_features.get('f0', 0.0)
+        rms = audio_features.get('rms', 0.0)
+
+        # Simple heuristic based on F0 and energy
+        if rms < 0.01:
+            state.current_context = "silence"
+            state.context_confidence = 0.8
+        elif f0 > 8000:
+            state.current_context = "alarm"  # High pitch often alarm
+            state.context_confidence = 0.5
+        elif 6000 < f0 < 8000:
+            state.current_context = "contact"  # Mid-range often contact
+            state.context_confidence = 0.5
+        else:
+            state.current_context = "neutral"
+            state.context_confidence = 0.3
+
+        state.last_update_ms = time.perf_counter() * 1000
+        return state
+
+    def update_priors(self, context_priors: Dict[str, float]):
+        """
+        Update context priors from Python Slow Path.
+
+        This is called periodically (10-20 Hz) to adjust the
+        probabilistic model based on higher-level cognitive analysis.
+        """
+        if self._machine is None:
+            return
+
+        # Update the machine's prior probabilities
+        # (Implementation depends on probabilistic_context_machine.py API)
+        pass
+
+    @property
+    def current_state(self) -> ProbabilisticContextState:
+        """Get current cached state"""
+        return self._current_state
+
+
+class EffectivenessTracker:
+    """
+    Phase 8: Track effectiveness of responses for online learning.
+
+    Uses proxy metrics:
+    - Did the animal stay in the area?
+    - Did it respond with the expected call?
+    - Did it look at the speaker?
+
+    Runs at 10-20 Hz (Python Slow Path)
+    """
+
+    def __init__(self, history_size: int = 100):
+        self._history: deque = deque(maxlen=history_size)
+        self._effectiveness_by_strategy: Dict[str, List[float]] = {}
+
+    def record_interaction(
+        self,
+        input_label: str,
+        response_label: str,
+        context: str,
+        animal_reaction: Dict[str, Any],
+    ) -> EffectivenessScore:
+        """
+        Record an interaction and compute effectiveness.
+
+        Args:
+            input_label: The input phrase label (e.g., "Tsik")
+            response_label: The response phrase label (e.g., "Phee")
+            context: The context (e.g., "alarm", "contact")
+            animal_reaction: Dict with reaction metrics:
+                - stayed: bool
+                - expected_response: bool
+                - looked_at_speaker: bool
+
+        Returns:
+            EffectivenessScore with computed effectiveness
+        """
+        score = EffectivenessScore(
+            input_label=input_label,
+            response_label=response_label,
+            context=context,
+            animal_stayed=animal_reaction.get('stayed', False),
+            expected_response=animal_reaction.get('expected_response', False),
+            looked_at_speaker=animal_reaction.get('looked_at_speaker', False),
+            timestamp=time.time(),
+        )
+
+        # Compute effectiveness (weighted combination)
+        effectiveness = 0.0
+        if score.animal_stayed:
+            effectiveness += 0.3
+        if score.expected_response:
+            effectiveness += 0.5
+        if score.looked_at_speaker:
+            effectiveness += 0.2
+
+        score.effectiveness = effectiveness
+        self._history.append(score)
+
+        # Track by strategy
+        strategy_key = f"{input_label}->{response_label}"
+        if strategy_key not in self._effectiveness_by_strategy:
+            self._effectiveness_by_strategy[strategy_key] = []
+        self._effectiveness_by_strategy[strategy_key].append(effectiveness)
+
+        return score
+
+    def get_strategy_effectiveness(self, input_label: str, response_label: str) -> float:
+        """Get average effectiveness for a strategy"""
+        strategy_key = f"{input_label}->{response_label}"
+        scores = self._effectiveness_by_strategy.get(strategy_key, [])
+        if not scores:
+            return 0.5  # Neutral default
+        return sum(scores) / len(scores)
+
+    def get_best_response(self, input_label: str, candidate_responses: List[str]) -> str:
+        """Get the best response for an input based on effectiveness history"""
+        best_response = candidate_responses[0] if candidate_responses else "Phee"
+        best_effectiveness = 0.0
+
+        for response in candidate_responses:
+            effectiveness = self.get_strategy_effectiveness(input_label, response)
+            if effectiveness > best_effectiveness:
+                best_effectiveness = effectiveness
+                best_response = response
+
+        return best_response
+
+    @property
+    def recent_effectiveness(self) -> float:
+        """Get average effectiveness of recent interactions"""
+        if not self._history:
+            return 0.5
+        return sum(s.effectiveness for s in self._history) / len(self._history)
+
+
+# =============================================================================
 # Acoustic Inventory
 # =============================================================================
 
@@ -595,6 +1137,303 @@ class BioAcousticAgent:
 
 
 # =============================================================================
+# Enhanced Bio-Acoustic Agent with Cognitive Glue
+# =============================================================================
+
+@dataclass
+class EnhancedSynthesisPlan:
+    """
+    Enhanced synthesis plan with semiotic enrichment.
+
+    This is the output of the EnhancedBioAcousticAgent, combining:
+    - Base synthesis plan (from Rust Fast Path)
+    - Semiotic enrichment (from Python Slow Path)
+    - Context state (from ProbabilisticContextMachine)
+    """
+
+    # Base synthesis plan
+    base_plan: SynthesisPlan
+
+    # Semiotic enrichment (Phase 3)
+    semiotic: SemioticEnrichment = field(default_factory=SemioticEnrichment)
+
+    # Probabilistic context (Phase 4)
+    context_state: ProbabilisticContextState = field(default_factory=ProbabilisticContextState)
+
+    # Response modification
+    response_modification: ResponseModification = ResponseModification.NORMAL
+
+    # Adjusted response label (may differ from base_plan if modified)
+    actual_response_label: str = ""
+
+    # Timing
+    total_planning_time_ms: float = 0.0
+
+    @property
+    def should_respond(self) -> bool:
+        """Whether we should respond at all"""
+        # Don't respond to high-confidence deception
+        if self.semiotic.deception_score > 0.85:
+            return False
+        # Don't respond in silence context
+        if self.context_state.current_context == "silence":
+            return False
+        return True
+
+    @property
+    def should_echo(self) -> bool:
+        """Whether we should echo the input or use a different response"""
+        if self.semiotic.deception_detected:
+            return False  # Don't echo deceptive signals
+        if self.semiotic.emergence_detected:
+            return True   # Echo novel behaviors for observation
+        return True
+
+    @property
+    def description(self) -> str:
+        """Human-readable description"""
+        parts = [self.base_plan.description]
+
+        if self.semiotic.deception_detected:
+            parts.append(f"DECEPTION({self.semiotic.deception_score:.2f})")
+        if self.semiotic.emergence_detected:
+            parts.append(f"EMERGENCE({self.semiotic.emergence_score:.2f})")
+        if self.response_modification != ResponseModification.NORMAL:
+            parts.append(f"MOD:{self.response_modification.value}")
+
+        return " | ".join(parts)
+
+
+class EnhancedBioAcousticAgent:
+    """
+    Enhanced Bio-Acoustic Agent with Cognitive Glue Integration.
+
+    Implements the 8-Phase Architecture:
+    - Phase 1: Multi-Modal Fusion (data_fusion.py) - external
+    - Phase 2: Rosetta Pipeline (Rust) - external input
+    - Phase 3: Semiotic Analysis (semiotic_engine.py) - integrated
+    - Phase 4: Probabilistic Context (probabilistic_context_machine.py) - integrated
+    - Phase 5: Adaptive Decision (adaptive_context_switcher.py) - integrated
+    - Phase 6: Synthesis Planning (bio_acoustic_agent.rs) - delegated
+    - Phase 7: Granular Synthesis (synthesis.rs) - external
+    - Phase 8: Online Learning (cognitive_layer.py) - integrated
+
+    Hybrid Execution:
+    - Python Slow Path (10-20 Hz): Phases 1, 3, 5, 8
+    - Rust Fast Path (audio rate): Phases 2, 4, 6, 7
+    """
+
+    def __init__(
+        self,
+        inventory: AcousticInventory,
+        database_path: str = "./src/vocalization_database.json",
+    ):
+        self.base_agent = BioAcousticAgent(inventory)
+
+        # Cognitive enhancement modules
+        self.semiotic_enhancer = SemioticEnhancer(database_path)
+        self.context_adapter = ProbabilisticContextAdapter()
+        self.effectiveness_tracker = EffectivenessTracker()
+
+        # Configuration
+        self.enable_semiotic = True
+        self.enable_context = True
+        self.enable_learning = True
+
+        logger.info("EnhancedBioAcousticAgent initialized with Cognitive Glue")
+
+    def plan_enhanced_synthesis(
+        self,
+        semantic_label: str,
+        inferred_intent: str = "",
+        environment: EnvState = EnvState.QUIET,
+        context: InteractionContext = InteractionContext.REPLY,
+        grading: float = 0.5,
+        pitch_offset: float = 0.0,
+        social_context: Dict[str, Any] = None,
+        behavioral_context: Dict[str, Any] = None,
+        audio_features: Dict[str, float] = None,
+    ) -> EnhancedSynthesisPlan:
+        """
+        Plan synthesis with full cognitive enhancement.
+
+        This is the main entry point for the Python Slow Path.
+
+        Args:
+            semantic_label: The semantic label from RosettaPipeline
+            inferred_intent: The inferred intent (e.g., "Contact", "Warning")
+            environment: Environmental state
+            context: Interaction context
+            grading: Emotional intensity (0.0-1.0)
+            pitch_offset: Additional pitch offset in Hz
+            social_context: Social context for semiotic analysis
+            behavioral_context: Behavioral context for semiotic analysis
+            audio_features: Audio features for context detection
+
+        Returns:
+            EnhancedSynthesisPlan with semiotic and context enrichment
+        """
+        start_time = time.perf_counter()
+
+        # Step 1: Get base synthesis plan (Phase 6)
+        base_plan = self.base_agent.plan_synthesis(
+            label=semantic_label,
+            environment=environment,
+            context=context,
+            grading=grading,
+            pitch_offset=pitch_offset,
+        )
+
+        enhanced = EnhancedSynthesisPlan(
+            base_plan=base_plan,
+            actual_response_label=base_plan.source_label,
+        )
+
+        # Step 2: Semiotic Analysis (Phase 3) - Python Slow Path
+        if self.enable_semiotic:
+            enhanced.semiotic = self.semiotic_enhancer.analyze(
+                semantic_label=semantic_label,
+                inferred_intent=inferred_intent,
+                social_context=social_context,
+                behavioral_context=behavioral_context,
+            )
+            enhanced.response_modification = enhanced.semiotic.response_modification
+
+        # Step 3: Probabilistic Context (Phase 4) - with Python cache update
+        if self.enable_context and audio_features:
+            enhanced.context_state = self.context_adapter.detect_context(audio_features)
+
+        # Step 4: Apply response modification (Phase 5 - Adaptive Decision)
+        enhanced.actual_response_label = self._apply_response_modification(
+            base_label=base_plan.source_label,
+            input_label=semantic_label,
+            semiotic=enhanced.semiotic,
+            context=enhanced.context_state,
+        )
+
+        # Step 5: If response was modified, recalculate base plan
+        if enhanced.actual_response_label != base_plan.source_label:
+            enhanced.base_plan = self.base_agent.plan_synthesis(
+                label=enhanced.actual_response_label,
+                environment=environment,
+                context=context,
+                grading=self._adjusted_grading(grading, enhanced.semiotic),
+            )
+
+        # Track timing
+        enhanced.total_planning_time_ms = (time.perf_counter() - start_time) * 1000
+
+        return enhanced
+
+    def _apply_response_modification(
+        self,
+        base_label: str,
+        input_label: str,
+        semiotic: SemioticEnrichment,
+        context: ProbabilisticContextState,
+    ) -> str:
+        """
+        Apply response modification based on semiotic and context analysis.
+
+        This is Phase 5: Adaptive Decision.
+        """
+
+        # If deception detected, use calming response
+        if semiotic.deception_detected:
+            # Get calming response from inventory
+            calming = self.base_agent.inventory.get_response_label(input_label)
+            if calming and calming != input_label:
+                logger.info(f"Deception detected, using calming response: {calming}")
+                return calming
+
+        # If emergence detected, log and potentially echo
+        if semiotic.emergence_detected:
+            logger.info(f"Emergence detected: {semiotic.emergence_score:.2f}")
+            # Echo the novel behavior
+            return base_label
+
+        # If directed communication, reply to target
+        if semiotic.directed_communication:
+            logger.info(f"Directed communication to: {semiotic.communication_target}")
+            return base_label
+
+        # Check effectiveness history for better response
+        if self.enable_learning:
+            available = self.base_agent.inventory.available_labels()
+            best = self.effectiveness_tracker.get_best_response(input_label, available)
+            if best != base_label:
+                logger.debug(f"Using effectiveness-optimized response: {best}")
+                return best
+
+        return base_label
+
+    def _adjusted_grading(self, original_grading: float, semiotic: SemioticEnrichment) -> float:
+        """Adjust grading based on semiotic analysis"""
+
+        # Reduce intensity for deceptive signals
+        if semiotic.deception_detected:
+            return original_grading * 0.5
+
+        # Increase intensity for urgency
+        if semiotic.response_modification == ResponseModification.URGENCY_BOOST:
+            return min(1.0, original_grading * 1.3)
+
+        # Reduce intensity for calming
+        if semiotic.response_modification == ResponseModification.URGENCY_REDUCE:
+            return original_grading * 0.7
+
+        return original_grading
+
+    def record_effectiveness(
+        self,
+        input_label: str,
+        response_label: str,
+        animal_reaction: Dict[str, Any],
+    ):
+        """
+        Record effectiveness of a response for learning.
+
+        This is Phase 8: Online Learning.
+
+        Args:
+            input_label: The input phrase label
+            response_label: The response phrase label
+            animal_reaction: Dict with reaction metrics:
+                - stayed: bool (did animal stay in area?)
+                - expected_response: bool (did animal respond as expected?)
+                - looked_at_speaker: bool (did animal look at speaker?)
+        """
+        if not self.enable_learning:
+            return
+
+        context = self.context_adapter.current_state.current_context
+        score = self.effectiveness_tracker.record_interaction(
+            input_label=input_label,
+            response_label=response_label,
+            context=context,
+            animal_reaction=animal_reaction,
+        )
+
+        logger.debug(
+            f"Recorded effectiveness: {input_label}->{response_label} = {score.effectiveness:.2f}"
+        )
+
+    @property
+    def inventory(self) -> AcousticInventory:
+        """Access to underlying inventory"""
+        return self.base_agent.inventory
+
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """Get performance statistics"""
+        return {
+            "semiotic_latency_ms": self.semiotic_enhancer.get_avg_latency_ms(),
+            "recent_effectiveness": self.effectiveness_tracker.recent_effectiveness,
+            "current_context": self.context_adapter.current_state.current_context,
+            "context_confidence": self.context_adapter.current_state.context_confidence,
+        }
+
+
+# =============================================================================
 # Factory Functions
 # =============================================================================
 
@@ -670,45 +1509,158 @@ def create_agent(species: str = "marmoset") -> BioAcousticAgent:
     return BioAcousticAgent(inventory)
 
 
+def create_enhanced_agent(
+    species: str = "marmoset",
+    database_path: str = "./src/vocalization_database.json",
+) -> EnhancedBioAcousticAgent:
+    """Create an Enhanced Bio-Acoustic Agent with Cognitive Glue"""
+    if species == "marmoset":
+        inventory = create_default_marmoset_inventory()
+    else:
+        inventory = AcousticInventory(species=species)
+
+    return EnhancedBioAcousticAgent(inventory, database_path)
+
+
 # =============================================================================
 # Example Usage
 # =============================================================================
 
 if __name__ == "__main__":
-    # Create agent
-    agent = create_agent("marmoset")
+    import sys
 
-    print("=== Bio-Acoustic Interaction Agent Demo ===\n")
+    use_enhanced = "--enhanced" in sys.argv
 
-    # Show available labels
-    print(f"Available labels: {agent.inventory.available_labels()}\n")
+    if use_enhanced:
+        # =====================================================================
+        # Enhanced Agent Demo with Cognitive Glue
+        # =====================================================================
+        agent = create_enhanced_agent("marmoset")
 
-    # Test 1: Plan synthesis in windy conditions
-    print("Test 1: Synthesize 'Phee' in windy conditions")
-    plan = agent.quick_synthesize("Phee", EnvState.WIND)
-    print(f"  Description: {plan.description}")
-    print(f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, +{plan.delta.delta_loudness:.2f} loudness")
-    print(f"  Valid: {plan.validation.is_valid}\n")
+        print("=" * 80)
+        print("     Enhanced Bio-Acoustic Interaction Agent (with Cognitive Glue)")
+        print("=" * 80)
+        print()
 
-    # Test 2: Plan synthesis with high emotional intensity
-    print("Test 2: Synthesize 'Tsik' with high urgency (grading=0.9)")
-    plan = agent.plan_synthesis("Tsik", grading=0.9)
-    print(f"  Description: {plan.description}")
-    print(f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, +{plan.delta.delta_shimmer:.2f} shimmer")
-    print(f"  Valid: {plan.validation.is_valid}\n")
+        print("8-Phase Architecture:")
+        print("  Phase 1: Multi-Modal Fusion     (data_fusion.py)      - Python Slow Path")
+        print("  Phase 2: Rosetta Pipeline       (Rust)                 - Fast Path")
+        print("  Phase 3: Semiotic Analysis      (semiotic_engine.py)   - Python Slow Path")
+        print("  Phase 4: Probabilistic Context  (context_machine.py)   - Fast Path")
+        print("  Phase 5: Adaptive Decision      (context_switcher.py)  - Python Slow Path")
+        print("  Phase 6: Synthesis Planning     (bio_acoustic_agent)   - Fast Path")
+        print("  Phase 7: Granular Synthesis     (synthesis.rs)         - Fast Path")
+        print("  Phase 8: Online Learning        (cognitive_layer.py)   - Python Slow Path")
+        print()
 
-    # Test 3: Response generation
-    print("Test 3: Generate response to 'Tsik' alarm")
-    plan, response_label = agent.generate_response("Tsik", EnvState.WIND)
-    print(f"  Response label: {response_label}")
-    print(f"  Description: {plan.description}")
-    print(f"  Valid: {plan.validation.is_valid}\n")
+        # Test 1: Normal contact call
+        print("Test 1: Normal Contact Call (Phee)")
+        print("-" * 40)
+        plan = agent.plan_enhanced_synthesis(
+            semantic_label="Phee",
+            inferred_intent="Contact",
+            environment=EnvState.WIND,
+            audio_features={'f0': 7000.0, 'rms': 0.3},
+        )
+        print(f"  Should respond: {plan.should_respond}")
+        print(f"  Response: {plan.actual_response_label}")
+        print(f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})")
+        print(f"  Context: {plan.context_state.current_context}")
+        print(f"  Planning time: {plan.total_planning_time_ms:.2f}ms")
+        print()
 
-    # Test 4: Formant Barrier validation
-    print("Test 4: Attempting to cross Formant Barrier")
-    source = SourceMetadata(harmonic_to_noise_ratio=25.0, entropy=0.1)
-    target = SourceMetadata(harmonic_to_noise_ratio=5.0, entropy=0.8)
-    validation = FormantBarrierValidator.validate(source, target)
-    print(f"  Valid: {validation.is_valid}")
-    print(f"  Violations: {validation.violations}")
-    print(f"  Recommended: {validation.recommended_action}")
+        # Test 2: Potential deception (alarm without threat)
+        print("Test 2: Potential Deception (Tsik without threat)")
+        print("-" * 40)
+        plan = agent.plan_enhanced_synthesis(
+            semantic_label="Tsik",
+            inferred_intent="Warning",
+            environment=EnvState.QUIET,
+            social_context={"immediate_threat": False},  # No actual threat!
+            audio_features={'f0': 9000.0, 'rms': 0.5},
+        )
+        print(f"  Should respond: {plan.should_respond}")
+        print(f"  Response: {plan.actual_response_label}")
+        print(f"  Deception: {plan.semiotic.deception_detected} ({plan.semiotic.deception_score:.2f})")
+        print(f"  Modification: {plan.response_modification.value}")
+        print(f"  Context: {plan.context_state.current_context}")
+        print()
+
+        # Test 3: Emergence detection (novel situation)
+        print("Test 3: Emergence Detection (novel situation)")
+        print("-" * 40)
+        plan = agent.plan_enhanced_synthesis(
+            semantic_label="Twitter",
+            inferred_intent="Social",
+            social_context={"novel_situation": True},
+            audio_features={'f0': 8000.0, 'rms': 0.4},
+        )
+        print(f"  Should respond: {plan.should_respond}")
+        print(f"  Response: {plan.actual_response_label}")
+        print(f"  Emergence: {plan.semiotic.emergence_detected} ({plan.semiotic.emergence_score:.2f})")
+        print(f"  Innovation potential: {plan.semiotic.innovation_potential:.2f}")
+        print()
+
+        # Test 4: Record effectiveness for learning
+        print("Test 4: Record Effectiveness (Phase 8 Learning)")
+        print("-" * 40)
+        agent.record_effectiveness(
+            input_label="Tsik",
+            response_label="Phee",
+            animal_reaction={
+                "stayed": True,
+                "expected_response": True,
+                "looked_at_speaker": True,
+            },
+        )
+        stats = agent.get_performance_stats()
+        print(f"  Recent effectiveness: {stats['recent_effectiveness']:.2f}")
+        print(f"  Current context: {stats['current_context']}")
+        print()
+
+        print("=" * 80)
+        print("Enhanced Agent Demo Complete")
+        print("=" * 80)
+
+    else:
+        # =====================================================================
+        # Standard Agent Demo
+        # =====================================================================
+        agent = create_agent("marmoset")
+
+        print("=== Bio-Acoustic Interaction Agent Demo ===\n")
+
+        # Show available labels
+        print(f"Available labels: {agent.inventory.available_labels()}\n")
+
+        # Test 1: Plan synthesis in windy conditions
+        print("Test 1: Synthesize 'Phee' in windy conditions")
+        plan = agent.quick_synthesize("Phee", EnvState.WIND)
+        print(f"  Description: {plan.description}")
+        print(f"  Delta: +{plan.delta.delta_mean_f0_hz:.0f}Hz pitch, +{plan.delta.delta_loudness:.2f} loudness")
+        print(f"  Valid: {plan.validation.is_valid}\n")
+
+        # Test 2: Plan synthesis with high emotional intensity
+        print("Test 2: Synthesize 'Tsik' with high urgency (grading=0.9)")
+        plan = agent.plan_synthesis("Tsik", grading=0.9)
+        print(f"  Description: {plan.description}")
+        print(f"  Delta: +{plan.delta.delta_jitter:.2f} jitter, +{plan.delta.delta_shimmer:.2f} shimmer")
+        print(f"  Valid: {plan.validation.is_valid}\n")
+
+        # Test 3: Response generation
+        print("Test 3: Generate response to 'Tsik' alarm")
+        plan, response_label = agent.generate_response("Tsik", EnvState.WIND)
+        print(f"  Response label: {response_label}")
+        print(f"  Description: {plan.description}")
+        print(f"  Valid: {plan.validation.is_valid}\n")
+
+        # Test 4: Formant Barrier validation
+        print("Test 4: Attempting to cross Formant Barrier")
+        source = SourceMetadata(harmonic_to_noise_ratio=25.0, entropy=0.1)
+        target = SourceMetadata(harmonic_to_noise_ratio=5.0, entropy=0.8)
+        validation = FormantBarrierValidator.validate(source, target)
+        print(f"  Valid: {validation.is_valid}")
+        print(f"  Violations: {validation.violations}")
+        print(f"  Recommended: {validation.recommended_action}")
+
+        print("\n  Run with --enhanced flag for Cognitive Glue demo")
