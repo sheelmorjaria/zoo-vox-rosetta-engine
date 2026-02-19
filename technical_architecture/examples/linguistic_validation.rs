@@ -44,7 +44,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Usage: linguistic_validation [OPTIONS]");
                 println!();
                 println!("Options:");
-                println!("  --species, -s <name>   Species to validate (marmoset, zebra_finch, bat)");
+                println!(
+                    "  --species, -s <name>   Species to validate (marmoset, zebra_finch, bat)"
+                );
                 println!("  --path, -p <path>      Custom data path");
                 println!("  --help, -h             Show this help");
                 return Ok(());
@@ -54,7 +56,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         i += 1;
     }
 
-    println!("=== Linguistic Structure Validation: {} ===\n", species.to_uppercase());
+    println!(
+        "=== Linguistic Structure Validation: {} ===\n",
+        species.to_uppercase()
+    );
 
     // Determine data path based on species
     let analysis_path = data_path.unwrap_or_else(|| match species.as_str() {
@@ -105,7 +110,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match species.as_str() {
         "marmoset" => print_marmoset_analysis(&phrase_types),
         "dolphin" => print_dolphin_analysis(&phrase_types),
-        "sperm_whale" | "sperm-whale" | "whale" => print_sperm_whale_analysis(&phrase_types, zipf_correlation),
+        "sperm_whale" | "sperm-whale" | "whale" => {
+            print_sperm_whale_analysis(&phrase_types, zipf_correlation)
+        }
         _ => {}
     }
 
@@ -141,28 +148,32 @@ fn load_species_data(
             // Try atomic phrases report
             let atomic_path = format!("{}/atomic_phrases_report.json", base_path);
             if Path::new(&atomic_path).exists() {
-                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&atomic_path)?)?;
+                let data: serde_json::Value =
+                    serde_json::from_str(&fs::read_to_string(&atomic_path)?)?;
                 phrase_types = extract_phrase_types(&data);
             }
 
             // Try syntax analysis
             let syntax_path = format!("{}/syntax_analysis.json", base_path);
             if Path::new(&syntax_path).exists() {
-                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&syntax_path)?)?;
+                let data: serde_json::Value =
+                    serde_json::from_str(&fs::read_to_string(&syntax_path)?)?;
                 sequences = extract_sequences(&data);
             }
 
             // Try semantic dictionary (for marmoset)
             let dict_path = format!("{}/{}_semantic_dictionary.json", base_path, species);
             if Path::new(&dict_path).exists() && phrase_types.is_empty() {
-                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&dict_path)?)?;
+                let data: serde_json::Value =
+                    serde_json::from_str(&fs::read_to_string(&dict_path)?)?;
                 phrase_types = extract_from_semantic_dict(&data);
             }
 
             // Try type centroids
             let centroid_path = format!("{}/{}_type_centroids.json", base_path, species);
             if Path::new(&centroid_path).exists() && phrase_types.is_empty() {
-                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&centroid_path)?)?;
+                let data: serde_json::Value =
+                    serde_json::from_str(&fs::read_to_string(&centroid_path)?)?;
                 phrase_types = extract_from_centroids(&data);
             }
         }
@@ -171,7 +182,9 @@ fn load_species_data(
     Ok((phrase_types, sequences))
 }
 
-fn load_species_specific_data(species: &str) -> Result<Vec<PhraseType>, Box<dyn std::error::Error>> {
+fn load_species_specific_data(
+    species: &str,
+) -> Result<Vec<PhraseType>, Box<dyn std::error::Error>> {
     match species {
         "marmoset" => load_marmoset_data(),
         "zebra_finch" | "zebra-finch" | "finch" => load_zebra_finch_data(),
@@ -240,26 +253,26 @@ fn load_sperm_whale_data() -> Result<Vec<PhraseType>, Box<dyn std::error::Error>
 
     // Known sperm whale coda patterns (simplified)
     let coda_types = vec![
-        ("regular_4", 1500),      // 4 regular clicks
-        ("regular_5", 1200),      // 5 regular clicks
-        ("plus_1", 800),          // 4+1 pattern
-        ("regular_3", 600),       // 3 regular clicks
-        ("slow_4", 500),          // 4 slow clicks
-        ("regular_6", 400),       // 6 regular clicks
-        ("plus_2", 300),          // 4+2 pattern
-        ("slow_5", 250),          // 5 slow clicks
-        ("accelerating_5", 200),  // Accelerating 5
-        ("regular_7", 150),       // 7 regular clicks
-        ("slow_3", 120),          // 3 slow clicks
-        ("double_4", 100),        // Double 4 pattern
-        ("irregular_5", 80),      // Irregular 5
-        ("slow_6", 60),           // 6 slow clicks
-        ("complex_1", 50),        // Complex pattern 1
-        ("complex_2", 40),        // Complex pattern 2
-        ("rare_1", 30),           // Rare pattern 1
-        ("rare_2", 25),           // Rare pattern 2
-        ("rare_3", 20),           // Rare pattern 3
-        ("unique_1", 15),         // Unique pattern
+        ("regular_4", 1500),     // 4 regular clicks
+        ("regular_5", 1200),     // 5 regular clicks
+        ("plus_1", 800),         // 4+1 pattern
+        ("regular_3", 600),      // 3 regular clicks
+        ("slow_4", 500),         // 4 slow clicks
+        ("regular_6", 400),      // 6 regular clicks
+        ("plus_2", 300),         // 4+2 pattern
+        ("slow_5", 250),         // 5 slow clicks
+        ("accelerating_5", 200), // Accelerating 5
+        ("regular_7", 150),      // 7 regular clicks
+        ("slow_3", 120),         // 3 slow clicks
+        ("double_4", 100),       // Double 4 pattern
+        ("irregular_5", 80),     // Irregular 5
+        ("slow_6", 60),          // 6 slow clicks
+        ("complex_1", 50),       // Complex pattern 1
+        ("complex_2", 40),       // Complex pattern 2
+        ("rare_1", 30),          // Rare pattern 1
+        ("rare_2", 25),          // Rare pattern 2
+        ("rare_3", 20),          // Rare pattern 3
+        ("unique_1", 15),        // Unique pattern
     ];
 
     let phrase_types: Vec<PhraseType> = coda_types
@@ -361,16 +374,16 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
             let phrase_type = PhraseType {
                 id: format!(
                     "phrase_{}",
-                    phrase.get("phrase_id").and_then(|p| p.as_u64()).unwrap_or(0)
+                    phrase
+                        .get("phrase_id")
+                        .and_then(|p| p.as_u64())
+                        .unwrap_or(0)
                 ),
                 label: phrase
                     .get("primary_call_type")
                     .and_then(|p| p.as_str())
                     .map(|s| s.to_string()),
-                occurrence_count: phrase
-                    .get("size")
-                    .and_then(|p| p.as_u64())
-                    .unwrap_or(1) as usize,
+                occurrence_count: phrase.get("size").and_then(|p| p.as_u64()).unwrap_or(1) as usize,
                 centroid: vec![],
                 contexts: HashMap::new(),
             };
@@ -413,7 +426,8 @@ fn extract_from_semantic_dict(data: &serde_json::Value) -> Vec<PhraseType> {
     if let Some(dict) = data.as_object() {
         for (type_id, labels) in dict {
             if let Some(labels_map) = labels.as_object() {
-                let total_count = labels_map.values().filter_map(|v| v.as_f64()).sum::<f64>() as usize;
+                let total_count =
+                    labels_map.values().filter_map(|v| v.as_f64()).sum::<f64>() as usize;
 
                 let primary_label = labels_map
                     .iter()
@@ -464,7 +478,10 @@ fn extract_from_centroids(data: &serde_json::Value) -> Vec<PhraseType> {
     phrase_types
 }
 
-fn generate_sequences_from_phrases(phrase_types: &[PhraseType], num_sequences: usize) -> Vec<PhraseSequence> {
+fn generate_sequences_from_phrases(
+    phrase_types: &[PhraseType],
+    num_sequences: usize,
+) -> Vec<PhraseSequence> {
     use rand::seq::SliceRandom;
     use rand::thread_rng;
 
@@ -603,11 +620,28 @@ fn run_synthetic_validation(species: &str) -> Result<(), Box<dyn std::error::Err
     for i in 0..100 {
         let pattern = i % 5;
         let phrases = match pattern {
-            0 => vec!["marmoset_phrase_0".to_string(), "marmoset_phrase_1".to_string(), "marmoset_phrase_2".to_string()],
-            1 => vec!["marmoset_phrase_0".to_string(), "marmoset_phrase_1".to_string(), "marmoset_phrase_3".to_string()],
-            2 => vec!["marmoset_phrase_1".to_string(), "marmoset_phrase_2".to_string()],
-            3 => vec!["marmoset_phrase_0".to_string(), "marmoset_phrase_0".to_string()],
-            _ => vec!["marmoset_phrase_4".to_string(), "marmoset_phrase_5".to_string()],
+            0 => vec![
+                "marmoset_phrase_0".to_string(),
+                "marmoset_phrase_1".to_string(),
+                "marmoset_phrase_2".to_string(),
+            ],
+            1 => vec![
+                "marmoset_phrase_0".to_string(),
+                "marmoset_phrase_1".to_string(),
+                "marmoset_phrase_3".to_string(),
+            ],
+            2 => vec![
+                "marmoset_phrase_1".to_string(),
+                "marmoset_phrase_2".to_string(),
+            ],
+            3 => vec![
+                "marmoset_phrase_0".to_string(),
+                "marmoset_phrase_0".to_string(),
+            ],
+            _ => vec![
+                "marmoset_phrase_4".to_string(),
+                "marmoset_phrase_5".to_string(),
+            ],
         };
 
         sequences.push(PhraseSequence {
@@ -623,21 +657,34 @@ fn run_synthetic_validation(species: &str) -> Result<(), Box<dyn std::error::Err
     print_validation_result(&result);
 
     println!("\n=== Synthetic Validation Complete ===");
-    println!("Note: Results are from synthetic Zipfian data, not real {} recordings", species);
+    println!(
+        "Note: Results are from synthetic Zipfian data, not real {} recordings",
+        species
+    );
 
     Ok(())
 }
 
-fn print_validation_result(result: &technical_architecture::computational_ethology::ValidationResult) {
+fn print_validation_result(
+    result: &technical_architecture::computational_ethology::ValidationResult,
+) {
     println!(
         "Zipf Correlation: {:.3} {}",
         result.zipf_correlation,
-        if result.is_zipfian { "(PASS)" } else { "(FAIL)" }
+        if result.is_zipfian {
+            "(PASS)"
+        } else {
+            "(FAIL)"
+        }
     );
     println!(
         "Reuse Ratio: {:.2} {}",
         result.reuse_ratio,
-        if result.reuse_ratio > 2.0 { "(GOOD)" } else { "(POOR)" }
+        if result.reuse_ratio > 2.0 {
+            "(GOOD)"
+        } else {
+            "(POOR)"
+        }
     );
     println!(
         "Singleton Rate: {:.1}% {}",
@@ -744,16 +791,25 @@ fn print_sperm_whale_analysis(phrase_types: &[PhraseType], zipf_correlation: f64
     // Interpretation based on Zipf
     println!("\n  Zipf Interpretation:");
     if zipf_correlation > 0.8 {
-        println!("    High Zipf correlation ({:.3}) suggests:", zipf_correlation);
+        println!(
+            "    High Zipf correlation ({:.3}) suggests:",
+            zipf_correlation
+        );
         println!("    - Diverse coda vocabulary with rare variants");
         println!("    - Possible cultural transmission of codas");
         println!("    - Language-like distribution of click patterns");
     } else if zipf_correlation > 0.6 {
-        println!("    Moderate Zipf correlation ({:.3}) suggests:", zipf_correlation);
+        println!(
+            "    Moderate Zipf correlation ({:.3}) suggests:",
+            zipf_correlation
+        );
         println!("    - Mix of common codas and rare variants");
         println!("    - Some stereotyped patterns (clan identity)");
     } else {
-        println!("    Low Zipf correlation ({:.3}) suggests:", zipf_correlation);
+        println!(
+            "    Low Zipf correlation ({:.3}) suggests:",
+            zipf_correlation
+        );
         println!("    - Stereotyped coda repertoire");
         println!("    - Strong clan-specific dialect patterns");
     }

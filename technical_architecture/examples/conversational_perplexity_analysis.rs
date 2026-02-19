@@ -20,7 +20,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load zebra finch syntax (fixed song patterns)
     let zf_syntax_path = "zebra_finch_analysis/syntax_analysis.json";
-    let zf_data: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(zf_syntax_path)?)?;
+    let zf_data: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(zf_syntax_path)?)?;
 
     println!("--- Zebra Finch (Solo Song) ---");
     let zf_sequences = extract_zebra_finch_sequences(&zf_data);
@@ -83,9 +84,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("├─────────────────────────────────────────────────────────────────┤");
     println!("│ {:<40} {:>20} │", "Species/Mode", "Perplexity");
     println!("├─────────────────────────────────────────────────────────────────┤");
-    println!("│ {:<40} {:>20.4} │", "Zebra Finch (Fixed Song)", zf_perplexity);
-    println!("│ {:<40} {:>20.4} │", "Marmoset - Solo Calling", solo_perplexity);
-    println!("│ {:<40} {:>20.4} │", "Marmoset - Conversational", conv_perplexity);
+    println!(
+        "│ {:<40} {:>20.4} │",
+        "Zebra Finch (Fixed Song)", zf_perplexity
+    );
+    println!(
+        "│ {:<40} {:>20.4} │",
+        "Marmoset - Solo Calling", solo_perplexity
+    );
+    println!(
+        "│ {:<40} {:>20.4} │",
+        "Marmoset - Conversational", conv_perplexity
+    );
     println!("│ {:<40} {:>20.4} │", "Random Baseline", random_perplexity);
     println!("└─────────────────────────────────────────────────────────────────┘");
 
@@ -95,9 +105,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conv_ratio = random_perplexity / conv_perplexity;
 
     println!("\n=== PERPLEXITY RATIOS (Real/Random) ===");
-    println!("Zebra Finch:     {:.4} {}", zf_ratio, if zf_ratio < 0.7 { "(FIXED SYNTAX)" } else { "(NO SYNTAX)" });
-    println!("Marmoset Solo:   {:.4} {}", solo_ratio, if solo_ratio < 0.7 { "(FIXED PATTERNS)" } else { "(FLEXIBLE)" });
-    println!("Marmoset Conv:   {:.4} {}", conv_ratio, if conv_ratio < 0.7 { "(FIXED PATTERNS)" } else { "(CONVERSATIONAL)" });
+    println!(
+        "Zebra Finch:     {:.4} {}",
+        zf_ratio,
+        if zf_ratio < 0.7 {
+            "(FIXED SYNTAX)"
+        } else {
+            "(NO SYNTAX)"
+        }
+    );
+    println!(
+        "Marmoset Solo:   {:.4} {}",
+        solo_ratio,
+        if solo_ratio < 0.7 {
+            "(FIXED PATTERNS)"
+        } else {
+            "(FLEXIBLE)"
+        }
+    );
+    println!(
+        "Marmoset Conv:   {:.4} {}",
+        conv_ratio,
+        if conv_ratio < 0.7 {
+            "(FIXED PATTERNS)"
+        } else {
+            "(CONVERSATIONAL)"
+        }
+    );
 
     // Hypothesis test
     println!("\n=== HYPOTHESIS TEST ===");
@@ -123,31 +157,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let marmoset_phrase_types: Vec<technical_architecture::computational_ethology::PhraseType> =
         marmoset_phrases
             .iter()
-            .map(|(id, count)| technical_architecture::computational_ethology::PhraseType {
-                id: id.clone(),
-                label: None,
-                occurrence_count: *count,
-                centroid: vec![],
-                contexts: HashMap::new(),
-            })
+            .map(
+                |(id, count)| technical_architecture::computational_ethology::PhraseType {
+                    id: id.clone(),
+                    label: None,
+                    occurrence_count: *count,
+                    centroid: vec![],
+                    contexts: HashMap::new(),
+                },
+            )
             .collect();
 
     let marmoset_zipf = calculate_zipf_correlation(&marmoset_phrase_types);
-    println!("Marmoset Zipf Correlation: {:.4} {}", marmoset_zipf, if marmoset_zipf > 0.8 { "(PASS - Graded Language)" } else { "(PARTIAL)" });
+    println!(
+        "Marmoset Zipf Correlation: {:.4} {}",
+        marmoset_zipf,
+        if marmoset_zipf > 0.8 {
+            "(PASS - Graded Language)"
+        } else {
+            "(PARTIAL)"
+        }
+    );
 
     // Zebra finch from data
     let zf_phrases = extract_zebra_finch_phrase_types(&zf_data);
     let zf_zipf = calculate_zipf_correlation(&zf_phrases);
-    println!("Zebra Finch Zipf Correlation: {:.4} {}", zf_zipf, if zf_zipf > 0.8 { "(PASS)" } else { "(PARTIAL - Fixed Song)" });
+    println!(
+        "Zebra Finch Zipf Correlation: {:.4} {}",
+        zf_zipf,
+        if zf_zipf > 0.8 {
+            "(PASS)"
+        } else {
+            "(PARTIAL - Fixed Song)"
+        }
+    );
 
     println!("\n=== COMPLETE LINGUISTIC PROFILE ===");
     println!("┌────────────────────┬────────────────────┬────────────────────┐");
-    println!("│ {:^18} │ {:^18} │ {:^18} │", "Metric", "Zebra Finch", "Marmoset");
+    println!(
+        "│ {:^18} │ {:^18} │ {:^18} │",
+        "Metric", "Zebra Finch", "Marmoset"
+    );
     println!("├────────────────────┼────────────────────┼────────────────────┤");
-    println!("│ {:<18} │ {:>18.4} │ {:>18.4} │", "Zipf Correlation", zf_zipf, marmoset_zipf);
-    println!("│ {:<18} │ {:>18.4} │ {:>18.4} │", "Perplexity", zf_perplexity, conv_perplexity);
-    println!("│ {:<18} │ {:>18} │ {:>18} │", "Communication", "Fixed Song", "Conversational");
-    println!("│ {:<18} │ {:>18} │ {:>18} │", "Structure", "Crystallized", "Graded/Language-like");
+    println!(
+        "│ {:<18} │ {:>18.4} │ {:>18.4} │",
+        "Zipf Correlation", zf_zipf, marmoset_zipf
+    );
+    println!(
+        "│ {:<18} │ {:>18.4} │ {:>18.4} │",
+        "Perplexity", zf_perplexity, conv_perplexity
+    );
+    println!(
+        "│ {:<18} │ {:>18} │ {:>18} │",
+        "Communication", "Fixed Song", "Conversational"
+    );
+    println!(
+        "│ {:<18} │ {:>18} │ {:>18} │",
+        "Structure", "Crystallized", "Graded/Language-like"
+    );
     println!("└────────────────────┴────────────────────┴────────────────────┘");
 
     Ok(())

@@ -62,7 +62,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Detailed interpretation
     println!("\n=== DETAILED INTERPRETATION ===");
-    interpret_bat_communication(bigram_perplexity, bigram_ratio, vocab.len(), sequences.len());
+    interpret_bat_communication(
+        bigram_perplexity,
+        bigram_ratio,
+        vocab.len(),
+        sequences.len(),
+    );
 
     Ok(())
 }
@@ -132,7 +137,10 @@ fn generate_bat_motif_sequences(num_sequences: usize) -> Vec<PhraseSequence> {
         let pattern_idx = i % motif_patterns.len();
         let pattern = &motif_patterns[pattern_idx];
 
-        let phrases: Vec<String> = pattern.iter().map(|&idx| format!("phrase_{}", idx)).collect();
+        let phrases: Vec<String> = pattern
+            .iter()
+            .map(|&idx| format!("phrase_{}", idx))
+            .collect();
 
         sequences.push(PhraseSequence {
             source_id: format!("bat_motif_{}", i),
@@ -172,10 +180,7 @@ fn analyze_by_context(sequences: &[PhraseSequence]) -> Result<(), Box<dyn std::e
     for seq in sequences {
         for tag in &seq.metadata_tags {
             if tag.starts_with("context_") {
-                by_context
-                    .entry(tag.clone())
-                    .or_default()
-                    .push(seq.clone());
+                by_context.entry(tag.clone()).or_default().push(seq.clone());
             }
         }
     }
@@ -221,7 +226,10 @@ fn print_comparison(bat_perplexity: f64, bat_ratio: f64) {
     let marmoset_conv_ratio = 0.57;
 
     println!("┌────────────────────────────┬──────────────┬──────────────┬──────────────┐");
-    println!("│ {:^24} │ {:^12} │ {:^12} │ {:^12} │", "Species", "Perplexity", "P Ratio", "Syntax");
+    println!(
+        "│ {:^24} │ {:^12} │ {:^12} │ {:^12} │",
+        "Species", "Perplexity", "P Ratio", "Syntax"
+    );
     println!("├────────────────────────────┼──────────────┼──────────────┼──────────────┤");
     println!(
         "│ {:<24} │ {:>12.4} │ {:>12.4} │ {:^12} │",
@@ -232,24 +240,22 @@ fn print_comparison(bat_perplexity: f64, bat_ratio: f64) {
     );
     println!(
         "│ {:<24} │ {:>12.4} │ {:>12.4} │ {:^12} │",
-        "Marmoset (Conversational)",
-        marmoset_conv_perplexity,
-        marmoset_conv_ratio,
-        "FLEX"
+        "Marmoset (Conversational)", marmoset_conv_perplexity, marmoset_conv_ratio, "FLEX"
     );
     println!(
         "│ {:<24} │ {:>12.4} │ {:>12.4} │ {:^12} │",
-        "Marmoset (Solo)",
-        marmoset_solo_perplexity,
-        marmoset_solo_ratio,
-        "FLEX"
+        "Marmoset (Solo)", marmoset_solo_perplexity, marmoset_solo_ratio, "FLEX"
     );
     println!(
         "│ {:<24} │ {:>12.4} │ {:>12.4} │ {:^12} │",
         "Zebra Finch (Song)",
         zebra_finch_perplexity,
         zebra_finch_ratio,
-        if zebra_finch_ratio < 0.7 { "FIXED" } else { "FLEX" }
+        if zebra_finch_ratio < 0.7 {
+            "FIXED"
+        } else {
+            "FLEX"
+        }
     );
     println!("└────────────────────────────┴──────────────┴──────────────┴──────────────┘");
 

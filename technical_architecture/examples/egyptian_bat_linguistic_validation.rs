@@ -84,7 +84,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Scientific Interpretation
     println!("\n=== SCIENTIFIC INTERPRETATION ===");
-    interpret_results(zipf_correlation, perplexity_ratio, reuse_ratio, singleton_rate);
+    interpret_results(
+        zipf_correlation,
+        perplexity_ratio,
+        reuse_ratio,
+        singleton_rate,
+    );
 
     println!("\n=== Validation Complete ===");
     println!(
@@ -104,7 +109,10 @@ fn load_bat_data(
     let mut sequences = Vec::new();
 
     // Load aggregate analysis for phrase stats
-    let aggregate_path = format!("{}/within_call_phrase_results/aggregate_analysis.json", base_path);
+    let aggregate_path = format!(
+        "{}/within_call_phrase_results/aggregate_analysis.json",
+        base_path
+    );
     if Path::new(&aggregate_path).exists() {
         let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&aggregate_path)?)?;
 
@@ -217,7 +225,10 @@ fn load_bat_data(
     Ok((phrase_types, sequences))
 }
 
-fn generate_bat_sequences(phrase_types: &[PhraseType], num_sequences: usize) -> Vec<PhraseSequence> {
+fn generate_bat_sequences(
+    phrase_types: &[PhraseType],
+    num_sequences: usize,
+) -> Vec<PhraseSequence> {
     let mut sequences = Vec::new();
 
     // Bats have specific patterns:
@@ -226,16 +237,16 @@ fn generate_bat_sequences(phrase_types: &[PhraseType], num_sequences: usize) -> 
     // - Context-dependent calling
 
     let motif_patterns: Vec<Vec<usize>> = vec![
-        vec![0, 0],          // Common repetition
-        vec![0, 0, 0],       // Triple repetition
-        vec![0, 0, 0, 0],    // Quadruple
-        vec![1, 2],          // Alternating
-        vec![0, 1, 0],       // With variation
-        vec![2, 3, 2, 3],    // Alternating pairs
-        vec![0, 4, 0],       // With rare phrase
-        vec![5, 5, 5],       // Different type repetition
-        vec![0, 1, 2, 3],    // Progressive
-        vec![6, 6],          // Another repetition
+        vec![0, 0],       // Common repetition
+        vec![0, 0, 0],    // Triple repetition
+        vec![0, 0, 0, 0], // Quadruple
+        vec![1, 2],       // Alternating
+        vec![0, 1, 0],    // With variation
+        vec![2, 3, 2, 3], // Alternating pairs
+        vec![0, 4, 0],    // With rare phrase
+        vec![5, 5, 5],    // Different type repetition
+        vec![0, 1, 2, 3], // Progressive
+        vec![6, 6],       // Another repetition
     ];
 
     for i in 0..num_sequences {
@@ -327,16 +338,26 @@ fn analyze_contexts(base_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn print_validation_result(result: &technical_architecture::computational_ethology::ValidationResult) {
+fn print_validation_result(
+    result: &technical_architecture::computational_ethology::ValidationResult,
+) {
     println!(
         "Zipf Correlation: {:.4} {}",
         result.zipf_correlation,
-        if result.is_zipfian { "(PASS)" } else { "(PARTIAL)" }
+        if result.is_zipfian {
+            "(PASS)"
+        } else {
+            "(PARTIAL)"
+        }
     );
     println!(
         "Reuse Ratio: {:.2} {}",
         result.reuse_ratio,
-        if result.reuse_ratio > 2.0 { "(GOOD)" } else { "(POOR)" }
+        if result.reuse_ratio > 2.0 {
+            "(GOOD)"
+        } else {
+            "(POOR)"
+        }
     );
     println!(
         "Singleton Rate: {:.1}% {}",
@@ -377,7 +398,10 @@ fn print_species_comparison(
     let zebra_finch_perplexity = 1.12;
 
     println!("┌────────────────────┬────────────────┬────────────────┬────────────────┐");
-    println!("│ {:^16} │ {:^14} │ {:^14} │ {:^14} │", "Metric", "Egyptian Bat", "Marmoset", "Zebra Finch");
+    println!(
+        "│ {:^16} │ {:^14} │ {:^14} │ {:^14} │",
+        "Metric", "Egyptian Bat", "Marmoset", "Zebra Finch"
+    );
     println!("├────────────────────┼────────────────┼────────────────┼────────────────┤");
     println!(
         "│ {:<16} │ {:>14.4} │ {:>14.3} │ {:>14.3} │",
@@ -393,11 +417,20 @@ fn print_species_comparison(
     );
     println!(
         "│ {:<16} │ {:>13.1}% │ {:>14} │ {:>14} │",
-        "Singleton Rate", bat_singleton * 100.0, "0.0%", "0.0%"
+        "Singleton Rate",
+        bat_singleton * 100.0,
+        "0.0%",
+        "0.0%"
     );
     println!("├────────────────────┼────────────────┼────────────────┼────────────────┤");
-    println!("│ {:<16} │ {:^14} │ {:^14} │ {:^14} │", "Communication", "Social/Context", "Conversational", "Fixed Song");
-    println!("│ {:<16} │ {:^14} │ {:^14} │ {:^14} │", "Structure", "Motif-based", "Graded", "Crystallized");
+    println!(
+        "│ {:<16} │ {:^14} │ {:^14} │ {:^14} │",
+        "Communication", "Social/Context", "Conversational", "Fixed Song"
+    );
+    println!(
+        "│ {:<16} │ {:^14} │ {:^14} │ {:^14} │",
+        "Structure", "Motif-based", "Graded", "Crystallized"
+    );
     println!("└────────────────────┴────────────────┴────────────────┴────────────────┘");
 }
 
@@ -407,7 +440,10 @@ fn interpret_results(zipf: f64, perplexity_ratio: f64, reuse: f64, singleton: f6
 
     // Zipf interpretation
     if zipf > 0.8 {
-        println!("✓ ZIPF'S LAW: Strong language-like distribution (r={:.3})", zipf);
+        println!(
+            "✓ ZIPF'S LAW: Strong language-like distribution (r={:.3})",
+            zipf
+        );
         println!("  Bats have a graded vocabulary with common and rare call types,");
         println!("  similar to human word frequency distributions.");
     } else if zipf > 0.6 {
@@ -422,11 +458,17 @@ fn interpret_results(zipf: f64, perplexity_ratio: f64, reuse: f64, singleton: f6
 
     // Perplexity interpretation
     if perplexity_ratio < 0.7 {
-        println!("✓ SYNTAX DETECTED: Low perplexity ratio ({:.3})", perplexity_ratio);
+        println!(
+            "✓ SYNTAX DETECTED: Low perplexity ratio ({:.3})",
+            perplexity_ratio
+        );
         println!("  Bat sequences are more predictable than random, indicating");
         println!("  structured patterns (motifs) in their vocalizations.");
     } else {
-        println!("○ FLEXIBLE PATTERNS: High perplexity ratio ({:.3})", perplexity_ratio);
+        println!(
+            "○ FLEXIBLE PATTERNS: High perplexity ratio ({:.3})",
+            perplexity_ratio
+        );
         println!("  Bat sequences show variability, possibly due to context-dependent");
         println!("  calling or individual variation.");
     }
