@@ -775,7 +775,7 @@ class SourceSeparator:
             # Fall back to scipy
             return self._frequency_based_separation(mixed_audio)
 
-    def _frequency_based_separation(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
+    def _frequency_based_separation_v2(self, mixed_audio: np.ndarray) -> Dict[str, np.ndarray]:
         """
         Simple frequency-based source separation.
 

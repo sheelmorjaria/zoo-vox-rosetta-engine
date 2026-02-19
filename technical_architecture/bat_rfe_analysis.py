@@ -408,7 +408,7 @@ def prepare_dataset(feature_dim: str = "37d") -> Tuple[np.ndarray, np.ndarray, L
     y = np.array(y_list)
     feature_names = get_feature_names(feature_dim)
 
-    print(f"\nDataset prepared:")
+    print("\nDataset prepared:")
     print(f"  Samples: {X.shape[0]}")
     print(f"  Features: {X.shape[1]}")
     print(f"  Classes: {len(np.unique(y))}")
@@ -436,7 +436,7 @@ def run_rfe_analysis(
         }
 
     print(f"\n{'=' * 60}")
-    print(f"Running RFE Analysis")
+    print("Running RFE Analysis")
     print(f"{'=' * 60}")
     print(f"Total features: {len(feature_names)}")
     print(f"Features to select: {n_features_to_select}")
@@ -471,7 +471,7 @@ def run_rfe_analysis(
     # Get selected features
     selected_mask = rfecv.support_
     selected_features = [name for i, name in enumerate(feature_names) if selected_mask[i]]
-    selected_indices = [i for i, selected in enumerate(selected_mask) if selected]
+    _selected_indices = [i for i, selected in enumerate(selected_mask) if selected]
 
     # Get feature importances (only for selected features from the RFE estimator)
     feature_importances = rfecv.estimator_.feature_importances_
@@ -519,7 +519,7 @@ def run_rfe_analysis(
         "importance_ranking": importance_df.to_dict("records"),
     }
 
-    print(f"\nRFE Results:")
+    print("\nRFE Results:")
     print(f"  Optimal number of features: {optimal_n_features}")
     print(f"  CV Accuracy (optimal): {cv_scores_full.mean():.1%} ± {cv_scores_full.std():.2%}")
 
@@ -559,7 +559,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
 
     MFCC_FEATURES = {f"mfcc_{i}" for i in range(1, 14)}
 
-    report = f"""# Recursive Feature Elimination (RFE) Analysis Report
+    report = """# Recursive Feature Elimination (RFE) Analysis Report
 **Egyptian Fruit Bat Vocalization Classification**
 
 **Date**: {pd.Timestamp.now().strftime("%Y-%m-%d")}
@@ -610,7 +610,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
 
         report += f"| {i} | **{feat}** | {importance:.4f} | {feat_type} |\n"
 
-    report += f"""
+    report += """
 
 ---
 
@@ -624,7 +624,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
         selected_mark = "✅" if feat["selected"] else ""
         report += f"| {feat['ranking']} | {feat['feature']} | {feat['importance']:.4f} | {selected_mark} |\n"
 
-    report += f"""
+    report += """
 
 ---
 
@@ -649,7 +649,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
             rank = feat_info["ranking"] if feat_info else "-"
             report += f"- **{feat}** (Rank: {rank}, Importance: {imp:.4f})\n"
 
-    report += f"""
+    report += """
 
 ---
 
@@ -663,7 +663,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
         n = n_feat.split("_")[1]
         report += f"| {n} | {score:.1%} |\n"
 
-    report += f"""
+    report += """
 
 ---
 
@@ -710,7 +710,7 @@ def generate_report(results: Dict, feature_dim: str = "37d"):
         else:
             report += "❌ Lower importance for bats |\n"
 
-    report += f"""
+    report += """
 
 ---
 
@@ -761,7 +761,7 @@ BAT_RFE_OPTIMAL_{results["optimal_n_features"]}D = [
     for i, feat in enumerate(selected_features):
         report += f'    "{feat}",' + "\n"
 
-    report += f"""]
+    report += """]
 ```
 
 ---
@@ -833,8 +833,8 @@ def main():
     print("Analysis Complete!")
     print(f"{'=' * 70}")
     print(f"\nReports saved to: {OUTPUT_DIR}")
-    print(f"  - BAT_RFE_ANALYSIS_REPORT.md (detailed report)")
-    print(f"  - bat_rfe_results.json (raw results)")
+    print("  - BAT_RFE_ANALYSIS_REPORT.md (detailed report)")
+    print("  - bat_rfe_results.json (raw results)")
 
 
 if __name__ == "__main__":

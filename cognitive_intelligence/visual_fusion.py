@@ -140,7 +140,7 @@ class MockMediaPipeResults:
 class MockMediaPipeModule:
     """Mock MediaPipe module structure"""
 
-    class solutions:
+    class solutions:  # noqa: F811 - Intentionally shadows mediapipe.solutions
         drawing_utils = MockDrawingUtils
         drawing_styles = MockDrawingStyles
         hands = MockHandsClass

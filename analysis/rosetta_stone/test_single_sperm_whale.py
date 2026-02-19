@@ -58,7 +58,7 @@ for gap in [20, 50, 100, 200]:
             phrases = analyzer.segment_phrases(audio, min_gap_ms=gap, min_phrase_duration_ms=dur)
             if len(phrases) > 0:
                 print(f"  gap={gap:3d}ms, dur={dur:2d}ms: {len(phrases)} phrases ✓")
-        except Exception as e:
+        except Exception:
             pass
 
 # Try with best params

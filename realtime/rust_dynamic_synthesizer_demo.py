@@ -26,7 +26,6 @@ import soundfile as sf
 # Import Rust synthesizer via PyO3
 try:
     import importlib.util
-    import sys
 
     spec = importlib.util.spec_from_file_location(
         "technical_architecture",

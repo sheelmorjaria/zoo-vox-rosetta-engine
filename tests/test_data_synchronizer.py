@@ -25,7 +25,6 @@ try:
 except ImportError:
     # Create Python mocks for testing
     from dataclasses import dataclass
-    from typing import List
 
     @dataclass
     class SyncConfig:

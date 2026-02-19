@@ -8,11 +8,8 @@ This script:
 3. Converts FLAC files to WAV format using pydub/ffmpeg
 """
 
-import os
-import sys
 import pandas as pd
 from pathlib import Path
-from typing import List, Tuple
 import random
 
 # Set random seed for reproducibility
@@ -77,7 +74,7 @@ def get_representative_subset(df: pd.DataFrame, n_files: int = 5000) -> pd.DataF
     result = result.sample(frac=1, random_state=42).reset_index(drop=True)
 
     print(f"Selected {len(result)} files")
-    print(f"Call type distribution in subset:")
+    print("Call type distribution in subset:")
     print(result["label"].value_counts())
 
     return result
@@ -145,7 +142,7 @@ def main():
         else:
             failed_count += 1
 
-    print(f"\nConversion complete!")
+    print("\nConversion complete!")
     print(f"  Successful: {success_count}")
     print(f"  Failed: {failed_count}")
     print(f"  Output directory: {OUTPUT_DIR}")
