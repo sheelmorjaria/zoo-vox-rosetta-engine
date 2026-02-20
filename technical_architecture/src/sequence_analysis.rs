@@ -271,12 +271,12 @@ impl MultipleSequenceAligner {
 
         for pos in 0..len {
             let mut counts: HashMap<i32, usize> = HashMap::new();
-            let mut gap_count = 0;
+            let mut _gap_count = 0;
 
             for seq in aligned {
                 if pos < seq.len() {
                     if seq[pos] == -999 {
-                        gap_count += 1;
+                        _gap_count += 1;
                     } else {
                         *counts.entry(seq[pos]).or_insert(0) += 1;
                     }

@@ -427,7 +427,6 @@ impl DynamicSegmenter {
         let mut features = Vec::new();
         let mut times = Vec::new();
 
-        let mut frame_idx = 0;
         for start in (0..audio.len().saturating_sub(frame_samples)).step_by(hop_samples) {
             let end = (start + frame_samples).min(audio.len());
             let frame = &audio[start..end];
@@ -437,7 +436,6 @@ impl DynamicSegmenter {
                     let time_ms = (start as f32 / self.sample_rate as f32) * 1000.0;
                     features.push(feat);
                     times.push(time_ms);
-                    frame_idx += 1;
                 }
             }
         }

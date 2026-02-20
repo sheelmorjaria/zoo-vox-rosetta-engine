@@ -1,0 +1,16 @@
+[flake8]
+# Rust bindings are imported from technical_architecture via PyO3 at runtime
+per-file-ignores =
+    tests/test_rust_python_integration.py: F821
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    */archive,
+    */archive/*,
+    archive,
+    archive_experimental,
+    realtime/archive,
+    technical_architecture/beans_analysis,
+    technical_architecture/bat_rfe_analysis.py,

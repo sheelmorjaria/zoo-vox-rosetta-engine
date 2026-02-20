@@ -187,7 +187,7 @@ impl SyntheticGapAnalyzer {
         let distance_to_intended = self.cosine_distance(features, intended_centroid);
 
         // Find nearest other type
-        let mut nearest_other_type = String::new();
+        let mut _nearest_other_type = String::new();
         let mut distance_to_nearest_other = f64::INFINITY;
 
         for (type_name, centroid) in &self.type_centroids {
@@ -195,7 +195,7 @@ impl SyntheticGapAnalyzer {
                 let dist = self.cosine_distance(features, centroid);
                 if dist < distance_to_nearest_other {
                     distance_to_nearest_other = dist;
-                    nearest_other_type = type_name.clone();
+                    _nearest_other_type = type_name.clone();
                 }
             }
         }

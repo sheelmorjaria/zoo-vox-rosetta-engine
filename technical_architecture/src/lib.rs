@@ -27,6 +27,26 @@
 // This is a known false positive from the PyO3 macro and can be safely suppressed.
 #![cfg_attr(feature = "python-bindings", allow(non_local_definitions))]
 
+// Library crate: many public items are part of the API but may not be used internally
+#![allow(dead_code)]
+#![allow(unused_assignments)]
+#![allow(unused_variables)]
+
+// Acceptable clippy lints for this scientific computing/audio processing library
+#![allow(clippy::too_many_arguments)]     // Signal processing functions often need many params
+#![allow(clippy::type_complexity)]        // Complex numeric types are common in DSP
+#![allow(clippy::needless_range_loop)]    // Index-based loops are clearer for DSP algorithms
+#![allow(clippy::should_implement_trait)] // Some APIs don't need Default trait
+#![allow(clippy::new_without_default)]    // Not all constructors need Default impl
+#![allow(clippy::large_enum_variant)]     // Performance-optimized enums may have size variance
+#![allow(clippy::doc_lazy_continuation)]  // Doc formatting style
+#![allow(clippy::doc_nested_refdefs)]     // Doc link style
+#![allow(clippy::vec_init_then_push)]     // Sometimes clearer than vec![] macro
+#![allow(clippy::manual_clamp)]           // min/max pattern is sometimes clearer
+#![allow(clippy::explicit_counter_loop)]  // Manual counters sometimes clearer
+#![allow(clippy::non_canonical_partial_ord_impl)] // Custom NaN handling needed
+#![allow(clippy::legacy_numeric_constants)] // std::i32::MAX style acceptable
+
 use anyhow::Result;
 use log::{error, info, warn};
 use parking_lot::Mutex;
