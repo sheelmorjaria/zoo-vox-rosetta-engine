@@ -181,49 +181,17 @@ Based on within-call phrase discovery analysis across multiple datasets:
 
 ### Phrase Data Preparation Pipeline (v2.0)
 
-The phrase data preparation system provides complete 30D acoustic feature extraction and species-specific phrase segmentation for all supported species.
+The phrase data preparation system provides complete **45D acoustic feature extraction** and species-specific phrase segmentation for all supported species. See the [45D Acoustic Feature System](#45d-acoustic-feature-system) section for detailed feature documentation.
 
 #### Modules
 
 | Module | Purpose |
 |--------|---------|
-| `zoo_vox_data_models` | Core data structures (30D features, PhrasePrototype, libraries) |
-| `zoo_vox_features` | 30D acoustic feature extraction |
+| `zoo_vox_data_models` | Core data structures (45D features, PhrasePrototype, libraries) |
+| `zoo_vox_features` | 45D acoustic feature extraction |
 | `zoo_vox_extraction` | Species-specific phrase segmentation |
 | `zoo_vox_library` | Phrase library building and management |
 | `zoo_vox_within_call` | Within-call phrase discovery using acoustic similarity |
-
-#### 30D Acoustic Features
-
-The 30-dimensional feature vector captures complete bioacoustic characteristics:
-
-**1. Fundamental (3 features)**
-- `mean_f0_hz` - Mean fundamental frequency
-- `duration_ms` - Phrase duration
-- `f0_range_hz` - Pitch modulation range
-
-**2. Grit Factors (3 features)**
-- `harmonic_to_noise_ratio` - Harmonic purity (dB)
-- `spectral_flatness` - Noise vs tonal quality
-- `harmonicity` - Harmonic structure strength
-
-**3. Motion Factors (7 features)**
-- `attack_time_ms` - Onset speed
-- `decay_time_ms` - Release speed
-- `sustain_level` - Steady-state amplitude
-- `vibrato_rate_hz` - Pitch modulation frequency
-- `vibrato_depth` - Pitch modulation depth
-- `jitter` - Frequency perturbation
-- `shimmer` - Amplitude perturbation
-
-**4. Fingerprint Factors (14 features)**
-- `mfcc_1` through `mfcc_13` - Mel-frequency cepstral coefficients
-- `spectral_flux` - Spectral change rate
-
-**5. Rhythm Factors (3 features)**
-- `median_ici_ms` - Inter-call interval
-- `onset_rate_hz` - Event rate
-- `ici_coefficient_of_variation` - Rhythm regularity
 
 #### Usage Example
 
@@ -330,7 +298,7 @@ let library = builder.build_library(phrases, "zebra_finch")?;
 
 | Aspect | Standard (Key-Based) | Similarity-Based |
 |--------|---------------------|------------------|
-| Grouping method | F0 + Duration bins | Full 30D acoustic similarity |
+| Grouping method | F0 + Duration bins | Full 45D acoustic similarity |
 | Approach | Discrete binning | Continuous acoustic manifold |
 | Thresholds | Fixed | Species-specific |
 | Variability metrics | No | Intra-type variability computed |
@@ -367,7 +335,7 @@ cargo test zoo_vox_within_call --lib
 
 ### Overview
 
-The 45-dimensional feature vector provides comprehensive bioacoustic characterization for cross-species analysis. This replaces the earlier 30D system with expanded coverage of fine temporal structure and psychoacoustic features.
+The 45-dimensional feature vector provides comprehensive bioacoustic characterization for cross-species analysis with expanded coverage of fine temporal structure and psychoacoustic features.
 
 ### Feature Groups (9 groups × 5 features = 45D)
 
@@ -975,10 +943,10 @@ cargo run --example benchmark_peer_controller --release
 
 ## Test Coverage
 
-**1206 tests passing** - Comprehensive coverage of all functionality
+**1287 tests passing** - Comprehensive coverage of all functionality
 
 ```
-Rust Execution Layer: 1206 tests passing
+Rust Execution Layer: 1287 tests passing
 ├── Rust Tests: 463+ tests
 │   ├── Core Modules: 187 tests
 │   ├── Production Deployment: 142 tests
