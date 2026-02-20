@@ -35,6 +35,26 @@ RUST_BINDINGS_AVAILABLE = False
 IMPORT_ERROR = "Not initialized"
 
 try:
+    from technical_architecture import (
+        # Visual Recorder
+        VisualRecorder,
+        VisualRecorderConfig,
+        AudioSyncEvent,
+        # Synthesis
+        DynamicMicroharmonicSynthesizer,
+        GranularConcatenativeSynthesizer,
+        # Peer Controller
+        PeerController,
+        PeerControllerConfig,
+        OperationMode,
+        # Thermal
+        ThermalState,
+        # Environmental Monitor
+        EnvironmentalMonitor,
+        EnvironmentalConditions,
+        RainIntensity,
+        TemperatureClassification,
+    )
     RUST_BINDINGS_AVAILABLE = True
 except ImportError as e:
     IMPORT_ERROR = str(e)
