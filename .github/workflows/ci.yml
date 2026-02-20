@@ -70,7 +70,8 @@ jobs:
           --ignore=tests/test_shared_memory_ipc.py \
           --ignore=tests/test_realtime_dependencies.py \
           --ignore=tests/test_17d_metadata_synthesis.py \
-          --ignore=tests/archive_experimental/
+          --ignore=tests/archive_experimental/ \
+          --ignore=tests/archive/
 
   rust-tests:
     name: Rust Tests
