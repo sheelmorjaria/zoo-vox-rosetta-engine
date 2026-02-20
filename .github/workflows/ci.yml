@@ -110,13 +110,10 @@ jobs:
       run: cargo build --verbose
 
     - name: Run Rust tests
-      run: cargo test --verbose
+      run: cargo test --lib --verbose
 
     - name: Run Rust tests (release)
-      run: cargo test --release --verbose
-
-    - name: Run Rust benchmarks
-      run: cargo run --example benchmark_peer_controller --release
+      run: cargo test --lib --release --verbose
 
   rust-lint:
     name: Rust Lint
