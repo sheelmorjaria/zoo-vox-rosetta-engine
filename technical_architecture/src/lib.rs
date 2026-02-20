@@ -28,8 +28,11 @@
 #![cfg_attr(feature = "python-bindings", allow(non_local_definitions))]
 // Library crate: many public items are part of the API but may not be used internally
 #![allow(dead_code)]
+#![allow(unused_imports)]
 #![allow(unused_assignments)]
 #![allow(unused_variables)]
+#![allow(unused_mut)]
+#![allow(unused_comparisons)]
 // Acceptable clippy lints for this scientific computing/audio processing library
 #![allow(clippy::too_many_arguments)] // Signal processing functions often need many params
 #![allow(clippy::type_complexity)] // Complex numeric types are common in DSP
