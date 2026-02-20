@@ -55,6 +55,7 @@ try:
         RainIntensity,
         TemperatureClassification,
     )
+
     RUST_BINDINGS_AVAILABLE = True
 except ImportError as e:
     IMPORT_ERROR = str(e)
