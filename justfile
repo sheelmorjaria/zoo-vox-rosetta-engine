@@ -42,7 +42,8 @@ build-bindings:
     # Build the wheel
     maturin build --release --features python-bindings --strip
     # Install the wheel (forces reinstall to ensure updates are picked up)
-    pip install --force-reinstall target/wheels/technical_architecture*.whl --break-system-packages.
+    pip install --force-reinstall target/wheels/technical_architecture*.whl || \
+    pip install --force-reinstall target/wheels/technical_architecture*.whl --break-system-packages
     cd ..
 
 # Fast build for development (uses maturin develop instead of wheel)
@@ -64,7 +65,8 @@ test-python:
         --ignore=tests/test_shared_memory_ipc.py \
         --ignore=tests/test_realtime_dependencies.py \
         --ignore=tests/test_17d_metadata_synthesis.py \
-        --ignore=tests/archive_experimental/
+        --ignore=tests/archive_experimental/ \
+        --ignore=tests/archive/
 
 # Run Integration Tests
 test-integration:
