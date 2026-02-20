@@ -88,7 +88,4 @@ asyncio_mode = "auto"
 markers = [
     "asyncio: mark test as async"
 ]
-ignore = [
-    "tests/archive",
-    "tests/archive_experimental",
-]
+# Use --ignore flags in justfile/CI instead of deprecated 'ignore' option
