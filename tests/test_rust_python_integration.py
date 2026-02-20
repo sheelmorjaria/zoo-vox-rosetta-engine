@@ -36,24 +36,24 @@ IMPORT_ERROR = "Not initialized"
 
 try:
     from technical_architecture import (
-        # Visual Recorder
-        VisualRecorder,
-        VisualRecorderConfig,
         AudioSyncEvent,
         # Synthesis
         DynamicMicroharmonicSynthesizer,
+        EnvironmentalConditions,
+        # Environmental Monitor
+        EnvironmentalMonitor,
         GranularConcatenativeSynthesizer,
+        OperationMode,
         # Peer Controller
         PeerController,
         PeerControllerConfig,
-        OperationMode,
-        # Thermal
-        ThermalState,
-        # Environmental Monitor
-        EnvironmentalMonitor,
-        EnvironmentalConditions,
         RainIntensity,
         TemperatureClassification,
+        # Thermal
+        ThermalState,
+        # Visual Recorder
+        VisualRecorder,
+        VisualRecorderConfig,
     )
 
     RUST_BINDINGS_AVAILABLE = True
