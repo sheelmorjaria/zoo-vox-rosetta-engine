@@ -245,13 +245,13 @@ mod test_phrase_extractor {
     fn test_extractor_creation() {
         let config = ZooVoxExtractionConfig::new(44100);
         let extractor = ZooVoxPhraseExtractor::new(config);
-        assert_eq!(extractor.config.sample_rate, 44100);
+        assert_eq!(extractor.sample_rate(), 44100);
     }
 
     #[test]
     fn test_extractor_for_species() {
         let extractor = ZooVoxPhraseExtractor::for_species("sperm_whale", 48000);
-        assert_eq!(extractor.config.sample_rate, 48000);
+        assert_eq!(extractor.sample_rate(), 48000);
     }
 
     #[test]
@@ -279,7 +279,7 @@ mod test_library_builder {
     #[test]
     fn test_builder_creation() {
         let builder = ZooVoxLibraryBuilder::new();
-        assert_eq!(builder.similarity_threshold, 0.85);
+        assert_eq!(builder.similarity_threshold(), 0.85);
     }
 
     #[test]

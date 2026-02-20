@@ -133,6 +133,11 @@ impl ZooVoxPhraseExtractor {
         Self::new(ZooVoxExtractionConfig::for_species(species, sample_rate))
     }
 
+    /// Get the sample rate
+    pub fn sample_rate(&self) -> u32 {
+        self.config.sample_rate
+    }
+
     /// Extract phrases from audio for a specific species
     pub fn extract_phrases(
         &mut self,

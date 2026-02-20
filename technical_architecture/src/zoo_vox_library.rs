@@ -54,6 +54,11 @@ impl ZooVoxLibraryBuilder {
         self
     }
 
+    /// Get the similarity threshold
+    pub fn similarity_threshold(&self) -> f64 {
+        self.similarity_threshold
+    }
+
     /// Build a species phrase library from extracted phrases
     pub fn build_library(
         &self,
