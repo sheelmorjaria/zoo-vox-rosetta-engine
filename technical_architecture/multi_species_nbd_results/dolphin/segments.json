@@ -1,0 +1,65 @@
+[
+  {
+    "source_file": "noise1.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 2697.729,
+    "duration_ms": 2697.729,
+    "boundary_type": "End",
+    "feature_hash": 12976889388695179054
+  },
+  {
+    "source_file": "noise3.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 2003.0885,
+    "duration_ms": 2003.0885,
+    "boundary_type": "End",
+    "feature_hash": 18437629472682998585
+  },
+  {
+    "source_file": "noise2.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 629.3333,
+    "duration_ms": 629.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17878395721258557641
+  },
+  {
+    "source_file": "noise2.wav",
+    "segment_idx": 1,
+    "start_ms": 629.3333,
+    "end_ms": 640.0,
+    "duration_ms": 10.666667,
+    "boundary_type": "Transitional",
+    "feature_hash": 11155705393839455845
+  },
+  {
+    "source_file": "noise2.wav",
+    "segment_idx": 2,
+    "start_ms": 640.0,
+    "end_ms": 970.6666,
+    "duration_ms": 330.66666,
+    "boundary_type": "Transitional",
+    "feature_hash": 12024619588403041684
+  },
+  {
+    "source_file": "noise2.wav",
+    "segment_idx": 3,
+    "start_ms": 970.6666,
+    "end_ms": 981.3333,
+    "duration_ms": 10.666667,
+    "boundary_type": "Soft",
+    "feature_hash": 14815451818010676485
+  },
+  {
+    "source_file": "noise2.wav",
+    "segment_idx": 4,
+    "start_ms": 981.3333,
+    "end_ms": 1778.5261,
+    "duration_ms": 797.1927,
+    "boundary_type": "End",
+    "feature_hash": 4285124506855726235
+  }
+]

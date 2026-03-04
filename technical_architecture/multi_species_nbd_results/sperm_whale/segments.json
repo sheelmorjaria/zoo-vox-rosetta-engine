@@ -1,0 +1,7328 @@
+[
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 185834.67,
+    "duration_ms": 185834.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 445449174329808384
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 185834.67,
+    "end_ms": 186602.66,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6860970049030697960
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 186602.66,
+    "end_ms": 187349.33,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 14919570211329063056
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 187349.33,
+    "end_ms": 187370.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 187370.67,
+    "end_ms": 267200.0,
+    "duration_ms": 79829.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 4327547337432421968
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 267200.0,
+    "end_ms": 267221.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2239427876850987703
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 267221.34,
+    "end_ms": 267242.7,
+    "duration_ms": 21.354166,
+    "boundary_type": "Transitional",
+    "feature_hash": 13929320997657259696
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 267242.7,
+    "end_ms": 278421.3,
+    "duration_ms": 11178.625,
+    "boundary_type": "Transitional",
+    "feature_hash": 5710542508714382421
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 278421.3,
+    "end_ms": 282816.0,
+    "duration_ms": 4394.6875,
+    "boundary_type": "Transitional",
+    "feature_hash": 9253631580174787432
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 282816.0,
+    "end_ms": 282837.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 282837.34,
+    "end_ms": 283562.66,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 2203389302660307648
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 283562.66,
+    "end_ms": 283584.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 283584.0,
+    "end_ms": 283605.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9302705798281723805
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 283605.34,
+    "end_ms": 423274.66,
+    "duration_ms": 139669.33,
+    "boundary_type": "Soft",
+    "feature_hash": 7525915377596942331
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 423274.66,
+    "end_ms": 424213.34,
+    "duration_ms": 938.6666,
+    "boundary_type": "Soft",
+    "feature_hash": 3094153114926874436
+  },
+  {
+    "source_file": "SW_21_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 424213.34,
+    "end_ms": 439452.8,
+    "duration_ms": 15239.511,
+    "boundary_type": "End",
+    "feature_hash": 3982695269969809180
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 58645.332,
+    "duration_ms": 58645.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 10900695364259850828
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 58645.332,
+    "end_ms": 59370.668,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 13777598903339959111
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 59370.668,
+    "end_ms": 59392.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 59392.0,
+    "end_ms": 59413.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13432064440271086587
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 59413.332,
+    "end_ms": 139306.67,
+    "duration_ms": 79893.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 5113296904227094489
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 139306.67,
+    "end_ms": 139328.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 13929320997657259696
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 139328.0,
+    "end_ms": 139349.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11047054801162295753
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 139349.33,
+    "end_ms": 140010.67,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 5642838502880593477
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 140010.67,
+    "end_ms": 140032.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 140032.0,
+    "end_ms": 140053.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3884282169009037167
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 140053.33,
+    "end_ms": 155306.67,
+    "duration_ms": 15253.333,
+    "boundary_type": "Hard",
+    "feature_hash": 3841415051622456829
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 155306.67,
+    "end_ms": 209877.33,
+    "duration_ms": 54570.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 15682484707841532777
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 209877.33,
+    "end_ms": 209898.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1398711313437134752
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 209898.67,
+    "end_ms": 216042.66,
+    "duration_ms": 6144.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 8951999394901802242
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 216042.66,
+    "end_ms": 216064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18294739927232872970
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 216064.0,
+    "end_ms": 216746.67,
+    "duration_ms": 682.6667,
+    "boundary_type": "Hard",
+    "feature_hash": 1824157342120695113
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 216746.67,
+    "end_ms": 216768.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 216768.0,
+    "end_ms": 216789.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5626906834148416678
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 216789.34,
+    "end_ms": 221312.0,
+    "duration_ms": 4522.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 17278746069495057715
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 221312.0,
+    "end_ms": 221333.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15616342842376308657
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 221333.33,
+    "end_ms": 221354.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10560106204426471024
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 221354.66,
+    "end_ms": 224362.67,
+    "duration_ms": 3008.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 15465350427285506016
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 224362.67,
+    "end_ms": 224384.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 998469680634707887
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 224384.0,
+    "end_ms": 228309.33,
+    "duration_ms": 3925.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 1907523986704142169
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 228309.33,
+    "end_ms": 228330.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 228330.67,
+    "end_ms": 228352.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 216841941236853028
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 228352.0,
+    "end_ms": 229098.66,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 4521036752502106513
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 229098.66,
+    "end_ms": 229120.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 229120.0,
+    "end_ms": 229141.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10252331778947164175
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 229141.33,
+    "end_ms": 229845.34,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5024576213170899066
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 229845.34,
+    "end_ms": 229866.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 229866.67,
+    "end_ms": 229888.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2248573727762164970
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 229888.0,
+    "end_ms": 248042.66,
+    "duration_ms": 18154.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 5448656296583953946
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 248042.66,
+    "end_ms": 248064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 248064.0,
+    "end_ms": 250261.34,
+    "duration_ms": 2197.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 3914379908626114095
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 250261.34,
+    "end_ms": 250282.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18169569875581460336
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 250282.67,
+    "end_ms": 410538.66,
+    "duration_ms": 160256.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3763649550019305810
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 410538.66,
+    "end_ms": 410560.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 410560.0,
+    "end_ms": 410581.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16881567579238767953
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 410581.34,
+    "end_ms": 411242.7,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 7538856448979305758
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 411242.7,
+    "end_ms": 411264.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 11024262916425889316
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 411264.0,
+    "end_ms": 411285.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 998469680634707887
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 411285.34,
+    "end_ms": 411925.3,
+    "duration_ms": 640.0,
+    "boundary_type": "Hard",
+    "feature_hash": 130180051109456112
+  },
+  {
+    "source_file": "SW_24_filtered.wav",
+    "segment_idx": 43,
+    "start_ms": 411925.3,
+    "end_ms": 455728.88,
+    "duration_ms": 43803.543,
+    "boundary_type": "End",
+    "feature_hash": 4343686687580689340
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 16063.989,
+    "duration_ms": 16063.989,
+    "boundary_type": "Soft",
+    "feature_hash": 7873403776934699763
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 16063.989,
+    "end_ms": 142592.0,
+    "duration_ms": 126528.01,
+    "boundary_type": "Transitional",
+    "feature_hash": 6849087164570114060
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 142592.0,
+    "end_ms": 145066.67,
+    "duration_ms": 2474.6665,
+    "boundary_type": "Soft",
+    "feature_hash": 18120863540161572267
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 145066.67,
+    "end_ms": 145088.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 145088.0,
+    "end_ms": 147584.0,
+    "duration_ms": 2496.0,
+    "boundary_type": "Soft",
+    "feature_hash": 9394429967820419966
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 147584.0,
+    "end_ms": 148992.0,
+    "duration_ms": 1408.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 13217031393187817138
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 148992.0,
+    "end_ms": 149013.34,
+    "duration_ms": 21.34375,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 149013.34,
+    "end_ms": 149034.67,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 7417078925507850903
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 149034.67,
+    "end_ms": 151552.0,
+    "duration_ms": 2517.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 1629392494882807621
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 151552.0,
+    "end_ms": 167744.0,
+    "duration_ms": 16191.999,
+    "boundary_type": "Transitional",
+    "feature_hash": 4654944791658998769
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 167744.0,
+    "end_ms": 168704.0,
+    "duration_ms": 960.0,
+    "boundary_type": "Soft",
+    "feature_hash": 6937849613333019494
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 168704.0,
+    "end_ms": 170432.0,
+    "duration_ms": 1728.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 830753972954123932
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 170432.0,
+    "end_ms": 175104.0,
+    "duration_ms": 4672.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 12927215809868723669
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 175104.0,
+    "end_ms": 175125.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7705443671575645868
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 175125.33,
+    "end_ms": 177130.64,
+    "duration_ms": 2005.3125,
+    "boundary_type": "Soft",
+    "feature_hash": 5660647699452872208
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 177130.64,
+    "end_ms": 181546.66,
+    "duration_ms": 4416.021,
+    "boundary_type": "Hard",
+    "feature_hash": 5283996980179870835
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 181546.66,
+    "end_ms": 182549.33,
+    "duration_ms": 1002.6667,
+    "boundary_type": "Soft",
+    "feature_hash": 4117688605183299487
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 182549.33,
+    "end_ms": 183424.0,
+    "duration_ms": 874.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 6782871072022670987
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 183424.0,
+    "end_ms": 368170.66,
+    "duration_ms": 184746.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 11496974596579920327
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 368170.66,
+    "end_ms": 368192.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 368192.0,
+    "end_ms": 368213.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6234342683711306708
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 368213.34,
+    "end_ms": 382229.34,
+    "duration_ms": 14016.0,
+    "boundary_type": "Soft",
+    "feature_hash": 11974443566404002024
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 382229.34,
+    "end_ms": 382250.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 382250.66,
+    "end_ms": 383018.7,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 677427550869808456
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 383018.7,
+    "end_ms": 384597.3,
+    "duration_ms": 1578.6667,
+    "boundary_type": "Soft",
+    "feature_hash": 4710334694954873664
+  },
+  {
+    "source_file": "SW_22_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 384597.3,
+    "end_ms": 455728.88,
+    "duration_ms": 71131.54,
+    "boundary_type": "End",
+    "feature_hash": 11768171417086025180
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 36266.668,
+    "duration_ms": 36266.668,
+    "boundary_type": "Hard",
+    "feature_hash": 13461959413611140950
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 36266.668,
+    "end_ms": 126293.336,
+    "duration_ms": 90026.664,
+    "boundary_type": "Hard",
+    "feature_hash": 9849821188130782864
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 126293.336,
+    "end_ms": 142954.67,
+    "duration_ms": 16661.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15692365675682309076
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 142954.67,
+    "end_ms": 142976.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7415675580714976739
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 142976.0,
+    "end_ms": 203050.66,
+    "duration_ms": 60074.664,
+    "boundary_type": "Hard",
+    "feature_hash": 12320391937594281119
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 203050.66,
+    "end_ms": 210496.0,
+    "duration_ms": 7445.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 11377049020271388246
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 210496.0,
+    "end_ms": 210517.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 210517.33,
+    "end_ms": 210538.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3742911367134049315
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 210538.67,
+    "end_ms": 217856.0,
+    "duration_ms": 7317.333,
+    "boundary_type": "Hard",
+    "feature_hash": 9565444627691546945
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 217856.0,
+    "end_ms": 242816.0,
+    "duration_ms": 24960.0,
+    "boundary_type": "Hard",
+    "feature_hash": 7499675177277444735
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 242816.0,
+    "end_ms": 242837.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 242837.33,
+    "end_ms": 243136.0,
+    "duration_ms": 298.66666,
+    "boundary_type": "Transitional",
+    "feature_hash": 1417625434418199903
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 243136.0,
+    "end_ms": 275626.7,
+    "duration_ms": 32490.688,
+    "boundary_type": "Hard",
+    "feature_hash": 14285750541127887114
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 275626.7,
+    "end_ms": 302272.0,
+    "duration_ms": 26645.312,
+    "boundary_type": "Hard",
+    "feature_hash": 4905508553548906531
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 302272.0,
+    "end_ms": 320917.3,
+    "duration_ms": 18645.312,
+    "boundary_type": "Transitional",
+    "feature_hash": 17370854520894349172
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 320917.3,
+    "end_ms": 329728.0,
+    "duration_ms": 8810.6875,
+    "boundary_type": "Hard",
+    "feature_hash": 16915770626433428960
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 329728.0,
+    "end_ms": 331136.0,
+    "duration_ms": 1408.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 9756156367520108153
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 331136.0,
+    "end_ms": 331157.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 331157.3,
+    "end_ms": 333525.34,
+    "duration_ms": 2368.0208,
+    "boundary_type": "Hard",
+    "feature_hash": 10313525939947813113
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 333525.34,
+    "end_ms": 338304.0,
+    "duration_ms": 4778.6665,
+    "boundary_type": "Hard",
+    "feature_hash": 10764165460949670703
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 338304.0,
+    "end_ms": 348202.66,
+    "duration_ms": 9898.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 6236301208234030579
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 348202.66,
+    "end_ms": 348224.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 348224.0,
+    "end_ms": 416341.34,
+    "duration_ms": 68117.336,
+    "boundary_type": "Hard",
+    "feature_hash": 13556171535261140017
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 416341.34,
+    "end_ms": 417130.7,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9658836329619916329
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 417130.7,
+    "end_ms": 417152.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 417152.0,
+    "end_ms": 417920.0,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6860970049030697960
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 417920.0,
+    "end_ms": 417941.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9320154795667402340
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 417941.34,
+    "end_ms": 424362.66,
+    "duration_ms": 6421.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 9690403359910260966
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 424362.66,
+    "end_ms": 424384.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 424384.0,
+    "end_ms": 425130.7,
+    "duration_ms": 746.6667,
+    "boundary_type": "Hard",
+    "feature_hash": 3273655945950251709
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 425130.7,
+    "end_ms": 425152.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10208728875365930315
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 425152.0,
+    "end_ms": 425173.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 3503387548888659157
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 425173.34,
+    "end_ms": 431850.7,
+    "duration_ms": 6677.3335,
+    "boundary_type": "Hard",
+    "feature_hash": 146616129111450678
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 431850.7,
+    "end_ms": 431872.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5520198847384730254
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 431872.0,
+    "end_ms": 437205.3,
+    "duration_ms": 5333.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 14700326394322182214
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 437205.3,
+    "end_ms": 437226.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 3078770607231123020
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 437226.66,
+    "end_ms": 437248.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5520198847384730254
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 437248.0,
+    "end_ms": 442709.3,
+    "duration_ms": 5461.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 2144550371975299030
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 442709.3,
+    "end_ms": 442730.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 442730.66,
+    "end_ms": 442752.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5520198847384730254
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 442752.0,
+    "end_ms": 445589.3,
+    "duration_ms": 2837.3335,
+    "boundary_type": "Hard",
+    "feature_hash": 13457329610003361455
+  },
+  {
+    "source_file": "SW_34_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 445589.3,
+    "end_ms": 455728.88,
+    "duration_ms": 10139.542,
+    "boundary_type": "End",
+    "feature_hash": 4720353804020135690
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 15210.667,
+    "duration_ms": 15210.667,
+    "boundary_type": "Transitional",
+    "feature_hash": 1434028704752349918
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 15210.667,
+    "end_ms": 15232.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8780134482063118908
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 15232.0,
+    "end_ms": 16298.666,
+    "duration_ms": 1066.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 3562111762943475784
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 16298.666,
+    "end_ms": 16320.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9748327407872988964
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 16320.0,
+    "end_ms": 23616.0,
+    "duration_ms": 7296.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 11715595199332286016
+  },
+  {
+    "source_file": "SW_39_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 23616.0,
+    "end_ms": 276692.53,
+    "duration_ms": 253076.53,
+    "boundary_type": "End",
+    "feature_hash": 1408695854178882911
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 220117.34,
+    "duration_ms": 220117.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 17436781674210442327
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 220117.34,
+    "end_ms": 223317.34,
+    "duration_ms": 3200.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 13926898517851787594
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 223317.34,
+    "end_ms": 224853.33,
+    "duration_ms": 1536.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6839850014498788857
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 224853.33,
+    "end_ms": 225600.0,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 14039152596032987514
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 225600.0,
+    "end_ms": 226346.67,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 14039152596032987514
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 226346.67,
+    "end_ms": 230784.0,
+    "duration_ms": 4437.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17793832168591019164
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 230784.0,
+    "end_ms": 347306.66,
+    "duration_ms": 116522.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 5323085842166920438
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 347306.66,
+    "end_ms": 347328.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4540804929688875951
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 347328.0,
+    "end_ms": 437888.0,
+    "duration_ms": 90560.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3815361042075971843
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 437888.0,
+    "end_ms": 438549.34,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 3876010279266315593
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 438549.34,
+    "end_ms": 439232.0,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 18098703209999720276
+  },
+  {
+    "source_file": "SW_9_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 439232.0,
+    "end_ms": 455728.88,
+    "duration_ms": 16496.875,
+    "boundary_type": "End",
+    "feature_hash": 14204545156077525984
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 50581.332,
+    "duration_ms": 50581.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 17049320756470076331
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 50581.332,
+    "end_ms": 50602.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 50602.664,
+    "end_ms": 50624.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 50624.0,
+    "end_ms": 51328.0,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 14322396710456750183
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 51328.0,
+    "end_ms": 51349.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 51349.336,
+    "end_ms": 51370.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 51370.668,
+    "end_ms": 52821.336,
+    "duration_ms": 1450.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 7032527087089771678
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 52821.336,
+    "end_ms": 68821.336,
+    "duration_ms": 16000.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 949851425656986585
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 68821.336,
+    "end_ms": 68842.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 68842.664,
+    "end_ms": 69546.67,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 16277053424733541949
+  },
+  {
+    "source_file": "SW_18_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 69546.67,
+    "end_ms": 81380.16,
+    "duration_ms": 11833.489,
+    "boundary_type": "End",
+    "feature_hash": 2845158961640601723
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 67349.336,
+    "duration_ms": 67349.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 8224038893218621978
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 67349.336,
+    "end_ms": 90965.33,
+    "duration_ms": 23616.0,
+    "boundary_type": "Hard",
+    "feature_hash": 9410365735465486282
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 90965.33,
+    "end_ms": 90986.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 90986.664,
+    "end_ms": 206698.67,
+    "duration_ms": 115712.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 14354495820498666121
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 206698.67,
+    "end_ms": 206720.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 206720.0,
+    "end_ms": 209536.0,
+    "duration_ms": 2816.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17520184097401282575
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 209536.0,
+    "end_ms": 209557.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 209557.33,
+    "end_ms": 335850.7,
+    "duration_ms": 126293.36,
+    "boundary_type": "Transitional",
+    "feature_hash": 13599505395093907129
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 335850.7,
+    "end_ms": 341653.3,
+    "duration_ms": 5802.625,
+    "boundary_type": "Transitional",
+    "feature_hash": 4861562009142625902
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 341653.3,
+    "end_ms": 341674.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 341674.66,
+    "end_ms": 342442.66,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 15288395087577143819
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 342442.66,
+    "end_ms": 342464.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13325993368921438097
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 342464.0,
+    "end_ms": 343232.0,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 594780760732862254
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 343232.0,
+    "end_ms": 343253.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 14648098017777056764
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 343253.3,
+    "end_ms": 343274.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 343274.66,
+    "end_ms": 344021.34,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 16760641288964760643
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 344021.34,
+    "end_ms": 344042.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12277053350683589550
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 344042.66,
+    "end_ms": 344064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 344064.0,
+    "end_ms": 344810.66,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 8526678237155247496
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 344810.66,
+    "end_ms": 344832.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12277053350683589550
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 344832.0,
+    "end_ms": 344853.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 344853.34,
+    "end_ms": 345578.7,
+    "duration_ms": 725.3542,
+    "boundary_type": "Transitional",
+    "feature_hash": 9201731892296403366
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 345578.7,
+    "end_ms": 345600.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 345600.0,
+    "end_ms": 345621.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 345621.34,
+    "end_ms": 365141.3,
+    "duration_ms": 19520.0,
+    "boundary_type": "Hard",
+    "feature_hash": 7176776553414194588
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 365141.3,
+    "end_ms": 365162.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18270693499309309777
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 365162.66,
+    "end_ms": 366058.66,
+    "duration_ms": 896.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2475956507256960157
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 366058.66,
+    "end_ms": 366080.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 366080.0,
+    "end_ms": 366101.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13920831224383305080
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 366101.3,
+    "end_ms": 367018.7,
+    "duration_ms": 917.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 12297009164416047997
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 367018.7,
+    "end_ms": 367040.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 367040.0,
+    "end_ms": 367872.0,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 10019115929220642989
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 367872.0,
+    "end_ms": 367893.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 367893.34,
+    "end_ms": 368725.34,
+    "duration_ms": 832.0,
+    "boundary_type": "Hard",
+    "feature_hash": 13907976360886553893
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 368725.34,
+    "end_ms": 451392.0,
+    "duration_ms": 82666.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 6064195006064501557
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 451392.0,
+    "end_ms": 451413.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_37_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 451413.34,
+    "end_ms": 455728.88,
+    "duration_ms": 4315.5415,
+    "boundary_type": "End",
+    "feature_hash": 11492251165948476924
+  },
+  {
+    "source_file": "SW_12_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 237056.0,
+    "duration_ms": 237056.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6113277237374906352
+  },
+  {
+    "source_file": "SW_12_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 237056.0,
+    "end_ms": 237077.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_12_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 237077.33,
+    "end_ms": 379712.0,
+    "duration_ms": 142634.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 1129067929416718907
+  },
+  {
+    "source_file": "SW_12_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 379712.0,
+    "end_ms": 455728.88,
+    "duration_ms": 76016.875,
+    "boundary_type": "End",
+    "feature_hash": 6729412545653173775
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 43050.668,
+    "duration_ms": 43050.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 11937864478759103383
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 43050.668,
+    "end_ms": 43733.332,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 6050362559241906464
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 43733.332,
+    "end_ms": 320021.34,
+    "duration_ms": 276288.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17242831783353118407
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 320021.34,
+    "end_ms": 320042.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 320042.66,
+    "end_ms": 320064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2283384172942771612
+  },
+  {
+    "source_file": "SW_19_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 320064.0,
+    "end_ms": 439452.8,
+    "duration_ms": 119388.84,
+    "boundary_type": "End",
+    "feature_hash": 17569830575762671741
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 146005.34,
+    "duration_ms": 146005.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 6539190672846253749
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 146005.34,
+    "end_ms": 146026.67,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 660428063976784914
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 146026.67,
+    "end_ms": 146752.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 10607663798161125740
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 146752.0,
+    "end_ms": 146773.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4088523198371810708
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 146773.33,
+    "end_ms": 147285.34,
+    "duration_ms": 512.0104,
+    "boundary_type": "Transitional",
+    "feature_hash": 8849030513215947992
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 147285.34,
+    "end_ms": 147306.67,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 660428063976784914
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 147306.67,
+    "end_ms": 150677.34,
+    "duration_ms": 3370.677,
+    "boundary_type": "Transitional",
+    "feature_hash": 15503157913352542936
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 150677.34,
+    "end_ms": 151381.33,
+    "duration_ms": 703.98956,
+    "boundary_type": "Transitional",
+    "feature_hash": 7810950334796551987
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 151381.33,
+    "end_ms": 151402.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 151402.67,
+    "end_ms": 151424.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9120525556672823289
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 151424.0,
+    "end_ms": 240789.34,
+    "duration_ms": 89365.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 7512831520339250789
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 240789.34,
+    "end_ms": 240810.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3731120904099227908
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 240810.67,
+    "end_ms": 248597.33,
+    "duration_ms": 7786.667,
+    "boundary_type": "Transitional",
+    "feature_hash": 1403726862936944627
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 248597.33,
+    "end_ms": 248618.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5392590374291440862
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 248618.67,
+    "end_ms": 249344.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 10607663798161125740
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 249344.0,
+    "end_ms": 249365.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2874295236190974316
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 249365.33,
+    "end_ms": 272554.66,
+    "duration_ms": 23189.332,
+    "boundary_type": "Hard",
+    "feature_hash": 13978378113202144341
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 272554.66,
+    "end_ms": 272576.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 272576.0,
+    "end_ms": 272597.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 4999720815505422846
+  },
+  {
+    "source_file": "SW_32_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 272597.3,
+    "end_ms": 455728.88,
+    "duration_ms": 183131.56,
+    "boundary_type": "End",
+    "feature_hash": 11393064473922723527
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 44629.332,
+    "duration_ms": 44629.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 7201518510373825510
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 44629.332,
+    "end_ms": 44650.656,
+    "duration_ms": 21.322918,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 44650.656,
+    "end_ms": 46314.668,
+    "duration_ms": 1664.0104,
+    "boundary_type": "Transitional",
+    "feature_hash": 12729678307982061776
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 46314.668,
+    "end_ms": 46336.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 46336.0,
+    "end_ms": 46357.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 46357.336,
+    "end_ms": 47168.0,
+    "duration_ms": 810.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 3933280534319906692
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 47168.0,
+    "end_ms": 48000.0,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17006300383681559819
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 48000.0,
+    "end_ms": 48021.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 48021.332,
+    "end_ms": 48832.0,
+    "duration_ms": 810.6667,
+    "boundary_type": "Hard",
+    "feature_hash": 7230975314502065638
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 48832.0,
+    "end_ms": 48853.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 48853.332,
+    "end_ms": 49749.332,
+    "duration_ms": 896.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17167164690977902524
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 49749.332,
+    "end_ms": 49770.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 49770.668,
+    "end_ms": 53056.0,
+    "duration_ms": 3285.3335,
+    "boundary_type": "Hard",
+    "feature_hash": 16025685412877391988
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 53056.0,
+    "end_ms": 72234.664,
+    "duration_ms": 19178.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 11864180571908446722
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 72234.664,
+    "end_ms": 72256.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 72256.0,
+    "end_ms": 72277.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18273173849476547415
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 72277.336,
+    "end_ms": 72981.32,
+    "duration_ms": 703.98956,
+    "boundary_type": "Transitional",
+    "feature_hash": 8012700194153330188
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 72981.32,
+    "end_ms": 73002.67,
+    "duration_ms": 21.34375,
+    "boundary_type": "Transitional",
+    "feature_hash": 12676320264282671801
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 73002.67,
+    "end_ms": 86464.0,
+    "duration_ms": 13461.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 14142040623421294606
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 86464.0,
+    "end_ms": 87210.67,
+    "duration_ms": 746.6667,
+    "boundary_type": "Hard",
+    "feature_hash": 14770002813177299844
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 87210.67,
+    "end_ms": 87232.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3742911367134049315
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 87232.0,
+    "end_ms": 87253.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 87253.336,
+    "end_ms": 87274.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 87274.664,
+    "end_ms": 94058.67,
+    "duration_ms": 6784.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17181008778541914975
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 94058.67,
+    "end_ms": 94080.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 94080.0,
+    "end_ms": 143914.67,
+    "duration_ms": 49834.668,
+    "boundary_type": "Hard",
+    "feature_hash": 16382874303084156772
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 143914.67,
+    "end_ms": 150485.34,
+    "duration_ms": 6570.6772,
+    "boundary_type": "Hard",
+    "feature_hash": 9846164214517631765
+  },
+  {
+    "source_file": "SW_6_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 150485.34,
+    "end_ms": 439452.8,
+    "duration_ms": 288967.5,
+    "boundary_type": "End",
+    "feature_hash": 14987711704512969010
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 15829.333,
+    "duration_ms": 15829.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 16507292576537308935
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 15829.333,
+    "end_ms": 15850.667,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2143786237312099775
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 15850.667,
+    "end_ms": 114965.33,
+    "duration_ms": 99114.67,
+    "boundary_type": "Hard",
+    "feature_hash": 13234508531496132618
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 114965.33,
+    "end_ms": 114986.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18193658880924428592
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 114986.664,
+    "end_ms": 329450.66,
+    "duration_ms": 214464.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6999728955059885809
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 329450.66,
+    "end_ms": 329472.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_14_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 329472.0,
+    "end_ms": 455728.88,
+    "duration_ms": 126256.875,
+    "boundary_type": "End",
+    "feature_hash": 5258263002908592113
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 4949.3228,
+    "duration_ms": 4949.3228,
+    "boundary_type": "Transitional",
+    "feature_hash": 7175768923907345996
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 4949.3228,
+    "end_ms": 4970.667,
+    "duration_ms": 21.34375,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 4970.667,
+    "end_ms": 4992.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9302705798281723805
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 4992.0,
+    "end_ms": 77952.0,
+    "duration_ms": 72960.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 4347280277276458622
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 77952.0,
+    "end_ms": 81194.664,
+    "duration_ms": 3242.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 457015703453528063
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 81194.664,
+    "end_ms": 81216.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17092302916930420884
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 81216.0,
+    "end_ms": 101610.664,
+    "duration_ms": 20394.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 10692658216917461969
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 101610.664,
+    "end_ms": 101632.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 101632.0,
+    "end_ms": 101653.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 101653.336,
+    "end_ms": 101674.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17575700947258555733
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 101674.664,
+    "end_ms": 102421.336,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 3485686270270176358
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 102421.336,
+    "end_ms": 102442.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13002423589366904230
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 102442.664,
+    "end_ms": 106965.33,
+    "duration_ms": 4522.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 4255366119333433911
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 106965.33,
+    "end_ms": 106986.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2283384172942771612
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 106986.664,
+    "end_ms": 107008.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 107008.0,
+    "end_ms": 110293.336,
+    "duration_ms": 3285.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 936155721036273674
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 110293.336,
+    "end_ms": 110314.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16018166630046282313
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 110314.664,
+    "end_ms": 110848.0,
+    "duration_ms": 533.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7634937887525792660
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 110848.0,
+    "end_ms": 110869.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 110869.33,
+    "end_ms": 111082.664,
+    "duration_ms": 213.33334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8759425114864361333
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 111082.664,
+    "end_ms": 111722.664,
+    "duration_ms": 640.0,
+    "boundary_type": "Hard",
+    "feature_hash": 9882326130293769965
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 111722.664,
+    "end_ms": 111744.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17092302916930420884
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 111744.0,
+    "end_ms": 125034.67,
+    "duration_ms": 13290.667,
+    "boundary_type": "Transitional",
+    "feature_hash": 8401215458959832996
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 125034.67,
+    "end_ms": 125056.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2283384172942771612
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 125056.0,
+    "end_ms": 156202.67,
+    "duration_ms": 31146.668,
+    "boundary_type": "Hard",
+    "feature_hash": 10086530652469032603
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 156202.67,
+    "end_ms": 156224.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 2143786237312099775
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 156224.0,
+    "end_ms": 157034.67,
+    "duration_ms": 810.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 16753788291218343595
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 157034.67,
+    "end_ms": 157824.0,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2519039926632742789
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 157824.0,
+    "end_ms": 158592.0,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 14745995041098508997
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 158592.0,
+    "end_ms": 158613.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 18193658880924428592
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 158613.33,
+    "end_ms": 158634.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13920831224383305080
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 158634.67,
+    "end_ms": 159360.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 10290766334610655240
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 159360.0,
+    "end_ms": 159381.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 159381.33,
+    "end_ms": 159402.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 159402.67,
+    "end_ms": 159424.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 159424.0,
+    "end_ms": 159445.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12337242015063006443
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 159445.33,
+    "end_ms": 169792.0,
+    "duration_ms": 10346.666,
+    "boundary_type": "Hard",
+    "feature_hash": 9147838859922804554
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 169792.0,
+    "end_ms": 190890.67,
+    "duration_ms": 21098.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 1590383110342465705
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 190890.67,
+    "end_ms": 195797.33,
+    "duration_ms": 4906.667,
+    "boundary_type": "Transitional",
+    "feature_hash": 14659903537981482264
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 195797.33,
+    "end_ms": 195818.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 195818.67,
+    "end_ms": 195840.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 195840.0,
+    "end_ms": 196672.0,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3304399016013934324
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 196672.0,
+    "end_ms": 196693.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10903172211006615780
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 43,
+    "start_ms": 196693.33,
+    "end_ms": 196842.67,
+    "duration_ms": 149.33333,
+    "boundary_type": "Transitional",
+    "feature_hash": 1922691400270010933
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 44,
+    "start_ms": 196842.67,
+    "end_ms": 201408.0,
+    "duration_ms": 4565.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 17259177574306261472
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 45,
+    "start_ms": 201408.0,
+    "end_ms": 201429.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7705443671575645868
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 46,
+    "start_ms": 201429.34,
+    "end_ms": 202176.0,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 13703254359669372017
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 47,
+    "start_ms": 202176.0,
+    "end_ms": 202197.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 48,
+    "start_ms": 202197.33,
+    "end_ms": 204330.67,
+    "duration_ms": 2133.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 16182339629411078338
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 49,
+    "start_ms": 204330.67,
+    "end_ms": 204352.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 50,
+    "start_ms": 204352.0,
+    "end_ms": 204373.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8105025481098923532
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 51,
+    "start_ms": 204373.34,
+    "end_ms": 208810.67,
+    "duration_ms": 4437.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 2464370289779559052
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 52,
+    "start_ms": 208810.67,
+    "end_ms": 208832.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8841715408505350688
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 53,
+    "start_ms": 208832.0,
+    "end_ms": 209066.67,
+    "duration_ms": 234.66666,
+    "boundary_type": "Hard",
+    "feature_hash": 3429385459981715851
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 54,
+    "start_ms": 209066.67,
+    "end_ms": 209088.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5449519718476553029
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 55,
+    "start_ms": 209088.0,
+    "end_ms": 209749.33,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 15265077678280285338
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 56,
+    "start_ms": 209749.33,
+    "end_ms": 209770.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 57,
+    "start_ms": 209770.66,
+    "end_ms": 209920.0,
+    "duration_ms": 149.33333,
+    "boundary_type": "Transitional",
+    "feature_hash": 492202095961152800
+  },
+  {
+    "source_file": "SW_38_filtered.wav",
+    "segment_idx": 58,
+    "start_ms": 209920.0,
+    "end_ms": 309244.6,
+    "duration_ms": 99324.59,
+    "boundary_type": "End",
+    "feature_hash": 11335151947650140194
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 13952.0,
+    "duration_ms": 13952.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3831284418901230884
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 13952.0,
+    "end_ms": 13973.333,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 13973.333,
+    "end_ms": 13994.667,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11851507496831937826
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 13994.667,
+    "end_ms": 87829.32,
+    "duration_ms": 73834.66,
+    "boundary_type": "Soft",
+    "feature_hash": 8716951768058923092
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 87829.32,
+    "end_ms": 174250.67,
+    "duration_ms": 86421.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 16838913039648240221
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 174250.67,
+    "end_ms": 235242.66,
+    "duration_ms": 60992.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3218403410821287173
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 235242.66,
+    "end_ms": 235264.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 235264.0,
+    "end_ms": 235285.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 5449519718476553029
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 235285.34,
+    "end_ms": 237717.33,
+    "duration_ms": 2432.0,
+    "boundary_type": "Soft",
+    "feature_hash": 14180209903180215106
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 237717.33,
+    "end_ms": 239914.67,
+    "duration_ms": 2197.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 12107132914409454988
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 239914.67,
+    "end_ms": 239936.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 239936.0,
+    "end_ms": 239957.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11464746719954087527
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 239957.34,
+    "end_ms": 241813.34,
+    "duration_ms": 1856.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5389481086565981245
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 241813.34,
+    "end_ms": 242538.67,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 11960617234231982576
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 242538.67,
+    "end_ms": 242560.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 242560.0,
+    "end_ms": 242581.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 242581.33,
+    "end_ms": 242602.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6343492290035758087
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 242602.66,
+    "end_ms": 242688.0,
+    "duration_ms": 85.333336,
+    "boundary_type": "Transitional",
+    "feature_hash": 5448424969039187176
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 242688.0,
+    "end_ms": 244224.0,
+    "duration_ms": 1536.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6229649850105234096
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 244224.0,
+    "end_ms": 244245.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5449519718476553029
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 244245.33,
+    "end_ms": 244266.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4921074146558454662
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 244266.66,
+    "end_ms": 248064.0,
+    "duration_ms": 3797.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 9729884120120281448
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 248064.0,
+    "end_ms": 248106.67,
+    "duration_ms": 42.666668,
+    "boundary_type": "Transitional",
+    "feature_hash": 8469364149683410510
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 248106.67,
+    "end_ms": 279957.34,
+    "duration_ms": 31850.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 17787413613464598694
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 279957.34,
+    "end_ms": 279978.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 279978.66,
+    "end_ms": 280000.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14169988294457933653
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 280000.0,
+    "end_ms": 280682.7,
+    "duration_ms": 682.6875,
+    "boundary_type": "Transitional",
+    "feature_hash": 3056522089861245578
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 280682.7,
+    "end_ms": 280704.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 280704.0,
+    "end_ms": 280725.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8841715408505350688
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 280725.34,
+    "end_ms": 284330.66,
+    "duration_ms": 3605.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 12876439931572481103
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 284330.66,
+    "end_ms": 284352.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13929320997657259696
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 284352.0,
+    "end_ms": 334378.66,
+    "duration_ms": 50026.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 7136287748219500948
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 334378.66,
+    "end_ms": 334400.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17774736994791613428
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 334400.0,
+    "end_ms": 392021.34,
+    "duration_ms": 57621.336,
+    "boundary_type": "Hard",
+    "feature_hash": 12752430804309708042
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 392021.34,
+    "end_ms": 392042.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 392042.66,
+    "end_ms": 392064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9253360098659504035
+  },
+  {
+    "source_file": "SW_31_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 392064.0,
+    "end_ms": 455728.88,
+    "duration_ms": 63664.875,
+    "boundary_type": "End",
+    "feature_hash": 8045157114900708410
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 4224.0,
+    "duration_ms": 4224.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294782978785706506
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 4224.0,
+    "end_ms": 65664.0,
+    "duration_ms": 61440.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2418754043577284329
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 65664.0,
+    "end_ms": 65685.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 65685.336,
+    "end_ms": 65706.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 65706.664,
+    "end_ms": 80810.67,
+    "duration_ms": 15104.0,
+    "boundary_type": "Hard",
+    "feature_hash": 13655233489773436098
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 80810.67,
+    "end_ms": 81024.0,
+    "duration_ms": 213.33334,
+    "boundary_type": "Hard",
+    "feature_hash": 14245770279090010032
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 81024.0,
+    "end_ms": 81045.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2143786237312099775
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 81045.336,
+    "end_ms": 337813.3,
+    "duration_ms": 256767.97,
+    "boundary_type": "Transitional",
+    "feature_hash": 6064373729939163908
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 337813.3,
+    "end_ms": 337834.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Transitional",
+    "feature_hash": 1225263372541704896
+  },
+  {
+    "source_file": "SW_11_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 337834.66,
+    "end_ms": 439452.8,
+    "duration_ms": 101618.18,
+    "boundary_type": "End",
+    "feature_hash": 3216183021166172700
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 27946.666,
+    "duration_ms": 27946.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 13673078322034392568
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 27946.666,
+    "end_ms": 120448.0,
+    "duration_ms": 92501.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 15080585614427252852
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 120448.0,
+    "end_ms": 120469.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 120469.33,
+    "end_ms": 120490.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2987583370267128582
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 120490.67,
+    "end_ms": 128320.01,
+    "duration_ms": 7829.3438,
+    "boundary_type": "Transitional",
+    "feature_hash": 18434442573082345959
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 128320.01,
+    "end_ms": 128341.336,
+    "duration_ms": 21.322918,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 128341.336,
+    "end_ms": 128362.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6475840069152079128
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 128362.67,
+    "end_ms": 128384.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 128384.0,
+    "end_ms": 129216.0,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5310878719134630855
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 129216.0,
+    "end_ms": 129237.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 129237.336,
+    "end_ms": 129258.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8643571921739128436
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 129258.664,
+    "end_ms": 132736.0,
+    "duration_ms": 3477.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 1912456608503968716
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 132736.0,
+    "end_ms": 132757.34,
+    "duration_ms": 21.34375,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 132757.34,
+    "end_ms": 132778.67,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 7415675580714976739
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 132778.67,
+    "end_ms": 133482.67,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5024576213170899066
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 133482.67,
+    "end_ms": 133504.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9120525556672823289
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 133504.0,
+    "end_ms": 133525.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6234342683711306708
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 133525.33,
+    "end_ms": 197312.0,
+    "duration_ms": 63786.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 2581346531041818744
+  },
+  {
+    "source_file": "SW_25_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 197312.0,
+    "end_ms": 455728.88,
+    "duration_ms": 258416.88,
+    "boundary_type": "End",
+    "feature_hash": 11239520337055652132
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 60032.0,
+    "duration_ms": 60032.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2156044755943949503
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 60032.0,
+    "end_ms": 60053.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18270693499309309777
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 60053.332,
+    "end_ms": 88234.664,
+    "duration_ms": 28181.334,
+    "boundary_type": "Hard",
+    "feature_hash": 1039501685292550807
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 88234.664,
+    "end_ms": 166165.33,
+    "duration_ms": 77930.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 10135458594540129657
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 166165.33,
+    "end_ms": 166186.66,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 5465674525873335485
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 166186.66,
+    "end_ms": 220544.0,
+    "duration_ms": 54357.344,
+    "boundary_type": "Transitional",
+    "feature_hash": 14709263976092233089
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 220544.0,
+    "end_ms": 220565.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 220565.34,
+    "end_ms": 264576.0,
+    "duration_ms": 44010.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 17200216062930274849
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 264576.0,
+    "end_ms": 264597.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 7705443671575645868
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 264597.3,
+    "end_ms": 293440.0,
+    "duration_ms": 28842.688,
+    "boundary_type": "Hard",
+    "feature_hash": 3850468777606666815
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 293440.0,
+    "end_ms": 293461.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 293461.34,
+    "end_ms": 293482.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10208728875365930315
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 293482.66,
+    "end_ms": 295360.0,
+    "duration_ms": 1877.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 2197214562439979515
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 295360.0,
+    "end_ms": 295381.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5045280824201180253
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 295381.34,
+    "end_ms": 304661.34,
+    "duration_ms": 9280.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 1686817229569889451
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 304661.34,
+    "end_ms": 306944.0,
+    "duration_ms": 2282.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 2167943500740678206
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 306944.0,
+    "end_ms": 306965.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5465674525873335485
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 306965.34,
+    "end_ms": 383530.66,
+    "duration_ms": 76565.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 13163610818871524415
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 383530.66,
+    "end_ms": 383552.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 383552.0,
+    "end_ms": 402602.66,
+    "duration_ms": 19050.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 13349381368620036326
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 402602.66,
+    "end_ms": 402624.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 402624.0,
+    "end_ms": 403328.0,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6826681041434568862
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 403328.0,
+    "end_ms": 436885.34,
+    "duration_ms": 33557.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 15158693202039945726
+  },
+  {
+    "source_file": "SW_36_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 436885.34,
+    "end_ms": 455728.88,
+    "duration_ms": 18843.543,
+    "boundary_type": "End",
+    "feature_hash": 11597106415794031912
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 262933.3,
+    "duration_ms": 262933.3,
+    "boundary_type": "Transitional",
+    "feature_hash": 14239640381473234848
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 262933.3,
+    "end_ms": 284288.0,
+    "duration_ms": 21354.688,
+    "boundary_type": "Transitional",
+    "feature_hash": 4131557323954376159
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 284288.0,
+    "end_ms": 284309.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 4929801586086185151
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 284309.3,
+    "end_ms": 374272.0,
+    "duration_ms": 89962.69,
+    "boundary_type": "Transitional",
+    "feature_hash": 6119213698060522660
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 374272.0,
+    "end_ms": 374954.7,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 17076114213313487335
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 374954.7,
+    "end_ms": 374976.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 644778006631530807
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 374976.0,
+    "end_ms": 391253.3,
+    "duration_ms": 16277.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9790489372267953604
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 391253.3,
+    "end_ms": 391274.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5492706312014058562
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 391274.66,
+    "end_ms": 392256.0,
+    "duration_ms": 981.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 14741344042903804503
+  },
+  {
+    "source_file": "SW_2_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 392256.0,
+    "end_ms": 455728.88,
+    "duration_ms": 63472.875,
+    "boundary_type": "End",
+    "feature_hash": 3676417301558934414
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 19306.668,
+    "duration_ms": 19306.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 4088987147838692030
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 19306.668,
+    "end_ms": 19328.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14360402300405244541
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 19328.0,
+    "end_ms": 20757.334,
+    "duration_ms": 1429.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11491414878604642855
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 20757.334,
+    "end_ms": 20778.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6270698441784514634
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 20778.668,
+    "end_ms": 54634.668,
+    "duration_ms": 33856.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 16042477667362485819
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 54634.668,
+    "end_ms": 63040.0,
+    "duration_ms": 8405.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15203697557491639956
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 63040.0,
+    "end_ms": 63061.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14360402300405244541
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 63061.332,
+    "end_ms": 72512.0,
+    "duration_ms": 9450.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 11949668948382019295
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 72512.0,
+    "end_ms": 72533.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 72533.336,
+    "end_ms": 78741.336,
+    "duration_ms": 6208.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 10096508476113514606
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 78741.336,
+    "end_ms": 78762.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3503387548888659157
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 78762.664,
+    "end_ms": 78784.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 78784.0,
+    "end_ms": 79445.336,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 13421009077571998306
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 79445.336,
+    "end_ms": 79466.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 79466.664,
+    "end_ms": 83712.0,
+    "duration_ms": 4245.333,
+    "boundary_type": "Hard",
+    "feature_hash": 13401840171060348682
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 83712.0,
+    "end_ms": 83733.32,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 83733.32,
+    "end_ms": 85184.0,
+    "duration_ms": 1450.677,
+    "boundary_type": "Transitional",
+    "feature_hash": 4342541289777758175
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 85184.0,
+    "end_ms": 89130.68,
+    "duration_ms": 3946.677,
+    "boundary_type": "Hard",
+    "feature_hash": 5906243897849328711
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 89130.68,
+    "end_ms": 89152.0,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 89152.0,
+    "end_ms": 98602.67,
+    "duration_ms": 9450.666,
+    "boundary_type": "Hard",
+    "feature_hash": 12110114943287954333
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 98602.67,
+    "end_ms": 99370.664,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6860970049030697960
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 99370.664,
+    "end_ms": 99392.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 99392.0,
+    "end_ms": 105685.336,
+    "duration_ms": 6293.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 18411513118772261688
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 105685.336,
+    "end_ms": 105706.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 16074517899723902332
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 105706.664,
+    "end_ms": 106474.67,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 13914810651233162322
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 106474.67,
+    "end_ms": 108992.0,
+    "duration_ms": 2517.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17205130352647522573
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 108992.0,
+    "end_ms": 109013.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12676320264282671801
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 109013.336,
+    "end_ms": 109034.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 13929320997657259696
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 109034.67,
+    "end_ms": 109866.67,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 16157787464356723558
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 109866.67,
+    "end_ms": 109888.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 109888.0,
+    "end_ms": 281685.34,
+    "duration_ms": 171797.33,
+    "boundary_type": "Hard",
+    "feature_hash": 4162384932671640147
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 281685.34,
+    "end_ms": 293098.66,
+    "duration_ms": 11413.333,
+    "boundary_type": "Hard",
+    "feature_hash": 658208096197495020
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 293098.66,
+    "end_ms": 326400.0,
+    "duration_ms": 33301.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 5448050834249154429
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 326400.0,
+    "end_ms": 326421.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 326421.3,
+    "end_ms": 335978.66,
+    "duration_ms": 9557.354,
+    "boundary_type": "Transitional",
+    "feature_hash": 8434127324145442450
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 335978.66,
+    "end_ms": 336000.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 336000.0,
+    "end_ms": 336981.3,
+    "duration_ms": 981.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 6852627208356029207
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 336981.3,
+    "end_ms": 337002.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 337002.66,
+    "end_ms": 361898.7,
+    "duration_ms": 24896.0,
+    "boundary_type": "Hard",
+    "feature_hash": 15078658225013538104
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 361898.7,
+    "end_ms": 379093.3,
+    "duration_ms": 17194.666,
+    "boundary_type": "Transitional",
+    "feature_hash": 3627508194690810645
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 379093.3,
+    "end_ms": 379114.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 379114.66,
+    "end_ms": 379136.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 379136.0,
+    "end_ms": 379157.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4540804929688875951
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 43,
+    "start_ms": 379157.3,
+    "end_ms": 380672.0,
+    "duration_ms": 1514.6666,
+    "boundary_type": "Hard",
+    "feature_hash": 5689906225413019770
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 44,
+    "start_ms": 380672.0,
+    "end_ms": 388949.34,
+    "duration_ms": 8277.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 12960712080440562457
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 45,
+    "start_ms": 388949.34,
+    "end_ms": 388970.7,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 3078770607231123020
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 46,
+    "start_ms": 388970.7,
+    "end_ms": 393280.0,
+    "duration_ms": 4309.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 922335403968146413
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 47,
+    "start_ms": 393280.0,
+    "end_ms": 393301.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12676320264282671801
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 48,
+    "start_ms": 393301.34,
+    "end_ms": 393322.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 49,
+    "start_ms": 393322.66,
+    "end_ms": 393344.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7705443671575645868
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 50,
+    "start_ms": 393344.0,
+    "end_ms": 394026.7,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 7869847833135280505
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 51,
+    "start_ms": 394026.7,
+    "end_ms": 394048.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 52,
+    "start_ms": 394048.0,
+    "end_ms": 401770.66,
+    "duration_ms": 7722.6665,
+    "boundary_type": "Hard",
+    "feature_hash": 15452504250149805279
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 53,
+    "start_ms": 401770.66,
+    "end_ms": 403093.3,
+    "duration_ms": 1322.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 1624703422500398676
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 54,
+    "start_ms": 403093.3,
+    "end_ms": 403114.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 55,
+    "start_ms": 403114.66,
+    "end_ms": 403136.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 56,
+    "start_ms": 403136.0,
+    "end_ms": 403157.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 57,
+    "start_ms": 403157.3,
+    "end_ms": 408320.0,
+    "duration_ms": 5162.667,
+    "boundary_type": "Hard",
+    "feature_hash": 18187395651322343802
+  },
+  {
+    "source_file": "SW_3_filtered.wav",
+    "segment_idx": 58,
+    "start_ms": 408320.0,
+    "end_ms": 455728.88,
+    "duration_ms": 47408.875,
+    "boundary_type": "End",
+    "feature_hash": 13620898485330393849
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 2944.0,
+    "duration_ms": 2944.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 1714997542358365503
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 2944.0,
+    "end_ms": 2965.3333,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 2965.3333,
+    "end_ms": 4544.0,
+    "duration_ms": 1578.6667,
+    "boundary_type": "Hard",
+    "feature_hash": 6513282252746917580
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 4544.0,
+    "end_ms": 6165.3335,
+    "duration_ms": 1621.3334,
+    "boundary_type": "Hard",
+    "feature_hash": 14404123893602194430
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 6165.3335,
+    "end_ms": 95637.336,
+    "duration_ms": 89472.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17403163264775201674
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 95637.336,
+    "end_ms": 95658.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 95658.67,
+    "end_ms": 102506.67,
+    "duration_ms": 6848.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6316314371958104381
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 102506.67,
+    "end_ms": 102528.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7705443671575645868
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 102528.0,
+    "end_ms": 108650.664,
+    "duration_ms": 6122.667,
+    "boundary_type": "Transitional",
+    "feature_hash": 6808922003401406069
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 108650.664,
+    "end_ms": 109376.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 16005690330121700131
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 109376.0,
+    "end_ms": 109397.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 10208728875365930315
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 109397.33,
+    "end_ms": 110122.664,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17820543453580495450
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 110122.664,
+    "end_ms": 187861.33,
+    "duration_ms": 77738.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 2126357574866201067
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 187861.33,
+    "end_ms": 187882.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 504960453498024986
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 187882.66,
+    "end_ms": 234282.67,
+    "duration_ms": 46400.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 11666514843077948442
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 234282.67,
+    "end_ms": 235008.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Hard",
+    "feature_hash": 399442019036169037
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 235008.0,
+    "end_ms": 236437.33,
+    "duration_ms": 1429.3334,
+    "boundary_type": "Hard",
+    "feature_hash": 7498247496264396972
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 236437.33,
+    "end_ms": 237141.33,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 8012700194153330188
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 237141.33,
+    "end_ms": 242218.67,
+    "duration_ms": 5077.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 14872157386739563688
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 242218.67,
+    "end_ms": 248725.33,
+    "duration_ms": 6506.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 9028931553522409572
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 248725.33,
+    "end_ms": 248746.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 248746.67,
+    "end_ms": 249365.33,
+    "duration_ms": 618.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 8976966916031493627
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 249365.33,
+    "end_ms": 249386.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 249386.67,
+    "end_ms": 249408.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 263843929525453042
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 249408.0,
+    "end_ms": 250069.34,
+    "duration_ms": 661.3333,
+    "boundary_type": "Soft",
+    "feature_hash": 14052262107533368131
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 250069.34,
+    "end_ms": 251520.0,
+    "duration_ms": 1450.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 13062308039175557372
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 251520.0,
+    "end_ms": 251541.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 251541.34,
+    "end_ms": 254272.0,
+    "duration_ms": 2730.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 18008930939995371670
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 254272.0,
+    "end_ms": 254293.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_35_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 254293.33,
+    "end_ms": 455728.88,
+    "duration_ms": 201435.55,
+    "boundary_type": "End",
+    "feature_hash": 5641646766559400748
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 13205.334,
+    "duration_ms": 13205.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16025847754144372702
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 13205.334,
+    "end_ms": 13226.666,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 13226.666,
+    "end_ms": 46314.668,
+    "duration_ms": 33088.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 16631353698121746723
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 46314.668,
+    "end_ms": 76266.67,
+    "duration_ms": 29952.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 7128086257993280985
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 76266.67,
+    "end_ms": 86314.664,
+    "duration_ms": 10048.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 11723603842578972596
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 86314.664,
+    "end_ms": 86336.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 218712609248946087
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 86336.0,
+    "end_ms": 90282.67,
+    "duration_ms": 3946.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 428094493376941453
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 90282.67,
+    "end_ms": 153088.0,
+    "duration_ms": 62805.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 8384302452248750674
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 153088.0,
+    "end_ms": 153109.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 153109.33,
+    "end_ms": 195648.0,
+    "duration_ms": 42538.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 2163406861579730108
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 195648.0,
+    "end_ms": 196053.33,
+    "duration_ms": 405.33334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10683099562404841633
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 196053.33,
+    "end_ms": 196074.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 218712609248946087
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 196074.66,
+    "end_ms": 255360.0,
+    "duration_ms": 59285.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 40121081856200667
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 255360.0,
+    "end_ms": 262912.0,
+    "duration_ms": 7552.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 13592581255357710734
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 262912.0,
+    "end_ms": 273344.0,
+    "duration_ms": 10432.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6101663329459466877
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 273344.0,
+    "end_ms": 273365.3,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 2143786237312099775
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 273365.3,
+    "end_ms": 277568.0,
+    "duration_ms": 4202.6875,
+    "boundary_type": "Transitional",
+    "feature_hash": 1742872190187340921
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 277568.0,
+    "end_ms": 280021.34,
+    "duration_ms": 2453.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 3258150360330982638
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 280021.34,
+    "end_ms": 280042.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 280042.66,
+    "end_ms": 454272.0,
+    "duration_ms": 174229.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 2762239095764829689
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 454272.0,
+    "end_ms": 454293.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1225263372541704896
+  },
+  {
+    "source_file": "SW_8_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 454293.34,
+    "end_ms": 455728.88,
+    "duration_ms": 1435.5416,
+    "boundary_type": "End",
+    "feature_hash": 3289901338303755812
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 661.3333,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 9134005551520480906
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 661.3333,
+    "end_ms": 71680.0,
+    "duration_ms": 71018.67,
+    "boundary_type": "Soft",
+    "feature_hash": 2090911379497164846
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 71680.0,
+    "end_ms": 120960.0,
+    "duration_ms": 49280.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3683003619208398557
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 120960.0,
+    "end_ms": 120981.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 120981.33,
+    "end_ms": 121002.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13481490037702409974
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 121002.67,
+    "end_ms": 293312.0,
+    "duration_ms": 172309.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 13980883282743950796
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 293312.0,
+    "end_ms": 293333.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 293333.34,
+    "end_ms": 293354.7,
+    "duration_ms": 21.354166,
+    "boundary_type": "Transitional",
+    "feature_hash": 9989186152647642972
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 293354.7,
+    "end_ms": 293376.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Hard",
+    "feature_hash": 14371461599536971352
+  },
+  {
+    "source_file": "SW_1_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 293376.0,
+    "end_ms": 439452.8,
+    "duration_ms": 146076.84,
+    "boundary_type": "End",
+    "feature_hash": 8647709265193714473
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 23253.334,
+    "duration_ms": 23253.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10345059809913395688
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 23253.334,
+    "end_ms": 42666.668,
+    "duration_ms": 19413.334,
+    "boundary_type": "Hard",
+    "feature_hash": 18047093662536429263
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 42666.668,
+    "end_ms": 108885.33,
+    "duration_ms": 66218.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 7728662382056001584
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 108885.33,
+    "end_ms": 108906.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 108906.67,
+    "end_ms": 109696.0,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7486037309101278705
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 109696.0,
+    "end_ms": 110506.67,
+    "duration_ms": 810.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 1111934597801100161
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 110506.67,
+    "end_ms": 147093.34,
+    "duration_ms": 36586.676,
+    "boundary_type": "Transitional",
+    "feature_hash": 5328401084962113189
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 147093.34,
+    "end_ms": 152085.33,
+    "duration_ms": 4991.9897,
+    "boundary_type": "Transitional",
+    "feature_hash": 10217866057653948760
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 152085.33,
+    "end_ms": 152106.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 152106.67,
+    "end_ms": 233962.66,
+    "duration_ms": 81856.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 11962626705221871589
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 233962.66,
+    "end_ms": 234794.66,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 8937532684078268711
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 234794.66,
+    "end_ms": 314026.7,
+    "duration_ms": 79232.016,
+    "boundary_type": "Transitional",
+    "feature_hash": 4312079662313276062
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 314026.7,
+    "end_ms": 314048.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 314048.0,
+    "end_ms": 418517.34,
+    "duration_ms": 104469.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 1500214214082414258
+  },
+  {
+    "source_file": "SW_7_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 418517.34,
+    "end_ms": 455728.88,
+    "duration_ms": 37211.54,
+    "boundary_type": "End",
+    "feature_hash": 2288073327127875104
+  },
+  {
+    "source_file": "SW_4_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 208917.33,
+    "duration_ms": 208917.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 6761325940189288094
+  },
+  {
+    "source_file": "SW_4_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 208917.33,
+    "end_ms": 208938.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_4_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 208938.66,
+    "end_ms": 208960.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4498867459758680498
+  },
+  {
+    "source_file": "SW_4_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 208960.0,
+    "end_ms": 208981.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 10470959678205717468
+  },
+  {
+    "source_file": "SW_4_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 208981.34,
+    "end_ms": 455728.88,
+    "duration_ms": 246747.55,
+    "boundary_type": "End",
+    "feature_hash": 16749272093832779171
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 35541.332,
+    "duration_ms": 35541.332,
+    "boundary_type": "Transitional",
+    "feature_hash": 11639182135687080338
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 35541.332,
+    "end_ms": 35562.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 35562.668,
+    "end_ms": 35584.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10536306831140917636
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 35584.0,
+    "end_ms": 36373.332,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16406714020617248616
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 36373.332,
+    "end_ms": 36394.656,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 36394.656,
+    "end_ms": 36416.0,
+    "duration_ms": 21.34375,
+    "boundary_type": "Transitional",
+    "feature_hash": 4449047383798871070
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 36416.0,
+    "end_ms": 48960.0,
+    "duration_ms": 12544.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2545567396526209290
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 48960.0,
+    "end_ms": 55829.336,
+    "duration_ms": 6869.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 3328540898014104226
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 55829.336,
+    "end_ms": 55850.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 55850.668,
+    "end_ms": 55872.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 7782509987117624602
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 55872.0,
+    "end_ms": 56576.0,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2760431414092265856
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 56576.0,
+    "end_ms": 56597.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 56597.332,
+    "end_ms": 56618.668,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9120525556672823289
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 56618.668,
+    "end_ms": 84117.336,
+    "duration_ms": 27498.666,
+    "boundary_type": "Soft",
+    "feature_hash": 7626168815411164748
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 84117.336,
+    "end_ms": 84885.32,
+    "duration_ms": 767.98956,
+    "boundary_type": "Transitional",
+    "feature_hash": 6860970049030697960
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 84885.32,
+    "end_ms": 84906.67,
+    "duration_ms": 21.34375,
+    "boundary_type": "Soft",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 84906.67,
+    "end_ms": 85696.0,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7892494183536150715
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 85696.0,
+    "end_ms": 108992.0,
+    "duration_ms": 23296.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 12582951310210138008
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 108992.0,
+    "end_ms": 109013.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 12676320264282671801
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 109013.336,
+    "end_ms": 112106.664,
+    "duration_ms": 3093.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17107245427164809833
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 112106.664,
+    "end_ms": 112128.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 112128.0,
+    "end_ms": 113258.664,
+    "duration_ms": 1130.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 10991148144027504555
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 113258.664,
+    "end_ms": 114816.0,
+    "duration_ms": 1557.3334,
+    "boundary_type": "Hard",
+    "feature_hash": 11638948847483291220
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 114816.0,
+    "end_ms": 142805.33,
+    "duration_ms": 27989.334,
+    "boundary_type": "Transitional",
+    "feature_hash": 876932701080724399
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 142805.33,
+    "end_ms": 148522.66,
+    "duration_ms": 5717.3228,
+    "boundary_type": "Transitional",
+    "feature_hash": 18088906500190839318
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 148522.66,
+    "end_ms": 148544.0,
+    "duration_ms": 21.34375,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 148544.0,
+    "end_ms": 148565.34,
+    "duration_ms": 21.34375,
+    "boundary_type": "Soft",
+    "feature_hash": 15616342842376308657
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 148565.34,
+    "end_ms": 148586.67,
+    "duration_ms": 21.322918,
+    "boundary_type": "Transitional",
+    "feature_hash": 17530558158992005820
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 148586.67,
+    "end_ms": 148608.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 148608.0,
+    "end_ms": 150784.0,
+    "duration_ms": 2176.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 15172840473391028385
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 150784.0,
+    "end_ms": 150805.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 150805.33,
+    "end_ms": 150826.66,
+    "duration_ms": 21.322918,
+    "boundary_type": "Soft",
+    "feature_hash": 16881567579238767953
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 150826.66,
+    "end_ms": 161685.33,
+    "duration_ms": 10858.677,
+    "boundary_type": "Transitional",
+    "feature_hash": 11988975552408351676
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 161685.33,
+    "end_ms": 161706.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 161706.67,
+    "end_ms": 161728.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9120525556672823289
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 161728.0,
+    "end_ms": 162517.33,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11909381548646988131
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 162517.33,
+    "end_ms": 162538.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 3835600376927818597
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 162538.67,
+    "end_ms": 162560.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3760244718044205615
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 162560.0,
+    "end_ms": 163392.0,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 15396526592838752226
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 163392.0,
+    "end_ms": 163413.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6234342683711306708
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 163413.33,
+    "end_ms": 232341.34,
+    "duration_ms": 68928.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 13514652309572260918
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 232341.34,
+    "end_ms": 232362.67,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 232362.67,
+    "end_ms": 232384.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7417078925507850903
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 43,
+    "start_ms": 232384.0,
+    "end_ms": 436309.3,
+    "duration_ms": 203925.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 12019462934053789999
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 44,
+    "start_ms": 436309.3,
+    "end_ms": 436330.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7417078925507850903
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 45,
+    "start_ms": 436330.66,
+    "end_ms": 437120.0,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2519039926632742789
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 46,
+    "start_ms": 437120.0,
+    "end_ms": 437141.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5948649105467621028
+  },
+  {
+    "source_file": "SW_29_filtered.wav",
+    "segment_idx": 47,
+    "start_ms": 437141.3,
+    "end_ms": 439452.8,
+    "duration_ms": 2311.5103,
+    "boundary_type": "End",
+    "feature_hash": 15663222452683306588
+  },
+  {
+    "source_file": "SW_15_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 91520.0,
+    "duration_ms": 91520.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 12997545578171670292
+  },
+  {
+    "source_file": "SW_15_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 91520.0,
+    "end_ms": 91541.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17129415247269507029
+  },
+  {
+    "source_file": "SW_15_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 91541.336,
+    "end_ms": 455728.88,
+    "duration_ms": 364187.53,
+    "boundary_type": "End",
+    "feature_hash": 9548858999805430367
+  },
+  {
+    "source_file": "SW_10_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 295253.3,
+    "duration_ms": 295253.3,
+    "boundary_type": "Transitional",
+    "feature_hash": 15174241435134137316
+  },
+  {
+    "source_file": "SW_10_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 295253.3,
+    "end_ms": 295274.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Transitional",
+    "feature_hash": 10275926950747630153
+  },
+  {
+    "source_file": "SW_10_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 295274.66,
+    "end_ms": 434240.0,
+    "duration_ms": 138965.33,
+    "boundary_type": "Transitional",
+    "feature_hash": 15675644600490577585
+  },
+  {
+    "source_file": "SW_10_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 434240.0,
+    "end_ms": 434261.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 18273173849476547415
+  },
+  {
+    "source_file": "SW_10_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 434261.3,
+    "end_ms": 455728.88,
+    "duration_ms": 21467.541,
+    "boundary_type": "End",
+    "feature_hash": 15026727403090274790
+  },
+  {
+    "source_file": "SW_13_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 137578.66,
+    "duration_ms": 137578.66,
+    "boundary_type": "Transitional",
+    "feature_hash": 11916469588073351973
+  },
+  {
+    "source_file": "SW_13_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 137578.66,
+    "end_ms": 137600.0,
+    "duration_ms": 21.34375,
+    "boundary_type": "Transitional",
+    "feature_hash": 4540804929688875951
+  },
+  {
+    "source_file": "SW_13_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 137600.0,
+    "end_ms": 369664.0,
+    "duration_ms": 232064.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 1800219520859378020
+  },
+  {
+    "source_file": "SW_13_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 369664.0,
+    "end_ms": 455728.88,
+    "duration_ms": 86064.875,
+    "boundary_type": "End",
+    "feature_hash": 8423814860815711834
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 140714.66,
+    "duration_ms": 140714.66,
+    "boundary_type": "Hard",
+    "feature_hash": 14278186456495390780
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 140714.66,
+    "end_ms": 355413.34,
+    "duration_ms": 214698.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 4996320502017192662
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 355413.34,
+    "end_ms": 356224.0,
+    "duration_ms": 810.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 1141966905049632624
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 356224.0,
+    "end_ms": 358741.34,
+    "duration_ms": 2517.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 16892766969120123118
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 358741.34,
+    "end_ms": 358762.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 358762.66,
+    "end_ms": 358784.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8967127548607003881
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 358784.0,
+    "end_ms": 359530.66,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 4252349577239276196
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 359530.66,
+    "end_ms": 359552.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 359552.0,
+    "end_ms": 359573.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12343929607201206417
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 359573.34,
+    "end_ms": 361024.0,
+    "duration_ms": 1450.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 9550002328704497105
+  },
+  {
+    "source_file": "SW_5_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 361024.0,
+    "end_ms": 455728.88,
+    "duration_ms": 94704.875,
+    "boundary_type": "End",
+    "feature_hash": 2785148000802222131
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 44053.332,
+    "duration_ms": 44053.332,
+    "boundary_type": "Soft",
+    "feature_hash": 250615361502327641
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 44053.332,
+    "end_ms": 44800.0,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 14919570211329063056
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 44800.0,
+    "end_ms": 47018.664,
+    "duration_ms": 2218.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 1564302973722843673
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 47018.664,
+    "end_ms": 47040.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 47040.0,
+    "end_ms": 47061.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17129415247269507029
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 47061.332,
+    "end_ms": 47786.668,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 6098481857291848716
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 47786.668,
+    "end_ms": 47808.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3503387548888659157
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 47808.0,
+    "end_ms": 62997.332,
+    "duration_ms": 15189.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 9276301803779934180
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 62997.332,
+    "end_ms": 63018.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 63018.664,
+    "end_ms": 63040.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7417078925507850903
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 63040.0,
+    "end_ms": 63722.668,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 16817574293085241142
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 63722.668,
+    "end_ms": 63744.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 63744.0,
+    "end_ms": 63765.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12200677191627260758
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 63765.336,
+    "end_ms": 64490.668,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 10117312017847664005
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 64490.668,
+    "end_ms": 64512.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 64512.0,
+    "end_ms": 64533.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7417078925507850903
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 64533.332,
+    "end_ms": 105984.0,
+    "duration_ms": 41450.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 3606575183977480020
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 105984.0,
+    "end_ms": 106005.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 106005.336,
+    "end_ms": 106858.664,
+    "duration_ms": 853.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15247764520120730225
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 106858.664,
+    "end_ms": 106880.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11819391224603415387
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 106880.0,
+    "end_ms": 107626.664,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 4521036752502106513
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 107626.664,
+    "end_ms": 107648.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1624932871634421903
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 107648.0,
+    "end_ms": 107669.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3884282169009037167
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 107669.336,
+    "end_ms": 112021.33,
+    "duration_ms": 4352.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 9535871546652584386
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 112021.33,
+    "end_ms": 263104.0,
+    "duration_ms": 151082.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 9729512948002022134
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 263104.0,
+    "end_ms": 263125.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 263125.34,
+    "end_ms": 265813.3,
+    "duration_ms": 2687.9792,
+    "boundary_type": "Transitional",
+    "feature_hash": 3170686319624110138
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 265813.3,
+    "end_ms": 265834.66,
+    "duration_ms": 21.354166,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 265834.66,
+    "end_ms": 265856.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13002423589366904230
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 265856.0,
+    "end_ms": 271914.7,
+    "duration_ms": 6058.6875,
+    "boundary_type": "Hard",
+    "feature_hash": 1777406963531981219
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 271914.7,
+    "end_ms": 271936.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 271936.0,
+    "end_ms": 271957.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 271957.34,
+    "end_ms": 272661.34,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 8012700194153330188
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 272661.34,
+    "end_ms": 272682.7,
+    "duration_ms": 21.354166,
+    "boundary_type": "Transitional",
+    "feature_hash": 14502794761569981790
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 272682.7,
+    "end_ms": 273237.34,
+    "duration_ms": 554.6458,
+    "boundary_type": "Soft",
+    "feature_hash": 11215468122909967634
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 273237.34,
+    "end_ms": 273258.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 5473245239408965783
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 273258.66,
+    "end_ms": 273920.0,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 6621922194101689612
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 273920.0,
+    "end_ms": 346922.66,
+    "duration_ms": 73002.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 4101052253816748088
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 346922.66,
+    "end_ms": 346944.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1248412676741863980
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 346944.0,
+    "end_ms": 347605.34,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 2207829123340463946
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 347605.34,
+    "end_ms": 347626.7,
+    "duration_ms": 21.354166,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 347626.7,
+    "end_ms": 347648.0,
+    "duration_ms": 21.3125,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 347648.0,
+    "end_ms": 406506.66,
+    "duration_ms": 58858.664,
+    "boundary_type": "Transitional",
+    "feature_hash": 16194172814312361998
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 43,
+    "start_ms": 406506.66,
+    "end_ms": 406848.0,
+    "duration_ms": 341.33334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6259889854848970538
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 44,
+    "start_ms": 406848.0,
+    "end_ms": 406869.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_23_filtered.wav",
+    "segment_idx": 45,
+    "start_ms": 406869.3,
+    "end_ms": 406900.78,
+    "duration_ms": 31.447918,
+    "boundary_type": "End",
+    "feature_hash": 9393139290503064998
+  },
+  {
+    "source_file": "SW_17_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 207296.0,
+    "duration_ms": 207296.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 18359851530901225832
+  },
+  {
+    "source_file": "SW_17_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 207296.0,
+    "end_ms": 207317.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17250880088138522260
+  },
+  {
+    "source_file": "SW_17_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 207317.34,
+    "end_ms": 212202.67,
+    "duration_ms": 4885.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 12841470290549031099
+  },
+  {
+    "source_file": "SW_17_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 212202.67,
+    "end_ms": 227864.44,
+    "duration_ms": 15661.7705,
+    "boundary_type": "End",
+    "feature_hash": 16727285831075051304
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 2197.3333,
+    "duration_ms": 2197.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 11022167726447295224
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 2197.3333,
+    "end_ms": 51456.0,
+    "duration_ms": 49258.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 11570482224195045029
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 51456.0,
+    "end_ms": 51477.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 51477.332,
+    "end_ms": 51498.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 16881567579238767953
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 51498.664,
+    "end_ms": 103381.336,
+    "duration_ms": 51882.668,
+    "boundary_type": "Transitional",
+    "feature_hash": 499368624660610812
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 103381.336,
+    "end_ms": 103402.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 103402.664,
+    "end_ms": 103424.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2283384172942771612
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 103424.0,
+    "end_ms": 104021.33,
+    "duration_ms": 597.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 520556955044273953
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 104021.33,
+    "end_ms": 104042.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 104042.664,
+    "end_ms": 104064.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1237710043095217943
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 104064.0,
+    "end_ms": 104085.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 5520198847384730254
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 104085.336,
+    "end_ms": 104704.0,
+    "duration_ms": 618.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 13588614916282163790
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 104704.0,
+    "end_ms": 110442.664,
+    "duration_ms": 5738.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 16520585577452566762
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 110442.664,
+    "end_ms": 110464.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 110464.0,
+    "end_ms": 110485.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3779361881867623756
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 110485.336,
+    "end_ms": 111146.664,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 8904071988165031129
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 111146.664,
+    "end_ms": 111168.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 111168.0,
+    "end_ms": 111189.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2874295236190974316
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 111189.33,
+    "end_ms": 117098.664,
+    "duration_ms": 5909.333,
+    "boundary_type": "Transitional",
+    "feature_hash": 17581219662547726309
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 117098.664,
+    "end_ms": 117802.664,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17812744178292130726
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 117802.664,
+    "end_ms": 117824.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 117824.0,
+    "end_ms": 117845.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12706291559777079682
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 117845.336,
+    "end_ms": 138389.33,
+    "duration_ms": 20544.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 420291852221118529
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 138389.33,
+    "end_ms": 337770.66,
+    "duration_ms": 199381.33,
+    "boundary_type": "Soft",
+    "feature_hash": 13615520832359044500
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 337770.66,
+    "end_ms": 337792.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11624504065851367695
+  },
+  {
+    "source_file": "SW_27_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 337792.0,
+    "end_ms": 439452.8,
+    "duration_ms": 101660.84,
+    "boundary_type": "End",
+    "feature_hash": 14731589188752317466
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 147562.67,
+    "duration_ms": 147562.67,
+    "boundary_type": "Transitional",
+    "feature_hash": 4488265371424466146
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 147562.67,
+    "end_ms": 147584.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 147584.0,
+    "end_ms": 261760.02,
+    "duration_ms": 114176.016,
+    "boundary_type": "Hard",
+    "feature_hash": 16067462848463605804
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 261760.02,
+    "end_ms": 313770.66,
+    "duration_ms": 52010.65,
+    "boundary_type": "Transitional",
+    "feature_hash": 6717802139676678799
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 313770.66,
+    "end_ms": 313792.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_16_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 313792.0,
+    "end_ms": 439452.8,
+    "duration_ms": 125660.84,
+    "boundary_type": "End",
+    "feature_hash": 7494518078373871766
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 133504.0,
+    "duration_ms": 133504.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3472319158345585909
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 133504.0,
+    "end_ms": 133525.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 12798207070204658117
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 133525.33,
+    "end_ms": 189290.67,
+    "duration_ms": 55765.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 11397180765596381039
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 189290.67,
+    "end_ms": 189312.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3742911367134049315
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 189312.0,
+    "end_ms": 189973.33,
+    "duration_ms": 661.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 2207829123340463946
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 189973.33,
+    "end_ms": 194261.34,
+    "duration_ms": 4288.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3713227569614692982
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 194261.34,
+    "end_ms": 329920.0,
+    "duration_ms": 135658.66,
+    "boundary_type": "Soft",
+    "feature_hash": 13648351629805881718
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 329920.0,
+    "end_ms": 329941.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4056944803799043253
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 329941.34,
+    "end_ms": 336405.34,
+    "duration_ms": 6464.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6661438149482548700
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 336405.34,
+    "end_ms": 336426.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 336426.66,
+    "end_ms": 336448.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4757711478042793315
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 336448.0,
+    "end_ms": 381269.34,
+    "duration_ms": 44821.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 15293116895476547157
+  },
+  {
+    "source_file": "SW_20_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 381269.34,
+    "end_ms": 423176.8,
+    "duration_ms": 41907.477,
+    "boundary_type": "End",
+    "feature_hash": 12041273744669699995
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 1962.6666,
+    "duration_ms": 1962.6666,
+    "boundary_type": "Transitional",
+    "feature_hash": 391028547946357534
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 1962.6666,
+    "end_ms": 1984.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3078770607231123020
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 1984.0,
+    "end_ms": 2005.3334,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10152365147362527362
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 2005.3334,
+    "end_ms": 2752.0,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 16259831674545075249
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 2752.0,
+    "end_ms": 2773.3333,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 4693442959453288434
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 2773.3333,
+    "end_ms": 8938.656,
+    "duration_ms": 6165.3228,
+    "boundary_type": "Transitional",
+    "feature_hash": 1221512793998719374
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 8938.656,
+    "end_ms": 8960.0,
+    "duration_ms": 21.34375,
+    "boundary_type": "Transitional",
+    "feature_hash": 17250880088138522260
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 8960.0,
+    "end_ms": 8981.334,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3706759039641661282
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 8981.334,
+    "end_ms": 13525.333,
+    "duration_ms": 4544.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5779477144813578477
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 13525.333,
+    "end_ms": 13546.667,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 218712609248946087
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 13546.667,
+    "end_ms": 13568.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 2229470640017617847
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 13568.0,
+    "end_ms": 17685.334,
+    "duration_ms": 4117.3335,
+    "boundary_type": "Transitional",
+    "feature_hash": 17330311364135784223
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 17685.334,
+    "end_ms": 17706.666,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 660428063976784914
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 17706.666,
+    "end_ms": 25706.666,
+    "duration_ms": 8000.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 4113539315531278822
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 25706.666,
+    "end_ms": 25728.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 25728.0,
+    "end_ms": 25749.332,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17245125484357330247
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 25749.332,
+    "end_ms": 25770.666,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1731884237355488120
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 25770.666,
+    "end_ms": 25792.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 25792.0,
+    "end_ms": 26474.666,
+    "duration_ms": 682.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 10598036758811229264
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 26474.666,
+    "end_ms": 26496.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 26496.0,
+    "end_ms": 26517.334,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9079722912215633758
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 26517.334,
+    "end_ms": 28010.666,
+    "duration_ms": 1493.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15340348330606021679
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 28010.666,
+    "end_ms": 28032.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 28032.0,
+    "end_ms": 28053.334,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3760244718044205615
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 28053.334,
+    "end_ms": 119765.336,
+    "duration_ms": 91712.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 4511660264903359396
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 119765.336,
+    "end_ms": 119786.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 119786.664,
+    "end_ms": 119808.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11851507496831937826
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 27,
+    "start_ms": 119808.0,
+    "end_ms": 119829.33,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9715945361444461956
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 28,
+    "start_ms": 119829.33,
+    "end_ms": 120661.33,
+    "duration_ms": 832.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 5310878719134630855
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 29,
+    "start_ms": 120661.33,
+    "end_ms": 120682.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 30,
+    "start_ms": 120682.664,
+    "end_ms": 120704.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4449047383798871070
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 31,
+    "start_ms": 120704.0,
+    "end_ms": 121493.33,
+    "duration_ms": 789.3334,
+    "boundary_type": "Soft",
+    "feature_hash": 10966317358612585212
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 32,
+    "start_ms": 121493.33,
+    "end_ms": 121514.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4449047383798871070
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 33,
+    "start_ms": 121514.664,
+    "end_ms": 121536.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 8922957246018780654
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 34,
+    "start_ms": 121536.0,
+    "end_ms": 198634.67,
+    "duration_ms": 77098.664,
+    "boundary_type": "Soft",
+    "feature_hash": 12208938201200719480
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 35,
+    "start_ms": 198634.67,
+    "end_ms": 198656.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11464746719954087527
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 36,
+    "start_ms": 198656.0,
+    "end_ms": 198677.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10843149093729147339
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 37,
+    "start_ms": 198677.34,
+    "end_ms": 302741.34,
+    "duration_ms": 104064.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 14491461638364860098
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 38,
+    "start_ms": 302741.34,
+    "end_ms": 302762.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 3779361881867623756
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 39,
+    "start_ms": 302762.66,
+    "end_ms": 303488.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 12662534876252796490
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 40,
+    "start_ms": 303488.0,
+    "end_ms": 303509.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 41,
+    "start_ms": 303509.34,
+    "end_ms": 303530.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 10152365147362527362
+  },
+  {
+    "source_file": "SW_30_filtered.wav",
+    "segment_idx": 42,
+    "start_ms": 303530.66,
+    "end_ms": 455728.88,
+    "duration_ms": 152198.22,
+    "boundary_type": "End",
+    "feature_hash": 12372186387317029183
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 73301.32,
+    "duration_ms": 73301.32,
+    "boundary_type": "Soft",
+    "feature_hash": 9178471193356125815
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 73301.32,
+    "end_ms": 74069.336,
+    "duration_ms": 768.01044,
+    "boundary_type": "Soft",
+    "feature_hash": 16730831105032530401
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 74069.336,
+    "end_ms": 74816.0,
+    "duration_ms": 746.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 3485686270270176358
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 74816.0,
+    "end_ms": 75541.336,
+    "duration_ms": 725.3333,
+    "boundary_type": "Soft",
+    "feature_hash": 9494234496960064805
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 75541.336,
+    "end_ms": 197162.67,
+    "duration_ms": 121621.33,
+    "boundary_type": "Soft",
+    "feature_hash": 11689274976915755382
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 197162.67,
+    "end_ms": 200789.34,
+    "duration_ms": 3626.6667,
+    "boundary_type": "Transitional",
+    "feature_hash": 9480748955207158238
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 200789.34,
+    "end_ms": 203114.67,
+    "duration_ms": 2325.3333,
+    "boundary_type": "Soft",
+    "feature_hash": 11129409731856360865
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 203114.67,
+    "end_ms": 203136.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14041653243546621476
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 203136.0,
+    "end_ms": 203882.66,
+    "duration_ms": 746.6667,
+    "boundary_type": "Soft",
+    "feature_hash": 4521036752502106513
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 203882.66,
+    "end_ms": 274282.66,
+    "duration_ms": 70400.0,
+    "boundary_type": "Soft",
+    "feature_hash": 11093626930349093141
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 274282.66,
+    "end_ms": 326250.66,
+    "duration_ms": 51968.0,
+    "boundary_type": "Soft",
+    "feature_hash": 10506100773272613678
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 326250.66,
+    "end_ms": 424874.66,
+    "duration_ms": 98624.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 2652960872780748493
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 424874.66,
+    "end_ms": 424896.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 7799432323814569910
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 424896.0,
+    "end_ms": 425664.0,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17318111609362038871
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 14,
+    "start_ms": 425664.0,
+    "end_ms": 425685.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 15,
+    "start_ms": 425685.34,
+    "end_ms": 425706.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 1237710043095217943
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 16,
+    "start_ms": 425706.66,
+    "end_ms": 426474.66,
+    "duration_ms": 768.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 16733510551403760843
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 17,
+    "start_ms": 426474.66,
+    "end_ms": 426496.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 16610299357582506115
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 18,
+    "start_ms": 426496.0,
+    "end_ms": 426517.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6475840069152079128
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 19,
+    "start_ms": 426517.34,
+    "end_ms": 428885.34,
+    "duration_ms": 2368.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 11194964353540629691
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 20,
+    "start_ms": 428885.34,
+    "end_ms": 429674.66,
+    "duration_ms": 789.3334,
+    "boundary_type": "Transitional",
+    "feature_hash": 15963240874005390735
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 21,
+    "start_ms": 429674.66,
+    "end_ms": 429696.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9294182095000023255
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 22,
+    "start_ms": 429696.0,
+    "end_ms": 429717.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 17774736994791613428
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 23,
+    "start_ms": 429717.34,
+    "end_ms": 433792.0,
+    "duration_ms": 4074.6665,
+    "boundary_type": "Transitional",
+    "feature_hash": 3362608420690674016
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 24,
+    "start_ms": 433792.0,
+    "end_ms": 433813.3,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 9854873937103950303
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 25,
+    "start_ms": 433813.3,
+    "end_ms": 433834.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 13835058169346729412
+  },
+  {
+    "source_file": "SW_28_filtered.wav",
+    "segment_idx": 26,
+    "start_ms": 433834.66,
+    "end_ms": 439452.8,
+    "duration_ms": 5618.177,
+    "boundary_type": "End",
+    "feature_hash": 18136421510712163902
+  },
+  {
+    "source_file": "SW_33_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 125653.336,
+    "duration_ms": 125653.336,
+    "boundary_type": "Transitional",
+    "feature_hash": 7898623210374556177
+  },
+  {
+    "source_file": "SW_33_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 125653.336,
+    "end_ms": 125674.664,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 11464746719954087527
+  },
+  {
+    "source_file": "SW_33_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 125674.664,
+    "end_ms": 126400.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 919143708184456158
+  },
+  {
+    "source_file": "SW_33_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 126400.0,
+    "end_ms": 126421.336,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 9253360098659504035
+  },
+  {
+    "source_file": "SW_33_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 126421.336,
+    "end_ms": 455728.88,
+    "duration_ms": 329307.56,
+    "boundary_type": "End",
+    "feature_hash": 12203240488894175208
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 0,
+    "start_ms": 0.0,
+    "end_ms": 340885.34,
+    "duration_ms": 340885.34,
+    "boundary_type": "Transitional",
+    "feature_hash": 1435578364771244262
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 1,
+    "start_ms": 340885.34,
+    "end_ms": 423509.34,
+    "duration_ms": 82624.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 3699430264887980138
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 2,
+    "start_ms": 423509.34,
+    "end_ms": 423530.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4487356859640919332
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 3,
+    "start_ms": 423530.66,
+    "end_ms": 424256.0,
+    "duration_ms": 725.3333,
+    "boundary_type": "Transitional",
+    "feature_hash": 6098481857291848716
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 4,
+    "start_ms": 424256.0,
+    "end_ms": 424277.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 14356590184434168917
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 5,
+    "start_ms": 424277.34,
+    "end_ms": 426837.34,
+    "duration_ms": 2560.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 693493749499147881
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 6,
+    "start_ms": 426837.34,
+    "end_ms": 426858.7,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 1720172709976732288
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 7,
+    "start_ms": 426858.7,
+    "end_ms": 426880.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 6162446187524405352
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 8,
+    "start_ms": 426880.0,
+    "end_ms": 426901.34,
+    "duration_ms": 21.333334,
+    "boundary_type": "Hard",
+    "feature_hash": 3078770607231123020
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 9,
+    "start_ms": 426901.34,
+    "end_ms": 431957.34,
+    "duration_ms": 5056.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 6554842039652542243
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 10,
+    "start_ms": 431957.34,
+    "end_ms": 431978.66,
+    "duration_ms": 21.333334,
+    "boundary_type": "Soft",
+    "feature_hash": 13325993368921438097
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 11,
+    "start_ms": 431978.66,
+    "end_ms": 432000.0,
+    "duration_ms": 21.333334,
+    "boundary_type": "Transitional",
+    "feature_hash": 4487356859640919332
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 12,
+    "start_ms": 432000.0,
+    "end_ms": 432704.0,
+    "duration_ms": 704.0,
+    "boundary_type": "Transitional",
+    "feature_hash": 17755194142980037348
+  },
+  {
+    "source_file": "SW_26_filtered.wav",
+    "segment_idx": 13,
+    "start_ms": 432704.0,
+    "end_ms": 455728.88,
+    "duration_ms": 23024.875,
+    "boundary_type": "End",
+    "feature_hash": 12034412713851489058
+  }
+]

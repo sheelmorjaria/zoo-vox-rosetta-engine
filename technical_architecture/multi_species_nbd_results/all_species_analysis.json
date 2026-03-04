@@ -1,0 +1,312 @@
+[
+  {
+    "species": "Marmoset",
+    "total_files": 500,
+    "total_segments": 7670,
+    "avg_segments_per_file": 15.34,
+    "recurrence_stats": {
+      "total_segments": 7670,
+      "unique_segments": 4573,
+      "recurrence_rate": 0.4037809647979139,
+      "top_patterns": [
+        {
+          "feature_hash": 17524212011156704928,
+          "count": 23,
+          "first_occurrence": "2020_3_0_Vocalization_542181.wav"
+        },
+        {
+          "feature_hash": 5724070128322761923,
+          "count": 20,
+          "first_occurrence": "2023_2_1_Trill_706685.wav"
+        },
+        {
+          "feature_hash": 13406377327967049120,
+          "count": 20,
+          "first_occurrence": "2020_7_0_Vocalization_513507.wav"
+        },
+        {
+          "feature_hash": 9825381762078546658,
+          "count": 19,
+          "first_occurrence": "2022_12_4_Vocalization_519336.wav"
+        },
+        {
+          "feature_hash": 9294182095000023255,
+          "count": 18,
+          "first_occurrence": "2020_11_0_Tsik_555425.wav"
+        },
+        {
+          "feature_hash": 9893589563552761544,
+          "count": 17,
+          "first_occurrence": "2020_12_2_Vocalization_863517.wav"
+        },
+        {
+          "feature_hash": 17811515868218472394,
+          "count": 17,
+          "first_occurrence": "2020_1_0_Vocalization_222497.wav"
+        },
+        {
+          "feature_hash": 18271259335860684419,
+          "count": 16,
+          "first_occurrence": "2021_9_0_Vocalization_567102.wav"
+        },
+        {
+          "feature_hash": 7442082117236906192,
+          "count": 16,
+          "first_occurrence": "2019_12_0_Vocalization_223054.wav"
+        },
+        {
+          "feature_hash": 9159156960931342997,
+          "count": 14,
+          "first_occurrence": "2021_9_0_Vocalization_567102.wav"
+        }
+      ]
+    },
+    "sample_rate": 44100,
+    "nbd_config": "BoundaryDetectorConfig { hop_size: 2048, sample_rate: 44100, min_phrase_duration_ms: 5.0, threshold: 0.25, smoothing_frames: 2 }"
+  },
+  {
+    "species": "Giant Otter",
+    "total_files": 441,
+    "total_segments": 4148,
+    "avg_segments_per_file": 9.405895691609977,
+    "recurrence_stats": {
+      "total_segments": 4148,
+      "unique_segments": 2832,
+      "recurrence_rate": 0.31726133076181295,
+      "top_patterns": [
+        {
+          "feature_hash": 9294182095000023255,
+          "count": 499,
+          "first_occurrence": "Audio S221_hum.wav"
+        },
+        {
+          "feature_hash": 7655700282067789291,
+          "count": 111,
+          "first_occurrence": "Audio S221_hum.wav"
+        },
+        {
+          "feature_hash": 9854873937103950303,
+          "count": 90,
+          "first_occurrence": "Audio S279_hum short.wav"
+        },
+        {
+          "feature_hash": 14814488998467489635,
+          "count": 45,
+          "first_occurrence": "Audio S109_close call.wav"
+        },
+        {
+          "feature_hash": 1720172709976732288,
+          "count": 37,
+          "first_occurrence": "Audio S135_contact call.wav"
+        },
+        {
+          "feature_hash": 2428601647479599792,
+          "count": 25,
+          "first_occurrence": "Audio S105_close call.wav"
+        },
+        {
+          "feature_hash": 9270803994875837307,
+          "count": 25,
+          "first_occurrence": "Audio S279_hum short.wav"
+        },
+        {
+          "feature_hash": 14255865322483276026,
+          "count": 20,
+          "first_occurrence": "Audio S206_hah.wav"
+        },
+        {
+          "feature_hash": 4056944803799043253,
+          "count": 15,
+          "first_occurrence": "Audio S114_close call.wav"
+        },
+        {
+          "feature_hash": 15445021853913174403,
+          "count": 15,
+          "first_occurrence": "Audio S391_whine.wav"
+        }
+      ]
+    },
+    "sample_rate": 44100,
+    "nbd_config": "BoundaryDetectorConfig { hop_size: 2048, sample_rate: 44100, min_phrase_duration_ms: 5.0, threshold: 0.25, smoothing_frames: 2 }"
+  },
+  {
+    "species": "Sperm Whale",
+    "total_files": 39,
+    "total_segments": 814,
+    "avg_segments_per_file": 20.871794871794872,
+    "recurrence_stats": {
+      "total_segments": 814,
+      "unique_segments": 557,
+      "recurrence_rate": 0.3157248157248157,
+      "top_patterns": [
+        {
+          "feature_hash": 9294182095000023255,
+          "count": 73,
+          "first_occurrence": "SW_21_filtered.wav"
+        },
+        {
+          "feature_hash": 9854873937103950303,
+          "count": 21,
+          "first_occurrence": "SW_34_filtered.wav"
+        },
+        {
+          "feature_hash": 1720172709976732288,
+          "count": 13,
+          "first_occurrence": "SW_34_filtered.wav"
+        },
+        {
+          "feature_hash": 12798207070204658117,
+          "count": 9,
+          "first_occurrence": "SW_21_filtered.wav"
+        },
+        {
+          "feature_hash": 4056944803799043253,
+          "count": 8,
+          "first_occurrence": "SW_14_filtered.wav"
+        },
+        {
+          "feature_hash": 7799432323814569910,
+          "count": 8,
+          "first_occurrence": "SW_22_filtered.wav"
+        },
+        {
+          "feature_hash": 16610299357582506115,
+          "count": 8,
+          "first_occurrence": "SW_37_filtered.wav"
+        },
+        {
+          "feature_hash": 4757711478042793315,
+          "count": 7,
+          "first_occurrence": "SW_21_filtered.wav"
+        },
+        {
+          "feature_hash": 11819391224603415387,
+          "count": 7,
+          "first_occurrence": "SW_22_filtered.wav"
+        },
+        {
+          "feature_hash": 12200677191627260758,
+          "count": 7,
+          "first_occurrence": "SW_24_filtered.wav"
+        }
+      ]
+    },
+    "sample_rate": 96000,
+    "nbd_config": "BoundaryDetectorConfig { hop_size: 2048, sample_rate: 96000, min_phrase_duration_ms: 5.0, threshold: 0.25, smoothing_frames: 2 }"
+  },
+  {
+    "species": "Orcas",
+    "total_files": 500,
+    "total_segments": 1607,
+    "avg_segments_per_file": 3.214,
+    "recurrence_stats": {
+      "total_segments": 1607,
+      "unique_segments": 1461,
+      "recurrence_rate": 0.0908525202240199,
+      "top_patterns": [
+        {
+          "feature_hash": 4682174847714381628,
+          "count": 16,
+          "first_occurrence": "211.wav"
+        },
+        {
+          "feature_hash": 12291715387031185397,
+          "count": 11,
+          "first_occurrence": "450.wav"
+        },
+        {
+          "feature_hash": 1580320529152682264,
+          "count": 8,
+          "first_occurrence": "334.wav"
+        },
+        {
+          "feature_hash": 12293247871824742374,
+          "count": 7,
+          "first_occurrence": "457.wav"
+        },
+        {
+          "feature_hash": 16268529776615769958,
+          "count": 6,
+          "first_occurrence": "391.wav"
+        },
+        {
+          "feature_hash": 7921366019201209374,
+          "count": 5,
+          "first_occurrence": "270.wav"
+        },
+        {
+          "feature_hash": 5111915121126586059,
+          "count": 5,
+          "first_occurrence": "547.wav"
+        },
+        {
+          "feature_hash": 9156195268251903859,
+          "count": 5,
+          "first_occurrence": "270.wav"
+        },
+        {
+          "feature_hash": 9157096485039281769,
+          "count": 4,
+          "first_occurrence": "389.wav"
+        },
+        {
+          "feature_hash": 10156655806090705129,
+          "count": 4,
+          "first_occurrence": "584.wav"
+        }
+      ]
+    },
+    "sample_rate": 44100,
+    "nbd_config": "BoundaryDetectorConfig { hop_size: 2048, sample_rate: 44100, min_phrase_duration_ms: 5.0, threshold: 0.25, smoothing_frames: 2 }"
+  },
+  {
+    "species": "Dolphin",
+    "total_files": 4,
+    "total_segments": 7,
+    "avg_segments_per_file": 1.75,
+    "recurrence_stats": {
+      "total_segments": 7,
+      "unique_segments": 7,
+      "recurrence_rate": 0.0,
+      "top_patterns": [
+        {
+          "feature_hash": 12976889388695179054,
+          "count": 1,
+          "first_occurrence": "noise1.wav"
+        },
+        {
+          "feature_hash": 4285124506855726235,
+          "count": 1,
+          "first_occurrence": "noise2.wav"
+        },
+        {
+          "feature_hash": 11155705393839455845,
+          "count": 1,
+          "first_occurrence": "noise2.wav"
+        },
+        {
+          "feature_hash": 17878395721258557641,
+          "count": 1,
+          "first_occurrence": "noise2.wav"
+        },
+        {
+          "feature_hash": 18437629472682998585,
+          "count": 1,
+          "first_occurrence": "noise3.wav"
+        },
+        {
+          "feature_hash": 12024619588403041684,
+          "count": 1,
+          "first_occurrence": "noise2.wav"
+        },
+        {
+          "feature_hash": 14815451818010676485,
+          "count": 1,
+          "first_occurrence": "noise2.wav"
+        }
+      ]
+    },
+    "sample_rate": 192000,
+    "nbd_config": "BoundaryDetectorConfig { hop_size: 2048, sample_rate: 192000, min_phrase_duration_ms: 5.0, threshold: 0.25, smoothing_frames: 2 }"
+  }
+]

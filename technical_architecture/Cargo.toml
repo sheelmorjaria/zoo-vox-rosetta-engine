@@ -80,12 +80,17 @@ pyo3 = { version = "0.19", features = ["extension-module", "chrono"], optional =
 pyo3-asyncio = { version = "0.19", features = ["tokio-runtime"], optional = true }
 numpy = { version = "0.19", optional = true }
 
+# PyTorch/libtorch bindings for GPU neural network training (optional)
+# Requires LIBTORCH environment variable to be set
+tch = { version = "0.15", optional = true }
+
 [features]
 default = ["hound", "symphonia"]
 # hound is always available (required for WAV export in synthesis)
 hound = []
 python-bindings = ["pyo3", "pyo3-asyncio", "numpy"]
 gpu-acceleration = []
+gpu-training = ["tch"]  # PyTorch-based NN training
 fpga-integration = []
 # Phase 3: Parallel Extraction dependencies
 parallel-extraction = ["polars", "linfa", "linfa-clustering", "linfa-preprocessing", "linfa-nn", "rubato", "symphonia", "ndarray-linalg"]

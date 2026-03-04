@@ -111,3 +111,35 @@ tmp/
 
 # Archive directories (already archived elsewhere)
 archive/
+
+# BEANS-Zero model and output files (large files)
+*.ot
+beans_zero_*.json
+beans_feature_cache*/
+random_forest_model_*.json
+gatekeeper_rf_*.json
+species_expert_*.json
+voting_ensemble_*.json
+taxonomic_gated_*.json
+hierarchical_*.json
+
+# Training outputs (large JSON models)
+*_results.json
+bengali_*.json
+bat_*.json
+finch_*.json
+marmoset_*.json
+bird_*.json
+corpus_*.json
+
+# Additional large data files
+*.npz
+*.npy
+*.joblib
+*.trt
+*.onnx
+beans_audio_*/
+beans_zero_data/
+rosetta_net_*.json
+curriculum_*.json
+dns64_*

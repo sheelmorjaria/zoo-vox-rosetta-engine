@@ -510,6 +510,15 @@ mod visual_recording;
 mod web_dashboard;
 mod wildlife_sentry;
 
+// Taxonomic-aware routing for hybrid expert architecture
+pub mod taxonomic_router;
+
+// Voting Ensemble for Species Classification (NN + RF)
+pub mod voting_ensemble;
+
+// Taxonomic-Aware Feature Gating (Dynamic Feature Reweighting)
+pub mod feature_gating;
+
 // Metadata-first synthesizer (30D vector space queries)
 mod metadata_synthesizer;
 

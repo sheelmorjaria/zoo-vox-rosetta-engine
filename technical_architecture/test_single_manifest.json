@@ -1,0 +1,15 @@
+{
+  "dataset": "test",
+  "split": "test",
+  "n_samples": 1,
+  "samples": [
+    {
+      "id": "test_001",
+      "audio_file": "test_single.raw",
+      "sample_rate": 44100,
+      "n_samples": 37485,
+      "duration_ms": 850.0,
+      "labels": {}
+    }
+  ]
+}
