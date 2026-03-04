@@ -145,8 +145,12 @@ corpus_*.json
 *.ogg
 *.bin
 *.mpk
+*.png
+*.jpg
+*.jpeg
 beans_audio_*/
 beans_zero_data/
 rosetta_net_*.json
 curriculum_*.json
 dns64_*
+multi_species_nbd_results/
