@@ -1,0 +1,102 @@
+[
+  {
+    "id": "Tsik_411566",
+    "label": "discovered:phrase_0",
+    "type": "Tsik"
+  },
+  {
+    "id": "Twitter_814175",
+    "label": "discovered:phrase_0",
+    "type": "Twitter"
+  },
+  {
+    "id": "Twitter_854101",
+    "label": "discovered:phrase_0",
+    "type": "Twitter"
+  },
+  {
+    "id": "Vocalization_107947",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_244321",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_246340",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_247420",
+    "label": "discovered:phrase_1",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_319891",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_322190",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_325960",
+    "label": "discovered:phrase_1",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_334523",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_350345",
+    "label": "discovered:phrase_1",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_406018",
+    "label": "discovered:phrase_1",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_423220",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_482259",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_570833",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_607420",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_613804",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_7587",
+    "label": "discovered:phrase_0",
+    "type": "Vocalization"
+  },
+  {
+    "id": "Vocalization_797653",
+    "label": "discovered:phrase_1",
+    "type": "Vocalization"
+  }
+]

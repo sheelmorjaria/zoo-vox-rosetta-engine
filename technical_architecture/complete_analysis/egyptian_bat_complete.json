@@ -1,0 +1,213 @@
+{
+  "species": "egyptian_bat",
+  "total_files": 500,
+  "processing_time_sec": 1150.648306486,
+  "hierarchical": {
+    "motifs": {
+      "phrase_types": 47,
+      "candidates": 536,
+      "avg_duration_ms": 358.74533741509737,
+      "duration_distribution": {
+        "200-500ms": 536
+      }
+    },
+    "syllables": {
+      "phrase_types": 187,
+      "candidates": 6424,
+      "avg_duration_ms": 32.22408085653227,
+      "duration_distribution": {
+        "500ms+": 1,
+        "0-50ms": 6321,
+        "100-200ms": 77,
+        "200-500ms": 17,
+        "50-100ms": 8
+      }
+    },
+    "notes": {
+      "phrase_types": 120,
+      "candidates": 2473,
+      "avg_duration_ms": 79.70278690028084,
+      "duration_distribution": {
+        "50-100ms": 2373,
+        "100-200ms": 80,
+        "0-50ms": 20
+      }
+    }
+  },
+  "syntax": {
+    "vocabulary_size": 94,
+    "unique_transitions": 619,
+    "entropy": 1.7834482239480614,
+    "perplexity": 5.841955034059601,
+    "top_transitions": [
+      {
+        "from_phrase": 1,
+        "to_phrase": 1,
+        "count": 253,
+        "probability": 0.5952941176470589
+      },
+      {
+        "from_phrase": 12,
+        "to_phrase": 12,
+        "count": 181,
+        "probability": 0.7801724137931034
+      },
+      {
+        "from_phrase": 3,
+        "to_phrase": 3,
+        "count": 80,
+        "probability": 0.7142857142857143
+      },
+      {
+        "from_phrase": 4,
+        "to_phrase": 4,
+        "count": 71,
+        "probability": 0.6635514018691588
+      },
+      {
+        "from_phrase": 18,
+        "to_phrase": 18,
+        "count": 42,
+        "probability": 0.4883720930232558
+      },
+      {
+        "from_phrase": 1,
+        "to_phrase": 2,
+        "count": 37,
+        "probability": 0.08705882352941176
+      },
+      {
+        "from_phrase": 14,
+        "to_phrase": 14,
+        "count": 23,
+        "probability": 0.40350877192982454
+      },
+      {
+        "from_phrase": 32,
+        "to_phrase": 32,
+        "count": 22,
+        "probability": 0.5
+      },
+      {
+        "from_phrase": 37,
+        "to_phrase": 37,
+        "count": 19,
+        "probability": 0.3220338983050847
+      },
+      {
+        "from_phrase": 1,
+        "to_phrase": 3,
+        "count": 19,
+        "probability": 0.04470588235294118
+      }
+    ],
+    "common_patterns": [
+      {
+        "pattern": [
+          1,
+          1,
+          1
+        ],
+        "occurrences": 165
+      },
+      {
+        "pattern": [
+          12,
+          12,
+          12
+        ],
+        "occurrences": 71
+      },
+      {
+        "pattern": [
+          1,
+          1,
+          2
+        ],
+        "occurrences": 25
+      },
+      {
+        "pattern": [
+          4,
+          4,
+          4
+        ],
+        "occurrences": 24
+      },
+      {
+        "pattern": [
+          3,
+          3,
+          3
+        ],
+        "occurrences": 21
+      },
+      {
+        "pattern": [
+          2,
+          1,
+          1
+        ],
+        "occurrences": 12
+      },
+      {
+        "pattern": [
+          11,
+          12,
+          12
+        ],
+        "occurrences": 12
+      },
+      {
+        "pattern": [
+          1,
+          3,
+          3
+        ],
+        "occurrences": 12
+      },
+      {
+        "pattern": [
+          1,
+          1,
+          3
+        ],
+        "occurrences": 11
+      },
+      {
+        "pattern": [
+          14,
+          12,
+          12
+        ],
+        "occurrences": 10
+      }
+    ]
+  },
+  "fingerprint": {
+    "phrase_types": 94,
+    "call_type_distribution": {
+      "type_10": 38,
+      "type_9": 28,
+      "type_2": 93,
+      "type_14": 439,
+      "type_13": 101,
+      "type_5": 198,
+      "type_7": 333,
+      "type_1": 310,
+      "type_8": 75,
+      "type_4": 63,
+      "type_11": 35,
+      "type_3": 41,
+      "type_6": 395,
+      "type_0": 230,
+      "type_12": 311
+    },
+    "duration_range_ms": [
+      102.5,
+      485.0
+    ],
+    "avg_duration_ms": 357.7983277955463,
+    "acoustic_niches": []
+  }
+}

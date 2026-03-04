@@ -1,0 +1,277 @@
+{
+  "species": "zebra_finch",
+  "total_sequences": 125,
+  "vocabulary_size": 120,
+  "bigram_stats": {
+    "unique_transitions": 373,
+    "entropy": 1.1836014665973456,
+    "perplexity": 4.292755758206787,
+    "top_transitions": [
+      {
+        "from_phrase": 6,
+        "to_phrase": 6,
+        "count": 20,
+        "probability": 0.4
+      },
+      {
+        "from_phrase": 18,
+        "to_phrase": 18,
+        "count": 17,
+        "probability": 0.4857142857142857
+      },
+      {
+        "from_phrase": 3,
+        "to_phrase": 3,
+        "count": 16,
+        "probability": 0.42105263157894735
+      },
+      {
+        "from_phrase": 18,
+        "to_phrase": 6,
+        "count": 11,
+        "probability": 0.3142857142857143
+      },
+      {
+        "from_phrase": 6,
+        "to_phrase": 18,
+        "count": 10,
+        "probability": 0.2
+      },
+      {
+        "from_phrase": 49,
+        "to_phrase": 49,
+        "count": 6,
+        "probability": 0.2857142857142857
+      },
+      {
+        "from_phrase": 49,
+        "to_phrase": 20,
+        "count": 5,
+        "probability": 0.23809523809523808
+      },
+      {
+        "from_phrase": 22,
+        "to_phrase": 22,
+        "count": 5,
+        "probability": 0.625
+      },
+      {
+        "from_phrase": 33,
+        "to_phrase": 20,
+        "count": 5,
+        "probability": 0.38461538461538464
+      },
+      {
+        "from_phrase": 2,
+        "to_phrase": 3,
+        "count": 5,
+        "probability": 0.38461538461538464
+      },
+      {
+        "from_phrase": 27,
+        "to_phrase": 27,
+        "count": 5,
+        "probability": 0.35714285714285715
+      },
+      {
+        "from_phrase": 33,
+        "to_phrase": 33,
+        "count": 4,
+        "probability": 0.3076923076923077
+      },
+      {
+        "from_phrase": 20,
+        "to_phrase": 61,
+        "count": 4,
+        "probability": 0.15384615384615385
+      },
+      {
+        "from_phrase": 3,
+        "to_phrase": 2,
+        "count": 4,
+        "probability": 0.10526315789473684
+      },
+      {
+        "from_phrase": 5,
+        "to_phrase": 3,
+        "count": 3,
+        "probability": 0.6
+      },
+      {
+        "from_phrase": 22,
+        "to_phrase": 27,
+        "count": 3,
+        "probability": 0.375
+      },
+      {
+        "from_phrase": 62,
+        "to_phrase": 20,
+        "count": 3,
+        "probability": 0.6
+      },
+      {
+        "from_phrase": 67,
+        "to_phrase": 3,
+        "count": 3,
+        "probability": 1.0
+      },
+      {
+        "from_phrase": 28,
+        "to_phrase": 3,
+        "count": 3,
+        "probability": 0.3333333333333333
+      },
+      {
+        "from_phrase": 3,
+        "to_phrase": 68,
+        "count": 3,
+        "probability": 0.07894736842105263
+      }
+    ]
+  },
+  "bird_syntax_comparison": [
+    {
+      "bird_id": "whiblu5698",
+      "sequence_count": 7,
+      "unique_phrases": 12,
+      "perplexity": 2.4301640408432315
+    },
+    {
+      "bird_id": "lblred0613",
+      "sequence_count": 19,
+      "unique_phrases": 16,
+      "perplexity": 2.1863753352111437
+    },
+    {
+      "bird_id": "gralbl0457",
+      "sequence_count": 7,
+      "unique_phrases": 26,
+      "perplexity": 1.565972441175087
+    },
+    {
+      "bird_id": "lblbla4548",
+      "sequence_count": 15,
+      "unique_phrases": 38,
+      "perplexity": 1.620880440636685
+    },
+    {
+      "bird_id": "gragra0201",
+      "sequence_count": 8,
+      "unique_phrases": 8,
+      "perplexity": 1.709975946676697
+    },
+    {
+      "bird_id": "hpihpi4748",
+      "sequence_count": 14,
+      "unique_phrases": 27,
+      "perplexity": 3.030738113139339
+    },
+    {
+      "bird_id": "blabla0506",
+      "sequence_count": 7,
+      "unique_phrases": 17,
+      "perplexity": 2.363949450567203
+    },
+    {
+      "bird_id": "yelgre5275",
+      "sequence_count": 7,
+      "unique_phrases": 30,
+      "perplexity": 1.420982563153855
+    },
+    {
+      "bird_id": "bluras61dd",
+      "sequence_count": 5,
+      "unique_phrases": 25,
+      "perplexity": 2.8077153663322405
+    },
+    {
+      "bird_id": "yelora2575",
+      "sequence_count": 5,
+      "unique_phrases": 15,
+      "perplexity": 2.109333746300666
+    }
+  ],
+  "common_patterns": [
+    {
+      "pattern": [
+        6,
+        6,
+        6
+      ],
+      "occurrences": 6
+    },
+    {
+      "pattern": [
+        18,
+        18,
+        18
+      ],
+      "occurrences": 5
+    },
+    {
+      "pattern": [
+        18,
+        6,
+        6
+      ],
+      "occurrences": 4
+    },
+    {
+      "pattern": [
+        6,
+        6,
+        18
+      ],
+      "occurrences": 4
+    },
+    {
+      "pattern": [
+        3,
+        3,
+        3
+      ],
+      "occurrences": 4
+    },
+    {
+      "pattern": [
+        6,
+        18,
+        18
+      ],
+      "occurrences": 4
+    },
+    {
+      "pattern": [
+        67,
+        3,
+        68
+      ],
+      "occurrences": 3
+    },
+    {
+      "pattern": [
+        2,
+        3,
+        3
+      ],
+      "occurrences": 3
+    },
+    {
+      "pattern": [
+        3,
+        3,
+        2
+      ],
+      "occurrences": 3
+    },
+    {
+      "pattern": [
+        6,
+        18,
+        6
+      ],
+      "occurrences": 3
+    }
+  ],
+  "processing_time_sec": 2.706298967
+}

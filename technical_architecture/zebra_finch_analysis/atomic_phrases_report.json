@@ -1,0 +1,127 @@
+{
+  "total_candidates": 27518,
+  "total_atomic_phrases": 1830,
+  "high_quality_phrases": 0,
+  "avg_cluster_size": 14.984699453551913,
+  "avg_intra_similarity": 0.5787417645508961,
+  "avg_inter_distance": 0.21817041425422343,
+  "avg_separation": 0.5220371446121503,
+  "avg_reuse": 12.689071038251367,
+  "top_phrases": [
+    {
+      "phrase_id": 294,
+      "size": 38,
+      "intra_similarity": 0.6233073502911745,
+      "separation": 1.6080211970737839,
+      "reuse_score": 32.0,
+      "primary_call_type": "Song",
+      "unique_birds": 13,
+      "unique_files": 32
+    },
+    {
+      "phrase_id": 457,
+      "size": 37,
+      "intra_similarity": 0.6209767677538313,
+      "separation": 1.3644406846336599,
+      "reuse_score": 32.0,
+      "primary_call_type": "Song",
+      "unique_birds": 18,
+      "unique_files": 32
+    },
+    {
+      "phrase_id": 126,
+      "size": 39,
+      "intra_similarity": 0.6179776209194718,
+      "separation": 1.330469127026238,
+      "reuse_score": 32.0,
+      "primary_call_type": "Song",
+      "unique_birds": 16,
+      "unique_files": 32
+    },
+    {
+      "phrase_id": 274,
+      "size": 37,
+      "intra_similarity": 0.6168403869231431,
+      "separation": 1.23590881871026,
+      "reuse_score": 29.0,
+      "primary_call_type": "Song",
+      "unique_birds": 15,
+      "unique_files": 29
+    },
+    {
+      "phrase_id": 109,
+      "size": 34,
+      "intra_similarity": 0.6196923415024599,
+      "separation": 1.2245533892034792,
+      "reuse_score": 25.0,
+      "primary_call_type": "Song",
+      "unique_birds": 12,
+      "unique_files": 25
+    },
+    {
+      "phrase_id": 307,
+      "size": 36,
+      "intra_similarity": 0.6276112567381367,
+      "separation": 1.1859651365069759,
+      "reuse_score": 30.0,
+      "primary_call_type": "Song",
+      "unique_birds": 14,
+      "unique_files": 30
+    },
+    {
+      "phrase_id": 341,
+      "size": 38,
+      "intra_similarity": 0.6242052539236637,
+      "separation": 1.1768445097994507,
+      "reuse_score": 32.0,
+      "primary_call_type": "Song",
+      "unique_birds": 15,
+      "unique_files": 32
+    },
+    {
+      "phrase_id": 251,
+      "size": 42,
+      "intra_similarity": 0.6218242253059193,
+      "separation": 1.1538477189508687,
+      "reuse_score": 32.0,
+      "primary_call_type": "Song",
+      "unique_birds": 14,
+      "unique_files": 32
+    },
+    {
+      "phrase_id": 765,
+      "size": 19,
+      "intra_similarity": 0.6149670198623007,
+      "separation": 1.0973887531673894,
+      "reuse_score": 15.0,
+      "primary_call_type": "Song",
+      "unique_birds": 9,
+      "unique_files": 15
+    },
+    {
+      "phrase_id": 116,
+      "size": 29,
+      "intra_similarity": 0.6146506598784657,
+      "separation": 1.086082077750568,
+      "reuse_score": 22.0,
+      "primary_call_type": "Song",
+      "unique_birds": 15,
+      "unique_files": 22
+    }
+  ],
+  "call_type_distribution": {
+    "Wsst": 936,
+    "Distress": 373,
+    "Nest": 1505,
+    "Thuk": 375,
+    "Distance": 1485,
+    "Whine": 872,
+    "Begging": 771,
+    "Tet": 959,
+    "Tuck": 318,
+    "Song": 1796
+  },
+  "extraction_time_sec": 5.927207911,
+  "clustering_time_sec": 5.279899705,
+  "total_time_sec": 11.210239596
+}

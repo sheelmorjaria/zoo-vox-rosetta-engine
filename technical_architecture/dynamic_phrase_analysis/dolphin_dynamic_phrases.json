@@ -1,0 +1,175 @@
+{
+  "species": "dolphin",
+  "total_files": 303,
+  "total_candidates": 571,
+  "total_atomic_phrases": 49,
+  "high_quality_phrases": 0,
+  "avg_phrases_per_file": 1.8844884488448845,
+  "avg_phrase_duration_ms": 1490.672285464098,
+  "duration_distribution": {
+    "50-100ms": 58,
+    "500ms+": 439,
+    "200-500ms": 41,
+    "100-200ms": 33
+  },
+  "call_type_distribution": {
+    "whistle": 533
+  },
+  "avg_cluster_size": 10.877551020408163,
+  "avg_intra_similarity": 0.08686391175749462,
+  "avg_separation": 0.24791266564936784,
+  "avg_reuse": 7.775510204081633,
+  "top_phrases": [
+    {
+      "phrase_id": 5,
+      "size": 15,
+      "avg_duration_ms": 2123.862548828125,
+      "intra_similarity": 0.17321716699661716,
+      "separation": 0.5594743941067033,
+      "reuse_score": 12.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 12,
+      "unique_files": 12,
+      "duration_range_ms": [
+        1172.3583,
+        2728.8208
+      ]
+    },
+    {
+      "phrase_id": 36,
+      "size": 2,
+      "avg_duration_ms": 269.410400390625,
+      "intra_similarity": 0.05216378144546846,
+      "separation": 0.5168031776370285,
+      "reuse_score": 1.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 1,
+      "unique_files": 1,
+      "duration_range_ms": [
+        109.77319,
+        429.0476
+      ]
+    },
+    {
+      "phrase_id": 10,
+      "size": 3,
+      "avg_duration_ms": 1907.3544921875,
+      "intra_similarity": 0.06632328871396849,
+      "separation": 0.4906555871253209,
+      "reuse_score": 3.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 3,
+      "unique_files": 3,
+      "duration_range_ms": [
+        1606.372,
+        2249.9094
+      ]
+    },
+    {
+      "phrase_id": 35,
+      "size": 2,
+      "avg_duration_ms": 2107.732421875,
+      "intra_similarity": 0.06776580265261045,
+      "separation": 0.4687190259495949,
+      "reuse_score": 2.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 2,
+      "unique_files": 2,
+      "duration_range_ms": [
+        1591.4059,
+        2624.059
+      ]
+    },
+    {
+      "phrase_id": 41,
+      "size": 2,
+      "avg_duration_ms": 863.061279296875,
+      "intra_similarity": 0.07363163473699214,
+      "separation": 0.3780997057263762,
+      "reuse_score": 2.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 2,
+      "unique_files": 2,
+      "duration_range_ms": [
+        613.6281,
+        1112.4944
+      ]
+    },
+    {
+      "phrase_id": 21,
+      "size": 2,
+      "avg_duration_ms": 356.7120056152344,
+      "intra_similarity": 0.05786101221468004,
+      "separation": 0.34824412176617753,
+      "reuse_score": 2.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 2,
+      "unique_files": 2,
+      "duration_range_ms": [
+        314.30838,
+        399.11563
+      ]
+    },
+    {
+      "phrase_id": 37,
+      "size": 3,
+      "avg_duration_ms": 68.20108795166016,
+      "intra_similarity": 0.06677697382743401,
+      "separation": 0.3447844195637855,
+      "reuse_score": 1.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 1,
+      "unique_files": 1,
+      "duration_range_ms": [
+        59.886475,
+        84.83008
+      ]
+    },
+    {
+      "phrase_id": 45,
+      "size": 2,
+      "avg_duration_ms": 538.7982177734375,
+      "intra_similarity": 0.029953709086158686,
+      "separation": 0.33654640763507204,
+      "reuse_score": 2.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 2,
+      "unique_files": 2,
+      "duration_range_ms": [
+        503.87756,
+        573.7188
+      ]
+    },
+    {
+      "phrase_id": 42,
+      "size": 2,
+      "avg_duration_ms": 64.87528991699219,
+      "intra_similarity": 0.029789171121121782,
+      "separation": 0.3295550676357679,
+      "reuse_score": 1.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 1,
+      "unique_files": 1,
+      "duration_range_ms": [
+        54.897964,
+        74.85261
+      ]
+    },
+    {
+      "phrase_id": 1,
+      "size": 2,
+      "avg_duration_ms": 690.9523315429688,
+      "intra_similarity": 0.04241956006119235,
+      "separation": 0.3282718565715529,
+      "reuse_score": 2.0,
+      "primary_call_type": "whistle",
+      "unique_birds": 2,
+      "unique_files": 2,
+      "duration_range_ms": [
+        498.8889,
+        883.01575
+      ]
+    }
+  ],
+  "processing_time_sec": 3.807151116
+}
