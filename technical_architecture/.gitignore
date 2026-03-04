@@ -138,6 +138,13 @@ corpus_*.json
 *.joblib
 *.trt
 *.onnx
+*.wav
+*.raw
+*.flac
+*.mp3
+*.ogg
+*.bin
+*.mpk
 beans_audio_*/
 beans_zero_data/
 rosetta_net_*.json
