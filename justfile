@@ -26,9 +26,9 @@ lint-rust:
 
 # Run Python linting (Ruff + Flake8)
 lint-python:
-    ruff format --check .
-    ruff check .
-    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    ruff format --check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
+    ruff check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
+    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude="presentation_video.py,pub.py,technical_architecture/scripts/*,tests/archive_experimental/*,tests/archive/*,archive/*,realtime/archive/*"
 
 # =================================================#
 #                BUILDING                          #

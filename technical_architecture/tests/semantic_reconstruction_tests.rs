@@ -86,7 +86,10 @@ fn test_exemplar_manager_keep_better_on_lower_quality() {
     manager.register_exemplar(42, audio2, features2);
 
     let entry = manager.get_exemplar(42).expect("Exemplar should exist");
-    assert_eq!(entry.audio, audio1, "Should keep original high quality exemplar");
+    assert_eq!(
+        entry.audio, audio1,
+        "Should keep original high quality exemplar"
+    );
 }
 
 #[test]
@@ -380,7 +383,11 @@ fn test_cached_granular_synthesizer_clear_sources() {
 
     let audio = vec![0.5, 0.3];
     let features = RosettaFeatures::default();
-    synth.register_source(1, audio.clone(), SourceMetadata112D::from_features(&features));
+    synth.register_source(
+        1,
+        audio.clone(),
+        SourceMetadata112D::from_features(&features),
+    );
     synth.register_source(2, audio, SourceMetadata112D::from_features(&features));
 
     assert_eq!(synth.source_count(), 2);

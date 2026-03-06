@@ -27,33 +27,33 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use technical_architecture::{
-    // Stage 1: NBD Segmentation
-    BoundaryDetectorConfig as NbdDetectorConfig,
-    NeuralBoundaryDetector,
-    NbdPhraseBoundary,
-    NbdBoundaryType,
     segment_into_phrases,
 
-    // Stage 2: Feature Extraction
-    MicroDynamicsExtractor,
-    MicroDynamicsFeatures,
-    RosettaFeatures,
-
-    // Stage 3: Corpus Analysis
-    NGram,
-    NGramMiner,
-    PhraseX,
-    PhraseXDiscoveryEngine,
-    PMICalculator,
-    SuffixEntropyCalculator,
-
+    // Stage 1: NBD Segmentation
+    BoundaryDetectorConfig as NbdDetectorConfig,
     // Stage 4: Semantic Reconstruction
     CachedGranularSynthesizer,
     ExemplarManager,
+    // Stage 2: Feature Extraction
+    MicroDynamicsExtractor,
+    MicroDynamicsFeatures,
+    // Stage 3: Corpus Analysis
+    NGram,
+    NGramMiner,
+    NbdBoundaryType,
+    NbdPhraseBoundary,
+    NeuralBoundaryDetector,
+    PMICalculator,
+    PhraseX,
+    PhraseXDiscoveryEngine,
+    RosettaFeatures,
+
     SemanticTimelineEvent,
+    SourceMetadata112D,
+    SuffixEntropyCalculator,
+
     SynthesisConfig112D,
     SynthesisTimeline,
-    SourceMetadata112D,
 };
 
 // =============================================================================
@@ -204,10 +204,7 @@ fn test_stage3_ngram_miner() {
 
 #[test]
 fn test_stage3_pmi_calculator() {
-    let corpus = vec![
-        vec![0, 1, 0, 1, 0, 1],
-        vec![0, 1, 2, 3],
-    ];
+    let corpus = vec![vec![0, 1, 0, 1, 0, 1], vec![0, 1, 2, 3]];
     let calc = PMICalculator::from_corpus(&corpus);
     assert!(calc.is_ok());
     let calc = calc.unwrap();
@@ -218,11 +215,7 @@ fn test_stage3_pmi_calculator() {
 
 #[test]
 fn test_stage3_suffix_entropy_calculator() {
-    let corpus = vec![
-        vec![1, 1, 2],
-        vec![1, 1, 3],
-        vec![1, 1, 4],
-    ];
+    let corpus = vec![vec![1, 1, 2], vec![1, 1, 3], vec![1, 1, 4]];
     let calc = SuffixEntropyCalculator::from_corpus(&corpus);
     assert!(calc.is_ok());
     let calc = calc.unwrap();
@@ -368,8 +361,8 @@ fn test_clustering_vocabulary_size() {
 fn test_clustering_assign_to_nearest() {
     // Simulate k-means clustering behavior with distinct centroids
     let centroids = vec![
-        vec![0.0f32, 0.0, 0.0], // Centroid 0: at origin
-        vec![5.0f32, 5.0, 5.0], // Centroid 1: far from origin
+        vec![0.0f32, 0.0, 0.0],    // Centroid 0: at origin
+        vec![5.0f32, 5.0, 5.0],    // Centroid 1: far from origin
         vec![10.0f32, 10.0, 10.0], // Centroid 2: farthest
     ];
 

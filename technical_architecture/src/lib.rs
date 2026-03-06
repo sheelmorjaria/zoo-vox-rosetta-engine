@@ -80,6 +80,8 @@ pub use synthesis::{
     PhraseSegment,
     RealTimeSafetyMonitor,
     SafetyCheck,
+    // Semantic Reconstruction (STAGE 4) - SourceMetadata only (112D fields)
+    SourceMetadata,
     SpeciesParameters,
     SuperpositionalSynthesizer,
     SynthesisConfig,
@@ -88,8 +90,6 @@ pub use synthesis::{
     SynthesisResult,
     TimelineEvent,
     ValidationResult,
-    // Semantic Reconstruction (STAGE 4) - SourceMetadata only (112D fields)
-    SourceMetadata,
 };
 
 // Manifest Bridge exports (Rust/Python pipeline communication)
@@ -205,13 +205,8 @@ pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationEr
 
 // Within-Vocalization Analysis exports (NEW - TDD-tested multi-phrase detection)
 pub use within_vocalization_analyzer::{
-    BoundaryType as WvaBoundaryType,
-    CorpusPhraseAnalyzer,
-    CorpusPhraseStatistics,
-    PhraseBoundary,
-    PhraseSegmentation,
-    WithinVocalizationAnalyzer,
-    WithinVocalizationConfig,
+    BoundaryType as WvaBoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary,
+    PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
 };
 
 // GMM exports (NEW - Phoneme discovery approach)
@@ -312,9 +307,7 @@ pub use corpus_analysis::{
 };
 
 // Neural Boundary Detection exports (NEW - Stage 1 of synthesis pipeline)
-pub use neural_boundary::{
-    segment_into_phrases, BoundaryDetectorConfig, NeuralBoundaryDetector,
-};
+pub use neural_boundary::{segment_into_phrases, BoundaryDetectorConfig, NeuralBoundaryDetector};
 // Rename to avoid conflict with within_vocalization_analyzer::PhraseBoundary
 pub use neural_boundary::{BoundaryType as NbdBoundaryType, PhraseBoundary as NbdPhraseBoundary};
 
@@ -521,6 +514,7 @@ mod environmental_monitor;
 mod iacuc_compliance;
 pub mod island_hopping; // Make public for integration tests
 mod logging;
+pub mod manifest_bridge; // Rust/Python pipeline communication
 mod master_controller;
 mod multi_node_coordination;
 mod peer_controller;
@@ -531,7 +525,6 @@ mod safety;
 mod shadow_model_monitor;
 mod source_separation;
 pub mod synthesis; // Make public for integration tests
-pub mod manifest_bridge; // Rust/Python pipeline communication
 mod thermal;
 mod time_series_archive;
 mod visual_recording;

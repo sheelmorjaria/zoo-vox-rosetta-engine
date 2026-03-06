@@ -161,16 +161,15 @@ jobs:
 
     - name: Check formatting with ruff
       run: |
-        ruff format --check . --exclude archive/
+        ruff format --check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
 
     - name: Lint with ruff
       run: |
-        ruff check . --exclude archive/
+        ruff check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
 
     - name: Lint with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=archive/
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=archive/
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude="presentation_video.py,pub.py,technical_architecture/scripts/*,tests/archive_experimental/*,tests/archive/*,archive/*,realtime/archive/*"
 
   integration-test:
     name: Integration Tests

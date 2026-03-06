@@ -207,9 +207,7 @@ impl SynthesisManifest {
 
     /// Get an exemplar by cluster ID
     pub fn get_exemplar(&self, cluster_id: u32) -> Option<&ExemplarEntry> {
-        self.exemplars
-            .iter()
-            .find(|e| e.cluster_id == cluster_id)
+        self.exemplars.iter().find(|e| e.cluster_id == cluster_id)
     }
 
     /// Get the number of exemplars
@@ -287,7 +285,7 @@ impl ClustersManifest {
                     cluster_id: cluster.cluster_id,
                     audio_path: cluster.exemplar_audio.clone(),
                     metadata: ExemplarMetadata {
-                        mean_f0_hz: features.get(0).copied().unwrap_or(5000.0),
+                        mean_f0_hz: features.first().copied().unwrap_or(5000.0),
                         duration_ms: features.get(1).copied().unwrap_or(100.0),
                         f0_range_hz: features.get(2).copied().unwrap_or(500.0),
                         rms_energy: features.get(3).copied().unwrap_or(0.5),
@@ -334,10 +332,7 @@ impl PipelineController {
     }
 
     /// Stage 1-2: Create segments manifest from extracted features
-    pub fn create_segments_manifest(
-        &mut self,
-        source_file: Option<&str>,
-    ) -> &mut SegmentsManifest {
+    pub fn create_segments_manifest(&mut self, source_file: Option<&str>) -> &mut SegmentsManifest {
         let manifest = if let Some(src) = source_file {
             SegmentsManifest::from_source(src, self.sample_rate)
         } else {
@@ -392,9 +387,7 @@ impl PipelineController {
 
     /// Get an exemplar for synthesis by cluster ID
     pub fn get_exemplar(&self, cluster_id: u32) -> Option<&ExemplarEntry> {
-        self.synthesis_manifest
-            .as_ref()?
-            .get_exemplar(cluster_id)
+        self.synthesis_manifest.as_ref()?.get_exemplar(cluster_id)
     }
 }
 
@@ -460,10 +453,12 @@ mod tests {
 
         // Add a segment
         let features = RosettaFeatures::default();
-        controller
-            .segments_manifest_mut()
-            .unwrap()
-            .add_segment("seg_001.wav", &features, Some(0.0), Some(100.0));
+        controller.segments_manifest_mut().unwrap().add_segment(
+            "seg_001.wav",
+            &features,
+            Some(0.0),
+            Some(100.0),
+        );
 
         assert_eq!(controller.segments_manifest().unwrap().len(), 1);
     }
