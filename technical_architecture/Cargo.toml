@@ -72,6 +72,8 @@ walkdir = "2.4"
 dirs = "5.0"
 # Zstd compression for bundle serialization
 zstd = "0.13"
+# CLI argument parsing
+clap = { version = "4.4", features = ["derive"] }
 # Scientific computing extensions (Phase 3: Parallel Extraction)
 ndarray-stats = "0.5"
 ndarray-linalg = { version = "0.16", optional = true }
@@ -83,6 +85,10 @@ numpy = { version = "0.19", optional = true }
 # PyTorch/libtorch bindings for GPU neural network training (optional)
 # Requires LIBTORCH environment variable to be set
 tch = { version = "0.15", optional = true }
+# Arrow for BEANS dataset manifest creation (optional)
+arrow = { version = "53.0", optional = true }
+# Burn framework for neural network training (optional)
+burn = { version = "0.14", optional = true }
 
 [features]
 default = ["hound", "symphonia"]
@@ -91,9 +97,12 @@ hound = []
 python-bindings = ["pyo3", "pyo3-asyncio", "numpy"]
 gpu-acceleration = []
 gpu-training = ["tch"]  # PyTorch-based NN training
+burn-training = ["burn"]  # Burn-based NN training
 fpga-integration = []
 # Phase 3: Parallel Extraction dependencies
 parallel-extraction = ["polars", "linfa", "linfa-clustering", "linfa-preprocessing", "linfa-nn", "rubato", "symphonia", "ndarray-linalg"]
+# BEANS dataset tools (requires arrow)
+beans-tools = ["arrow"]
 
 [profile.release]
 opt-level = 3
@@ -110,3 +119,8 @@ name = "technical_architecture._rust"  # Python module name
 
 [dev-dependencies]
 tempfile = "3.8"
+
+# Integration tests
+[[test]]
+name = "synthesis_pipeline_integration"
+path = "tests/synthesis_pipeline_integration_tests.rs"

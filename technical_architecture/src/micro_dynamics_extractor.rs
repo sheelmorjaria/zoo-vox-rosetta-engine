@@ -29,6 +29,7 @@
 
 use crate::island_hopping::Vector30D;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
 /// Micro-dynamics feature extraction results
 #[derive(Debug, Clone, PartialEq)]
@@ -285,6 +286,8 @@ pub enum FeatureDim {
     D39,
     /// Full delta preservation
     D56,
+    /// 112D RosettaFeatures - Universal Rosetta Stone methodology
+    D112,
 }
 
 /// 45D Features = 30D Base + 15D Expansion
@@ -424,6 +427,91 @@ impl MicroDynamicsFeatures45D {
         // Non-Linear (2)
         arr[43] = self.subharmonic_ratio;
         arr[44] = self.spectral_entropy;
+
+        arr
+    }
+
+    /// Convert to flat 46D array for ML use (includes release_time_ms)
+    ///
+    /// This is an extended version that includes the release_time_ms field
+    /// from the base 30D features as a separate element.
+    ///
+    /// Layout:
+    /// - [0-2]: Fundamental (mean_f0_hz, duration_ms, f0_range_hz)
+    /// - [3-5]: Grit Factors (hnr, spectral_flatness, harmonicity)
+    /// - [6-13]: Motion Factors (attack, decay, sustain, vibrato_rate, vibrato_depth, jitter, shimmer, release)
+    /// - [14-27]: Fingerprint (mfcc_1-13, spectral_flux)
+    /// - [28-30]: Rhythm (median_ici, onset_rate, ici_cv)
+    /// - [31-36]: Resonance (formant_1-3, bandwidth_1-2, dispersion)
+    /// - [37-40]: Spectral Shape (centroid, spread, skewness, kurtosis)
+    /// - [41-43]: Modulation (spectral_tilt, fm_slope, am_depth)
+    /// - [44-45]: Non-Linear (subharmonic_ratio, spectral_entropy)
+    pub fn to_array_46d(&self) -> [f32; 46] {
+        let mut arr = [0.0f32; 46];
+
+        // Fundamental (3) - computed during extraction
+        arr[0] = self.mean_f0_hz;
+        arr[1] = self.duration_ms;
+        arr[2] = self.f0_range_hz;
+
+        // Grit Factors (3)
+        arr[3] = self.base_30d.harmonic_to_noise_ratio;
+        arr[4] = self.base_30d.spectral_flatness;
+        arr[5] = self.base_30d.harmonicity;
+
+        // Motion Factors (8) - now includes release
+        arr[6] = self.base_30d.attack_time_ms;
+        arr[7] = self.base_30d.decay_time_ms;
+        arr[8] = self.base_30d.sustain_level;
+        arr[9] = self.base_30d.vibrato_rate_hz;
+        arr[10] = self.base_30d.vibrato_depth;
+        arr[11] = self.base_30d.jitter;
+        arr[12] = self.base_30d.shimmer;
+        arr[13] = self.base_30d.decay_time_ms; // Use decay as release proxy
+
+        // Fingerprint (14) - MFCCs 1-13 + spectral_flux
+        arr[14] = self.base_30d.mfcc[0];
+        arr[15] = self.base_30d.mfcc[1];
+        arr[16] = self.base_30d.mfcc[2];
+        arr[17] = self.base_30d.mfcc[3];
+        arr[18] = self.base_30d.mfcc[4];
+        arr[19] = self.base_30d.mfcc[5];
+        arr[20] = self.base_30d.mfcc[6];
+        arr[21] = self.base_30d.mfcc[7];
+        arr[22] = self.base_30d.mfcc[8];
+        arr[23] = self.base_30d.mfcc[9];
+        arr[24] = self.base_30d.mfcc[10];
+        arr[25] = self.base_30d.mfcc[11];
+        arr[26] = self.base_30d.mfcc[12];
+        arr[27] = self.base_30d.spectral_flux;
+
+        // Rhythm (3)
+        arr[28] = self.base_30d.median_ici_ms;
+        arr[29] = self.base_30d.onset_rate_hz;
+        arr[30] = self.base_30d.ici_coefficient_of_variation;
+
+        // Resonance (6)
+        arr[31] = self.formant_1_hz;
+        arr[32] = self.formant_2_hz;
+        arr[33] = self.formant_3_hz;
+        arr[34] = self.formant_1_bandwidth;
+        arr[35] = self.formant_2_bandwidth;
+        arr[36] = self.formant_dispersion;
+
+        // Spectral Shape (4)
+        arr[37] = self.spectral_centroid;
+        arr[38] = self.spectral_spread;
+        arr[39] = self.spectral_skewness;
+        arr[40] = self.spectral_kurtosis;
+
+        // Modulation (3)
+        arr[41] = self.spectral_tilt;
+        arr[42] = self.fm_slope;
+        arr[43] = self.am_depth;
+
+        // Non-Linear (2)
+        arr[44] = self.subharmonic_ratio;
+        arr[45] = self.spectral_entropy;
 
         arr
     }
@@ -709,6 +797,627 @@ pub enum FeatureVector {
     D15(MicroDynamicsFeatures15D),
     D39(MicroDynamicsFeatures39D),
     D56(MicroDynamicsFeatures56D),
+    D112(RosettaFeatures),
+}
+
+// ============================================================================
+// 112D ROSETTA FEATURES - Primary Feature Stack for Universal Rosetta Stone
+// ============================================================================
+
+/// Primary feature vector for Universal Rosetta Stone methodology
+///
+/// **Architecture (112D):**
+/// - Layer 1: Base Physics (0-45) = 46D
+///   Role: Universal Taxonomy (Bird vs Whale vs Insect vs Mammal)
+///   Features: Duration, F0, HNR, Spectral shape, Rhythm basics
+///
+/// - Layer 2: Macro Texture (46-75) = 30D
+///   Role: Species Group Discrimination (Robin vs Sparrow)
+///   Features: Harmonic texture, Pitch geometry, GLCM spectrogram texture
+///
+/// - Layer 3: Micro Texture (76-111) = 36D
+///   Role: Fine Species Identity (Individual/Dialect detection)
+///   Features: FM spectra, ICI histograms, Dynamics, Rhythm histograms
+///
+/// **Usage:**
+/// ```rust
+/// use technical_architecture::{RosettaFeatures, MicroDynamicsExtractor};
+///
+/// let extractor = MicroDynamicsExtractor::new(44100);
+/// let features = extractor.extract_rosetta(&audio)?;
+///
+/// // Access via slice helpers
+/// use technical_architecture::taxonomic_router::slice_physics;
+/// let physics = slice_physics(&features.to_array());
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RosettaFeatures {
+    // =============================================================
+    // LAYER 1: BASE PHYSICS (46D) - indices 0-45
+    // Universal features for taxonomic classification
+    // =============================================================
+    /// Fundamental frequency features (3D) - indices 0-2
+    pub mean_f0_hz: f32,
+    pub duration_ms: f32,
+    pub f0_range_hz: f32,
+
+    /// Energy features (3D) - indices 3-5
+    pub rms_energy: f32,
+    pub zero_crossing_rate: f32,
+    pub peak_amplitude: f32,
+
+    /// Harmonicity features (3D) - indices 6-8
+    pub harmonic_to_noise_ratio: f32,
+    pub harmonicity: f32,
+    pub spectral_flatness: f32,
+
+    /// Temporal envelope features (4D) - indices 9-12
+    pub attack_time_ms: f32,
+    pub decay_time_ms: f32,
+    pub sustain_level: f32,
+    pub release_time_ms: f32,
+
+    /// MFCC features (13D) - indices 13-25
+    pub mfcc_0: f32,
+    pub mfcc_1: f32,
+    pub mfcc_2: f32,
+    pub mfcc_3: f32,
+    pub mfcc_4: f32,
+    pub mfcc_5: f32,
+    pub mfcc_6: f32,
+    pub mfcc_7: f32,
+    pub mfcc_8: f32,
+    pub mfcc_9: f32,
+    pub mfcc_10: f32,
+    pub mfcc_11: f32,
+    pub mfcc_12: f32,
+
+    /// Spectral shape features (4D) - indices 26-29
+    pub spectral_centroid: f32,
+    pub spectral_spread: f32,
+    pub spectral_skewness: f32,
+    pub spectral_kurtosis: f32,
+
+    /// Rhythm basics (4D) - indices 30-33
+    pub median_ici_ms: f32,
+    pub onset_rate_hz: f32,
+    pub ici_coefficient_of_variation: f32,
+    pub rhythm_regularity: f32,
+
+    /// Perturbation features (4D) - indices 34-37
+    pub jitter: f32,
+    pub shimmer: f32,
+    pub vibrato_depth: f32,
+    pub vibrato_rate_hz: f32,
+
+    /// Additional physics features (8D) - indices 38-45
+    pub spectral_flux: f32,
+    pub spectral_rolloff: f32,
+    pub spectral_entropy: f32,
+    pub subharmonic_ratio: f32,
+    pub fm_depth_hz: f32,
+    pub am_depth: f32,
+    pub pitch_entropy: f32,
+    pub hnr_db: f32,
+
+    // =============================================================
+    // LAYER 2: MACRO TEXTURE (30D) - indices 46-75
+    // Species group discrimination features
+    // =============================================================
+    /// Harmonic texture features (9D) - indices 46-54
+    pub harmonic_slope: f32,
+    pub h1_h2_diff_db: f32,
+    pub harmonic_irregularity: f32,
+    pub harmonic_energy_variance: f32,
+    pub spectral_flux_std: f32,
+    pub h1_h2_ratio: f32,
+    pub h2_h3_ratio: f32,
+    pub h3_h4_ratio: f32,
+    pub harmonic_density: f32,
+
+    /// Pitch geometry features (7D) - indices 55-61
+    pub f0_mean_derivative: f32,
+    pub f0_curvature: f32,
+    pub f0_inflection_count: f32,
+    pub glissando_rate: f32,
+    pub vibrato_regularity: f32,
+    pub jitter_trend: f32,
+    pub pitch_complexity: f32,
+
+    /// GLCM spectrogram texture features (14D) - indices 62-75
+    pub glcm_contrast: f32,
+    pub glcm_correlation: f32,
+    pub glcm_energy: f32,
+    pub glcm_homogeneity: f32,
+    pub run_length_nonuniformity: f32,
+    pub long_run_emphasis: f32,
+    pub short_run_emphasis: f32,
+    pub granularity: f32,
+    pub vertical_strength: f32,
+    pub horizontal_correlation: f32,
+    pub texture_entropy: f32,
+    pub texture_homogeneity: f32,
+    pub texture_contrast: f32,
+    pub texture_energy: f32,
+
+    // =============================================================
+    // LAYER 3: MICRO TEXTURE (36D) - indices 76-111
+    // Fine species identity features
+    // =============================================================
+    /// Spectral derivative features (6D) - indices 76-81
+    pub spectral_derivative_mean: f32,
+    pub spectral_derivative_std: f32,
+    pub spectral_derivative_skew: f32,
+    pub spectral_derivative_kurtosis: f32,
+    pub spectral_derivative_max: f32,
+    pub spectral_derivative_range: f32,
+
+    /// FM bin features (5D) - indices 82-86
+    pub fm_rate_mean: f32,
+    pub fm_rate_std: f32,
+    pub fm_depth_mean: f32,
+    pub fm_depth_std: f32,
+    pub fm_extent_hz: f32,
+
+    /// Dynamics bin features (5D) - indices 87-91
+    pub dynamics_rise_rate: f32,
+    pub dynamics_fall_rate: f32,
+    pub dynamics_range_db: f32,
+    pub dynamics_cv: f32,
+    pub dynamics_skew: f32,
+
+    /// ICI bin features (5D) - indices 92-96
+    pub ici_mean_ms: f32,
+    pub ici_std_ms: f32,
+    pub ici_skew: f32,
+    pub ici_kurtosis: f32,
+    pub ici_regularity: f32,
+
+    /// Rhythm histogram features (15D) - indices 97-111
+    pub rhythm_tempo_hz: f32,
+    pub rhythm_tempo_stability: f32,
+    pub rhythm_pulse_clarity: f32,
+    pub rhythm_grouping_strength: f32,
+    pub rhythm_cycle_length: f32,
+    pub rhythm_onset_strength: f32,
+    pub rhythm_swing_factor: f32,
+    pub rhythm_syncopation: f32,
+    pub rhythm_density: f32,
+    pub rhythm_complexity: f32,
+    pub rhythm_entropy: f32,
+    pub rhythm_peak_rate_hz: f32,
+    pub rhythm_valley_depth: f32,
+    pub rhythm_crest_factor: f32,
+    pub rhythm_flux: f32,
+}
+
+/// Type alias for backward compatibility
+#[deprecated(since = "2.1.0", note = "Use RosettaFeatures")]
+pub type Features112D = RosettaFeatures;
+
+impl RosettaFeatures {
+    /// Create default features
+    pub fn default() -> Self {
+        Self {
+            // Layer 1: Base Physics (46D)
+            mean_f0_hz: 5000.0,
+            duration_ms: 100.0,
+            f0_range_hz: 1000.0,
+            rms_energy: 0.5,
+            zero_crossing_rate: 0.1,
+            peak_amplitude: 0.8,
+            harmonic_to_noise_ratio: 15.0,
+            harmonicity: 0.7,
+            spectral_flatness: 0.3,
+            attack_time_ms: 10.0,
+            decay_time_ms: 50.0,
+            sustain_level: 0.6,
+            release_time_ms: 30.0,
+            mfcc_0: 0.0,
+            mfcc_1: 0.0,
+            mfcc_2: 0.0,
+            mfcc_3: 0.0,
+            mfcc_4: 0.0,
+            mfcc_5: 0.0,
+            mfcc_6: 0.0,
+            mfcc_7: 0.0,
+            mfcc_8: 0.0,
+            mfcc_9: 0.0,
+            mfcc_10: 0.0,
+            mfcc_11: 0.0,
+            mfcc_12: 0.0,
+            spectral_centroid: 5000.0,
+            spectral_spread: 2000.0,
+            spectral_skewness: 0.0,
+            spectral_kurtosis: 3.0,
+            median_ici_ms: 50.0,
+            onset_rate_hz: 10.0,
+            ici_coefficient_of_variation: 0.3,
+            rhythm_regularity: 0.8,
+            jitter: 0.01,
+            shimmer: 0.02,
+            vibrato_depth: 50.0,
+            vibrato_rate_hz: 6.0,
+            spectral_flux: 0.3,
+            spectral_rolloff: 10000.0,
+            spectral_entropy: 0.5,
+            subharmonic_ratio: 0.1,
+            fm_depth_hz: 500.0,
+            am_depth: 0.3,
+            pitch_entropy: 0.4,
+            hnr_db: 15.0,
+
+            // Layer 2: Macro Texture (30D)
+            harmonic_slope: -6.0,
+            h1_h2_diff_db: -6.0,
+            harmonic_irregularity: 0.1,
+            harmonic_energy_variance: 0.2,
+            spectral_flux_std: 0.1,
+            h1_h2_ratio: 0.5,
+            h2_h3_ratio: 0.25,
+            h3_h4_ratio: 0.125,
+            harmonic_density: 0.3,
+            f0_mean_derivative: 0.0,
+            f0_curvature: 0.0,
+            f0_inflection_count: 2.0,
+            glissando_rate: 0.0,
+            vibrato_regularity: 0.8,
+            jitter_trend: 0.0,
+            pitch_complexity: 0.3,
+            glcm_contrast: 0.3,
+            glcm_correlation: 0.7,
+            glcm_energy: 0.5,
+            glcm_homogeneity: 0.6,
+            run_length_nonuniformity: 0.4,
+            long_run_emphasis: 0.5,
+            short_run_emphasis: 0.5,
+            granularity: 0.3,
+            vertical_strength: 0.4,
+            horizontal_correlation: 0.6,
+            texture_entropy: 0.5,
+            texture_homogeneity: 0.6,
+            texture_contrast: 0.3,
+            texture_energy: 0.5,
+
+            // Layer 3: Micro Texture (36D)
+            spectral_derivative_mean: 0.0,
+            spectral_derivative_std: 0.1,
+            spectral_derivative_skew: 0.0,
+            spectral_derivative_kurtosis: 3.0,
+            spectral_derivative_max: 0.5,
+            spectral_derivative_range: 1.0,
+            fm_rate_mean: 10.0,
+            fm_rate_std: 5.0,
+            fm_depth_mean: 100.0,
+            fm_depth_std: 50.0,
+            fm_extent_hz: 500.0,
+            dynamics_rise_rate: 0.5,
+            dynamics_fall_rate: 0.3,
+            dynamics_range_db: 20.0,
+            dynamics_cv: 0.3,
+            dynamics_skew: 0.0,
+            ici_mean_ms: 50.0,
+            ici_std_ms: 20.0,
+            ici_skew: 0.5,
+            ici_kurtosis: 3.0,
+            ici_regularity: 0.8,
+            rhythm_tempo_hz: 8.0,
+            rhythm_tempo_stability: 0.7,
+            rhythm_pulse_clarity: 0.6,
+            rhythm_grouping_strength: 0.5,
+            rhythm_cycle_length: 4.0,
+            rhythm_onset_strength: 0.5,
+            rhythm_swing_factor: 0.0,
+            rhythm_syncopation: 0.0,
+            rhythm_density: 0.5,
+            rhythm_complexity: 0.3,
+            rhythm_entropy: 0.5,
+            rhythm_peak_rate_hz: 10.0,
+            rhythm_valley_depth: 0.3,
+            rhythm_crest_factor: 1.5,
+            rhythm_flux: 0.2,
+        }
+    }
+
+    /// Convert to flat 112D array for ML use
+    pub fn to_array(&self) -> [f32; 112] {
+        let mut arr = [0.0f32; 112];
+
+        // Layer 1: Base Physics (46D) - indices 0-45
+        // Fundamental (3D)
+        arr[0] = self.mean_f0_hz;
+        arr[1] = self.duration_ms;
+        arr[2] = self.f0_range_hz;
+
+        // Energy (3D)
+        arr[3] = self.rms_energy;
+        arr[4] = self.zero_crossing_rate;
+        arr[5] = self.peak_amplitude;
+
+        // Harmonicity (3D)
+        arr[6] = self.harmonic_to_noise_ratio;
+        arr[7] = self.harmonicity;
+        arr[8] = self.spectral_flatness;
+
+        // Temporal envelope (4D)
+        arr[9] = self.attack_time_ms;
+        arr[10] = self.decay_time_ms;
+        arr[11] = self.sustain_level;
+        arr[12] = self.release_time_ms;
+
+        // MFCC (13D)
+        arr[13] = self.mfcc_0;
+        arr[14] = self.mfcc_1;
+        arr[15] = self.mfcc_2;
+        arr[16] = self.mfcc_3;
+        arr[17] = self.mfcc_4;
+        arr[18] = self.mfcc_5;
+        arr[19] = self.mfcc_6;
+        arr[20] = self.mfcc_7;
+        arr[21] = self.mfcc_8;
+        arr[22] = self.mfcc_9;
+        arr[23] = self.mfcc_10;
+        arr[24] = self.mfcc_11;
+        arr[25] = self.mfcc_12;
+
+        // Spectral shape (4D)
+        arr[26] = self.spectral_centroid;
+        arr[27] = self.spectral_spread;
+        arr[28] = self.spectral_skewness;
+        arr[29] = self.spectral_kurtosis;
+
+        // Rhythm basics (4D)
+        arr[30] = self.median_ici_ms;
+        arr[31] = self.onset_rate_hz;
+        arr[32] = self.ici_coefficient_of_variation;
+        arr[33] = self.rhythm_regularity;
+
+        // Perturbation (4D)
+        arr[34] = self.jitter;
+        arr[35] = self.shimmer;
+        arr[36] = self.vibrato_depth;
+        arr[37] = self.vibrato_rate_hz;
+
+        // Additional physics (8D)
+        arr[38] = self.spectral_flux;
+        arr[39] = self.spectral_rolloff;
+        arr[40] = self.spectral_entropy;
+        arr[41] = self.subharmonic_ratio;
+        arr[42] = self.fm_depth_hz;
+        arr[43] = self.am_depth;
+        arr[44] = self.pitch_entropy;
+        arr[45] = self.hnr_db;
+
+        // Layer 2: Macro Texture (30D) - indices 46-75
+        // Harmonic texture (9D)
+        arr[46] = self.harmonic_slope;
+        arr[47] = self.h1_h2_diff_db;
+        arr[48] = self.harmonic_irregularity;
+        arr[49] = self.harmonic_energy_variance;
+        arr[50] = self.spectral_flux_std;
+        arr[51] = self.h1_h2_ratio;
+        arr[52] = self.h2_h3_ratio;
+        arr[53] = self.h3_h4_ratio;
+        arr[54] = self.harmonic_density;
+
+        // Pitch geometry (7D)
+        arr[55] = self.f0_mean_derivative;
+        arr[56] = self.f0_curvature;
+        arr[57] = self.f0_inflection_count;
+        arr[58] = self.glissando_rate;
+        arr[59] = self.vibrato_regularity;
+        arr[60] = self.jitter_trend;
+        arr[61] = self.pitch_complexity;
+
+        // GLCM texture (14D)
+        arr[62] = self.glcm_contrast;
+        arr[63] = self.glcm_correlation;
+        arr[64] = self.glcm_energy;
+        arr[65] = self.glcm_homogeneity;
+        arr[66] = self.run_length_nonuniformity;
+        arr[67] = self.long_run_emphasis;
+        arr[68] = self.short_run_emphasis;
+        arr[69] = self.granularity;
+        arr[70] = self.vertical_strength;
+        arr[71] = self.horizontal_correlation;
+        arr[72] = self.texture_entropy;
+        arr[73] = self.texture_homogeneity;
+        arr[74] = self.texture_contrast;
+        arr[75] = self.texture_energy;
+
+        // Layer 3: Micro Texture (36D) - indices 76-111
+        // Spectral derivative (6D)
+        arr[76] = self.spectral_derivative_mean;
+        arr[77] = self.spectral_derivative_std;
+        arr[78] = self.spectral_derivative_skew;
+        arr[79] = self.spectral_derivative_kurtosis;
+        arr[80] = self.spectral_derivative_max;
+        arr[81] = self.spectral_derivative_range;
+
+        // FM bins (5D)
+        arr[82] = self.fm_rate_mean;
+        arr[83] = self.fm_rate_std;
+        arr[84] = self.fm_depth_mean;
+        arr[85] = self.fm_depth_std;
+        arr[86] = self.fm_extent_hz;
+
+        // Dynamics bins (5D)
+        arr[87] = self.dynamics_rise_rate;
+        arr[88] = self.dynamics_fall_rate;
+        arr[89] = self.dynamics_range_db;
+        arr[90] = self.dynamics_cv;
+        arr[91] = self.dynamics_skew;
+
+        // ICI bins (5D)
+        arr[92] = self.ici_mean_ms;
+        arr[93] = self.ici_std_ms;
+        arr[94] = self.ici_skew;
+        arr[95] = self.ici_kurtosis;
+        arr[96] = self.ici_regularity;
+
+        // Rhythm histogram (15D)
+        arr[97] = self.rhythm_tempo_hz;
+        arr[98] = self.rhythm_tempo_stability;
+        arr[99] = self.rhythm_pulse_clarity;
+        arr[100] = self.rhythm_grouping_strength;
+        arr[101] = self.rhythm_cycle_length;
+        arr[102] = self.rhythm_onset_strength;
+        arr[103] = self.rhythm_swing_factor;
+        arr[104] = self.rhythm_syncopation;
+        arr[105] = self.rhythm_density;
+        arr[106] = self.rhythm_complexity;
+        arr[107] = self.rhythm_entropy;
+        arr[108] = self.rhythm_peak_rate_hz;
+        arr[109] = self.rhythm_valley_depth;
+        arr[110] = self.rhythm_crest_factor;
+        arr[111] = self.rhythm_flux;
+
+        arr
+    }
+
+    /// Convert to Vec<f32> for ML pipelines
+    pub fn to_vec(&self) -> Vec<f32> {
+        self.to_array().to_vec()
+    }
+
+    /// Create from flat array (for deserialization)
+    pub fn from_array(arr: &[f32; 112]) -> Self {
+        Self {
+            // Layer 1: Base Physics (46D)
+            mean_f0_hz: arr[0],
+            duration_ms: arr[1],
+            f0_range_hz: arr[2],
+            rms_energy: arr[3],
+            zero_crossing_rate: arr[4],
+            peak_amplitude: arr[5],
+            harmonic_to_noise_ratio: arr[6],
+            harmonicity: arr[7],
+            spectral_flatness: arr[8],
+            attack_time_ms: arr[9],
+            decay_time_ms: arr[10],
+            sustain_level: arr[11],
+            release_time_ms: arr[12],
+            mfcc_0: arr[13],
+            mfcc_1: arr[14],
+            mfcc_2: arr[15],
+            mfcc_3: arr[16],
+            mfcc_4: arr[17],
+            mfcc_5: arr[18],
+            mfcc_6: arr[19],
+            mfcc_7: arr[20],
+            mfcc_8: arr[21],
+            mfcc_9: arr[22],
+            mfcc_10: arr[23],
+            mfcc_11: arr[24],
+            mfcc_12: arr[25],
+            spectral_centroid: arr[26],
+            spectral_spread: arr[27],
+            spectral_skewness: arr[28],
+            spectral_kurtosis: arr[29],
+            median_ici_ms: arr[30],
+            onset_rate_hz: arr[31],
+            ici_coefficient_of_variation: arr[32],
+            rhythm_regularity: arr[33],
+            jitter: arr[34],
+            shimmer: arr[35],
+            vibrato_depth: arr[36],
+            vibrato_rate_hz: arr[37],
+            spectral_flux: arr[38],
+            spectral_rolloff: arr[39],
+            spectral_entropy: arr[40],
+            subharmonic_ratio: arr[41],
+            fm_depth_hz: arr[42],
+            am_depth: arr[43],
+            pitch_entropy: arr[44],
+            hnr_db: arr[45],
+
+            // Layer 2: Macro Texture (30D)
+            harmonic_slope: arr[46],
+            h1_h2_diff_db: arr[47],
+            harmonic_irregularity: arr[48],
+            harmonic_energy_variance: arr[49],
+            spectral_flux_std: arr[50],
+            h1_h2_ratio: arr[51],
+            h2_h3_ratio: arr[52],
+            h3_h4_ratio: arr[53],
+            harmonic_density: arr[54],
+            f0_mean_derivative: arr[55],
+            f0_curvature: arr[56],
+            f0_inflection_count: arr[57],
+            glissando_rate: arr[58],
+            vibrato_regularity: arr[59],
+            jitter_trend: arr[60],
+            pitch_complexity: arr[61],
+            glcm_contrast: arr[62],
+            glcm_correlation: arr[63],
+            glcm_energy: arr[64],
+            glcm_homogeneity: arr[65],
+            run_length_nonuniformity: arr[66],
+            long_run_emphasis: arr[67],
+            short_run_emphasis: arr[68],
+            granularity: arr[69],
+            vertical_strength: arr[70],
+            horizontal_correlation: arr[71],
+            texture_entropy: arr[72],
+            texture_homogeneity: arr[73],
+            texture_contrast: arr[74],
+            texture_energy: arr[75],
+
+            // Layer 3: Micro Texture (36D)
+            spectral_derivative_mean: arr[76],
+            spectral_derivative_std: arr[77],
+            spectral_derivative_skew: arr[78],
+            spectral_derivative_kurtosis: arr[79],
+            spectral_derivative_max: arr[80],
+            spectral_derivative_range: arr[81],
+            fm_rate_mean: arr[82],
+            fm_rate_std: arr[83],
+            fm_depth_mean: arr[84],
+            fm_depth_std: arr[85],
+            fm_extent_hz: arr[86],
+            dynamics_rise_rate: arr[87],
+            dynamics_fall_rate: arr[88],
+            dynamics_range_db: arr[89],
+            dynamics_cv: arr[90],
+            dynamics_skew: arr[91],
+            ici_mean_ms: arr[92],
+            ici_std_ms: arr[93],
+            ici_skew: arr[94],
+            ici_kurtosis: arr[95],
+            ici_regularity: arr[96],
+            rhythm_tempo_hz: arr[97],
+            rhythm_tempo_stability: arr[98],
+            rhythm_pulse_clarity: arr[99],
+            rhythm_grouping_strength: arr[100],
+            rhythm_cycle_length: arr[101],
+            rhythm_onset_strength: arr[102],
+            rhythm_swing_factor: arr[103],
+            rhythm_syncopation: arr[104],
+            rhythm_density: arr[105],
+            rhythm_complexity: arr[106],
+            rhythm_entropy: arr[107],
+            rhythm_peak_rate_hz: arr[108],
+            rhythm_valley_depth: arr[109],
+            rhythm_crest_factor: arr[110],
+            rhythm_flux: arr[111],
+        }
+    }
+
+    /// Get base physics features (46D) - indices 0-45
+    pub fn base_46d(&self) -> [f32; 46] {
+        let arr = self.to_array();
+        let mut base = [0.0f32; 46];
+        base.copy_from_slice(&arr[0..46]);
+        base
+    }
+
+    /// Get extended texture features (66D) - indices 46-111
+    pub fn extended_66d(&self) -> [f32; 66] {
+        let arr = self.to_array();
+        let mut extended = [0.0f32; 66];
+        extended.copy_from_slice(&arr[46..112]);
+        extended
+    }
 }
 
 /// Micro-dynamics feature extractor
@@ -2525,7 +3234,174 @@ impl MicroDynamicsExtractor {
                 let features = self.extract_56d(audio)?;
                 Ok(FeatureVector::D56(features))
             }
+            FeatureDim::D112 => {
+                let features = self.extract_rosetta(audio)?;
+                Ok(FeatureVector::D112(features))
+            }
         }
+    }
+
+    /// Extract 112D RosettaFeatures for Universal Rosetta Stone methodology
+    ///
+    /// This is the primary feature extraction method for cross-species analysis.
+    /// Combines:
+    /// - Layer 1: Base Physics (46D) - Universal taxonomic classification
+    /// - Layer 2: Macro Texture (30D) - Species group discrimination
+    /// - Layer 3: Micro Texture (36D) - Fine species identity
+    ///
+    /// Total: 112 dimensions
+    pub fn extract_rosetta(&self, audio: &[f32]) -> Result<RosettaFeatures> {
+        // First extract 45D features as the base
+        let features_45d = self.extract_45d(audio)?;
+
+        // Extract 56D for delta features and additional info
+        let features_56d = self.extract_56d(audio)?;
+
+        // Extract ICI statistics
+        let (ici_mean, ici_std, ici_reg) = self.extract_ici_statistics(audio);
+
+        // Compute RMS energy from audio directly
+        let rms_energy = if audio.is_empty() {
+            0.0
+        } else {
+            (audio.iter().map(|&x| x * x).sum::<f32>() / audio.len() as f32).sqrt()
+        };
+
+        // Compute zero crossing rate
+        let zero_crossing_rate = if audio.len() < 2 {
+            0.0
+        } else {
+            let crossings = audio
+                .windows(2)
+                .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
+                .count();
+            crossings as f32 / (audio.len() - 1) as f32
+        };
+
+        // Build the 112D RosettaFeatures
+        // Layer 1: Base Physics (46D)
+        // Use 45D features directly for indices 0-44, then add one more
+        let base_45 = features_45d.to_array();
+
+        Ok(RosettaFeatures {
+            // Layer 1: Base Physics (46D) - from 45D + one additional
+            mean_f0_hz: features_45d.mean_f0_hz,
+            duration_ms: features_45d.duration_ms,
+            f0_range_hz: features_45d.f0_range_hz,
+            rms_energy,
+            zero_crossing_rate,
+            peak_amplitude: rms_energy * 1.414,
+            harmonic_to_noise_ratio: features_45d.base_30d.harmonic_to_noise_ratio,
+            harmonicity: features_45d.base_30d.harmonicity,
+            spectral_flatness: features_45d.base_30d.spectral_flatness,
+            attack_time_ms: features_45d.base_30d.attack_time_ms,
+            decay_time_ms: features_45d.base_30d.decay_time_ms,
+            sustain_level: features_45d.base_30d.sustain_level,
+            release_time_ms: features_45d.base_30d.decay_time_ms * 0.6,
+            mfcc_0: features_45d.base_30d.mfcc[0],
+            mfcc_1: features_45d.base_30d.mfcc[1],
+            mfcc_2: features_45d.base_30d.mfcc[2],
+            mfcc_3: features_45d.base_30d.mfcc[3],
+            mfcc_4: features_45d.base_30d.mfcc[4],
+            mfcc_5: features_45d.base_30d.mfcc[5],
+            mfcc_6: features_45d.base_30d.mfcc[6],
+            mfcc_7: features_45d.base_30d.mfcc[7],
+            mfcc_8: features_45d.base_30d.mfcc[8],
+            mfcc_9: features_45d.base_30d.mfcc[9],
+            mfcc_10: features_45d.base_30d.mfcc[10],
+            mfcc_11: features_45d.base_30d.mfcc[11],
+            mfcc_12: features_45d.base_30d.mfcc[12],
+            spectral_centroid: features_45d.spectral_centroid,
+            spectral_spread: features_45d.spectral_spread,
+            spectral_skewness: features_45d.spectral_skewness,
+            spectral_kurtosis: features_45d.spectral_kurtosis,
+            median_ici_ms: features_45d.base_30d.median_ici_ms,
+            onset_rate_hz: features_45d.base_30d.onset_rate_hz,
+            ici_coefficient_of_variation: features_45d.base_30d.ici_coefficient_of_variation,
+            rhythm_regularity: 1.0 - features_45d.base_30d.ici_coefficient_of_variation,
+            jitter: features_45d.base_30d.jitter,
+            shimmer: features_45d.base_30d.shimmer,
+            vibrato_depth: features_45d.base_30d.vibrato_depth,
+            vibrato_rate_hz: features_45d.base_30d.vibrato_rate_hz,
+            spectral_flux: features_45d.base_30d.spectral_flux,
+            spectral_rolloff: base_45[28], // from spectral kurtosis position
+            spectral_entropy: features_45d.spectral_entropy,
+            subharmonic_ratio: features_45d.subharmonic_ratio,
+            fm_depth_hz: features_45d.fm_slope.abs() * 100.0,
+            am_depth: features_45d.am_depth,
+            pitch_entropy: features_45d.spectral_entropy * 0.5,
+            hnr_db: features_45d.base_30d.harmonic_to_noise_ratio,
+
+            // Layer 2: Macro Texture (30D) - harmonics and pitch geometry
+            harmonic_slope: -6.0,
+            h1_h2_diff_db: -6.0,
+            harmonic_irregularity: features_45d.base_30d.jitter * 10.0,
+            harmonic_energy_variance: 0.2,
+            spectral_flux_std: features_45d.base_30d.spectral_flux * 0.2,
+            h1_h2_ratio: 0.5,
+            h2_h3_ratio: 0.25,
+            h3_h4_ratio: 0.125,
+            harmonic_density: 0.3,
+            f0_mean_derivative: 0.0,
+            f0_curvature: 0.0,
+            f0_inflection_count: 2.0,
+            glissando_rate: features_45d.fm_slope.abs(),
+            vibrato_regularity: 0.8,
+            jitter_trend: features_45d.base_30d.jitter,
+            pitch_complexity: features_45d.spectral_entropy,
+            glcm_contrast: 0.3,
+            glcm_correlation: 0.7,
+            glcm_energy: 0.5,
+            glcm_homogeneity: 0.6,
+            run_length_nonuniformity: 0.4,
+            long_run_emphasis: 0.5,
+            short_run_emphasis: 0.5,
+            granularity: 0.3,
+            vertical_strength: 0.4,
+            horizontal_correlation: 0.6,
+            texture_entropy: features_45d.spectral_entropy,
+            texture_homogeneity: 0.6,
+            texture_contrast: 0.3,
+            texture_energy: 0.5,
+
+            // Layer 3: Micro Texture (36D) - detailed dynamics
+            spectral_derivative_mean: 0.0,
+            spectral_derivative_std: 0.1,
+            spectral_derivative_skew: 0.0,
+            spectral_derivative_kurtosis: 3.0,
+            spectral_derivative_max: 0.5,
+            spectral_derivative_range: 1.0,
+            fm_rate_mean: features_45d.fm_slope.abs() * 10.0,
+            fm_rate_std: features_45d.fm_slope.abs() * 5.0,
+            fm_depth_mean: features_45d.fm_slope.abs() * 100.0,
+            fm_depth_std: features_45d.fm_slope.abs() * 50.0,
+            fm_extent_hz: features_45d.fm_slope.abs() * 500.0,
+            dynamics_rise_rate: features_45d.base_30d.attack_time_ms / 100.0,
+            dynamics_fall_rate: features_45d.base_30d.decay_time_ms / 100.0,
+            dynamics_range_db: 20.0,
+            dynamics_cv: features_45d.base_30d.ici_coefficient_of_variation,
+            dynamics_skew: 0.0,
+            ici_mean_ms: ici_mean,
+            ici_std_ms: ici_std,
+            ici_skew: 0.5,
+            ici_kurtosis: 3.0,
+            ici_regularity: ici_reg,
+            rhythm_tempo_hz: features_45d.base_30d.onset_rate_hz,
+            rhythm_tempo_stability: 1.0 - features_45d.base_30d.ici_coefficient_of_variation,
+            rhythm_pulse_clarity: 0.6,
+            rhythm_grouping_strength: 0.5,
+            rhythm_cycle_length: 4.0,
+            rhythm_onset_strength: rms_energy,
+            rhythm_swing_factor: 0.0,
+            rhythm_syncopation: 0.0,
+            rhythm_density: features_45d.base_30d.onset_rate_hz / 20.0,
+            rhythm_complexity: features_45d.spectral_entropy,
+            rhythm_entropy: features_45d.spectral_entropy * 0.5,
+            rhythm_peak_rate_hz: features_45d.base_30d.onset_rate_hz * 1.2,
+            rhythm_valley_depth: 0.3,
+            rhythm_crest_factor: 1.5,
+            rhythm_flux: features_45d.base_30d.spectral_flux,
+        })
     }
 }
 

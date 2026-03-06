@@ -88,7 +88,16 @@ pub use synthesis::{
     SynthesisResult,
     TimelineEvent,
     ValidationResult,
+    // Semantic Reconstruction (STAGE 4) - SourceMetadata only (112D fields)
+    SourceMetadata,
 };
+
+// Manifest Bridge exports (Rust/Python pipeline communication)
+pub use manifest_bridge::{
+    ClusterInfo as ManifestClusterInfo, ClustersManifest, ExemplarEntry as ManifestExemplarEntry,
+    ExemplarMetadata, PipelineController, SegmentEntry, SegmentsManifest, SynthesisManifest,
+};
+
 pub use thermal::{TemperatureReading, ThermalGovernor, ThermalState, ThermalStats};
 
 // Island Hopping Navigation (NEW)
@@ -112,7 +121,13 @@ pub use metadata_synthesizer::{
 pub use micro_dynamics_extractor::{
     FeatureDim, FeatureVector, MicroDynamicsExtractor, MicroDynamicsFeatures,
     MicroDynamicsFeatures15D, MicroDynamicsFeatures37D, MicroDynamicsFeatures39D,
-    MicroDynamicsFeatures56D, MultiScaleValue,
+    MicroDynamicsFeatures56D, MultiScaleValue, RosettaFeatures,
+};
+
+// Semantic Reconstruction exports (NEW - STAGE 4 of 112D pipeline)
+pub use semantic_reconstruction::{
+    CachedGranularSynthesizer, ExemplarEntry, ExemplarManager, SemanticTimelineEvent,
+    SourceMetadata112D, SynthesisConfig112D, SynthesisTimeline,
 };
 
 #[cfg(feature = "python-bindings")]
@@ -190,8 +205,13 @@ pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationEr
 
 // Within-Vocalization Analysis exports (NEW - TDD-tested multi-phrase detection)
 pub use within_vocalization_analyzer::{
-    BoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary, PhraseSegmentation,
-    WithinVocalizationAnalyzer, WithinVocalizationConfig,
+    BoundaryType as WvaBoundaryType,
+    CorpusPhraseAnalyzer,
+    CorpusPhraseStatistics,
+    PhraseBoundary,
+    PhraseSegmentation,
+    WithinVocalizationAnalyzer,
+    WithinVocalizationConfig,
 };
 
 // GMM exports (NEW - Phoneme discovery approach)
@@ -290,6 +310,13 @@ pub use corpus_analysis::{
     CorpusError, CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX,
     PhraseXDiscoveryEngine, Result as CorpusResult, SuffixEntropyCalculator,
 };
+
+// Neural Boundary Detection exports (NEW - Stage 1 of synthesis pipeline)
+pub use neural_boundary::{
+    segment_into_phrases, BoundaryDetectorConfig, NeuralBoundaryDetector,
+};
+// Rename to avoid conflict with within_vocalization_analyzer::PhraseBoundary
+pub use neural_boundary::{BoundaryType as NbdBoundaryType, PhraseBoundary as NbdPhraseBoundary};
 
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
 pub use sequence::{Motif, NgramStats, SequenceAnalysis, SequenceModule};
@@ -504,6 +531,7 @@ mod safety;
 mod shadow_model_monitor;
 mod source_separation;
 pub mod synthesis; // Make public for integration tests
+pub mod manifest_bridge; // Rust/Python pipeline communication
 mod thermal;
 mod time_series_archive;
 mod visual_recording;
@@ -524,6 +552,11 @@ mod metadata_synthesizer;
 
 // Micro-dynamics extractor (NEW - 30D feature extraction)
 pub mod micro_dynamics_extractor;
+
+// Semantic Reconstruction (STAGE 4) - 112D metadata
+mod semantic_reconstruction;
+
+// Semantic Reconstruction (STAGE 4) - 112D metadata forpub mod semantic_reconstruction;
 
 // Pitch detection (NEW - YIN and autocorrelation algorithms)
 pub mod pitch;
@@ -569,6 +602,7 @@ mod parallel_extraction;
 
 // Corpus Analysis (NEW - Phrase X discovery for corpus analysis)
 mod corpus_analysis;
+mod neural_boundary;
 
 // Within-Vocalization Analysis (NEW - Multi-phrase detection within vocalizations)
 pub mod within_vocalization_analyzer;
