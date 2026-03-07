@@ -1410,6 +1410,239 @@ class CognitiveLayer:
             # Multi-modal processing
             return self.multi_modal_fuser.fuse_audio_visual(audio_features, visual_context)
 
+    def process_features_112d(
+        self,
+        features_112d: np.ndarray,
+        cluster_id: int,
+        timestamp: float = None,
+        sequence: int = None,
+    ) -> Dict[str, Any]:
+        """
+        Process 112D features directly from Rust Execution Layer.
+
+        This method is the main entry point for the closed-loop interaction agent.
+        It accepts pre-extracted 112D features and produces synthesis timeline
+        commands for the Rust synthesizer.
+
+        Args:
+            features_112d: 112D feature vector from Rust (RosettaFeatures)
+            cluster_id: Cluster ID from corpus analysis
+            timestamp: Event timestamp (optional)
+            sequence: Sequence number (optional)
+
+        Returns:
+            Dictionary with:
+            - context_state: Detected behavioral context
+            - confidence: Detection confidence
+            - synthesis_timeline: List of TimelineEvents for Rust synthesizer
+            - deltas: Optional MicroDynamicsDelta for synthesis modification
+        """
+        start_time = time.time()
+
+        # Validate feature dimensions
+        if features_112d.shape[0] != 112:
+            raise ValueError(f"Expected 112D features, got {features_112d.shape[0]}D")
+
+        # Extract key features from 112D vector
+        # Layer 1: Base Physics (46D) - indices 0-45
+        # Layer 2: Macro Texture (30D) - indices 46-75
+        # Layer 3: Micro Texture (36D) - indices 76-111
+
+        # Map 112D to simplified context features
+        # F0-related: Use index 0 (mean_f0)
+        f0 = float(features_112d[0]) if features_112d[0] > 0 else 5000.0
+
+        # Energy-related: Use RMS from base physics
+        rms = float(features_112d[1]) if len(features_112d) > 1 else 0.5
+
+        # Duration-related: Use index from macro texture
+        duration = float(features_112d[46]) if len(features_112d) > 46 else 0.2
+
+        # Create audio features dict for context processing
+        audio_features = {
+            "f0": f0,
+            "rms": rms,
+            "duration": duration,
+            "spectral_centroid": float(features_112d[2]) if len(features_112d) > 2 else 5000.0,
+            "spectral_bandwidth": float(features_112d[3]) if len(features_112d) > 3 else 1000.0,
+        }
+
+        # Process context
+        context_result = self.process_context(audio_features)
+
+        # Determine behavioral context based on features
+        context_state = self._infer_context_from_112d(features_112d)
+
+        # Calculate confidence
+        confidence = context_result.get("contact_probability", 0.5)
+
+        # Generate synthesis timeline
+        synthesis_timeline = self._generate_response_timeline(
+            context_state, cluster_id, features_112d
+        )
+
+        # Calculate micro-dynamics deltas if needed
+        deltas = self._calculate_synthesis_deltas(features_112d, context_state)
+
+        processing_time = (time.time() - start_time) * 1000
+
+        # Update metrics
+        self.cognitive_metrics.processing_time_ms = processing_time
+
+        return {
+            "context_state": context_state,
+            "confidence": confidence,
+            "synthesis_timeline": synthesis_timeline,
+            "deltas": deltas,
+            "processing_time_ms": processing_time,
+            "cluster_id": cluster_id,
+            "sequence": sequence,
+        }
+
+    def _infer_context_from_112d(self, features_112d: np.ndarray) -> ContextType:
+        """
+        Infer behavioral context from 112D features.
+
+        Args:
+            features_112d: 112D feature vector
+
+        Returns:
+            Inferred ContextType
+        """
+        # Extract key indicators from feature layers
+        # F0 variation indicates emotional state
+        f0 = features_112d[0] if features_112d[0] > 0 else 5000.0
+
+        # Energy/prosody indicators
+        rms = features_112d[1] if len(features_112d) > 1 else 0.5
+
+        # Frequency range (from macro texture)
+        f0_range = features_112d[48] if len(features_112d) > 48 else 1000.0
+
+        # High F0 + high energy = alarm/aggressive
+        if f0 > 8000 and rms > 0.6:
+            return ContextType.ALARM_CALL
+
+        # High F0 range = social/territorial
+        if f0_range > 2000:
+            return ContextType.TERRITORIAL
+
+        # Moderate F0 + moderate energy = contact/food
+        if 4000 < f0 < 7000 and 0.3 < rms < 0.6:
+            return ContextType.CONTACT_CALL
+
+        # Low F0 = social interaction
+        if f0 < 4000:
+            return ContextType.SOCIAL_INTERACTION
+
+        # Default to contact call
+        return ContextType.CONTACT_CALL
+
+    def _generate_response_timeline(
+        self,
+        context: ContextType,
+        cluster_id: int,
+        features_112d: np.ndarray,
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate synthesis timeline for response.
+
+        Args:
+            context: Behavioral context
+            cluster_id: Source cluster ID
+            features_112d: Feature vector
+
+        Returns:
+            List of timeline events for synthesis
+        """
+        # Get adapted parameters (for potential future use)
+        _ = self.get_adapted_parameters(context)
+
+        # Base duration from features
+        base_duration = float(features_112d[46]) if len(features_112d) > 46 else 150.0
+        duration_ms = max(50.0, min(500.0, base_duration * 1000))
+
+        # Response based on context
+        if context == ContextType.ALARM_CALL:
+            # Short, urgent response
+            return [
+                {
+                    "cluster_id": cluster_id,
+                    "start_time_ms": 0.0,
+                    "duration_ms": duration_ms * 0.7,
+                    "amplitude": 0.9,
+                }
+            ]
+        elif context == ContextType.TERRITORIAL:
+            # Strong, assertive response
+            return [
+                {
+                    "cluster_id": cluster_id,
+                    "start_time_ms": 0.0,
+                    "duration_ms": duration_ms,
+                    "amplitude": 0.8,
+                }
+            ]
+        elif context == ContextType.SOCIAL_INTERACTION:
+            # Longer, conversational response
+            return [
+                {
+                    "cluster_id": cluster_id,
+                    "start_time_ms": 0.0,
+                    "duration_ms": duration_ms,
+                    "amplitude": 0.7,
+                },
+                {
+                    "cluster_id": cluster_id,
+                    "start_time_ms": duration_ms + 50.0,
+                    "duration_ms": duration_ms * 0.8,
+                    "amplitude": 0.6,
+                },
+            ]
+        else:
+            # Default contact call response
+            return [
+                {
+                    "cluster_id": cluster_id,
+                    "start_time_ms": 0.0,
+                    "duration_ms": duration_ms,
+                    "amplitude": 0.75,
+                }
+            ]
+
+    def _calculate_synthesis_deltas(
+        self,
+        features_112d: np.ndarray,
+        context: ContextType,
+    ) -> Optional[Dict[str, float]]:
+        """
+        Calculate micro-dynamics deltas for synthesis modification.
+
+        Args:
+            features_112d: Feature vector
+            context: Behavioral context
+
+        Returns:
+            Dictionary of deltas, or None if no modification needed
+        """
+        deltas = {}
+
+        # F0 shift based on context
+        if context == ContextType.ALARM_CALL:
+            deltas["delta_mean_f0_hz"] = 500.0  # Raise pitch
+        elif context == ContextType.SOCIAL_INTERACTION:
+            deltas["delta_mean_f0_hz"] = -200.0  # Lower pitch
+
+        # Duration modification
+        if context == ContextType.TERRITORIAL:
+            deltas["delta_duration_ms"] = 20.0  # Slightly longer
+
+        # Energy adjustment
+        if context == ContextType.CONTACT_CALL:
+            deltas["delta_rms_energy"] = 0.1  # Slightly louder
+
+        return deltas if deltas else None
+
     def save_learning_state(self, filepath: str):
         """Save learning state to file."""
         self.online_learner.save_learning_state(filepath)

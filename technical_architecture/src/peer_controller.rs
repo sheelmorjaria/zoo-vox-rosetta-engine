@@ -365,6 +365,599 @@ impl PeerController {
 }
 
 // ============================================================================
+// Feature Event Types (for Rust → Python streaming)
+// ============================================================================
+
+/// Feature extraction event sent to Python Logic Layer
+///
+/// This struct carries the output of Stage 1 (NBD) and Stage 2 (112D Feature Extraction)
+/// to the Python Cognitive Agent for decision-making.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureEvent {
+    /// Event type identifier (always "feature_extraction")
+    pub event_type: String,
+
+    /// Cluster ID from corpus analysis (k=1020)
+    pub cluster_id: u32,
+
+    /// 112D feature vector from RosettaFeatures
+    pub features_112d: Vec<f32>,
+
+    /// Unix timestamp in seconds
+    pub timestamp: f64,
+
+    /// Sequence number for ordering and gap detection
+    pub sequence: u64,
+}
+
+impl FeatureEvent {
+    /// Create a new feature event
+    ///
+    /// # Arguments
+    /// * `cluster_id` - Cluster ID from corpus analysis
+    /// * `features_112d` - 112D feature vector (must have 112 elements)
+    /// * `sequence` - Sequence number for ordering
+    ///
+    /// # Returns
+    /// * `Result<Self>` - The event or an error if features dimension is wrong
+    pub fn new(cluster_id: u32, features_112d: Vec<f32>, sequence: u64) -> Result<Self> {
+        if features_112d.len() != 112 {
+            anyhow::bail!("Feature vector must have 112 elements, got {}", features_112d.len());
+        }
+
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+
+        Ok(Self {
+            event_type: "feature_extraction".to_string(),
+            cluster_id,
+            features_112d,
+            timestamp,
+            sequence,
+        })
+    }
+
+    /// Create a feature event from an existing array
+    ///
+    /// # Arguments
+    /// * `cluster_id` - Cluster ID from corpus analysis
+    /// * `features_112d` - 112D feature array
+    /// * `sequence` - Sequence number for ordering
+    pub fn from_array(cluster_id: u32, features_112d: [f32; 112], sequence: u64) -> Self {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+
+        Self {
+            event_type: "feature_extraction".to_string(),
+            cluster_id,
+            features_112d: features_112d.to_vec(),
+            timestamp,
+            sequence,
+        }
+    }
+
+    /// Create a test event with zero features
+    #[cfg(test)]
+    pub fn test_event(cluster_id: u32, sequence: u64) -> Self {
+        Self::from_array(cluster_id, [0.0f32; 112], sequence)
+    }
+
+    /// Serialize to JSON bytes
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+        serde_json::to_vec(self).map_err(|e| anyhow::anyhow!("Failed to serialize feature event: {}", e))
+    }
+
+    /// Deserialize from JSON bytes
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes).map_err(|e| anyhow::anyhow!("Failed to deserialize feature event: {}", e))
+    }
+}
+
+impl std::fmt::Display for FeatureEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "FeatureEvent(cluster={}, seq={}, time={:.3})",
+            self.cluster_id, self.sequence, self.timestamp
+        )
+    }
+}
+
+// ============================================================================
+// Feature Event Publisher Configuration
+// ============================================================================
+
+/// Configuration for feature event publisher
+#[derive(Debug, Clone)]
+pub struct EventPublisherConfig {
+    /// ZeroMQ endpoint for feature events
+    pub event_endpoint: String,
+
+    /// High water mark for outbound messages
+    pub send_high_water_mark: i32,
+
+    /// Enable verbose logging
+    pub verbose_logging: bool,
+}
+
+impl Default for EventPublisherConfig {
+    fn default() -> Self {
+        Self {
+            event_endpoint: "ipc:///tmp/cognitive_features.ipc".to_string(),
+            send_high_water_mark: 100,
+            verbose_logging: false,
+        }
+    }
+}
+
+// ============================================================================
+// Feature Event Publisher
+// ============================================================================
+
+/// Publisher for feature events to Python Logic Layer
+///
+/// Uses ZeroMQ PUB socket to stream feature extraction events
+/// to the Python Cognitive Agent.
+pub struct FeatureEventPublisher {
+    /// ZeroMQ context
+    #[allow(dead_code)]
+    ctx: zmq::Context,
+
+    /// Publisher socket
+    sock: zmq::Socket,
+
+    /// Configuration
+    config: EventPublisherConfig,
+
+    /// Sequence counter
+    sequence: u64,
+
+    /// Events published counter
+    events_published: u64,
+}
+
+impl FeatureEventPublisher {
+    /// Create a new feature event publisher
+    ///
+    /// # Arguments
+    /// * `config` - Publisher configuration
+    ///
+    /// # Returns
+    /// * `Result<Self>` - The publisher or an error
+    pub fn new(config: EventPublisherConfig) -> Result<Self> {
+        info!("Initializing Feature Event Publisher on: {}", config.event_endpoint);
+
+        let ctx = zmq::Context::new();
+        let sock = ctx.socket(zmq::PUB)?;
+
+        // Set high water mark
+        sock.set_sndhwm(config.send_high_water_mark)?;
+
+        // Bind to endpoint (Python will connect)
+        sock.bind(&config.event_endpoint)?;
+
+        info!("Feature Event Publisher bound to: {}", config.event_endpoint);
+
+        Ok(Self {
+            ctx,
+            sock,
+            config,
+            sequence: 0,
+            events_published: 0,
+        })
+    }
+
+    /// Publish a feature event
+    ///
+    /// # Arguments
+    /// * `event` - The feature event to publish
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error
+    pub fn publish(&mut self, event: &FeatureEvent) -> Result<()> {
+        let bytes = event.to_bytes()?;
+        self.sock.send(&bytes, zmq::DONTWAIT)?;
+
+        self.events_published += 1;
+
+        if self.config.verbose_logging && self.events_published.is_multiple_of(100) {
+            info!("Published {} feature events", self.events_published);
+        }
+
+        Ok(())
+    }
+
+    /// Create and publish a feature event in one step
+    ///
+    /// # Arguments
+    /// * `cluster_id` - Cluster ID from corpus analysis
+    /// * `features_112d` - 112D feature vector
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error
+    pub fn publish_features(&mut self, cluster_id: u32, features_112d: Vec<f32>) -> Result<()> {
+        self.sequence += 1;
+        let event = FeatureEvent::new(cluster_id, features_112d, self.sequence)?;
+        self.publish(&event)
+    }
+
+    /// Check if publisher is ready
+    pub fn is_ready(&self) -> bool {
+        true // Socket is bound
+    }
+
+    /// Get the endpoint
+    pub fn endpoint(&self) -> &str {
+        &self.config.event_endpoint
+    }
+
+    /// Get statistics
+    pub fn stats(&self) -> EventPublisherStats {
+        EventPublisherStats {
+            events_published: self.events_published,
+            current_sequence: self.sequence,
+            endpoint: self.config.event_endpoint.clone(),
+        }
+    }
+}
+
+/// Statistics for event publisher
+#[derive(Debug, Clone)]
+pub struct EventPublisherStats {
+    /// Total events published
+    pub events_published: u64,
+
+    /// Current sequence number
+    pub current_sequence: u64,
+
+    /// Endpoint string
+    pub endpoint: String,
+}
+
+// ============================================================================
+// Synthesis Action Types (for Python → Rust communication)
+// ============================================================================
+
+/// Priority levels for synthesis actions
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ActionPriority {
+    /// Low priority - can be delayed
+    Low,
+
+    /// Normal priority - default
+    #[default]
+    Normal,
+
+    /// High priority - should be processed quickly
+    High,
+
+    /// Critical priority - must be processed immediately
+    Critical,
+}
+
+/// Single event in a synthesis timeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimelineEvent {
+    /// Cluster ID for synthesis
+    pub cluster_id: u32,
+
+    /// Start time in milliseconds from timeline start
+    pub start_time_ms: f64,
+
+    /// Duration in milliseconds
+    pub duration_ms: f64,
+
+    /// Amplitude (0.0 to 1.0)
+    #[serde(default = "default_amplitude")]
+    pub amplitude: f32,
+}
+
+fn default_amplitude() -> f32 {
+    1.0
+}
+
+impl TimelineEvent {
+    /// Create a new timeline event
+    pub fn new(cluster_id: u32, start_time_ms: f64, duration_ms: f64) -> Self {
+        Self {
+            cluster_id,
+            start_time_ms,
+            duration_ms,
+            amplitude: 1.0,
+        }
+    }
+
+    /// Create a timeline event with custom amplitude
+    pub fn with_amplitude(mut self, amplitude: f32) -> Self {
+        self.amplitude = amplitude;
+        self
+    }
+
+    /// Create a test event
+    #[cfg(test)]
+    pub fn test_event(cluster_id: u32) -> Self {
+        Self::new(cluster_id, 0.0, 150.0)
+    }
+}
+
+/// Micro-dynamics delta for synthesis modification
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct MicroDynamicsDelta {
+    /// Change to mean F0 (Hz)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_mean_f0_hz: f32,
+
+    /// Change to duration (ms)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_duration_ms: f32,
+
+    /// Change to F0 range (Hz)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_f0_range_hz: f32,
+
+    /// Change to harmonic-to-noise ratio
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_harmonic_to_noise_ratio: f32,
+
+    /// Change to attack time (ms)
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_attack_time_ms: f32,
+
+    /// Change to sustain level
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_sustain_level: f32,
+
+    /// Change to RMS energy
+    #[serde(default, skip_serializing_if = "is_zero_f32")]
+    pub delta_rms_energy: f32,
+}
+
+fn is_zero_f32(v: &f32) -> bool {
+    *v == 0.0
+}
+
+impl MicroDynamicsDelta {
+    /// Create a new delta with F0 shift
+    pub fn with_f0_shift(delta_hz: f32) -> Self {
+        Self {
+            delta_mean_f0_hz: delta_hz,
+            ..Default::default()
+        }
+    }
+
+    /// Create a new delta with duration shift
+    pub fn with_duration_shift(delta_ms: f32) -> Self {
+        Self {
+            delta_duration_ms: delta_ms,
+            ..Default::default()
+        }
+    }
+
+    /// Check if any deltas are non-zero
+    pub fn is_empty(&self) -> bool {
+        self.delta_mean_f0_hz == 0.0
+            && self.delta_duration_ms == 0.0
+            && self.delta_f0_range_hz == 0.0
+            && self.delta_harmonic_to_noise_ratio == 0.0
+            && self.delta_attack_time_ms == 0.0
+            && self.delta_sustain_level == 0.0
+            && self.delta_rms_energy == 0.0
+    }
+}
+
+/// Synthesis action command from Python
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SynthesisAction {
+    /// Action type (e.g., "synthesize_timeline")
+    pub action_type: String,
+
+    /// Timeline of events to synthesize
+    pub timeline: Vec<TimelineEvent>,
+
+    /// Optional micro-dynamics deltas
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deltas: Option<MicroDynamicsDelta>,
+
+    /// Action priority
+    #[serde(default)]
+    pub priority: ActionPriority,
+}
+
+impl SynthesisAction {
+    /// Create a new synthesis action
+    pub fn new(timeline: Vec<TimelineEvent>) -> Self {
+        Self {
+            action_type: "synthesize_timeline".to_string(),
+            timeline,
+            deltas: None,
+            priority: ActionPriority::Normal,
+        }
+    }
+
+    /// Create an action with deltas
+    pub fn with_deltas(mut self, deltas: MicroDynamicsDelta) -> Self {
+        self.deltas = Some(deltas);
+        self
+    }
+
+    /// Create an action with priority
+    pub fn with_priority(mut self, priority: ActionPriority) -> Self {
+        self.priority = priority;
+        self
+    }
+
+    /// Create a single-event action
+    pub fn single_event(cluster_id: u32, duration_ms: f64) -> Self {
+        Self::new(vec![TimelineEvent::new(cluster_id, 0.0, duration_ms)])
+    }
+
+    /// Deserialize from JSON bytes
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes).map_err(|e| anyhow::anyhow!("Failed to deserialize synthesis action: {}", e))
+    }
+
+    /// Serialize to JSON bytes
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+        serde_json::to_vec(self).map_err(|e| anyhow::anyhow!("Failed to serialize synthesis action: {}", e))
+    }
+
+    /// Create a test action
+    #[cfg(test)]
+    pub fn test_action() -> Self {
+        Self::single_event(42, 150.0)
+    }
+}
+
+// ============================================================================
+// Action Subscriber Configuration
+// ============================================================================
+
+/// Configuration for action subscriber
+#[derive(Debug, Clone)]
+pub struct ActionSubscriberConfig {
+    /// ZeroMQ endpoint for action commands
+    pub action_endpoint: String,
+
+    /// Receive timeout in milliseconds
+    pub receive_timeout_ms: u64,
+
+    /// High water mark for receiving
+    pub receive_high_water_mark: i32,
+}
+
+impl Default for ActionSubscriberConfig {
+    fn default() -> Self {
+        Self {
+            action_endpoint: "ipc:///tmp/cognitive_actions.ipc".to_string(),
+            receive_timeout_ms: 100,
+            receive_high_water_mark: 10,
+        }
+    }
+}
+
+// ============================================================================
+// Action Subscriber
+// ============================================================================
+
+/// Subscriber for synthesis actions from Python
+///
+/// Uses ZeroMQ SUB socket to receive synthesis timeline commands
+/// from the Python Logic Layer.
+pub struct ActionSubscriber {
+    /// ZeroMQ context
+    #[allow(dead_code)]
+    ctx: zmq::Context,
+
+    /// Subscriber socket
+    sock: zmq::Socket,
+
+    /// Configuration
+    config: ActionSubscriberConfig,
+
+    /// Actions received counter
+    actions_received: u64,
+}
+
+impl ActionSubscriber {
+    /// Create a new action subscriber
+    pub fn new(config: ActionSubscriberConfig) -> Result<Self> {
+        info!("Initializing Action Subscriber on: {}", config.action_endpoint);
+
+        let ctx = zmq::Context::new();
+        let sock = ctx.socket(zmq::SUB)?;
+
+        // Set socket options
+        sock.set_rcvtimeo(config.receive_timeout_ms as i32)?;
+        sock.set_rcvhwm(config.receive_high_water_mark)?;
+
+        // Bind to endpoint (Python will connect)
+        sock.bind(&config.action_endpoint)?;
+
+        // Subscribe to all messages
+        sock.set_subscribe(b"")?;
+
+        info!("Action Subscriber bound to: {}", config.action_endpoint);
+
+        Ok(Self {
+            ctx,
+            sock,
+            config,
+            actions_received: 0,
+        })
+    }
+
+    /// Try to receive an action (non-blocking)
+    ///
+    /// # Returns
+    /// * `Result<Option<SynthesisAction>>` - Received action or None if no message
+    pub fn try_recv(&mut self) -> Result<Option<SynthesisAction>> {
+        match self.sock.recv_bytes(zmq::DONTWAIT) {
+            Ok(bytes) => {
+                let action = SynthesisAction::from_bytes(&bytes)?;
+                self.actions_received += 1;
+
+                if self.actions_received.is_multiple_of(100) {
+                    info!("Received {} actions", self.actions_received);
+                }
+
+                Ok(Some(action))
+            }
+            Err(zmq::Error::EAGAIN) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("Failed to receive action: {}", e)),
+        }
+    }
+
+    /// Receive an action with timeout
+    ///
+    /// # Returns
+    /// * `Result<Option<SynthesisAction>>` - Received action or None on timeout
+    pub fn recv_timeout(&mut self) -> Result<Option<SynthesisAction>> {
+        match self.sock.recv_bytes(0) {
+            Ok(bytes) => {
+                let action = SynthesisAction::from_bytes(&bytes)?;
+                self.actions_received += 1;
+                Ok(Some(action))
+            }
+            Err(zmq::Error::EAGAIN) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("Failed to receive action: {}", e)),
+        }
+    }
+
+    /// Check if subscriber is ready
+    pub fn is_ready(&self) -> bool {
+        true // Socket is bound
+    }
+
+    /// Get the endpoint
+    pub fn endpoint(&self) -> &str {
+        &self.config.action_endpoint
+    }
+
+    /// Get statistics
+    pub fn stats(&self) -> ActionSubscriberStats {
+        ActionSubscriberStats {
+            actions_received: self.actions_received,
+            endpoint: self.config.action_endpoint.clone(),
+        }
+    }
+}
+
+/// Statistics for action subscriber
+#[derive(Debug, Clone)]
+pub struct ActionSubscriberStats {
+    /// Total actions received
+    pub actions_received: u64,
+
+    /// Endpoint string
+    pub endpoint: String,
+}
+
+// ============================================================================
 // Tests
 // ============================================================================
 
@@ -615,5 +1208,437 @@ mod tests {
         assert!(controller.is_python_alive());
         controller.update_mode();
         assert_eq!(controller.mode(), OperationMode::Interactive);
+    }
+}
+
+// ============================================================================
+// Feature Event Tests
+// ============================================================================
+
+#[cfg(test)]
+mod feature_event_tests {
+    use super::*;
+
+    #[test]
+    fn test_feature_event_serialization() {
+        let event = FeatureEvent::from_array(42, [0.0f32; 112], 1);
+        let json = serde_json::to_string(&event).unwrap();
+
+        assert!(json.contains("\"event_type\":\"feature_extraction\""));
+        assert!(json.contains("\"cluster_id\":42"));
+        assert!(json.contains("\"sequence\":1"));
+    }
+
+    #[test]
+    fn test_feature_event_deserialization() {
+        let json = r#"{
+            "event_type": "feature_extraction",
+            "cluster_id": 42,
+            "features_112d": [0.0, 1.0, 2.0],
+            "timestamp": 1699345823.456,
+            "sequence": 12345
+        }"#;
+
+        let event: FeatureEvent = serde_json::from_str(json).unwrap();
+        assert_eq!(event.cluster_id, 42);
+        assert_eq!(event.event_type, "feature_extraction");
+        assert_eq!(event.features_112d.len(), 3);
+        assert_eq!(event.timestamp, 1699345823.456);
+        assert_eq!(event.sequence, 12345);
+    }
+
+    #[test]
+    fn test_feature_event_new_with_valid_features() {
+        let features: Vec<f32> = (0..112).map(|i| i as f32).collect();
+        let event = FeatureEvent::new(42, features.clone(), 1).unwrap();
+
+        assert_eq!(event.cluster_id, 42);
+        assert_eq!(event.features_112d.len(), 112);
+        assert_eq!(event.sequence, 1);
+        assert_eq!(event.event_type, "feature_extraction");
+        assert!(event.timestamp > 0.0);
+    }
+
+    #[test]
+    fn test_feature_event_new_with_wrong_dimension() {
+        let features: Vec<f32> = vec![0.0; 100]; // Wrong size
+        let result = FeatureEvent::new(42, features, 1);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("must have 112 elements"));
+    }
+
+    #[test]
+    fn test_feature_event_from_array() {
+        let mut features = [0.0f32; 112];
+        features[0] = 1.0;
+        features[111] = 112.0;
+
+        let event = FeatureEvent::from_array(42, features, 1);
+
+        assert_eq!(event.cluster_id, 42);
+        assert_eq!(event.features_112d[0], 1.0);
+        assert_eq!(event.features_112d[111], 112.0);
+        assert_eq!(event.sequence, 1);
+    }
+
+    #[test]
+    fn test_feature_event_to_bytes() {
+        let event = FeatureEvent::from_array(42, [0.0f32; 112], 1);
+        let bytes = event.to_bytes().unwrap();
+
+        assert!(!bytes.is_empty());
+
+        // Verify it's valid JSON
+        let decoded: FeatureEvent = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(decoded.cluster_id, 42);
+    }
+
+    #[test]
+    fn test_feature_event_from_bytes() {
+        let original = FeatureEvent::from_array(42, [1.0f32; 112], 1);
+        let bytes = original.to_bytes().unwrap();
+        let decoded = FeatureEvent::from_bytes(&bytes).unwrap();
+
+        assert_eq!(decoded.cluster_id, original.cluster_id);
+        assert_eq!(decoded.features_112d, original.features_112d);
+        assert_eq!(decoded.sequence, original.sequence);
+    }
+
+    #[test]
+    fn test_feature_event_test_event() {
+        let event = FeatureEvent::test_event(42, 1);
+
+        assert_eq!(event.cluster_id, 42);
+        assert_eq!(event.features_112d.len(), 112);
+        assert!(event.features_112d.iter().all(|&f| f == 0.0));
+        assert_eq!(event.sequence, 1);
+    }
+}
+
+#[cfg(test)]
+mod feature_publisher_tests {
+    use super::*;
+
+    #[test]
+    fn test_event_publisher_config_default() {
+        let config = EventPublisherConfig::default();
+
+        assert_eq!(config.event_endpoint, "ipc:///tmp/cognitive_features.ipc");
+        assert_eq!(config.send_high_water_mark, 100);
+        assert!(!config.verbose_logging);
+    }
+
+    #[test]
+    fn test_feature_event_publisher_creation() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_features.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let publisher = FeatureEventPublisher::new(config).unwrap();
+        assert!(publisher.is_ready());
+        assert_eq!(publisher.endpoint(), "ipc:///tmp/test_features.ipc");
+    }
+
+    #[test]
+    fn test_feature_event_publisher_stats() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_stats.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let publisher = FeatureEventPublisher::new(config).unwrap();
+        let stats = publisher.stats();
+
+        assert_eq!(stats.events_published, 0);
+        assert_eq!(stats.current_sequence, 0);
+        assert_eq!(stats.endpoint, "ipc:///tmp/test_stats.ipc");
+    }
+
+    #[test]
+    fn test_feature_event_publisher_publish() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_publish.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut publisher = FeatureEventPublisher::new(config).unwrap();
+
+        let event = FeatureEvent::test_event(42, 1);
+        let result = publisher.publish(&event);
+
+        assert!(result.is_ok());
+
+        let stats = publisher.stats();
+        assert_eq!(stats.events_published, 1);
+    }
+
+    #[test]
+    fn test_feature_event_publisher_publish_features() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_publish_features.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut publisher = FeatureEventPublisher::new(config).unwrap();
+
+        // Publish features directly
+        let features: Vec<f32> = (0..112).map(|i| i as f32).collect();
+        let result = publisher.publish_features(42, features);
+
+        assert!(result.is_ok());
+
+        let stats = publisher.stats();
+        assert_eq!(stats.events_published, 1);
+        assert_eq!(stats.current_sequence, 1);
+    }
+
+    #[test]
+    fn test_feature_event_publisher_sequence_incrementing() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_sequence_inc.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut publisher = FeatureEventPublisher::new(config).unwrap();
+
+        // Publish multiple events
+        for i in 1..=5 {
+            let features: Vec<f32> = vec![i as f32; 112];
+            publisher.publish_features(i as u32, features).unwrap();
+        }
+
+        let stats = publisher.stats();
+        assert_eq!(stats.events_published, 5);
+        assert_eq!(stats.current_sequence, 5);
+    }
+
+    #[test]
+    fn test_feature_event_publisher_wrong_dimension_fails() {
+        let config = EventPublisherConfig {
+            event_endpoint: "ipc:///tmp/test_wrong_dim.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut publisher = FeatureEventPublisher::new(config).unwrap();
+
+        // Try to publish with wrong dimensions
+        let features: Vec<f32> = vec![0.0; 100]; // Wrong size
+        let result = publisher.publish_features(42, features);
+
+        assert!(result.is_err());
+    }
+}
+
+// ============================================================================
+// Synthesis Action Tests
+// ============================================================================
+
+#[cfg(test)]
+mod synthesis_action_tests {
+    use super::*;
+
+    #[test]
+    fn test_timeline_event_serialization() {
+        let event = TimelineEvent::new(42, 0.0, 150.0);
+        let json = serde_json::to_string(&event).unwrap();
+
+        assert!(json.contains("\"cluster_id\":42"));
+        assert!(json.contains("\"start_time_ms\":0.0"));
+        assert!(json.contains("\"duration_ms\":150.0"));
+    }
+
+    #[test]
+    fn test_timeline_event_deserialization() {
+        let json = r#"{"cluster_id":42,"start_time_ms":0.0,"duration_ms":150.0,"amplitude":0.8}"#;
+        let event: TimelineEvent = serde_json::from_str(json).unwrap();
+
+        assert_eq!(event.cluster_id, 42);
+        assert_eq!(event.start_time_ms, 0.0);
+        assert_eq!(event.duration_ms, 150.0);
+        assert!((event.amplitude - 0.8).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_timeline_event_default_amplitude() {
+        let json = r#"{"cluster_id":42,"start_time_ms":0.0,"duration_ms":150.0}"#;
+        let event: TimelineEvent = serde_json::from_str(json).unwrap();
+
+        assert!((event.amplitude - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_micro_dynamics_delta_default() {
+        let delta = MicroDynamicsDelta::default();
+
+        assert_eq!(delta.delta_mean_f0_hz, 0.0);
+        assert_eq!(delta.delta_duration_ms, 0.0);
+        assert!(delta.is_empty());
+    }
+
+    #[test]
+    fn test_micro_dynamics_delta_with_f0_shift() {
+        let delta = MicroDynamicsDelta::with_f0_shift(100.0);
+
+        assert_eq!(delta.delta_mean_f0_hz, 100.0);
+        assert!(!delta.is_empty());
+    }
+
+    #[test]
+    fn test_micro_dynamics_delta_serialization() {
+        let delta = MicroDynamicsDelta::with_f0_shift(100.0);
+        let json = serde_json::to_string(&delta).unwrap();
+
+        assert!(json.contains("\"delta_mean_f0_hz\":100.0"));
+    }
+
+    #[test]
+    fn test_synthesis_action_creation() {
+        let timeline = vec![TimelineEvent::new(42, 0.0, 150.0)];
+        let action = SynthesisAction::new(timeline.clone());
+
+        assert_eq!(action.action_type, "synthesize_timeline");
+        assert_eq!(action.timeline.len(), 1);
+        assert_eq!(action.timeline[0].cluster_id, 42);
+        assert!(action.deltas.is_none());
+        assert_eq!(action.priority, ActionPriority::Normal);
+    }
+
+    #[test]
+    fn test_synthesis_action_single_event() {
+        let action = SynthesisAction::single_event(42, 150.0);
+
+        assert_eq!(action.timeline.len(), 1);
+        assert_eq!(action.timeline[0].cluster_id, 42);
+        assert_eq!(action.timeline[0].duration_ms, 150.0);
+    }
+
+    #[test]
+    fn test_synthesis_action_with_deltas() {
+        let delta = MicroDynamicsDelta::with_f0_shift(100.0);
+        let action = SynthesisAction::single_event(42, 150.0).with_deltas(delta);
+
+        assert!(action.deltas.is_some());
+        assert_eq!(action.deltas.unwrap().delta_mean_f0_hz, 100.0);
+    }
+
+    #[test]
+    fn test_synthesis_action_with_priority() {
+        let action = SynthesisAction::single_event(42, 150.0).with_priority(ActionPriority::Critical);
+
+        assert_eq!(action.priority, ActionPriority::Critical);
+    }
+
+    #[test]
+    fn test_synthesis_action_serialization() {
+        let action = SynthesisAction::single_event(42, 150.0).with_deltas(MicroDynamicsDelta::with_f0_shift(100.0));
+
+        let json = action.to_bytes().unwrap();
+        let json_str = String::from_utf8(json).unwrap();
+
+        assert!(json_str.contains("\"action_type\":\"synthesize_timeline\""));
+        assert!(json_str.contains("\"cluster_id\":42"));
+    }
+
+    #[test]
+    fn test_synthesis_action_deserialization() {
+        let json = r#"{
+            "action_type": "synthesize_timeline",
+            "timeline": [{"cluster_id":42,"start_time_ms":0.0,"duration_ms":150.0,"amplitude":1.0}],
+            "deltas": {"delta_mean_f0_hz": 100.0},
+            "priority": "high"
+        }"#;
+
+        let action: SynthesisAction = serde_json::from_str(json).unwrap();
+
+        assert_eq!(action.action_type, "synthesize_timeline");
+        assert_eq!(action.timeline.len(), 1);
+        assert_eq!(action.timeline[0].cluster_id, 42);
+        assert!(action.deltas.is_some());
+        assert_eq!(action.priority, ActionPriority::High);
+    }
+
+    #[test]
+    fn test_synthesis_action_roundtrip() {
+        let original = SynthesisAction::single_event(42, 150.0)
+            .with_deltas(MicroDynamicsDelta::with_f0_shift(100.0))
+            .with_priority(ActionPriority::Critical);
+
+        let bytes = original.to_bytes().unwrap();
+        let decoded = SynthesisAction::from_bytes(&bytes).unwrap();
+
+        assert_eq!(decoded.action_type, original.action_type);
+        assert_eq!(decoded.timeline.len(), original.timeline.len());
+        assert_eq!(decoded.timeline[0].cluster_id, original.timeline[0].cluster_id);
+        assert_eq!(decoded.priority, original.priority);
+    }
+
+    #[test]
+    fn test_action_priority_serde() {
+        assert_eq!(ActionPriority::Normal, ActionPriority::default());
+
+        let json = "\"normal\"";
+        let priority: ActionPriority = serde_json::from_str(json).unwrap();
+        assert_eq!(priority, ActionPriority::Normal);
+
+        let json = "\"critical\"";
+        let priority: ActionPriority = serde_json::from_str(json).unwrap();
+        assert_eq!(priority, ActionPriority::Critical);
+    }
+}
+
+#[cfg(test)]
+mod action_subscriber_tests {
+    use super::*;
+
+    #[test]
+    fn test_action_subscriber_config_default() {
+        let config = ActionSubscriberConfig::default();
+
+        assert_eq!(config.action_endpoint, "ipc:///tmp/cognitive_actions.ipc");
+        assert_eq!(config.receive_timeout_ms, 100);
+        assert_eq!(config.receive_high_water_mark, 10);
+    }
+
+    #[test]
+    fn test_action_subscriber_creation() {
+        let config = ActionSubscriberConfig {
+            action_endpoint: "ipc:///tmp/test_actions.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let subscriber = ActionSubscriber::new(config).unwrap();
+        assert!(subscriber.is_ready());
+        assert_eq!(subscriber.endpoint(), "ipc:///tmp/test_actions.ipc");
+    }
+
+    #[test]
+    fn test_action_subscriber_stats() {
+        let config = ActionSubscriberConfig {
+            action_endpoint: "ipc:///tmp/test_action_stats.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let subscriber = ActionSubscriber::new(config).unwrap();
+        let stats = subscriber.stats();
+
+        assert_eq!(stats.actions_received, 0);
+        assert_eq!(stats.endpoint, "ipc:///tmp/test_action_stats.ipc");
+    }
+
+    #[test]
+    fn test_action_subscriber_try_recv_empty() {
+        let config = ActionSubscriberConfig {
+            action_endpoint: "ipc:///tmp/test_try_recv.ipc".to_string(),
+            ..Default::default()
+        };
+
+        let mut subscriber = ActionSubscriber::new(config).unwrap();
+
+        // Should return None when no message available
+        let result = subscriber.try_recv().unwrap();
+        assert!(result.is_none());
     }
 }
