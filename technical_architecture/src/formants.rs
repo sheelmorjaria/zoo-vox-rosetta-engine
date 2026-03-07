@@ -190,10 +190,7 @@ impl FormantExtractor {
             len <<= 1;
         }
 
-        complex[..n / 2]
-            .iter()
-            .map(|&(r, i)| (r * r + i * i).sqrt())
-            .collect()
+        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
     }
 
     /// Smooth spectrum using moving average
@@ -341,6 +338,34 @@ impl FormantBandwidthCalculator {
 
         bandwidths
     }
+}
+
+/// Helper: Generate sine wave
+fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            (2.0 * PI * freq_hz * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate harmonic series
+fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let mut audio = vec![0.0; num_samples];
+
+    for h in 1..=num_harmonics {
+        let freq = f0 * h as f32;
+        let amplitude = 1.0 / h as f32;
+        for (i, sample) in audio.iter_mut().enumerate() {
+            let t = i as f32 / sample_rate as f32;
+            *sample += amplitude * (2.0 * PI * freq * t).sin();
+        }
+    }
+
+    audio
 }
 
 #[cfg(test)]
@@ -505,37 +530,4 @@ mod tests {
         assert_eq!(bandwidths.len(), 2);
         assert!(bandwidths[0] >= 0.0);
     }
-}
-
-/// Helper: Generate sine wave
-fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            (2.0 * PI * freq_hz * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate harmonic series
-fn generate_harmonic_series(
-    f0: f32,
-    num_harmonics: usize,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let mut audio = vec![0.0; num_samples];
-
-    for h in 1..=num_harmonics {
-        let freq = f0 * h as f32;
-        let amplitude = 1.0 / h as f32;
-        for (i, sample) in audio.iter_mut().enumerate() {
-            let t = i as f32 / sample_rate as f32;
-            *sample += amplitude * (2.0 * PI * freq * t).sin();
-        }
-    }
-
-    audio
 }

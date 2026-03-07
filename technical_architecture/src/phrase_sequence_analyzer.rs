@@ -134,9 +134,7 @@ impl PhraseSequenceAnalyzer {
 
     /// Extract phrases from a vocalization
     pub fn extract_phrases(&self, audio: &[f32], sample_rate: u32) -> Result<Vec<Phrase>> {
-        use crate::within_vocalization_analyzer::{
-            WithinVocalizationAnalyzer, WithinVocalizationConfig,
-        };
+        use crate::within_vocalization_analyzer::{WithinVocalizationAnalyzer, WithinVocalizationConfig};
 
         // Use within-vocalization analyzer to detect phrase boundaries
         let config = WithinVocalizationConfig {
@@ -550,10 +548,7 @@ impl PhraseSequenceAnalyzer {
         for seq in sequences {
             for (i, &word) in seq.words.iter().enumerate() {
                 if i + 1 < seq.words.len() {
-                    transition_patterns
-                        .entry(word)
-                        .or_default()
-                        .push(seq.words[i + 1]);
+                    transition_patterns.entry(word).or_default().push(seq.words[i + 1]);
                 }
             }
         }
@@ -563,8 +558,7 @@ impl PhraseSequenceAnalyzer {
             fixed_transitions: pmi.high_pmi_transitions,
             positional_grammar,
             avg_sentence_length: if !sequences.is_empty() {
-                sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64
-                    / sequences.len() as f64
+                sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64 / sequences.len() as f64
             } else {
                 0.0
             },
@@ -666,10 +660,7 @@ mod tests {
         let similarity = analyzer.compute_similarity(&features1, &features2);
 
         // Similar phrases should have high similarity
-        assert!(
-            similarity > 0.8,
-            "Similar phrases should have high similarity"
-        );
+        assert!(similarity > 0.8, "Similar phrases should have high similarity");
     }
 
     #[test]

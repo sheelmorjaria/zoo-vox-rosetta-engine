@@ -78,10 +78,7 @@ impl RhythmicStabilityCalculator {
         }
 
         // Calculate inter-onset intervals (in samples)
-        let iois: Vec<f32> = onsets
-            .windows(2)
-            .map(|pair| (pair[1] - pair[0]) as f32)
-            .collect();
+        let iois: Vec<f32> = onsets.windows(2).map(|pair| (pair[1] - pair[0]) as f32).collect();
 
         // Calculate mean and std dev of IOIs
         let mean_ioi = iois.iter().sum::<f32>() / iois.len() as f32;
@@ -90,11 +87,7 @@ impl RhythmicStabilityCalculator {
             return 0.0;
         }
 
-        let variance = iois
-            .iter()
-            .map(|&ioi| (ioi - mean_ioi).powi(2))
-            .sum::<f32>()
-            / iois.len() as f32;
+        let variance = iois.iter().map(|&ioi| (ioi - mean_ioi).powi(2)).sum::<f32>() / iois.len() as f32;
 
         let std_ioi = variance.sqrt();
 
@@ -224,10 +217,7 @@ impl RhythmicStabilityCalculator {
         }
 
         // Return magnitude (only positive frequencies)
-        complex[..n / 2]
-            .iter()
-            .map(|&(r, i)| (r * r + i * i).sqrt())
-            .collect()
+        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
     }
 }
 
@@ -299,6 +289,58 @@ impl TemporalCentroidCalculator {
     }
 }
 
+/// Helper: Generate regular clicks (onsets)
+fn generate_regular_clicks(sample_rate: u32, clicks_per_sec: f32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let interval_samples = (sample_rate as f32 / clicks_per_sec) as usize;
+    let mut audio = vec![0.0; num_samples];
+
+    for i in (0..num_samples).step_by(interval_samples) {
+        // Create a short click (impulse)
+        if i + 100 < num_samples {
+            for j in 0..100.min(num_samples - i) {
+                audio[i + j] = 0.5 * (-0.1 * j as f32).exp(); // Decaying impulse
+            }
+        }
+    }
+
+    audio
+}
+
+/// Helper: Generate irregular clicks (random timing)
+fn generate_irregular_clicks(sample_rate: u32, num_clicks: usize, duration_sec: f32) -> Vec<f32> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let mut audio = vec![0.0; num_samples];
+
+    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let mut rng: u32 = seed;
+
+    for _ in 0..num_clicks {
+        let i = (rng as usize % num_samples).saturating_sub(100);
+        rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
+
+        if i + 100 < num_samples {
+            for j in 0..100.min(num_samples - i) {
+                audio[i + j] = 0.5 * (-0.1 * j as f32).exp();
+            }
+        }
+    }
+
+    audio
+}
+
+/// Helper: Generate sine wave for testing
+fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            (2.0 * PI * freq_hz * t).sin()
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -324,10 +366,7 @@ mod tests {
         let clicks = generate_irregular_clicks(48000, 10, 0.5);
         let stability = calculator.calculate(&clicks);
         // Irregular clicks should have lower stability
-        assert!(
-            stability < 0.7,
-            "Irregular clicks should have lower stability"
-        );
+        assert!(stability < 0.7, "Irregular clicks should have lower stability");
     }
 
     #[test]
@@ -366,7 +405,7 @@ mod tests {
         let trill: Vec<f32> = (0..num_samples)
             .map(|i| {
                 let t = i as f32 / sample_rate as f32;
-                let freq = if (i / (sample_rate as usize / 20)) % 2 == 0 {
+                let freq = if (i / (sample_rate as usize / 20)).is_multiple_of(2) {
                     440.0
                 } else {
                     880.0
@@ -385,19 +424,16 @@ mod tests {
         let calculator = RhythmicStabilityCalculator::new(48000, 0.5);
         let clicks = generate_regular_clicks(48000, 8.0, 0.5);
         let stability = calculator.calculate(&clicks);
-        assert!(stability >= 0.0 && stability <= 1.0);
+        assert!((0.0..=1.0).contains(&stability));
     }
 
     #[test]
     fn test_rhythmic_stability_range() {
         let calculator = RhythmicStabilityCalculator::default();
         // Test with various inputs
-        for &test in &[
-            &[0.0f32; 4800][..],
-            &generate_sine_wave(1000.0, 48000, 0.1)[..],
-        ] {
+        for &test in &[&[0.0f32; 4800][..], &generate_sine_wave(1000.0, 48000, 0.1)[..]] {
             let stability = calculator.calculate(test);
-            assert!(stability >= 0.0 && stability <= 1.0);
+            assert!((0.0..=1.0).contains(&stability));
         }
     }
 
@@ -469,61 +505,6 @@ mod tests {
         let calculator = TemporalCentroidCalculator::new(48000);
         let tone = generate_sine_wave(1000.0, 48000, 0.1);
         let centroid = calculator.calculate(&tone);
-        assert!(centroid >= 0.0 && centroid <= 1.0);
+        assert!((0.0..=1.0).contains(&centroid));
     }
-}
-
-/// Helper: Generate regular clicks (onsets)
-fn generate_regular_clicks(sample_rate: u32, clicks_per_sec: f32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let interval_samples = (sample_rate as f32 / clicks_per_sec) as usize;
-    let mut audio = vec![0.0; num_samples];
-
-    for i in (0..num_samples).step_by(interval_samples) {
-        // Create a short click (impulse)
-        if i + 100 < num_samples {
-            for j in 0..100.min(num_samples - i) {
-                audio[i + j] = 0.5 * (-0.1 * j as f32).exp(); // Decaying impulse
-            }
-        }
-    }
-
-    audio
-}
-
-/// Helper: Generate irregular clicks (random timing)
-fn generate_irregular_clicks(sample_rate: u32, num_clicks: usize, duration_sec: f32) -> Vec<f32> {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let mut audio = vec![0.0; num_samples];
-
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .subsec_nanos();
-    let mut rng: u32 = seed;
-
-    for _ in 0..num_clicks {
-        let i = (rng as usize % num_samples).saturating_sub(100);
-        rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
-
-        if i + 100 < num_samples {
-            for j in 0..100.min(num_samples - i) {
-                audio[i + j] = 0.5 * (-0.1 * j as f32).exp();
-            }
-        }
-    }
-
-    audio
-}
-
-/// Helper: Generate sine wave for testing
-fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            (2.0 * PI * freq_hz * t).sin()
-        })
-        .collect()
 }

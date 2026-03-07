@@ -9,6 +9,7 @@
 //!   cargo run --release --example multi_species_dynamic_phrases -- marmoset
 //!   cargo run --release --example multi_species_dynamic_phrases -- dolphin
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -21,8 +22,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
-    SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric,
+    ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -221,10 +222,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
     println!("Configuration:");
     println!("  ├─ Data Directory: {:?}", config.data_dir);
     println!("  ├─ Sample Rate: {}Hz", config.sample_rate);
-    println!(
-        "  ├─ Frame Duration: {}ms",
-        config.segmenter_config.frame_duration_ms
-    );
+    println!("  ├─ Frame Duration: {}ms", config.segmenter_config.frame_duration_ms);
     println!(
         "  ├─ Min Phrase Duration: {}ms",
         config.segmenter_config.min_phrase_duration_ms
@@ -233,10 +231,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
         "  ├─ Max Phrase Duration: {}ms",
         config.segmenter_config.max_phrase_duration_ms
     );
-    println!(
-        "  ├─ Change Threshold: {}",
-        config.segmenter_config.change_threshold
-    );
+    println!("  ├─ Change Threshold: {}", config.segmenter_config.change_threshold);
     println!("  └─ Max Files: {}", config.max_files);
     println!();
 
@@ -253,13 +248,14 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
 
     if !files.is_empty() {
         // Show call type distribution if available
-        let call_types: HashMap<String, usize> = files
-            .iter()
-            .filter(|f| f.call_type != "unknown")
-            .fold(HashMap::new(), |mut acc, f| {
-                *acc.entry(f.call_type.clone()).or_insert(0) += 1;
-                acc
-            });
+        let call_types: HashMap<String, usize> =
+            files
+                .iter()
+                .filter(|f| f.call_type != "unknown")
+                .fold(HashMap::new(), |mut acc, f| {
+                    *acc.entry(f.call_type.clone()).or_insert(0) += 1;
+                    acc
+                });
 
         if !call_types.is_empty() {
             println!("Call Type Distribution:");
@@ -301,9 +297,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
                 let audio = resample_audio(&audio, file_info.sample_rate, config.sample_rate);
 
                 // Create feature extractor
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    config.sample_rate,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(config.sample_rate)));
 
                 // Segment using dynamic approach
                 let result = segmenter.segment(
@@ -311,9 +305,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &file_info.filename,
                 );
@@ -359,10 +351,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
     }
 
     println!("Building atomic phrase clusters...");
-    println!(
-        "  ├─ Similarity Threshold: {:.2}",
-        config.similarity_threshold
-    );
+    println!("  ├─ Similarity Threshold: {:.2}", config.similarity_threshold);
     println!("  └─ Min Occurrences: {}", config.min_occurrences);
     println!();
 
@@ -446,8 +435,7 @@ fn run_discovery(config: SpeciesConfig) -> Result<(), Box<dyn std::error::Error>
         }
 
         atomic_phrases[i].inter_cluster_distance = min_dist;
-        atomic_phrases[i].separation_score =
-            min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
+        atomic_phrases[i].separation_score = min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
     }
 
     let total_time = total_start.elapsed();
@@ -498,9 +486,7 @@ fn load_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::erro
     }
 }
 
-fn load_zebra_finch_files(
-    config: &SpeciesConfig,
-) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
+fn load_zebra_finch_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
     let annotations_path = config.data_dir.join("annotations.csv");
     let vocalizations_dir = config.data_dir.join("vocalizations");
 
@@ -523,9 +509,7 @@ fn load_zebra_finch_files(
 }
 
 fn load_bat_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
-    let annotations_path = config
-        .data_dir
-        .join("annotations_1k_subset_with_call_types.csv");
+    let annotations_path = config.data_dir.join("annotations_1k_subset_with_call_types.csv");
     let audio_dir = config.data_dir.join("audio");
 
     let file = File::open(annotations_path)?;
@@ -546,9 +530,7 @@ fn load_bat_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::
     Ok(files.into_iter().take(config.max_files).collect())
 }
 
-fn load_marmoset_files(
-    config: &SpeciesConfig,
-) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
+fn load_marmoset_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
     let annotations_path = config.data_dir.join("marmoset_annotations.csv");
 
     let file = File::open(annotations_path)?;
@@ -593,18 +575,12 @@ fn load_dolphin_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn s
     Ok(files.into_iter().take(config.max_files).collect())
 }
 
-fn load_raw_audio_files(
-    config: &SpeciesConfig,
-) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
+fn load_raw_audio_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::error::Error>> {
     let mut files = Vec::new();
     for entry in std::fs::read_dir(&config.data_dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path
-            .extension()
-            .map(|e| e == "wav" || e == "flac")
-            .unwrap_or(false)
-        {
+        if path.extension().map(|e| e == "wav" || e == "flac").unwrap_or(false) {
             files.push(FileInfo {
                 filename: path.file_name().unwrap().to_string_lossy().to_string(),
                 path,
@@ -636,21 +612,10 @@ fn generate_report(
         .filter(|p| p.intra_similarity > 0.70 && p.separation_score > 1.2)
         .collect();
 
-    let avg_cluster_size = atomic_phrases
-        .iter()
-        .map(|p| p.member_indices.len())
-        .sum::<usize>() as f64
+    let avg_cluster_size = atomic_phrases.iter().map(|p| p.member_indices.len()).sum::<usize>() as f64
         / atomic_phrases.len().max(1) as f64;
-    let avg_intra = atomic_phrases
-        .iter()
-        .map(|p| p.intra_similarity)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_sep = atomic_phrases
-        .iter()
-        .map(|p| p.separation_score)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
+    let avg_intra = atomic_phrases.iter().map(|p| p.intra_similarity).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_sep = atomic_phrases.iter().map(|p| p.separation_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
 
     let durations: Vec<f32> = all_candidates.iter().map(|(c, _)| c.duration_ms).collect();
     let avg_duration = durations.iter().sum::<f32>() as f64 / durations.len().max(1) as f64;
@@ -775,10 +740,7 @@ fn generate_report(
             "   ├─ Intra-Sim: {:.3}, Separation: {:.2}",
             s.intra_similarity, s.separation
         );
-        println!(
-            "   └─ Reuse: {} files, Type: {}",
-            s.unique_files, s.primary_call_type
-        );
+        println!("   └─ Reuse: {} files, Type: {}", s.unique_files, s.primary_call_type);
     }
 
     println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -811,10 +773,7 @@ fn generate_report(
     };
 
     std::fs::create_dir_all("dynamic_phrase_analysis")?;
-    let output_path = format!(
-        "dynamic_phrase_analysis/{}_dynamic_phrases.json",
-        config.name
-    );
+    let output_path = format!("dynamic_phrase_analysis/{}_dynamic_phrases.json", config.name);
     let file = File::create(&output_path)?;
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, &report)?;
@@ -833,10 +792,7 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader
@@ -872,10 +828,7 @@ fn resample_audio(audio: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
         .collect()
 }
 
-fn compute_centroid(
-    indices: &[usize],
-    candidates: &[(DynamicPhraseCandidate, String)],
-) -> Vec<f64> {
+fn compute_centroid(indices: &[usize], candidates: &[(DynamicPhraseCandidate, String)]) -> Vec<f64> {
     if indices.is_empty() {
         return vec![0.0; FEATURE_DIM];
     }

@@ -45,23 +45,11 @@ mod tests {
         let (auto_f0, auto_conf) = autocorr.estimate(&tone);
 
         // Both should detect approximately 1000 Hz
-        assert!(
-            (yin_f0 - 1000.0).abs() < 150.0,
-            "YIN should detect ~1000 Hz"
-        );
-        assert!(
-            (auto_f0 - 1000.0).abs() < 150.0,
-            "Autocorr should detect ~1000 Hz"
-        );
+        assert!((yin_f0 - 1000.0).abs() < 150.0, "YIN should detect ~1000 Hz");
+        assert!((auto_f0 - 1000.0).abs() < 150.0, "Autocorr should detect ~1000 Hz");
 
         // Both should have valid confidence
-        assert!(
-            yin_conf >= 0.0 && yin_conf <= 1.0,
-            "YIN confidence should be valid"
-        );
-        assert!(
-            auto_conf >= 0.0 && auto_conf <= 1.0,
-            "Autocorr confidence should be valid"
-        );
+        assert!((0.0..=1.0).contains(&yin_conf), "YIN confidence should be valid");
+        assert!((0.0..=1.0).contains(&auto_conf), "Autocorr confidence should be valid");
     }
 }

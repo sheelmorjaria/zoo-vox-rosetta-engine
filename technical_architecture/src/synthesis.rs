@@ -375,8 +375,7 @@ impl AudioSegment {
             let frac = src_pos.fract();
 
             if src_idx + 1 < self.samples.len() {
-                let sample =
-                    self.samples[src_idx] * (1.0 - frac) + self.samples[src_idx + 1] * frac;
+                let sample = self.samples[src_idx] * (1.0 - frac) + self.samples[src_idx + 1] * frac;
                 new_samples.push(sample);
             } else if src_idx < self.samples.len() {
                 new_samples.push(self.samples[src_idx]);
@@ -431,8 +430,7 @@ impl MicroharmonicValidator {
         // Validate each phrase
         for key in phrase_keys {
             if let Some(phrase) = phrase_segments.get(key) {
-                let score = self
-                    .check_frequency_compatibility(phrase.mean_f0_hz, constraints.frequency_range);
+                let score = self.check_frequency_compatibility(phrase.mean_f0_hz, constraints.frequency_range);
                 phrase_scores.insert(key.clone(), score);
                 total_score += score;
 
@@ -450,10 +448,7 @@ impl MicroharmonicValidator {
                 {
                     messages.push(format!(
                         "Phrase '{}' F0 {:.1} Hz outside range {:.1}-{:.1} Hz",
-                        key,
-                        phrase.mean_f0_hz,
-                        constraints.frequency_range.0,
-                        constraints.frequency_range.1
+                        key, phrase.mean_f0_hz, constraints.frequency_range.0, constraints.frequency_range.1
                     ));
                 }
             } else {
@@ -672,10 +667,7 @@ impl CrossSpeciesAdapter {
         base_constraints: &MicroharmonicConstraints,
     ) -> MicroharmonicConstraints {
         let default_params = SpeciesParameters::default();
-        let params = self
-            .species_parameters
-            .get(species)
-            .unwrap_or(&default_params);
+        let params = self.species_parameters.get(species).unwrap_or(&default_params);
 
         let mut adapted = base_constraints.clone();
         adapted.frequency_range = params.frequency_range;
@@ -714,11 +706,7 @@ impl ConcatenativeSynthesizer {
     }
 
     /// Concatenate phrases sequentially with crossfades
-    pub fn concatenate_phrases(
-        &self,
-        phrases: &[PhraseSegment],
-        fade_duration_ms: f32,
-    ) -> Result<Vec<f32>> {
+    pub fn concatenate_phrases(&self, phrases: &[PhraseSegment], fade_duration_ms: f32) -> Result<Vec<f32>> {
         if phrases.is_empty() {
             return Ok(Vec::new());
         }
@@ -766,8 +754,7 @@ impl ConcatenativeSynthesizer {
                     let audio_start = fade_len;
                     let copy_len = phrase_len - fade_len;
                     if copy_start + copy_len <= output.len() {
-                        output[copy_start..copy_start + copy_len]
-                            .copy_from_slice(&audio[audio_start..]);
+                        output[copy_start..copy_start + copy_len].copy_from_slice(&audio[audio_start..]);
                     }
                 }
             }
@@ -801,11 +788,7 @@ impl SuperpositionalSynthesizer {
     }
 
     /// Layer phrases harmonically at same time position
-    pub fn layer_phrases_harmonically(
-        &self,
-        phrases: &[PhraseSegment],
-        amplitude_balance: bool,
-    ) -> Result<Vec<f32>> {
+    pub fn layer_phrases_harmonically(&self, phrases: &[PhraseSegment], amplitude_balance: bool) -> Result<Vec<f32>> {
         if phrases.is_empty() {
             return Ok(Vec::new());
         }
@@ -956,11 +939,7 @@ pub struct EnhancedMicroharmonicSynthesizer {
 
 impl EnhancedMicroharmonicSynthesizer {
     /// Create a new enhanced microharmonic synthesizer
-    pub fn new(
-        species: String,
-        phrase_segments: HashMap<String, PhraseSegment>,
-        sample_rate: usize,
-    ) -> Self {
+    pub fn new(species: String, phrase_segments: HashMap<String, PhraseSegment>, sample_rate: usize) -> Self {
         Self {
             species,
             phrase_segments,
@@ -986,11 +965,9 @@ impl EnhancedMicroharmonicSynthesizer {
             .adapt_parameters_for_species(&self.species, constraints);
 
         // Validate compatibility
-        let validation = self.validator.validate_compatibility(
-            phrase_sequence,
-            &adapted_constraints,
-            &self.phrase_segments,
-        );
+        let validation =
+            self.validator
+                .validate_compatibility(phrase_sequence, &adapted_constraints, &self.phrase_segments);
 
         if !validation.is_valid {
             warn!("Validation failed: {:?}", validation.messages);
@@ -1016,8 +993,7 @@ impl EnhancedMicroharmonicSynthesizer {
 
         // Synthesize using concatenative approach
         let concatenative = ConcatenativeSynthesizer::new(self.sample_rate, 1.0);
-        let mut audio = concatenative
-            .concatenate_phrases(&phrases, adapted_constraints.crossfade_duration_ms)?;
+        let mut audio = concatenative.concatenate_phrases(&phrases, adapted_constraints.crossfade_duration_ms)?;
 
         // Apply safety limiting
         self.safety_monitor.apply_safety_limiter(&mut audio)?;
@@ -1031,9 +1007,9 @@ impl EnhancedMicroharmonicSynthesizer {
             stats.total_syntheses += 1;
             stats.horizontal_count += 1;
             let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-            stats.avg_processing_time_ms =
-                (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64 + elapsed)
-                    / stats.total_syntheses as f64;
+            stats.avg_processing_time_ms = (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64
+                + elapsed)
+                / stats.total_syntheses as f64;
             stats.max_processing_time_ms = stats.max_processing_time_ms.max(elapsed);
         }
 
@@ -1062,11 +1038,9 @@ impl EnhancedMicroharmonicSynthesizer {
             .adapt_parameters_for_species(&self.species, constraints);
 
         // Validate compatibility
-        let validation = self.validator.validate_compatibility(
-            phrase_set,
-            &adapted_constraints,
-            &self.phrase_segments,
-        );
+        let validation = self
+            .validator
+            .validate_compatibility(phrase_set, &adapted_constraints, &self.phrase_segments);
 
         if !validation.is_valid {
             warn!("Validation failed: {:?}", validation.messages);
@@ -1091,10 +1065,9 @@ impl EnhancedMicroharmonicSynthesizer {
         }
 
         // Synthesize using superpositional approach
-        let superpositional =
-            SuperpositionalSynthesizer::new(self.sample_rate, adapted_constraints.max_phrases);
-        let mut audio = superpositional
-            .layer_phrases_harmonically(&phrases, adapted_constraints.amplitude_balancing)?;
+        let superpositional = SuperpositionalSynthesizer::new(self.sample_rate, adapted_constraints.max_phrases);
+        let mut audio =
+            superpositional.layer_phrases_harmonically(&phrases, adapted_constraints.amplitude_balancing)?;
 
         // Apply safety limiting
         self.safety_monitor.apply_safety_limiter(&mut audio)?;
@@ -1108,9 +1081,9 @@ impl EnhancedMicroharmonicSynthesizer {
             stats.total_syntheses += 1;
             stats.vertical_count += 1;
             let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-            stats.avg_processing_time_ms =
-                (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64 + elapsed)
-                    / stats.total_syntheses as f64;
+            stats.avg_processing_time_ms = (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64
+                + elapsed)
+                / stats.total_syntheses as f64;
             stats.max_processing_time_ms = stats.max_processing_time_ms.max(elapsed);
         }
 
@@ -1148,11 +1121,9 @@ impl EnhancedMicroharmonicSynthesizer {
             all_phrase_keys.extend(phrase_keys.clone());
 
             // Validate each group
-            let validation = self.validator.validate_compatibility(
-                phrase_keys,
-                &adapted_constraints,
-                &self.phrase_segments,
-            );
+            let validation =
+                self.validator
+                    .validate_compatibility(phrase_keys, &adapted_constraints, &self.phrase_segments);
             total_score += validation.compatibility_score;
             score_count += 1;
 
@@ -1202,9 +1173,9 @@ impl EnhancedMicroharmonicSynthesizer {
             stats.total_syntheses += 1;
             stats.combined_count += 1;
             let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-            stats.avg_processing_time_ms =
-                (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64 + elapsed)
-                    / stats.total_syntheses as f64;
+            stats.avg_processing_time_ms = (stats.avg_processing_time_ms * (stats.total_syntheses - 1) as f64
+                + elapsed)
+                / stats.total_syntheses as f64;
             stats.max_processing_time_ms = stats.max_processing_time_ms.max(elapsed);
         }
 
@@ -1285,8 +1256,8 @@ impl GrainWindow {
         for i in 0..num_samples {
             let t = i as f32 / num_samples as f32;
             // Blackman window: 0.42 - 0.5*cos(2*pi*t) + 0.08*cos(4*pi*t)
-            let sample = 0.42 - 0.5 * (2.0 * std::f32::consts::PI * t).cos()
-                + 0.08 * (4.0 * std::f32::consts::PI * t).cos();
+            let sample =
+                0.42 - 0.5 * (2.0 * std::f32::consts::PI * t).cos() + 0.08 * (4.0 * std::f32::consts::PI * t).cos();
             window.push(sample);
         }
 
@@ -1434,10 +1405,7 @@ impl GranularMorpher {
     /// - voices: Vector of granular voices to overlap
     /// - crossfade_ms: Crossfade duration for smooth transitions
     pub fn new(voices: Vec<GranularVoice>, crossfade_ms: f32) -> Self {
-        Self {
-            voices,
-            crossfade_ms,
-        }
+        Self { voices, crossfade_ms }
     }
 
     /// Generate a single sample by summing all active voices
@@ -1667,8 +1635,8 @@ impl Default for SourceMetadata {
             spectral_flux: 0.5, // Moderate spectral change rate
 
             // Rhythm - not pulsed (defaults for harmonic calls)
-            median_ici_ms: 0.0, // Not applicable for continuous tones
-            onset_rate_hz: 0.0, // Not applicable for continuous tones
+            median_ici_ms: 0.0,                // Not applicable for continuous tones
+            onset_rate_hz: 0.0,                // Not applicable for continuous tones
             ici_coefficient_of_variation: 0.0, // Not applicable for continuous tones
 
             // === 30D → 45D Expansion Defaults ===
@@ -1717,8 +1685,7 @@ impl SourceMetadata {
             delta_duration_ms: self.duration_ms - other.duration_ms,
             delta_f0_range_hz: self.f0_range_hz - other.f0_range_hz,
 
-            delta_harmonic_to_noise_ratio: self.harmonic_to_noise_ratio
-                - other.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio: self.harmonic_to_noise_ratio - other.harmonic_to_noise_ratio,
             delta_spectral_flatness: self.spectral_flatness - other.spectral_flatness,
             delta_harmonicity: self.harmonicity - other.harmonicity,
 
@@ -2288,12 +2255,7 @@ impl GranularConcatenativeSynthesizer {
     ///     100.0     // Increase F0 range by 100Hz
     /// );
     /// ```
-    pub fn apply_vector_delta(
-        &mut self,
-        delta_f0_hz: f32,
-        delta_duration_ms: f32,
-        delta_f0_range_hz: f32,
-    ) {
+    pub fn apply_vector_delta(&mut self, delta_f0_hz: f32, delta_duration_ms: f32, delta_f0_range_hz: f32) {
         self.shift_pitch_by_hz(delta_f0_hz);
         self.shift_duration_by_ms(delta_duration_ms);
         // Note: F0 range shift would require spectral manipulation beyond granular synthesis
@@ -2575,11 +2537,7 @@ impl GranularSynthesizer {
         let duration_samples = (self.config.sample_rate as f32 * 0.1) as usize; // 100ms
         let mut output = Vec::with_capacity(duration_samples);
 
-        let frequency = if features.f0 > 0.0 {
-            features.f0
-        } else {
-            440.0
-        };
+        let frequency = if features.f0 > 0.0 { features.f0 } else { 440.0 };
 
         for i in 0..duration_samples {
             let t = i as f32 / self.config.sample_rate as f32;
@@ -2629,10 +2587,8 @@ impl GranularSynthesizer {
 
     /// Update grain generation
     fn update_grains(&mut self, _num_samples: usize) {
-        let grain_size_samples =
-            (self.config.grain_size_ms * self.config.sample_rate as f32 / 1000.0) as usize;
-        let grain_spacing =
-            (grain_size_samples as f32 * (1.0 - self.config.grain_overlap)) as usize;
+        let grain_size_samples = (self.config.grain_size_ms * self.config.sample_rate as f32 / 1000.0) as usize;
+        let grain_spacing = (grain_size_samples as f32 * (1.0 - self.config.grain_overlap)) as usize;
 
         // Spawn new grains as needed
         while self.grains.len() < self.config.max_grains {
@@ -2642,8 +2598,7 @@ impl GranularSynthesizer {
                 break;
             }
 
-            let grain_samples =
-                self.source_buffer[start_pos..start_pos + grain_size_samples].to_vec();
+            let grain_samples = self.source_buffer[start_pos..start_pos + grain_size_samples].to_vec();
             let grain = Grain::new(grain_samples, grain_size_samples);
 
             self.grains.push(grain);
@@ -2728,11 +2683,7 @@ fn calculate_adsr_envelope(time: f32, total: f32, attack: f32, decay: f32, susta
 /// - phase: Current oscillator phase (0.0 to 1.0)
 ///
 /// Returns: Synthesized sample value (-1.0 to 1.0)
-pub fn generate_dynamic_microharmonic_sample(
-    time: f32,
-    params: &DynamicMicroharmonicParams,
-    phase: f32,
-) -> f32 {
+pub fn generate_dynamic_microharmonic_sample(time: f32, params: &DynamicMicroharmonicParams, phase: f32) -> f32 {
     // 1. Calculate instantaneous F0 with vibrato
     let vibrato_osc = (time * params.vibrato_rate_hz * 2.0 * std::f32::consts::PI).sin();
     let vibrato_cents = vibrato_osc * params.vibrato_depth_cents;
@@ -2879,11 +2830,7 @@ impl DynamicMicroharmonicSynthesizer {
     /// - crossfade_ms: Crossfade duration between phrases
     ///
     /// Returns: Synthesized audio samples for entire sequence
-    pub fn synthesize_sequence(
-        &self,
-        phrase_params: &[DynamicMicroharmonicParams],
-        crossfade_ms: f32,
-    ) -> Vec<f32> {
+    pub fn synthesize_sequence(&self, phrase_params: &[DynamicMicroharmonicParams], crossfade_ms: f32) -> Vec<f32> {
         if phrase_params.is_empty() {
             return Vec::new();
         }
@@ -2893,10 +2840,7 @@ impl DynamicMicroharmonicSynthesizer {
         }
 
         // Synthesize each phrase individually
-        let phrases: Vec<Vec<f32>> = phrase_params
-            .iter()
-            .map(|p| self.synthesize_phrase(p))
-            .collect();
+        let phrases: Vec<Vec<f32>> = phrase_params.iter().map(|p| self.synthesize_phrase(p)).collect();
 
         // Calculate total duration
         let total_samples: usize = phrases.iter().map(|p| p.len()).sum();
@@ -2965,10 +2909,8 @@ impl DynamicMicroharmonicSynthesizer {
             attack_ms: attack_base * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
             decay_ms: decay_base * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
             sustain_level: 0.7,
-            vibrato_rate_hz: vibrato_rate_base
-                * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
-            vibrato_depth_cents: vibrato_depth_base
-                * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
+            vibrato_rate_hz: vibrato_rate_base * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
+            vibrato_depth_cents: vibrato_depth_base * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
             jitter_amount: jitter_base * (1.0 + (rng.gen::<f32>() - 0.5) * 2.0 * variability),
             shimmer_amount: 0.01,
             spectral_tilt: -6.0,
@@ -3022,13 +2964,7 @@ impl ModalityTimeline {
     }
 
     /// Add an event to the timeline
-    pub fn add_event(
-        &mut self,
-        start_ms: f32,
-        duration_ms: f32,
-        source: String,
-        modality: Modality,
-    ) {
+    pub fn add_event(&mut self, start_ms: f32, duration_ms: f32, source: String, modality: Modality) {
         let event = TimelineEvent {
             start_ms,
             duration_ms,
@@ -3040,8 +2976,7 @@ impl ModalityTimeline {
 
     /// Sort events by start time
     pub fn sort_by_time(&mut self) {
-        self.events
-            .sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap());
+        self.events.sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap());
     }
 
     /// Validate timeline has no overlaps and is sequential
@@ -3135,12 +3070,7 @@ impl MultiBufferGranularSequencer {
     /// - `buffer_name`: Unique identifier for this buffer (e.g., "corvid_whistle")
     /// - `audio`: Audio samples
     /// - `metadata`: Acoustic features of the source
-    pub fn register_source(
-        &mut self,
-        buffer_name: String,
-        audio: Vec<f32>,
-        metadata: SourceMetadata,
-    ) {
+    pub fn register_source(&mut self, buffer_name: String, audio: Vec<f32>, metadata: SourceMetadata) {
         self.source_buffers.insert(buffer_name.clone(), audio);
         self.source_metadata.insert(buffer_name, metadata);
     }
@@ -3191,13 +3121,10 @@ impl MultiBufferGranularSequencer {
             let source_audio = self
                 .source_buffers
                 .get(&event.source_buffer)
-                .ok_or_else(|| {
-                    anyhow::anyhow!("Source buffer '{}' not found", event.source_buffer)
-                })?;
+                .ok_or_else(|| anyhow::anyhow!("Source buffer '{}' not found", event.source_buffer))?;
 
             // Create single-buffer synthesizer for this event
-            let grain_size_samples =
-                (event.duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+            let grain_size_samples = (event.duration_ms / 1000.0 * self.sample_rate as f32) as usize;
 
             // Calculate start sample
             let start_sample = (event.start_ms / 1000.0 * self.sample_rate as f32) as usize;
@@ -3352,12 +3279,7 @@ impl CachedGranularSequencer {
     /// * `id` - Unique identifier for this buffer (e.g., "neutral_001")
     /// * `audio` - Audio samples
     /// * `metadata` - Acoustic metadata for this buffer
-    pub async fn register_source(
-        &mut self,
-        id: String,
-        audio: Vec<f32>,
-        metadata: SourceMetadata,
-    ) -> Result<()> {
+    pub async fn register_source(&mut self, id: String, audio: Vec<f32>, metadata: SourceMetadata) -> Result<()> {
         // Check cache first
         if self.cache.get(&id).is_some() {
             // Cache hit - buffer already loaded
@@ -3371,8 +3293,7 @@ impl CachedGranularSequencer {
         *self.cache_misses.lock() += 1;
 
         // Create cached buffer
-        let cached =
-            CachedAudioBuffer::new(id.clone(), audio.clone(), self.sequencer.sample_rate());
+        let cached = CachedAudioBuffer::new(id.clone(), audio.clone(), self.sequencer.sample_rate());
 
         let size_bytes = cached.size_bytes;
 
@@ -3407,12 +3328,7 @@ impl CachedGranularSequencer {
     /// * `id` - Buffer identifier to pre-load
     /// * `audio` - Audio samples
     /// * `metadata` - Acoustic metadata
-    pub async fn preload(
-        &mut self,
-        id: String,
-        audio: Vec<f32>,
-        metadata: SourceMetadata,
-    ) -> Result<()> {
+    pub async fn preload(&mut self, id: String, audio: Vec<f32>, metadata: SourceMetadata) -> Result<()> {
         debug!("Pre-loading buffer '{}'", id);
         self.register_source(id, audio, metadata).await
     }
@@ -3432,11 +3348,7 @@ impl CachedGranularSequencer {
         let hits = *self.cache_hits.lock();
         let misses = *self.cache_misses.lock();
         let total = hits + misses;
-        let hit_rate = if total > 0 {
-            hits as f32 / total as f32
-        } else {
-            0.0
-        };
+        let hit_rate = if total > 0 { hits as f32 / total as f32 } else { 0.0 };
 
         CacheStats {
             cache_hits: hits,
@@ -3663,18 +3575,12 @@ mod tests {
         let audio1: Vec<f32> = (0..1000)
             .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin() * 0.5)
             .collect();
-        phrase_segments.insert(
-            "phrase1".to_string(),
-            PhraseSegment::new(audio1, 44100, 440.0),
-        );
+        phrase_segments.insert("phrase1".to_string(), PhraseSegment::new(audio1, 44100, 440.0));
 
         let audio2: Vec<f32> = (0..1000)
             .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / 44100.0).sin() * 0.5)
             .collect();
-        phrase_segments.insert(
-            "phrase2".to_string(),
-            PhraseSegment::new(audio2, 44100, 880.0),
-        );
+        phrase_segments.insert("phrase2".to_string(), PhraseSegment::new(audio2, 44100, 880.0));
 
         let constraints = MicroharmonicConstraints::default();
         let phrase_keys = vec!["phrase1".to_string(), "phrase2".to_string()];
@@ -3731,8 +3637,7 @@ mod tests {
 
         // Test parameter adaptation
         let base_constraints = MicroharmonicConstraints::default();
-        let marmoset_constraints =
-            adapter.adapt_parameters_for_species("marmoset", &base_constraints);
+        let marmoset_constraints = adapter.adapt_parameters_for_species("marmoset", &base_constraints);
 
         assert_eq!(marmoset_constraints.frequency_range, (500.0, 15000.0));
         assert_eq!(marmoset_constraints.harmonic_tolerance, 2.0);
@@ -3779,9 +3684,7 @@ mod tests {
             .collect();
         phrases.push(PhraseSegment::new(audio2, 44100, 880.0));
 
-        let output = synthesizer
-            .layer_phrases_harmonically(&phrases, true)
-            .unwrap();
+        let output = synthesizer.layer_phrases_harmonically(&phrases, true).unwrap();
 
         assert!(!output.is_empty());
         assert_eq!(output.len(), 2205); // Should be same as input length
@@ -3825,21 +3728,14 @@ mod tests {
         let audio1: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase1".to_string(),
-            PhraseSegment::new(audio1, 44100, 440.0),
-        );
+        phrase_segments.insert("phrase1".to_string(), PhraseSegment::new(audio1, 44100, 440.0));
 
         let audio2: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase2".to_string(),
-            PhraseSegment::new(audio2, 44100, 880.0),
-        );
+        phrase_segments.insert("phrase2".to_string(), PhraseSegment::new(audio2, 44100, 880.0));
 
-        let synthesizer =
-            EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
+        let synthesizer = EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
 
         let constraints = MicroharmonicConstraints::default();
         let phrase_sequence = vec!["phrase1".to_string(), "phrase2".to_string()];
@@ -3864,21 +3760,14 @@ mod tests {
         let audio1: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase1".to_string(),
-            PhraseSegment::new(audio1, 44100, 440.0),
-        );
+        phrase_segments.insert("phrase1".to_string(), PhraseSegment::new(audio1, 44100, 440.0));
 
         let audio2: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase2".to_string(),
-            PhraseSegment::new(audio2, 44100, 880.0),
-        );
+        phrase_segments.insert("phrase2".to_string(), PhraseSegment::new(audio2, 44100, 880.0));
 
-        let synthesizer =
-            EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
+        let synthesizer = EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
 
         let constraints = MicroharmonicConstraints::default();
         let phrase_set = vec!["phrase1".to_string(), "phrase2".to_string()];
@@ -3903,29 +3792,19 @@ mod tests {
         let audio1: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase1".to_string(),
-            PhraseSegment::new(audio1, 44100, 440.0),
-        );
+        phrase_segments.insert("phrase1".to_string(), PhraseSegment::new(audio1, 44100, 440.0));
 
         let audio2: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 660.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase2".to_string(),
-            PhraseSegment::new(audio2, 44100, 660.0),
-        );
+        phrase_segments.insert("phrase2".to_string(), PhraseSegment::new(audio2, 44100, 660.0));
 
         let audio3: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase3".to_string(),
-            PhraseSegment::new(audio3, 44100, 880.0),
-        );
+        phrase_segments.insert("phrase3".to_string(), PhraseSegment::new(audio3, 44100, 880.0));
 
-        let synthesizer =
-            EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
+        let synthesizer = EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
 
         let constraints = MicroharmonicConstraints::default();
         let synthesis_plan = vec![
@@ -4045,11 +3924,7 @@ impl CorvidRoughnessParams {
 /// # Returns
 /// Audio with corvid roughness applied
 #[allow(dead_code)]
-pub fn apply_corvid_roughness(
-    audio: &[f32],
-    sample_rate: usize,
-    params: &CorvidRoughnessParams,
-) -> Vec<f32> {
+pub fn apply_corvid_roughness(audio: &[f32], sample_rate: usize, params: &CorvidRoughnessParams) -> Vec<f32> {
     if audio.is_empty() {
         return Vec::new();
     }
@@ -4077,8 +3952,7 @@ pub fn apply_corvid_roughness(
         // Generate phase smearing (random phase shifts)
         let phase_smear = if params.phase_smearing > 0.0 {
             // Random delay up to phase_smearing samples
-            let delay_samples =
-                (rng.gen::<f32>() * params.phase_smearing * sample_rate as f32) as usize;
+            let delay_samples = (rng.gen::<f32>() * params.phase_smearing * sample_rate as f32) as usize;
             if i >= delay_samples {
                 audio[i - delay_samples]
             } else {
@@ -4122,10 +3996,7 @@ pub struct CorvidModeSynthesizer {
 impl CorvidModeSynthesizer {
     /// Create a new corvid mode synthesizer
     pub fn new(sample_rate: usize, params: CorvidRoughnessParams) -> Self {
-        Self {
-            sample_rate,
-            params,
-        }
+        Self { sample_rate, params }
     }
 
     /// Synthesize a corvid-style phrase with roughness
@@ -4179,9 +4050,7 @@ mod corvid_roughness_tests {
 
         // Create clean sine wave
         let clean: Vec<f32> = (0..sample_rate)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5)
             .collect();
 
         let params = CorvidRoughnessParams::american_crow();
@@ -4191,11 +4060,7 @@ mod corvid_roughness_tests {
         assert_eq!(rough.len(), clean.len());
 
         // Output should be different (roughness applied)
-        let diff_squared: f32 = rough
-            .iter()
-            .zip(clean.iter())
-            .map(|(r, c)| (r - c).powi(2))
-            .sum();
+        let diff_squared: f32 = rough.iter().zip(clean.iter()).map(|(r, c)| (r - c).powi(2)).sum();
         assert!(diff_squared > 0.01, "Roughness should modify audio");
 
         // Output should be bounded (soft clipping applied)
@@ -4211,9 +4076,7 @@ mod corvid_roughness_tests {
 
         // Create clean audio
         let clean: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 880.0 * i as f32 / sample_rate as f32).sin() * 0.3
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / sample_rate as f32).sin() * 0.3)
             .collect();
 
         // Apply roughness
@@ -4240,9 +4103,7 @@ mod corvid_roughness_tests {
     fn test_corvid_roughness_zero_params() {
         let sample_rate = 44100;
         let clean: Vec<f32> = (0..sample_rate)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5)
             .collect();
 
         let params = CorvidRoughnessParams {
@@ -4267,13 +4128,9 @@ mod corvid_roughness_tests {
         let audio1: Vec<f32> = (0..2205)
             .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
-        phrase_segments.insert(
-            "phrase1".to_string(),
-            PhraseSegment::new(audio1, 44100, 440.0),
-        );
+        phrase_segments.insert("phrase1".to_string(), PhraseSegment::new(audio1, 44100, 440.0));
 
-        let synthesizer =
-            EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
+        let synthesizer = EnhancedMicroharmonicSynthesizer::new("marmoset".to_string(), phrase_segments, 44100);
 
         let constraints = MicroharmonicConstraints::default();
 
@@ -4335,9 +4192,7 @@ mod corvid_roughness_tests {
     fn test_granular_voice_pitch_shift() {
         let sample_rate = 22050;
         let source: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5)
             .collect();
 
         let mut voice = GranularVoice::new(source, sample_rate, 20.0);
@@ -4364,9 +4219,7 @@ mod corvid_roughness_tests {
     fn test_granular_voice_time_stretch() {
         let sample_rate = 22050;
         let source: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.5)
             .collect();
 
         let mut voice = GranularVoice::new(source, sample_rate, 20.0);
@@ -4395,15 +4248,11 @@ mod corvid_roughness_tests {
 
         // Create two different source signals
         let source1: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.3
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 440.0 * i as f32 / sample_rate as f32).sin() * 0.3)
             .collect();
 
         let source2: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 880.0 * i as f32 / sample_rate as f32).sin() * 0.3
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 880.0 * i as f32 / sample_rate as f32).sin() * 0.3)
             .collect();
 
         let voice1 = GranularVoice::new(source1, sample_rate, 20.0);
@@ -4426,9 +4275,7 @@ mod corvid_roughness_tests {
 
         // Create source audio (simple sine wave)
         let source: Vec<f32> = (0..22050)
-            .map(|i| {
-                (2.0 * std::f32::consts::PI * 7000.0 * i as f32 / sample_rate as f32).sin() * 0.3
-            })
+            .map(|i| (2.0 * std::f32::consts::PI * 7000.0 * i as f32 / sample_rate as f32).sin() * 0.3)
             .collect();
 
         let mut synthesizer = GranularConcatenativeSynthesizer::new(sample_rate);
@@ -4489,9 +4336,7 @@ mod corvid_roughness_tests {
             .vibrato_depth(0.03)
             .jitter(0.02)
             .shimmer(0.03)
-            .mfcc(
-                1.2, 0.8, -0.3, 0.5, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4,
-            )
+            .mfcc(1.2, 0.8, -0.3, 0.5, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4)
             .spectral_flux(0.5)
             .rhythm(45.0, 12.0, 0.25)
             .build();
@@ -4762,10 +4607,7 @@ mod corvid_roughness_tests {
         assert_eq!(built.mean_f0_hz, defaulted.mean_f0_hz);
         assert_eq!(built.duration_ms, defaulted.duration_ms);
         assert_eq!(built.f0_range_hz, defaulted.f0_range_hz);
-        assert_eq!(
-            built.harmonic_to_noise_ratio,
-            defaulted.harmonic_to_noise_ratio
-        );
+        assert_eq!(built.harmonic_to_noise_ratio, defaulted.harmonic_to_noise_ratio);
         assert_eq!(built.spectral_flatness, defaulted.spectral_flatness);
         assert_eq!(built.harmonicity, defaulted.harmonicity);
         assert_eq!(built.attack_time_ms, defaulted.attack_time_ms);
@@ -4812,11 +4654,7 @@ mod corvid_roughness_tests {
         let vector = metadata.to_vector_45d();
 
         // Verify dimension count
-        assert_eq!(
-            vector.len(),
-            45,
-            "to_vector_45d should return exactly 45 features"
-        );
+        assert_eq!(vector.len(), 45, "to_vector_45d should return exactly 45 features");
 
         // Verify ordering matches documented structure
         // Fundamental (3): indices 0-2
@@ -4951,9 +4789,7 @@ mod corvid_roughness_tests {
             .map(|i| (2.0 * std::f32::consts::PI * 7000.0 * i as f32 / 44100.0).sin() * 0.3)
             .collect();
 
-        let rattle_audio: Vec<f32> = (0..2205)
-            .map(|_| (rand::random::<f32>() - 0.5) * 0.5)
-            .collect();
+        let rattle_audio: Vec<f32> = (0..2205).map(|_| (rand::random::<f32>() - 0.5) * 0.5).collect();
 
         let whistle_metadata = SourceMetadata {
             mean_f0_hz: 7000.0,
@@ -5012,7 +4848,7 @@ mod corvid_roughness_tests {
         let rattle_audio = vec![0.2f32; 2205]; // 50ms
         let metadata = SourceMetadata::default();
 
-        sequencer.register_source("whistle".to_string(), whistle_audio, metadata.clone());
+        sequencer.register_source("whistle".to_string(), whistle_audio, metadata);
         sequencer.register_source("rattle".to_string(), rattle_audio, metadata);
 
         // Create timeline with voice switching: whistle -> rattle -> whistle

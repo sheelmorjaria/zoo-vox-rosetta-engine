@@ -10,10 +10,11 @@
 //
 // Usage: cargo run --example linguistic_analysis_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use technical_architecture::{
-    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate,
-    LinguisticAnalysis, ParallelExtractionPipeline, VocalizationResult,
+    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate, LinguisticAnalysis,
+    ParallelExtractionPipeline, VocalizationResult,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,10 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  - Vocalizations: {}", vocalization_results.len());
     println!(
         "  - Total phrases: {}",
-        vocalization_results
-            .iter()
-            .map(|v| v.phrases.len())
-            .sum::<usize>()
+        vocalization_results.iter().map(|v| v.phrases.len()).sum::<usize>()
     );
     println!("  - Clustered phrases: {}", clustered_phrases.len());
     println!();
@@ -116,11 +114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Top 5 most frequent phrases
     println!("  Top 5 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(5).enumerate() {
-        let freq = analysis
-            .zipf
-            .phrase_frequencies
-            .get(phrase_id)
-            .unwrap_or(&0);
+        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
         let rank = i + 1;
         println!("    {}. {} (occurrences: {})", rank, phrase_id, freq);
     }
@@ -136,14 +130,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Prosody Analysis:");
-    println!(
-        "  Gap CV (Coefficient of Variation): {:.3}",
-        analysis.prosody.gap_cv
-    );
-    println!(
-        "  Mean gap duration: {:.2} ms",
-        analysis.prosody.mean_gap_ms
-    );
+    println!("  Gap CV (Coefficient of Variation): {:.3}", analysis.prosody.gap_cv);
+    println!("  Mean gap duration: {:.2} ms", analysis.prosody.mean_gap_ms);
     println!("  Gap std deviation: {:.2} ms", analysis.prosody.gap_std_ms);
     println!("  Rhythm classification: {:?}", analysis.prosody.rhythm);
     println!();
@@ -203,13 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if !analysis.phonotactics.forbidden_transitions.is_empty() {
         println!("  Sample of Forbidden/Rare Transitions:");
-        for (i, ft) in analysis
-            .phonotactics
-            .forbidden_transitions
-            .iter()
-            .take(5)
-            .enumerate()
-        {
+        for (i, ft) in analysis.phonotactics.forbidden_transitions.iter().take(5).enumerate() {
             println!(
                 "    {}. {} → {} (prob: {:.3}, reason: {:?})",
                 i + 1,
@@ -246,10 +228,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "  Overlap count: {}",
         analysis.pragmatics.overlap_analysis.overlap_count
     );
-    println!(
-        "  Mean gap: {:.1} ms",
-        analysis.pragmatics.gap_analysis.mean_gap_ms
-    );
+    println!("  Mean gap: {:.1} ms", analysis.pragmatics.gap_analysis.mean_gap_ms);
     println!();
 
     match analysis.pragmatics.pattern {
@@ -301,10 +280,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .count();
 
     println!("Updated Atomicity Analysis:");
-    println!(
-        "  Total phrases analyzed: {}",
-        analysis.updated_atomic_phrases.len()
-    );
+    println!("  Total phrases analyzed: {}", analysis.updated_atomic_phrases.len());
     println!(
         "  Phonologically atomic: {} ({:.1}%)",
         phonologically_atomic,
@@ -360,10 +336,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("1. Information Theory:");
     println!("   - Efficiency Level: {:?}", analysis.zipf.efficiency);
-    println!(
-        "   - Zipf Slope (α): {:.3} (human ≈ -1.0)",
-        analysis.zipf.slope_alpha
-    );
+    println!("   - Zipf Slope (α): {:.3} (human ≈ -1.0)", analysis.zipf.slope_alpha);
     println!();
 
     println!("2. Prosody:");
@@ -417,8 +390,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // mimics real marmoset vocalization patterns.
 // ============================================================================
 
-fn create_marmoset_demo_data(
-) -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>), Box<dyn std::error::Error>> {
+fn create_marmoset_demo_data() -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>), Box<dyn std::error::Error>> {
     // Marmoset vocal characteristics (based on real research):
     // - Phee calls: 7-12 kHz F0 range
     // - Duration: 50-200 ms typical

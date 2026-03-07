@@ -9,6 +9,10 @@
 //! Usage:
 //!   cargo run --release --bin train_gatekeeper_rf
 
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::useless_vec)]
+#![allow(clippy::needless_range_loop)]
+
 use anyhow::Result;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -19,8 +23,8 @@ use std::path::Path;
 // Reserved for future progress tracking: use std::sync::atomic::{AtomicUsize, Ordering};
 
 use technical_architecture::taxonomic_router::{
-    FEATURE_DIM, GATEKEEPER_DIM, ConsolidatedTaxon,
-    consolidated_taxon_to_idx, idx_to_consolidated_taxon, consolidated_taxon_labels,
+    consolidated_taxon_labels, consolidated_taxon_to_idx, idx_to_consolidated_taxon, ConsolidatedTaxon, FEATURE_DIM,
+    GATEKEEPER_DIM,
 };
 
 // =============================================================================
@@ -28,7 +32,9 @@ use technical_architecture::taxonomic_router::{
 // =============================================================================
 
 #[derive(Debug, Deserialize)]
-struct BeansManifest { samples: Vec<BeansSample> }
+struct BeansManifest {
+    samples: Vec<BeansSample>,
+}
 
 #[derive(Debug, Deserialize, Clone)]
 struct BeansSample {
@@ -43,7 +49,9 @@ struct BeansLabels {
 }
 
 #[derive(Debug, Deserialize)]
-struct CacheManifest { entries: HashMap<String, String> }
+struct CacheManifest {
+    entries: HashMap<String, String>,
+}
 
 // =============================================================================
 // Species to Taxonomic Group Mapping
@@ -54,58 +62,83 @@ fn species_to_taxon(species: &str, task: &str) -> ConsolidatedTaxon {
     let task_lower = task.to_lowercase();
 
     // Bird species
-    if species_lower.contains("sparrow") || species_lower.contains("finch")
-        || species_lower.contains("warbler") || species_lower.contains("bird")
-        || task_lower.contains("bird") || task_lower.contains("zf-indv")
-        || task_lower.contains("cbi") {
+    if species_lower.contains("sparrow")
+        || species_lower.contains("finch")
+        || species_lower.contains("warbler")
+        || species_lower.contains("bird")
+        || task_lower.contains("bird")
+        || task_lower.contains("zf-indv")
+        || task_lower.contains("cbi")
+    {
         return ConsolidatedTaxon::Bird;
     }
 
     // Marine mammals (dolphins, whales)
-    if species_lower.contains("dolphin") || species_lower.contains("whale")
-        || species_lower.contains("cetacean") || species_lower.contains("watkins")
-        || task_lower.contains("dolphin") || task_lower.contains("whale") {
+    if species_lower.contains("dolphin")
+        || species_lower.contains("whale")
+        || species_lower.contains("cetacean")
+        || species_lower.contains("watkins")
+        || task_lower.contains("dolphin")
+        || task_lower.contains("whale")
+    {
         return ConsolidatedTaxon::MarineMammal;
     }
 
     // Insects (mosquitoes, bees, crickets)
-    if species_lower.contains("mosquito") || species_lower.contains("bee")
-        || species_lower.contains("cricket") || species_lower.contains("insect")
-        || species_lower.contains("humbugdb") || species_lower.contains("cicada")
-        || task_lower.contains("insect") || task_lower.contains("humbugdb") {
+    if species_lower.contains("mosquito")
+        || species_lower.contains("bee")
+        || species_lower.contains("cricket")
+        || species_lower.contains("insect")
+        || species_lower.contains("humbugdb")
+        || species_lower.contains("cicada")
+        || task_lower.contains("insect")
+        || task_lower.contains("humbugdb")
+    {
         return ConsolidatedTaxon::Insect;
     }
 
     // Amphibians (frogs, toads)
-    if species_lower.contains("frog") || species_lower.contains("toad")
-        || species_lower.contains("amphibian") || task_lower.contains("frog")
-        || task_lower.contains("amphibian") {
+    if species_lower.contains("frog")
+        || species_lower.contains("toad")
+        || species_lower.contains("amphibian")
+        || task_lower.contains("frog")
+        || task_lower.contains("amphibian")
+    {
         return ConsolidatedTaxon::Amphibian;
     }
 
     // Mammals (bats, primates)
-    if species_lower.contains("bat") || species_lower.contains("marmoset")
-        || species_lower.contains("primate") || species_lower.contains("monkey")
-        || task_lower.contains("bat") || task_lower.contains("mammal") {
+    if species_lower.contains("bat")
+        || species_lower.contains("marmoset")
+        || species_lower.contains("primate")
+        || species_lower.contains("monkey")
+        || task_lower.contains("bat")
+        || task_lower.contains("mammal")
+    {
         return ConsolidatedTaxon::Mammal;
     }
 
     // ESC50 has mixed categories
     if task_lower.contains("esc50") {
         // Try to infer from species name
-        if species_lower.contains("dog") || species_lower.contains("cat")
-            || species_lower.contains("cow") || species_lower.contains("pig") {
+        if species_lower.contains("dog")
+            || species_lower.contains("cat")
+            || species_lower.contains("cow")
+            || species_lower.contains("pig")
+        {
             return ConsolidatedTaxon::Mammal;
         }
         if species_lower.contains("frog") || species_lower.contains("toad") {
             return ConsolidatedTaxon::Amphibian;
         }
-        if species_lower.contains("bird") || species_lower.contains("rooster")
-            || species_lower.contains("chicken") || species_lower.contains("crow") {
+        if species_lower.contains("bird")
+            || species_lower.contains("rooster")
+            || species_lower.contains("chicken")
+            || species_lower.contains("crow")
+        {
             return ConsolidatedTaxon::Bird;
         }
-        if species_lower.contains("cricket") || species_lower.contains("fly")
-            || species_lower.contains("mosquito") {
+        if species_lower.contains("cricket") || species_lower.contains("fly") || species_lower.contains("mosquito") {
             return ConsolidatedTaxon::Insect;
         }
     }
@@ -173,19 +206,10 @@ impl SimpleRF {
                 let mut rng = SimpleRng::seed(42 + tree_idx as u64);
 
                 // Bootstrap sample
-                let sample_indices: Vec<usize> = (0..n_samples)
-                    .map(|_| rng.next_usize(n_samples))
-                    .collect();
+                let sample_indices: Vec<usize> = (0..n_samples).map(|_| rng.next_usize(n_samples)).collect();
 
                 // Train single tree
-                self.train_tree(
-                    features,
-                    labels,
-                    &sample_indices,
-                    max_depth,
-                    mtry,
-                    &mut rng,
-                )
+                self.train_tree(features, labels, &sample_indices, max_depth, mtry, &mut rng)
             })
             .collect();
 
@@ -204,16 +228,7 @@ impl SimpleRF {
         let mut nodes: Vec<TreeNode> = Vec::new();
 
         // Build tree recursively
-        self.build_node(
-            features,
-            labels,
-            sample_indices,
-            0,
-            max_depth,
-            mtry,
-            rng,
-            &mut nodes,
-        );
+        self.build_node(features, labels, sample_indices, 0, max_depth, mtry, rng, &mut nodes);
 
         DecisionTree { nodes }
     }
@@ -247,10 +262,7 @@ impl SimpleRF {
         }
 
         // Check purity
-        let unique_labels: std::collections::HashSet<usize> = sample_indices
-            .iter()
-            .map(|&i| labels[i])
-            .collect();
+        let unique_labels: std::collections::HashSet<usize> = sample_indices.iter().map(|&i| labels[i]).collect();
 
         if unique_labels.len() == 1 {
             nodes[node_idx].class_prediction = Some(*unique_labels.iter().next().unwrap());
@@ -258,13 +270,7 @@ impl SimpleRF {
         }
 
         // Find best split
-        let (best_feat, best_thresh, best_gain) = self.find_best_split(
-            features,
-            labels,
-            sample_indices,
-            mtry,
-            rng,
-        );
+        let (best_feat, best_thresh, best_gain) = self.find_best_split(features, labels, sample_indices, mtry, rng);
 
         if best_gain <= 0.0 {
             nodes[node_idx].class_prediction = Some(self.majority_vote(labels, sample_indices));
@@ -287,12 +293,8 @@ impl SimpleRF {
         nodes[node_idx].threshold = best_thresh;
 
         // Recurse
-        let left_child = self.build_node(
-            features, labels, &left_indices, depth + 1, max_depth, mtry, rng, nodes,
-        );
-        let right_child = self.build_node(
-            features, labels, &right_indices, depth + 1, max_depth, mtry, rng, nodes,
-        );
+        let left_child = self.build_node(features, labels, &left_indices, depth + 1, max_depth, mtry, rng, nodes);
+        let right_child = self.build_node(features, labels, &right_indices, depth + 1, max_depth, mtry, rng, nodes);
 
         nodes[node_idx].left_child = Some(left_child);
         nodes[node_idx].right_child = Some(right_child);
@@ -322,9 +324,7 @@ impl SimpleRF {
             let feat_idx = rng.next_usize(n_features);
 
             // Get all values for this feature
-            let mut values: Vec<f32> = sample_indices.iter()
-                .map(|&i| features[i][feat_idx])
-                .collect();
+            let mut values: Vec<f32> = sample_indices.iter().map(|&i| features[i][feat_idx]).collect();
             values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
             // Try midpoints as thresholds
@@ -397,7 +397,8 @@ impl SimpleRF {
             class_counts[labels[i]] += 1;
         }
 
-        class_counts.iter()
+        class_counts
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.cmp(b))
             .map(|(i, _)| i)
@@ -411,7 +412,8 @@ impl SimpleRF {
             votes[pred] += 1;
         }
 
-        votes.iter()
+        votes
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.cmp(b))
             .map(|(i, _)| i)
@@ -448,11 +450,15 @@ impl SimpleRF {
     }
 }
 
-struct SimpleRng { state: u64 }
+struct SimpleRng {
+    state: u64,
+}
 
 impl SimpleRng {
     fn seed(seed: u64) -> Self {
-        Self { state: if seed == 0 { 1 } else { seed } }
+        Self {
+            state: if seed == 0 { 1 } else { seed },
+        }
     }
 
     fn next_usize(&mut self, max: usize) -> usize {
@@ -477,7 +483,8 @@ fn main() -> Result<()> {
     println!("Loading BEANS-Zero dataset...");
     let manifest: BeansManifest = serde_json::from_str(&fs::read_to_string("beans_zero_full_manifest.json")?)?;
     let cache_dir = Path::new("beans_feature_cache_112d");
-    let cache_manifest: CacheManifest = serde_json::from_str(&fs::read_to_string(cache_dir.join("cache_manifest.json"))?)?;
+    let cache_manifest: CacheManifest =
+        serde_json::from_str(&fs::read_to_string(cache_dir.join("cache_manifest.json"))?)?;
 
     // Collect features and labels
     let mut all_features: Vec<Vec<f32>> = Vec::new();
@@ -524,7 +531,12 @@ fn main() -> Result<()> {
     println!("\nClass distribution:");
     for (i, count) in class_counts.iter().enumerate() {
         let taxon = idx_to_consolidated_taxon(i);
-        println!("  {:?}: {} samples ({:.1}%)", taxon, count, *count as f64 / all_features.len() as f64 * 100.0);
+        println!(
+            "  {:?}: {} samples ({:.1}%)",
+            taxon,
+            count,
+            *count as f64 / all_features.len() as f64 * 100.0
+        );
     }
 
     // Train/validation split (80/20)
@@ -563,22 +575,30 @@ fn main() -> Result<()> {
     }
 
     // Normalize features
-    let train_features_norm: Vec<Vec<f32>> = train_features.iter()
-        .map(|f| f.iter().enumerate()
-            .map(|(i, &v)| (v - feature_means[i]) / feature_stds[i])
-            .collect())
+    let train_features_norm: Vec<Vec<f32>> = train_features
+        .iter()
+        .map(|f| {
+            f.iter()
+                .enumerate()
+                .map(|(i, &v)| (v - feature_means[i]) / feature_stds[i])
+                .collect()
+        })
         .collect();
 
-    let val_features_norm: Vec<Vec<f32>> = val_features.iter()
-        .map(|f| f.iter().enumerate()
-            .map(|(i, &v)| (v - feature_means[i]) / feature_stds[i])
-            .collect())
+    let val_features_norm: Vec<Vec<f32>> = val_features
+        .iter()
+        .map(|f| {
+            f.iter()
+                .enumerate()
+                .map(|(i, &v)| (v - feature_means[i]) / feature_stds[i])
+                .collect()
+        })
         .collect();
 
     // Train RF
-    println!("\nTraining Gatekeeper RF (300 trees, max_depth=30)...");
+    println!("\nTraining Gatekeeper RF (200 trees, max_depth=15)...");
     let mut rf = SimpleRF::new(6);
-    rf.train(&train_features_norm, &train_labels, 300, 30);
+    rf.train(&train_features_norm, &train_labels, 200, 15);
 
     // Evaluate
     let mut train_correct = 0;

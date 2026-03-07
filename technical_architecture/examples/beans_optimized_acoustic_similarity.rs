@@ -8,6 +8,7 @@
 //
 // Performance: ~5-10x faster than naive DFT implementation
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -164,10 +165,7 @@ fn extract_features_parallel(manifest: &Manifest, base_path: &Path) -> Vec<Extra
     let n_failed = failed.load(Ordering::Relaxed);
     let throughput = n_processed as f64 / elapsed.as_secs_f64();
 
-    println!(
-        "\r  Progress: {}/{} samples processed",
-        n_processed, n_samples
-    );
+    println!("\r  Progress: {}/{} samples processed", n_processed, n_samples);
     println!();
     println!("Extraction complete:");
     println!("  ├─ Processed: {} samples", n_processed);
@@ -203,10 +201,7 @@ fn load_raw_audio(path: &Path, expected_samples: usize) -> Result<Vec<f32>> {
 // Type Discovery using Acoustic Similarity
 // ============================================================================
 
-fn build_global_types_streaming(
-    features: &[ExtractedFeatures],
-    similarity_threshold: f64,
-) -> Vec<AcousticType> {
+fn build_global_types_streaming(features: &[ExtractedFeatures], similarity_threshold: f64) -> Vec<AcousticType> {
     if features.is_empty() {
         return Vec::new();
     }
@@ -255,13 +250,10 @@ fn build_global_types_streaming(
         if let Some(type_idx) = best_type {
             let n_in_type = types[type_idx].count + 1;
             types[type_idx].count = n_in_type;
-            types[type_idx]
-                .sample_ids
-                .push(features[i].sample_id.clone());
+            types[type_idx].sample_ids.push(features[i].sample_id.clone());
 
             for (j, val) in features[i].features.iter().enumerate().take(FEATURE_DIM) {
-                types[type_idx].centroid[j] +=
-                    (val - types[type_idx].centroid[j]) / n_in_type as f64;
+                types[type_idx].centroid[j] += (val - types[type_idx].centroid[j]) / n_in_type as f64;
             }
         } else {
             types.push(AcousticType {
@@ -310,10 +302,7 @@ fn build_global_types_streaming(
 // Statistics
 // ============================================================================
 
-fn compute_statistics(
-    features: &[ExtractedFeatures],
-    types: &[AcousticType],
-) -> (f64, f64, f64, f64) {
+fn compute_statistics(features: &[ExtractedFeatures], types: &[AcousticType]) -> (f64, f64, f64, f64) {
     if features.is_empty() || types.is_empty() {
         return (0.0, 0.0, 0.0, 0.0);
     }
@@ -427,10 +416,7 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
         m
     };
 
-    let eval_labels: Vec<String> = eval_indices
-        .iter()
-        .map(|&idx| labels[idx].clone())
-        .collect();
+    let eval_labels: Vec<String> = eval_indices.iter().map(|&idx| labels[idx].clone()).collect();
 
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     engine.fit_normalization(&eval_features);
@@ -491,9 +477,7 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
     (accuracy, K_NEIGHBORS)
 }
 
-fn analyze_labels(
-    features: &[ExtractedFeatures],
-) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn analyze_labels(features: &[ExtractedFeatures]) -> (HashMap<String, usize>, HashMap<String, usize>) {
     let mut source_datasets = HashMap::new();
     let mut task_types = HashMap::new();
 
@@ -546,10 +530,7 @@ fn main() -> Result<()> {
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
     println!("  ├─ Similarity Threshold: {:.2}", SIMILARITY_THRESHOLD);
     println!("  ├─ k-NN Neighbors: {}", K_NEIGHBORS);
-    println!(
-        "  ├─ Parallel: Rayon with {} threads",
-        rayon::current_num_threads()
-    );
+    println!("  ├─ Parallel: Rayon with {} threads", rayon::current_num_threads());
     println!("  └─ Feature Extraction: ZooVoxFeatureExtractor (FFT-based)");
     println!();
 
@@ -581,8 +562,7 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let (type_entropy, avg_intra, avg_inter, separation) =
-        compute_statistics(&features, &global_types);
+    let (type_entropy, avg_intra, avg_inter, separation) = compute_statistics(&features, &global_types);
 
     println!("Type Discovery:");
     println!("  ├─ Global Types: {}", global_types.len());
@@ -685,10 +665,7 @@ fn main() -> Result<()> {
     println!("Type Discovery:");
     println!("  ├─ Types: {}", assessment.global_types);
     println!("  ├─ Entropy: {:.3} bits", assessment.type_entropy);
-    println!(
-        "  ├─ Intra-sim: {:.4}",
-        assessment.avg_intra_type_similarity
-    );
+    println!("  ├─ Intra-sim: {:.4}", assessment.avg_intra_type_similarity);
     println!("  ├─ Inter-dist: {:.4}", assessment.avg_inter_type_distance);
     println!("  └─ Separation: {:.2}x", assessment.separation_ratio);
     println!();

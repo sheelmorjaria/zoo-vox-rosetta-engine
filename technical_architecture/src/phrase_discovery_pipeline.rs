@@ -3,7 +3,7 @@
 //! Strategic Integration (from manuscript review):
 //!
 //! The Problem with standard HDBSCAN:
-//!   - Uses Euclidean distance in 105D space
+//!   - Uses Euclidean distance in 112D space
 //!   - Suffers from "Curse of Dimensionality"
 //!   - Scale-sensitive: Duration (0-3000ms) dominates HNR (0-40dB)
 //!
@@ -19,7 +19,7 @@
 //!         ↓
 //!   [2] Purity Gate (HNR/Flatness Filter)
 //!         ↓
-//!   [3] 105D Feature Extraction
+//!   [3] 112D Feature Extraction
 //!         ↓
 //!   [4] Acoustic Similarity Engine (Distance Matrix)
 //!         ↓
@@ -92,7 +92,7 @@ pub struct DiscoveredPhrase {
     pub start_ms: f32,
     /// End time in ms
     pub end_ms: f32,
-    /// 105D features
+    /// 112D features (46D physics + 66D texture)
     pub features: Vec<f32>,
     /// Cluster assignment (-1 = noise)
     pub cluster_id: i32,
@@ -139,7 +139,7 @@ impl PhraseDiscoveryPipeline {
     /// Run the full discovery pipeline
     ///
     /// # Arguments
-    /// * `segments` - Pre-segmented audio with 105D features
+    /// * `segments` - Pre-segmented audio with 112D features
     ///
     /// # Returns
     /// * DiscoveryResult with cluster assignments and linguistic metrics
@@ -222,7 +222,7 @@ impl PhraseDiscoveryPipeline {
 
     /// Purity Gate: Reject non-biological sounds
     fn passes_purity_gate(&self, seg: &SegmentFeatures) -> bool {
-        // Extract purity features from 105D
+        // Extract purity features from 112D
         let hnr_db = seg.features.get(23).copied().unwrap_or(0.0);
         let flatness = seg.features.get(16).copied().unwrap_or(0.5);
         let duration_ms = seg.end_ms - seg.start_ms;
@@ -252,16 +252,16 @@ impl PhraseDiscoveryPipeline {
     /// ASE Distance: Weighted Physics + Texture
     ///
     /// Uses the strategic weighting:
-    ///   - Physics (45D) × 0.6 for broad taxonomy
-    ///   - Texture (60D) × 0.4 for fine species ID
+    ///   - Physics (46D) × 0.6 for broad taxonomy
+    ///   - Texture (66D) × 0.4 for fine species ID
     fn ase_distance(&self, a: &[f32], b: &[f32]) -> f64 {
         let min_len = a.len().min(b.len());
-        if min_len < 45 {
+        if min_len < 46 {
             return f64::MAX;
         }
 
-        // Physics distance (45D)
-        let physics_dist: f64 = (0..45)
+        // Physics distance (46D)
+        let physics_dist: f64 = (0..46)
             .map(|i| {
                 let diff =
                     (a.get(i).copied().unwrap_or(0.0) - b.get(i).copied().unwrap_or(0.0)).powi(2);
@@ -270,8 +270,8 @@ impl PhraseDiscoveryPipeline {
             .sum::<f64>()
             .sqrt();
 
-        // Texture distance (remaining dimensions)
-        let texture_dist: f64 = (45..min_len)
+        // Texture distance (remaining dimensions - 66D for 112D total)
+        let texture_dist: f64 = (46..min_len)
             .map(|i| {
                 let diff =
                     (a.get(i).copied().unwrap_or(0.0) - b.get(i).copied().unwrap_or(0.0)).powi(2);
@@ -511,7 +511,7 @@ mod tests {
         let mut pipeline = PhraseDiscoveryPipeline::new(config);
 
         // Should pass: biological sound
-        let mut features = vec![0.0f32; 105];
+        let mut features = vec![0.0f32; 112];
         features[23] = 10.0; // HNR = 10dB
         features[16] = 0.3; // Flatness = 0.3
 
@@ -524,7 +524,7 @@ mod tests {
         assert!(pipeline.passes_purity_gate(&seg));
 
         // Should fail: noise (low HNR)
-        let mut noise_features = vec![0.0f32; 105];
+        let mut noise_features = vec![0.0f32; 112];
         noise_features[23] = 1.0; // HNR = 1dB (too low)
         noise_features[16] = 0.3;
 
@@ -543,14 +543,14 @@ mod tests {
         let pipeline = PhraseDiscoveryPipeline::new(config);
 
         // Identical features = 0 distance
-        let a = vec![1.0f32; 105];
-        let b = vec![1.0f32; 105];
+        let a = vec![1.0f32; 112];
+        let b = vec![1.0f32; 112];
         let dist = pipeline.ase_distance(&a, &b);
         assert!(dist < 0.001);
 
         // Different features > 0 distance
-        let c = vec![0.0f32; 105];
-        let d = vec![2.0f32; 105];
+        let c = vec![0.0f32; 112];
+        let d = vec![2.0f32; 112];
         let dist2 = pipeline.ase_distance(&c, &d);
         assert!(dist2 > 0.0);
     }
@@ -584,7 +584,7 @@ mod tests {
         // Create test segments
         let segments: Vec<SegmentFeatures> = (0..10)
             .map(|i| {
-                let mut features = vec![0.0f32; 105];
+                let mut features = vec![0.0f32; 112];
                 features[23] = 10.0; // HNR
                 features[16] = 0.3; // Flatness
                 features[0] = i as f32; // Unique ID

@@ -300,8 +300,7 @@ impl SemioticState {
         // Combine with weighted average
         // Visual attention adds 30% weight when looking at speaker
         if self.visual_attention.is_looking_at_speaker() {
-            self.combined_directed_score =
-                (semiotic_directed * 0.7) + (visual_boost + 0.7).min(1.0) * 0.3;
+            self.combined_directed_score = (semiotic_directed * 0.7) + (visual_boost + 0.7).min(1.0) * 0.3;
         } else {
             self.combined_directed_score = semiotic_directed;
         }
@@ -498,10 +497,7 @@ impl SharedSemioticState {
             *state = new_state;
             state.last_update = Instant::now();
             state.update_count += 1;
-            info!(
-                "SemioticState synced from Python (update #{})",
-                state.update_count
-            );
+            info!("SemioticState synced from Python (update #{})", state.update_count);
         }
     }
 
@@ -524,9 +520,7 @@ impl SharedSemioticState {
     pub fn is_healthy(&self) -> bool {
         match self.inner.read() {
             Ok(state) => {
-                !state.is_stale(Duration::from_secs(5))
-                    && state.scores.confidence > 0.3
-                    && state.update_count > 0
+                !state.is_stale(Duration::from_secs(5)) && state.scores.confidence > 0.3 && state.update_count > 0
             }
             Err(_) => false,
         }
@@ -535,10 +529,7 @@ impl SharedSemioticState {
     /// Get update statistics
     pub fn stats(&self) -> (u64, bool) {
         match self.inner.read() {
-            Ok(state) => (
-                state.update_count,
-                state.is_stale(Duration::from_millis(500)),
-            ),
+            Ok(state) => (state.update_count, state.is_stale(Duration::from_millis(500))),
             Err(_) => (0, true),
         }
     }
@@ -747,9 +738,7 @@ mod tests {
         let write_count_clone = write_count.clone();
         let writer = thread::spawn(move || {
             for i in 0..100 {
-                let new_state = SemioticStateBuilder::new()
-                    .deception(i as f32 / 100.0)
-                    .build();
+                let new_state = SemioticStateBuilder::new().deception(i as f32 / 100.0).build();
                 state_clone.update(new_state);
                 write_count_clone.fetch_add(1, Ordering::SeqCst);
                 thread::sleep(Duration::from_micros(100));

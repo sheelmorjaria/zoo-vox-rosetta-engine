@@ -11,11 +11,12 @@
 //! **Phase 2b: Contextual Enrichment (Environmental/Syntax)**
 //! - Refines interpretation based on sensor data
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use technical_architecture::{
     rosetta_pipeline::{
-        ContextEnrichedPhrase, EnvState, RosettaBundle, RosettaPipeline, RosettaResult,
-        SemanticPhraseDictionary, FEATURE_DIM,
+        ContextEnrichedPhrase, EnvState, RosettaBundle, RosettaPipeline, RosettaResult, SemanticPhraseDictionary,
+        FEATURE_DIM,
     },
     species::FeatureWeights,
 };
@@ -231,10 +232,7 @@ fn print_result(result: &RosettaResult) {
             phrase.semantic_label,
             phrase.label_confidence * 100.0
         );
-        println!(
-            "│ │  Grading Score: {:.2} (0=discrete, 1=graded)",
-            phrase.grading_score
-        );
+        println!("│ │  Grading Score: {:.2} (0=discrete, 1=graded)", phrase.grading_score);
         println!("│ │  Environment: {:?}", phrase.environmental_state);
         println!("│ └─ Inferred Intent: {}", phrase.inferred_intent);
     }

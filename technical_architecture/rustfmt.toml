@@ -1,0 +1,60 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# BORING RUST: Rustfmt Configuration for Technical Architecture
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Optimized for:
+# - Readable diffs (agent-generated code changes frequently)
+# - Consistent tokenization (LLMs see consistent patterns)
+# - Vertical clarity (easier to reason about line-by-line)
+#
+# Note: Only stable rustfmt options are used. For nightly-only features, see
+# the Boring Rust skill references/rustfmt.toml template.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+edition = "2021"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# LINE WIDTH & WRAPPING
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Match clippy.toml line length
+max_width = 120
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FORMATTING CHOICES
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Use block indent (not visual indent) for cleaner diffs
+indent_style = "Block"
+
+# Tabs vs spaces
+hard_tabs = false
+tab_spaces = 4
+
+# Newline style (Unix = LF)
+newline_style = "Unix"
+
+# Trailing commas help with diffs
+trailing_semicolon = true
+match_arm_trailing_comma = true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# IMPORTS
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Reorder imports alphabetically
+reorder_imports = true
+reorder_modules = true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# MISC
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Use field init shorthand: Foo { bar } not Foo { bar: bar }
+use_field_init_shorthand = true
+
+# Use try shorthand: ? not try!
+use_try_shorthand = true
+
+# Empty function bodies
+empty_item_single_line = true

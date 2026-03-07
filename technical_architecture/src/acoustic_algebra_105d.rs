@@ -326,6 +326,426 @@ impl Vector105D {
 }
 
 // ============================================================================
+// 112D Feature Vector (Upgraded from 105D)
+// ============================================================================
+
+/// 112-dimensional acoustic feature vector with full synthesis support
+///
+/// This is the upgraded version of Vector105D with 7 additional dimensions:
+/// - Layer 1: 45D → 46D (+1: release_time_ms)
+/// - Layer 2: 30D (unchanged)
+/// - Layer 3: 30D → 36D (+6: additional rhythm histogram features)
+///
+/// Total: 112 dimensions
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Vector112D {
+    // =============================================================
+    // LAYER 1: BASE PHYSICS (46D) - indices 0-45
+    // =============================================================
+    /// Base 46D physics features stored as Vec for flexibility
+    pub base_46d: Vec<f32>,
+
+    // =============================================================
+    // LAYER 2: MACRO TEXTURE (30D) - indices 46-75
+    // =============================================================
+    /// Harmonic Texture (9D) - indices 46-54
+    pub harmonic_slope: f32,
+    pub h1_h2_diff_db: f32,
+    pub harmonic_irregularity: f32,
+    pub harmonic_energy_variance: f32,
+    pub spectral_flux_std: f32,
+    pub h1_h2_ratio: f32,
+    pub h2_h3_ratio: f32,
+    pub h3_h4_ratio: f32,
+    pub harmonic_density: f32,
+
+    /// Pitch Geometry (7D) - indices 55-61
+    pub f0_mean_derivative: f32,
+    pub f0_curvature: f32,
+    pub f0_inflection_count: f32,
+    pub glissando_rate: f32,
+    pub vibrato_regularity: f32,
+    pub jitter_trend: f32,
+    pub pitch_complexity: f32,
+
+    /// GLCM Spectrogram Texture (14D) - indices 62-75
+    pub glcm_contrast: f32,
+    pub glcm_correlation: f32,
+    pub glcm_energy: f32,
+    pub glcm_homogeneity: f32,
+    pub run_length_nonuniformity: f32,
+    pub long_run_emphasis: f32,
+    pub short_run_emphasis: f32,
+    pub granularity: f32,
+    pub vertical_strength: f32,
+    pub horizontal_correlation: f32,
+    pub texture_entropy: f32,
+    pub texture_homogeneity: f32,
+    pub texture_contrast: f32,
+    pub texture_energy: f32,
+
+    // =============================================================
+    // LAYER 3: MICRO TEXTURE (36D) - indices 76-111
+    // =============================================================
+    /// Spectral Derivative (6D) - indices 76-81
+    pub spectral_derivative_mean: f32,
+    pub spectral_derivative_std: f32,
+    pub spectral_derivative_skew: f32,
+    pub spectral_derivative_kurtosis: f32,
+    pub spectral_derivative_max: f32,
+    pub spectral_derivative_range: f32,
+
+    /// FM Bin Features (5D) - indices 82-86
+    pub fm_rate_mean: f32,
+    pub fm_rate_std: f32,
+    pub fm_depth_mean: f32,
+    pub fm_depth_std: f32,
+    pub fm_extent_hz: f32,
+
+    /// Dynamics Bin Features (5D) - indices 87-91
+    pub dynamics_rise_rate: f32,
+    pub dynamics_fall_rate: f32,
+    pub dynamics_range_db: f32,
+    pub dynamics_cv: f32,
+    pub dynamics_skew: f32,
+
+    /// ICI Bin Features (5D) - indices 92-96
+    pub ici_mean_ms: f32,
+    pub ici_std_ms: f32,
+    pub ici_skew: f32,
+    pub ici_kurtosis: f32,
+    pub ici_regularity: f32,
+
+    /// Rhythm Histogram Extended (15D) - indices 97-111
+    pub rhythm_tempo_hz: f32,
+    pub rhythm_tempo_stability: f32,
+    pub rhythm_pulse_clarity: f32,
+    pub rhythm_grouping_strength: f32,
+    pub rhythm_cycle_length: f32,
+    pub rhythm_onset_strength: f32,
+    pub rhythm_swing_factor: f32,
+    pub rhythm_syncopation: f32,
+    pub rhythm_density: f32,
+    pub rhythm_complexity: f32,
+    pub rhythm_entropy: f32,
+    pub rhythm_peak_rate_hz: f32,
+    pub rhythm_valley_depth: f32,
+    pub rhythm_crest_factor: f32,
+    pub rhythm_flux: f32,
+}
+
+impl Vector112D {
+    /// Create a new zero-initialized 112D vector
+    pub fn zero() -> Self {
+        Self {
+            base_46d: vec![0.0; 46],
+            harmonic_slope: 0.0,
+            h1_h2_diff_db: 0.0,
+            harmonic_irregularity: 0.0,
+            harmonic_energy_variance: 0.0,
+            spectral_flux_std: 0.0,
+            h1_h2_ratio: 0.0,
+            h2_h3_ratio: 0.0,
+            h3_h4_ratio: 0.0,
+            harmonic_density: 0.0,
+            f0_mean_derivative: 0.0,
+            f0_curvature: 0.0,
+            f0_inflection_count: 0.0,
+            glissando_rate: 0.0,
+            vibrato_regularity: 0.0,
+            jitter_trend: 0.0,
+            pitch_complexity: 0.0,
+            glcm_contrast: 0.0,
+            glcm_correlation: 0.0,
+            glcm_energy: 0.0,
+            glcm_homogeneity: 0.0,
+            run_length_nonuniformity: 0.0,
+            long_run_emphasis: 0.0,
+            short_run_emphasis: 0.0,
+            granularity: 0.0,
+            vertical_strength: 0.0,
+            horizontal_correlation: 0.0,
+            texture_entropy: 0.0,
+            texture_homogeneity: 0.0,
+            texture_contrast: 0.0,
+            texture_energy: 0.0,
+            spectral_derivative_mean: 0.0,
+            spectral_derivative_std: 0.0,
+            spectral_derivative_skew: 0.0,
+            spectral_derivative_kurtosis: 0.0,
+            spectral_derivative_max: 0.0,
+            spectral_derivative_range: 0.0,
+            fm_rate_mean: 0.0,
+            fm_rate_std: 0.0,
+            fm_depth_mean: 0.0,
+            fm_depth_std: 0.0,
+            fm_extent_hz: 0.0,
+            dynamics_rise_rate: 0.0,
+            dynamics_fall_rate: 0.0,
+            dynamics_range_db: 0.0,
+            dynamics_cv: 0.0,
+            dynamics_skew: 0.0,
+            ici_mean_ms: 0.0,
+            ici_std_ms: 0.0,
+            ici_skew: 0.0,
+            ici_kurtosis: 0.0,
+            ici_regularity: 0.0,
+            rhythm_tempo_hz: 0.0,
+            rhythm_tempo_stability: 0.0,
+            rhythm_pulse_clarity: 0.0,
+            rhythm_grouping_strength: 0.0,
+            rhythm_cycle_length: 0.0,
+            rhythm_onset_strength: 0.0,
+            rhythm_swing_factor: 0.0,
+            rhythm_syncopation: 0.0,
+            rhythm_density: 0.0,
+            rhythm_complexity: 0.0,
+            rhythm_entropy: 0.0,
+            rhythm_peak_rate_hz: 0.0,
+            rhythm_valley_depth: 0.0,
+            rhythm_crest_factor: 0.0,
+            rhythm_flux: 0.0,
+        }
+    }
+
+    /// Convert to flat array for ML training
+    pub fn to_array(&self) -> Vec<f32> {
+        let mut arr = Vec::with_capacity(112);
+
+        // Layer 1: Base Physics (46D)
+        arr.extend_from_slice(&self.base_46d);
+
+        // Layer 2: Macro Texture (30D)
+        arr.extend_from_slice(&[
+            self.harmonic_slope,
+            self.h1_h2_diff_db,
+            self.harmonic_irregularity,
+            self.harmonic_energy_variance,
+            self.spectral_flux_std,
+            self.h1_h2_ratio,
+            self.h2_h3_ratio,
+            self.h3_h4_ratio,
+            self.harmonic_density,
+            self.f0_mean_derivative,
+            self.f0_curvature,
+            self.f0_inflection_count,
+            self.glissando_rate,
+            self.vibrato_regularity,
+            self.jitter_trend,
+            self.pitch_complexity,
+            self.glcm_contrast,
+            self.glcm_correlation,
+            self.glcm_energy,
+            self.glcm_homogeneity,
+            self.run_length_nonuniformity,
+            self.long_run_emphasis,
+            self.short_run_emphasis,
+            self.granularity,
+            self.vertical_strength,
+            self.horizontal_correlation,
+            self.texture_entropy,
+            self.texture_homogeneity,
+            self.texture_contrast,
+            self.texture_energy,
+        ]);
+
+        // Layer 3: Micro Texture (36D)
+        arr.extend_from_slice(&[
+            // Spectral Derivative (6D)
+            self.spectral_derivative_mean,
+            self.spectral_derivative_std,
+            self.spectral_derivative_skew,
+            self.spectral_derivative_kurtosis,
+            self.spectral_derivative_max,
+            self.spectral_derivative_range,
+            // FM Bin (5D)
+            self.fm_rate_mean,
+            self.fm_rate_std,
+            self.fm_depth_mean,
+            self.fm_depth_std,
+            self.fm_extent_hz,
+            // Dynamics Bin (5D)
+            self.dynamics_rise_rate,
+            self.dynamics_fall_rate,
+            self.dynamics_range_db,
+            self.dynamics_cv,
+            self.dynamics_skew,
+            // ICI Bin (5D)
+            self.ici_mean_ms,
+            self.ici_std_ms,
+            self.ici_skew,
+            self.ici_kurtosis,
+            self.ici_regularity,
+            // Rhythm Histogram Extended (15D)
+            self.rhythm_tempo_hz,
+            self.rhythm_tempo_stability,
+            self.rhythm_pulse_clarity,
+            self.rhythm_grouping_strength,
+            self.rhythm_cycle_length,
+            self.rhythm_onset_strength,
+            self.rhythm_swing_factor,
+            self.rhythm_syncopation,
+            self.rhythm_density,
+            self.rhythm_complexity,
+            self.rhythm_entropy,
+            self.rhythm_peak_rate_hz,
+            self.rhythm_valley_depth,
+            self.rhythm_crest_factor,
+            self.rhythm_flux,
+        ]);
+
+        arr
+    }
+
+    /// Get physics slice (for Taxonomy Head) - indices 0..46
+    pub fn physics_slice(&self) -> &[f32] {
+        &self.base_46d
+    }
+
+    /// Get macro texture slice - indices 46..76
+    pub fn macro_texture_slice(&self) -> Vec<f32> {
+        vec![
+            self.harmonic_slope,
+            self.h1_h2_diff_db,
+            self.harmonic_irregularity,
+            self.harmonic_energy_variance,
+            self.spectral_flux_std,
+            self.h1_h2_ratio,
+            self.h2_h3_ratio,
+            self.h3_h4_ratio,
+            self.harmonic_density,
+            self.f0_mean_derivative,
+            self.f0_curvature,
+            self.f0_inflection_count,
+            self.glissando_rate,
+            self.vibrato_regularity,
+            self.jitter_trend,
+            self.pitch_complexity,
+            self.glcm_contrast,
+            self.glcm_correlation,
+            self.glcm_energy,
+            self.glcm_homogeneity,
+            self.run_length_nonuniformity,
+            self.long_run_emphasis,
+            self.short_run_emphasis,
+            self.granularity,
+            self.vertical_strength,
+            self.horizontal_correlation,
+            self.texture_entropy,
+            self.texture_homogeneity,
+            self.texture_contrast,
+            self.texture_energy,
+        ]
+    }
+
+    /// Compute weighted Euclidean distance to another vector
+    pub fn distance_to(&self, other: &Self, weights: &[f32]) -> f32 {
+        let self_arr = self.to_array();
+        let other_arr = other.to_array();
+
+        self_arr
+            .iter()
+            .zip(other_arr.iter())
+            .zip(weights.iter())
+            .map(|((&a, &b), &w)| w * (a - b).powi(2))
+            .sum()
+    }
+}
+
+/// Convert Vector105D to Vector112D (upgrades with zero-filled new dimensions)
+impl From<&Vector105D> for Vector112D {
+    fn from(v: &Vector105D) -> Self {
+        // Convert 105D to 112D:
+        // - base_45d → base_46d (add release_time_ms at index 12, default 0.0)
+        // - macro_texture: same 30D
+        // - micro_texture: 30D → 36D (add 6 rhythm features at end, default 0.0)
+
+        let mut base_46d = vec![0.0; 46];
+        // Copy base_45d, inserting release_time_ms placeholder at index 12
+        base_46d[0..12].copy_from_slice(&v.base_45d[0..12]);
+        // Index 12 is release_time_ms (0.0 for now)
+        base_46d[13..46].copy_from_slice(&v.base_45d[12..45]);
+
+        Self {
+            base_46d,
+            // Macro texture (same 8D from 105D + 1 new)
+            harmonic_slope: v.harmonic_slope,
+            h1_h2_diff_db: v.h1_h2_diff_db,
+            harmonic_irregularity: v.harmonic_irregularity,
+            harmonic_energy_variance: v.harmonic_energy_variance,
+            spectral_flux_std: v.spectral_flux_std,
+            h1_h2_ratio: v.h1_h2_ratio,
+            h2_h3_ratio: v.h2_h3_ratio,
+            h3_h4_ratio: v.h3_h4_ratio,
+            harmonic_density: 0.0, // NEW in 112D - not in 105D
+            f0_mean_derivative: v.f0_mean_derivative,
+            f0_curvature: v.f0_curvature,
+            f0_inflection_count: v.f0_inflection_count,
+            glissando_rate: v.glissando_rate,
+            vibrato_regularity: v.vibrato_regularity,
+            jitter_trend: v.jitter_trend,
+            pitch_complexity: v.pitch_entropy, // Note: renamed in 112D
+            glcm_contrast: v.glcm_contrast,
+            glcm_correlation: v.glcm_correlation,
+            glcm_energy: v.glcm_energy,
+            glcm_homogeneity: v.glcm_homogeneity,
+            run_length_nonuniformity: v.run_length_nonuniformity,
+            long_run_emphasis: v.long_run_emphasis,
+            short_run_emphasis: v.short_run_emphasis,
+            granularity: v.granularity,
+            vertical_strength: v.vertical_strength,
+            horizontal_correlation: v.diagonal_strength, // Note: renamed
+            texture_entropy: 0.0,                        // New in 112D
+            texture_homogeneity: 0.0,                    // New in 112D
+            texture_contrast: 0.0,                       // New in 112D
+            texture_energy: 0.0,                         // New in 112D
+            // Micro texture - new 6D spectral derivative
+            spectral_derivative_mean: 0.0,
+            spectral_derivative_std: 0.0,
+            spectral_derivative_skew: 0.0,
+            spectral_derivative_kurtosis: 0.0,
+            spectral_derivative_max: 0.0,
+            spectral_derivative_range: 0.0,
+            // FM Bin (from 105D modulation spectra)
+            fm_rate_mean: v.fm_spectrum_0_10hz,
+            fm_rate_std: v.fm_spectrum_10_30hz,
+            fm_depth_mean: v.fm_spectrum_30_50hz,
+            fm_depth_std: v.fm_spectrum_50_100hz,
+            fm_extent_hz: v.fm_depth_mean,
+            // Dynamics Bin (from 105D AM spectra)
+            dynamics_rise_rate: v.am_spectrum_0_10hz,
+            dynamics_fall_rate: v.am_spectrum_10_30hz,
+            dynamics_range_db: v.am_spectrum_30_50hz,
+            dynamics_cv: v.am_spectrum_50_100hz,
+            dynamics_skew: v.am_depth_mean,
+            // ICI Bin (from 105D rhythm histograms)
+            ici_mean_ms: v.ioi_bin_0_50ms,
+            ici_std_ms: v.ioi_bin_50_100ms,
+            ici_skew: v.ioi_bin_100_200ms,
+            ici_kurtosis: v.ioi_bin_200_500ms,
+            ici_regularity: v.ioi_bin_500_1000ms,
+            // Rhythm Histogram Extended (15D) - mapped from 105D
+            rhythm_tempo_hz: v.ioi_bin_1000_plus,
+            rhythm_tempo_stability: v.ioi_variance,
+            rhythm_pulse_clarity: v.ioi_skewness,
+            rhythm_grouping_strength: v.ioi_kurtosis,
+            rhythm_cycle_length: v.rhythm_regularity,
+            // New rhythm features (10D) - zero for now
+            rhythm_onset_strength: 0.0,
+            rhythm_swing_factor: 0.0,
+            rhythm_syncopation: 0.0,
+            rhythm_density: 0.0,
+            rhythm_complexity: 0.0,
+            rhythm_entropy: 0.0,
+            rhythm_peak_rate_hz: 0.0,
+            rhythm_valley_depth: 0.0,
+            rhythm_crest_factor: 0.0,
+            rhythm_flux: 0.0,
+        }
+    }
+}
+
+// ============================================================================
 // Modulation Spectra Computation (Module 5)
 // ============================================================================
 
@@ -335,11 +755,7 @@ impl Vector105D {
 /// - Trills (10-30Hz AM)
 /// - Roughness (30-50Hz AM)
 /// - Insect buzz (50-100Hz AM)
-pub fn compute_am_spectrum(
-    energy_envelope: &[f32],
-    sample_rate: f32,
-    frame_rate: f32,
-) -> (f32, f32, f32, f32, f32) {
+pub fn compute_am_spectrum(energy_envelope: &[f32], sample_rate: f32, frame_rate: f32) -> (f32, f32, f32, f32, f32) {
     if energy_envelope.len() < 16 {
         return (0.0, 0.0, 0.0, 0.0, 0.0);
     }
@@ -442,11 +858,7 @@ pub fn compute_fm_spectrum(f0_contour: &[f32], frame_rate: f32) -> (f32, f32, f3
 
     // FM depth: average F0 excursion relative to mean F0
     let mean_f0: f32 = voiced.iter().sum::<f32>() / n;
-    let fm_depth = if mean_f0 > 0.0 {
-        mean_deriv / mean_f0
-    } else {
-        0.0
-    };
+    let fm_depth = if mean_f0 > 0.0 { mean_deriv / mean_f0 } else { 0.0 };
 
     (
         band_energies[0], // 0-10 Hz (slow drift)
@@ -468,11 +880,7 @@ pub fn compute_modulation_stats(
     // AM vs FM dominance
     let am_total = am_0_10 + am_10_30 + am_30_50 + am_50_100;
     let fm_total = fm_0_10 + fm_10_30 + fm_30_50 + fm_50_100;
-    let am_fm_ratio = if fm_total > 1e-10 {
-        am_total / fm_total
-    } else {
-        0.0
-    };
+    let am_fm_ratio = if fm_total > 1e-10 { am_total / fm_total } else { 0.0 };
 
     // Modulation complexity (spread across bands)
     let all_bands = [
@@ -507,13 +915,7 @@ pub fn compute_modulation_stats(
         0.0
     };
 
-    (
-        am_fm_ratio,
-        complexity,
-        trill_strength,
-        flutter_index,
-        synchrony,
-    )
+    (am_fm_ratio, complexity, trill_strength, flutter_index, synchrony)
 }
 
 // ============================================================================
@@ -593,19 +995,10 @@ pub fn compute_rhythm_stats(iois: &[f32]) -> (f32, f32, f32, f32) {
 
     // Skewness (asymmetry of distribution)
     let std_dev = variance.sqrt().max(1e-10);
-    let skewness: f32 = iois
-        .iter()
-        .map(|&x| ((x - mean) / std_dev).powi(3))
-        .sum::<f32>()
-        / n;
+    let skewness: f32 = iois.iter().map(|&x| ((x - mean) / std_dev).powi(3)).sum::<f32>() / n;
 
     // Kurtosis (tailedness of distribution)
-    let kurtosis: f32 = iois
-        .iter()
-        .map(|&x| ((x - mean) / std_dev).powi(4))
-        .sum::<f32>()
-        / n
-        - 3.0; // Excess kurtosis
+    let kurtosis: f32 = iois.iter().map(|&x| ((x - mean) / std_dev).powi(4)).sum::<f32>() / n - 3.0; // Excess kurtosis
 
     // Regularity: low variance = high regularity
     let regularity = 1.0 / (1.0 + variance / (mean * mean).max(1e-10));
@@ -620,11 +1013,7 @@ pub fn compute_rhythm_stats(iois: &[f32]) -> (f32, f32, f32, f32) {
 /// Compute psychoacoustic features
 ///
 /// These features model how sound is *perceived* rather than just measured
-pub fn compute_psychoacoustics(
-    spectrum: &[f32],
-    frequencies: &[f32],
-    rms_energy: f32,
-) -> (f32, f32, f32, f32, f32) {
+pub fn compute_psychoacoustics(spectrum: &[f32], frequencies: &[f32], rms_energy: f32) -> (f32, f32, f32, f32, f32) {
     if spectrum.is_empty() || frequencies.is_empty() {
         return (0.0, 0.0, 0.0, 0.0, 0.0);
     }
@@ -679,24 +1068,14 @@ pub fn compute_psychoacoustics(
 
     // 5. Fluctuation Strength - perception of slow modulations (< 20Hz)
     // Approximated by low-frequency spectral energy concentration
-    let low_freq_energy: f32 = spectrum
-        .iter()
-        .take(spectrum.len() / 4)
-        .map(|&m| m * m)
-        .sum();
+    let low_freq_energy: f32 = spectrum.iter().take(spectrum.len() / 4).map(|&m| m * m).sum();
     let fluctuation_strength = if total_energy > 1e-10 {
         (low_freq_energy / total_energy).sqrt()
     } else {
         0.0
     };
 
-    (
-        sharpness,
-        roughness,
-        loudness_sone,
-        tonality,
-        fluctuation_strength,
-    )
+    (sharpness, roughness, loudness_sone, tonality, fluctuation_strength)
 }
 
 /// Count local maxima in spectrum
@@ -777,8 +1156,7 @@ mod tests {
             })
             .collect();
 
-        let (am_0_10, am_10_30, am_30_50, am_50_100, _depth) =
-            compute_am_spectrum(&envelope, frame_rate, frame_rate);
+        let (am_0_10, am_10_30, am_30_50, am_50_100, _depth) = compute_am_spectrum(&envelope, frame_rate, frame_rate);
 
         // Should have strong 10-30Hz component (trill range)
         assert!(am_10_30 > am_0_10);
@@ -796,8 +1174,7 @@ mod tests {
             })
             .collect();
 
-        let (fm_0_10, fm_10_30, fm_30_50, _fm_50_100, _depth) =
-            compute_fm_spectrum(&f0, frame_rate);
+        let (fm_0_10, fm_10_30, fm_30_50, _fm_50_100, _depth) = compute_fm_spectrum(&f0, frame_rate);
 
         // Should have strong 10-30Hz component (vibrato range)
         assert!(fm_10_30 > fm_0_10);
@@ -852,7 +1229,7 @@ mod tests {
         // Loudness should be positive
         assert!(loudness >= 0.0);
         // Fluctuation should be in valid range
-        assert!(fluctuation >= 0.0 && fluctuation <= 1.0);
+        assert!((0.0..=1.0).contains(&fluctuation));
     }
 
     #[test]

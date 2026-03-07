@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --release --example phase0_symbolic_stream_bat
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
@@ -210,8 +211,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cluster_start = Instant::now();
 
-    let hdbscan =
-        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
+    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     println!("   🔍 Running HDBSCAN...");
     let labels = hdbscan.fit_predict(&feature_matrix)?;
@@ -238,14 +238,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Clustering Results:");
     println!("      ├─ Total phrases analyzed: {}", n_features);
     println!("      ├─ Vocabulary items discovered: {}", stats.n_clusters);
-    println!(
-        "      ├─ Noise points (unclassified): {}",
-        stats.noise_count
-    );
-    println!(
-        "      └─ Classified phrases: {}",
-        n_features - stats.noise_count
-    );
+    println!("      ├─ Noise points (unclassified): {}", stats.noise_count);
+    println!("      └─ Classified phrases: {}", n_features - stats.noise_count);
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -302,13 +296,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_offset = 100;
     let symbolic_stream: Vec<i32> = labels
         .iter()
-        .map(|&label| {
-            if label == -1 {
-                0
-            } else {
-                label + cluster_offset
-            }
-        })
+        .map(|&label| if label == -1 { 0 } else { label + cluster_offset })
         .collect();
 
     // Create symbol-to-count mapping
@@ -348,8 +336,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   🔍 Stream Pattern Analysis:");
 
     // Count consecutive sequences
-    let mut sequence_patterns: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::new();
+    let mut sequence_patterns: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     for window in symbolic_stream.windows(3) {
         let pattern = format!("{},{},{}", window[0], window[1], window[2]);
         *sequence_patterns.entry(pattern).or_insert(0) += 1;
@@ -398,10 +385,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(
-        &clusters_path,
-        serde_json::to_string_pretty(&clusters_output)?,
-    )?;
+    fs::write(&clusters_path, serde_json::to_string_pretty(&clusters_output)?)?;
     println!("   💾 Clusters saved: {}", clusters_path.display());
 
     // Save pure symbolic stream (just the sequence)
@@ -418,11 +402,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let readable_path = results_dir.join("symbolic_stream_readable.csv");
     let mut readable_content = String::from("file_name,cluster_id,symbol\n");
     for (i, (file_name, &label)) in all_file_names.iter().zip(labels.iter()).enumerate() {
-        let symbol = if label == -1 {
-            0
-        } else {
-            label + cluster_offset
-        };
+        let symbol = if label == -1 { 0 } else { label + cluster_offset };
         readable_content.push_str(&format!("{},{},{}\n", file_name, label, symbol));
     }
     fs::write(&readable_path, &readable_content)?;
@@ -458,31 +438,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  📁 OUTPUT FILES:                                                         ║");
     println!(
         "║     • {:50}                                              ║",
-        features_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        features_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50}                                              ║",
-        clusters_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        clusters_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50}                                                 ║",
-        stream_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        stream_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50}                                        ║",
-        readable_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        readable_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!("║                                                                           ║");
     println!("║  🎯 SYMBOLIC STREAM FORMAT:                                                ║");
@@ -556,24 +524,21 @@ fn extract_features_from_files_batch(
 
     let features: Vec<_> = file_names
         .par_iter()
-        .filter_map(|file_name| {
-            match extract_single_feature(&audio_dir.join(file_name), file_name) {
+        .filter_map(
+            |file_name| match extract_single_feature(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
                     eprintln!("Warning: Failed to extract from {}: {}", file_name, e);
                     None
                 }
-            }
-        })
+            },
+        )
         .collect();
 
     Ok(features)
 }
 
-fn extract_single_feature(
-    file_path: &Path,
-    file_name: &str,
-) -> Result<ExtractedFeatures, Box<dyn std::error::Error>> {
+fn extract_single_feature(file_path: &Path, file_name: &str) -> Result<ExtractedFeatures, Box<dyn std::error::Error>> {
     use technical_architecture::MicroDynamicsExtractor;
 
     // Load WAV file
@@ -582,10 +547,7 @@ fn extract_single_feature(
     let sample_rate = spec.sample_rate;
 
     // Read samples
-    let audio: Vec<f32> = reader
-        .into_samples::<f32>()
-        .filter_map(|s| s.ok())
-        .collect();
+    let audio: Vec<f32> = reader.into_samples::<f32>().filter_map(|s| s.ok()).collect();
 
     if audio.is_empty() {
         return Err("No audio samples".into());

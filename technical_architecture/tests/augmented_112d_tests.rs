@@ -22,12 +22,13 @@ mod tests_augmented_112d {
     }
 
     /// Generate signal with envelope
+    #[allow(clippy::too_many_arguments)]
     fn generate_signal_with_envelope(
         sample_rate: u32,
         duration_ms: f32,
         frequency: f32,
         attack_ms: f32,
-        decay_ms: f32,
+        _decay_ms: f32,
         sustain_level: f32,
         release_ms: f32,
     ) -> Vec<f32> {
@@ -49,8 +50,7 @@ mod tests_augmented_112d {
                     sustain_level
                 } else {
                     // Release phase
-                    let release_progress =
-                        (i - (n_samples - release_samples)) as f32 / release_samples.max(1) as f32;
+                    let release_progress = (i - (n_samples - release_samples)) as f32 / release_samples.max(1) as f32;
                     sustain_level * (1.0 - release_progress)
                 };
 
@@ -128,10 +128,7 @@ mod tests_augmented_112d {
         let features_noisy = extractor.extract_45d(&noisy).unwrap();
         let jitter_noisy = features_noisy.base_30d.jitter;
 
-        println!(
-            "Jitter clean: {:.4}, noisy: {:.4}",
-            jitter_clean, jitter_noisy
-        );
+        println!("Jitter clean: {:.4}, noisy: {:.4}", jitter_clean, jitter_noisy);
 
         // Jitter should be finite and non-negative
         assert!(jitter_clean.is_finite());
@@ -226,10 +223,7 @@ mod tests_augmented_112d {
         let features_sweep = extractor.extract_45d(&sweep).unwrap();
         let flux_sweep = features_sweep.base_30d.spectral_flux;
 
-        println!(
-            "Spectral Flux - Static: {:.4}, Sweep: {:.4}",
-            flux_static, flux_sweep
-        );
+        println!("Spectral Flux - Static: {:.4}, Sweep: {:.4}", flux_static, flux_sweep);
 
         // Both should be finite
         assert!(flux_static.is_finite());
@@ -285,14 +279,8 @@ mod tests_augmented_112d {
             ),
             ("[13-26] Fingerprint", "mfcc_1-13, spectral_flux"),
             ("[27-29] Rhythm", "median_ici, onset_rate, ici_cv"),
-            (
-                "[30-35] Resonance",
-                "formant_1-3, bandwidth_1-2, dispersion",
-            ),
-            (
-                "[36-39] Spectral Shape",
-                "centroid, spread, skewness, kurtosis",
-            ),
+            ("[30-35] Resonance", "formant_1-3, bandwidth_1-2, dispersion"),
+            ("[36-39] Spectral Shape", "centroid, spread, skewness, kurtosis"),
             ("[40-42] Modulation", "spectral_tilt, fm_slope, am_depth"),
             ("[43-44] Non-Linear", "subharmonic_ratio, spectral_entropy"),
         ];

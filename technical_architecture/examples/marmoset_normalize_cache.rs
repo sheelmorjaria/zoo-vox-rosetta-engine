@@ -4,6 +4,7 @@
 //! Loads existing marmoset_train_cache and normalizes features
 //! so all 105 dimensions contribute equally to distance calculations.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::BufWriter;
@@ -71,11 +72,7 @@ fn main() -> anyhow::Result<()> {
     let n_features = 105;
     let n_floats = (data.len() - 12) / 4;
 
-    println!(
-        "  Total floats: {} (expected {})",
-        n_floats,
-        n_samples * n_features
-    );
+    println!("  Total floats: {} (expected {})", n_floats, n_samples * n_features);
 
     // Build feature matrix
     let mut feature_matrix: Vec<Vec<f32>> = Vec::with_capacity(n_samples);
@@ -84,12 +81,7 @@ fn main() -> anyhow::Result<()> {
         for j in 0..n_features {
             let offset = 12 + (i * n_features + j) * 4;
             if offset + 4 <= data.len() {
-                let bytes = [
-                    data[offset],
-                    data[offset + 1],
-                    data[offset + 2],
-                    data[offset + 3],
-                ];
+                let bytes = [data[offset], data[offset + 1], data[offset + 2], data[offset + 3]];
                 row.push(f32::from_le_bytes(bytes));
             }
         }
@@ -238,11 +230,7 @@ fn main() -> anyhow::Result<()> {
     let batch_size = 500;
     let n_batches = (n_samples + batch_size - 1) / batch_size;
 
-    println!(
-        "  Saving {} batches to {}...",
-        n_batches,
-        output_dir.display()
-    );
+    println!("  Saving {} batches to {}...", n_batches, output_dir.display());
 
     // Get call types from manifest
     let empty_vec = Vec::new();
@@ -260,9 +248,7 @@ fn main() -> anyhow::Result<()> {
                 .unwrap_or("Unknown")
                 .to_string();
 
-            let label_id = sample
-                .and_then(|s| s["labels"]["label_id"].as_i64())
-                .unwrap_or(0) as i32;
+            let label_id = sample.and_then(|s| s["labels"]["label_id"].as_i64()).unwrap_or(0) as i32;
 
             let audio_file = sample
                 .and_then(|s| s["audio_file"].as_str())
@@ -278,11 +264,7 @@ fn main() -> anyhow::Result<()> {
             }));
         }
 
-        let filename = format!(
-            "{}/nbd_batch_{:04}.json",
-            output_dir.display(),
-            batch_idx + 1
-        );
+        let filename = format!("{}/nbd_batch_{:04}.json", output_dir.display(), batch_idx + 1);
         let file = File::create(&filename)?;
         serde_json::to_writer(BufWriter::new(file), &batch_data)?;
     }

@@ -4,6 +4,7 @@
 //! Extracts and caches 105D features for the entire bat dataset.
 //! Run this ONCE to build the feature cache.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -37,12 +38,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -171,8 +167,7 @@ fn main() -> anyhow::Result<()> {
 
                 for i in (0..audio.len()).step_by(hop) {
                     let end = (i + hop).min(audio.len());
-                    let energy: f32 =
-                        audio[i..end].iter().map(|x| x * x).sum::<f32>() / (end - i) as f32;
+                    let energy: f32 = audio[i..end].iter().map(|x| x * x).sum::<f32>() / (end - i) as f32;
 
                     if energy.sqrt() > threshold && !in_seg {
                         in_seg = true;
@@ -238,11 +233,7 @@ fn main() -> anyhow::Result<()> {
 
         // Progress update
         if (idx + 1) % 10000 == 0 {
-            println!(
-                "  Progress: {}/{} files processed...",
-                idx + 1,
-                all_files.len()
-            );
+            println!("  Progress: {}/{} files processed...", idx + 1, all_files.len());
         }
     }
 

@@ -124,10 +124,10 @@ pub fn consolidated_taxon_labels() -> Vec<String> {
 
 /// Feature dimension constants
 pub const FEATURE_DIM: usize = 112;
-pub const PHYSICS_DIM: usize = 46;  // Layer 1: indices 0-45
-pub const TEXTURE_DIM: usize = 66;  // Layers 2-3: indices 46-111
-pub const MACRO_TEXTURE_DIM: usize = 30;  // Layer 2: indices 46-75
-pub const MICRO_TEXTURE_DIM: usize = 36;  // Layer 3: indices 76-111
+pub const PHYSICS_DIM: usize = 46; // Layer 1: indices 0-45
+pub const TEXTURE_DIM: usize = 66; // Layers 2-3: indices 46-111
+pub const MACRO_TEXTURE_DIM: usize = 30; // Layer 2: indices 46-75
+pub const MICRO_TEXTURE_DIM: usize = 36; // Layer 3: indices 76-111
 
 /// Gatekeeper input dimension (Base + Macro = 46 + 30 = 76D)
 pub const GATEKEEPER_DIM: usize = PHYSICS_DIM + MACRO_TEXTURE_DIM;
@@ -311,10 +311,7 @@ pub fn get_taxonomic_weights(taxon: Taxon) -> Vec<f32> {
 /// Element-wise multiplication of features by taxonomic weights.
 pub fn apply_taxonomic_mask(features: &[f32], taxon: Taxon) -> Vec<f32> {
     let weights = get_taxonomic_weights(taxon);
-    features.iter()
-        .zip(weights.iter())
-        .map(|(f, w)| f * w)
-        .collect()
+    features.iter().zip(weights.iter()).map(|(f, w)| f * w).collect()
 }
 
 // =============================================================================
@@ -348,7 +345,12 @@ pub fn slice_micro_texture_only(features: &[f32]) -> Vec<f32> {
 /// Slice Gatekeeper Input (76D): Base Physics (46D) + Macro Texture (30D)
 /// Used by the Random Forest for taxonomic classification
 pub fn slice_gatekeeper_input(features: &[f32]) -> Vec<f32> {
-    assert!(features.len() == FEATURE_DIM, "Invalid feature dimension: expected {}, got {}", FEATURE_DIM, features.len());
+    assert!(
+        features.len() == FEATURE_DIM,
+        "Invalid feature dimension: expected {}, got {}",
+        FEATURE_DIM,
+        features.len()
+    );
     let mut result = vec![0.0f32; GATEKEEPER_DIM];
     // Base Physics (46D)
     result[..PHYSICS_DIM].copy_from_slice(&features[..PHYSICS_DIM]);
@@ -620,17 +622,27 @@ mod tests {
         let mut features = vec![0.0f32; FEATURE_DIM];
 
         // Set Base Physics to 1.0
-        for i in 0..46 { features[i] = 1.0; }
+        for i in 0..46 {
+            features[i] = 1.0;
+        }
         // Set Macro Texture to 2.0
-        for i in 46..76 { features[i] = 2.0; }
+        for i in 46..76 {
+            features[i] = 2.0;
+        }
         // Set Micro Texture to 3.0
-        for i in 76..112 { features[i] = 3.0; }
+        for i in 76..112 {
+            features[i] = 3.0;
+        }
 
         let gatekeeper = slice_gatekeeper_input(&features);
 
         // Gatekeeper should have 1.0 for base, 2.0 for macro
-        for i in 0..46 { assert!((gatekeeper[i] - 1.0).abs() < 1e-6); }
-        for i in 46..76 { assert!((gatekeeper[i] - 2.0).abs() < 1e-6); }
+        for i in 0..46 {
+            assert!((gatekeeper[i] - 1.0).abs() < 1e-6);
+        }
+        for i in 46..76 {
+            assert!((gatekeeper[i] - 2.0).abs() < 1e-6);
+        }
     }
 
     #[test]
@@ -639,17 +651,27 @@ mod tests {
         let mut features = vec![0.0f32; FEATURE_DIM];
 
         // Set Base Physics to 1.0
-        for i in 0..46 { features[i] = 1.0; }
+        for i in 0..46 {
+            features[i] = 1.0;
+        }
         // Set Macro Texture to 2.0
-        for i in 46..76 { features[i] = 2.0; }
+        for i in 46..76 {
+            features[i] = 2.0;
+        }
         // Set Micro Texture to 3.0
-        for i in 76..112 { features[i] = 3.0; }
+        for i in 76..112 {
+            features[i] = 3.0;
+        }
 
         let expert = slice_species_expert_input(&features);
 
         // Expert should have 1.0 for base, 3.0 for micro
-        for i in 0..46 { assert!((expert[i] - 1.0).abs() < 1e-6); }
-        for i in 46..82 { assert!((expert[i] - 3.0).abs() < 1e-6); }
+        for i in 0..46 {
+            assert!((expert[i] - 1.0).abs() < 1e-6);
+        }
+        for i in 46..82 {
+            assert!((expert[i] - 3.0).abs() < 1e-6);
+        }
     }
 
     #[test]
@@ -738,13 +760,24 @@ mod tests {
     fn test_weight_vector_dimensions() {
         // All taxonomic weights should be 112D
         for taxon in [
-            Taxon::Cetacean, Taxon::Mysticete, Taxon::Songbird,
-            Taxon::NonPasserine, Taxon::Amphibian, Taxon::Pinniped,
-            Taxon::Insect, Taxon::Mammal, Taxon::Unknown,
+            Taxon::Cetacean,
+            Taxon::Mysticete,
+            Taxon::Songbird,
+            Taxon::NonPasserine,
+            Taxon::Amphibian,
+            Taxon::Pinniped,
+            Taxon::Insect,
+            Taxon::Mammal,
+            Taxon::Unknown,
         ] {
             let weights = get_taxonomic_weights(taxon);
-            assert_eq!(weights.len(), FEATURE_DIM,
-                "Weight vector for {:?} should be {}D", taxon, FEATURE_DIM);
+            assert_eq!(
+                weights.len(),
+                FEATURE_DIM,
+                "Weight vector for {:?} should be {}D",
+                taxon,
+                FEATURE_DIM
+            );
         }
     }
 
@@ -752,8 +785,12 @@ mod tests {
     fn test_unknown_weights_are_uniform() {
         let weights = get_taxonomic_weights(Taxon::Unknown);
         for (i, &w) in weights.iter().enumerate() {
-            assert!((w - 1.0).abs() < 1e-6,
-                "Unknown weight at index {} should be 1.0, got {}", i, w);
+            assert!(
+                (w - 1.0).abs() < 1e-6,
+                "Unknown weight at index {} should be 1.0, got {}",
+                i,
+                w
+            );
         }
     }
 
@@ -763,8 +800,12 @@ mod tests {
 
         // ICI bins should be heavily weighted
         for i in feature_indices::ICI_BINS_START..feature_indices::ICI_BINS_END {
-            assert!(weights[i] > 2.0,
-                "Cetacean weight at ICI index {} should be > 2.0, got {}", i, weights[i]);
+            assert!(
+                weights[i] > 2.0,
+                "Cetacean weight at ICI index {} should be > 2.0, got {}",
+                i,
+                weights[i]
+            );
         }
     }
 
@@ -773,14 +814,20 @@ mod tests {
         let weights = get_taxonomic_weights(Taxon::Mysticete);
 
         // Duration should be heavily weighted for baleen whales
-        assert!(weights[feature_indices::DURATION] > 2.0,
+        assert!(
+            weights[feature_indices::DURATION] > 2.0,
             "Mysticete duration weight should be > 2.0, got {}",
-            weights[feature_indices::DURATION]);
+            weights[feature_indices::DURATION]
+        );
 
         // Harmonic texture should also be emphasized
         for i in feature_indices::HARMONIC_TEXTURE_START..feature_indices::HARMONIC_TEXTURE_END {
-            assert!(weights[i] > 2.0,
-                "Mysticete harmonic weight at {} should be > 2.0, got {}", i, weights[i]);
+            assert!(
+                weights[i] > 2.0,
+                "Mysticete harmonic weight at {} should be > 2.0, got {}",
+                i,
+                weights[i]
+            );
         }
     }
 
@@ -790,8 +837,12 @@ mod tests {
 
         // Rhythm/tempo should be heavily weighted for insects
         for i in feature_indices::RHYTHM_START..feature_indices::RHYTHM_END {
-            assert!(weights[i] > 3.0,
-                "Insect rhythm weight at {} should be > 3.0, got {}", i, weights[i]);
+            assert!(
+                weights[i] > 3.0,
+                "Insect rhythm weight at {} should be > 3.0, got {}",
+                i,
+                weights[i]
+            );
         }
     }
 
@@ -801,8 +852,12 @@ mod tests {
 
         // Dynamics bins (AM) should be heavily weighted for frogs
         for i in feature_indices::DYNAMICS_BINS_START..feature_indices::DYNAMICS_BINS_END {
-            assert!(weights[i] > 2.0,
-                "Amphibian dynamics weight at {} should be > 2.0, got {}", i, weights[i]);
+            assert!(
+                weights[i] > 2.0,
+                "Amphibian dynamics weight at {} should be > 2.0, got {}",
+                i,
+                weights[i]
+            );
         }
     }
 
@@ -819,8 +874,13 @@ mod tests {
         let masked = apply_taxonomic_mask(&features, Taxon::Unknown);
 
         for (i, (f, m)) in features.iter().zip(masked.iter()).enumerate() {
-            assert!((f - m).abs() < 1e-6,
-                "Unknown mask at {} should be identity: {} vs {}", i, f, m);
+            assert!(
+                (f - m).abs() < 1e-6,
+                "Unknown mask at {} should be identity: {} vs {}",
+                i,
+                f,
+                m
+            );
         }
     }
 
@@ -831,8 +891,12 @@ mod tests {
 
         // ICI bins should be multiplied by 3.0
         for i in feature_indices::ICI_BINS_START..feature_indices::ICI_BINS_END {
-            assert!((masked[i] - 3.0).abs() < 1e-6,
-                "Masked ICI at {} should be 3.0, got {}", i, masked[i]);
+            assert!(
+                (masked[i] - 3.0).abs() < 1e-6,
+                "Masked ICI at {} should be 3.0, got {}",
+                i,
+                masked[i]
+            );
         }
     }
 
@@ -931,14 +995,25 @@ mod tests {
     fn test_weights_are_positive() {
         // All weights should be positive to avoid flipping feature signs
         for taxon in [
-            Taxon::Cetacean, Taxon::Mysticete, Taxon::Songbird,
-            Taxon::NonPasserine, Taxon::Amphibian, Taxon::Pinniped,
-            Taxon::Insect, Taxon::Mammal, Taxon::Unknown,
+            Taxon::Cetacean,
+            Taxon::Mysticete,
+            Taxon::Songbird,
+            Taxon::NonPasserine,
+            Taxon::Amphibian,
+            Taxon::Pinniped,
+            Taxon::Insect,
+            Taxon::Mammal,
+            Taxon::Unknown,
         ] {
             let weights = get_taxonomic_weights(taxon);
             for (i, &w) in weights.iter().enumerate() {
-                assert!(w > 0.0,
-                    "Weight for {:?} at index {} should be positive, got {}", taxon, i, w);
+                assert!(
+                    w > 0.0,
+                    "Weight for {:?} at index {} should be positive, got {}",
+                    taxon,
+                    i,
+                    w
+                );
             }
         }
     }
@@ -950,8 +1025,12 @@ mod tests {
         let masked = apply_taxonomic_mask(&features, Taxon::Cetacean);
 
         for (i, m) in masked.iter().enumerate() {
-            assert!(*m <= 0.0,
-                "Masked value at {} should be <= 0 (sign preserved), got {}", i, m);
+            assert!(
+                *m <= 0.0,
+                "Masked value at {} should be <= 0 (sign preserved), got {}",
+                i,
+                m
+            );
         }
     }
 }

@@ -1,4 +1,5 @@
 // Debug script to test marmoset phrase extraction
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
 use symphonia::core::formats::FormatOptions;
@@ -26,8 +27,7 @@ fn load_flac_file(path: &str) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -61,11 +61,7 @@ fn load_flac_file(path: &str) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::S24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32));
                 }
             }
             AudioBufferRef::S16(buf) => {
@@ -95,21 +91,13 @@ fn load_flac_file(path: &str) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0));
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| (s as f32 - 2147483648.0) / 2147483648.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2147483648.0) / 2147483648.0));
                 }
             }
         }

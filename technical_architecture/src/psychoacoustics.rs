@@ -193,11 +193,7 @@ impl RoughnessCalculator {
         let roughness_bin = (self.threshold_hz / bin_resolution).ceil() as usize;
 
         // Sum energy in roughness band (high frequencies)
-        let roughness_energy: f32 = spectrum
-            .iter()
-            .skip(roughness_bin.min(num_bins))
-            .map(|&x| x * x)
-            .sum();
+        let roughness_energy: f32 = spectrum.iter().skip(roughness_bin.min(num_bins)).map(|&x| x * x).sum();
 
         // Sum total energy
         let total_energy: f32 = spectrum.iter().map(|&x| x * x).sum();
@@ -288,10 +284,7 @@ impl RoughnessCalculator {
         }
 
         // Return magnitude spectrum (only positive frequencies)
-        complex[..n / 2]
-            .iter()
-            .map(|&(r, i)| (r * r + i * i).sqrt())
-            .collect()
+        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
     }
 }
 
@@ -365,6 +358,32 @@ impl BrightnessCalculator {
     }
 }
 
+/// Helper function to generate sine wave for testing
+fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            (2.0 * PI * freq_hz * t).sin()
+        })
+        .collect()
+}
+
+/// Helper function to generate white noise for testing
+fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let mut rng: u32 = seed;
+
+    (0..num_samples)
+        .map(|_| {
+            rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
+            (rng as f32 / u32::MAX as f32) * 2.0 - 1.0
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -378,10 +397,7 @@ mod tests {
         let calculator = PitchEntropyCalculator::default();
         let constant = vec![440.0; 100];
         let entropy = calculator.calculate(&constant);
-        assert!(
-            entropy < 0.1,
-            "Constant pitch should have near-zero entropy"
-        );
+        assert!(entropy < 0.1, "Constant pitch should have near-zero entropy");
     }
 
     #[test]
@@ -400,10 +416,7 @@ mod tests {
         // Uniform distribution across range
         let uniform: Vec<f32> = (0..100).map(|i| 100.0 + i as f32 * 5.0).collect();
         let entropy = calculator.calculate(&uniform);
-        assert!(
-            entropy > 0.7,
-            "Uniform distribution should have high entropy"
-        );
+        assert!(entropy > 0.7, "Uniform distribution should have high entropy");
     }
 
     #[test]
@@ -460,10 +473,7 @@ mod tests {
         let pure_tone = generate_sine_wave(200.0, 48000, 0.1);
         let roughness = calculator.calculate(&pure_tone);
         // Low frequency tone should have lower roughness (energy below threshold)
-        assert!(
-            roughness < 0.5,
-            "Low frequency tone should have lower roughness"
-        );
+        assert!(roughness < 0.5, "Low frequency tone should have lower roughness");
     }
 
     #[test]
@@ -516,7 +526,7 @@ mod tests {
         let calculator = RoughnessCalculator::new(1000.0, 48000);
         let tone = generate_sine_wave(1500.0, 48000, 0.1);
         let roughness = calculator.calculate(&tone);
-        assert!(roughness >= 0.0 && roughness <= 1.0);
+        assert!((0.0..=1.0).contains(&roughness));
     }
 
     #[test]
@@ -552,10 +562,7 @@ mod tests {
         let high_tone = generate_sine_wave(10000.0, 48000, 0.1);
         let brightness = calculator.calculate(&high_tone);
         // High frequency tone should have higher brightness than low
-        assert!(
-            brightness > 0.2,
-            "High frequency should have measurable brightness"
-        );
+        assert!(brightness > 0.2, "High frequency should have measurable brightness");
     }
 
     #[test]
@@ -580,7 +587,7 @@ mod tests {
         for freq in &[100.0, 500.0, 1000.0, 5000.0, 10000.0, 15000.0] {
             let tone = generate_sine_wave(*freq, 48000, 0.1);
             let brightness = calculator.calculate(&tone);
-            assert!(brightness >= 0.0 && brightness <= 1.0);
+            assert!((0.0..=1.0).contains(&brightness));
         }
     }
 
@@ -625,33 +632,4 @@ mod tests {
         // Similar frequencies should give similar brightness
         assert!((brightness_44100 - brightness_48000).abs() < 0.1);
     }
-}
-
-/// Helper function to generate sine wave for testing
-fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            (2.0 * PI * freq_hz * t).sin()
-        })
-        .collect()
-}
-
-/// Helper function to generate white noise for testing
-fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .subsec_nanos();
-    let mut rng: u32 = seed;
-
-    (0..num_samples)
-        .map(|_| {
-            rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
-            (rng as f32 / u32::MAX as f32) * 2.0 - 1.0
-        })
-        .collect()
 }

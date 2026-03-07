@@ -96,24 +96,11 @@ impl Default for CalibrationDashboardStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WsMessage {
-    Spectrogram {
-        data: Vec<f32>,
-        sample_rate: u32,
-    },
-    GaugeUpdate {
-        name: String,
-        value: f32,
-        unit: String,
-    },
-    StatusUpdate {
-        status: DashboardState,
-    },
-    Error {
-        message: String,
-    },
-    Info {
-        message: String,
-    },
+    Spectrogram { data: Vec<f32>, sample_rate: u32 },
+    GaugeUpdate { name: String, value: f32, unit: String },
+    StatusUpdate { status: DashboardState },
+    Error { message: String },
+    Info { message: String },
 }
 
 /// Dashboard command from client
@@ -121,13 +108,8 @@ pub enum WsMessage {
 #[serde(tag = "type")]
 pub enum DashboardCommand {
     EmergencyStop,
-    ManualOverride {
-        intent: String,
-    },
-    SetParameter {
-        name: String,
-        value: serde_json::Value,
-    },
+    ManualOverride { intent: String },
+    SetParameter { name: String, value: serde_json::Value },
     RunCalibration,
     GetStatus,
     SubscribeSpectrogram,
@@ -269,9 +251,8 @@ impl WebDashboard {
     /// Generate auth token
     fn generate_token(&self, user: &str) -> AuthToken {
         use chrono::Duration;
-        let expires_at = PtpTimestamp::from(
-            chrono::Utc::now() + Duration::hours(self.config.token_expiry_hours as i64),
-        );
+        let expires_at =
+            PtpTimestamp::from(chrono::Utc::now() + Duration::hours(self.config.token_expiry_hours as i64));
 
         // Simple token generation (in production, use proper JWT)
         let token = format!("{}_{}", user, expires_at.as_nanos());
@@ -353,12 +334,7 @@ impl WebDashboard {
     }
 
     /// Process a dashboard command
-    pub fn process_command(
-        &self,
-        command: DashboardCommand,
-        user: &str,
-        ip_address: &str,
-    ) -> CommandResult {
+    pub fn process_command(&self, command: DashboardCommand, user: &str, ip_address: &str) -> CommandResult {
         log::info!("Processing command from {}: {:?}", user, command);
 
         let result = match &command {
@@ -459,11 +435,7 @@ impl WebDashboard {
 
     /// Broadcast spectrogram data
     pub fn broadcast_spectrogram(&self, data: Vec<f32>, sample_rate: u32) {
-        log::debug!(
-            "Broadcasting spectrogram: {} samples @ {}Hz",
-            data.len(),
-            sample_rate
-        );
+        log::debug!("Broadcasting spectrogram: {} samples @ {}Hz", data.len(), sample_rate);
 
         // In production, this would broadcast to subscribed clients
         // via WebSocket
@@ -594,14 +566,8 @@ mod tests {
 
     #[test]
     fn test_operation_mode() {
-        assert_eq!(
-            DashboardOperationMode::Passthrough,
-            DashboardOperationMode::Passthrough
-        );
-        assert_ne!(
-            DashboardOperationMode::Interactive,
-            DashboardOperationMode::Passthrough
-        );
+        assert_eq!(DashboardOperationMode::Passthrough, DashboardOperationMode::Passthrough);
+        assert_ne!(DashboardOperationMode::Interactive, DashboardOperationMode::Passthrough);
     }
 
     // ============================================================================
@@ -721,9 +687,7 @@ mod tests {
         // Add token and connect
         let token = dashboard.generate_token("test_user");
         dashboard.add_token(&token);
-        dashboard
-            .connect_client("client1", "127.0.0.1", &token.token)
-            .unwrap();
+        dashboard.connect_client("client1", "127.0.0.1", &token.token).unwrap();
 
         assert_eq!(dashboard.connected_clients_count(), 1);
 
@@ -743,8 +707,7 @@ mod tests {
 
         // First 5 connections should succeed
         for i in 0..5 {
-            let result =
-                dashboard.connect_client(&format!("client{}", i), "127.0.0.1", &token.token);
+            let result = dashboard.connect_client(&format!("client{}", i), "127.0.0.1", &token.token);
             assert!(result.is_ok(), "Connection {} should succeed", i);
         }
 
@@ -861,12 +824,8 @@ mod tests {
         // Add some connections
         let token = dashboard.generate_token("test_user");
         dashboard.add_token(&token);
-        dashboard
-            .connect_client("client1", "127.0.0.1", &token.token)
-            .unwrap();
-        dashboard
-            .connect_client("client2", "127.0.0.1", &token.token)
-            .unwrap();
+        dashboard.connect_client("client1", "127.0.0.1", &token.token).unwrap();
+        dashboard.connect_client("client2", "127.0.0.1", &token.token).unwrap();
 
         assert_eq!(dashboard.connected_clients_count(), 2);
 

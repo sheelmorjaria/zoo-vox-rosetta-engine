@@ -129,8 +129,7 @@ impl TrajectoryAnalyzer {
 
     /// Add a reference point (type centroid) for the manifold
     pub fn add_reference_point(&mut self, type_name: &str, features: Vec<f64>) {
-        self.reference_points
-            .push((type_name.to_string(), features));
+        self.reference_points.push((type_name.to_string(), features));
     }
 
     /// Fit the analyzer on a set of features (compute normalization statistics)
@@ -242,11 +241,7 @@ impl TrajectoryAnalyzer {
         let start_norm = self.normalize_features(start_features);
         let end_norm = self.normalize_features(end_features);
 
-        let direction: Vec<f64> = end_norm
-            .iter()
-            .zip(start_norm.iter())
-            .map(|(e, s)| e - s)
-            .collect();
+        let direction: Vec<f64> = end_norm.iter().zip(start_norm.iter()).map(|(e, s)| e - s).collect();
 
         let magnitude: f64 = direction.iter().map(|d| d * d).sum::<f64>().sqrt();
 
@@ -264,10 +259,7 @@ impl TrajectoryAnalyzer {
             .collect();
 
         // Distance from midpoint to linear interpolation at 0.5
-        let linear_midpoint: Vec<f64> = normalized_direction
-            .iter()
-            .map(|d| d * magnitude / 2.0)
-            .collect();
+        let linear_midpoint: Vec<f64> = normalized_direction.iter().map(|d| d * magnitude / 2.0).collect();
 
         let curvature = midpoint
             .iter()
@@ -309,26 +301,15 @@ impl TrajectoryAnalyzer {
     }
 
     /// Compute manifold coordinate from normalized features
-    fn compute_manifold_coordinate(
-        &self,
-        features: &[f64],
-    ) -> Result<ManifoldCoordinate, TrajectoryError> {
+    fn compute_manifold_coordinate(&self, features: &[f64]) -> Result<ManifoldCoordinate, TrajectoryError> {
         let (x, y, z) = if let Some(embedding) = &self.embedding_matrix {
             // Use learned embedding
             let feature_array = Array1::from_vec(features.to_vec());
             let projected = feature_array.dot(embedding);
 
             let x = projected[0];
-            let y = if projected.len() > 1 {
-                projected[1]
-            } else {
-                0.0
-            };
-            let z = if projected.len() > 2 {
-                Some(projected[2])
-            } else {
-                None
-            };
+            let y = if projected.len() > 1 { projected[1] } else { 0.0 };
+            let z = if projected.len() > 2 { Some(projected[2]) } else { None };
 
             (x, y, z)
         } else {
@@ -407,11 +388,7 @@ impl TrajectoryAnalyzer {
 
     /// Euclidean distance between two feature vectors
     fn euclidean_distance(&self, a: &[f64], b: &[f64]) -> f64 {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (x - y).powi(2))
-            .sum::<f64>()
-            .sqrt()
+        a.iter().zip(b.iter()).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
     }
 
     /// Cosine distance between two feature vectors
@@ -522,11 +499,7 @@ mod tests {
     fn test_fit_analyzer() {
         let mut analyzer = TrajectoryAnalyzer::default();
 
-        let features = vec![
-            vec![1.0, 0.0, 0.0],
-            vec![0.0, 1.0, 0.0],
-            vec![0.0, 0.0, 1.0],
-        ];
+        let features = vec![vec![1.0, 0.0, 0.0], vec![0.0, 1.0, 0.0], vec![0.0, 0.0, 1.0]];
 
         let result = analyzer.fit(&features);
         assert!(result.is_ok());
@@ -586,8 +559,10 @@ mod tests {
 
     #[test]
     fn test_transition_zone_detection() {
-        let mut config = TrajectoryAnalysisConfig::default();
-        config.transition_zone_threshold = 0.5;
+        let config = TrajectoryAnalysisConfig {
+            transition_zone_threshold: 0.5,
+            ..Default::default()
+        };
         let mut analyzer = TrajectoryAnalyzer::new(config);
 
         // Add two close reference points
@@ -636,9 +611,7 @@ mod tests {
         analyzer.fit(&features).unwrap();
 
         // Linear trajectory should have low curvature
-        let linear = analyzer
-            .analyze_transition(&[0.0, 0.0], &[1.0, 0.0], 100.0)
-            .unwrap();
+        let linear = analyzer.analyze_transition(&[0.0, 0.0], &[1.0, 0.0], 100.0).unwrap();
 
         assert!(linear.trajectory.unwrap().curvature >= 0.0);
     }

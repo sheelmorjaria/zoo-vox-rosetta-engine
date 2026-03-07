@@ -132,10 +132,7 @@ pub struct PowerBudget {
 impl PowerBudget {
     /// Calculate total consumption
     pub fn total_consumption_w(&self) -> f32 {
-        self.base_consumption_w
-            + self.synthesis_consumption_w
-            + self.fpga_consumption_w
-            + self.separation_consumption_w
+        self.base_consumption_w + self.synthesis_consumption_w + self.fpga_consumption_w + self.separation_consumption_w
     }
 
     /// Check if power budget is sufficient
@@ -236,9 +233,7 @@ impl PowerManager {
             solar_prediction: None,
             last_poll: None,
             fpga_enabled: Arc::new(AtomicBool::new(initial_mode.fpga_enabled())),
-            source_separation_enabled: Arc::new(AtomicBool::new(
-                initial_mode.source_separation_enabled(),
-            )),
+            source_separation_enabled: Arc::new(AtomicBool::new(initial_mode.source_separation_enabled())),
             synthesis_enabled: Arc::new(AtomicBool::new(initial_mode.full_synthesis_enabled())),
         }
     }
@@ -290,10 +285,8 @@ impl PowerManager {
     fn update_throttle_state(&self) {
         self.fpga_enabled
             .store(self.power_mode.fpga_enabled(), Ordering::Relaxed);
-        self.source_separation_enabled.store(
-            self.power_mode.source_separation_enabled(),
-            Ordering::Relaxed,
-        );
+        self.source_separation_enabled
+            .store(self.power_mode.source_separation_enabled(), Ordering::Relaxed);
         self.synthesis_enabled
             .store(self.power_mode.full_synthesis_enabled(), Ordering::Relaxed);
     }
@@ -310,8 +303,7 @@ impl PowerManager {
 
     /// Calculate power budget
     pub fn calculate_power_budget(&self) -> PowerBudget {
-        let available_wh = self.battery_state.effective_capacity_percent() / 100.0
-            * self.config.battery_capacity_wh;
+        let available_wh = self.battery_state.effective_capacity_percent() / 100.0 * self.config.battery_capacity_wh;
 
         let solar_gain = self
             .solar_prediction
@@ -423,11 +415,7 @@ impl PowerManager {
 
         // Low mode defers unless good solar gain expected
         if matches!(self.power_mode, PowerMode::Low) {
-            let solar_good = self
-                .solar_prediction
-                .as_ref()
-                .map(|p| p.is_good())
-                .unwrap_or(false);
+            let solar_good = self.solar_prediction.as_ref().map(|p| p.is_good()).unwrap_or(false);
 
             return !solar_good;
         }

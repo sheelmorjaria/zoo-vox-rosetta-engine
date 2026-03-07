@@ -126,8 +126,7 @@ impl IacucProtocol {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path).context("Failed to open protocol file")?;
         let reader = BufReader::new(file);
-        let protocol: IacucProtocol =
-            serde_json::from_reader(reader).context("Failed to parse protocol JSON")?;
+        let protocol: IacucProtocol = serde_json::from_reader(reader).context("Failed to parse protocol JSON")?;
 
         // Validate protocol
         protocol.validate()?;
@@ -277,10 +276,7 @@ impl ComplianceState {
 
     /// Record an interaction
     pub fn record_interaction(&mut self, species: &str, duration_seconds: u32) {
-        *self
-            .species_interaction_counts
-            .entry(species.to_string())
-            .or_insert(0) += 1;
+        *self.species_interaction_counts.entry(species.to_string()).or_insert(0) += 1;
         self.today_interaction_seconds += duration_seconds;
         self.today_playback_count += 1;
         self.last_interaction_time = Some(PtpTimestamp::from(chrono::Utc::now()));
@@ -426,10 +422,7 @@ impl IacucComplianceEngine {
                         let violation = PolicyViolation {
                             timestamp: PtpTimestamp::from(chrono::Utc::now()),
                             violation_type: ViolationType::ProhibitedBehavior,
-                            description: format!(
-                                "Behavior '{}' is prohibited for species {}",
-                                behavior, species
-                            ),
+                            description: format!("Behavior '{}' is prohibited for species {}", behavior, species),
                             attempted_action: format!("Execute behavior {}", behavior),
                             species: Some(species.clone()),
                         };
@@ -472,10 +465,7 @@ impl IacucComplianceEngine {
                         "Daily interaction limit would be exceeded: {} + {} > {} seconds",
                         today_seconds, intent.duration_seconds, max_seconds
                     ),
-                    attempted_action: format!(
-                        "Interaction for {} seconds",
-                        intent.duration_seconds
-                    ),
+                    attempted_action: format!("Interaction for {} seconds", intent.duration_seconds),
                     species: intent.species.clone(),
                 };
                 self.log_violation(violation);
@@ -543,11 +533,7 @@ impl IacucComplianceEngine {
         let log_path = log_path.replace(".jsonl", "");
         let log_file = format!("{}_compliance.jsonl", log_path);
 
-        let mut file = match std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&log_file)
-        {
+        let mut file = match std::fs::OpenOptions::new().create(true).append(true).open(&log_file) {
             Ok(f) => f,
             Err(_) => return, // Silently fail if can't write
         };
@@ -571,9 +557,7 @@ impl IacucComplianceEngine {
 
         if let Some(last_interaction) = state.last_interaction_time {
             let last_chrono: chrono::DateTime<chrono::Utc> = last_interaction.into();
-            let elapsed = chrono::Utc::now()
-                .signed_duration_since(last_chrono)
-                .num_seconds() as u32;
+            let elapsed = chrono::Utc::now().signed_duration_since(last_chrono).num_seconds() as u32;
 
             elapsed < self.protocol.daily_limits.cooling_period_seconds
         } else {
@@ -1048,10 +1032,7 @@ mod tests {
             format!("{}", ViolationType::OutsideAllowedHours),
             "Outside allowed interaction hours"
         );
-        assert_eq!(
-            format!("{}", ViolationType::MaxSplExceeded),
-            "Maximum SPL exceeded"
-        );
+        assert_eq!(format!("{}", ViolationType::MaxSplExceeded), "Maximum SPL exceeded");
         assert_eq!(
             format!("{}", ViolationType::SpeciesLimitExceeded),
             "Species interaction limit exceeded"

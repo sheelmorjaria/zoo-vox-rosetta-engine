@@ -55,8 +55,7 @@ impl PerformanceMetrics {
 
     pub fn calculate_throughput(&mut self) {
         if self.total_duration_us > 0 {
-            self.throughput_ops_per_sec =
-                (self.operations as f64 * 1_000_000.0) / self.total_duration_us as f64;
+            self.throughput_ops_per_sec = (self.operations as f64 * 1_000_000.0) / self.total_duration_us as f64;
         }
     }
 
@@ -292,10 +291,7 @@ pub fn benchmark_mode_switching(iterations: u64) -> PerformanceMetrics {
 }
 
 /// Benchmark 5: Concurrent Heartbeat Processing
-pub fn benchmark_concurrent_processing(
-    num_senders: usize,
-    messages_per_sender: u64,
-) -> PerformanceMetrics {
+pub fn benchmark_concurrent_processing(num_senders: usize, messages_per_sender: u64) -> PerformanceMetrics {
     let controller = Arc::new(std::sync::Mutex::new(PeerControllerSimulator::new(100)));
     let heartbeat_count = Arc::new(AtomicU64::new(0));
     let mut handles = vec![];
@@ -372,10 +368,7 @@ pub fn benchmark_memory_allocation(iterations: u64) -> PerformanceMetrics {
 /// Run all benchmarks and return a summary
 pub fn run_all_benchmarks() -> Vec<(&'static str, PerformanceMetrics)> {
     vec![
-        (
-            "Serialization Throughput",
-            benchmark_serialization_throughput(10_000),
-        ),
+        ("Serialization Throughput", benchmark_serialization_throughput(10_000)),
         ("Message Processing", benchmark_message_processing(10_000)),
         ("Timeout Detection", benchmark_timeout_detection()),
         ("Mode Switching", benchmark_mode_switching(100)),
@@ -422,10 +415,7 @@ mod tests {
         let metrics = benchmark_serialization_throughput(1_000);
 
         assert_eq!(metrics.operations, 1_000);
-        assert!(
-            metrics.avg_latency_us < 100.0,
-            "Avg latency should be < 100μs"
-        );
+        assert!(metrics.avg_latency_us < 100.0, "Avg latency should be < 100μs");
         assert!(
             metrics.throughput_ops_per_sec > 10_000.0,
             "Should process > 10k ops/sec"
@@ -437,10 +427,7 @@ mod tests {
         let metrics = benchmark_message_processing(1_000);
 
         assert_eq!(metrics.operations, 1_000);
-        assert!(
-            metrics.avg_latency_us < 10.0,
-            "Message processing should be < 10μs"
-        );
+        assert!(metrics.avg_latency_us < 10.0, "Message processing should be < 10μs");
         assert!(
             metrics.throughput_ops_per_sec > 100_000.0,
             "Should process > 100k msgs/sec"
@@ -453,10 +440,7 @@ mod tests {
 
         assert_eq!(metrics.operations, 10);
         // Timeout detection should be near-instantaneous (just checking elapsed time)
-        assert!(
-            metrics.avg_latency_us < 100.0,
-            "Timeout detection should be < 100μs"
-        );
+        assert!(metrics.avg_latency_us < 100.0, "Timeout detection should be < 100μs");
     }
 
     #[test]
@@ -465,10 +449,7 @@ mod tests {
 
         assert_eq!(metrics.operations, 10);
         // Mode switching should be fast (just setting a flag)
-        assert!(
-            metrics.avg_latency_us < 1000.0,
-            "Mode switching should be < 1ms"
-        );
+        assert!(metrics.avg_latency_us < 1000.0, "Mode switching should be < 1ms");
     }
 
     #[test]
@@ -489,10 +470,7 @@ mod tests {
 
         assert_eq!(metrics.operations, 1_000);
         // Should allocate memory efficiently (no leaks)
-        assert!(
-            metrics.memory_allocated_bytes > 0,
-            "Should have allocated memory"
-        );
+        assert!(metrics.memory_allocated_bytes > 0, "Should have allocated memory");
     }
 
     #[test]

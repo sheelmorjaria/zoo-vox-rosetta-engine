@@ -11,6 +11,7 @@
 //! This tests whether the 45D features capture universal acoustic patterns
 //! that transfer across species boundaries.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -230,9 +231,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for sample in &all_samples {
         let is_unseen = unseen_dataset_names.contains(sample.source_dataset.as_str());
 
-        let entry = dataset_counts
-            .entry(sample.source_dataset.clone())
-            .or_insert((0, 0));
+        let entry = dataset_counts.entry(sample.source_dataset.clone()).or_insert((0, 0));
         if is_unseen {
             unseen_samples.push(sample);
             entry.1 += 1;
@@ -262,10 +261,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (name, (seen, unseen)) in &sorted_datasets {
         let status = if *unseen > 0 { "UNSEEN" } else { "seen" };
-        println!(
-            "  ├─ {}: {} seen, {} unseen [{}]",
-            name, seen, unseen, status
-        );
+        println!("  ├─ {}: {} seen, {} unseen [{}]", name, seen, unseen, status);
     }
     println!();
 
@@ -295,8 +291,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create similarity engine and fit on seen samples only
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix =
-            ndarray::Array2::<f64>::zeros((seen_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix = ndarray::Array2::<f64>::zeros((seen_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in seen_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -409,11 +404,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if (i + 1) % 2000 == 0 {
-            println!(
-                "  Progress: {}/{} unseen samples evaluated",
-                i + 1,
-                eval_size
-            );
+            println!("  Progress: {}/{} unseen samples evaluated", i + 1, eval_size);
         }
     });
 
@@ -475,18 +466,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Clustering Quality (k=10 neighbors from same dataset):");
-    println!(
-        "  ├─ Top-1 (all neighbors same dataset): {:.1}%",
-        accuracy * 100.0
-    );
-    println!(
-        "  ├─ Top-3 (≤3 unique datasets): {:.1}%",
-        top3_accuracy * 100.0
-    );
-    println!(
-        "  └─ Top-5 (≤5 unique datasets): {:.1}%",
-        top5_accuracy * 100.0
-    );
+    println!("  ├─ Top-1 (all neighbors same dataset): {:.1}%", accuracy * 100.0);
+    println!("  ├─ Top-3 (≤3 unique datasets): {:.1}%", top3_accuracy * 100.0);
+    println!("  └─ Top-5 (≤5 unique datasets): {:.1}%", top5_accuracy * 100.0);
     println!();
 
     println!("Per-Dataset Transfer (Top-1 clustering):");
@@ -519,10 +501,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Configuration:");
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
     println!("  ├─ Seen Datasets: {} (train)", seen_dataset_names.len());
-    println!(
-        "  └─ Unseen Datasets: {} (test)",
-        unseen_dataset_names_vec.len()
-    );
+    println!("  └─ Unseen Datasets: {} (test)", unseen_dataset_names_vec.len());
     println!();
 
     println!("Samples:");
@@ -538,14 +517,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Zero-Shot Transfer Metrics:");
     println!("  ├─ Clustering Quality (Top-1): {:.1}%", accuracy * 100.0);
-    println!(
-        "  ├─ Clustering Quality (Top-3): {:.1}%",
-        top3_accuracy * 100.0
-    );
-    println!(
-        "  └─ Clustering Quality (Top-5): {:.1}%",
-        top5_accuracy * 100.0
-    );
+    println!("  ├─ Clustering Quality (Top-3): {:.1}%", top3_accuracy * 100.0);
+    println!("  └─ Clustering Quality (Top-5): {:.1}%", top5_accuracy * 100.0);
     println!();
 
     // Assessment
@@ -598,10 +571,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
     let audio: Vec<f64> = bytes

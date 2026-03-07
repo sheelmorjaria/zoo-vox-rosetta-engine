@@ -2,6 +2,7 @@
 // Within-Call Phrase Discovery: Multi-Species Analysis
 // =============================================================================
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
@@ -85,8 +86,7 @@ impl PhraseSegmenter {
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 =
-                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
+            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
@@ -126,9 +126,7 @@ impl PhraseSegmenter {
                             id: phrase_count,
                             start_ms: start_sample as f64 / sample_rate * 1000.0,
                             end_ms: end_sample as f64 / sample_rate * 1000.0,
-                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64
-                                / sample_rate
-                                * 1000.0,
+                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
                             start_sample,
                             end_sample,
                             n_samples: end_sample.saturating_sub(start_sample),
@@ -155,8 +153,7 @@ impl PhraseSegmenter {
                     id: phrase_count,
                     start_ms: start_sample as f64 / sample_rate * 1000.0,
                     end_ms: end_sample as f64 / sample_rate * 1000.0,
-                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate
-                        * 1000.0,
+                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
                     start_sample,
                     end_sample,
                     n_samples: end_sample.saturating_sub(start_sample),
@@ -212,11 +209,7 @@ impl SimpleFeatureExtractor {
         features[3] = zcr * 2.0;
 
         let mean: f64 = audio.iter().map(|x| *x as f64).sum::<f64>() / n as f64;
-        let var: f64 = audio
-            .iter()
-            .map(|x| (*x as f64 - mean).powi(2))
-            .sum::<f64>()
-            / n as f64;
+        let var: f64 = audio.iter().map(|x| (*x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
         features[4] = var.sqrt();
         features[5] = mean;
 
@@ -234,10 +227,7 @@ impl SimpleFeatureExtractor {
             features[7] = peak_pos as f64 / n as f64;
 
             let threshold = max_val * 0.9;
-            let attack_sample = audio
-                .iter()
-                .position(|&x| x.abs() >= threshold)
-                .unwrap_or(n);
+            let attack_sample = audio.iter().position(|&x| x.abs() >= threshold).unwrap_or(n);
             features[8] = attack_sample as f64 / n as f64;
 
             let low_thresh = max_val * 0.1;
@@ -271,15 +261,12 @@ impl SimpleFeatureExtractor {
         let mut envelope = Vec::new();
         for i in (0..n.saturating_sub(window_size)).step_by(window_size / 2) {
             let window = &audio[i..i + window_size];
-            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>()
-                / window_size as f64)
-                .sqrt();
+            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / window_size as f64).sqrt();
             envelope.push(rms);
         }
         if envelope.len() >= 2 {
             let emean = envelope.iter().sum::<f64>() / envelope.len() as f64;
-            let evar =
-                envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
+            let evar = envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
             features[11] = evar.sqrt() / (emean + 1e-10);
         }
 
@@ -445,11 +432,10 @@ impl WithinCallAnalyzer {
             phrase.phrase_type = Some(ptype);
         }
 
-        let type_distribution: HashMap<i32, usize> =
-            phrase_types.iter().fold(HashMap::new(), |mut acc, &t| {
-                *acc.entry(t).or_default() += 1;
-                acc
-            });
+        let type_distribution: HashMap<i32, usize> = phrase_types.iter().fold(HashMap::new(), |mut acc, &t| {
+            *acc.entry(t).or_default() += 1;
+            acc
+        });
 
         let type_entropy = if n > 0 {
             let mut entropy = 0.0;
@@ -464,8 +450,7 @@ impl WithinCallAnalyzer {
             0.0
         };
 
-        let avg_within_type_similarity =
-            self.compute_within_type_similarity(&phrase_types, &similarity_matrix);
+        let avg_within_type_similarity = self.compute_within_type_similarity(&phrase_types, &similarity_matrix);
 
         let total_duration_ms: f64 = phrases.iter().map(|p| p.duration_ms).sum();
         let phrase_rate = if total_duration_ms > 0.0 {
@@ -529,8 +514,7 @@ impl WithinCallAnalyzer {
             } else {
                 phrase_types[i] = next_type;
                 for j in (i + 1)..n {
-                    if phrase_types[j] == -1 && similarity_matrix[i][j] >= self.same_type_threshold
-                    {
+                    if phrase_types[j] == -1 && similarity_matrix[i][j] >= self.same_type_threshold {
                         phrase_types[j] = next_type;
                     }
                 }
@@ -553,11 +537,7 @@ impl WithinCallAnalyzer {
         (phrase_types, new_id as usize)
     }
 
-    fn compute_within_type_similarity(
-        &self,
-        phrase_types: &[i32],
-        similarity_matrix: &[Vec<f64>],
-    ) -> f64 {
+    fn compute_within_type_similarity(&self, phrase_types: &[i32], similarity_matrix: &[Vec<f64>]) -> f64 {
         let mut total_sim = 0.0;
         let mut count = 0;
 
@@ -594,8 +574,7 @@ fn load_audio_file(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn Error>> {
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let probed =
-        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;
@@ -765,11 +744,7 @@ fn analyze_dataset(
         0.0
     };
     let avg_phrase_types_per_file = if total_files > 0 {
-        file_analyses
-            .iter()
-            .map(|a| a.n_phrase_types as f64)
-            .sum::<f64>()
-            / total_files as f64
+        file_analyses.iter().map(|a| a.n_phrase_types as f64).sum::<f64>() / total_files as f64
     } else {
         0.0
     };
@@ -783,11 +758,7 @@ fn analyze_dataset(
         0.0
     };
     let avg_type_entropy = if total_files > 0 {
-        file_analyses
-            .iter()
-            .map(|a| a.stats.type_entropy)
-            .sum::<f64>()
-            / total_files as f64
+        file_analyses.iter().map(|a| a.stats.type_entropy).sum::<f64>() / total_files as f64
     } else {
         0.0
     };
@@ -839,16 +810,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let datasets = vec![
         ("bird_songs", base_dir.join("bird_songs"), None),
         ("macaques", base_dir.join("macaques/train"), Some(1000)),
-        (
-            "zebra_finch_songs",
-            base_dir.join("zebra_finch_songs"),
-            None,
-        ),
-        (
-            "giant_otter",
-            base_dir.join("giant_otter/giant_otters"),
-            None,
-        ),
+        ("zebra_finch_songs", base_dir.join("zebra_finch_songs"), None),
+        ("giant_otter", base_dir.join("giant_otter/giant_otters"), None),
         ("orcas", base_dir.join("orcas"), None),
     ];
 

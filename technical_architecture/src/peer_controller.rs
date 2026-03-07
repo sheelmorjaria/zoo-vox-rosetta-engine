@@ -15,7 +15,7 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -102,28 +102,31 @@ pub struct HeartbeatMessage {
 
 impl HeartbeatMessage {
     /// Create a new heartbeat message
-    pub fn new(sequence: u64, pid: u32) -> Self {
-        Self {
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64,
+    ///
+    /// # Errors
+    /// Returns an error if the system clock is set before Unix epoch
+    pub fn new(sequence: u64, pid: u32) -> Result<Self> {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .context("system clock is before Unix epoch")?
+            .as_millis() as u64;
+
+        Ok(Self {
+            timestamp,
             sequence,
             pid,
             state: "active".to_string(),
-        }
+        })
     }
 
     /// Serialize to JSON bytes
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        serde_json::to_vec(self)
-            .map_err(|e| anyhow::anyhow!("Failed to serialize heartbeat: {}", e))
+        serde_json::to_vec(self).map_err(|e| anyhow::anyhow!("Failed to serialize heartbeat: {}", e))
     }
 
     /// Deserialize from JSON bytes
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        serde_json::from_slice(bytes)
-            .map_err(|e| anyhow::anyhow!("Failed to deserialize heartbeat: {}", e))
+        serde_json::from_slice(bytes).map_err(|e| anyhow::anyhow!("Failed to deserialize heartbeat: {}", e))
     }
 }
 
@@ -274,30 +277,21 @@ impl PeerController {
 
         // Check for sequence jump (detect missed heartbeats)
         if self.last_sequence > 0 && heartbeat.sequence > self.last_sequence + 1 {
-            warn!(
-                "Missed {} heartbeats",
-                heartbeat.sequence - self.last_sequence - 1
-            );
+            warn!("Missed {} heartbeats", heartbeat.sequence - self.last_sequence - 1);
         }
 
         self.last_sequence = heartbeat.sequence;
         self.last_heartbeat = Some(now);
 
         if !self.python_alive {
-            info!(
-                "⚡ Cognitive Agent (Python) RECONNECTED - PID: {}",
-                heartbeat.pid
-            );
+            info!("⚡ Cognitive Agent (Python) RECONNECTED - PID: {}", heartbeat.pid);
             self.python_alive = true;
             self.audio_mute = AudioMuteState::Active;
             info!("Switching to Interactive Mode");
         }
 
         if self.config.verbose_logging {
-            info!(
-                "Heartbeat received: seq={}, pid={}",
-                heartbeat.sequence, heartbeat.pid
-            );
+            info!("Heartbeat received: seq={}, pid={}", heartbeat.sequence, heartbeat.pid);
         }
     }
 
@@ -382,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_heartbeat_message_serialization() {
-        let msg = HeartbeatMessage::new(1, 12345);
+        let msg = HeartbeatMessage::new(1, 12345).unwrap();
         let bytes = msg.to_bytes().unwrap();
         let decoded = HeartbeatMessage::from_bytes(&bytes).unwrap();
 
@@ -458,10 +452,10 @@ mod tests {
         let mut controller = PeerController::new(config).unwrap();
 
         // Send heartbeats with gap
-        let msg1 = HeartbeatMessage::new(1, 12345);
+        let msg1 = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg1);
 
-        let msg2 = HeartbeatMessage::new(5, 12345); // Skipped 2, 3, 4
+        let msg2 = HeartbeatMessage::new(5, 12345).unwrap(); // Skipped 2, 3, 4
         controller.handle_heartbeat(msg2);
 
         // Should have detected gap (logged, but controller continues)
@@ -483,7 +477,7 @@ mod tests {
         assert!(!controller.is_python_alive());
 
         // Receive heartbeat
-        let msg = HeartbeatMessage::new(1, 12345);
+        let msg = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg);
 
         // Should switch to interactive
@@ -505,7 +499,7 @@ mod tests {
         assert_eq!(controller.audio_mute(), AudioMuteState::Muted);
 
         // Receive heartbeat - audio should become active
-        let msg = HeartbeatMessage::new(1, 12345);
+        let msg = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg);
         assert_eq!(controller.audio_mute(), AudioMuteState::Active);
 
@@ -524,7 +518,7 @@ mod tests {
         let mut controller = PeerController::new(config).unwrap();
 
         // Simulate connected state
-        let msg = HeartbeatMessage::new(1, 12345);
+        let msg = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg);
         assert!(controller.is_python_alive());
 
@@ -549,7 +543,7 @@ mod tests {
         assert!(controller.time_since_last_heartbeat().is_none());
 
         // Receive heartbeat
-        let msg = HeartbeatMessage::new(1, 12345);
+        let msg = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg);
 
         // Should have a time
@@ -570,10 +564,7 @@ mod tests {
         let controller = PeerController::new(config.clone()).unwrap();
         let retrieved_config = controller.get_config();
 
-        assert_eq!(
-            retrieved_config.heartbeat_endpoint,
-            "ipc:///tmp/test_config.ipc"
-        );
+        assert_eq!(retrieved_config.heartbeat_endpoint, "ipc:///tmp/test_config.ipc");
         assert_eq!(retrieved_config.heartbeat_timeout_ms, 200);
         assert_eq!(retrieved_config.poll_interval_ms, 20);
         assert!(retrieved_config.verbose_logging);
@@ -587,10 +578,7 @@ mod tests {
         };
 
         let controller = PeerController::new(config).unwrap();
-        assert_eq!(
-            controller.heartbeat_endpoint(),
-            "ipc:///tmp/my_endpoint.ipc"
-        );
+        assert_eq!(controller.heartbeat_endpoint(), "ipc:///tmp/my_endpoint.ipc");
     }
 
     #[test]
@@ -608,7 +596,7 @@ mod tests {
         assert_eq!(controller.mode(), OperationMode::Passthrough);
 
         // Connect
-        let msg1 = HeartbeatMessage::new(1, 12345);
+        let msg1 = HeartbeatMessage::new(1, 12345).unwrap();
         controller.handle_heartbeat(msg1);
         assert!(controller.is_python_alive());
         // handle_heartbeat doesn't call update_mode, so mode is still Passthrough
@@ -622,7 +610,7 @@ mod tests {
         assert_eq!(controller.mode(), OperationMode::Passthrough);
 
         // Reconnect with new PID
-        let msg2 = HeartbeatMessage::new(10, 67890);
+        let msg2 = HeartbeatMessage::new(10, 67890).unwrap();
         controller.handle_heartbeat(msg2);
         assert!(controller.is_python_alive());
         controller.update_mode();

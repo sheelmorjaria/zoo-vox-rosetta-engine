@@ -15,6 +15,7 @@
 //! - Addressing Models: "Who is being talked to"
 //! - Conversational Rules: "When to respond"
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -22,9 +23,7 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 /// Cached segment with full interaction data
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,12 +64,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -141,11 +135,11 @@ fn compute_105d_f32(extractor: &MicroDynamicsExtractor, audio: &[f32]) -> Option
     Some(features)
 }
 
-fn boundary_type_str(bt: technical_architecture::NeuralBoundaryType) -> String {
+fn boundary_type_str(bt: technical_architecture::BoundaryType) -> String {
     match bt {
-        technical_architecture::NeuralBoundaryType::Hard => "Hard".to_string(),
-        technical_architecture::NeuralBoundaryType::Soft => "Soft".to_string(),
-        technical_architecture::NeuralBoundaryType::Transitional => "Transitional".to_string(),
+        technical_architecture::BoundaryType::Hard => "Hard".to_string(),
+        technical_architecture::BoundaryType::Soft => "Soft".to_string(),
+        technical_architecture::BoundaryType::Transitional => "Transitional".to_string(),
     }
 }
 
@@ -295,11 +289,7 @@ fn main() -> anyhow::Result<()> {
 
                             // Update stats
                             *emitter_counts.lock().unwrap().entry(emitter).or_insert(0) += 1;
-                            *addressee_counts
-                                .lock()
-                                .unwrap()
-                                .entry(addressee)
-                                .or_insert(0) += 1;
+                            *addressee_counts.lock().unwrap().entry(addressee).or_insert(0) += 1;
                             *context_counts.lock().unwrap().entry(context).or_insert(0) += 1;
                             if !is_self {
                                 *interaction_pairs
@@ -368,22 +358,10 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Get final statistics
-    let emitter_counts = Arc::try_unwrap(emitter_counts)
-        .unwrap()
-        .into_inner()
-        .unwrap();
-    let addressee_counts = Arc::try_unwrap(addressee_counts)
-        .unwrap()
-        .into_inner()
-        .unwrap();
-    let context_counts = Arc::try_unwrap(context_counts)
-        .unwrap()
-        .into_inner()
-        .unwrap();
-    let interaction_pairs = Arc::try_unwrap(interaction_pairs)
-        .unwrap()
-        .into_inner()
-        .unwrap();
+    let emitter_counts = Arc::try_unwrap(emitter_counts).unwrap().into_inner().unwrap();
+    let addressee_counts = Arc::try_unwrap(addressee_counts).unwrap().into_inner().unwrap();
+    let context_counts = Arc::try_unwrap(context_counts).unwrap().into_inner().unwrap();
+    let interaction_pairs = Arc::try_unwrap(interaction_pairs).unwrap().into_inner().unwrap();
 
     // Interaction statistics
     println!("  INTERACTION STATISTICS:");

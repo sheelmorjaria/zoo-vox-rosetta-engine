@@ -17,9 +17,7 @@
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use technical_architecture::island_hopping::{
-    apply_delta_to_granular, GranularParams, Vector30D, VectorDelta,
-};
+use technical_architecture::island_hopping::{apply_delta_to_granular, GranularParams, Vector30D, VectorDelta};
 use technical_architecture::synthesis::{CachedGranularSequencer, SourceMetadataBuilder};
 
 // =============================================================================
@@ -62,10 +60,7 @@ async fn test_island_hopping_cache_miss() {
     );
 
     // Verify source is in cache
-    assert!(
-        sequencer.is_cached("neutral_001"),
-        "Source should be cached"
-    );
+    assert!(sequencer.is_cached("neutral_001"), "Source should be cached");
 
     // Verify cache stats
     let stats = sequencer.cache_stats();
@@ -96,7 +91,7 @@ async fn test_island_revisiting_cache_hit() {
 
     // First load (cache miss)
     sequencer
-        .register_source("neutral_001".to_string(), audio.clone(), metadata.clone())
+        .register_source("neutral_001".to_string(), audio.clone(), metadata)
         .await
         .expect("First load should succeed");
 
@@ -136,9 +131,9 @@ async fn test_concurrent_island_hopping() {
     // Scenario: 4 threads loading different sources simultaneously
     // Expected: All loads succeed, no data races, cache is consistent
     // Arrange
-    let sequencer = Arc::new(tokio::sync::Mutex::new(
-        CachedGranularSequencer::with_default_cache(48000),
-    ));
+    let sequencer = Arc::new(tokio::sync::Mutex::new(CachedGranularSequencer::with_default_cache(
+        48000,
+    )));
 
     let mut handles = vec![];
 
@@ -167,10 +162,7 @@ async fn test_concurrent_island_hopping() {
                 assert!(result.is_ok(), "Thread {} failed to load source", thread_id);
 
                 // Check cache
-                let is_cached = sequencer_clone
-                    .lock()
-                    .await
-                    .is_cached(&format!("source_{}", thread_id));
+                let is_cached = sequencer_clone.lock().await.is_cached(&format!("source_{}", thread_id));
                 assert!(is_cached, "Thread {} source should be cached", thread_id);
 
                 println!("✓ Thread {} completed successfully", thread_id);
@@ -187,10 +179,7 @@ async fn test_concurrent_island_hopping() {
 
     // Assert - Verify final cache state
     let stats = sequencer.lock().await.cache_stats();
-    assert_eq!(
-        stats.cache_misses, 4,
-        "Should have 4 cache misses (one per thread)"
-    );
+    assert_eq!(stats.cache_misses, 4, "Should have 4 cache misses (one per thread)");
     assert_eq!(stats.cache_hits, 0, "Should have 0 cache hits");
 
     println!("✓ Concurrency test passed - all 4 threads succeeded");
@@ -342,23 +331,15 @@ async fn test_lru_cache_eviction() {
 
     // Load 3 sources (fills cache)
     sequencer
-        .register_source(
-            "source_1".to_string(),
-            large_audio.clone(),
-            metadata.clone(),
-        )
+        .register_source("source_1".to_string(), large_audio.clone(), metadata)
         .await
         .expect("Load 1 should succeed");
     sequencer
-        .register_source(
-            "source_2".to_string(),
-            large_audio.clone(),
-            metadata.clone(),
-        )
+        .register_source("source_2".to_string(), large_audio.clone(), metadata)
         .await
         .expect("Load 2 should succeed");
     sequencer
-        .register_source("source_3".to_string(), large_audio, metadata.clone())
+        .register_source("source_3".to_string(), large_audio, metadata)
         .await
         .expect("Load 3 should succeed");
 
@@ -372,18 +353,9 @@ async fn test_lru_cache_eviction() {
     assert!(result.is_ok(), "Load 4 should succeed");
 
     // LRU (source_1) should be evicted
-    assert!(
-        !sequencer.is_cached("source_1"),
-        "source_1 should be evicted"
-    );
-    assert!(
-        sequencer.is_cached("source_2"),
-        "source_2 should still be cached"
-    );
-    assert!(
-        sequencer.is_cached("source_3"),
-        "source_3 should still be cached"
-    );
+    assert!(!sequencer.is_cached("source_1"), "source_1 should be evicted");
+    assert!(sequencer.is_cached("source_2"), "source_2 should still be cached");
+    assert!(sequencer.is_cached("source_3"), "source_3 should still be cached");
     assert!(sequencer.is_cached("source_4"), "source_4 should be cached");
 
     println!("✓ LRU eviction test passed");
@@ -417,7 +389,7 @@ async fn test_end_to_end_island_hopping_workflow() {
 
     // Step 1: Load neutral source (cache miss, ~20ms)
     sequencer
-        .register_source("neutral".to_string(), audio.clone(), metadata.clone())
+        .register_source("neutral".to_string(), audio.clone(), metadata)
         .await
         .expect("Load neutral should succeed");
 

@@ -13,6 +13,7 @@
 //! - Marine mammal datasets (Watkins, HICEAS) → Dolphin weights
 //! - Insect datasets (HumBugDB) → Insect-specific weights
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -211,11 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let split_point = (samples.len() as f64 * 0.7) as usize;
     let train_samples: Vec<_> = samples.iter().take(split_point).collect();
     let test_samples: Vec<_> = samples.iter().skip(split_point).collect();
-    println!(
-        "  Train: {}, Test: {}",
-        train_samples.len(),
-        test_samples.len()
-    );
+    println!("  Train: {}, Test: {}", train_samples.len(), test_samples.len());
 
     // Build prototypes
     let mut prototypes: HashMap<String, Vec<f64>> = HashMap::new();
@@ -256,10 +253,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let category = get_species_category(dataset);
         let weights = weights_by_dataset.get(*dataset).unwrap();
         let max_weight = weights.iter().cloned().fold(0.0_f32, f32::max);
-        println!(
-            "  ├─ {} [{}] → max weight: {:.1}",
-            dataset, category, max_weight
-        );
+        println!("  ├─ {} [{}] → max weight: {:.1}", dataset, category, max_weight);
     }
     println!();
 
@@ -268,8 +262,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bench_start = Instant::now();
 
     // Create base engine for normalization fitting
-    let mut base_engine =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut base_engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Fit normalization
     {
@@ -285,8 +278,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Evaluate with species-aware weights
     let threshold = 0.5;
-    let (unw_f1, unw_per_ds) =
-        evaluate_unweighted(&test_samples, &prototypes, &base_engine, threshold);
+    let (unw_f1, unw_per_ds) = evaluate_unweighted(&test_samples, &prototypes, &base_engine, threshold);
     let (species_f1, species_per_ds) =
         evaluate_species_aware(&test_samples, &prototypes, &weights_by_dataset, threshold);
 
@@ -313,10 +305,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ PER-DATASET RESULTS (with species category)                                 │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!(
-        "│ {:<20} {:>10} {:>10} {:>8}",
-        "Dataset", "Unweighted", "Species", "Δ"
-    );
+    println!("│ {:<20} {:>10} {:>10} {:>8}", "Dataset", "Unweighted", "Species", "Δ");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
 
     let mut datasets: Vec<_> = unw_per_ds.keys().collect();
@@ -420,10 +409,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     println!("│ Feature Extraction: {:.1}s", extract_time.as_secs_f64());
     println!("│ Benchmark:          {:.1}s", bench_time.as_secs_f64());
-    println!(
-        "│ Total:              {:.1}s",
-        total_start.elapsed().as_secs_f64()
-    );
+    println!("│ Total:              {:.1}s", total_start.elapsed().as_secs_f64());
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
 
     Ok(())
@@ -458,16 +444,12 @@ fn evaluate_unweighted(
         let detected = best_sim >= threshold;
         let is_correct = best_dataset == sample.source_dataset;
 
-        *per_ds_total
-            .entry(sample.source_dataset.clone())
-            .or_insert(0) += 1;
+        *per_ds_total.entry(sample.source_dataset.clone()).or_insert(0) += 1;
 
         if detected {
             if is_correct {
                 tp += 1;
-                *per_ds_correct
-                    .entry(sample.source_dataset.clone())
-                    .or_insert(0) += 1;
+                *per_ds_correct.entry(sample.source_dataset.clone()).or_insert(0) += 1;
             } else {
                 fp += 1;
             }
@@ -476,11 +458,7 @@ fn evaluate_unweighted(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -524,8 +502,7 @@ fn evaluate_species_aware(
     let mut engines: HashMap<String, AcousticSimilarityEngine> = HashMap::new();
 
     for (dataset, weights) in weights_by_dataset {
-        let mut engine =
-            AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+        let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
         engine.set_feature_weights(weights);
         engines.insert(dataset.clone(), engine);
     }
@@ -556,16 +533,12 @@ fn evaluate_species_aware(
         let detected = best_sim >= threshold;
         let is_correct = best_dataset == sample.source_dataset;
 
-        *per_ds_total
-            .entry(sample.source_dataset.clone())
-            .or_insert(0) += 1;
+        *per_ds_total.entry(sample.source_dataset.clone()).or_insert(0) += 1;
 
         if detected {
             if is_correct {
                 tp += 1;
-                *per_ds_correct
-                    .entry(sample.source_dataset.clone())
-                    .or_insert(0) += 1;
+                *per_ds_correct.entry(sample.source_dataset.clone()).or_insert(0) += 1;
             } else {
                 fp += 1;
             }
@@ -574,11 +547,7 @@ fn evaluate_species_aware(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -612,10 +581,7 @@ fn evaluate_species_aware(
     (f1, per_ds_f1)
 }
 
-fn load_audio_f32(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_f32(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let mut file = File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;

@@ -8,8 +8,7 @@ use std::collections::HashMap;
 
 use crate::species::SpeciesConfigFactory;
 use crate::zoo_vox_data_models::{
-    AcousticFeatures30D, ContextAssociation, CrossSpeciesPhraseDatabase, PhrasePrototype,
-    SpeciesPhraseLibrary,
+    AcousticFeatures30D, ContextAssociation, CrossSpeciesPhraseDatabase, PhrasePrototype, SpeciesPhraseLibrary,
 };
 
 /// Zoo Vox Rosetta library error type
@@ -72,10 +71,7 @@ impl ZooVoxLibraryBuilder {
         let typed_phrases = self.type_phrases(phrases);
 
         // Calculate statistics
-        let total_occurrences: u64 = typed_phrases
-            .iter()
-            .map(|p| p.occurrence_count as u64)
-            .sum();
+        let total_occurrences: u64 = typed_phrases.iter().map(|p| p.occurrence_count as u64).sum();
 
         // Calculate entropy
         let type_entropy = if total_occurrences > 0 {
@@ -110,10 +106,7 @@ impl ZooVoxLibraryBuilder {
             (0.0, 0.0)
         };
 
-        let dur_values: Vec<f64> = typed_phrases
-            .iter()
-            .map(|p| p.features_30d.duration_ms)
-            .collect();
+        let dur_values: Vec<f64> = typed_phrases.iter().map(|p| p.features_30d.duration_ms).collect();
 
         let typical_duration_ms = if !dur_values.is_empty() {
             let min = dur_values.iter().fold(f64::INFINITY, |a, &b| a.min(b));
@@ -162,10 +155,7 @@ impl ZooVoxLibraryBuilder {
         // Group by phrase_key first
         let mut key_groups: HashMap<String, Vec<PhrasePrototype>> = HashMap::new();
         for phrase in phrases {
-            key_groups
-                .entry(phrase.phrase_key.clone())
-                .or_default()
-                .push(phrase);
+            key_groups.entry(phrase.phrase_key.clone()).or_default().push(phrase);
         }
 
         // Merge phrases with same key
@@ -205,8 +195,7 @@ impl ZooVoxLibraryBuilder {
         let mut context_counts: HashMap<String, u32> = HashMap::new();
         for phrase in phrases {
             for ctx in &phrase.contexts {
-                *context_counts.entry(ctx.context_label.clone()).or_insert(0) +=
-                    ctx.occurrence_count;
+                *context_counts.entry(ctx.context_label.clone()).or_insert(0) += ctx.occurrence_count;
             }
         }
 
@@ -227,11 +216,7 @@ impl ZooVoxLibraryBuilder {
             .map(|(label, _)| label.clone());
 
         // Average typical position
-        let typical_position = phrases
-            .iter()
-            .map(|p| p.typical_position as f64)
-            .sum::<f64>()
-            / phrases.len() as f64;
+        let typical_position = phrases.iter().map(|p| p.typical_position as f64).sum::<f64>() / phrases.len() as f64;
 
         // Collect co-occurring phrases
         let co_occurring: Vec<String> = phrases
@@ -260,10 +245,8 @@ impl ZooVoxLibraryBuilder {
             co_occurring_phrases: co_occurring,
             occurrence_count: phrases.iter().map(|p| p.occurrence_count).sum(),
             entropy_contribution: phrases.iter().map(|p| p.entropy_contribution).sum(),
-            signal_to_noise_ratio: phrases.iter().map(|p| p.signal_to_noise_ratio).sum::<f64>()
-                / phrases.len() as f64,
-            extraction_confidence: phrases.iter().map(|p| p.extraction_confidence).sum::<f64>()
-                / phrases.len() as f64,
+            signal_to_noise_ratio: phrases.iter().map(|p| p.signal_to_noise_ratio).sum::<f64>() / phrases.len() as f64,
+            extraction_confidence: phrases.iter().map(|p| p.extraction_confidence).sum::<f64>() / phrases.len() as f64,
             created_at: Utc::now(),
             notes: None,
         }
@@ -399,9 +382,7 @@ mod tests {
         phrase.occurrence_count = 100;
         phrase.primary_context = Some("contact".to_string());
 
-        let library = builder
-            .build_library(vec![phrase], "marmoset", None)
-            .unwrap();
+        let library = builder.build_library(vec![phrase], "marmoset", None).unwrap();
 
         assert_eq!(library.total_phrases, 1);
         assert_eq!(library.total_occurrences, 100);

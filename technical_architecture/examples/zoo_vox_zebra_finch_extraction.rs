@@ -13,10 +13,11 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_zebra_finch_extraction
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use technical_architecture::species::SpeciesConfigFactory;
 use technical_architecture::{
-    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer,
-    WithinCallConfig, ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxPhraseExtractor,
+    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer, WithinCallConfig,
+    ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxPhraseExtractor,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,10 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "    Phrase duration: {:.0} - {:.0} ms",
         params.phrase_min_ms, params.phrase_max_ms
     );
-    println!(
-        "    Similarity threshold: {:.2}",
-        params.similarity_threshold
-    );
+    println!("    Similarity threshold: {:.2}", params.similarity_threshold);
     println!("    Feature dimensions: {}", params.feature_dim);
 
     let contexts = config.context_labels();
@@ -74,12 +72,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // - Motif patterns (repeated syllable sequences)
 
     let syllable_specs = [
-        ("Intro", 4500.0, 50.0, 0.05, "high_short"), // Introduction note
-        ("Stack_A", 3500.0, 100.0, 0.1, "fm_rapid"), // Rapid FM sweep
-        ("Stack_B", 2800.0, 80.0, 0.08, "fm_rapid"), // Another FM sweep
+        ("Intro", 4500.0, 50.0, 0.05, "high_short"),   // Introduction note
+        ("Stack_A", 3500.0, 100.0, 0.1, "fm_rapid"),   // Rapid FM sweep
+        ("Stack_B", 2800.0, 80.0, 0.08, "fm_rapid"),   // Another FM sweep
         ("Distance", 3200.0, 180.0, 0.18, "harmonic"), // Distance call
-        ("Motif_1", 4000.0, 60.0, 0.06, "trill"),    // Trill syllable
-        ("Motif_2", 3800.0, 70.0, 0.07, "trill"),    // Another trill
+        ("Motif_1", 4000.0, 60.0, 0.06, "trill"),      // Trill syllable
+        ("Motif_2", 3800.0, 70.0, 0.07, "trill"),      // Another trill
     ];
 
     println!("  Syllable Types in Generated Song:");
@@ -93,10 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let gap_duration = 0.04; // 40ms gaps between syllables
 
     // Calculate total duration
-    let total_syllable_duration: f64 = motif_pattern
-        .iter()
-        .map(|&i| syllable_specs[i].3)
-        .sum::<f64>();
+    let total_syllable_duration: f64 = motif_pattern.iter().map(|&i| syllable_specs[i].3).sum::<f64>();
     let total_gap_duration = gap_duration * (motif_pattern.len() - 1) as f64;
     let total_duration = total_syllable_duration + total_gap_duration;
 
@@ -194,12 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!(
             "  {:<4} {:<12} {:<10.0} {:<10.0} {:<15.1}",
             i + 1,
-            phrase
-                .phrase_key
-                .split("_")
-                .take(3)
-                .collect::<Vec<_>>()
-                .join("_"),
+            phrase.phrase_key.split("_").take(3).collect::<Vec<_>>().join("_"),
             phrase.features_30d.mean_f0_hz,
             phrase.features_30d.duration_ms,
             phrase.features_30d.harmonic_to_noise_ratio
@@ -262,12 +252,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         result.avg_between_type_distance
     );
 
-    let separation_ratio =
-        if result.avg_within_type_similarity > 0.0 && result.avg_within_type_similarity < 1.0 {
-            result.avg_between_type_distance / (1.0 - result.avg_within_type_similarity)
-        } else {
-            f64::INFINITY
-        };
+    let separation_ratio = if result.avg_within_type_similarity > 0.0 && result.avg_within_type_similarity < 1.0 {
+        result.avg_between_type_distance / (1.0 - result.avg_within_type_similarity)
+    } else {
+        f64::INFINITY
+    };
     println!(
         "  Separation ratio:        {:.2}x (higher = better discrimination)",
         separation_ratio
@@ -280,17 +269,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 6: Phrase Sequence Analysis\n");
     println!("────────────────────────────────");
 
-    println!(
-        "  Phrase Sequence ({} elements):",
-        result.phrase_sequence.len()
-    );
+    println!("  Phrase Sequence ({} elements):", result.phrase_sequence.len());
 
     // Group into lines of 8
     for chunk in result.phrase_sequence.chunks(8) {
-        let line: Vec<&str> = chunk
-            .iter()
-            .map(|s| s.split('_').last().unwrap_or("?"))
-            .collect();
+        let line: Vec<&str> = chunk.iter().map(|s| s.split('_').last().unwrap_or("?")).collect();
         println!("    {}", line.join(" → "));
     }
     println!();
@@ -300,21 +283,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut transitions: Vec<_> = result
         .transition_matrix
         .iter()
-        .flat_map(|(from, inner)| {
-            inner
-                .iter()
-                .map(move |(to, count)| (from.clone(), to.clone(), *count))
-        })
+        .flat_map(|(from, inner)| inner.iter().map(move |(to, count)| (from.clone(), to.clone(), *count)))
         .collect();
     transitions.sort_by(|a, b| b.2.cmp(&a.2));
 
     for (from, to, count) in transitions.iter().take(8) {
         let from_short = from.split('_').last().unwrap_or("?");
         let to_short = to.split('_').last().unwrap_or("?");
-        println!(
-            "    type_{} → type_{}: {} occurrences",
-            from_short, to_short, count
-        );
+        println!("    type_{} → type_{}: {} occurrences", from_short, to_short, count);
     }
     println!();
 
@@ -363,14 +339,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let f = &pt.centroid_features;
 
         println!("  === FUNDAMENTAL (3 features) ===");
-        println!(
-            "    Mean F0:        {:>8.1} Hz  (typical: 2000-8000 Hz)",
-            f.mean_f0_hz
-        );
-        println!(
-            "    Duration:       {:>8.1} ms   (typical: 50-200 ms)",
-            f.duration_ms
-        );
+        println!("    Mean F0:        {:>8.1} Hz  (typical: 2000-8000 Hz)", f.mean_f0_hz);
+        println!("    Duration:       {:>8.1} ms   (typical: 50-200 ms)", f.duration_ms);
         println!("    F0 Range:       {:>8.1} Hz", f.f0_range_hz);
 
         println!("\n  === GRIT FACTORS (3 features) ===");
@@ -405,10 +375,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("    Spectral Flux:  {:>8.1}", f.spectral_flux);
 
         println!("\n  === RHYTHM FACTORS (3 features) ===");
-        println!(
-            "    Median ICI:     {:>8.1} ms  (inter-call interval)",
-            f.median_ici_ms
-        );
+        println!("    Median ICI:     {:>8.1} ms  (inter-call interval)", f.median_ici_ms);
         println!("    Onset Rate:     {:>8.1} Hz", f.onset_rate_hz);
     }
     println!();

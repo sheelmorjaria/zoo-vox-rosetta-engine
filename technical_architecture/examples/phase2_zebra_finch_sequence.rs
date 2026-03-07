@@ -8,6 +8,7 @@
 // 4. Markov Chain Analysis - Transition matrices
 // 5. Sequence Clustering - Group similar songs
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
@@ -91,14 +92,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Load within-call results
-    let results_path =
-        "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_songs_within_call.json";
+    let results_path = "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_songs_within_call.json";
     let json_data = fs::read_to_string(results_path)?;
     let dataset: serde_json::Value = serde_json::from_str(&json_data)?;
 
-    let file_analyses = dataset["file_analyses"]
-        .as_array()
-        .ok_or("No file analyses")?;
+    let file_analyses = dataset["file_analyses"].as_array().ok_or("No file analyses")?;
     println!("Loaded {} file analyses", file_analyses.len());
     println!();
 
@@ -109,10 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for fa in file_analyses {
         if let Some(seq) = fa["phrase_sequence"].as_array() {
-            let sequence: Vec<i32> = seq
-                .iter()
-                .filter_map(|p| p.as_i64().map(|x| x as i32))
-                .collect();
+            let sequence: Vec<i32> = seq.iter().filter_map(|p| p.as_i64().map(|x| x as i32)).collect();
 
             for &t in &sequence {
                 all_types.insert(t);
@@ -173,10 +168,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Unique transitions: {}", transitions.len());
     println!();
     println!("   Top 15 Transitions:");
-    println!(
-        "   {:>8} {:>8} {:>10} {:>10}",
-        "From", "To", "Count", "Probability"
-    );
+    println!("   {:>8} {:>8} {:>10} {:>10}", "From", "To", "Count", "Probability");
     println!("   {}", "-".repeat(40));
 
     for t in transitions.iter().take(15) {
@@ -302,25 +294,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     motifs.sort_by(|a, b| b.occurrences.cmp(&a.occurrences));
 
-    println!(
-        "   Found {} recurring motifs (>=5 occurrences)",
-        motifs.len()
-    );
+    println!("   Found {} recurring motifs (>=5 occurrences)", motifs.len());
     println!();
     println!("   Top 15 Motifs:");
-    println!(
-        "   {:>25} {:>12} {:>12}",
-        "Pattern", "Occurrences", "Avg Interval"
-    );
+    println!("   {:>25} {:>12} {:>12}", "Pattern", "Occurrences", "Avg Interval");
     println!("   {}", "-".repeat(55));
 
     for m in motifs.iter().take(15) {
-        let pattern: String = m
-            .pattern
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<_>>()
-            .join("-");
+        let pattern: String = m.pattern.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("-");
         println!(
             "   {:>25} {:>12} {:>12.1}",
             format!("[{}]", pattern),
@@ -348,8 +329,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let from = window[0];
                 let to = window[1];
 
-                let transition_prob = transition_counts.get(&(from, to)).copied().unwrap_or(0)
-                    as f64
+                let transition_prob = transition_counts.get(&(from, to)).copied().unwrap_or(0) as f64
                     / from_counts.get(&from).copied().unwrap_or(1).max(1) as f64;
 
                 // Add smoothing for unseen transitions
@@ -418,30 +398,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "║    • Sequences analyzed:     {:>10}",
         format!("{}", all_sequences.len())
     );
-    println!(
-        "║    • Total phrases:          {:>10}",
-        format!("{}", total_phrases)
-    );
-    println!(
-        "║    • Unique phrase types:    {:>10}",
-        format!("{}", all_types.len())
-    );
+    println!("║    • Total phrases:          {:>10}", format!("{}", total_phrases));
+    println!("║    • Unique phrase types:    {:>10}", format!("{}", all_types.len()));
     println!(
         "║    • Unique transitions:     {:>10}",
         format!("{}", transitions.len())
     );
-    println!(
-        "║    • Unique bigrams:         {:>10}",
-        format!("{}", bigrams.len())
-    );
-    println!(
-        "║    • Unique trigrams:        {:>10}",
-        format!("{}", trigrams.len())
-    );
-    println!(
-        "║    • Recurring motifs:       {:>10}",
-        format!("{}", motifs.len())
-    );
+    println!("║    • Unique bigrams:         {:>10}", format!("{}", bigrams.len()));
+    println!("║    • Unique trigrams:        {:>10}", format!("{}", trigrams.len()));
+    println!("║    • Recurring motifs:       {:>10}", format!("{}", motifs.len()));
     println!("║    • Type entropy:           {:>10.3} bits", type_entropy);
     println!("║    • Perplexity:             {:>10.2}", perplexity);
     println!("║                                                                           ║");
@@ -472,12 +437,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if let Some(m) = top_motif {
-        let pattern: String = m
-            .pattern
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<_>>()
-            .join("-");
+        let pattern: String = m.pattern.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("-");
         println!(
             "║  • Most frequent motif: [{}] ({} occurrences)",
             pattern, m.occurrences
@@ -543,8 +503,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
     };
 
-    let output_path =
-        "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_sequence_analysis.json";
+    let output_path = "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_sequence_analysis.json";
     let output_file = std::fs::File::create(output_path)?;
     serde_json::to_writer_pretty(std::io::BufWriter::new(output_file), &results)?;
     println!("Results saved to: {}", output_path);

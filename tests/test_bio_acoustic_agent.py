@@ -17,9 +17,7 @@ License: CC BY-ND 4.0 International
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import numpy as np
+from unittest.mock import MagicMock
 
 # Handle imports gracefully
 try:

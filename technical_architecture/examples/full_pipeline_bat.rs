@@ -13,6 +13,7 @@
 // Usage:
 //   cargo run --example full_pipeline_bat --release
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs;
 use std::path::{Path, PathBuf};
 use technical_architecture::{
@@ -35,18 +36,13 @@ use technical_architecture::{
 use hound;
 
 /// Load WAV file using hound
-fn load_wav_file<P: AsRef<Path>>(
-    path: P,
-) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_wav_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     let reader = hound::WavReader::open(path.as_ref())?;
     let spec = reader.spec();
     let sample_rate = spec.sample_rate;
 
     // Read samples as f32
-    let audio: Vec<f32> = reader
-        .into_samples::<f32>()
-        .filter_map(|s| s.ok())
-        .collect();
+    let audio: Vec<f32> = reader.into_samples::<f32>().filter_map(|s| s.ok()).collect();
 
     // Convert to mono if stereo
     let audio_mono = if spec.channels == 2 {
@@ -60,16 +56,13 @@ fn load_wav_file<P: AsRef<Path>>(
 
 /// Load audio file (currently WAV-only via hound)
 /// TODO: Add symphonia support for FLAC/MP3/AAC/OGG
-fn load_audio_file<P: AsRef<Path>>(
-    path: P,
-) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
+fn load_audio_file<P: AsRef<Path>>(path: P) -> std::result::Result<(Vec<f32>, u32), Box<dyn std::error::Error>> {
     load_wav_file(path)
 }
 
 // Configuration
 const BAT_AUDIO_DIR: &str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio";
-const BAT_ANNOTATIONS_CSV: &str =
-    "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv";
+const BAT_ANNOTATIONS_CSV: &str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv";
 const MAX_PHRASE_TYPES: usize = 172; // All phrase directories
 const MAX_FILES_PER_PHRASE: usize = 100; // Process only 100 files for testing
 
@@ -100,10 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let phrase_directories = discover_phrase_directories(bat_audio_path, MAX_PHRASE_TYPES)?;
 
-    println!(
-        "✅ Found {} phrase type directories",
-        phrase_directories.len()
-    );
+    println!("✅ Found {} phrase type directories", phrase_directories.len());
     println!();
 
     // ========================================================================
@@ -166,10 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         process_bat_dataset_parallel(&phrase_directories)?;
 
     // Add all audio segments to the phrase library
-    println!(
-        "  Adding {} audio segments to phrase library...",
-        audio_segments.len()
-    );
+    println!("  Adding {} audio segments to phrase library...", audio_segments.len());
     pipeline.add_segments_to_library(audio_segments);
 
     let processing_time = start_time.elapsed();
@@ -179,10 +166,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Vocalizations: {}", vocalization_results.len());
     println!(
         "   Total phrases extracted: {}",
-        vocalization_results
-            .iter()
-            .map(|v| v.phrases.len())
-            .sum::<usize>()
+        vocalization_results.iter().map(|v| v.phrases.len()).sum::<usize>()
     );
     println!("   Clustered phrases: {}", clustered_phrases.len());
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
@@ -209,10 +193,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  Sample Rate: {} Hz", stats.sr);
         println!("  Total Segments: {}", stats.total_segments);
         println!("  Unique Phrases: {}", stats.total_phrases);
-        println!(
-            "  Max Segments Per Phrase: {}",
-            stats.max_segments_per_phrase
-        );
+        println!("  Max Segments Per Phrase: {}", stats.max_segments_per_phrase);
         println!();
 
         println!("  Top 10 Phrase Types:");
@@ -317,10 +298,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Audio File Discovery
 // ============================================================================
 
-fn discover_phrase_directories(
-    base_dir: &Path,
-    max_dirs: usize,
-) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+fn discover_phrase_directories(base_dir: &Path, max_dirs: usize) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
     // For the flat structure, just return the audio directory itself
     println!("  Found flat audio directory with 91,080 WAV files");
     Ok(vec![base_dir.to_path_buf()])
@@ -429,10 +407,7 @@ fn process_single_bat_file(
 ) -> Result<(VocalizationResult, Option<PhraseAudioSegment>), Box<dyn std::error::Error>> {
     use technical_architecture::MicroDynamicsExtractor;
 
-    let file_name = file_path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("unknown");
+    let file_name = file_path.file_name().and_then(|s| s.to_str()).unwrap_or("unknown");
 
     // Load audio using symphonia (auto-detects format: WAV, FLAC, MP3, AAC, OGG, etc.)
     let (audio_mono, sample_rate) = load_audio_file(file_path)?;
@@ -533,20 +508,13 @@ fn display_linguistic_results(
     println!("   Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("   Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
     println!("   Efficiency: {:?}", analysis.zipf.efficiency);
-    println!(
-        "   Unique phrases: {}",
-        analysis.zipf.phrase_frequencies.len()
-    );
+    println!("   Unique phrases: {}", analysis.zipf.phrase_frequencies.len());
     println!();
 
     // Top 10 phrases
     println!("   Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis
-            .zipf
-            .phrase_frequencies
-            .get(phrase_id)
-            .unwrap_or(&0);
+        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
         println!("     {:2}. {} (freq: {})", i + 1, phrase_id, freq);
     }
     println!();
@@ -583,10 +551,7 @@ fn display_linguistic_results(
         .filter(|p| p.is_truly_atomic)
         .count();
 
-    println!(
-        "   Total phrases: {}",
-        analysis.updated_atomic_phrases.len()
-    );
+    println!("   Total phrases: {}", analysis.updated_atomic_phrases.len());
     println!(
         "   Truly atomic: {} ({:.1}%)",
         truly_atomic,
@@ -613,10 +578,7 @@ fn display_turn_taking_results(
     // 1. Turn-Taking Metrics
     println!("1️⃣  TURN-TAKING METRICS:");
     println!("   Turn-switch rate: {:.1}%", turn_taking.turn_switch_rate);
-    println!(
-        "   Total conversations: {}",
-        turn_taking.total_conversations
-    );
+    println!("   Total conversations: {}", turn_taking.total_conversations);
     println!("   A→B→A conversations: {}", turn_taking.aba_conversations);
     println!(
         "   Dyadic conversations (2 individuals): {}",
@@ -635,14 +597,8 @@ fn display_turn_taking_results(
         "   Median length: {:.1} turns",
         turn_taking.conversation_stats.median_length
     );
-    println!(
-        "   Min length: {} turn",
-        turn_taking.conversation_stats.min_length
-    );
-    println!(
-        "   Max length: {} turns",
-        turn_taking.conversation_stats.max_length
-    );
+    println!("   Min length: {} turn", turn_taking.conversation_stats.min_length);
+    println!("   Max length: {} turns", turn_taking.conversation_stats.max_length);
     println!(
         "   Multi-turn conversations (>2): {}",
         turn_taking.conversation_stats.multi_turn_count
@@ -655,14 +611,8 @@ fn display_turn_taking_results(
 
     // 3. Response Time
     println!("3️⃣  RESPONSE TIME ANALYSIS:");
-    println!(
-        "   Mean gap: {:.2} files",
-        turn_taking.response_time_stats.mean_gap
-    );
-    println!(
-        "   Median gap: {:.1} files",
-        turn_taking.response_time_stats.median_gap
-    );
+    println!("   Mean gap: {:.2} files", turn_taking.response_time_stats.mean_gap);
+    println!("   Median gap: {:.1} files", turn_taking.response_time_stats.median_gap);
     println!(
         "   Immediate responses: {} ({:.1}%)",
         turn_taking.response_time_stats.immediate_response_count,
@@ -674,10 +624,7 @@ fn display_turn_taking_results(
     println!("4️⃣  SOCIAL NETWORK ANALYSIS:");
     println!("   Unique emitters: {}", social_network.unique_emitters);
     println!("   Unique addressees: {}", social_network.unique_addressees);
-    println!(
-        "   Unique interaction pairs: {}",
-        social_network.unique_pairs
-    );
+    println!("   Unique interaction pairs: {}", social_network.unique_pairs);
     println!();
 
     // Top 5 emitters
@@ -699,10 +646,7 @@ fn display_turn_taking_results(
 
     // Top 5 interaction pairs
     println!("   Top 5 Interaction Pairs:");
-    println!(
-        "     {:>12} → {:>12} {:>10}",
-        "Emitter", "Addressee", "Count"
-    );
+    println!("     {:>12} → {:>12} {:>10}", "Emitter", "Addressee", "Count");
     for (i, interaction) in social_network.top_interactions.iter().take(5).enumerate() {
         println!(
             "     {:2}. Emitter {:>5} → Addressee {:>5} {:>10}",
@@ -729,10 +673,7 @@ fn display_turn_taking_results(
     for (_context_id, stats) in context_vec.iter() {
         println!(
             "     {:>10} {:>15} {:>15} {:>9.1}%",
-            stats.context_id,
-            stats.vocalization_count,
-            stats.turn_switch_count,
-            stats.turn_switch_rate
+            stats.context_id, stats.vocalization_count, stats.turn_switch_count, stats.turn_switch_rate
         );
     }
     println!();
@@ -761,20 +702,13 @@ fn export_results(
     Ok(())
 }
 
-fn export_phrase_library(
-    library: &PhraseAudioLibrary,
-    output_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn export_phrase_library(library: &PhraseAudioLibrary, output_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let json_output = serde_json::to_string_pretty(library)?;
     let file_size = json_output.len();
     fs::write(output_path, json_output)?;
 
     println!("✅ Phrase library exported to: {}", output_path);
-    println!(
-        "   File size: {} bytes ({} MB)",
-        file_size,
-        file_size / 1_000_000
-    );
+    println!("   File size: {} bytes ({} MB)", file_size, file_size / 1_000_000);
 
     Ok(())
 }

@@ -12,10 +12,10 @@
 // Reference: Universal Rosetta Stone methodology for cross-species
 // communication analysis.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use technical_architecture::{
-    CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX, PhraseXDiscoveryEngine,
-    SuffixEntropyCalculator,
+    CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX, PhraseXDiscoveryEngine, SuffixEntropyCalculator,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -61,14 +61,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Corpus Statistics ===");
     println!("  Total sequences: {}", stats.total_sequences);
     println!("  Total symbols: {}", stats.total_symbols);
-    println!(
-        "  Vocabulary size: {} unique symbols",
-        stats.vocabulary_size
-    );
-    println!(
-        "  Avg sequence length: {:.1} symbols",
-        stats.avg_sequence_length
-    );
+    println!("  Vocabulary size: {} unique symbols", stats.vocabulary_size);
+    println!("  Avg sequence length: {:.1} symbols", stats.avg_sequence_length);
     println!();
 
     // ========================================================================

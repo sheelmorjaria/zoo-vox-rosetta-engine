@@ -7,13 +7,13 @@
 //
 // Usage: cargo run --release --example phase3_minibatch_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Paths to checkpoint data
-    let results_dir =
-        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let output_path = results_dir.join("minibatch_clusters.json");
 
@@ -28,15 +28,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let load_start = Instant::now();
 
     let features_data = std::fs::read(&features_path)?;
-    println!(
-        "   ├─ Loaded {} MB of feature data",
-        features_data.len() / 1_048_576
-    );
+    println!("   ├─ Loaded {} MB of feature data", features_data.len() / 1_048_576);
 
     // Deserialize features
-    let serializable_features: Vec<
-        technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable,
-    > = bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable> =
+        bincode::deserialize(&features_data)?;
 
     let n_features = serializable_features.len();
     println!(
@@ -116,10 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!(
-        "   Clustered phrases:    {}",
-        n_features - stats.noise_count
-    );
+    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
     println!();
 
     if !stats.cluster_sizes.is_empty() {

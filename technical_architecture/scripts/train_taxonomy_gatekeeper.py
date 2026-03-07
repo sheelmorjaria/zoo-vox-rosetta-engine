@@ -17,40 +17,109 @@ Usage:
 """
 
 import json
-import numpy as np
 import struct
-from pathlib import Path
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import joblib
 import time
 from collections import Counter
+from pathlib import Path
+
+import joblib
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.preprocessing import StandardScaler
 
 FEATURE_DIM = 112
 PHYSICS_DIM = 46  # Layer 1: indices 0-45
 
 # Taxonomic mapping (must match Rust implementation)
 TAXON_MAP = {
-    'Cetacean': ['dolphin', 'porpoise', 'sperm', 'beaked', 'delphinid', 'phocoen', 'orca'],
-    'Mysticete': ['humpback', 'blue whale', 'fin whale', 'minke', 'gray whale', 'right whale', 'bowhead', 'balaenopter'],
-    'Songbird': ['sparrow', 'finch', 'warbler', 'thrush', 'robin', 'cardinal', 'towhee', 'ovenbird', 'wren', 'tit', 'swainson'],
-    'NonPasserine': ['parrot', 'owl', 'hawk', 'eagle', 'duck', 'goose', 'gull', 'crow', 'raven', 'penguin', 'psittacid', 'strigid'],
-    'Amphibian': ['frog', 'toad', 'ranid', 'bufonid', 'hylid', 'peeper'],
-    'Insect': ['cricket', 'mosquito', 'cicada', 'grasshopper', 'katydid', 'bee', 'fly', 'anopheles', 'aedes', 'culex', 'culicid'],
-    'Mammal': ['bat', 'pteropodid', 'vesper', 'phyllostomid', 'monkey', 'ape', 'gibbon', 'chimp', 'gorilla', 'primate'],
-    'Pinniped': ['seal', 'sea lion', 'walrus', 'phocid', 'otariid'],
+    "Cetacean": ["dolphin", "porpoise", "sperm", "beaked", "delphinid", "phocoen", "orca"],
+    "Mysticete": [
+        "humpback",
+        "blue whale",
+        "fin whale",
+        "minke",
+        "gray whale",
+        "right whale",
+        "bowhead",
+        "balaenopter",
+    ],
+    "Songbird": [
+        "sparrow",
+        "finch",
+        "warbler",
+        "thrush",
+        "robin",
+        "cardinal",
+        "towhee",
+        "ovenbird",
+        "wren",
+        "tit",
+        "swainson",
+    ],
+    "NonPasserine": [
+        "parrot",
+        "owl",
+        "hawk",
+        "eagle",
+        "duck",
+        "goose",
+        "gull",
+        "crow",
+        "raven",
+        "penguin",
+        "psittacid",
+        "strigid",
+    ],
+    "Amphibian": ["frog", "toad", "ranid", "bufonid", "hylid", "peeper"],
+    "Insect": [
+        "cricket",
+        "mosquito",
+        "cicada",
+        "grasshopper",
+        "katydid",
+        "bee",
+        "fly",
+        "anopheles",
+        "aedes",
+        "culex",
+        "culicid",
+    ],
+    "Mammal": [
+        "bat",
+        "pteropodid",
+        "vesper",
+        "phyllostomid",
+        "monkey",
+        "ape",
+        "gibbon",
+        "chimp",
+        "gorilla",
+        "primate",
+    ],
+    "Pinniped": ["seal", "sea lion", "walrus", "phocid", "otariid"],
 }
 
-TAXON_LABELS = ['Cetacean', 'Mysticete', 'Songbird', 'NonPasserine', 'Amphibian', 'Insect', 'Mammal', 'Pinniped', 'Unknown']
+TAXON_LABELS = [
+    "Cetacean",
+    "Mysticete",
+    "Songbird",
+    "NonPasserine",
+    "Amphibian",
+    "Insect",
+    "Mammal",
+    "Pinniped",
+    "Unknown",
+]
 TAXON_TO_IDX = {t: i for i, t in enumerate(TAXON_LABELS)}
 
+
 def load_bincode_features(filepath):
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
@@ -58,28 +127,30 @@ def load_bincode_features(filepath):
         data = f.read(length * 4)
         return np.frombuffer(data, dtype=np.float32).copy()
 
+
 def map_species_to_taxon(species):
     """Map a species name to its taxonomic group"""
     s = species.lower()
-    
+
     for taxon, keywords in TAXON_MAP.items():
         for keyword in keywords:
             if keyword in s:
                 return taxon
-    
+
     # Check task names
-    if 'gibbon' in s:
-        return 'Mammal'
-    if 'dcase' in s or 'bird' in s:
-        return 'Songbird'
-    if 'watkins' in s:
-        return 'Cetacean'
-    if 'humbug' in s or 'mosquito' in s:
-        return 'Insect'
-    if 'rfcx' in s:
-        return 'Mammal'
-    
-    return 'Unknown'
+    if "gibbon" in s:
+        return "Mammal"
+    if "dcase" in s or "bird" in s:
+        return "Songbird"
+    if "watkins" in s:
+        return "Cetacean"
+    if "humbug" in s or "mosquito" in s:
+        return "Insect"
+    if "rfcx" in s:
+        return "Mammal"
+
+    return "Unknown"
+
 
 def main():
     print("╔═══════════════════════════════════════════════════════════════════╗")
@@ -112,8 +183,12 @@ def main():
 
     for sample in samples:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
-        
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
+
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
             full_path = cache_dir / cache_file
@@ -144,12 +219,12 @@ def main():
     # Split (use same split as other models - last 10% test)
     n_samples = len(X)
     n_train = int(n_samples * 0.9)
-    
+
     X_train = X[:n_train]
     y_train = y_taxon[:n_train]
     X_test = X[n_train:]
     y_test = y_taxon[n_train:]
-    
+
     print(f"\nSplit: {len(X_train)} train, {len(X_test)} test")
 
     # Standardize
@@ -168,10 +243,10 @@ def main():
         n_estimators=300,
         max_depth=30,
         min_samples_split=3,
-        class_weight='balanced',
+        class_weight="balanced",
         n_jobs=-1,
         random_state=42,
-        verbose=1
+        verbose=1,
     )
 
     rf.fit(X_train_scaled, y_train)
@@ -204,13 +279,13 @@ def main():
     # Confusion matrix summary
     print("\nConfusion Matrix (Top 5 confusions):")
     cm = confusion_matrix(y_test, y_pred, labels=TAXON_LABELS)
-    
+
     confusions = []
     for i, true_taxon in enumerate(TAXON_LABELS):
         for j, pred_taxon in enumerate(TAXON_LABELS):
             if i != j and cm[i, j] > 0:
                 confusions.append((true_taxon, pred_taxon, cm[i, j]))
-    
+
     confusions.sort(key=lambda x: -x[2])
     for true_taxon, pred_taxon, count in confusions[:5]:
         print(f"  {true_taxon} -> {pred_taxon}: {count}")
@@ -218,13 +293,16 @@ def main():
     # Save model
     model_path = "taxonomy_gatekeeper_rf.joblib"
     print(f"\nSaving model to: {model_path}")
-    joblib.dump({
-        'model': rf,
-        'scaler': scaler,
-        'taxon_labels': TAXON_LABELS,
-        'taxon_to_idx': TAXON_TO_IDX,
-        'accuracy': accuracy,
-    }, model_path)
+    joblib.dump(
+        {
+            "model": rf,
+            "scaler": scaler,
+            "taxon_labels": TAXON_LABELS,
+            "taxon_to_idx": TAXON_TO_IDX,
+            "accuracy": accuracy,
+        },
+        model_path,
+    )
 
     elapsed = time.time() - start_time
     print("\n╔═══════════════════════════════════════════════════════════════════╗")
@@ -236,8 +314,9 @@ def main():
 
     print("\nHierarchical Veto Ensemble Components:")
     print(f"  1. Taxonomy Gatekeeper (RF 46D): {accuracy:.2f}%")
-    print(f"  2. Species Expert (NN 66D):     59.88%")
+    print("  2. Species Expert (NN 66D):     59.88%")
     print("  3. Veto Mechanism:              (run eval_hierarchical_veto)")
+
 
 if __name__ == "__main__":
     main()

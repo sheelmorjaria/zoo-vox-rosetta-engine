@@ -202,10 +202,7 @@ pub fn calculate_singleton_rate(phrase_types: &[PhraseType]) -> f64 {
         return 0.0;
     }
 
-    let singleton_count = phrase_types
-        .iter()
-        .filter(|p| p.occurrence_count == 1)
-        .count();
+    let singleton_count = phrase_types.iter().filter(|p| p.occurrence_count == 1).count();
 
     singleton_count as f64 / phrase_types.len() as f64
 }
@@ -348,10 +345,8 @@ pub fn calculate_pmi(
 
     // Calculate PMI for each phrase-context pair
     for ((phrase_id, context), joint_count) in &phrase_context_counts {
-        let phrase_prob =
-            *phrase_seq_counts.get(phrase_id).unwrap_or(&0) as f64 / total_sequences as f64;
-        let context_prob =
-            *context_seq_counts.get(context).unwrap_or(&0) as f64 / total_sequences as f64;
+        let phrase_prob = *phrase_seq_counts.get(phrase_id).unwrap_or(&0) as f64 / total_sequences as f64;
+        let context_prob = *context_seq_counts.get(context).unwrap_or(&0) as f64 / total_sequences as f64;
         let joint_prob = *joint_count as f64 / total_sequences as f64;
 
         if phrase_prob > 0.0 && context_prob > 0.0 && joint_prob > 0.0 {
@@ -479,11 +474,7 @@ pub fn validate_linguistic_structure(
         real_perplexity,
         random_perplexity,
         perplexity_ratio,
-        if has_syntax {
-            "SYNTAX DETECTED"
-        } else {
-            "NO SYNTAX"
-        }
+        if has_syntax { "SYNTAX DETECTED" } else { "NO SYNTAX" }
     );
 
     // 4. PMI (semantics)
@@ -819,12 +810,7 @@ mod tests {
     fn test_shuffled_sequences_different() {
         let original = vec![PhraseSequence {
             source_id: "s1".to_string(),
-            phrases: vec![
-                "A".to_string(),
-                "B".to_string(),
-                "C".to_string(),
-                "D".to_string(),
-            ],
+            phrases: vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()],
             metadata_tags: vec![],
         }];
 
@@ -877,10 +863,7 @@ mod tests {
         let pmi = calculate_pmi(&phrase_types, &sequences);
 
         // alarm_phrase should have positive PMI with alarm context
-        assert!(
-            pmi.contains_key("alarm_phrase"),
-            "Should have PMI for alarm_phrase"
-        );
+        assert!(pmi.contains_key("alarm_phrase"), "Should have PMI for alarm_phrase");
         assert!(
             pmi["alarm_phrase"].contains_key("alarm"),
             "Should have PMI for alarm context"
@@ -1013,11 +996,7 @@ mod tests {
         let sequences: Vec<PhraseSequence> = (0..50)
             .map(|i| PhraseSequence {
                 source_id: format!("s{}", i),
-                phrases: vec![
-                    "type_1".to_string(),
-                    "type_2".to_string(),
-                    "type_3".to_string(),
-                ],
+                phrases: vec!["type_1".to_string(), "type_2".to_string(), "type_3".to_string()],
                 metadata_tags: vec![],
             })
             .collect();
@@ -1025,19 +1004,10 @@ mod tests {
         let config = ValidationConfig::default();
         let result = validate_linguistic_structure(&phrase_types, &sequences, &config).unwrap();
 
-        assert!(
-            result.zipf_correlation > 0.8,
-            "Good corpus should be Zipfian"
-        );
+        assert!(result.zipf_correlation > 0.8, "Good corpus should be Zipfian");
         assert!(result.has_syntax, "Repeating patterns should show syntax");
-        assert!(
-            result.singleton_rate < 0.3,
-            "Good corpus should have few singletons"
-        );
-        assert!(
-            result.validation_score > 0.5,
-            "Good corpus should score well"
-        );
+        assert!(result.singleton_rate < 0.3, "Good corpus should have few singletons");
+        assert!(result.validation_score > 0.5, "Good corpus should score well");
     }
 
     #[test]
@@ -1065,18 +1035,9 @@ mod tests {
         let config = ValidationConfig::default();
         let result = validate_linguistic_structure(&phrase_types, &sequences, &config).unwrap();
 
-        assert_eq!(
-            result.singleton_rate, 1.0,
-            "Poor corpus should have all singletons"
-        );
-        assert_eq!(
-            result.reuse_ratio, 1.0,
-            "Poor corpus should have reuse ratio of 1"
-        );
-        assert!(
-            result.validation_score < 0.5,
-            "Poor corpus should score poorly"
-        );
+        assert_eq!(result.singleton_rate, 1.0, "Poor corpus should have all singletons");
+        assert_eq!(result.reuse_ratio, 1.0, "Poor corpus should have reuse ratio of 1");
+        assert!(result.validation_score < 0.5, "Poor corpus should score poorly");
     }
 
     #[test]
@@ -1114,14 +1075,8 @@ mod tests {
             .collect();
 
         let config = ValidationConfig::default();
-        let comparison = compare_configurations(
-            &phrase_types_a,
-            &sequences_a,
-            &phrase_types_b,
-            &sequences_b,
-            &config,
-        )
-        .unwrap();
+        let comparison =
+            compare_configurations(&phrase_types_a, &sequences_a, &phrase_types_b, &sequences_b, &config).unwrap();
 
         assert_eq!(comparison.winner, "B", "Better config should win");
         assert!(comparison.zipf_improvement > 0.0);

@@ -82,9 +82,7 @@ impl FmDepthCalculator {
 
         // Calculate statistics
         let min_pitch = valid_pitches.iter().fold(f32::INFINITY, |a, &b| a.min(b));
-        let max_pitch = valid_pitches
-            .iter()
-            .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+        let max_pitch = valid_pitches.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
         let mean_pitch = valid_pitches.iter().sum::<f32>() / valid_pitches.len() as f32;
 
         let depth_hz = max_pitch - min_pitch;
@@ -201,8 +199,7 @@ impl FmRateCalculator {
             return 0.0;
         }
 
-        let depth_calc =
-            FmDepthCalculator::new(self.sample_rate, self.frame_size_ms, self.hop_size_ms);
+        let depth_calc = FmDepthCalculator::new(self.sample_rate, self.frame_size_ms, self.hop_size_ms);
         let pitch_contour = depth_calc.track_pitch(audio);
 
         if pitch_contour.len() < 10 {
@@ -244,15 +241,11 @@ impl FmRateCalculator {
         let mut extrema = Vec::new();
 
         for i in 2..data.len() - 2 {
-            let is_peak = data[i] > data[i - 1]
-                && data[i] > data[i - 2]
-                && data[i] > data[i + 1]
-                && data[i] > data[i + 2];
+            let is_peak =
+                data[i] > data[i - 1] && data[i] > data[i - 2] && data[i] > data[i + 1] && data[i] > data[i + 2];
 
-            let is_valley = data[i] < data[i - 1]
-                && data[i] < data[i - 2]
-                && data[i] < data[i + 1]
-                && data[i] < data[i + 2];
+            let is_valley =
+                data[i] < data[i - 1] && data[i] < data[i - 2] && data[i] < data[i + 1] && data[i] < data[i + 2];
 
             if is_peak || is_valley {
                 extrema.push(i);
@@ -323,6 +316,85 @@ impl AmDepthCalculator {
         // Modulation depth = (max - min) / max
         (max_env - min_env) / max_env
     }
+}
+
+/// Helper: Generate sine wave
+fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            (2.0 * PI * freq_hz * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate FM sweep with sinusoidal modulation (vibrato)
+fn generate_fm_sweep(
+    carrier: f32,
+    min_freq: f32,
+    max_freq: f32,
+    mod_rate: f32,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let mod_depth = (max_freq - min_freq) / 2.0;
+    let center_freq = carrier;
+
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            let instant_freq = center_freq + mod_depth * (2.0 * PI * mod_rate * t).sin();
+            // Integrate to get phase
+            (2.0 * PI * instant_freq * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate linear FM sweep
+fn generate_linear_fm_sweep(start_freq: f32, end_freq: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            let progress = i as f32 / num_samples as f32;
+            let instant_freq = start_freq + (end_freq - start_freq) * progress;
+            (2.0 * PI * instant_freq * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate trill (alternating frequencies)
+fn generate_trill(freq1: f32, freq2: f32, rate: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let period_samples = (sample_rate as f32 / rate) as usize;
+
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            let freq = if (i / period_samples).is_multiple_of(2) {
+                freq1
+            } else {
+                freq2
+            };
+            (2.0 * PI * freq * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate amplitude-modulated tone (tremolo)
+fn generate_am_tone(carrier: f32, mod_rate: f32, mod_depth: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            let env = 1.0 - mod_depth * (1.0 - (2.0 * PI * mod_rate * t).cos()) / 2.0;
+            env * (2.0 * PI * carrier * t).sin()
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -544,7 +616,7 @@ mod tests {
         let tone = generate_sine_wave(1000.0, 48000, 0.2);
         let depth = calculator.calculate(&tone);
 
-        assert!(depth >= 0.0 && depth <= 1.0);
+        assert!((0.0..=1.0).contains(&depth));
     }
 
     #[test]
@@ -562,100 +634,4 @@ mod tests {
         // Fading should produce high AM depth
         assert!(depth > 0.3);
     }
-}
-
-/// Helper: Generate sine wave
-fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            (2.0 * PI * freq_hz * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate FM sweep with sinusoidal modulation (vibrato)
-fn generate_fm_sweep(
-    carrier: f32,
-    min_freq: f32,
-    max_freq: f32,
-    mod_rate: f32,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let mod_depth = (max_freq - min_freq) / 2.0;
-    let center_freq = carrier;
-
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            let instant_freq = center_freq + mod_depth * (2.0 * PI * mod_rate * t).sin();
-            // Integrate to get phase
-            (2.0 * PI * instant_freq * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate linear FM sweep
-fn generate_linear_fm_sweep(
-    start_freq: f32,
-    end_freq: f32,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            let progress = i as f32 / num_samples as f32;
-            let instant_freq = start_freq + (end_freq - start_freq) * progress;
-            (2.0 * PI * instant_freq * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate trill (alternating frequencies)
-fn generate_trill(
-    freq1: f32,
-    freq2: f32,
-    rate: f32,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let period_samples = (sample_rate as f32 / rate) as usize;
-
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            let freq = if (i / period_samples).is_multiple_of(2) {
-                freq1
-            } else {
-                freq2
-            };
-            (2.0 * PI * freq * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate amplitude-modulated tone (tremolo)
-fn generate_am_tone(
-    carrier: f32,
-    mod_rate: f32,
-    mod_depth: f32,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            let env = 1.0 - mod_depth * (1.0 - (2.0 * PI * mod_rate * t).cos()) / 2.0;
-            env * (2.0 * PI * carrier * t).sin()
-        })
-        .collect()
 }

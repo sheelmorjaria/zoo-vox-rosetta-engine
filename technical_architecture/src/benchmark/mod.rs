@@ -7,13 +7,9 @@ pub mod dataset_loader;
 pub mod evaluator;
 pub mod metrics;
 
-pub use dataset_loader::{
-    BenchmarkDataset, DatasetLoader, DatasetMetadata, DatasetType, Label, Recording,
-};
+pub use dataset_loader::{BenchmarkDataset, DatasetLoader, DatasetMetadata, DatasetType, Label, Recording};
 pub use evaluator::{ClassificationReport, ComparisonReport, ExtractionReport, FeatureEvaluator};
-pub use metrics::{
-    ClassificationMetrics, ConfusionMatrix, FeatureAblationResults, MetricCalculator,
-};
+pub use metrics::{ClassificationMetrics, ConfusionMatrix, FeatureAblationResults, MetricCalculator};
 
 #[cfg(test)]
 mod tests {

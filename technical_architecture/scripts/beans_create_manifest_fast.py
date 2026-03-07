@@ -17,12 +17,11 @@ The manifest creation will:
 
 import argparse
 import json
-import os
+import multiprocessing as mp
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-import multiprocessing as mp
 
 import numpy as np
 from scipy.io import wavfile
@@ -89,10 +88,7 @@ def process_sample(args):
         return {
             "audio_file": str(audio_path),
             "n_samples": len(array),
-            "labels": {
-                "output": output_label,
-                "task": sample.get("dataset_name", "unknown")
-            }
+            "labels": {"output": output_label, "task": sample.get("dataset_name", "unknown")},
         }
 
     except Exception as e:
@@ -157,17 +153,20 @@ def create_manifest_parallel(dataset_path: Path, output_path: Path, n_workers: i
                     elapsed = time.time() - start_time
                     rate = completed / elapsed
                     eta = (n_samples - completed) / rate
-                    print(f"  Processed {completed}/{n_samples} ({completed/n_samples*100:.1f}%) - "
-                          f"{rate:.1f} samples/s - ETA: {eta/60:.1f}min", flush=True)
+                    print(
+                        f"  Processed {completed}/{n_samples} ({completed / n_samples * 100:.1f}%) - "
+                        f"{rate:.1f} samples/s - ETA: {eta / 60:.1f}min",
+                        flush=True,
+                    )
 
     elapsed = time.time() - start_time
-    print(f"\nManifest creation completed in {elapsed:.1f}s ({n_samples/elapsed:.1f} samples/s)")
+    print(f"\nManifest creation completed in {elapsed:.1f}s ({n_samples / elapsed:.1f} samples/s)")
 
     # Create final manifest
     manifest = {
         "dataset": "BEANS-Zero",
         "n_samples": len(manifest_samples),
-        "samples": manifest_samples
+        "samples": manifest_samples,
     }
 
     # Save manifest
@@ -184,8 +183,9 @@ def create_manifest_parallel(dataset_path: Path, output_path: Path, n_workers: i
 
     # Print label frequency
     from collections import Counter
+
     label_counts = Counter(labels)
-    print(f"\nTop 20 labels by frequency:")
+    print("\nTop 20 labels by frequency:")
     for label, count in label_counts.most_common(20):
         print(f"    {label}: {count}")
 
@@ -195,22 +195,25 @@ def create_manifest_parallel(dataset_path: Path, output_path: Path, n_workers: i
 def main():
     parser = argparse.ArgumentParser(description="Create BEANS-Zero manifest (parallel)")
     parser.add_argument(
-        "--dataset", "-d",
+        "--dataset",
+        "-d",
         type=Path,
         default=Path("beans_zero_data/beans_zero_test"),
-        help="Path to HuggingFace dataset"
+        help="Path to HuggingFace dataset",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=Path("beans_zero_full_manifest.json"),
-        help="Output manifest path"
+        help="Output manifest path",
     )
     parser.add_argument(
-        "--workers", "-w",
+        "--workers",
+        "-w",
         type=int,
         default=mp.cpu_count(),
-        help=f"Number of parallel workers (default: {mp.cpu_count()})"
+        help=f"Number of parallel workers (default: {mp.cpu_count()})",
     )
 
     args = parser.parse_args()

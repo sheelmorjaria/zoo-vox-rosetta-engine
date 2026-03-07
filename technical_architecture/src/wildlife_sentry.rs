@@ -26,11 +26,7 @@ pub struct WildlifeSentryConfig {
 impl Default for WildlifeSentryConfig {
     fn default() -> Self {
         Self {
-            target_species: vec![
-                "marmoset".to_string(),
-                "dolphin".to_string(),
-                "bat".to_string(),
-            ],
+            target_species: vec!["marmoset".to_string(), "dolphin".to_string(), "bat".to_string()],
             detection_threshold: 0.001, // Lower threshold for reliable test detection
             debounce_ms: 500,
             sample_rate: 48000,
@@ -65,8 +61,7 @@ impl SpeciesSignature {
         let spectral_pattern = (0..pattern_size)
             .map(|i| {
                 let freq_norm = i as f32 / pattern_size as f32;
-                let freq = frequency_range_hz.0
-                    + freq_norm * (frequency_range_hz.1 - frequency_range_hz.0);
+                let freq = frequency_range_hz.0 + freq_norm * (frequency_range_hz.1 - frequency_range_hz.0);
                 (-freq / 10000.0).exp() // Decay with frequency
             })
             .collect();
@@ -209,10 +204,7 @@ struct FFTProcessor {
 
 impl FFTProcessor {
     fn new(fft_size: usize, sample_rate: usize) -> Self {
-        Self {
-            fft_size,
-            sample_rate,
-        }
+        Self { fft_size, sample_rate }
     }
 
     /// Estimate power at a specific frequency using correlation
@@ -241,12 +233,7 @@ impl FFTProcessor {
     }
 
     /// Find dominant frequency in audio
-    fn find_dominant_frequency(
-        &self,
-        audio: &[f32],
-        min_hz: f32,
-        max_hz: f32,
-    ) -> Option<(f32, f32)> {
+    fn find_dominant_frequency(&self, audio: &[f32], min_hz: f32, max_hz: f32) -> Option<(f32, f32)> {
         if audio.is_empty() {
             return None;
         }
@@ -368,8 +355,7 @@ impl WildlifeSentry {
 
     /// Add a species signature to the database
     pub fn add_species_signature(&mut self, signature: SpeciesSignature) {
-        self.species_database
-            .insert(signature.name.clone(), signature);
+        self.species_database.insert(signature.name.clone(), signature);
     }
 
     /// Get the species database
@@ -447,9 +433,7 @@ impl WildlifeSentry {
     /// Check if should trigger wake
     pub fn should_trigger(&self, detections: &[DetectionEvent]) -> bool {
         // Trigger if any detection exceeds confidence threshold
-        detections
-            .iter()
-            .any(|d| d.confidence >= self.config.min_confidence)
+        detections.iter().any(|d| d.confidence >= self.config.min_confidence)
     }
 
     /// Get detection statistics
@@ -739,15 +723,9 @@ mod tests {
     #[test]
     fn test_suggested_response_duration() {
         assert_eq!(TriggerUrgency::Low.suggested_response_duration_ms(), 500);
-        assert_eq!(
-            TriggerUrgency::Medium.suggested_response_duration_ms(),
-            1000
-        );
+        assert_eq!(TriggerUrgency::Medium.suggested_response_duration_ms(), 1000);
         assert_eq!(TriggerUrgency::High.suggested_response_duration_ms(), 2000);
-        assert_eq!(
-            TriggerUrgency::Critical.suggested_response_duration_ms(),
-            3000
-        );
+        assert_eq!(TriggerUrgency::Critical.suggested_response_duration_ms(), 3000);
     }
 
     #[test]

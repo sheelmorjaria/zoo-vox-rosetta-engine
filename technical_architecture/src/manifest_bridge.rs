@@ -453,12 +453,10 @@ mod tests {
 
         // Add a segment
         let features = RosettaFeatures::default();
-        controller.segments_manifest_mut().unwrap().add_segment(
-            "seg_001.wav",
-            &features,
-            Some(0.0),
-            Some(100.0),
-        );
+        controller
+            .segments_manifest_mut()
+            .unwrap()
+            .add_segment("seg_001.wav", &features, Some(0.0), Some(100.0));
 
         assert_eq!(controller.segments_manifest().unwrap().len(), 1);
     }

@@ -10,10 +10,11 @@
 //! - Dimensionality comparison (30D vs 39D vs 56D)
 //! - Feature ablation analysis
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::time::Instant;
 use technical_architecture::{
-    ClassificationMetrics, ComparisonReport, ConfusionMatrix, DatasetLoader, DatasetType,
-    ExtractionReport, FeatureDim, FeatureEvaluator, MetricCalculator, MicroDynamicsExtractor,
+    ClassificationMetrics, ComparisonReport, ConfusionMatrix, DatasetLoader, DatasetType, ExtractionReport, FeatureDim,
+    FeatureEvaluator, MetricCalculator, MicroDynamicsExtractor,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,10 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let birdvox_dataset = birdvox_loader.load()?;
     println!("✓ Loaded {} recordings", birdvox_dataset.recordings.len());
     println!("  Sample rate: {} Hz", birdvox_dataset.metadata.sample_rate);
-    println!(
-        "  Total duration: {:.1} ms",
-        birdvox_dataset.metadata.total_duration_ms
-    );
+    println!("  Total duration: {:.1} ms", birdvox_dataset.metadata.total_duration_ms);
     println!("  Classes: {}", birdvox_dataset.metadata.num_classes);
     println!();
 
@@ -56,10 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let nemesis_dataset = nemesis_loader.load()?;
     println!("✓ Loaded {} recordings", nemesis_dataset.recordings.len());
     println!("  Sample rate: {} Hz", nemesis_dataset.metadata.sample_rate);
-    println!(
-        "  Total duration: {:.1} ms",
-        nemesis_dataset.metadata.total_duration_ms
-    );
+    println!("  Total duration: {:.1} ms", nemesis_dataset.metadata.total_duration_ms);
     println!("  Classes: {}", nemesis_dataset.metadata.num_classes);
     println!();
 
@@ -82,10 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total processed: {}", extraction_report.total_processed);
     println!("  Successful: {}", extraction_report.successful);
     println!("  Failed: {}", extraction_report.failed);
-    println!(
-        "  Average time: {:.2} ms/recording",
-        extraction_report.average_time_ms
-    );
+    println!("  Average time: {:.2} ms/recording", extraction_report.average_time_ms);
     println!();
 
     // ========================================================================
@@ -110,14 +102,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cm = &metrics.confusion_matrix;
     println!("                Predicted");
     println!("              Pos    Neg");
-    println!(
-        "Actual Pos  {:4}    {:4}",
-        cm.true_positives, cm.false_negatives
-    );
-    println!(
-        "       Neg  {:4}    {:4}",
-        cm.false_positives, cm.true_negatives
-    );
+    println!("Actual Pos  {:4}    {:4}", cm.true_positives, cm.false_negatives);
+    println!("       Neg  {:4}    {:4}", cm.false_positives, cm.true_negatives);
     println!();
 
     // ========================================================================
@@ -132,33 +118,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let comparison_report = evaluator.compare_dimensions(&nemesis_dataset)?;
     let comp_time = start.elapsed();
 
-    println!(
-        "✓ Comparison completed in {:.2} ms",
-        comp_time.as_millis() as f32
-    );
+    println!("✓ Comparison completed in {:.2} ms", comp_time.as_millis() as f32);
     println!();
 
     println!("Accuracy by Dimensionality:");
-    println!(
-        "  30D (baseline):  {:.1}%",
-        comparison_report.accuracy_30d * 100.0
-    );
-    println!(
-        "  39D (compact):   {:.1}%",
-        comparison_report.accuracy_39d * 100.0
-    );
-    println!(
-        "  56D (full):      {:.1}%",
-        comparison_report.accuracy_56d * 100.0
-    );
+    println!("  30D (baseline):  {:.1}%", comparison_report.accuracy_30d * 100.0);
+    println!("  39D (compact):   {:.1}%", comparison_report.accuracy_39d * 100.0);
+    println!("  56D (full):      {:.1}%", comparison_report.accuracy_56d * 100.0);
     println!();
 
-    let improvement_39d = (comparison_report.accuracy_39d - comparison_report.accuracy_30d)
-        / comparison_report.accuracy_30d
-        * 100.0;
-    let improvement_56d = (comparison_report.accuracy_56d - comparison_report.accuracy_30d)
-        / comparison_report.accuracy_30d
-        * 100.0;
+    let improvement_39d =
+        (comparison_report.accuracy_39d - comparison_report.accuracy_30d) / comparison_report.accuracy_30d * 100.0;
+    let improvement_56d =
+        (comparison_report.accuracy_56d - comparison_report.accuracy_30d) / comparison_report.accuracy_30d * 100.0;
 
     println!("Improvement over 30D baseline:");
     println!("  39D: +{:.1}%", improvement_39d);

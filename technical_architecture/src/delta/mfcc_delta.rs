@@ -61,10 +61,7 @@ impl MfccDeltaComputer {
     /// - mfcc_frames is empty
     /// - frames have inconsistent dimensions
     /// - contains NaN or Inf values
-    pub fn compute(
-        &self,
-        mfcc_frames: &[Vec<f32>],
-    ) -> Result<(Vec<Vec<f32>>, Vec<Vec<f32>>), String> {
+    pub fn compute(&self, mfcc_frames: &[Vec<f32>]) -> Result<(Vec<Vec<f32>>, Vec<Vec<f32>>), String> {
         // Validate input
         if mfcc_frames.is_empty() {
             return Ok((vec![], vec![]));
@@ -105,12 +102,7 @@ impl MfccDeltaComputer {
     }
 
     /// Compute delta features (first derivative)
-    fn compute_delta(
-        &self,
-        frames: &[Vec<f32>],
-        n_frames: usize,
-        n_coeffs: usize,
-    ) -> Vec<Vec<f32>> {
+    fn compute_delta(&self, frames: &[Vec<f32>], n_frames: usize, n_coeffs: usize) -> Vec<Vec<f32>> {
         let mut delta = vec![vec![0.0; n_coeffs]; n_frames];
 
         match self.width {
@@ -151,12 +143,7 @@ impl MfccDeltaComputer {
     }
 
     /// Compute delta-delta features (second derivative)
-    fn compute_delta_delta(
-        &self,
-        delta: &[Vec<f32>],
-        n_frames: usize,
-        n_coeffs: usize,
-    ) -> Vec<Vec<f32>> {
+    fn compute_delta_delta(&self, delta: &[Vec<f32>], n_frames: usize, n_coeffs: usize) -> Vec<Vec<f32>> {
         let mut delta_delta = vec![vec![0.0; n_coeffs]; n_frames];
 
         match self.width {
@@ -187,8 +174,7 @@ impl MfccDeltaComputer {
                     }
                     // Last frame
                     for c in 0..n_coeffs {
-                        delta_delta[n_frames - 1][c] =
-                            delta[n_frames - 1][c] - delta[n_frames - 2][c];
+                        delta_delta[n_frames - 1][c] = delta[n_frames - 1][c] - delta[n_frames - 2][c];
                     }
                 }
             }
@@ -226,20 +212,14 @@ mod tests {
         // All deltas should be ~0
         for frame_delta in &delta {
             for &d in frame_delta {
-                assert!(
-                    d.abs() < 1e-6,
-                    "Constant sequence should produce zero delta"
-                );
+                assert!(d.abs() < 1e-6, "Constant sequence should produce zero delta");
             }
         }
 
         // All delta-deltas should be ~0
         for frame_dd in &delta_delta {
             for &dd in frame_dd {
-                assert!(
-                    dd.abs() < 1e-6,
-                    "Constant sequence should produce zero delta-delta"
-                );
+                assert!(dd.abs() < 1e-6, "Constant sequence should produce zero delta-delta");
             }
         }
     }
@@ -265,10 +245,7 @@ mod tests {
         // Delta-delta should be ≈ 0
         for frame_dd in &delta_delta {
             for &dd in frame_dd {
-                assert!(
-                    dd.abs() < 1e-6,
-                    "Linear sequence should produce zero delta-delta"
-                );
+                assert!(dd.abs() < 1e-6, "Linear sequence should produce zero delta-delta");
             }
         }
     }
@@ -290,51 +267,32 @@ mod tests {
         // Delta should be roughly linear (increasing)
         let delta_0 = &delta.iter().map(|d| d[0]).collect::<Vec<_>>();
         for i in 1..delta_0.len() - 1 {
-            assert!(
-                delta_0[i] > delta_0[i - 1],
-                "Delta should increase for quadratic input"
-            );
+            assert!(delta_0[i] > delta_0[i - 1], "Delta should increase for quadratic input");
         }
 
         // Delta-delta should be roughly constant (≈ 2 for x²)
         let dd_0 = &delta_delta.iter().map(|dd| dd[0]).collect::<Vec<_>>();
-        let dd_mean: f32 = dd_0.iter().skip(1).take(dd_0.len() - 2).sum::<f32>()
-            / (dd_0.len().saturating_sub(2) as f32).max(1.0);
-        assert!(
-            (dd_mean - 2.0).abs() < 1.0,
-            "Delta-delta should be ~2.0 for x²"
-        );
+        let dd_mean: f32 =
+            dd_0.iter().skip(1).take(dd_0.len() - 2).sum::<f32>() / (dd_0.len().saturating_sub(2) as f32).max(1.0);
+        assert!((dd_mean - 2.0).abs() < 1.0, "Delta-delta should be ~2.0 for x²");
     }
 
     #[test]
     fn test_boundary_handling() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames = vec![
-            vec![0.0, 1.0, 2.0],
-            vec![1.0, 2.0, 3.0],
-            vec![2.0, 3.0, 4.0],
-        ];
+        let frames = vec![vec![0.0, 1.0, 2.0], vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]];
 
         let (delta, _) = computer.compute(&frames).unwrap();
 
         // First frame: forward difference (1.0)
-        assert!(
-            (delta[0][0] - 1.0).abs() < 1e-6,
-            "First frame should use forward diff"
-        );
+        assert!((delta[0][0] - 1.0).abs() < 1e-6, "First frame should use forward diff");
 
         // Middle frame: regression (1.0)
-        assert!(
-            (delta[1][0] - 1.0).abs() < 1e-6,
-            "Middle frame should use regression"
-        );
+        assert!((delta[1][0] - 1.0).abs() < 1e-6, "Middle frame should use regression");
 
         // Last frame: backward difference (1.0)
-        assert!(
-            (delta[2][0] - 1.0).abs() < 1e-6,
-            "Last frame should use backward diff"
-        );
+        assert!((delta[2][0] - 1.0).abs() < 1e-6, "Last frame should use backward diff");
     }
 
     #[test]
@@ -396,10 +354,7 @@ mod tests {
         // All delta-deltas should be ~0
         for frame_dd in &delta_delta {
             for &dd in frame_dd {
-                assert!(
-                    dd.abs() < 1e-6,
-                    "Constant delta should produce zero delta-delta"
-                );
+                assert!(dd.abs() < 1e-6, "Constant delta should produce zero delta-delta");
             }
         }
     }
@@ -420,8 +375,8 @@ mod tests {
 
         // Delta-delta should be roughly constant (~2.0 for x²)
         let dd_0 = &delta_delta.iter().map(|dd| dd[0]).collect::<Vec<_>>();
-        let dd_mean: f32 = dd_0.iter().skip(1).take(dd_0.len() - 2).sum::<f32>()
-            / (dd_0.len().saturating_sub(2) as f32).max(1.0);
+        let dd_mean: f32 =
+            dd_0.iter().skip(1).take(dd_0.len() - 2).sum::<f32>() / (dd_0.len().saturating_sub(2) as f32).max(1.0);
         assert!((dd_mean - 2.0).abs() < 1.0, "Delta-delta should be ~2.0");
     }
 
@@ -455,7 +410,7 @@ mod tests {
         let frames: Vec<Vec<f32>> = (0..10)
             .map(|i| {
                 let base = i as f32;
-                vec![base + 0.01 * (i as f32 % 3.0) as f32]
+                vec![base + 0.01 * (i as f32 % 3.0)]
             })
             .collect();
 
@@ -463,10 +418,7 @@ mod tests {
 
         // Delta should be roughly 1.0 despite noise
         let delta_mean: f32 = delta.iter().map(|d| d[0]).sum::<f32>() / delta.len() as f32;
-        assert!(
-            (delta_mean - 1.0).abs() < 0.1,
-            "Delta should be robust to noise"
-        );
+        assert!((delta_mean - 1.0).abs() < 0.1, "Delta should be robust to noise");
     }
 
     #[test]
@@ -617,11 +569,7 @@ mod tests {
     fn test_nan_propagation() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames = vec![
-            vec![0.0, 1.0, 2.0],
-            vec![f32::NAN, 2.0, 3.0],
-            vec![2.0, 3.0, 4.0],
-        ];
+        let frames = vec![vec![0.0, 1.0, 2.0], vec![f32::NAN, 2.0, 3.0], vec![2.0, 3.0, 4.0]];
 
         let result = computer.compute(&frames);
 
@@ -633,11 +581,7 @@ mod tests {
     fn test_infinity_propagation() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames = vec![
-            vec![0.0, 1.0, 2.0],
-            vec![f32::INFINITY, 2.0, 3.0],
-            vec![2.0, 3.0, 4.0],
-        ];
+        let frames = vec![vec![0.0, 1.0, 2.0], vec![f32::INFINITY, 2.0, 3.0], vec![2.0, 3.0, 4.0]];
 
         let result = computer.compute(&frames);
 
@@ -712,10 +656,7 @@ mod tests {
         let (delta, _) = computer.compute(&frames).unwrap();
 
         // Should maintain reasonable precision
-        assert!(
-            (delta[1][0] - 0.00000005).abs() < 1e-7,
-            "Should maintain precision"
-        );
+        assert!((delta[1][0] - 0.00000005).abs() < 1e-7, "Should maintain precision");
     }
 
     // =========================================================================
@@ -727,9 +668,7 @@ mod tests {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
         // 100 frames × 13 coefficients (typical MFCC size)
-        let frames: Vec<Vec<f32>> = (0..100)
-            .map(|_| (0..13).map(|i| i as f32).collect())
-            .collect();
+        let frames: Vec<Vec<f32>> = (0..100).map(|_| (0..13).map(|i| i as f32).collect()).collect();
 
         let start = std::time::Instant::now();
         let _ = computer.compute(&frames).unwrap();
@@ -743,9 +682,7 @@ mod tests {
     fn test_memory_efficiency() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames: Vec<Vec<f32>> = (0..1000)
-            .map(|_| (0..13).map(|i| i as f32).collect())
-            .collect();
+        let frames: Vec<Vec<f32>> = (0..1000).map(|_| (0..13).map(|i| i as f32).collect()).collect();
 
         let (delta, delta_delta) = computer.compute(&frames).unwrap();
 
@@ -773,9 +710,7 @@ mod tests {
     fn test_parallelizable() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames: Vec<Vec<f32>> = (0..100)
-            .map(|_| (0..13).map(|i| i as f32).collect())
-            .collect();
+        let frames: Vec<Vec<f32>> = (0..100).map(|_| (0..13).map(|i| i as f32).collect()).collect();
 
         // Multiple independent computations
         let start = std::time::Instant::now();
@@ -807,16 +742,13 @@ mod tests {
     fn test_allocation_free_parsing() {
         let computer = MfccDeltaComputer::new(DeltaWidth::N2);
 
-        let frames: Vec<Vec<f32>> = (0..10)
-            .map(|_| (0..13).map(|i| i as f32).collect())
-            .collect();
+        let frames: Vec<Vec<f32>> = (0..10).map(|_| (0..13).map(|i| i as f32).collect()).collect();
 
         // Multiple calls should not leak
         for _ in 0..100 {
             let _ = computer.compute(&frames).unwrap();
         }
 
-        // If we reach here, no memory leak occurred
-        assert!(true);
+        // Test passes if we reach here (no memory leak)
     }
 }

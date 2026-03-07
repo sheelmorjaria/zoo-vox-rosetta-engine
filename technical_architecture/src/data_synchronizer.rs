@@ -34,10 +34,7 @@ impl Default for SyncConfig {
             compression_enabled: true,
             compression_level: 6,
             max_bandwidth_kbps: 1000.0,
-            storage_paths: vec![
-                "/tmp/blackbox_primary".to_string(),
-                "/tmp/blackbox_usb".to_string(),
-            ],
+            storage_paths: vec!["/tmp/blackbox_primary".to_string(), "/tmp/blackbox_usb".to_string()],
             sync_endpoints: vec!["https://api.example.com/sync".to_string()],
             sync_interval_ms: 60000, // 1 minute
             max_retry_count: 3,
@@ -100,9 +97,7 @@ impl QueuedEntry {
         let timestamp = PtpTimestamp::from(chrono::Utc::now());
 
         // Calculate size
-        let size_bytes = bincode::serialize(&entry)
-            .map(|data| data.len())
-            .unwrap_or(0);
+        let size_bytes = bincode::serialize(&entry).map(|data| data.len()).unwrap_or(0);
 
         Self {
             id,
@@ -134,8 +129,7 @@ impl QueuedEntry {
     /// Decompress the entry data
     pub fn decompress(&self) -> Result<LogEntry> {
         if let Some(ref data) = self.compressed_data {
-            let entry: LogEntry =
-                bincode::deserialize(data).context("Failed to deserialize entry")?;
+            let entry: LogEntry = bincode::deserialize(data).context("Failed to deserialize entry")?;
             Ok(entry)
         } else {
             Ok(self.entry.clone())
@@ -278,19 +272,11 @@ impl DataSynchronizer {
                     Ok(file) => {
                         let writer = BufWriter::new(file);
                         if let Err(e) = bincode::serialize_into(writer, &entries) {
-                            eprintln!(
-                                "Failed to serialize queue to {}: {}",
-                                queue_path.display(),
-                                e
-                            );
+                            eprintln!("Failed to serialize queue to {}: {}", queue_path.display(), e);
                         }
                     }
                     Err(e) => {
-                        eprintln!(
-                            "Failed to create queue file {}: {}",
-                            queue_path.display(),
-                            e
-                        );
+                        eprintln!("Failed to create queue file {}: {}", queue_path.display(), e);
                     }
                 }
             }
@@ -311,10 +297,7 @@ impl DataSynchronizer {
         // Check queue size limit
         if queue.len() >= self.config.max_queue_size {
             // Remove oldest entry with same or lower priority
-            if let Some(pos) = queue
-                .iter()
-                .rposition(|e| e.priority <= queued_entry.priority)
-            {
+            if let Some(pos) = queue.iter().rposition(|e| e.priority <= queued_entry.priority) {
                 queue.remove(pos);
             } else {
                 queue.pop_front(); // Remove oldest entry
@@ -442,7 +425,12 @@ impl DataSynchronizer {
 
 impl Default for DataSynchronizer {
     fn default() -> Self {
-        Self::new(SyncConfig::default()).expect("Failed to create DataSynchronizer")
+        // SAFETY: DataSynchronizer::new() with default config cannot fail:
+        // - Storage backends are created without I/O
+        // - Directory creation errors are logged, not propagated
+        // - Queue loading returns empty VecDeque on error
+        #[allow(clippy::expect_used)]
+        Self::new(SyncConfig::default()).expect("default config cannot fail")
     }
 }
 
@@ -483,10 +471,7 @@ mod tests {
         cleanup_test_dir("/tmp/test_blackbox_2");
 
         let config = SyncConfig {
-            storage_paths: vec![
-                "/tmp/test_blackbox_1".to_string(),
-                "/tmp/test_blackbox_2".to_string(),
-            ],
+            storage_paths: vec!["/tmp/test_blackbox_1".to_string(), "/tmp/test_blackbox_2".to_string()],
             ..Default::default()
         };
 
@@ -657,11 +642,8 @@ mod tests {
 
         // Add many entries
         for i in 0..10 {
-            sync.queue_entry(
-                create_test_entry("INFO", &format!("msg{}", i)),
-                SyncPriority::Normal,
-            )
-            .unwrap();
+            sync.queue_entry(create_test_entry("INFO", &format!("msg{}", i)), SyncPriority::Normal)
+                .unwrap();
         }
 
         let before_size = sync.queue_size();
@@ -688,11 +670,8 @@ mod tests {
         // Add entries with different priorities
         sync.queue_entry(create_test_entry("INFO", "low"), SyncPriority::Low)
             .unwrap();
-        sync.queue_entry(
-            create_test_entry("INFO", "critical"),
-            SyncPriority::Critical,
-        )
-        .unwrap();
+        sync.queue_entry(create_test_entry("INFO", "critical"), SyncPriority::Critical)
+            .unwrap();
         sync.queue_entry(create_test_entry("INFO", "normal"), SyncPriority::Normal)
             .unwrap();
 
@@ -701,11 +680,7 @@ mod tests {
         // Critical should be synced first, so it should be gone
         assert_eq!(sync.count_by_priority(SyncPriority::Critical), 0);
         // Low and Normal should remain (bandwidth limit)
-        assert!(
-            sync.count_by_priority(SyncPriority::Low)
-                + sync.count_by_priority(SyncPriority::Normal)
-                > 0
-        );
+        assert!(sync.count_by_priority(SyncPriority::Low) + sync.count_by_priority(SyncPriority::Normal) > 0);
     }
 
     #[test]
@@ -779,8 +754,7 @@ mod tests {
 
     #[test]
     fn test_storage_backend_refresh() {
-        let mut backend =
-            StorageBackend::new(StorageType::USBDrive, "/nonexistent/path".to_string());
+        let mut backend = StorageBackend::new(StorageType::USBDrive, "/nonexistent/path".to_string());
 
         assert!(!backend.is_mounted);
         assert_eq!(backend.available_bytes, 0);
@@ -793,10 +767,7 @@ mod tests {
 
     #[test]
     fn test_compress_entry() {
-        let entry = QueuedEntry::new(
-            create_test_entry("INFO", "Test message"),
-            SyncPriority::Normal,
-        );
+        let entry = QueuedEntry::new(create_test_entry("INFO", "Test message"), SyncPriority::Normal);
 
         assert!(entry.compressed_data.is_none());
 
@@ -881,11 +852,8 @@ mod tests {
             })
             .unwrap();
 
-            sync.queue_entry(
-                create_test_entry("INFO", "persistent1"),
-                SyncPriority::Normal,
-            )
-            .unwrap();
+            sync.queue_entry(create_test_entry("INFO", "persistent1"), SyncPriority::Normal)
+                .unwrap();
             sync.queue_entry(create_test_entry("INFO", "persistent2"), SyncPriority::High)
                 .unwrap();
         }

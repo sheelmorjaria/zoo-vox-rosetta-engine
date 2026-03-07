@@ -14,6 +14,7 @@
 // - 250kHz sample rate
 // - Mono, IEEE Float format
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use symphonia::core::audio::{AudioBufferRef, Signal};
 use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
@@ -43,8 +44,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
     // Get number of channels from the decoder's spec
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
@@ -89,10 +89,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Analyze a sample of bat vocalizations for within-vocalization phrase structure
-fn analyze_bat_corpus(
-    audio_dir: &Path,
-    sample_size: usize,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn analyze_bat_corpus(audio_dir: &Path, sample_size: usize) -> Result<(), Box<dyn std::error::Error>> {
     println!("========================================================================");
     println!("Within-Vocalization Phrase Analysis: Egyptian Fruit Bats");
     println!("========================================================================");
@@ -116,14 +113,8 @@ fn analyze_bat_corpus(
 
     println!("Configuration:");
     println!("  - Sample rate: {} kHz", config.sample_rate / 1000);
-    println!(
-        "  - Min phrase duration: {} ms",
-        config.min_phrase_duration_ms
-    );
-    println!(
-        "  - Min pause duration: {} ms",
-        config.min_pause_duration_ms
-    );
+    println!("  - Min phrase duration: {} ms", config.min_phrase_duration_ms);
+    println!("  - Min pause duration: {} ms", config.min_pause_duration_ms);
     println!("  - Min F0 change: {} Hz", config.min_f0_change_hz);
     println!("  - Frame size: {} ms", config.frame_size_ms);
     println!("  - Hop size: {} ms", config.hop_size_ms);
@@ -171,8 +162,7 @@ fn analyze_bat_corpus(
                 match analyzer.analyze_vocalization(&audio, None) {
                     Ok(segmentation) => {
                         if segmentation.num_phrases > 1 {
-                            multi_phrase_examples
-                                .push((file_name.to_string(), segmentation.clone()));
+                            multi_phrase_examples.push((file_name.to_string(), segmentation.clone()));
                             if multi_phrase_examples.len() <= 5 {
                                 println!(
                                     "  ✓ [{}] {} phrases detected: {}",
@@ -220,15 +210,9 @@ fn analyze_bat_corpus(
 
         match corpus_analyzer.analyze_corpus(vocalizations_refs, f0_contours) {
             Ok(stats) => {
-                println!(
-                    "Total vocalizations analyzed: {}",
-                    stats.total_vocalizations
-                );
+                println!("Total vocalizations analyzed: {}", stats.total_vocalizations);
                 println!("Multi-phrase vocalizations: {}", stats.multi_phrase_count);
-                println!(
-                    "Multi-phrase detection rate: {:.2}%",
-                    stats.multi_phrase_rate * 100.0
-                );
+                println!("Multi-phrase detection rate: {:.2}%", stats.multi_phrase_rate * 100.0);
                 println!(
                     "Average phrases per vocalization: {:.2}",
                     stats.avg_phrases_per_vocalization
@@ -273,9 +257,7 @@ fn analyze_bat_corpus(
                         stats.avg_phrases_per_vocalization
                     );
                     println!("  → Most vocalizations appear to be holistic units");
-                    println!(
-                        "  → May need to adjust detection thresholds or use different features"
-                    );
+                    println!("  → May need to adjust detection thresholds or use different features");
                 }
             }
             Err(e) => {

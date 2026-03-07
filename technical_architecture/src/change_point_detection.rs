@@ -209,12 +209,9 @@ mod tests {
         assert_eq!(changepoints[changepoints.len() - 1], 100);
 
         // Should detect changepoint near the step (within tolerance)
-        let detected_step = changepoints.iter().find(|&&cp| cp >= 45 && cp <= 55);
+        let detected_step = changepoints.iter().find(|&&cp| (45..=55).contains(&cp));
 
-        assert!(
-            detected_step.is_some(),
-            "Should detect changepoint near frame 50"
-        );
+        assert!(detected_step.is_some(), "Should detect changepoint near frame 50");
     }
 
     // ===== Test 4: Multi-step signal (multiple changepoints) =====
@@ -272,12 +269,9 @@ mod tests {
         // Should detect change between 45-55 frames
         assert!(changepoints.len() >= 2);
 
-        let closest = changepoints.iter().find(|&&cp| cp >= 45 && cp <= 55);
+        let closest = changepoints.iter().find(|&&cp| (45..=55).contains(&cp));
 
-        assert!(
-            closest.is_some(),
-            "Should detect changepoint in expected range"
-        );
+        assert!(closest.is_some(), "Should detect changepoint in expected range");
     }
 
     // ===== Test 8: Segment cost calculation =====

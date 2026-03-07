@@ -20,6 +20,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_marmoset_generality
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rand::Rng;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -34,9 +35,7 @@ use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
-use technical_architecture::{
-    MicroDynamicsExtractor, WithinVocalizationAnalyzer, WithinVocalizationConfig,
-};
+use technical_architecture::{MicroDynamicsExtractor, WithinVocalizationAnalyzer, WithinVocalizationConfig};
 
 // ============================================================================
 // Data Structures
@@ -188,8 +187,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configuration
     let data_dir = Path::new("/home/sheel/birdsong_analysis/data/Vocalizations");
-    let results_dir =
-        Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
+    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
 
     fs::create_dir_all(&results_dir)?;
 
@@ -254,11 +252,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Process files in parallel with limit for testing
     let max_files = 1000usize; // Adjust as needed
-    let all_files: Vec<_> = files_by_type
-        .values()
-        .flat_map(|v| v.iter())
-        .cloned()
-        .collect();
+    let all_files: Vec<_> = files_by_type.values().flat_map(|v| v.iter()).cloned().collect();
     let files_to_process: Vec<_> = all_files.into_iter().take(max_files).collect();
 
     println!(
@@ -396,8 +390,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let mut metrics =
-        calculate_generality_metrics(&phrase_context_map, &phrase_totals, n_contexts)?;
+    let mut metrics = calculate_generality_metrics(&phrase_context_map, &phrase_totals, n_contexts)?;
     println!("      └─ Computed metrics for {} phrases", metrics.len());
     println!();
 
@@ -455,12 +448,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let n_permutations = 1000;
-    let perm_result = run_permutation_test(
-        &phrase_context_map,
-        &phrase_totals,
-        n_permutations,
-        n_contexts,
-    )?;
+    let perm_result = run_permutation_test(&phrase_context_map, &phrase_totals, n_permutations, n_contexts)?;
 
     println!();
     println!("   ✅ Permutation Test Results:");
@@ -472,21 +460,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "      ├─ Null mean generality:      {:.4} ± {:.4}",
         perm_result.null_mean_generality, perm_result.null_std_generality
     );
-    println!(
-        "      ├─ Z-score:                   {:.4}",
-        perm_result.z_score
-    );
-    println!(
-        "      ├─ P-value:                   {:.6}",
-        perm_result.p_value
-    );
+    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
+    println!("      ├─ P-value:                   {:.6}", perm_result.p_value);
     println!(
         "      └─ Significant (α=0.05):      {}",
-        if perm_result.significant {
-            "YES ✨"
-        } else {
-            "NO"
-        }
+        if perm_result.significant { "YES ✨" } else { "NO" }
     );
     println!();
 
@@ -515,10 +493,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Shannon Entropy Distribution:");
     println!("      ├─ Mean:   {:.4} bits", summary.mean_shannon_entropy);
-    println!(
-        "      └─ Median: {:.4} bits",
-        summary.median_shannon_entropy
-    );
+    println!("      └─ Median: {:.4} bits", summary.median_shannon_entropy);
     println!();
 
     // ========================================================================
@@ -651,8 +626,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -683,18 +657,13 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     Ok(audio_samples)
 }
 
-fn extract_15d_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_15d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     let features = extractor.extract_15d_marmoset(audio)?;
     Ok(features.to_array().to_vec())
 }
 
-fn cluster_phrases(
-    phrases: &[ExtractedPhrase],
-) -> Result<Vec<(String, Vec<f32>)>, Box<dyn std::error::Error>> {
+fn cluster_phrases(phrases: &[ExtractedPhrase]) -> Result<Vec<(String, Vec<f32>)>, Box<dyn std::error::Error>> {
     use ndarray::Array2;
     use technical_architecture::hdbscan::HdbscanClustering;
 
@@ -898,8 +867,7 @@ fn run_permutation_test(
         .into_par_iter()
         .map(|_| {
             let mut rng = rand::thread_rng();
-            let mut shuffled_contexts: Vec<String> =
-                all_pairs.iter().map(|(ctx, _)| ctx.clone()).collect();
+            let mut shuffled_contexts: Vec<String> = all_pairs.iter().map(|(ctx, _)| ctx.clone()).collect();
             shuffled_contexts.shuffle(&mut rng);
 
             let mut phrase_context_counts: HashMap<String, usize> = HashMap::new();
@@ -917,11 +885,7 @@ fn run_permutation_test(
         .collect();
 
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_variance = null_means
-        .iter()
-        .map(|&x| (x - null_mean).powi(2))
-        .sum::<f64>()
-        / null_means.len() as f64;
+    let null_variance = null_means.iter().map(|&x| (x - null_mean).powi(2)).sum::<f64>() / null_means.len() as f64;
     let null_std = null_variance.sqrt();
 
     let z_score = if null_std > 0.0 {
@@ -952,11 +916,7 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     let mut sorted_gen = gen_scores.clone();
     sorted_gen.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let median_gen = sorted_gen[sorted_gen.len() / 2];
-    let var_gen = gen_scores
-        .iter()
-        .map(|x| (x - mean_gen).powi(2))
-        .sum::<f64>()
-        / gen_scores.len() as f64;
+    let var_gen = gen_scores.iter().map(|x| (x - mean_gen).powi(2)).sum::<f64>() / gen_scores.len() as f64;
 
     let entropies: Vec<f64> = metrics.iter().map(|m| m.shannon_entropy).collect();
     let mean_ent = entropies.iter().sum::<f64>() / entropies.len() as f64;
@@ -978,10 +938,7 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     }
 }
 
-fn save_generality_csv(
-    metrics: &[GeneralityMetrics],
-    path: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn save_generality_csv(metrics: &[GeneralityMetrics], path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut wtr = csv::Writer::from_path(path)?;
 
     wtr.write_record(&[

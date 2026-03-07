@@ -20,6 +20,7 @@
 // - 250kHz sample rate
 // - 13 behavioral contexts (coded 0-12 in annotations.csv)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -31,8 +32,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use technical_architecture::{
-    hdbscan::HdbscanClustering, MicroDynamicsExtractor, WithinVocalizationAnalyzer,
-    WithinVocalizationConfig,
+    hdbscan::HdbscanClustering, MicroDynamicsExtractor, WithinVocalizationAnalyzer, WithinVocalizationConfig,
 };
 
 // ============================================================================
@@ -206,8 +206,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
@@ -248,18 +247,13 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Load annotations CSV and create file -> context mapping
-fn load_annotations(
-    annotations_path: &Path,
-) -> Result<HashMap<String, BatContext>, Box<dyn std::error::Error>> {
+fn load_annotations(annotations_path: &Path) -> Result<HashMap<String, BatContext>, Box<dyn std::error::Error>> {
     let mut mapping = HashMap::new();
 
     let content = std::fs::read_to_string(annotations_path)?;
     let lines: Vec<&str> = content.lines().collect();
 
-    println!(
-        "📊 Loading annotations from: {}",
-        annotations_path.display()
-    );
+    println!("📊 Loading annotations from: {}", annotations_path.display());
 
     for (i, line) in lines.iter().enumerate() {
         if i == 0 {
@@ -286,10 +280,7 @@ fn load_annotations(
 // ============================================================================
 
 /// Extract features from audio segment (using 19D bat-optimized features)
-fn extract_15d_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_15d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     // Use 19D RFE-optimal features for bats
     let features = extractor.extract_rfe_optimal_19d_bat(audio)?;
@@ -366,11 +357,7 @@ fn segment_vocalization(
 // PHASE 2: CROSS-VOCALIZATION CLUSTERING (HDBSCAN)
 // ============================================================================
 
-fn discover_vocabulary(
-    phrases: &[PhraseCandidate],
-    min_cluster_size: usize,
-    min_samples: usize,
-) -> Vec<VocabWord> {
+fn discover_vocabulary(phrases: &[PhraseCandidate], min_cluster_size: usize, min_samples: usize) -> Vec<VocabWord> {
     if phrases.is_empty() {
         return Vec::new();
     }
@@ -406,10 +393,7 @@ fn discover_vocabulary(
     let mut cluster_map: HashMap<i32, Vec<&PhraseCandidate>> = HashMap::new();
     for (i, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            cluster_map
-                .entry(label)
-                .or_insert_with(Vec::new)
-                .push(&phrases[i]);
+            cluster_map.entry(label).or_insert_with(Vec::new).push(&phrases[i]);
         }
     }
 
@@ -536,14 +520,8 @@ fn analyze_reuse_patterns(vocabulary: &[VocabWord], phrases: &[PhraseCandidate])
     general_purpose_words.sort_by(|a, b| b.occurrence_count.cmp(&a.occurrence_count));
     context_specific_words.sort_by(|a, b| b.occurrence_count.cmp(&a.occurrence_count));
 
-    println!(
-        "  ✅ Found {} general purpose words",
-        general_purpose_words.len()
-    );
-    println!(
-        "  ✅ Found {} context-specific words",
-        context_specific_words.len()
-    );
+    println!("  ✅ Found {} general purpose words", general_purpose_words.len());
+    println!("  ✅ Found {} context-specific words", context_specific_words.len());
 
     // Calculate context statistics
     let mut context_statistics: HashMap<String, ContextStats> = HashMap::new();
@@ -613,11 +591,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
 
     // Sort phrases within each vocalization by start time
     for phrases_vec in vocalization_phrases.values_mut() {
-        phrases_vec.sort_by(|a, b| {
-            a.start_ms
-                .partial_cmp(&b.start_ms)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        phrases_vec.sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap_or(std::cmp::Ordering::Equal));
     }
 
     // Extract bigrams and trigrams
@@ -710,8 +684,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
                 avg_sequence_length: if sequence_lengths.is_empty() {
                     0.0
                 } else {
-                    sequence_lengths.iter().map(|&x| x as f64).sum::<f64>()
-                        / sequence_lengths.len() as f64
+                    sequence_lengths.iter().map(|&x| x as f64).sum::<f64>() / sequence_lengths.len() as f64
                 },
                 sequence_lengths,
                 bigram_entropy,
@@ -739,10 +712,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
     }
 
     // Find bigrams shared across multiple contexts
-    let all_bigrams: HashSet<String> = context_bigrams
-        .values()
-        .flat_map(|set| set.iter().cloned())
-        .collect();
+    let all_bigrams: HashSet<String> = context_bigrams.values().flat_map(|set| set.iter().cloned()).collect();
 
     for bigram in all_bigrams {
         let mut contexts: Vec<BatContext> = Vec::new();
@@ -768,10 +738,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
 
     println!("  ✅ Found {} unique bigrams", bigram_counts.len());
     println!("  ✅ Found {} unique trigrams", trigram_counts.len());
-    println!(
-        "  ✅ Found {} cross-context patterns",
-        cross_context_patterns.len()
-    );
+    println!("  ✅ Found {} cross-context patterns", cross_context_patterns.len());
 
     SequentialAnalysis {
         bigram_counts,
@@ -809,9 +776,7 @@ fn calculate_entropy(items: &[String]) -> f64 {
 // PHASE 4 DISPLAY
 // ============================================================================
 
-fn run_sequential_analysis(
-    phrases: &[PhraseCandidate],
-) -> Result<SequentialAnalysis, Box<dyn std::error::Error>> {
+fn run_sequential_analysis(phrases: &[PhraseCandidate]) -> Result<SequentialAnalysis, Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Phase 4: Sequential Pattern Analysis                                   │");
     println!("│   (Discovering Syntactic Rules Through Phrase Ordering)                 │");
@@ -828,8 +793,7 @@ fn run_sequential_analysis(
     println!();
 
     println!("Top 20 Bigram Transitions:");
-    for (i, (from_phrase, to_phrase, count)) in analysis.top_transitions.iter().take(20).enumerate()
-    {
+    for (i, (from_phrase, to_phrase, count)) in analysis.top_transitions.iter().take(20).enumerate() {
         println!(
             "  {:2}. {:30} → {:30} ({:>3} occurrences)",
             i + 1,
@@ -902,11 +866,7 @@ fn run_sequential_analysis(
         println!("Top 15 Cross-Context Shared Patterns:");
         for (i, pattern) in analysis.cross_context_patterns.iter().take(15).enumerate() {
             let pattern_str = pattern.pattern.join(" → ");
-            println!(
-                "  {:2}. Pattern: {}",
-                i + 1,
-                truncate_string(&pattern_str, 50)
-            );
+            println!("  {:2}. Pattern: {}", i + 1, truncate_string(&pattern_str, 50));
             println!(
                 "      Shared across {} contexts: {:?}",
                 pattern.contexts.len(),
@@ -924,27 +884,15 @@ fn run_sequential_analysis(
     println!();
 
     // Calculate overall entropy across all contexts
-    let all_entropies: Vec<f64> = analysis
-        .context_sequences
-        .values()
-        .map(|s| s.bigram_entropy)
-        .collect();
+    let all_entropies: Vec<f64> = analysis.context_sequences.values().map(|s| s.bigram_entropy).collect();
 
     if !all_entropies.is_empty() {
         let avg_entropy = all_entropies.iter().sum::<f64>() / all_entropies.len() as f64;
         let min_entropy = all_entropies.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-        let max_entropy = all_entropies
-            .iter()
-            .fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+        let max_entropy = all_entropies.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
 
-        println!(
-            "Average bigram entropy (unpredictability): {:.3} bits",
-            avg_entropy
-        );
-        println!(
-            "Entropy range: [{:.3}, {:.3}] bits",
-            min_entropy, max_entropy
-        );
+        println!("Average bigram entropy (unpredictability): {:.3} bits", avg_entropy);
+        println!("Entropy range: [{:.3}, {:.3}] bits", min_entropy, max_entropy);
         println!();
 
         // Interpret entropy
@@ -961,10 +909,7 @@ fn run_sequential_analysis(
     }
 
     println!();
-    println!(
-        "Cross-context patterns: {}",
-        analysis.cross_context_patterns.len()
-    );
+    println!("Cross-context patterns: {}", analysis.cross_context_patterns.len());
     if !analysis.cross_context_patterns.is_empty() {
         let max_shared = analysis
             .cross_context_patterns
@@ -1055,10 +1000,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(limit) = limit_vocalizations {
         println!("📊 Limiting to {} files for testing", limit);
-        println!(
-            "📊 Processing limited to {} vocalizations (testing mode)",
-            limit
-        );
+        println!("📊 Processing limited to {} vocalizations (testing mode)", limit);
     }
 
     println!("📂 Base directory: {}", base_dir.display());
@@ -1073,10 +1015,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if !annotations_path.exists() {
-        println!(
-            "⚠️  Annotations file not found: {}",
-            annotations_path.display()
-        );
+        println!("⚠️  Annotations file not found: {}", annotations_path.display());
         return Err("Annotations file not found".into());
     }
 
@@ -1134,14 +1073,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Configuration:");
     println!("  - Sample rate: {} kHz", config.sample_rate / 1000);
-    println!(
-        "  - Min phrase duration: {} ms",
-        config.min_phrase_duration_ms
-    );
-    println!(
-        "  - Min pause duration: {} ms",
-        config.min_pause_duration_ms
-    );
+    println!("  - Min phrase duration: {} ms", config.min_phrase_duration_ms);
+    println!("  - Min pause duration: {} ms", config.min_pause_duration_ms);
     println!("  - Min F0 change: {} Hz", config.min_f0_change_hz);
     println!();
 
@@ -1165,35 +1098,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     for (i, audio_file) in files_to_process.iter().enumerate() {
-        let file_name = audio_file
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .to_string();
+        let file_name = audio_file.file_name().unwrap().to_string_lossy().to_string();
 
         // Get context from annotations
-        let context = file_to_context
-            .get(&file_name)
-            .copied()
-            .unwrap_or(BatContext::Context0);
+        let context = file_to_context.get(&file_name).copied().unwrap_or(BatContext::Context0);
 
         match load_wav_file(audio_file) {
-            Ok(audio) => {
-                match segment_vocalization(
-                    &audio,
-                    &file_name,
-                    context,
-                    &analyzer,
-                    config.sample_rate,
-                ) {
-                    Ok(mut phrase_list) => {
-                        phrases.append(&mut phrase_list);
-                    }
-                    Err(e) => {
-                        eprintln!("  ✗ Error segmenting {}: {}", file_name, e);
-                    }
+            Ok(audio) => match segment_vocalization(&audio, &file_name, context, &analyzer, config.sample_rate) {
+                Ok(mut phrase_list) => {
+                    phrases.append(&mut phrase_list);
                 }
-            }
+                Err(e) => {
+                    eprintln!("  ✗ Error segmenting {}: {}", file_name, e);
+                }
+            },
             Err(e) => {
                 eprintln!("  ✗ Error loading {}: {}", file_name, e);
             }
@@ -1299,12 +1217,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Top 20 General Purpose Words (by occurrence count):");
-    for (i, word) in reuse_analysis
-        .general_purpose_words
-        .iter()
-        .take(20)
-        .enumerate()
-    {
+    for (i, word) in reuse_analysis.general_purpose_words.iter().take(20).enumerate() {
         println!(
             "  {:2}. Word {:>4} | {:>2} contexts | {:>4} occurrences | {:>4} vocalizations | {:?}",
             i + 1,
@@ -1324,8 +1237,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Group context-specific words by context
-    let mut context_specific_by_context: HashMap<String, Vec<&ContextSpecificWord>> =
-        HashMap::new();
+    let mut context_specific_by_context: HashMap<String, Vec<&ContextSpecificWord>> = HashMap::new();
     for word in &reuse_analysis.context_specific_words {
         context_specific_by_context
             .entry(word.context.clone())

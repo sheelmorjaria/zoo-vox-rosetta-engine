@@ -9,10 +9,11 @@
 //!
 //! Target: Total loop < 200ms for "Antiphonal" (turn-taking) behavior
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::time::{Duration, Instant};
 use technical_architecture::bio_acoustic_agent::{
-    AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent, EnvState,
-    InteractionContext, SourceMetadata, SynthesisRequest,
+    AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent, EnvState, InteractionContext,
+    SourceMetadata, SynthesisRequest,
 };
 
 /// Benchmark results
@@ -207,19 +208,14 @@ fn simulate_cognitive_decision(label: &str, confidence: f64) -> (String, Duratio
 fn plan_synthesis(
     agent: &BioAcousticAgent,
     label: &str,
-) -> (
-    technical_architecture::bio_acoustic_agent::SynthesisPlan,
-    Duration,
-) {
+) -> (technical_architecture::bio_acoustic_agent::SynthesisPlan, Duration) {
     let start = Instant::now();
 
     let request = SynthesisRequest::new(label)
         .with_environment(EnvState::Quiet)
         .with_context(InteractionContext::Reply);
 
-    let plan = agent
-        .plan_synthesis(request)
-        .expect("Synthesis planning failed");
+    let plan = agent.plan_synthesis(request).expect("Synthesis planning failed");
 
     (plan, start.elapsed())
 }
@@ -265,8 +261,7 @@ fn run_benchmark_iteration(agent: &BioAcousticAgent) -> LatencyProfile {
     let plan_ms = plan_time.as_secs_f64() * 1000.0;
 
     // 7. Granular Synthesis
-    let (_output, synth_time) =
-        simulate_granular_synthesis(plan.target_metadata.duration_ms as f64);
+    let (_output, synth_time) = simulate_granular_synthesis(plan.target_metadata.duration_ms as f64);
     let synth_ms = synth_time.as_secs_f64() * 1000.0;
 
     LatencyProfile {
@@ -353,11 +348,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..n_iterations {
         let profile = run_benchmark_iteration(&agent);
         profiles.push(profile);
-        println!(
-            "  Iteration {}: {:.2}ms",
-            i + 1,
-            profiles.last().unwrap().total()
-        );
+        println!("  Iteration {}: {:.2}ms", i + 1, profiles.last().unwrap().total());
     }
 
     // =========================================================================
@@ -369,25 +360,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate averages
     let avg_profile = LatencyProfile {
-        audio_capture_ms: profiles.iter().map(|p| p.audio_capture_ms).sum::<f64>()
-            / n_iterations as f64,
-        segmentation_ms: profiles.iter().map(|p| p.segmentation_ms).sum::<f64>()
-            / n_iterations as f64,
-        feature_extraction_ms: profiles
-            .iter()
-            .map(|p| p.feature_extraction_ms)
-            .sum::<f64>()
-            / n_iterations as f64,
-        classification_ms: profiles.iter().map(|p| p.classification_ms).sum::<f64>()
-            / n_iterations as f64,
+        audio_capture_ms: profiles.iter().map(|p| p.audio_capture_ms).sum::<f64>() / n_iterations as f64,
+        segmentation_ms: profiles.iter().map(|p| p.segmentation_ms).sum::<f64>() / n_iterations as f64,
+        feature_extraction_ms: profiles.iter().map(|p| p.feature_extraction_ms).sum::<f64>() / n_iterations as f64,
+        classification_ms: profiles.iter().map(|p| p.classification_ms).sum::<f64>() / n_iterations as f64,
         decision_ms: profiles.iter().map(|p| p.decision_ms).sum::<f64>() / n_iterations as f64,
-        synthesis_planning_ms: profiles
-            .iter()
-            .map(|p| p.synthesis_planning_ms)
-            .sum::<f64>()
-            / n_iterations as f64,
-        synthesis_audio_ms: profiles.iter().map(|p| p.synthesis_audio_ms).sum::<f64>()
-            / n_iterations as f64,
+        synthesis_planning_ms: profiles.iter().map(|p| p.synthesis_planning_ms).sum::<f64>() / n_iterations as f64,
+        synthesis_audio_ms: profiles.iter().map(|p| p.synthesis_audio_ms).sum::<f64>() / n_iterations as f64,
         total_ms: 0.0,
     };
 
@@ -416,11 +395,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let antiphonal_status = if p95 <= 200.0 { "✓ PASS" } else { "✗ FAIL" };
     let call_response_status = if p95 <= 500.0 { "✓ PASS" } else { "✗ FAIL" };
-    let monitoring_status = if p95 <= 1000.0 {
-        "✓ PASS"
-    } else {
-        "✗ FAIL"
-    };
+    let monitoring_status = if p95 <= 1000.0 { "✓ PASS" } else { "✗ FAIL" };
 
     println!(
         "  │ Antiphonal (200ms)         │ 200ms     │ {} ({:.0}ms) │",
@@ -447,10 +422,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("Granular Synthesis", avg_profile.synthesis_audio_ms),
     ];
 
-    let max_stage = bottleneck
-        .iter()
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-        .unwrap();
+    let max_stage = bottleneck.iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap()).unwrap();
     println!(
         "  - Primary bottleneck: {} ({:.1}ms, {:.0}% of total)",
         max_stage.0,

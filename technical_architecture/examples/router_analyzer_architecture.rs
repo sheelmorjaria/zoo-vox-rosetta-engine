@@ -20,9 +20,9 @@
 //!
 //! Solution: Use consistent weights for Phase 1, species-specific for Phase 2.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use technical_architecture::{
-    species::FeatureWeights, zoo_vox_within_call::WithinCallAnalyzer, AcousticSimilarityEngine,
-    SimilarityMetric,
+    species::FeatureWeights, zoo_vox_within_call::WithinCallAnalyzer, AcousticSimilarityEngine, SimilarityMetric,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -45,8 +45,7 @@ fn main() {
     println!();
 
     // Create engine with UNIFIED weights (or no weights = equal)
-    let mut global_engine =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut global_engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Unified weights for global discrimination
     let unified_weights = FeatureWeights {
@@ -165,10 +164,7 @@ fn main() {
         "  ├─ Micro-dynamics: {:.1}x ← Click patterns",
         whale_weights.micro_dynamics
     );
-    println!(
-        "  └─ TFS: {:.1}x ← Temporal structure critical",
-        whale_weights.tfs
-    );
+    println!("  └─ TFS: {:.1}x ← Temporal structure critical", whale_weights.tfs);
     println!();
 
     // =========================================================================

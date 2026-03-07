@@ -86,13 +86,7 @@ impl MacaqueSpectralDerivative {
     }
 
     /// Configure parameters
-    pub fn with_params(
-        mut self,
-        fft_size: usize,
-        hop_size: usize,
-        min_sweep_rate: f64,
-        max_sweep_rate: f64,
-    ) -> Self {
+    pub fn with_params(mut self, fft_size: usize, hop_size: usize, min_sweep_rate: f64, max_sweep_rate: f64) -> Self {
         self.fft_size = fft_size;
         self.hop_size = hop_size;
         self.min_sweep_rate = min_sweep_rate;
@@ -116,11 +110,8 @@ impl MacaqueSpectralDerivative {
         for frame_idx in 1..n_frames - 1 {
             for bin_idx in 0..n_bins {
                 // Central difference for time derivative
-                let dt =
-                    (frame_idx as f64 * self.hop_size as f64) / self.sample_rate as f64 * 1000.0;
-                let df = (spectrogram[frame_idx + 1][bin_idx]
-                    - spectrogram[frame_idx - 1][bin_idx])
-                    / (2.0 * dt);
+                let dt = (frame_idx as f64 * self.hop_size as f64) / self.sample_rate as f64 * 1000.0;
+                let df = (spectrogram[frame_idx + 1][bin_idx] - spectrogram[frame_idx - 1][bin_idx]) / (2.0 * dt);
 
                 derivative[frame_idx][bin_idx] = df;
             }
@@ -132,11 +123,7 @@ impl MacaqueSpectralDerivative {
     /// Detect FM sweep events
     ///
     /// Finds regions where frequency is changing rapidly (FM sweeps)
-    pub fn detect_fm_sweeps(
-        &self,
-        spectrogram: &[Vec<f64>],
-        frequencies: &[f64],
-    ) -> Vec<FmSweepEvent> {
+    pub fn detect_fm_sweeps(&self, spectrogram: &[Vec<f64>], frequencies: &[f64]) -> Vec<FmSweepEvent> {
         let derivative = self.compute_spectral_derivative(spectrogram);
         let mut sweeps = Vec::new();
 
@@ -145,8 +132,7 @@ impl MacaqueSpectralDerivative {
         }
 
         let hop_ms = (self.hop_size as f64 / self.sample_rate as f64) * 1000.0;
-        let freq_resolution =
-            frequencies.get(1).unwrap_or(&0.0) - frequencies.first().unwrap_or(&0.0);
+        let freq_resolution = frequencies.get(1).unwrap_or(&0.0) - frequencies.first().unwrap_or(&0.0);
 
         // Find peaks in derivative (rapid FM regions)
         let mut in_sweep = false;
@@ -227,12 +213,7 @@ impl MacaqueSpectralDerivative {
     }
 
     /// Analyze macaque vocalization for FM characteristics
-    pub fn analyze(
-        &self,
-        spectrogram: &[Vec<f64>],
-        frequencies: &[f64],
-        timestamp_ms: u64,
-    ) -> SpeciesAnalysisResult {
+    pub fn analyze(&self, spectrogram: &[Vec<f64>], frequencies: &[f64], timestamp_ms: u64) -> SpeciesAnalysisResult {
         let sweeps = self.detect_fm_sweeps(spectrogram, frequencies);
         let derivative = self.compute_spectral_derivative(spectrogram);
 
@@ -244,14 +225,8 @@ impl MacaqueSpectralDerivative {
             0.0
         };
 
-        let up_sweeps = sweeps
-            .iter()
-            .filter(|s| s.direction == SweepDirection::Up)
-            .count();
-        let down_sweeps = sweeps
-            .iter()
-            .filter(|s| s.direction == SweepDirection::Down)
-            .count();
+        let up_sweeps = sweeps.iter().filter(|s| s.direction == SweepDirection::Up).count();
+        let down_sweeps = sweeps.iter().filter(|s| s.direction == SweepDirection::Down).count();
 
         let mut features = HashMap::new();
         features.insert("sweep_count".to_string(), sweeps.len() as f64);
@@ -383,11 +358,7 @@ impl DolphinBispectrumAnalyzer {
     ///
     /// Where X(f) is the FFT at frequency f, and X* is the complex conjugate.
     /// For real signals, we use magnitude for simplicity.
-    pub fn compute_bispectrum(
-        &self,
-        fft_magnitudes: &[f64],
-        fft_phases: &[f64],
-    ) -> BispectrumResult {
+    pub fn compute_bispectrum(&self, fft_magnitudes: &[f64], fft_phases: &[f64]) -> BispectrumResult {
         let n = fft_magnitudes.len();
         let freq_resolution = self.sample_rate as f64 / (2 * n) as f64;
 
@@ -465,9 +436,7 @@ impl DolphinBispectrumAnalyzer {
 
                     // Biphase coherence (closer to 0 mod 2pi = more coherent)
                     let biphase = bispectrum.phase[f1_bin][f2_bin];
-                    let coherence = ((biphase % (2.0 * std::f64::consts::PI)).abs()
-                        / std::f64::consts::PI)
-                        .min(1.0);
+                    let coherence = ((biphase % (2.0 * std::f64::consts::PI)).abs() / std::f64::consts::PI).min(1.0);
 
                     qpc_events.push(QpcEvent {
                         f1_hz: f1,
@@ -502,8 +471,7 @@ impl DolphinBispectrumAnalyzer {
         let whistle_threshold = 20000.0; // 20kHz
 
         let has_click = f1 > click_threshold || f2 > click_threshold || f3 > click_threshold;
-        let has_whistle =
-            f1 < whistle_threshold || f2 < whistle_threshold || f3 < whistle_threshold;
+        let has_whistle = f1 < whistle_threshold || f2 < whistle_threshold || f3 < whistle_threshold;
 
         if has_click && has_whistle {
             CouplingType::ClickWhistleInteraction
@@ -517,23 +485,14 @@ impl DolphinBispectrumAnalyzer {
     }
 
     /// Analyze dolphin vocalization for bispectrum characteristics
-    pub fn analyze(
-        &self,
-        fft_magnitudes: &[f64],
-        fft_phases: &[f64],
-        timestamp_ms: u64,
-    ) -> SpeciesAnalysisResult {
+    pub fn analyze(&self, fft_magnitudes: &[f64], fft_phases: &[f64], timestamp_ms: u64) -> SpeciesAnalysisResult {
         let bispectrum = self.compute_bispectrum(fft_magnitudes, fft_phases);
         let qpc_events = self.detect_qpc(&bispectrum);
 
         // Compute aggregate statistics
         let total_qpc = qpc_events.len();
         let avg_magnitude = if !qpc_events.is_empty() {
-            qpc_events
-                .iter()
-                .map(|e| e.bispectrum_magnitude)
-                .sum::<f64>()
-                / qpc_events.len() as f64
+            qpc_events.iter().map(|e| e.bispectrum_magnitude).sum::<f64>() / qpc_events.len() as f64
         } else {
             0.0
         };
@@ -560,18 +519,9 @@ impl DolphinBispectrumAnalyzer {
         features.insert("qpc_count".to_string(), total_qpc as f64);
         features.insert("avg_bispectrum_magnitude".to_string(), avg_magnitude);
         features.insert("avg_biphase_coherence".to_string(), avg_coherence);
-        features.insert(
-            "click_click_interactions".to_string(),
-            click_interactions as f64,
-        );
-        features.insert(
-            "whistle_whistle_interactions".to_string(),
-            whistle_interactions as f64,
-        );
-        features.insert(
-            "click_whistle_interactions".to_string(),
-            mixed_interactions as f64,
-        );
+        features.insert("click_click_interactions".to_string(), click_interactions as f64);
+        features.insert("whistle_whistle_interactions".to_string(), whistle_interactions as f64);
+        features.insert("click_whistle_interactions".to_string(), mixed_interactions as f64);
 
         // Bispectrum entropy (measure of distribution)
         let entropy = self.compute_bispectrum_entropy(&bispectrum);
@@ -789,9 +739,7 @@ mod tests {
         let analyzer = MacaqueSpectralDerivative::new(48000);
 
         // Create spectrogram with some variation
-        let spectrogram: Vec<Vec<f64>> = (0..10)
-            .map(|i| vec![1.0 + i as f64 * 0.1, 2.0, 3.0])
-            .collect();
+        let spectrogram: Vec<Vec<f64>> = (0..10).map(|i| vec![1.0 + i as f64 * 0.1, 2.0, 3.0]).collect();
         let frequencies = vec![1000.0, 2000.0, 3000.0];
 
         let result = analyzer.analyze(&spectrogram, &frequencies, 0);

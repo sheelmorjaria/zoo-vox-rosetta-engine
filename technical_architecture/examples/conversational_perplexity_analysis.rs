@@ -10,6 +10,7 @@
 //!
 //! Prediction: Marmoset perplexity > Zebra Finch perplexity (less predictable = more conversational)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use technical_architecture::computational_ethology::{
     calculate_perplexity, calculate_zipf_correlation, PhraseSequence,
@@ -20,8 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load zebra finch syntax (fixed song patterns)
     let zf_syntax_path = "zebra_finch_analysis/syntax_analysis.json";
-    let zf_data: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(zf_syntax_path)?)?;
+    let zf_data: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(zf_syntax_path)?)?;
 
     println!("--- Zebra Finch (Solo Song) ---");
     let zf_sequences = extract_zebra_finch_sequences(&zf_data);
@@ -84,18 +84,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("├─────────────────────────────────────────────────────────────────┤");
     println!("│ {:<40} {:>20} │", "Species/Mode", "Perplexity");
     println!("├─────────────────────────────────────────────────────────────────┤");
-    println!(
-        "│ {:<40} {:>20.4} │",
-        "Zebra Finch (Fixed Song)", zf_perplexity
-    );
-    println!(
-        "│ {:<40} {:>20.4} │",
-        "Marmoset - Solo Calling", solo_perplexity
-    );
-    println!(
-        "│ {:<40} {:>20.4} │",
-        "Marmoset - Conversational", conv_perplexity
-    );
+    println!("│ {:<40} {:>20.4} │", "Zebra Finch (Fixed Song)", zf_perplexity);
+    println!("│ {:<40} {:>20.4} │", "Marmoset - Solo Calling", solo_perplexity);
+    println!("│ {:<40} {:>20.4} │", "Marmoset - Conversational", conv_perplexity);
     println!("│ {:<40} {:>20.4} │", "Random Baseline", random_perplexity);
     println!("└─────────────────────────────────────────────────────────────────┘");
 
@@ -154,19 +145,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== ZIPF CORRELATION COMPARISON ===");
 
     // Create phrase types from marmoset data
-    let marmoset_phrase_types: Vec<technical_architecture::computational_ethology::PhraseType> =
-        marmoset_phrases
-            .iter()
-            .map(
-                |(id, count)| technical_architecture::computational_ethology::PhraseType {
-                    id: id.clone(),
-                    label: None,
-                    occurrence_count: *count,
-                    centroid: vec![],
-                    contexts: HashMap::new(),
-                },
-            )
-            .collect();
+    let marmoset_phrase_types: Vec<technical_architecture::computational_ethology::PhraseType> = marmoset_phrases
+        .iter()
+        .map(
+            |(id, count)| technical_architecture::computational_ethology::PhraseType {
+                id: id.clone(),
+                label: None,
+                occurrence_count: *count,
+                centroid: vec![],
+                contexts: HashMap::new(),
+            },
+        )
+        .collect();
 
     let marmoset_zipf = calculate_zipf_correlation(&marmoset_phrase_types);
     println!(
@@ -194,10 +184,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n=== COMPLETE LINGUISTIC PROFILE ===");
     println!("┌────────────────────┬────────────────────┬────────────────────┐");
-    println!(
-        "│ {:^18} │ {:^18} │ {:^18} │",
-        "Metric", "Zebra Finch", "Marmoset"
-    );
+    println!("│ {:^18} │ {:^18} │ {:^18} │", "Metric", "Zebra Finch", "Marmoset");
     println!("├────────────────────┼────────────────────┼────────────────────┤");
     println!(
         "│ {:<18} │ {:>18.4} │ {:>18.4} │",
@@ -234,10 +221,7 @@ fn load_marmoset_call_types() -> Vec<(String, usize)> {
                 let mut call_types: Vec<(String, usize)> = phrases
                     .iter()
                     .map(|(key, val)| {
-                        let count = val
-                            .get("total_occurrences")
-                            .and_then(|c| c.as_u64())
-                            .unwrap_or(1) as usize;
+                        let count = val.get("total_occurrences").and_then(|c| c.as_u64()).unwrap_or(1) as usize;
                         (key.clone(), count)
                     })
                     .collect();
@@ -275,15 +259,9 @@ fn load_marmoset_call_types() -> Vec<(String, usize)> {
 fn extract_zebra_finch_sequences(data: &serde_json::Value) -> Vec<PhraseSequence> {
     let mut sequences = Vec::new();
 
-    let vocab_size = data
-        .get("vocabulary_size")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(120) as usize;
+    let vocab_size = data.get("vocabulary_size").and_then(|v| v.as_u64()).unwrap_or(120) as usize;
 
-    let total_sequences = data
-        .get("total_sequences")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(125) as usize;
+    let total_sequences = data.get("total_sequences").and_then(|v| v.as_u64()).unwrap_or(125) as usize;
 
     // Extract transitions for realistic sequence generation
     let transitions: Vec<(usize, usize, f64)> = data
@@ -312,10 +290,7 @@ fn extract_zebra_finch_sequences(data: &serde_json::Value) -> Vec<PhraseSequence
             phrases.push(format!("phrase_{}", current));
 
             // Find matching transitions
-            let matching: Vec<_> = transitions
-                .iter()
-                .filter(|(from, _, _)| *from == current)
-                .collect();
+            let matching: Vec<_> = transitions.iter().filter(|(from, _, _)| *from == current).collect();
 
             if !matching.is_empty() {
                 // Use deterministic "random" for reproducibility
@@ -349,10 +324,7 @@ fn extract_zebra_finch_phrase_types(
 ) -> Vec<technical_architecture::computational_ethology::PhraseType> {
     use technical_architecture::computational_ethology::PhraseType;
 
-    let vocab_size = data
-        .get("vocabulary_size")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(120) as usize;
+    let vocab_size = data.get("vocabulary_size").and_then(|v| v.as_u64()).unwrap_or(120) as usize;
 
     // Create Zipfian distribution for zebra finch (lumpy - heavy top, short tail)
     let mut phrase_types = Vec::new();
@@ -426,18 +398,12 @@ fn calculate_transition_entropy(transitions: &[(usize, usize, f64)]) -> f64 {
     }
 }
 
-fn generate_marmoset_solo_sequences(
-    call_types: &[(String, usize)],
-    num_sequences: usize,
-) -> Vec<PhraseSequence> {
+fn generate_marmoset_solo_sequences(call_types: &[(String, usize)], num_sequences: usize) -> Vec<PhraseSequence> {
     let mut sequences = Vec::new();
 
     // Calculate weights based on occurrence counts
     let total_count: usize = call_types.iter().map(|(_, c)| c).sum();
-    let weights: Vec<f64> = call_types
-        .iter()
-        .map(|(_, c)| *c as f64 / total_count as f64)
-        .collect();
+    let weights: Vec<f64> = call_types.iter().map(|(_, c)| *c as f64 / total_count as f64).collect();
 
     // Solo calling: same individual tends to repeat similar calls
     // Lower perplexity than conversational
@@ -503,10 +469,7 @@ fn generate_marmoset_conversational_sequences(
         ("contact_phee", vec!["phee", "contact_phee", "trill"]),
         ("food_call", vec!["food_call", "egg", "affiliative_trill"]),
         ("alarm_tsik", vec!["alarm_tsik", "tsik", "agonistic_tsik"]),
-        (
-            "affiliative_trill",
-            vec!["affiliative_trill", "trill", "soft_phee"],
-        ),
+        ("affiliative_trill", vec!["affiliative_trill", "trill", "soft_phee"]),
         ("agonistic_tsik", vec!["agonistic_tsik", "cry", "tsik"]),
         ("cry", vec!["phee", "contact_phee", "egg_cry"]),
         ("phee_cry", vec!["phee", "cry", "contact_phee"]),
@@ -522,10 +485,7 @@ fn generate_marmoset_conversational_sequences(
 
     // Calculate weights for initial call selection
     let total_count: usize = call_types.iter().map(|(_, c)| c).sum();
-    let weights: Vec<f64> = call_types
-        .iter()
-        .map(|(_, c)| *c as f64 / total_count as f64)
-        .collect();
+    let weights: Vec<f64> = call_types.iter().map(|(_, c)| *c as f64 / total_count as f64).collect();
 
     for i in 0..num_sequences {
         let mut phrases = Vec::new();

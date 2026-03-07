@@ -3,6 +3,7 @@
 //! This example analyzes bat corpus analysis results, computing perplexity,
 //! entropy, and ZIPF correlation metrics to evaluate language-like structure.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 
@@ -93,7 +94,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total Segments:          {:>12}", report.total_segments);
     println!("  Unique Segment Types:    {:>12}", report.unique_segment_types);
     println!("  Vocabulary Size:         {:>12}", report.config.vocabulary_size);
-    println!("  Avg Segments/Vocalization: {:>10.2}", report.avg_segments_per_vocalization);
+    println!(
+        "  Avg Segments/Vocalization: {:>10.2}",
+        report.avg_segments_per_vocalization
+    );
     println!("  Unique N-grams:          {:>12}", report.unique_ngrams);
     println!("  Max N-gram Length:       {:>12}", report.max_ngram_length);
     println!();
@@ -141,10 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let freqs: Vec<f64> = ngrams.iter().map(|(_, c)| *c as f64 / total_count as f64).collect();
 
         // Compute entropy
-        let entropy: f64 = freqs.iter()
-            .filter(|&&p| p > 0.0)
-            .map(|&p| -p * p.log2())
-            .sum();
+        let entropy: f64 = freqs.iter().filter(|&&p| p > 0.0).map(|&p| -p * p.log2()).sum();
 
         // Perplexity = 2^entropy
         let perplexity = 2.0_f64.powf(entropy);
@@ -154,7 +155,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let coverage = unique_count as f64 / possible_ngrams;
 
         // Most frequent
-        let (most_frequent, most_frequent_count) = ngrams.first()
+        let (most_frequent, most_frequent_count) = ngrams
+            .first()
             .map(|(ngram, count)| (ngram.clone(), *count))
             .unwrap_or((vec![], 0));
 
@@ -268,7 +270,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // N-gram structure score: based on perplexity reduction from unigram
     let unigram_perplexity = vocabulary_size.log2().exp2();
-    let bigram_perplexity = ngram_analyses.first()
+    let bigram_perplexity = ngram_analyses
+        .first()
         .map(|a| a.perplexity)
         .unwrap_or(unigram_perplexity);
     let perplexity_reduction = (unigram_perplexity - bigram_perplexity) / unigram_perplexity;
@@ -284,7 +287,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    N-gram Structure:     {:>6.1}%", structure_score * 100.0);
     println!();
     println!("  ┌─────────────────────────────────────────────────────────────┐");
-    println!("  │  COMPOSITE LANGUAGE STRUCTURE SCORE: {:>6.1}%               │", language_score * 100.0);
+    println!(
+        "  │  COMPOSITE LANGUAGE STRUCTURE SCORE: {:>6.1}%               │",
+        language_score * 100.0
+    );
     println!("  └─────────────────────────────────────────────────────────────┘");
     println!();
 
@@ -316,7 +322,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Vocabulary:       {:>10} types", report.unique_segment_types);
     println!("  N-grams Found:    {:>10} unique", report.unique_ngrams);
     println!("  ZIPF Correlation: {:>10.4}", zipf_correlation);
-    println!("  Max Syntactic Depth: {:>7} elements", report.longest_repeated_ngram.0.len());
+    println!(
+        "  Max Syntactic Depth: {:>7} elements",
+        report.longest_repeated_ngram.0.len()
+    );
     println!("  Language Score:   {:>10.1}%", language_score * 100.0);
     println!();
 
@@ -355,16 +364,10 @@ fn compute_zipf_correlation(frequencies: &[usize]) -> f64 {
     let n = frequencies.len().min(1000) as f64; // Use top 1000 for stability
 
     // Compute means of log(rank) and log(frequency)
-    let sum_log_rank: f64 = (1..=n as usize)
-        .map(|r| (r as f64).ln())
-        .sum();
+    let sum_log_rank: f64 = (1..=n as usize).map(|r| (r as f64).ln()).sum();
     let mean_log_rank = sum_log_rank / n;
 
-    let sum_log_freq: f64 = frequencies
-        .iter()
-        .take(n as usize)
-        .map(|f| (*f as f64).ln())
-        .sum();
+    let sum_log_freq: f64 = frequencies.iter().take(n as usize).map(|f| (*f as f64).ln()).sum();
     let mean_log_freq = sum_log_freq / n;
 
     // Compute Pearson correlation

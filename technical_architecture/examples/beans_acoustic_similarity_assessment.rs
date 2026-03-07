@@ -12,6 +12,7 @@
 // This approach avoids the O(n²) memory issue by using similarity-based
 // grouping instead of full pairwise distance matrices.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -214,11 +215,7 @@ impl FastFeatureExtractor {
         let max_lag = (self.sample_rate as f64 / 100.0).min(n as f64 / 2.0) as usize;
 
         let mean = audio.iter().map(|&x| x as f64).sum::<f64>() / n as f64;
-        let variance: f64 = audio
-            .iter()
-            .map(|&x| (x as f64 - mean).powi(2))
-            .sum::<f64>()
-            / n as f64;
+        let variance: f64 = audio.iter().map(|&x| (x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
         if variance < 1e-10 {
             return None;
         }
@@ -316,10 +313,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let geometric_mean = nonzero
-            .iter()
-            .product::<f64>()
-            .powf(1.0 / nonzero.len() as f64);
+        let geometric_mean = nonzero.iter().product::<f64>().powf(1.0 / nonzero.len() as f64);
         let arithmetic_mean = nonzero.iter().sum::<f64>() / nonzero.len() as f64;
 
         if arithmetic_mean > 0.0 {
@@ -410,9 +404,7 @@ impl FastFeatureExtractor {
         let sustain_start = (n as f64 * 0.3) as usize;
         let sustain_end = (n as f64 * 0.7) as usize;
         let sustain = if sustain_end > sustain_start {
-            envelope[sustain_start..sustain_end].iter().sum::<f64>()
-                / (sustain_end - sustain_start) as f64
-                / max_amp
+            envelope[sustain_start..sustain_end].iter().sum::<f64>() / (sustain_end - sustain_start) as f64 / max_amp
         } else {
             0.0
         };
@@ -429,11 +421,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let weighted_sum: f64 = spectrum
-            .iter()
-            .enumerate()
-            .map(|(i, &mag)| i as f64 * mag)
-            .sum();
+        let weighted_sum: f64 = spectrum.iter().enumerate().map(|(i, &mag)| i as f64 * mag).sum();
         let total_mag: f64 = spectrum.iter().sum();
 
         if total_mag > 0.0 {
@@ -480,11 +468,7 @@ impl FastFeatureExtractor {
         let vib_rate = crossings as f64 / duration / 2.0;
 
         // Vibrato depth (standard deviation of F0)
-        let variance: f64 = f0_contour
-            .iter()
-            .map(|f| (f - mean_f0).powi(2))
-            .sum::<f64>()
-            / f0_contour.len() as f64;
+        let variance: f64 = f0_contour.iter().map(|f| (f - mean_f0).powi(2)).sum::<f64>() / f0_contour.len() as f64;
         let vib_depth = variance.sqrt();
 
         (vib_rate.min(50.0), vib_depth.min(1000.0))
@@ -515,11 +499,8 @@ impl FastFeatureExtractor {
         }
 
         let mean_period = periods.iter().sum::<usize>() as f64 / periods.len() as f64;
-        let variance: f64 = periods
-            .iter()
-            .map(|p| (*p as f64 - mean_period).powi(2))
-            .sum::<f64>()
-            / periods.len() as f64;
+        let variance: f64 =
+            periods.iter().map(|p| (*p as f64 - mean_period).powi(2)).sum::<f64>() / periods.len() as f64;
 
         (variance.sqrt() / mean_period).min(1.0).max(0.0)
     }
@@ -558,8 +539,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let variance: f64 =
-            peaks.iter().map(|p| (p - mean_peak).powi(2)).sum::<f64>() / peaks.len() as f64;
+        let variance: f64 = peaks.iter().map(|p| (p - mean_peak).powi(2)).sum::<f64>() / peaks.len() as f64;
 
         (variance.sqrt() / mean_peak).min(1.0).max(0.0)
     }
@@ -598,10 +578,7 @@ impl FastFeatureExtractor {
         let mut prev_energy = 0.0;
         for start in (0..n).step_by(window) {
             let end = (start + window).min(n);
-            let energy = audio[start..end]
-                .iter()
-                .map(|x| (*x as f64) * (*x as f64))
-                .sum::<f64>();
+            let energy = audio[start..end].iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>();
 
             if energy > prev_energy * 2.0 && prev_energy > 0.0 {
                 onsets.push(start);
@@ -620,20 +597,11 @@ impl FastFeatureExtractor {
             .collect();
 
         let mean_ici = icis.iter().sum::<f64>() / icis.len() as f64;
-        let variance =
-            icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
+        let variance = icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
         let std_ici = variance.sqrt();
-        let ici_cv = if mean_ici > 0.0 {
-            std_ici / mean_ici
-        } else {
-            0.0
-        };
+        let ici_cv = if mean_ici > 0.0 { std_ici / mean_ici } else { 0.0 };
 
-        let onset_rate = if mean_ici > 0.0 {
-            1000.0 / mean_ici
-        } else {
-            0.0
-        };
+        let onset_rate = if mean_ici > 0.0 { 1000.0 / mean_ici } else { 0.0 };
 
         (mean_ici, onset_rate, ici_cv)
     }
@@ -651,12 +619,7 @@ struct ChunkedSimilarityProcessor {
 }
 
 impl ChunkedSimilarityProcessor {
-    fn new(
-        chunk_size: usize,
-        sample_rate: u32,
-        feature_dim: usize,
-        similarity_threshold: f64,
-    ) -> Self {
+    fn new(chunk_size: usize, sample_rate: u32, feature_dim: usize, similarity_threshold: f64) -> Self {
         Self {
             chunk_size,
             sample_rate,
@@ -770,10 +733,7 @@ impl ChunkedSimilarityProcessor {
         println!();
 
         let features = Arc::try_unwrap(all_features).unwrap().into_inner().unwrap();
-        let results = Arc::try_unwrap(chunk_results)
-            .unwrap()
-            .into_inner()
-            .unwrap();
+        let results = Arc::try_unwrap(chunk_results).unwrap().into_inner().unwrap();
 
         // Build global types from all features
         let global_types = self.build_global_types(&features);
@@ -781,10 +741,7 @@ impl ChunkedSimilarityProcessor {
         (features, global_types, results)
     }
 
-    fn discover_chunk_types(
-        &self,
-        features: &[ExtractedFeatures],
-    ) -> (Vec<AcousticType>, Vec<(String, usize)>, f64) {
+    fn discover_chunk_types(&self, features: &[ExtractedFeatures]) -> (Vec<AcousticType>, Vec<(String, usize)>, f64) {
         if features.is_empty() {
             return (Vec::new(), Vec::new(), 0.0);
         }
@@ -800,8 +757,7 @@ impl ChunkedSimilarityProcessor {
         }
 
         // Create similarity engine
-        let mut engine =
-            AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
+        let mut engine = AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
         engine.fit_normalization(&matrix);
 
         // Group by similarity
@@ -839,12 +795,7 @@ impl ChunkedSimilarityProcessor {
             // Compute centroid
             let mut centroid = vec![0.0; self.feature_dim];
             for &idx in &group_indices {
-                for (j, val) in features[idx]
-                    .features
-                    .iter()
-                    .enumerate()
-                    .take(self.feature_dim)
-                {
+                for (j, val) in features[idx].features.iter().enumerate().take(self.feature_dim) {
                     centroid[j] += val;
                 }
             }
@@ -877,8 +828,7 @@ impl ChunkedSimilarityProcessor {
         types.sort_by(|a, b| b.count.cmp(&a.count));
 
         // Build distribution
-        let distribution: Vec<(String, usize)> =
-            types.iter().map(|t| (t.type_id.clone(), t.count)).collect();
+        let distribution: Vec<(String, usize)> = types.iter().map(|t| (t.type_id.clone(), t.count)).collect();
 
         let avg_sim = if sim_count > 0 {
             total_sim / sim_count as f64
@@ -894,10 +844,7 @@ impl ChunkedSimilarityProcessor {
             return Vec::new();
         }
 
-        println!(
-            "Building global type assignments from {} samples...",
-            features.len()
-        );
+        println!("Building global type assignments from {} samples...", features.len());
 
         let n = features.len();
 
@@ -910,8 +857,7 @@ impl ChunkedSimilarityProcessor {
         }
 
         // Normalize
-        let mut engine =
-            AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
+        let mut engine = AcousticSimilarityEngine::with_metric(self.feature_dim, SimilarityMetric::Cosine);
         engine.fit_normalization(&matrix);
 
         // Use incremental clustering with centroids
@@ -944,20 +890,12 @@ impl ChunkedSimilarityProcessor {
                 // Add to existing type
                 assignments[i] = type_idx;
                 types[type_idx].count += 1;
-                types[type_idx]
-                    .sample_ids
-                    .push(features[i].sample_id.clone());
+                types[type_idx].sample_ids.push(features[i].sample_id.clone());
 
                 // Update centroid (moving average)
                 let n_in_type = types[type_idx].count;
-                for (j, val) in features[i]
-                    .features
-                    .iter()
-                    .enumerate()
-                    .take(self.feature_dim)
-                {
-                    types[type_idx].centroid[j] +=
-                        (val - types[type_idx].centroid[j]) / n_in_type as f64;
+                for (j, val) in features[i].features.iter().enumerate().take(self.feature_dim) {
+                    types[type_idx].centroid[j] += (val - types[type_idx].centroid[j]) / n_in_type as f64;
                 }
             } else {
                 // Create new type
@@ -974,12 +912,7 @@ impl ChunkedSimilarityProcessor {
             }
 
             if (i + 1) % 10000 == 0 {
-                println!(
-                    "    Processed {}/{} samples, {} types so far",
-                    i + 1,
-                    n,
-                    types.len()
-                );
+                println!("    Processed {}/{} samples, {} types so far", i + 1, n, types.len());
             }
         }
 
@@ -1034,10 +967,7 @@ impl ChunkedSimilarityProcessor {
 // Global Assessment Functions
 // ============================================================================
 
-fn compute_global_statistics(
-    features: &[ExtractedFeatures],
-    types: &[AcousticType],
-) -> (f64, f64, f64, f64) {
+fn compute_global_statistics(features: &[ExtractedFeatures], types: &[AcousticType]) -> (f64, f64, f64, f64) {
     if features.is_empty() || types.is_empty() {
         return (0.0, 0.0, 0.0, 0.0);
     }
@@ -1174,10 +1104,7 @@ fn evaluate_knn_classification(features: &[ExtractedFeatures]) -> (f64, usize) {
         m
     };
 
-    let eval_labels: Vec<String> = eval_indices
-        .iter()
-        .map(|&idx| labels[idx].clone())
-        .collect();
+    let eval_labels: Vec<String> = eval_indices.iter().map(|&idx| labels[idx].clone()).collect();
 
     // Build simple k-NN using acoustic similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
@@ -1242,9 +1169,7 @@ fn evaluate_knn_classification(features: &[ExtractedFeatures]) -> (f64, usize) {
     (accuracy, K_NEIGHBORS)
 }
 
-fn analyze_labels(
-    features: &[ExtractedFeatures],
-) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn analyze_labels(features: &[ExtractedFeatures]) -> (HashMap<String, usize>, HashMap<String, usize>) {
     let mut source_datasets = HashMap::new();
     let mut task_types = HashMap::new();
 
@@ -1309,15 +1234,10 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let processor = ChunkedSimilarityProcessor::new(
-        CHUNK_SIZE,
-        manifest.resample_rate,
-        FEATURE_DIM,
-        SIMILARITY_THRESHOLD,
-    );
+    let processor =
+        ChunkedSimilarityProcessor::new(CHUNK_SIZE, manifest.resample_rate, FEATURE_DIM, SIMILARITY_THRESHOLD);
 
-    let (features, global_types, chunk_results) =
-        processor.process_all_chunks(&manifest, base_path);
+    let (features, global_types, chunk_results) = processor.process_all_chunks(&manifest, base_path);
 
     // === Phase 2: Global Statistics ===
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -1325,8 +1245,7 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let (type_entropy, avg_intra, avg_inter, separation) =
-        compute_global_statistics(&features, &global_types);
+    let (type_entropy, avg_intra, avg_inter, separation) = compute_global_statistics(&features, &global_types);
 
     println!("Type Discovery:");
     println!("  ├─ Global Types: {}", global_types.len());
@@ -1441,10 +1360,7 @@ fn main() -> Result<()> {
         "  ├─ Intra-type similarity: {:.4}",
         assessment.avg_intra_type_similarity
     );
-    println!(
-        "  ├─ Inter-type distance: {:.4}",
-        assessment.avg_inter_type_distance
-    );
+    println!("  ├─ Inter-type distance: {:.4}", assessment.avg_inter_type_distance);
     println!("  └─ Separation ratio: {:.2}x", assessment.separation_ratio);
     println!();
 

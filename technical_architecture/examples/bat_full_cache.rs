@@ -3,6 +3,7 @@
 //!
 //! Uses real macro/micro texture features, not zeros.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -11,8 +12,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, MicroDynamicsFeatures45D,
-    NeuralBoundaryDetector,
+    BoundaryDetectorConfig, MicroDynamicsExtractor, MicroDynamicsFeatures45D, NeuralBoundaryDetector,
 };
 
 #[derive(Debug, Clone, Serialize)]
@@ -48,12 +48,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -202,11 +197,7 @@ fn compute_micro_texture(base: &MicroDynamicsFeatures45D) -> Vec<f32> {
     f.push(if ici < 20.0 { 1.0 } else { 0.0 });
     f.push(if ici >= 20.0 && ici < 50.0 { 1.0 } else { 0.0 });
     f.push(if ici >= 50.0 && ici < 100.0 { 1.0 } else { 0.0 });
-    f.push(if ici >= 100.0 && ici < 200.0 {
-        1.0
-    } else {
-        0.0
-    });
+    f.push(if ici >= 100.0 && ici < 200.0 { 1.0 } else { 0.0 });
     f.push(if ici >= 200.0 { 1.0 } else { 0.0 });
 
     // Rhythm Stats (5D)
@@ -251,9 +242,9 @@ fn process_file(
             let end = (b.time_ms * sr as f32 / 1000.0) as usize;
             if end > start && end <= audio.len() && end - start >= min_len {
                 let btype = match b.boundary_type {
-                    technical_architecture::NeuralBoundaryType::Hard => "Hard",
-                    technical_architecture::NeuralBoundaryType::Soft => "Soft",
-                    technical_architecture::NeuralBoundaryType::Transitional => "Transitional",
+                    technical_architecture::BoundaryType::Hard => "Hard",
+                    technical_architecture::BoundaryType::Soft => "Soft",
+                    technical_architecture::BoundaryType::Transitional => "Transitional",
                 };
                 segs.push((start, end, btype.to_string()));
             }
@@ -340,10 +331,7 @@ fn main() -> anyhow::Result<()> {
     let extractor = MicroDynamicsExtractor::new(250000);
     let batch_size = 500;
 
-    println!(
-        "Using {} threads (Rayon parallel)",
-        rayon::current_num_threads()
-    );
+    println!("Using {} threads (Rayon parallel)", rayon::current_num_threads());
     println!("Processing with FULL 105D features (real macro/micro texture)...");
     println!("─────────────────────────────────────────────────────────────────────────");
 

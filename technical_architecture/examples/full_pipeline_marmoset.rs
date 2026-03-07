@@ -9,14 +9,14 @@
 //
 // Usage: cargo run --example full_pipeline_marmoset --release
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use technical_architecture::{
-    AnnotationEntry, ClusteredPhrase, ExtractionConfig,
-    ExtractionPhraseCandidate as PhraseCandidate, LinguisticAnalysis, ParallelExtractionPipeline,
-    VocalizationResult,
+    AnnotationEntry, ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate,
+    LinguisticAnalysis, ParallelExtractionPipeline, VocalizationResult,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -148,10 +148,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📝 Corpus analysis data: marmoset_corpus_for_analysis.json");
     println!();
     println!("Key Findings:");
-    println!(
-        "  • Communication Efficiency: {:?}",
-        analysis.zipf.efficiency
-    );
+    println!("  • Communication Efficiency: {:?}", analysis.zipf.efficiency);
     println!("  • Rhythm Pattern: {:?}", analysis.prosody.rhythm);
     println!(
         "  • Atomic Phrases: {} / {} ({:.1}%)",
@@ -185,14 +182,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn convert_database_to_pipeline_format(
     phrases_data: &serde_json::Value,
-) -> Result<
-    (
-        Vec<VocalizationResult>,
-        Vec<ClusteredPhrase>,
-        Vec<AnnotationEntry>,
-    ),
-    Box<dyn std::error::Error>,
-> {
+) -> Result<(Vec<VocalizationResult>, Vec<ClusteredPhrase>, Vec<AnnotationEntry>), Box<dyn std::error::Error>> {
     let mut vocalization_results = Vec::new();
     let mut clustered_phrases = Vec::new();
     let mut annotations = Vec::new();
@@ -209,9 +199,7 @@ fn convert_database_to_pipeline_format(
 
             // Extract acoustic features
             let mean_f0 = acoustic_features["mean_f0_hz"].as_f64().unwrap_or(0.0);
-            let duration = acoustic_features["mean_duration_ms"]
-                .as_f64()
-                .unwrap_or(0.0);
+            let duration = acoustic_features["mean_duration_ms"].as_f64().unwrap_or(0.0);
             let f0_range = acoustic_features["f0_range_hz"].as_f64().unwrap_or(0.0);
 
             // Create 56D feature vector (simplified - using available features)
@@ -239,9 +227,7 @@ fn convert_database_to_pipeline_format(
             // Determine primary context
             let primary_context = if let Some(contexts_arr) = contexts.as_array() {
                 if !contexts_arr.is_empty() {
-                    contexts_arr[0]["context_name"]
-                        .as_str()
-                        .unwrap_or("unknown")
+                    contexts_arr[0]["context_name"].as_str().unwrap_or("unknown")
                 } else {
                     "unknown"
                 }
@@ -349,10 +335,7 @@ fn display_comprehensive_results(
     println!("Zipf's Law Parameters:");
     println!("  Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("  Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
-    println!(
-        "  Total unique phrases: {}",
-        analysis.zipf.phrase_frequencies.len()
-    );
+    println!("  Total unique phrases: {}", analysis.zipf.phrase_frequencies.len());
     println!();
 
     // Interpretation
@@ -391,11 +374,7 @@ fn display_comprehensive_results(
     // Top 10 phrases by frequency
     println!("Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis
-            .zipf
-            .phrase_frequencies
-            .get(phrase_id)
-            .unwrap_or(&0);
+        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
         let rank = i + 1;
 
         // Parse phrase signature
@@ -423,14 +402,8 @@ fn display_comprehensive_results(
     println!();
 
     println!("Rhythm Metrics:");
-    println!(
-        "  Coefficient of Variation (CV): {:.4}",
-        analysis.prosody.gap_cv
-    );
-    println!(
-        "  Mean gap duration: {:.2} ms",
-        analysis.prosody.mean_gap_ms
-    );
+    println!("  Coefficient of Variation (CV): {:.4}", analysis.prosody.gap_cv);
+    println!("  Mean gap duration: {:.2} ms", analysis.prosody.mean_gap_ms);
     println!("  Gap std deviation: {:.2} ms", analysis.prosody.gap_std_ms);
     println!();
 
@@ -488,18 +461,9 @@ fn display_comprehensive_results(
 
     if !analysis.phonotactics.forbidden_transitions.is_empty() {
         println!("Sample Forbidden Transitions:");
-        for (i, ft) in analysis
-            .phonotactics
-            .forbidden_transitions
-            .iter()
-            .take(5)
-            .enumerate()
-        {
+        for (i, ft) in analysis.phonotactics.forbidden_transitions.iter().take(5).enumerate() {
             println!("  {}. {} → {}", i + 1, ft.from_phrase, ft.to_phrase);
-            println!(
-                "     Probability: {:.4} | Reason: {:?}",
-                ft.probability, ft.reason
-            );
+            println!("     Probability: {:.4} | Reason: {:?}", ft.probability, ft.reason);
         }
         println!();
 
@@ -585,10 +549,7 @@ fn display_comprehensive_results(
         .count();
 
     println!("Atomicity Statistics:");
-    println!(
-        "  Total phrases analyzed: {}",
-        analysis.updated_atomic_phrases.len()
-    );
+    println!("  Total phrases analyzed: {}", analysis.updated_atomic_phrases.len());
     println!(
         "  Phonologically atomic: {} ({:.1}%)",
         phonologically_atomic,
@@ -719,9 +680,7 @@ fn export_results(
 // Corpus Analysis Export Functions
 // ============================================================================
 
-fn export_corpus_analysis_data(
-    clustered_phrases: &[ClusteredPhrase],
-) -> Result<(), Box<dyn std::error::Error>> {
+fn export_corpus_analysis_data(clustered_phrases: &[ClusteredPhrase]) -> Result<(), Box<dyn std::error::Error>> {
     use std::collections::HashMap;
 
     // Create phrase key to cluster ID mapping
@@ -750,10 +709,7 @@ fn export_corpus_analysis_data(
         let context = cp.phrase.context.clone();
 
         // Add phrases to context-based sessions
-        context_sessions
-            .entry(context.clone())
-            .or_default()
-            .push(cluster_id);
+        context_sessions.entry(context.clone()).or_default().push(cluster_id);
 
         // Add multiple occurrences based on phrase frequency
         let freq = clustered_phrases
@@ -787,10 +743,7 @@ fn export_corpus_analysis_data(
     }
 
     // Also add some mixed sessions with phrases from different contexts
-    let all_cluster_ids: Vec<usize> = clustered_phrases
-        .iter()
-        .map(|cp| cp.cluster_id as usize)
-        .collect();
+    let all_cluster_ids: Vec<usize> = clustered_phrases.iter().map(|cp| cp.cluster_id as usize).collect();
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(42);
     for _ in 0..20 {
@@ -826,10 +779,7 @@ fn export_corpus_analysis_data(
 
     println!("✅ Corpus analysis data exported");
     println!("   Sessions: {}", sessions.len());
-    println!(
-        "   Total phrases: {}",
-        sessions.iter().map(|s| s.len()).sum::<usize>()
-    );
+    println!("   Total phrases: {}", sessions.iter().map(|s| s.len()).sum::<usize>());
     println!("   Vocabulary size: {}", cluster_to_phrase.len());
     println!("   Output: {}", corpus_path);
 

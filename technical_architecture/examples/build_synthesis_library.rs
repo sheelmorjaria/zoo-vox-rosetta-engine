@@ -9,6 +9,7 @@
 //! This creates a "Lego Set" for animal communication:
 //! - Finite blocks (Grains) → Infinite sentences (Templates)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -136,14 +137,9 @@ fn main() -> anyhow::Result<()> {
         .collect();
 
     let total_segments = all_segments.len();
-    let unique_files: std::collections::HashSet<_> =
-        all_segments.iter().map(|s| s.source_file.clone()).collect();
+    let unique_files: std::collections::HashSet<_> = all_segments.iter().map(|s| s.source_file.clone()).collect();
 
-    println!(
-        "  Loaded {} segments from {} files",
-        total_segments,
-        unique_files.len()
-    );
+    println!("  Loaded {} segments from {} files", total_segments, unique_files.len());
 
     // Discretize into acoustic states
     let pitch_indices: Vec<usize> = vec![0, 1, 2, 40, 41, 42];
@@ -353,8 +349,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     // State ID -> Grain ID mapping
-    let state_to_grain: HashMap<StateId, usize> =
-        grain_library.iter().map(|g| (g.state_id, g.id)).collect();
+    let state_to_grain: HashMap<StateId, usize> = grain_library.iter().map(|g| (g.state_id, g.id)).collect();
 
     for (ngram, stats) in sorted_ngrams.iter() {
         if stats.total_count < 30 {
@@ -379,10 +374,7 @@ fn main() -> anyhow::Result<()> {
             .map(|(&ctx, &count)| (ctx, count as f64 / stats.total_count as f64))
             .collect();
 
-        let grain_ids: Vec<usize> = ngram
-            .iter()
-            .filter_map(|&s| state_to_grain.get(&s).copied())
-            .collect();
+        let grain_ids: Vec<usize> = ngram.iter().filter_map(|&s| state_to_grain.get(&s).copied()).collect();
 
         template_library.push(SyntaxTemplate {
             id: template_library.len(),

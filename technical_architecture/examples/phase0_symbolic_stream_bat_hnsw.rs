@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --release --example phase0_symbolic_stream_bat_hnsw
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
@@ -176,8 +177,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_start = Instant::now();
 
     // Use HNSW-optimized HDBSCAN
-    let hdbscan =
-        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
+    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     println!("   🔍 Running HDBSCAN with HNSW optimization...");
     println!("      └─ Memory-efficient O(log n) nearest neighbor queries");
@@ -205,14 +205,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Clustering Results:");
     println!("      ├─ Total phrases analyzed: {}", n_features);
     println!("      ├─ Vocabulary items discovered: {}", stats.n_clusters);
-    println!(
-        "      ├─ Noise points (unclassified): {}",
-        stats.noise_count
-    );
-    println!(
-        "      └─ Classified phrases: {}",
-        n_features - stats.noise_count
-    );
+    println!("      ├─ Noise points (unclassified): {}", stats.noise_count);
+    println!("      └─ Classified phrases: {}", n_features - stats.noise_count);
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -278,11 +272,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .zip(all_metadata.iter())
         .enumerate()
     {
-        let symbol = if label == -1 {
-            0
-        } else {
-            label + cluster_offset
-        };
+        let symbol = if label == -1 { 0 } else { label + cluster_offset };
         *symbol_counts.entry(symbol).or_insert(0) += 1;
 
         symbolic_stream_entries.push(SymbolicStreamEntry {
@@ -376,14 +366,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(
-        &results_path,
-        serde_json::to_string_pretty(&results_output)?,
-    )?;
-    println!(
-        "   💾 Full results with timestamps: {}",
-        results_path.display()
-    );
+    fs::write(&results_path, serde_json::to_string_pretty(&results_output)?)?;
+    println!("   💾 Full results with timestamps: {}", results_path.display());
 
     // Save pure symbolic stream (just the sequence)
     let stream_path = results_dir.join("symbolic_stream.txt");
@@ -393,10 +377,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Vec<_>>()
         .join(",");
     fs::write(&stream_path, &stream_text)?;
-    println!(
-        "   💾 Symbolic stream (sequence only): {}",
-        stream_path.display()
-    );
+    println!("   💾 Symbolic stream (sequence only): {}", stream_path.display());
 
     // Save timestamp map for audio extraction
     let timestamp_map_path = results_dir.join("timestamp_map.json");
@@ -408,14 +389,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "by_file": build_file_to_symbols_map(&symbolic_stream_entries),
         }
     });
-    fs::write(
-        &timestamp_map_path,
-        serde_json::to_string_pretty(&timestamp_map)?,
-    )?;
-    println!(
-        "   💾 Timestamp map for extraction: {}",
-        timestamp_map_path.display()
-    );
+    fs::write(&timestamp_map_path, serde_json::to_string_pretty(&timestamp_map)?)?;
+    println!("   💾 Timestamp map for extraction: {}", timestamp_map_path.display());
     println!();
 
     // ========================================================================
@@ -538,15 +513,15 @@ fn extract_features_with_metadata_batch(
 
     let features: Vec<_> = file_names
         .par_iter()
-        .filter_map(|file_name| {
-            match extract_single_feature_with_metadata(&audio_dir.join(file_name), file_name) {
+        .filter_map(
+            |file_name| match extract_single_feature_with_metadata(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
                     eprintln!("Warning: Failed to extract from {}: {}", file_name, e);
                     None
                 }
-            }
-        })
+            },
+        )
         .collect();
 
     Ok(features)
@@ -564,10 +539,7 @@ fn extract_single_feature_with_metadata(
     let sample_rate = spec.sample_rate;
 
     // Read samples
-    let audio: Vec<f32> = reader
-        .into_samples::<f32>()
-        .filter_map(|s| s.ok())
-        .collect();
+    let audio: Vec<f32> = reader.into_samples::<f32>().filter_map(|s| s.ok()).collect();
 
     if audio.is_empty() {
         return Err("No audio samples".into());
@@ -625,8 +597,7 @@ fn truncate(s: &str, max_len: usize) -> String {
 }
 
 fn build_symbol_to_entries_map(entries: &[SymbolicStreamEntry]) -> serde_json::Value {
-    let mut map: std::collections::HashMap<i32, Vec<serde_json::Value>> =
-        std::collections::HashMap::new();
+    let mut map: std::collections::HashMap<i32, Vec<serde_json::Value>> = std::collections::HashMap::new();
 
     for entry in entries {
         map.entry(entry.symbol)
@@ -642,8 +613,7 @@ fn build_symbol_to_entries_map(entries: &[SymbolicStreamEntry]) -> serde_json::V
 }
 
 fn build_file_to_symbols_map(entries: &[SymbolicStreamEntry]) -> serde_json::Value {
-    let mut map: std::collections::HashMap<String, Vec<serde_json::Value>> =
-        std::collections::HashMap::new();
+    let mut map: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
 
     for entry in entries {
         map.entry(entry.file_name.clone())

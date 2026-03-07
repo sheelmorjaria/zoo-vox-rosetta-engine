@@ -8,6 +8,7 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_rosetta_phrase_data_demo
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use technical_architecture::species::SpeciesConfigFactory;
 use technical_architecture::{
     ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder, ZooVoxPhraseExtractor,
@@ -40,10 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (species, freq, duration_ms, call_type) in &species_params {
-        println!(
-            "  {} - {:.0}Hz, {:.0}ms ({})",
-            species, freq, duration_ms, call_type
-        );
+        println!("  {} - {:.0}Hz, {:.0}ms ({})", species, freq, duration_ms, call_type);
     }
     println!();
 
@@ -72,10 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  F0 Range:       {:.1} Hz", features.f0_range_hz);
 
     println!("\n  === GRIT FACTORS (3 features) ===");
-    println!(
-        "  HNR:            {:.1} dB",
-        features.harmonic_to_noise_ratio
-    );
+    println!("  HNR:            {:.1} dB", features.harmonic_to_noise_ratio);
     println!("  Spectral Flat:  {:.3}", features.spectral_flatness);
     println!("  Harmonicity:    {:.3}", features.harmonicity);
 
@@ -98,10 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n  === RHYTHM FACTORS (3 features) ===");
     println!("  Median ICI:     {:.1} ms", features.median_ici_ms);
     println!("  Onset Rate:     {:.1} Hz", features.onset_rate_hz);
-    println!(
-        "  ICI CV:         {:.3}",
-        features.ici_coefficient_of_variation
-    );
+    println!("  ICI CV:         {:.3}", features.ici_coefficient_of_variation);
 
     // ========================================================================
     // Step 3: Extract phrases using species-specific segmentation

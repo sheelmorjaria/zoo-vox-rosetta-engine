@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --release --example phase0_symbolic_stream_marmoset [--limit N]
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -203,17 +204,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(n) = limit {
         let original_len = flac_files.len();
         flac_files.truncate(n.min(original_len));
-        println!(
-            "📊 Limited to {} files (was {})",
-            flac_files.len(),
-            original_len
-        );
+        println!("📊 Limited to {} files (was {})", flac_files.len(), original_len);
     }
 
-    println!(
-        "   📂 Vocalizations Directory: {}",
-        vocalizations_dir.display()
-    );
+    println!("   📂 Vocalizations Directory: {}", vocalizations_dir.display());
     println!("   🔢 Total FLAC files: {}", flac_files.len());
     println!("   💾 Results Directory: {}", results_dir.display());
     println!();
@@ -251,10 +245,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut all_file_names: Vec<String> = Vec::new();
 
     for (i, (file_path, call_type)) in flac_files.iter().enumerate() {
-        let filename = file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown");
+        let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
 
         if i % 100 == 0 || i == flac_files.len() - 1 {
             println!(
@@ -286,10 +277,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         });
                     }
                     Err(e) => {
-                        eprintln!(
-                            "      Warning: Feature extraction failed for {}: {}",
-                            filename, e
-                        );
+                        eprintln!("      Warning: Feature extraction failed for {}: {}", filename, e);
                     }
                 }
             }
@@ -414,8 +402,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cluster_start = Instant::now();
 
-    let hdbscan =
-        HdbscanClustering::with_metric(min_cluster_size, min_samples, DistanceMetric::Euclidean)?;
+    let hdbscan = HdbscanClustering::with_metric(min_cluster_size, min_samples, DistanceMetric::Euclidean)?;
 
     println!("   🔍 Running HDBSCAN...");
     let labels = hdbscan.fit_predict(&feature_matrix)?;
@@ -442,14 +429,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   📊 Clustering Results:");
     println!("      ├─ Total vocalizations analyzed: {}", n_features);
     println!("      ├─ Vocabulary items discovered: {}", stats.n_clusters);
-    println!(
-        "      ├─ Noise points (unclassified): {}",
-        stats.noise_count
-    );
-    println!(
-        "      └─ Classified vocalizations: {}",
-        n_features - stats.noise_count
-    );
+    println!("      ├─ Noise points (unclassified): {}", stats.noise_count);
+    println!("      └─ Classified vocalizations: {}", n_features - stats.noise_count);
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -459,14 +440,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let min_size = *stats.cluster_sizes.iter().min().unwrap_or(&0);
 
         println!("   📈 Cluster Statistics:");
-        println!(
-            "      ├─ Size range: {} - {} vocalizations",
-            min_size, max_size
-        );
-        println!(
-            "      ├─ Average: {:.1} vocalizations per word type",
-            avg_size
-        );
+        println!("      ├─ Size range: {} - {} vocalizations", min_size, max_size);
+        println!("      ├─ Average: {:.1} vocalizations per word type", avg_size);
         println!();
 
         // Top 20 discovered word types
@@ -512,13 +487,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_offset = 100;
     let symbolic_stream: Vec<i32> = labels
         .iter()
-        .map(|&label| {
-            if label == -1 {
-                0
-            } else {
-                label + cluster_offset
-            }
-        })
+        .map(|&label| if label == -1 { 0 } else { label + cluster_offset })
         .collect();
 
     // Create symbol-to-count mapping
@@ -607,10 +576,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(
-        &clusters_path,
-        serde_json::to_string_pretty(&clusters_output)?,
-    )?;
+    fs::write(&clusters_path, serde_json::to_string_pretty(&clusters_output)?)?;
     println!("   💾 Clusters saved: {}", clusters_path.display());
 
     // Save pure symbolic stream (just the sequence)
@@ -627,11 +593,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let readable_path = results_dir.join("symbolic_stream_readable.csv");
     let mut readable_content = String::from("file_name,call_type,cluster_id,symbol\n");
     for (file_info, label) in all_features.iter().zip(labels.iter()) {
-        let symbol = if *label == -1 {
-            0
-        } else {
-            *label + cluster_offset
-        };
+        let symbol = if *label == -1 { 0 } else { *label + cluster_offset };
         readable_content.push_str(&format!(
             "{},{},{},{}\n",
             file_info.file_name, file_info.call_type, label, symbol
@@ -670,31 +632,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║  📁 OUTPUT FILES:                                                   ║");
     println!(
         "║     • {:50} ║",
-        features_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        features_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50} ║",
-        clusters_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        clusters_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50} ║",
-        stream_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        stream_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!(
         "║     • {:50} ║",
-        readable_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
+        readable_path.file_name().unwrap_or_default().to_string_lossy()
     );
     println!("║                                                                   ║");
     println!("║  🎯 SYMBOLIC STREAM FORMAT:                                          ║");
@@ -769,8 +719,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();

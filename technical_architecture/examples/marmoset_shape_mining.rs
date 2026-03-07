@@ -11,6 +11,7 @@
 //!   - 53-59: Pitch Geometry (Slope, Curvature, Inflections) <-- THIS
 //! - Layer 3 (75-104): Micro Texture
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -80,11 +81,10 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Count call types
-    let call_type_counts: HashMap<String, usize> =
-        all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
-            *acc.entry(seg.call_type.clone()).or_insert(0) += 1;
-            acc
-        });
+    let call_type_counts: HashMap<String, usize> = all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
+        *acc.entry(seg.call_type.clone()).or_insert(0) += 1;
+        acc
+    });
 
     println!("Call Type Distribution:");
     let mut sorted_types: Vec<_> = call_type_counts.iter().collect();
@@ -236,10 +236,7 @@ fn main() -> anyhow::Result<()> {
             let pct = **count as f64 / members.len() as f64 * 100.0;
             let bar_len = (pct / 2.5) as usize;
             let bar = "█".repeat(bar_len);
-            println!(
-                "  │  {:14}: {:5} ({:5.1}%) {:<40}",
-                call_type, count, pct, bar
-            );
+            println!("  │  {:14}: {:5} ({:5.1}%) {:<40}", call_type, count, pct, bar);
         }
         println!("  └─────────────────────────────────────────────────────────────────────────┘");
         println!();
@@ -259,17 +256,10 @@ fn main() -> anyhow::Result<()> {
             .sum();
 
         let max_entropy = (sorted.len() as f64).log2();
-        let normalized_entropy = if max_entropy > 0.0 {
-            entropy / max_entropy
-        } else {
-            0.0
-        };
+        let normalized_entropy = if max_entropy > 0.0 { entropy / max_entropy } else { 0.0 };
 
         // Top type percentage
-        let top_type_pct = sorted
-            .first()
-            .map(|(_, &c)| c as f64 / total * 100.0)
-            .unwrap_or(0.0);
+        let top_type_pct = sorted.first().map(|(_, &c)| c as f64 / total * 100.0).unwrap_or(0.0);
 
         println!("  ┌─────────────────────────────────────────────────────────────────────────┐");
         println!("  │  DIAGNOSTIC INTERPRETATION                                               │");
@@ -294,45 +284,23 @@ fn main() -> anyhow::Result<()> {
         println!("  │                                                                          ");
 
         if stats.n_clusters > 5 && normalized_entropy < 0.7 {
-            println!(
-                "  │  ✓ DISCRETE PITCH CONTOURS FOUND!                                       │"
-            );
+            println!("  │  ✓ DISCRETE PITCH CONTOURS FOUND!                                       │");
             println!(
                 "  │    {} distinct shape clusters detected                                   ",
                 stats.n_clusters
             );
-            println!(
-                "  │    → Marmosets reuse specific pitch trajectories                        │"
-            );
-            println!(
-                "  │    → Bag-of-Shapes approach WILL WORK                                    │"
-            );
+            println!("  │    → Marmosets reuse specific pitch trajectories                        │");
+            println!("  │    → Bag-of-Shapes approach WILL WORK                                    │");
         } else if normalized_entropy > 0.9 {
-            println!(
-                "  │  ✗ NO DISCRETE SHAPES: Uniform contour mix                              │"
-            );
-            println!(
-                "  │                                                                          │"
-            );
-            println!(
-                "  │  Even 'Slope' and 'Curvature' are mixed across call types.              │"
-            );
-            println!(
-                "  │  → Marmosets use CONTINUOUS pitch modulation.                           │"
-            );
-            println!(
-                "  │  → No reusable 'Arch' or 'Sweep' templates found.                      │"
-            );
-            println!(
-                "  │  → This confirms the Graded Continuum hypothesis.                      │"
-            );
+            println!("  │  ✗ NO DISCRETE SHAPES: Uniform contour mix                              │");
+            println!("  │                                                                          │");
+            println!("  │  Even 'Slope' and 'Curvature' are mixed across call types.              │");
+            println!("  │  → Marmosets use CONTINUOUS pitch modulation.                           │");
+            println!("  │  → No reusable 'Arch' or 'Sweep' templates found.                      │");
+            println!("  │  → This confirms the Graded Continuum hypothesis.                      │");
         } else {
-            println!(
-                "  │  ~ PARTIAL DISCRIMINATION: Mixed but not uniform                        │"
-            );
-            println!(
-                "  │    Some pitch contour structure may exist                               │"
-            );
+            println!("  │  ~ PARTIAL DISCRIMINATION: Mixed but not uniform                        │");
+            println!("  │    Some pitch contour structure may exist                               │");
         }
         println!("  └─────────────────────────────────────────────────────────────────────────┘");
     }
@@ -342,16 +310,13 @@ fn main() -> anyhow::Result<()> {
         println!();
         println!("  All Clusters:");
 
-        let mut sorted_clusters: Vec<_> =
-            cluster_members.iter().filter(|(&l, _)| l != -1).collect();
+        let mut sorted_clusters: Vec<_> = cluster_members.iter().filter(|(&l, _)| l != -1).collect();
         sorted_clusters.sort_by_key(|(_, m)| std::cmp::Reverse(m.len()));
 
         for (label, members) in sorted_clusters.iter().take(10) {
             let mut type_counts: HashMap<&str, usize> = HashMap::new();
             for &idx in members.iter() {
-                *type_counts
-                    .entry(all_segments[idx].call_type.as_str())
-                    .or_insert(0) += 1;
+                *type_counts.entry(all_segments[idx].call_type.as_str()).or_insert(0) += 1;
             }
             let mut sorted: Vec<_> = type_counts.iter().collect();
             sorted.sort_by(|a, b| b.1.cmp(a.1));

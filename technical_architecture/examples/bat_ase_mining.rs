@@ -7,6 +7,7 @@
 //! Bat data uses CONTEXT (behavioral context) instead of call_type.
 //! Contexts: 0=Unknown, 1-15=various behavioral states
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::{Array1, Array2};
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -124,10 +125,7 @@ fn main() -> anyhow::Result<()> {
     let cache_dir = Path::new("bat_nbd_cache_normalized");
 
     if !cache_dir.exists() {
-        eprintln!(
-            "Error: Bat normalized cache not found: {}",
-            cache_dir.display()
-        );
+        eprintln!("Error: Bat normalized cache not found: {}", cache_dir.display());
         std::process::exit(1);
     }
 
@@ -176,11 +174,10 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Count contexts
-    let context_counts: HashMap<i32, usize> =
-        all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
-            *acc.entry(seg.context).or_insert(0) += 1;
-            acc
-        });
+    let context_counts: HashMap<i32, usize> = all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
+        *acc.entry(seg.context).or_insert(0) += 1;
+        acc
+    });
 
     println!("Context Distribution:");
     let mut sorted_contexts: Vec<_> = context_counts.iter().collect();
@@ -240,8 +237,7 @@ fn main() -> anyhow::Result<()> {
         println!("─────────────────────────────────────────────────────────────────────────");
 
         let weights = config.weights();
-        let sqrt_weights: Array1<f64> =
-            Array1::from_vec(weights.iter().map(|&w| w.sqrt()).collect());
+        let sqrt_weights: Array1<f64> = Array1::from_vec(weights.iter().map(|&w| w.sqrt()).collect());
 
         let mut weighted_matrix = Array2::<f64>::zeros((n_samples, n_features));
         for i in 0..n_samples {
@@ -320,8 +316,7 @@ fn main() -> anyhow::Result<()> {
             println!();
             println!("    → {} CLUSTERS FOUND!", stats.n_clusters);
 
-            let mut sorted_clusters: Vec<_> =
-                cluster_members.iter().filter(|(&l, _)| l != -1).collect();
+            let mut sorted_clusters: Vec<_> = cluster_members.iter().filter(|(&l, _)| l != -1).collect();
             sorted_clusters.sort_by_key(|(_, m)| std::cmp::Reverse(m.len()));
 
             for (label, members) in sorted_clusters.iter().take(5) {
@@ -383,10 +378,7 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Find best result (lowest entropy)
-    let best = results
-        .iter()
-        .min_by(|a, b| a.3.partial_cmp(&b.3).unwrap())
-        .unwrap();
+    let best = results.iter().min_by(|a, b| a.3.partial_cmp(&b.3).unwrap()).unwrap();
 
     println!("  ┌─────────────────────────────────────────────────────────────────────────┐");
     println!("  │  VERDICT                                                                │");
@@ -394,10 +386,7 @@ fn main() -> anyhow::Result<()> {
 
     if best.1 > 1 {
         println!("  │  ✓ ASE FOUND MULTIPLE CLUSTERS!                                        │");
-        println!(
-            "  │    Best config: {}                                  ",
-            best.0
-        );
+        println!("  │    Best config: {}                                  ", best.0);
         println!(
             "  │    Clusters found: {}                                                   ",
             best.1
@@ -405,10 +394,7 @@ fn main() -> anyhow::Result<()> {
         println!("  │    → Bats may have context-specific acoustic patterns                  │");
     } else if best.3 < 0.5 {
         println!("  │  ✓ ASE DISCRIMINATED CONTEXTS!                                         │");
-        println!(
-            "  │    Best config: {}                                  ",
-            best.0
-        );
+        println!("  │    Best config: {}                                  ", best.0);
         println!(
             "  │    Context entropy dropped to {:.0}%                                    ",
             best.3 * 100.0
@@ -416,10 +402,7 @@ fn main() -> anyhow::Result<()> {
         println!("  │    → Bats have context-dependent vocal signatures                      │");
     } else if best.3 < 0.8 {
         println!("  │  ~ PARTIAL CONTEXT DISCRIMINATION                                      │");
-        println!(
-            "  │    Best config: {}                                  ",
-            best.0
-        );
+        println!("  │    Best config: {}                                  ", best.0);
         println!(
             "  │    Context entropy: {:.0}%                                              ",
             best.3 * 100.0

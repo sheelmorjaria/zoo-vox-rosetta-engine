@@ -103,12 +103,7 @@ pub struct DriftAlert {
 }
 
 impl DriftAlert {
-    pub fn new(
-        timestamp: PtpTimestamp,
-        alert_level: AlertLevel,
-        current_divergence: f32,
-        threshold: f32,
-    ) -> Self {
+    pub fn new(timestamp: PtpTimestamp, alert_level: AlertLevel, current_divergence: f32, threshold: f32) -> Self {
         let recommendations = match alert_level {
             AlertLevel::Warning => vec![
                 "Monitor drift trend closely".to_string(),
@@ -201,10 +196,7 @@ impl InferenceModel for MockActiveModel {
 
         let (label, confidence) = if self.drift_factor > 0.5 {
             // High drift - different prediction
-            (
-                "recording".to_string(),
-                base_confidence * (1.0 - self.drift_factor),
-            )
+            ("recording".to_string(), base_confidence * (1.0 - self.drift_factor))
         } else {
             (base_label.to_string(), base_confidence)
         };
@@ -302,10 +294,7 @@ impl ShadowModelMonitor {
     }
 
     /// Create with default configuration
-    pub fn with_defaults(
-        active_model: Box<dyn InferenceModel>,
-        shadow_model: Box<dyn InferenceModel>,
-    ) -> Self {
+    pub fn with_defaults(active_model: Box<dyn InferenceModel>, shadow_model: Box<dyn InferenceModel>) -> Self {
         Self::new(active_model, shadow_model, ShadowModelConfig::default())
     }
 
@@ -337,12 +326,11 @@ impl ShadowModelMonitor {
         }
 
         // Calculate confidence-based divergence
-        let confidence_divergence = (active.confidence - shadow.confidence).abs()
-            / active.confidence.max(shadow.confidence);
+        let confidence_divergence =
+            (active.confidence - shadow.confidence).abs() / active.confidence.max(shadow.confidence);
 
         // Calculate score distribution divergence (simplified KL-divergence approximation)
-        let score_divergence =
-            self.calculate_score_divergence(&active.raw_scores, &shadow.raw_scores);
+        let score_divergence = self.calculate_score_divergence(&active.raw_scores, &shadow.raw_scores);
 
         // Average of both metrics
         (confidence_divergence + score_divergence) / 2.0
@@ -422,10 +410,7 @@ impl ShadowModelMonitor {
 
     /// Get current divergence (last sample or average)
     pub fn current_divergence(&self) -> f32 {
-        self.drift_history
-            .back()
-            .map(|s| s.divergence_ratio)
-            .unwrap_or(0.0)
+        self.drift_history.back().map(|s| s.divergence_ratio).unwrap_or(0.0)
     }
 
     /// Check if model should be frozen
@@ -616,10 +601,7 @@ mod tests {
         let alert = DriftAlert::new(timestamp, AlertLevel::Emergency, 0.5, 0.2);
 
         assert_eq!(alert.alert_level, AlertLevel::Emergency);
-        assert!(alert
-            .recommendations
-            .iter()
-            .any(|r| r.contains("EMERGENCY")));
+        assert!(alert.recommendations.iter().any(|r| r.contains("EMERGENCY")));
     }
 
     // ============================================================================

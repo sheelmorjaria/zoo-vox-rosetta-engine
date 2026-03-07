@@ -7,12 +7,11 @@ Converts HuggingFace dataset format to JSON manifest expected by train_beans_mod
 
 import argparse
 import json
-import os
 from pathlib import Path
 
 try:
-    from datasets import load_from_disk
     import numpy as np
+    from datasets import load_from_disk
     from scipy.io import wavfile
 except ImportError:
     print("Error: Required packages not installed.")
@@ -32,11 +31,7 @@ def create_manifest(dataset_path: Path, output_path: Path, max_samples: int = No
     audio_dir = output_path.parent / "beans_audio"
     audio_dir.mkdir(parents=True, exist_ok=True)
 
-    manifest = {
-        "dataset": "BEANS-Zero",
-        "n_samples": 0,
-        "samples": []
-    }
+    manifest = {"dataset": "BEANS-Zero", "n_samples": 0, "samples": []}
 
     n_samples = min(len(ds), max_samples) if max_samples else len(ds)
 
@@ -97,14 +92,13 @@ def create_manifest(dataset_path: Path, output_path: Path, max_samples: int = No
         if output_label is None:
             output_label = "unknown"
 
-        manifest["samples"].append({
-            "audio_file": str(audio_path),
-            "n_samples": len(array),
-            "labels": {
-                "output": output_label,
-                "task": sample.get("dataset_name", "unknown")
+        manifest["samples"].append(
+            {
+                "audio_file": str(audio_path),
+                "n_samples": len(array),
+                "labels": {"output": output_label, "task": sample.get("dataset_name", "unknown")},
             }
-        })
+        )
 
     manifest["n_samples"] = len(manifest["samples"])
 
@@ -127,22 +121,25 @@ def create_manifest(dataset_path: Path, output_path: Path, max_samples: int = No
 def main():
     parser = argparse.ArgumentParser(description="Create BEANS-Zero manifest")
     parser.add_argument(
-        "--dataset", "-d",
+        "--dataset",
+        "-d",
         type=Path,
         default=Path("beans_zero_data/beans_zero_test"),
-        help="Path to HuggingFace dataset"
+        help="Path to HuggingFace dataset",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=Path("beans_zero_manifest.json"),
-        help="Output manifest path"
+        help="Output manifest path",
     )
     parser.add_argument(
-        "--max-samples", "-m",
+        "--max-samples",
+        "-m",
         type=int,
         default=None,
-        help="Maximum samples to process (default: all)"
+        help="Maximum samples to process (default: all)",
     )
 
     args = parser.parse_args()

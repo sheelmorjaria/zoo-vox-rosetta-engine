@@ -9,6 +9,7 @@
 //! Dataset: ~/birdsong_analysis/data/Vocalizations (FLAC files in subdirectories)
 //! Sample rate: 96kHz (marmoset recordings)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::env;
 use std::fs::{self, File};
@@ -102,8 +103,7 @@ impl PhraseSegmenter {
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 =
-                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
+            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
@@ -226,11 +226,7 @@ pub fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
     features[3] = energy_var.sqrt();
 
     // 5-6: Zero crossing rate
-    let zcr: f64 = audio
-        .windows(2)
-        .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-        .count() as f64
-        / n as f64;
+    let zcr: f64 = audio.windows(2).filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0)).count() as f64 / n as f64;
     features[5] = zcr;
     features[6] = zcr * sr / 2.0;
 
@@ -249,8 +245,7 @@ pub fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
                 let mut real = 0.0;
                 let mut imag = 0.0;
                 for (i, &s) in window.iter().enumerate() {
-                    let angle =
-                        2.0 * std::f64::consts::PI * k as f64 * i as f64 / window_size as f64;
+                    let angle = 2.0 * std::f64::consts::PI * k as f64 * i as f64 / window_size as f64;
                     real += s as f64 * angle.cos();
                     imag += s as f64 * angle.sin();
                 }
@@ -259,12 +254,7 @@ pub fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
 
             let total_mag: f64 = magnitudes.iter().sum();
             if total_mag > 0.0 {
-                let centroid: f64 = magnitudes
-                    .iter()
-                    .enumerate()
-                    .map(|(k, &m)| k as f64 * m)
-                    .sum::<f64>()
-                    / total_mag;
+                let centroid: f64 = magnitudes.iter().enumerate().map(|(k, &m)| k as f64 * m).sum::<f64>() / total_mag;
                 centroid_sum += centroid * sr / window_size as f64;
                 centroid_count += 1;
             }
@@ -315,21 +305,14 @@ pub fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Vec<f64> {
             for i in 0..n_mod_windows {
                 let start = i * mod_period;
                 let end = (start + mod_period).min(n);
-                let energy: f64 = audio[start..end]
-                    .iter()
-                    .map(|x| (x * x) as f64)
-                    .sum::<f64>()
-                    / (end - start) as f64;
+                let energy: f64 = audio[start..end].iter().map(|x| (x * x) as f64).sum::<f64>() / (end - start) as f64;
                 mod_energies.push(energy.sqrt());
             }
 
             let mod_mean: f64 = mod_energies.iter().sum::<f64>() / mod_energies.len() as f64;
             if mod_mean > 0.0 {
-                let mod_var: f64 = mod_energies
-                    .iter()
-                    .map(|e| (e - mod_mean).powi(2))
-                    .sum::<f64>()
-                    / mod_energies.len() as f64;
+                let mod_var: f64 =
+                    mod_energies.iter().map(|e| (e - mod_mean).powi(2)).sum::<f64>() / mod_energies.len() as f64;
                 features[15] = mod_var.sqrt() / mod_mean;
             }
         }
@@ -494,10 +477,7 @@ fn discover_motifs(phrase_types: &[i32]) -> Vec<Motif> {
     let mut motifs: Vec<Motif> = motif_counts
         .into_iter()
         .filter(|(_, count)| *count >= 2)
-        .map(|(pattern, occurrences)| Motif {
-            pattern,
-            occurrences,
-        })
+        .map(|(pattern, occurrences)| Motif { pattern, occurrences })
         .collect();
 
     motifs.sort_by(|a, b| b.occurrences.cmp(&a.occurrences));
@@ -601,8 +581,7 @@ fn load_flac_file(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::error::Er
 
     let sample_rate = track.codec_params.sample_rate.unwrap_or(96000);
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -660,21 +639,13 @@ fn load_flac_file(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::error::Er
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|s| (s.into_u32() as f32 - 8388608.0) / 8388608.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|s| (s.into_u32() as f32 - 8388608.0) / 8388608.0));
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| (s as f32 - 2147483648.0) / 2147483648.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2147483648.0) / 2147483648.0));
                 }
             }
             AudioBufferRef::S8(buf) => {
@@ -741,8 +712,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let output_dir =
-        PathBuf::from(&home).join("birdsong_analysis/data/marmoset_within_call_results");
+    let output_dir = PathBuf::from(&home).join("birdsong_analysis/data/marmoset_within_call_results");
     fs::create_dir_all(&output_dir)?;
 
     let start_time = Instant::now();
@@ -752,10 +722,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let errors: Mutex<Vec<(String, String)>> = Mutex::new(Vec::new());
     let processed = AtomicUsize::new(0);
 
-    println!(
-        "\nProcessing {} files with parallel extraction...",
-        total_files
-    );
+    println!("\nProcessing {} files with parallel extraction...", total_files);
 
     files.par_iter().for_each(|path| {
         let file_name = path
@@ -853,10 +820,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !all_entropies.is_empty() {
         let avg_entropy: f64 = all_entropies.iter().sum::<f64>() / all_entropies.len() as f64;
         let low_ent = all_entropies.iter().filter(|&&e| e < 0.5).count();
-        let med_ent = all_entropies
-            .iter()
-            .filter(|&&e| e >= 0.5 && e < 1.5)
-            .count();
+        let med_ent = all_entropies.iter().filter(|&&e| e >= 0.5 && e < 1.5).count();
         let high_ent = all_entropies.iter().filter(|&&e| e >= 1.5).count();
         println!(
             "   Type entropy: avg={:.3}, low(<0.5)={}, med(0.5-1.5)={}, high(>=1.5)={}",

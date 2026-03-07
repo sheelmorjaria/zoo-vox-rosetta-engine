@@ -30,6 +30,7 @@
 //!
 //! The tool will warn if < 50% of segments come from NBD.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -162,11 +163,7 @@ fn main() -> anyhow::Result<()> {
     println!("  │  Species       │ Bigram Reuse │ Trigram Reuse │ Discrete Syntax?       │");
     println!("  ├─────────────────────────────────────────────────────────────────────────┤");
 
-    all_results.sort_by(|a, b| {
-        b.bigram_reuse_rate
-            .partial_cmp(&a.bigram_reuse_rate)
-            .unwrap()
-    });
+    all_results.sort_by(|a, b| b.bigram_reuse_rate.partial_cmp(&a.bigram_reuse_rate).unwrap());
 
     for result in &all_results {
         let syntax_status = if result.has_discrete_syntax {
@@ -214,10 +211,7 @@ fn main() -> anyhow::Result<()> {
     let results_json = serde_json::to_string_pretty(&all_results)?;
     fs::write(output_dir.join("syntax_analysis.json"), results_json)?;
 
-    println!(
-        "  Results saved to: {}/syntax_analysis.json",
-        output_dir.display()
-    );
+    println!("  Results saved to: {}/syntax_analysis.json", output_dir.display());
     println!();
     println!("═══════════════════════════════════════════════════════════════════════════");
 
@@ -245,10 +239,7 @@ fn mine_syntax(species_name: &str, segments_path: &Path) -> anyhow::Result<Speci
 
     if nbd_ratio < 0.5 {
         println!();
-        println!(
-            "  ⚠ WARNING: Only {:.0}% of segments are from NBD.",
-            nbd_ratio * 100.0
-        );
+        println!("  ⚠ WARNING: Only {:.0}% of segments are from NBD.", nbd_ratio * 100.0);
         println!("  ⚠ For mammals (bats, primates, cetaceans), NBD segments are REQUIRED.");
         println!("  ⚠ EBD/CPD will fragment graded signals and produce INVALID syntax analysis.");
         println!("  ⚠ Expected: segments from *_nbd_cache/ directories");
@@ -256,16 +247,12 @@ fn mine_syntax(species_name: &str, segments_path: &Path) -> anyhow::Result<Speci
         println!("  ⚠ Results may be INVALID. Proceed with caution.");
         println!();
     } else {
-        println!(
-            "  Segment validation: {:.0}% NBD segments ✓",
-            nbd_ratio * 100.0
-        );
+        println!("  Segment validation: {:.0}% NBD segments ✓", nbd_ratio * 100.0);
     }
 
     // Discretize segments into acoustic states
     let discretized = discretize_segments(&segments);
-    let unique_states: std::collections::HashSet<u32> =
-        discretized.iter().map(|s| s.state_id).collect();
+    let unique_states: std::collections::HashSet<u32> = discretized.iter().map(|s| s.state_id).collect();
 
     println!("  Discretized into {} states", unique_states.len());
 

@@ -35,7 +35,6 @@ from analysis.rosetta_stone.grain_based_grammar_discovery import (
     SentenceStructure,
     TransitionEntropyAnalyzer,
 )
-
 from analysis.rosetta_stone.high_dimensional_acoustic_algebra import (
     AcousticFeatureVector17,
     HighDimensionalAcousticAlgebra,

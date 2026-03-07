@@ -136,16 +136,14 @@ impl NeuralBoundaryDetector {
             let energy_change = (energy_profile[i] - energy_profile[i - 1]).abs();
             let spectral_change = spectral_profile[i];
 
-            let prob =
-                self.energy_weight * energy_change + self.spectral_change_weight * spectral_change;
+            let prob = self.energy_weight * energy_change + self.spectral_change_weight * spectral_change;
 
             boundary_probs.push(prob);
         }
 
         let smoothed = self.smooth_probabilities(&boundary_probs);
 
-        let min_samples =
-            (self.config.min_phrase_duration_ms * self.config.sample_rate as f32 / 1000.0) as usize;
+        let min_samples = (self.config.min_phrase_duration_ms * self.config.sample_rate as f32 / 1000.0) as usize;
 
         for (i, &prob) in smoothed.iter().enumerate() {
             if prob > self.config.threshold {
@@ -154,8 +152,7 @@ impl NeuralBoundaryDetector {
                 if sample - self.last_boundary_sample >= min_samples {
                     let time_ms = (sample as f32 / self.config.sample_rate as f32) * 1000.0;
 
-                    let boundary_type = if i > 0 && energy_profile[i] < energy_profile[i - 1] * 0.5
-                    {
+                    let boundary_type = if i > 0 && energy_profile[i] < energy_profile[i - 1] * 0.5 {
                         BoundaryType::Hard
                     } else if spectral_profile[i] > 0.5 {
                         BoundaryType::Soft
@@ -178,28 +175,20 @@ impl NeuralBoundaryDetector {
     }
 
     /// Detect boundaries from pre-computed spectrogram
-    pub fn detect_boundaries_from_spectrogram(
-        &mut self,
-        spec: &Array2<f32>,
-    ) -> Vec<PhraseBoundary> {
+    pub fn detect_boundaries_from_spectrogram(&mut self, spec: &Array2<f32>) -> Vec<PhraseBoundary> {
         let n_frames = spec.ncols();
         if n_frames < 2 {
             return Vec::new();
         }
 
         let mut boundaries = Vec::new();
-        let frame_duration_ms =
-            (self.config.hop_size as f32 / self.config.sample_rate as f32) * 1000.0;
+        let frame_duration_ms = (self.config.hop_size as f32 / self.config.sample_rate as f32) * 1000.0;
 
         for i in 1..n_frames {
             let prev_frame = spec.column(i - 1);
             let curr_frame = spec.column(i);
 
-            let dot: f32 = prev_frame
-                .iter()
-                .zip(curr_frame.iter())
-                .map(|(a, b)| a * b)
-                .sum();
+            let dot: f32 = prev_frame.iter().zip(curr_frame.iter()).map(|(a, b)| a * b).sum();
             let norm_prev: f32 = prev_frame.iter().map(|x| x * x).sum::<f32>().sqrt();
             let norm_curr: f32 = curr_frame.iter().map(|x| x * x).sum::<f32>().sqrt();
 
@@ -355,11 +344,7 @@ impl NeuralBoundaryDetector {
 }
 
 /// Segment audio into phrases based on detected boundaries
-pub fn segment_into_phrases(
-    audio: &[f32],
-    boundaries: &[PhraseBoundary],
-    sample_rate: u32,
-) -> Vec<Vec<f32>> {
+pub fn segment_into_phrases(audio: &[f32], boundaries: &[PhraseBoundary], sample_rate: u32) -> Vec<Vec<f32>> {
     if boundaries.is_empty() {
         return if audio.is_empty() {
             Vec::new()
@@ -444,11 +429,8 @@ mod tests {
         }
 
         let boundaries = detector.detect_boundaries(&audio);
-        // Should detect at least one boundary (the gap between tones)
-        assert!(
-            !boundaries.is_empty() || true,
-            "Detection may vary based on implementation"
-        );
+        // Detection may vary based on implementation - just verify no crash
+        let _ = boundaries.len();
     }
 
     #[test]
@@ -533,9 +515,7 @@ mod tests {
         // Should detect at least one boundary
         if !boundaries.is_empty() {
             // If boundaries found, check for hard type
-            let has_hard = boundaries
-                .iter()
-                .any(|b| b.boundary_type == BoundaryType::Hard);
+            let has_hard = boundaries.iter().any(|b| b.boundary_type == BoundaryType::Hard);
             // The test passes whether or not we find a hard boundary,
             // as long as we detect something
             assert!(has_hard || !boundaries.is_empty());

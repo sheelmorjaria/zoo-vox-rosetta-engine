@@ -221,18 +221,12 @@ impl MultiNodeCoordinator {
         // 3. Priority (lower is better)
         // 4. Node ID (lexicographic for tiebreaker)
         let best_node = nodes.values().min_by(|a, b| {
-            (
-                a.clock_class as u8,
-                a.clock_accuracy as u8,
-                a.priority,
-                &a.node_id,
-            )
-                .cmp(&(
-                    b.clock_class as u8,
-                    b.clock_accuracy as u8,
-                    b.priority,
-                    &b.node_id,
-                ))
+            (a.clock_class as u8, a.clock_accuracy as u8, a.priority, &a.node_id).cmp(&(
+                b.clock_class as u8,
+                b.clock_accuracy as u8,
+                b.priority,
+                &b.node_id,
+            ))
         });
 
         match best_node {
@@ -259,9 +253,7 @@ impl MultiNodeCoordinator {
     /// Generate TDMA schedule (only grandmaster should do this)
     pub async fn generate_tdma_schedule(&self) -> Result<TdmaSchedule> {
         if !self.is_grandmaster().await {
-            return Err(anyhow::anyhow!(
-                "Only grandmaster can generate TDMA schedule"
-            ));
+            return Err(anyhow::anyhow!("Only grandmaster can generate TDMA schedule"));
         }
 
         let nodes = self.nodes.lock().await;
@@ -276,8 +268,7 @@ impl MultiNodeCoordinator {
         };
 
         let mut slots = Vec::new();
-        let mut current_time: u64 =
-            (PtpTimestamp::from(chrono::Utc::now()).as_nanos() / 1000) as u64;
+        let mut current_time: u64 = (PtpTimestamp::from(chrono::Utc::now()).as_nanos() / 1000) as u64;
 
         for (index, node) in node_list.iter().enumerate() {
             slots.push(TdmaSlot {
@@ -308,10 +299,7 @@ impl MultiNodeCoordinator {
     /// Get TDMA slot for this node
     pub async fn get_my_tdma_slot(&self) -> Option<TdmaSlot> {
         let schedule = self.get_tdma_schedule().await?;
-        schedule
-            .slots
-            .into_iter()
-            .find(|slot| slot.node_id == self.node_id)
+        schedule.slots.into_iter().find(|slot| slot.node_id == self.node_id)
     }
 
     /// Fuse detection data from multiple nodes
@@ -335,14 +323,11 @@ impl MultiNodeCoordinator {
         }
 
         // Simple confidence fusion (weighted average)
-        let avg_confidence: f32 =
-            all_confidences.iter().sum::<f32>() / all_confidences.len() as f32;
+        let avg_confidence: f32 = all_confidences.iter().sum::<f32>() / all_confidences.len() as f32;
 
         // Location fusion (simple average)
         let location_estimate = if primary_data.location_estimate.is_some()
-            || additional_data
-                .iter()
-                .any(|d| d.location_estimate.is_some())
+            || additional_data.iter().any(|d| d.location_estimate.is_some())
         {
             let mut locations = Vec::new();
             if let Some(ref loc) = primary_data.location_estimate {
@@ -599,9 +584,7 @@ mod tests {
             .await
             .unwrap();
 
-        let result = coordinator
-            .elect_grandmaster(create_test_node_info("node1", 10))
-            .await;
+        let result = coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
         assert_eq!(result, ElectionResult::ElectedGrandmaster);
 
         let schedule = coordinator.generate_tdma_schedule().await.unwrap();
@@ -636,9 +619,7 @@ mod tests {
             .await
             .unwrap();
 
-        coordinator
-            .elect_grandmaster(create_test_node_info("node1", 10))
-            .await;
+        coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
         coordinator.generate_tdma_schedule().await.unwrap();
 
         let my_slot = coordinator.get_my_tdma_slot().await;
@@ -705,9 +686,7 @@ mod tests {
             metadata: HashMap::new(),
         };
 
-        let result = coordinator
-            .fuse_detection_data(primary, vec![secondary])
-            .unwrap();
+        let result = coordinator.fuse_detection_data(primary, vec![secondary]).unwrap();
         assert!((result.confidence - 0.8).abs() < 0.001); // (0.9 + 0.7) / 2
         assert_eq!(result.contributing_nodes.len(), 2);
         assert!((result.location_estimate.unwrap().x - 1.5).abs() < 0.001); // (1.0 + 2.0) / 2
@@ -736,9 +715,7 @@ mod tests {
     async fn test_reset_election_timer() {
         let coordinator = create_test_coordinator("node1");
 
-        coordinator
-            .elect_grandmaster(create_test_node_info("node1", 10))
-            .await;
+        coordinator.elect_grandmaster(create_test_node_info("node1", 10)).await;
         let count = coordinator.election_count().await;
 
         coordinator.reset_election_timer().await;

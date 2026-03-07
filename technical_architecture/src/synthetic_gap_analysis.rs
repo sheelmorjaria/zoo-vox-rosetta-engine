@@ -214,8 +214,7 @@ impl SyntheticGapAnalyzer {
 
         // Compute discriminability index
         // High when distance_to_intended is small AND distance_to_nearest_other is large
-        let discriminability =
-            self.compute_discriminability_index(distance_to_intended, distance_to_nearest_other);
+        let discriminability = self.compute_discriminability_index(distance_to_intended, distance_to_nearest_other);
 
         // Determine if passed
         let passed = discriminability >= self.config.min_discriminability;
@@ -250,11 +249,7 @@ impl SyntheticGapAnalyzer {
     }
 
     /// Compute discriminability index
-    fn compute_discriminability_index(
-        &self,
-        distance_to_intended: f64,
-        distance_to_nearest_other: f64,
-    ) -> f64 {
+    fn compute_discriminability_index(&self, distance_to_intended: f64, distance_to_nearest_other: f64) -> f64 {
         // Discriminability = how much closer we are to intended vs other
         // Scale: 0 = equally close, 1 = much closer to intended
         if distance_to_nearest_other == 0.0 {
@@ -282,11 +277,7 @@ impl SyntheticGapAnalyzer {
 
         // Compute mean and std discriminability
         let mean_discriminability = if total_samples > 0 {
-            self.results
-                .iter()
-                .map(|r| r.discriminability_index)
-                .sum::<f64>()
-                / total_samples as f64
+            self.results.iter().map(|r| r.discriminability_index).sum::<f64>() / total_samples as f64
         } else {
             0.0
         };
@@ -338,11 +329,7 @@ impl SyntheticGapAnalyzer {
 
         // Compute global t-SNE distance (average distance to all centroids)
         let global_tsne_distance = if total_samples > 0 {
-            self.results
-                .iter()
-                .map(|r| r.distance_to_intended)
-                .sum::<f64>()
-                / total_samples as f64
+            self.results.iter().map(|r| r.distance_to_intended).sum::<f64>() / total_samples as f64
         } else {
             0.0
         };
@@ -518,15 +505,9 @@ mod tests {
         analyzer.compute_centroids();
 
         // Add multiple synthesis results
-        analyzer
-            .analyze_synthesis("s1", "type_a", &[0.9, 0.1])
-            .unwrap();
-        analyzer
-            .analyze_synthesis("s2", "type_a", &[0.8, 0.2])
-            .unwrap();
-        analyzer
-            .analyze_synthesis("s3", "type_b", &[0.1, 0.9])
-            .unwrap();
+        analyzer.analyze_synthesis("s1", "type_a", &[0.9, 0.1]).unwrap();
+        analyzer.analyze_synthesis("s2", "type_a", &[0.8, 0.2]).unwrap();
+        analyzer.analyze_synthesis("s3", "type_b", &[0.1, 0.9]).unwrap();
 
         let stats = analyzer.compute_statistics();
 
@@ -583,12 +564,8 @@ mod tests {
         analyzer.add_natural_sample("type_b", vec![0.0, 1.0]);
         analyzer.compute_centroids();
 
-        analyzer
-            .analyze_synthesis("s1", "type_a", &[0.9, 0.1])
-            .unwrap(); // No drift
-        analyzer
-            .analyze_synthesis("s2", "type_a", &[0.1, 0.9])
-            .unwrap(); // Drift
+        analyzer.analyze_synthesis("s1", "type_a", &[0.9, 0.1]).unwrap(); // No drift
+        analyzer.analyze_synthesis("s2", "type_a", &[0.1, 0.9]).unwrap(); // Drift
 
         let stats = analyzer.compute_statistics();
         assert_eq!(stats.drift_count, 1);

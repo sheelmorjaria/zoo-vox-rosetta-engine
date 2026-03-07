@@ -5,6 +5,7 @@
 //! 2. Run clustering with higher min_cluster_size to force multiple clusters
 //! 3. Analyze cluster membership by call type
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -37,12 +38,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(16)];
@@ -63,10 +59,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
             };
 
             let mono_samples = if num_channels == 2 {
-                samples
-                    .chunks_exact(2)
-                    .map(|c| (c[0] + c[1]) / 2.0)
-                    .collect()
+                samples.chunks_exact(2).map(|c| (c[0] + c[1]) / 2.0).collect()
             } else {
                 samples
             };
@@ -145,9 +138,7 @@ fn compute_macro_texture(base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
 
     // Temporal Texture (5D)
     features.push(0.1);
-    features.push(
-        base_45d.base_30d.attack_time_ms as f64 / (base_45d.base_30d.decay_time_ms as f64 + 1.0),
-    );
+    features.push(base_45d.base_30d.attack_time_ms as f64 / (base_45d.base_30d.decay_time_ms as f64 + 1.0));
     features.push(base_45d.base_30d.sustain_level as f64 * 10.0);
     features.push(base_45d.base_30d.vibrato_depth as f64 / 100.0);
     features.push(0.1);
@@ -181,21 +172,9 @@ fn compute_micro_texture(base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
     // FM Spectrum (5D)
     let fm_rate = base_45d.fm_slope as f64;
     features.push(if fm_rate < 10.0 { 1.0 } else { 0.0 });
-    features.push(if fm_rate >= 10.0 && fm_rate < 30.0 {
-        1.0
-    } else {
-        0.0
-    });
-    features.push(if fm_rate >= 30.0 && fm_rate < 50.0 {
-        1.0
-    } else {
-        0.0
-    });
-    features.push(if fm_rate >= 50.0 && fm_rate < 100.0 {
-        1.0
-    } else {
-        0.0
-    });
+    features.push(if fm_rate >= 10.0 && fm_rate < 30.0 { 1.0 } else { 0.0 });
+    features.push(if fm_rate >= 30.0 && fm_rate < 50.0 { 1.0 } else { 0.0 });
+    features.push(if fm_rate >= 50.0 && fm_rate < 100.0 { 1.0 } else { 0.0 });
     features.push(0.0);
 
     // Modulation Stats (5D)
@@ -210,11 +189,7 @@ fn compute_micro_texture(base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
     features.push(if ici < 20.0 { 1.0 } else { 0.0 });
     features.push(if ici >= 20.0 && ici < 50.0 { 1.0 } else { 0.0 });
     features.push(if ici >= 50.0 && ici < 100.0 { 1.0 } else { 0.0 });
-    features.push(if ici >= 100.0 && ici < 200.0 {
-        1.0
-    } else {
-        0.0
-    });
+    features.push(if ici >= 100.0 && ici < 200.0 { 1.0 } else { 0.0 });
     features.push(if ici >= 200.0 { 1.0 } else { 0.0 });
 
     // Rhythm Stats (5D)
@@ -293,8 +268,7 @@ fn main() -> anyhow::Result<()> {
 
                 for i in (0..audio.len()).step_by(hop_size) {
                     let end = (i + frame_size).min(audio.len());
-                    let energy: f32 =
-                        audio[i..end].iter().map(|x| x * x).sum::<f32>() / (end - i) as f32;
+                    let energy: f32 = audio[i..end].iter().map(|x| x * x).sum::<f32>() / (end - i) as f32;
                     frame_energies.push(energy.sqrt());
                 }
 
@@ -380,14 +354,8 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    println!(
-        "  Feature matrix: {} segments × {} features",
-        n_segments, n_features
-    );
-    println!(
-        "  Running HDBSCAN with min_cluster_size={}...",
-        min_cluster_size
-    );
+    println!("  Feature matrix: {} segments × {} features", n_segments, n_features);
+    println!("  Running HDBSCAN with min_cluster_size={}...", min_cluster_size);
     println!();
 
     let hdbscan = HdbscanClustering::new(min_cluster_size, min_samples)?;
@@ -407,11 +375,7 @@ fn main() -> anyhow::Result<()> {
     println!("  Overall Statistics:");
     println!("    • Total segments: {}", n_segments);
     println!("    • Clusters found: {}", stats.n_clusters);
-    println!(
-        "    • Noise points: {} ({:.1}%)",
-        noise_count,
-        noise_ratio * 100.0
-    );
+    println!("    • Noise points: {} ({:.1}%)", noise_count, noise_ratio * 100.0);
     println!("    • Purity: {:.1}%", purity * 100.0);
     println!();
 
@@ -459,14 +423,9 @@ fn main() -> anyhow::Result<()> {
             for (call_type, count) in sorted_types {
                 let pct = *count as f64 / member_indices.len() as f64 * 100.0;
                 let bar = "█".repeat((pct / 5.0) as usize);
-                println!(
-                    "  │      • {:14} {:3} ({:5.1}%) {}",
-                    call_type, count, pct, bar
-                );
+                println!("  │      • {:14} {:3} ({:5.1}%) {}", call_type, count, pct, bar);
             }
-            println!(
-                "  │                                                                         "
-            );
+            println!("  │                                                                         ");
         }
     }
     println!("  └─────────────────────────────────────────────────────────────────────────┘");
@@ -496,10 +455,7 @@ fn main() -> anyhow::Result<()> {
             *cluster_dist.entry(label).or_insert(0) += 1;
         }
 
-        let dominant_cluster = cluster_dist
-            .iter()
-            .max_by_key(|(_, &c)| c)
-            .map(|(&l, &c)| (l, c));
+        let dominant_cluster = cluster_dist.iter().max_by_key(|(_, &c)| c).map(|(&l, &c)| (l, c));
 
         if let Some((dom_cluster, dom_count)) = dominant_cluster {
             let pct = dom_count as f64 / type_indices.len() as f64 * 100.0;

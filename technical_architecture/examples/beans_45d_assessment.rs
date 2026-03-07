@@ -7,6 +7,7 @@
 //! - Modulation Factors (3): Tilt, FM Slope, AM Depth
 //! - Non-Linear Factors (2): Subharmonic Ratio, Spectral Entropy
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -440,10 +441,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn build_global_types_streaming(
-    features: &[ExtractedFeatures],
-    similarity_threshold: f64,
-) -> Vec<AcousticType> {
+fn build_global_types_streaming(features: &[ExtractedFeatures], similarity_threshold: f64) -> Vec<AcousticType> {
     if features.is_empty() {
         return Vec::new();
     }
@@ -492,13 +490,10 @@ fn build_global_types_streaming(
         if let Some(type_idx) = best_type {
             let n_in_type = types[type_idx].count + 1;
             types[type_idx].count = n_in_type;
-            types[type_idx]
-                .sample_ids
-                .push(features[i].sample_id.clone());
+            types[type_idx].sample_ids.push(features[i].sample_id.clone());
 
             for (j, val) in features[i].features.iter().enumerate().take(FEATURE_DIM) {
-                types[type_idx].centroid[j] +=
-                    (val - types[type_idx].centroid[j]) / n_in_type as f64;
+                types[type_idx].centroid[j] += (val - types[type_idx].centroid[j]) / n_in_type as f64;
             }
         } else {
             types.push(AcousticType {
@@ -658,10 +653,7 @@ fn compute_knn_accuracy(features: &[ExtractedFeatures], k: usize) -> f64 {
             }
         }
 
-        let predicted = dataset_counts
-            .iter()
-            .max_by_key(|(_, &c)| c)
-            .map(|(d, _)| *d);
+        let predicted = dataset_counts.iter().max_by_key(|(_, &c)| c).map(|(d, _)| *d);
 
         let actual = features[i].dataset.as_deref();
 
@@ -674,10 +666,7 @@ fn compute_knn_accuracy(features: &[ExtractedFeatures], k: usize) -> f64 {
     correct_count as f64 / test_size as f64
 }
 
-fn load_audio_raw(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     // Load raw f32 audio file
     let bytes = std::fs::read(path)?;
 
@@ -750,8 +739,7 @@ fn load_audio_from_npy(path: &str) -> Result<Vec<f64>, Box<dyn std::error::Error
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let probed =
-        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;

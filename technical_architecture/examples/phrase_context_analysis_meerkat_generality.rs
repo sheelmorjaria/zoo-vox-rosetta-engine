@@ -11,6 +11,7 @@
 // - Shannon Entropy: Distribution evenness across contexts
 // - Permutation Test: Statistical significance vs random chance
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter};
@@ -147,18 +148,14 @@ fn get_label_meanings() -> HashMap<String, String> {
 // Loading Functions
 // ============================================================================
 
-fn load_within_call_results(
-    path: &Path,
-) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
+fn load_within_call_results(path: &Path) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let results: Vec<WithinCallAnalysis> = serde_json::from_reader(reader)?;
     Ok(results)
 }
 
-fn load_hdf5_labels(
-    labels_dir: &Path,
-) -> Result<HashMap<String, FileLabel>, Box<dyn std::error::Error>> {
+fn load_hdf5_labels(labels_dir: &Path) -> Result<HashMap<String, FileLabel>, Box<dyn std::error::Error>> {
     // Use external Python to read HDF5 since Rust HDF5 support is limited
     // We'll parse the output from a Python script
 
@@ -246,11 +243,7 @@ fn cluster_phrases(
         if let Some(label) = labels.get(&fname) {
             for phrase in &analysis.phrases {
                 if !phrase.features.is_empty() {
-                    all_features.push((
-                        phrase.features.clone(),
-                        fname.clone(),
-                        label.primary.clone(),
-                    ));
+                    all_features.push((phrase.features.clone(), fname.clone(), label.primary.clone()));
                 }
             }
         }
@@ -295,9 +288,7 @@ fn cluster_phrases(
     (type_assignments, type_representatives)
 }
 
-fn build_phrase_context_matrix(
-    type_assignments: &HashMap<i32, Vec<(String, String)>>,
-) -> PhraseContextMatrix {
+fn build_phrase_context_matrix(type_assignments: &HashMap<i32, Vec<(String, String)>>) -> PhraseContextMatrix {
     let mut matrix: HashMap<i32, HashMap<String, usize>> = HashMap::new();
     let mut phrase_totals: HashMap<i32, usize> = HashMap::new();
     let mut context_totals: HashMap<String, usize> = HashMap::new();
@@ -344,10 +335,7 @@ fn shannon_entropy(counts: &[usize]) -> f64 {
     entropy
 }
 
-fn calculate_generality_metrics(
-    pcm: &PhraseContextMatrix,
-    n_contexts: usize,
-) -> Vec<GeneralityMetrics> {
+fn calculate_generality_metrics(pcm: &PhraseContextMatrix, n_contexts: usize) -> Vec<GeneralityMetrics> {
     let mut metrics = Vec::new();
 
     for (phrase_id, context_counts) in &pcm.matrix {
@@ -362,11 +350,7 @@ fn calculate_generality_metrics(
         } else {
             0.0
         };
-        let normalized_entropy = if max_entropy > 0.0 {
-            entropy / max_entropy
-        } else {
-            0.0
-        };
+        let normalized_entropy = if max_entropy > 0.0 { entropy / max_entropy } else { 0.0 };
 
         let classification = classify_phrase(generality_score, total_occurrences);
 
@@ -409,19 +393,14 @@ fn classify_phrase(generality: f64, total: usize) -> PhraseType {
 // Permutation Test
 // ============================================================================
 
-fn run_permutation_test(
-    pcm: &PhraseContextMatrix,
-    n_permutations: usize,
-    n_contexts: usize,
-) -> PermutationTestResult {
+fn run_permutation_test(pcm: &PhraseContextMatrix, n_permutations: usize, n_contexts: usize) -> PermutationTestResult {
     // Calculate observed mean generality
     let observed_generalities: Vec<f64> = pcm
         .matrix
         .values()
         .map(|ctx_counts| ctx_counts.len() as f64 / n_contexts as f64)
         .collect();
-    let observed_mean =
-        observed_generalities.iter().sum::<f64>() / observed_generalities.len() as f64;
+    let observed_mean = observed_generalities.iter().sum::<f64>() / observed_generalities.len() as f64;
 
     // Collect all context assignments
     let all_contexts: Vec<String> = pcm
@@ -451,10 +430,7 @@ fn run_permutation_test(
         let mut idx = 0;
 
         for (_, &phrase_total) in pcm.phrase_totals.iter() {
-            let unique_contexts: HashSet<&String> = shuffled[idx..idx + phrase_total]
-                .iter()
-                .map(|s| s)
-                .collect();
+            let unique_contexts: HashSet<&String> = shuffled[idx..idx + phrase_total].iter().map(|s| s).collect();
             perm_generalities.push(unique_contexts.len() as f64 / n_contexts as f64);
             idx += phrase_total;
         }
@@ -463,16 +439,11 @@ fn run_permutation_test(
     }
 
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_var: f64 = null_means
-        .iter()
-        .map(|x| (x - null_mean).powi(2))
-        .sum::<f64>()
-        / null_means.len() as f64;
+    let null_var: f64 = null_means.iter().map(|x| (x - null_mean).powi(2)).sum::<f64>() / null_means.len() as f64;
     let null_std = null_var.sqrt();
 
     let z_score = (observed_mean - null_mean) / null_std.max(1e-10);
-    let p_value =
-        null_means.iter().filter(|&&x| x >= observed_mean).count() as f64 / n_permutations as f64;
+    let p_value = null_means.iter().filter(|&&x| x >= observed_mean).count() as f64 / n_permutations as f64;
 
     PermutationTestResult {
         observed_mean_generality: observed_mean,
@@ -712,21 +683,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "      ├─ Null mean generality:      {:.4} ± {:.4}",
         perm_result.null_mean_generality, perm_result.null_std_generality
     );
-    println!(
-        "      ├─ Z-score:                   {:.4}",
-        perm_result.z_score
-    );
-    println!(
-        "      ├─ P-value:                   {:.4}",
-        perm_result.p_value
-    );
+    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
+    println!("      ├─ P-value:                   {:.4}", perm_result.p_value);
     println!(
         "      └─ Significant:               {}",
-        if perm_result.significant {
-            "YES ✓"
-        } else {
-            "NO ✗"
-        }
+        if perm_result.significant { "YES ✓" } else { "NO ✗" }
     );
     println!();
 
@@ -743,11 +704,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let std_generality = {
         let mean = mean_generality;
-        let var: f64 = generality_scores
-            .iter()
-            .map(|x| (x - mean).powi(2))
-            .sum::<f64>()
-            / generality_scores.len() as f64;
+        let var: f64 =
+            generality_scores.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / generality_scores.len() as f64;
         var.sqrt()
     };
 
@@ -780,16 +738,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Key Metrics:");
     println!("      ├─ Mean Generality Score:    {:.3}", mean_generality);
-    println!(
-        "      ├─ Median Generality Score:  {:.3}",
-        median_generality
-    );
+    println!("      ├─ Median Generality Score:  {:.3}", median_generality);
     println!("      ├─ General Phrases:          {:.1}%", pct_general);
     println!("      ├─ Specific Phrases:         {:.1}%", pct_specific);
-    println!(
-        "      └─ Permutation p-value:      {:.4}",
-        perm_result.p_value
-    );
+    println!("      └─ Permutation p-value:      {:.4}", perm_result.p_value);
     println!();
 
     if pct_general > 20.0 && perm_result.significant {

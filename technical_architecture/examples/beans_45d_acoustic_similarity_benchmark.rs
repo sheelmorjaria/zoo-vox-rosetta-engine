@@ -16,6 +16,7 @@
 //! - Modulation Factors (3): Tilt, FM Slope, AM Depth
 //! - Non-Linear Factors (2): Subharmonic Ratio, Spectral Entropy
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -151,10 +152,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Configuration:");
     println!("  ├─ Dataset: EarthSpeciesProject/BEANS-Zero");
     println!("  ├─ Total Samples: {}", total_samples);
-    println!(
-        "  ├─ Feature Dimension: {}D (30D base + 15D new)",
-        FEATURE_DIM
-    );
+    println!("  ├─ Feature Dimension: {}D (30D base + 15D new)", FEATURE_DIM);
     println!("  ├─ Similarity Threshold: 0.85");
     println!("  ├─ Distance Metric: Cosine");
     println!("  ├─ k-NN Values: [5, 10, 15]");
@@ -204,10 +202,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut extractor = ZooVoxFeatureExtractor::new(entry.sample_rate);
             match extractor.extract_45d(&audio) {
                 Ok(features) => Some(ExtractedSample {
-                    sample_id: entry
-                        .id
-                        .clone()
-                        .unwrap_or_else(|| format!("sample_{}", idx)),
+                    sample_id: entry.id.clone().unwrap_or_else(|| format!("sample_{}", idx)),
                     features: features.to_vector().to_vec(),
                     source_dataset: entry.labels.source_dataset.clone(),
                     task: entry.labels.task.clone(),
@@ -342,12 +337,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Compute variance explained by new 15D features vs base 30D
-    let base_30d_variance: f64 = (0..30)
-        .map(|i| feature_stds[feature_names_45d[i]].powi(2))
-        .sum();
-    let new_15d_variance: f64 = (30..45)
-        .map(|i| feature_stds[feature_names_45d[i]].powi(2))
-        .sum();
+    let base_30d_variance: f64 = (0..30).map(|i| feature_stds[feature_names_45d[i]].powi(2)).sum();
+    let new_15d_variance: f64 = (30..45).map(|i| feature_stds[feature_names_45d[i]].powi(2)).sum();
     let total_variance = base_30d_variance + new_15d_variance;
     let new_features_variance_explained = if total_variance > 0.0 {
         new_15d_variance / total_variance
@@ -370,10 +361,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (min, max) = feature_ranges[name];
         let mean = feature_means[name];
         let std = feature_stds[name];
-        println!(
-            "  ├─ {}: [{:.2}, {:.2}] μ={:.2} σ={:.2}",
-            name, min, max, mean, std
-        );
+        println!("  ├─ {}: [{:.2}, {:.2}] μ={:.2} σ={:.2}", name, min, max, mean, std);
     }
     println!();
 
@@ -406,8 +394,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_sizes: Vec<usize> = clusters.iter().map(|c| c.count).collect();
     let largest_cluster = cluster_sizes.iter().max().copied().unwrap_or(0);
     let smallest_cluster = cluster_sizes.iter().min().copied().unwrap_or(0);
-    let avg_cluster_size =
-        cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len().max(1) as f64;
+    let avg_cluster_size = cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len().max(1) as f64;
 
     // Compute cluster entropy
     let cluster_entropy: f64 = clusters
@@ -541,10 +528,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         total_time.as_secs_f64(),
         total_time.as_secs_f64() / 60.0
     );
-    println!(
-        "  ├─ Extraction Time: {:.1}s",
-        extraction_time.as_secs_f64()
-    );
+    println!("  ├─ Extraction Time: {:.1}s", extraction_time.as_secs_f64());
     println!("  └─ Analysis Time: {:.1}s", analysis_time.as_secs_f64());
     println!();
 
@@ -629,10 +613,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
     let audio: Vec<f64> = bytes
@@ -647,10 +628,7 @@ fn load_audio_raw(
     Ok(audio)
 }
 
-fn build_clusters_streaming(
-    samples: &[ExtractedSample],
-    similarity_threshold: f64,
-) -> Vec<AcousticCluster> {
+fn build_clusters_streaming(samples: &[ExtractedSample], similarity_threshold: f64) -> Vec<AcousticCluster> {
     if samples.is_empty() {
         return Vec::new();
     }
@@ -700,9 +678,7 @@ fn build_clusters_streaming(
             // Add to existing cluster (update centroid incrementally)
             let n_in_cluster = clusters[cluster_idx].count + 1;
             clusters[cluster_idx].count = n_in_cluster;
-            clusters[cluster_idx]
-                .sample_ids
-                .push(sample.sample_id.clone());
+            clusters[cluster_idx].sample_ids.push(sample.sample_id.clone());
             *clusters[cluster_idx]
                 .source_datasets
                 .entry(sample.source_dataset.clone())
@@ -710,8 +686,7 @@ fn build_clusters_streaming(
 
             // Incremental centroid update
             for (j, &val) in sample.features.iter().enumerate() {
-                clusters[cluster_idx].centroid[j] +=
-                    (val - clusters[cluster_idx].centroid[j]) / n_in_cluster as f64;
+                clusters[cluster_idx].centroid[j] += (val - clusters[cluster_idx].centroid[j]) / n_in_cluster as f64;
             }
         } else {
             // Create new cluster
@@ -728,30 +703,18 @@ fn build_clusters_streaming(
         }
 
         if (i + 1) % 20000 == 0 {
-            println!(
-                "      Progress: {}/{} samples, {} clusters",
-                i + 1,
-                n,
-                clusters.len()
-            );
+            println!("      Progress: {}/{} samples, {} clusters", i + 1, n, clusters.len());
         }
     }
 
     // Sort by count
     clusters.sort_by(|a, b| b.count.cmp(&a.count));
 
-    println!(
-        "      Discovered {} clusters from {} samples",
-        clusters.len(),
-        n
-    );
+    println!("      Discovered {} clusters from {} samples", clusters.len(), n);
     clusters
 }
 
-fn compute_similarity_metrics(
-    samples: &[ExtractedSample],
-    clusters: &[AcousticCluster],
-) -> (f64, f64, f64) {
+fn compute_similarity_metrics(samples: &[ExtractedSample], clusters: &[AcousticCluster]) -> (f64, f64, f64) {
     if samples.is_empty() || clusters.is_empty() {
         return (0.0, 0.0, 0.0);
     }
@@ -866,15 +829,10 @@ fn compute_knn_accuracy(samples: &[ExtractedSample], k: usize) -> f64 {
         // Vote among top k
         let mut dataset_counts: HashMap<&str, usize> = HashMap::new();
         for (idx, _) in distances.iter().take(k) {
-            *dataset_counts
-                .entry(&samples[*idx].source_dataset)
-                .or_insert(0) += 1;
+            *dataset_counts.entry(&samples[*idx].source_dataset).or_insert(0) += 1;
         }
 
-        let predicted = dataset_counts
-            .iter()
-            .max_by_key(|(_, &c)| c)
-            .map(|(d, _)| *d);
+        let predicted = dataset_counts.iter().max_by_key(|(_, &c)| c).map(|(d, _)| *d);
 
         let actual = samples[i].source_dataset.as_str();
 

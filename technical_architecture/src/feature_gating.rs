@@ -59,8 +59,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::taxonomic_router::{
-    ConsolidatedTaxon, FEATURE_DIM, GATEKEEPER_DIM,
-    feature_indices, idx_to_consolidated_taxon,
+    feature_indices, idx_to_consolidated_taxon, ConsolidatedTaxon, FEATURE_DIM, GATEKEEPER_DIM,
 };
 
 // =============================================================================
@@ -180,10 +179,7 @@ impl TaxonomicMask {
     /// Apply the mask to a feature vector
     pub fn apply(&self, features: &[f32]) -> Vec<f32> {
         assert_eq!(features.len(), FEATURE_DIM, "Features must be {}D", FEATURE_DIM);
-        features.iter()
-            .zip(self.weights.iter())
-            .map(|(f, w)| f * w)
-            .collect()
+        features.iter().zip(self.weights.iter()).map(|(f, w)| f * w).collect()
     }
 }
 
@@ -270,7 +266,8 @@ impl FeatureGate {
 
     /// Get the mask for a specific taxon
     pub fn get_mask(&self, taxon: ConsolidatedTaxon) -> &TaxonomicMask {
-        self.masks.get(&taxon)
+        self.masks
+            .get(&taxon)
             .unwrap_or_else(|| self.masks.get(&ConsolidatedTaxon::Unknown).unwrap())
     }
 
@@ -282,16 +279,17 @@ impl FeatureGate {
     ///
     /// # Returns
     /// * (weighted_features, predicted_taxon, confidence)
-    pub fn apply_gating(
-        &self,
-        features_112d: &[f32],
-        gatekeeper_probs: &[f32],
-    ) -> (Vec<f32>, ConsolidatedTaxon, f32) {
+    pub fn apply_gating(&self, features_112d: &[f32], gatekeeper_probs: &[f32]) -> (Vec<f32>, ConsolidatedTaxon, f32) {
         assert_eq!(features_112d.len(), FEATURE_DIM, "Features must be {}D", FEATURE_DIM);
-        assert_eq!(gatekeeper_probs.len(), 6, "Gatekeeper probs must be 6D (consolidated taxa)");
+        assert_eq!(
+            gatekeeper_probs.len(),
+            6,
+            "Gatekeeper probs must be 6D (consolidated taxa)"
+        );
 
         // Find predicted taxon and confidence
-        let (taxon_idx, &confidence) = gatekeeper_probs.iter()
+        let (taxon_idx, &confidence) = gatekeeper_probs
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .unwrap_or((5, &0.0));
@@ -325,7 +323,8 @@ impl FeatureGate {
         assert_eq!(gatekeeper_probs.len(), 6, "Gatekeeper probs must be 6D");
 
         // Find predicted taxon and confidence
-        let (taxon_idx, &confidence) = gatekeeper_probs.iter()
+        let (taxon_idx, &confidence) = gatekeeper_probs
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .unwrap_or((5, &0.0));
@@ -350,7 +349,8 @@ impl FeatureGate {
         }
 
         // Apply combined weights
-        let weighted: Vec<f32> = features_112d.iter()
+        let weighted: Vec<f32> = features_112d
+            .iter()
             .zip(combined_weights.iter())
             .map(|(f, w)| f * w)
             .collect();
@@ -589,8 +589,7 @@ mod tests {
 
         // Features should be modified (weighted combination of masks)
         // Not all weights are 1.0 anymore
-        let has_modification = weighted.iter().zip(features.iter())
-            .any(|(w, f)| (w - f).abs() > 1e-6);
+        let has_modification = weighted.iter().zip(features.iter()).any(|(w, f)| (w - f).abs() > 1e-6);
         assert!(has_modification);
     }
 
@@ -626,7 +625,11 @@ mod tests {
 
         // Rhythm (96-106) should be boosted for insects
         for i in feature_indices::RHYTHM_START..feature_indices::RHYTHM_END.min(FEATURE_DIM) {
-            assert!(mask.weights[i] > 1.0, "Rhythm feature {} should be boosted for insects", i);
+            assert!(
+                mask.weights[i] > 1.0,
+                "Rhythm feature {} should be boosted for insects",
+                i
+            );
         }
     }
 
@@ -646,13 +649,7 @@ mod tests {
         let original = vec![1.0; FEATURE_DIM];
         let weighted = vec![2.0; FEATURE_DIM];
 
-        let input = GatedEnsembleInput::new(
-            original.clone(),
-            weighted.clone(),
-            ConsolidatedTaxon::Bird,
-            0.85,
-            42,
-        );
+        let input = GatedEnsembleInput::new(original.clone(), weighted.clone(), ConsolidatedTaxon::Bird, 0.85, 42);
 
         assert_eq!(input.original_features, original);
         assert_eq!(input.weighted_features, weighted);

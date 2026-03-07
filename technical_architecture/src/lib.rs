@@ -23,30 +23,85 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BORING RUST: Lint Configuration
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// This crate follows Boring Rust principles with some relaxations for
+// scientific computing/audio DSP. See clippy.toml for threshold configuration.
+//
+// Tier 1 (Default): Strict rules for agent-generated code
+// Tier 2 (#[hot_path]): Relaxed complexity for performance-critical code
+// Tier 3 (#[human_authored]): Unrestricted, agent treats as black box
+// ═══════════════════════════════════════════════════════════════════════════════
+
 // PyO3's #[pymethods] macro generates non-local impl blocks, which triggers warnings.
-// This is a known false positive from the PyO3 macro and can be safely suppressed.
+// JUSTIFICATION: Known false positive from PyO3 macro, safe to suppress.
 #![cfg_attr(feature = "python-bindings", allow(non_local_definitions))]
-// Library crate: many public items are part of the API but may not be used internally
+// ─────────────────────────────────────────────────────────────────────────────────
+// SAFETY-CRITICAL: These are NEVER allowed
+// ─────────────────────────────────────────────────────────────────────────────────
+// Note: These are enforced via clippy.toml and Cargo.toml [lints] section.
+// - unwrap_used: DENY - Use .context("...")? instead
+// - expect_used: DENY - Use .context("...")? instead
+// - panic: DENY - No panics in production code
+// - indexing_slicing: DENY - Use .get(i) instead of [i]
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// ALLOWED WITH JUSTIFICATION: Scientific Computing/DSP-specific relaxations
+// ─────────────────────────────────────────────────────────────────────────────────
+
+// JUSTIFICATION: Library crate with many public API items not used internally.
+// Items are part of the public API and used by downstream consumers.
 #![allow(dead_code)]
+// JUSTIFICATION: Signal processing functions legitimately need many parameters
+// (sample_rate, window_size, hop_size, n_mels, fmin, fmax, etc.)
+// TODO: Consider using config structs for functions with >5 params
+#![allow(clippy::too_many_arguments)]
+// JUSTIFICATION: Complex numeric types (ndarray::Array2<f32>, etc.) are common
+// in DSP and cannot be simplified without loss of clarity.
+#![allow(clippy::type_complexity)]
+// JUSTIFICATION: Index-based loops are often clearer for DSP algorithms where
+// the index has semantic meaning (sample index, frame number, etc.)
+#![allow(clippy::needless_range_loop)]
+// JUSTIFICATION: Some new() constructors don't need Default impl (e.g., with required params)
+#![allow(clippy::new_without_default)]
+// JUSTIFICATION: Performance-optimized enums may have size variance (e.g., large vs small variants)
+#![allow(clippy::large_enum_variant)]
+// ─────────────────────────────────────────────────────────────────────────────────
+// DOCUMENTATION STYLE: Minor relaxations for doc comment formatting
+// ─────────────────────────────────────────────────────────────────────────────────
+
+// JUSTIFICATION: Doc comment style preferences - these don't affect correctness
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::doc_nested_refdefs)]
+// ─────────────────────────────────────────────────────────────────────────────────
+// STYLE PREFERENCES: Minor patterns that are acceptable in this codebase
+// ─────────────────────────────────────────────────────────────────────────────────
+
+// JUSTIFICATION: vec![] followed by push can be clearer for incremental construction
+#![allow(clippy::vec_init_then_push)]
+// JUSTIFICATION: min/max pattern sometimes clearer than clamped() for audio bounds
+#![allow(clippy::manual_clamp)]
+// JUSTIFICATION: Manual counter loops can be clearer for DSP with index semantics
+#![allow(clippy::explicit_counter_loop)]
+// JUSTIFICATION: Custom NaN handling needed for float comparisons in DSP
+#![allow(clippy::non_canonical_partial_ord_impl)]
+// JUSTIFICATION: std::i32::MAX style acceptable for compatibility
+#![allow(clippy::legacy_numeric_constants)]
+// JUSTIFICATION: Some APIs don't need Default trait (e.g., required config)
+#![allow(clippy::should_implement_trait)]
+// ─────────────────────────────────────────────────────────────────────────────────
+// DEVELOPMENT ALLOWS: These should be removed over time
+// ─────────────────────────────────────────────────────────────────────────────────
+
+// Note: These suppress warnings that indicate incomplete code. As modules are cleaned
+// up, these should be moved to module-level or removed entirely.
 #![allow(unused_imports)]
 #![allow(unused_assignments)]
 #![allow(unused_variables)]
 #![allow(unused_mut)]
 #![allow(unused_comparisons)]
-// Acceptable clippy lints for this scientific computing/audio processing library
-#![allow(clippy::too_many_arguments)] // Signal processing functions often need many params
-#![allow(clippy::type_complexity)] // Complex numeric types are common in DSP
-#![allow(clippy::needless_range_loop)] // Index-based loops are clearer for DSP algorithms
-#![allow(clippy::should_implement_trait)] // Some APIs don't need Default trait
-#![allow(clippy::new_without_default)] // Not all constructors need Default impl
-#![allow(clippy::large_enum_variant)] // Performance-optimized enums may have size variance
-#![allow(clippy::doc_lazy_continuation)] // Doc formatting style
-#![allow(clippy::doc_nested_refdefs)] // Doc link style
-#![allow(clippy::vec_init_then_push)] // Sometimes clearer than vec![] macro
-#![allow(clippy::manual_clamp)] // min/max pattern is sometimes clearer
-#![allow(clippy::explicit_counter_loop)] // Manual counters sometimes clearer
-#![allow(clippy::non_canonical_partial_ord_impl)] // Custom NaN handling needed
-#![allow(clippy::legacy_numeric_constants)] // std::i32::MAX style acceptable
 
 use anyhow::Result;
 use log::{error, info, warn};
@@ -94,40 +149,37 @@ pub use synthesis::{
 
 // Manifest Bridge exports (Rust/Python pipeline communication)
 pub use manifest_bridge::{
-    ClusterInfo as ManifestClusterInfo, ClustersManifest, ExemplarEntry as ManifestExemplarEntry,
-    ExemplarMetadata, PipelineController, SegmentEntry, SegmentsManifest, SynthesisManifest,
+    ClusterInfo as ManifestClusterInfo, ClustersManifest, ExemplarEntry as ManifestExemplarEntry, ExemplarMetadata,
+    PipelineController, SegmentEntry, SegmentsManifest, SynthesisManifest,
 };
 
 pub use thermal::{TemperatureReading, ThermalGovernor, ThermalState, ThermalStats};
 
 // Island Hopping Navigation (NEW)
 pub use island_hopping::{
-    apply_delta_to_granular, AudioIsland, GranularParams, NavigationEngine, NavigationMode,
-    NavigationWaypoint, PhraseDatabase, SafetyClamp, TimelineExecutor, Vector30D, VectorDelta,
+    apply_delta_to_granular, AudioIsland, GranularParams, NavigationEngine, NavigationMode, NavigationWaypoint,
+    PhraseDatabase, SafetyClamp, TimelineExecutor, Vector30D, VectorDelta,
 };
 
 // Metadata-First Synthesizer (NEW - Rust implementation of Python metadata_synthesizer.py)
 pub use metadata_synthesizer::{
-    MetadataQuery, MetadataSynthesizer, PhraseCandidate, SynthesisRecipe, SynthesisTarget,
-    VectorSpaceQueryEngine,
+    MetadataQuery, MetadataSynthesizer, PhraseCandidate, SynthesisRecipe, SynthesisTarget, VectorSpaceQueryEngine,
 };
 
 #[cfg(feature = "python-bindings")]
-pub use metadata_synthesizer::{
-    PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe,
-};
+pub use metadata_synthesizer::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};
 
 // Micro-dynamics extractor exports (NEW)
 pub use micro_dynamics_extractor::{
-    FeatureDim, FeatureVector, MicroDynamicsExtractor, MicroDynamicsFeatures,
-    MicroDynamicsFeatures15D, MicroDynamicsFeatures37D, MicroDynamicsFeatures39D,
-    MicroDynamicsFeatures56D, MultiScaleValue, RosettaFeatures,
+    FeatureDim, FeatureVector, MicroDynamicsExtractor, MicroDynamicsFeatures, MicroDynamicsFeatures15D,
+    MicroDynamicsFeatures37D, MicroDynamicsFeatures39D, MicroDynamicsFeatures45D, MicroDynamicsFeatures56D,
+    MultiScaleValue, RosettaFeatures,
 };
 
 // Semantic Reconstruction exports (NEW - STAGE 4 of 112D pipeline)
 pub use semantic_reconstruction::{
-    CachedGranularSynthesizer, ExemplarEntry, ExemplarManager, SemanticTimelineEvent,
-    SourceMetadata112D, SynthesisConfig112D, SynthesisTimeline,
+    CachedGranularSynthesizer, ExemplarEntry, ExemplarManager, SemanticTimelineEvent, SourceMetadata112D,
+    SynthesisConfig112D, SynthesisTimeline,
 };
 
 #[cfg(feature = "python-bindings")]
@@ -137,14 +189,11 @@ pub use micro_dynamics_extractor::{PyMicroDynamicsExtractor, PyMicroDynamicsFeat
 pub use pitch::{AutocorrEstimator, F0Estimate, PitchAlgorithm, YinEstimator};
 
 // Delta features exports (NEW - Δ and ΔΔ MFCCs and temporal features)
-pub use delta::{
-    DeltaFeatures, DeltaWidth, MfccDeltaComputer, TemporalDeltaComputer, TemporalFeatureType,
-};
+pub use delta::{DeltaFeatures, DeltaWidth, MfccDeltaComputer, TemporalDeltaComputer, TemporalFeatureType};
 
 // Multi-scale aggregation exports (NEW - Statistical and hierarchical aggregation)
 pub use multi_scale::{
-    HierarchicalAggregator, HierarchicalConfig, HierarchicalFeatures, MultiScaleFeatures,
-    StatisticalAggregator,
+    HierarchicalAggregator, HierarchicalConfig, HierarchicalFeatures, MultiScaleFeatures, StatisticalAggregator,
 };
 
 // Psychoacoustic features exports (NEW - 37D expansion)
@@ -154,9 +203,7 @@ pub use psychoacoustics::{BrightnessCalculator, PitchEntropyCalculator, Roughnes
 pub use temporal::{RhythmicStabilityCalculator, TemporalCentroidCalculator};
 
 // Advanced spectral features exports (NEW - 37D expansion)
-pub use spectral_advanced::{
-    SpectralFlatnessCalculator, SpectralKurtosisCalculator, SpectralTiltCalculator,
-};
+pub use spectral_advanced::{SpectralFlatnessCalculator, SpectralKurtosisCalculator, SpectralTiltCalculator};
 
 // Harmonic analysis exports (NEW - 37D expansion)
 pub use harmonics::{HarmonicDeviationCalculator, InharmonicityCalculator};
@@ -169,9 +216,8 @@ pub use modulation::{AmDepthCalculator, FmDepthCalculator, FmRateCalculator};
 
 // Benchmark and evaluation exports (NEW - Phase 5)
 pub use benchmark::{
-    ClassificationMetrics, ClassificationReport, ComparisonReport, ConfusionMatrix, DatasetLoader,
-    DatasetMetadata, DatasetType, ExtractionReport, FeatureAblationResults, FeatureEvaluator,
-    Label, MetricCalculator, Recording,
+    ClassificationMetrics, ClassificationReport, ComparisonReport, ConfusionMatrix, DatasetLoader, DatasetMetadata,
+    DatasetType, ExtractionReport, FeatureAblationResults, FeatureEvaluator, Label, MetricCalculator, Recording,
 };
 
 // Change point detection exports (NEW - Phase 3)
@@ -185,10 +231,9 @@ pub use hdbscan::{DistanceMetric, HdbscanClustering, HdbscanError, HdbscanStats}
 
 // Acoustic Similarity exports (NEW - Pairwise similarity for continuous manifolds)
 pub use acoustic_similarity::{
-    AcousticSimilarityEngine, BetweenTypeDistance, ConfusionEntry,
-    DistanceMetric as SimilarityMetric, FeatureDiscrimination, FilePair, KnnClassifier,
-    KnnCvResults, KnnNeighbor, KnnResult, NeighborhoodAnalysis, SearchResult, SimilarityAnalysis,
-    SimilarityIndex,
+    AcousticSimilarityEngine, BetweenTypeDistance, ConfusionEntry, DistanceMetric as SimilarityMetric,
+    FeatureDiscrimination, FilePair, KnnClassifier, KnnCvResults, KnnNeighbor, KnnResult, NeighborhoodAnalysis,
+    SearchResult, SimilarityAnalysis, SimilarityIndex,
 };
 
 #[cfg(feature = "python-bindings")]
@@ -205,8 +250,8 @@ pub use adaptive_segmentation::{AdaptiveSegmenter, OnsetDetector, SegmentationEr
 
 // Within-Vocalization Analysis exports (NEW - TDD-tested multi-phrase detection)
 pub use within_vocalization_analyzer::{
-    BoundaryType as WvaBoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary,
-    PhraseSegmentation, WithinVocalizationAnalyzer, WithinVocalizationConfig,
+    BoundaryType as WvaBoundaryType, CorpusPhraseAnalyzer, CorpusPhraseStatistics, PhraseBoundary, PhraseSegmentation,
+    WithinVocalizationAnalyzer, WithinVocalizationConfig,
 };
 
 // GMM exports (NEW - Phoneme discovery approach)
@@ -220,23 +265,28 @@ pub use dtw::{DtwClusterStats, DtwDbscan, DtwError, DtwMetric, FastDtw};
 
 // Vocabulary to Synthesis exports (NEW - Mapping, segmentation, synthesis)
 pub use audio_segmenter::{
-    AudioGrain, AudioSegmentForSynthesis, AudioSegmenter, GrainEnvelope, SegmentContext,
-    SegmenterError,
+    AudioGrain, AudioSegmentForSynthesis, AudioSegmenter, GrainEnvelope, SegmentContext, SegmenterError,
 };
 pub use synthesis_pipeline::{
-    ConcatenativeParams, GrainEnvelopeType, GranularSynthesisParams, MetadataDrivenParams,
-    SynthesisAssets, SynthesisError, SynthesisPipeline,
+    ConcatenativeParams, GrainEnvelopeType, GranularSynthesisParams, MetadataDrivenParams, SynthesisAssets,
+    SynthesisError, SynthesisPipeline,
 };
 pub use vocabulary_mapper::{
-    AnnotationDataset, DurationStats, VocabularyError, VocabularyItem, VocabularyMapper,
-    VocabularyOccurrence, VocabularyStatistics, VocalizationContext,
+    AnnotationDataset, DurationStats, VocabularyError, VocabularyItem, VocabularyMapper, VocabularyOccurrence,
+    VocabularyStatistics, VocalizationContext,
+};
+
+// Graded Phrase Mining exports (NEW - Intensity-based phrase discovery)
+pub use graded_phrase_mining::{
+    FeatureMode, GradedMiningConfig, GradedMiningThresholds, GradedPhraseMiner, MotifClusterInfo, MotifReport,
+    MotifSegment, ProcessingApproach, SpeciesGradingPrediction,
 };
 
 // Lexicon to Syntax exports (NEW - Master pipeline)
 pub use lexicon_to_syntax::{
-    DiscoveryConfig, FeatureDimension, LexiconStatistics, LexiconToSyntaxPipeline,
-    LexiconToSyntaxResult, LexiconVocabularyItem, PhonemeModel, PhraseFeatures, PipelineCheckpoint,
-    PipelineError, RefinementConfig, SegmentationConfig, SegmentedPhrase, VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconStatistics, LexiconToSyntaxPipeline, LexiconToSyntaxResult,
+    LexiconVocabularyItem, PhonemeModel, PhraseFeatures, PipelineCheckpoint, PipelineError, RefinementConfig,
+    SegmentationConfig, SegmentedPhrase, VectorizationConfig,
 };
 
 // Parallel extraction exports (NEW - Phase 3)
@@ -302,48 +352,45 @@ pub use parallel_extraction::PhraseCandidate as ExtractionPhraseCandidate;
 
 // Corpus Analysis exports (NEW - Phrase X discovery)
 pub use corpus_analysis::{
-    CorpusError, CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX,
-    PhraseXDiscoveryEngine, Result as CorpusResult, SuffixEntropyCalculator,
+    CorpusError, CorpusStatistics, NGram, NGramMiner, PMICalculator, PhraseX, PhraseXDiscoveryEngine,
+    Result as CorpusResult, SuffixEntropyCalculator,
 };
 
 // Neural Boundary Detection exports (NEW - Stage 1 of synthesis pipeline)
-pub use neural_boundary::{segment_into_phrases, BoundaryDetectorConfig, NeuralBoundaryDetector};
+pub use neural_boundary::{segment_into_phrases, BoundaryDetectorConfig, BoundaryType, NeuralBoundaryDetector};
 // Rename to avoid conflict with within_vocalization_analyzer::PhraseBoundary
 pub use neural_boundary::{BoundaryType as NbdBoundaryType, PhraseBoundary as NbdPhraseBoundary};
 
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
 pub use sequence::{Motif, NgramStats, SequenceAnalysis, SequenceModule};
 pub use species::{
-    AnalysisModality, AnalysisModule, AtomicGranularity, ContextRules, DecodingMethod,
-    EncodingStrategy, FeatureParams, HierarchicalThresholds, SpeciesConfig, SpeciesConfigFactory,
+    AnalysisModality, AnalysisModule, AtomicGranularity, ContextRules, DecodingMethod, EncodingStrategy, FeatureParams,
+    HierarchicalThresholds, SpeciesConfig, SpeciesConfigFactory,
 };
 pub use spectral::{ContourConfig, ContourFeatures, FMType, FrequencyContour, SpectralModule};
 
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System exports
 pub use zoo_vox_data_models::{
-    AcousticFeatures30D, AcousticFeatures45D, BehaviorAnnotation, ContextAssociation,
-    CrossSpeciesPhraseDatabase, PhrasePrototype, SpeciesPhraseLibrary,
+    AcousticFeatures30D, AcousticFeatures45D, BehaviorAnnotation, ContextAssociation, CrossSpeciesPhraseDatabase,
+    PhrasePrototype, SpeciesPhraseLibrary,
 };
 pub use zoo_vox_features::{FeatureError, ZooVoxFeatureExtractor};
 
 #[cfg(feature = "python-bindings")]
 pub use zoo_vox_features::PyZooVoxFeatureExtractor;
 
-pub use zoo_vox_extraction::{
-    ZooVoxExtractionConfig, ZooVoxExtractionError, ZooVoxPhraseExtractor,
-};
+pub use zoo_vox_extraction::{ZooVoxExtractionConfig, ZooVoxExtractionError, ZooVoxPhraseExtractor};
 pub use zoo_vox_library::{create_sample_libraries, LibraryError, ZooVoxLibraryBuilder};
 
 // Zoo Vox Rosetta v2.0 - Within-Call Phrase Discovery (Acoustic Similarity)
 pub use zoo_vox_within_call::{
-    DiscoveredPhraseType, PhraseInstance, PhraseMotif, SimilarityBasedLibraryBuilder,
-    WithinCallAnalysisResult, WithinCallAnalyzer, WithinCallConfig,
+    DiscoveredPhraseType, PhraseInstance, PhraseMotif, SimilarityBasedLibraryBuilder, WithinCallAnalysisResult,
+    WithinCallAnalyzer, WithinCallConfig,
 };
 
 // Phrase Discovery Pipeline (Unified Segmentation + Similarity)
 pub use phrase_discovery::{
-    PhraseDiscoveryConfig, PhraseDiscoveryPipeline, PhraseDiscoveryResult, PipelinePhraseType,
-    PipelineStats,
+    PhraseDiscoveryConfig, PhraseDiscoveryPipeline, PhraseDiscoveryResult, PipelinePhraseType, PipelineStats,
 };
 
 /// Zoo Vox Rosetta result type
@@ -410,9 +457,9 @@ impl std::error::Error for ZooVoxError {}
 
 pub use logging::ProvenanceLogger;
 pub use master_controller::{
-    detect_fpga, Action, AtomicParameters, CognitiveProcessor, ExecutionReceipt, HealthStatus,
-    IntentPriority, IntentToken, RejectionReason, SessionProfile, SharedMemoryConfig,
-    SharedMemoryRingBuffer, SynthesisComplexity, WatchdogConfig,
+    detect_fpga, Action, AtomicParameters, CognitiveProcessor, ExecutionReceipt, HealthStatus, IntentPriority,
+    IntentToken, RejectionReason, SessionProfile, SharedMemoryConfig, SharedMemoryRingBuffer, SynthesisComplexity,
+    WatchdogConfig,
 };
 pub use ptp::{PtpClock, PtpTimestamp};
 
@@ -420,90 +467,82 @@ pub use ptp::{PtpClock, PtpTimestamp};
 pub use master_controller::PyCognitiveProcessor;
 
 // Peer controller exports
-pub use peer_controller::{
-    AudioMuteState, HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig,
-};
+pub use peer_controller::{AudioMuteState, HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig};
 
 // Acoustic simulator exports (for TDD testing)
 pub use acoustic_simulator::{
-    AcousticEnvironment, AcousticSimulator, EnvironmentType, NoiseMixture, NoiseProfile,
-    SpectralColor, TemporalCharacteristics,
+    AcousticEnvironment, AcousticSimulator, EnvironmentType, NoiseMixture, NoiseProfile, SpectralColor,
+    TemporalCharacteristics,
 };
 
 // Environmental monitor exports
 pub use environmental_monitor::{
-    EnvironmentalConditions, EnvironmentalMonitor, EnvironmentalMonitorConfig, LightLevel,
-    RainIntensity, SensorReading, SessionViability, SolarForecast, TemperatureClassification,
+    EnvironmentalConditions, EnvironmentalMonitor, EnvironmentalMonitorConfig, LightLevel, RainIntensity,
+    SensorReading, SessionViability, SolarForecast, TemperatureClassification,
 };
 
 // Power manager exports
 pub use power_manager::{
-    BatteryState, PowerBudget, PowerManager, PowerManagerConfig, PowerMode, SolarPrediction,
-    ThrottleState,
+    BatteryState, PowerBudget, PowerManager, PowerManagerConfig, PowerMode, SolarPrediction, ThrottleState,
 };
 
 // Wildlife sentry exports
 pub use wildlife_sentry::{
-    DetectionEvent, SpeciesSignature, TriggerUrgency, WakeTrigger, WildlifeSentry,
-    WildlifeSentryConfig,
+    DetectionEvent, SpeciesSignature, TriggerUrgency, WakeTrigger, WildlifeSentry, WildlifeSentryConfig,
 };
 
 // Data synchronizer exports
 pub use data_synchronizer::{
-    DataSynchronizer, LogEntry, QueuedEntry, StorageBackend, StorageType, SyncConfig, SyncPriority,
-    SyncStatus,
+    DataSynchronizer, LogEntry, QueuedEntry, StorageBackend, StorageType, SyncConfig, SyncPriority, SyncStatus,
 };
 
 // Visual recording exports (for context verification in post-processing)
 pub use visual_recording::{
-    AudioEventType, AudioSyncEvent, ContextAnnotation, FrameQueue, RecordingState,
-    RecordingStatistics, VisualMetadata, VisualRecorder, VisualRecorderConfig,
+    AudioEventType, AudioSyncEvent, ContextAnnotation, FrameQueue, RecordingState, RecordingStatistics, VisualMetadata,
+    VisualRecorder, VisualRecorderConfig,
 };
 
 // IACUC compliance exports
 pub use iacuc_compliance::{
-    ComplianceCheck, ComplianceState, DailyLimits, EmergencyContact, IacucComplianceEngine,
-    IacucIntent, IacucIntentType, IacucProtocol, PolicyViolation, SpeciesLimit, TimeWindow,
-    ViolationType, Weekday,
+    ComplianceCheck, ComplianceState, DailyLimits, EmergencyContact, IacucComplianceEngine, IacucIntent,
+    IacucIntentType, IacucProtocol, PolicyViolation, SpeciesLimit, TimeWindow, ViolationType, Weekday,
 };
 
 // Time-series archive exports
 pub use time_series_archive::{
-    ParquetCompression, ParquetExportConfig, RetentionPolicy, StorageQuota, StorageStats,
-    TimeSeriesArchiver, TimeSeriesBatch, TimeSeriesConfig, TimeSeriesPoint,
+    ParquetCompression, ParquetExportConfig, RetentionPolicy, StorageQuota, StorageStats, TimeSeriesArchiver,
+    TimeSeriesBatch, TimeSeriesConfig, TimeSeriesPoint,
 };
 
 // Auto-calibration exports
 pub use auto_calibration::{
-    CalibrationConfig, CalibrationEngine, CalibrationHealthStatus, CalibrationResult,
-    CalibrationTone, FrequencyResponsePoint, GainAdjustment, SignalType, SpeakerImpedance,
+    CalibrationConfig, CalibrationEngine, CalibrationHealthStatus, CalibrationResult, CalibrationTone,
+    FrequencyResponsePoint, GainAdjustment, SignalType, SpeakerImpedance,
 };
 
 // Shadow model monitor exports
 pub use shadow_model_monitor::{
-    AlertLevel, DriftAlert, DriftSample, InferenceModel, InputFeatures, MockActiveModel,
-    MockShadowModel, ModelComparison, ModelPrediction, ShadowModelConfig, ShadowModelMonitor,
+    AlertLevel, DriftAlert, DriftSample, InferenceModel, InputFeatures, MockActiveModel, MockShadowModel,
+    ModelComparison, ModelPrediction, ShadowModelConfig, ShadowModelMonitor,
 };
 
 // Web dashboard exports
 pub use web_dashboard::{
-    AuthToken, CalibrationDashboardStatus, CommandAuditLog, CommandResult, DashboardCommand,
-    DashboardConfig, DashboardOperationMode, DashboardState, GaugeValue, IacucStatus, WebDashboard,
-    WsMessage,
+    AuthToken, CalibrationDashboardStatus, CommandAuditLog, CommandResult, DashboardCommand, DashboardConfig,
+    DashboardOperationMode, DashboardState, GaugeValue, IacucStatus, WebDashboard, WsMessage,
 };
 
 // Multi-node coordination exports
 pub use multi_node_coordination::{
-    ClockAccuracy, ClockClass, ClusterConfig, ClusterId, ElectionResult, FusedDetectionData,
-    LocationEstimate, MultiNodeCoordinator, NodeCapabilities, NodeId, NodeInfo, TdmaSchedule,
-    TdmaSlot,
+    ClockAccuracy, ClockClass, ClusterConfig, ClusterId, ElectionResult, FusedDetectionData, LocationEstimate,
+    MultiNodeCoordinator, NodeCapabilities, NodeId, NodeInfo, TdmaSchedule, TdmaSlot,
 };
 
 // Performance testing exports
 pub use peer_controller_performance::{
     benchmark_concurrent_processing, benchmark_memory_allocation, benchmark_message_processing,
-    benchmark_mode_switching, benchmark_serialization_throughput, benchmark_timeout_detection,
-    format_metrics, run_all_benchmarks, PeerControllerSimulator, PerformanceMetrics,
+    benchmark_mode_switching, benchmark_serialization_throughput, benchmark_timeout_detection, format_metrics,
+    run_all_benchmarks, PeerControllerSimulator, PerformanceMetrics,
 };
 
 // Import modules
@@ -626,6 +665,9 @@ pub mod phrase_discovery;
 // Trajectory Analysis Module (NEW - Continuous manifold analysis)
 pub mod trajectory_analysis;
 
+// Graded Phrase Mining (NEW - Intensity-based phrase discovery)
+pub mod graded_phrase_mining;
+
 // Synthetic Gap Analysis (NEW - Inter-type discriminability)
 pub mod synthetic_gap_analysis;
 
@@ -670,6 +712,10 @@ pub mod annotation_aligner;
 
 // Rosetta Pipeline (Integrated Zoo Vox Rosetta Engine)
 pub mod rosetta_pipeline;
+
+// Acoustic Algebra (Vector spaces for acoustic features)
+pub mod acoustic_algebra_105d;
+pub mod acoustic_algebra_45d;
 
 // Bio-Acoustic Interaction Agent (Synthesis Integration)
 pub mod bio_acoustic_agent;
@@ -781,9 +827,7 @@ impl TechnicalArchitect {
         info!("Initializing Technical Architect with config: {:?}", config);
 
         // Initialize separator
-        let separator = Arc::new(RwLock::new(
-            ConvTasNetSeparator::new(config.separator.clone()).await?,
-        ));
+        let separator = Arc::new(RwLock::new(ConvTasNetSeparator::new(config.separator.clone()).await?));
 
         // Initialize thermal governor
         let thermal = Arc::new(ThermalGovernor::new(config.thermal.clone()).await?);
@@ -792,9 +836,7 @@ impl TechnicalArchitect {
         let safety = Arc::new(SafetyMonitor::new(config.safety.clone()).await?);
 
         // Initialize synthesizer
-        let synthesizer = Arc::new(RwLock::new(
-            GranularSynthesizer::new(config.synthesis.clone()).await?,
-        ));
+        let synthesizer = Arc::new(RwLock::new(GranularSynthesizer::new(config.synthesis.clone()).await?));
 
         // Initialize PTP clock
         let ptp_clock = Arc::new(PtpClock::new(config.ptp.clone()).await?);
@@ -902,10 +944,7 @@ impl TechnicalArchitect {
         state.thermal_state = thermal_state;
 
         // If throttling, return simplified processing
-        if matches!(
-            thermal_state,
-            ThermalState::Critical | ThermalState::Throttling
-        ) {
+        if matches!(thermal_state, ThermalState::Critical | ThermalState::Throttling) {
             warn!("Thermal throttling active, simplifying processing");
             self.stats.lock().thermal_throttle_count += 1;
             return Ok(audio); // Return raw audio
@@ -913,10 +952,7 @@ impl TechnicalArchitect {
 
         // Log provenance
         let timestamp = self.ptp_clock.get_timestamp().await?;
-        let _ = self
-            .logger
-            .log_decision("process_audio_frame", timestamp)
-            .await;
+        let _ = self.logger.log_decision("process_audio_frame", timestamp).await;
 
         // Run source separation
         let clean_audio = {
@@ -1040,9 +1076,7 @@ impl TechnicalArchitect {
         }
 
         // Log the emergency mute event with provenance
-        self.logger
-            .log_emergency_event("emergency_mute", timestamp)
-            .await?;
+        self.logger.log_emergency_event("emergency_mute", timestamp).await?;
 
         error!("Emergency mute completed at PTP timestamp: {:?}", timestamp);
         Ok(())
@@ -1064,11 +1098,7 @@ impl TechnicalArchitect {
         species: String,
         phrase_segments: HashMap<String, synthesis::PhraseSegment>,
     ) -> EnhancedMicroharmonicSynthesizer {
-        EnhancedMicroharmonicSynthesizer::new(
-            species,
-            phrase_segments,
-            self.config.synthesis.sample_rate,
-        )
+        EnhancedMicroharmonicSynthesizer::new(species, phrase_segments, self.config.synthesis.sample_rate)
     }
 
     /// Synthesize in horizontal mode (sequential concatenation)
@@ -1080,9 +1110,7 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer
-            .synthesize_horizontal(&phrase_keys, constraints)
-            .await
+        synthesizer.synthesize_horizontal(&phrase_keys, constraints).await
     }
 
     /// Synthesize in vertical mode (simultaneous layering)
@@ -1094,9 +1122,7 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer
-            .synthesize_vertical(&phrase_keys, constraints)
-            .await
+        synthesizer.synthesize_vertical(&phrase_keys, constraints).await
     }
 
     /// Synthesize in combined mode (mixed encoding)
@@ -1108,9 +1134,7 @@ impl TechnicalArchitect {
     ) -> Result<SynthesisResult> {
         let default_constraints = MicroharmonicConstraints::default();
         let constraints = constraints.unwrap_or(&default_constraints);
-        synthesizer
-            .synthesize_combined(&synthesis_plan, constraints)
-            .await
+        synthesizer.synthesize_combined(&synthesis_plan, constraints).await
     }
 }
 
@@ -1198,15 +1222,9 @@ impl PyDynamicMicroharmonicSynthesizer {
     /// - crossfade_ms: Crossfade duration between phrases
     ///
     /// Returns: List of audio samples for the entire sequence
-    fn synthesize_sequence(
-        &self,
-        phrase_params_json: String,
-        crossfade_ms: f32,
-    ) -> PyResult<Vec<f32>> {
-        let phrase_params: Vec<synthesis::DynamicMicroharmonicParams> =
-            serde_json::from_str(&phrase_params_json).map_err(|e| {
-                pyo3::exceptions::PyValueError::new_err(format!("Invalid parameters JSON: {}", e))
-            })?;
+    fn synthesize_sequence(&self, phrase_params_json: String, crossfade_ms: f32) -> PyResult<Vec<f32>> {
+        let phrase_params: Vec<synthesis::DynamicMicroharmonicParams> = serde_json::from_str(&phrase_params_json)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid parameters JSON: {}", e)))?;
 
         Ok(self.inner.synthesize_sequence(&phrase_params, crossfade_ms))
     }
@@ -1219,19 +1237,11 @@ impl PyDynamicMicroharmonicSynthesizer {
     /// - variability: Randomness amount (0.0 to 1.0)
     ///
     /// Returns: JSON string of parameters
-    fn generate_random_params(
-        &self,
-        f0_base: f32,
-        duration_ms: f32,
-        variability: f32,
-    ) -> PyResult<String> {
-        let params = self
-            .inner
-            .generate_random_params(f0_base, duration_ms, variability);
+    fn generate_random_params(&self, f0_base: f32, duration_ms: f32, variability: f32) -> PyResult<String> {
+        let params = self.inner.generate_random_params(f0_base, duration_ms, variability);
 
-        serde_json::to_string(&params).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
-        })
+        serde_json::to_string(&params)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
     }
 
     /// Get default parameters for marmoset vocalizations
@@ -1244,9 +1254,8 @@ impl PyDynamicMicroharmonicSynthesizer {
     fn marmoset_default(&self, f0_base: f32, duration_ms: f32) -> PyResult<String> {
         let params = synthesis::DynamicMicroharmonicParams::marmoset_default(f0_base, duration_ms);
 
-        serde_json::to_string(&params).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
-        })
+        serde_json::to_string(&params)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
     }
 
     /// Get default parameters for bat vocalizations
@@ -1259,9 +1268,8 @@ impl PyDynamicMicroharmonicSynthesizer {
     fn bat_default(&self, f0_base: f32, duration_ms: f32) -> PyResult<String> {
         let params = synthesis::DynamicMicroharmonicParams::bat_default(f0_base, duration_ms);
 
-        serde_json::to_string(&params).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e))
-        })
+        serde_json::to_string(&params)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Serialization failed: {}", e)))
     }
 }
 
@@ -1715,7 +1723,9 @@ impl PySourceMetadata {
     fn __repr__(&self) -> String {
         format!(
             "SourceMetadata(F0={}Hz, Dur={}ms, Range={}Hz, HNR={}dB, Flat={}, Attack={}ms, Decay={}ms, Jitter={})",
-            self.mean_f0_hz as i32, self.duration_ms as i32, self.f0_range_hz as i32,
+            self.mean_f0_hz as i32,
+            self.duration_ms as i32,
+            self.f0_range_hz as i32,
             (self.harmonic_to_noise_ratio * 10.0) as i32 / 10,
             (self.spectral_flatness * 100.0) as i32 / 100,
             (self.attack_time_ms * 10.0) as i32 / 10,
@@ -2214,12 +2224,7 @@ impl PyGranularConcatenativeSynthesizer {
     /// # 6. Synthesize
     /// output = synthesizer.synthesize(duration_ms=virtual.duration_ms)
     /// ```
-    fn apply_vector_delta(
-        &mut self,
-        delta_f0_hz: f32,
-        delta_duration_ms: f32,
-        delta_f0_range_hz: f32,
-    ) {
+    fn apply_vector_delta(&mut self, delta_f0_hz: f32, delta_duration_ms: f32, delta_f0_range_hz: f32) {
         self.inner
             .apply_vector_delta(delta_f0_hz, delta_duration_ms, delta_f0_range_hz);
     }
@@ -2297,43 +2302,33 @@ impl PyTechnicalArchitect {
     /// Create a new Technical Architect from Python
     #[new]
     fn new(config_json: String) -> PyResult<Self> {
-        let config: TechArchConfig = serde_json::from_str(&config_json).map_err(|e| {
-            pyo3::exceptions::PyValueError::new_err(format!("Invalid config: {}", e))
-        })?;
+        let config: TechArchConfig = serde_json::from_str(&config_json)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid config: {}", e)))?;
 
         // Use tokio runtime
-        let rt = tokio::runtime::Runtime::new().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
-        })?;
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
 
         let inner = rt
             .block_on(async { TechnicalArchitect::new(config).await })
-            .map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to initialize: {}", e))
-            })?;
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to initialize: {}", e)))?;
 
-        Ok(Self {
-            inner: Arc::new(inner),
-        })
+        Ok(Self { inner: Arc::new(inner) })
     }
 
     /// Process an audio frame from Python
     fn process_audio_frame(&self, audio: Vec<f32>) -> PyResult<Vec<f32>> {
-        let rt = tokio::runtime::Runtime::new().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
-        })?;
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
 
         rt.block_on(async { self.inner.process_audio_frame(audio).await })
-            .map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!("Processing failed: {}", e))
-            })
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Processing failed: {}", e)))
     }
 
     /// Get thermal state as string
     fn get_thermal_state(&self) -> PyResult<String> {
-        let rt = tokio::runtime::Runtime::new().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e))
-        })?;
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
 
         let state = rt.block_on(async { self.inner.get_thermal_state().await });
 
@@ -2343,9 +2338,8 @@ impl PyTechnicalArchitect {
     /// Get statistics as JSON string
     fn get_stats(&self) -> PyResult<String> {
         let stats = self.inner.stats.lock();
-        serde_json::to_string(&*stats).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize: {}", e))
-        })
+        serde_json::to_string(&*stats)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize: {}", e)))
     }
 }
 
@@ -2512,8 +2506,7 @@ impl PyPeerControllerConfig {
         verbose_logging: bool,
     ) -> Self {
         Self {
-            heartbeat_endpoint: heartbeat_endpoint
-                .unwrap_or_else(|| "ipc:///tmp/cognitive_heartbeat.ipc".to_string()),
+            heartbeat_endpoint: heartbeat_endpoint.unwrap_or_else(|| "ipc:///tmp/cognitive_heartbeat.ipc".to_string()),
             heartbeat_timeout_ms,
             poll_interval_ms,
             verbose_logging,
@@ -2562,20 +2555,16 @@ impl PyPeerController {
             .map(|controller| Self {
                 inner: std::sync::Mutex::new(controller),
             })
-            .map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!(
-                    "Failed to create PeerController: {}",
-                    e
-                ))
-            })
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to create PeerController: {}", e)))
     }
 
     /// Tick the controller (check for heartbeat and update mode)
     /// Returns the current operation mode
     fn tick(&self) -> PyResult<PyOperationMode> {
-        let mut controller = self.inner.lock().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
-        })?;
+        let mut controller = self
+            .inner
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
         controller
             .tick()
             .map(|mode| PyOperationMode { inner: mode })
@@ -2596,31 +2585,31 @@ impl PyPeerController {
 
     /// Check if currently in Interactive mode
     fn is_interactive(&self) -> PyResult<bool> {
-        let mut controller = self.inner.lock().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
-        })?;
-        let mode = controller.tick().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e))
-        })?;
+        let mut controller = self
+            .inner
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
+        let mode = controller
+            .tick()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e)))?;
         Ok(matches!(mode, peer_controller::OperationMode::Interactive))
     }
 
     /// Check if currently in Passthrough mode
     fn is_passthrough(&self) -> PyResult<bool> {
-        let mut controller = self.inner.lock().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
-        })?;
-        let mode = controller.tick().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e))
-        })?;
+        let mut controller = self
+            .inner
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
+        let mode = controller
+            .tick()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Tick failed: {}", e)))?;
         Ok(matches!(mode, peer_controller::OperationMode::Passthrough))
     }
 
     fn __repr__(&self) -> String {
         let mut controller = self.inner.lock().unwrap();
-        let mode = controller
-            .tick()
-            .unwrap_or(peer_controller::OperationMode::Passthrough);
+        let mode = controller.tick().unwrap_or(peer_controller::OperationMode::Passthrough);
         format!("PeerController(mode={:?})", mode)
     }
 }
@@ -2895,9 +2884,7 @@ impl PyEnvironmentalConditions {
 
     fn temperature_classification(&self) -> PyTemperatureClassification {
         PyTemperatureClassification {
-            inner: environmental_monitor::TemperatureClassification::from_celsius(
-                self.temperature_celsius,
-            ),
+            inner: environmental_monitor::TemperatureClassification::from_celsius(self.temperature_celsius),
         }
     }
 
@@ -3006,18 +2993,14 @@ impl PyEnvironmentalMonitor {
     fn new(config: PyEnvironmentalMonitorConfig) -> Self {
         let rust_config: environmental_monitor::EnvironmentalMonitorConfig = config.into();
         Self {
-            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::new(
-                rust_config,
-            )),
+            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::new(rust_config)),
         }
     }
 
     #[staticmethod]
     fn with_defaults() -> Self {
         Self {
-            inner: std::sync::Mutex::new(
-                environmental_monitor::EnvironmentalMonitor::with_defaults(),
-            ),
+            inner: std::sync::Mutex::new(environmental_monitor::EnvironmentalMonitor::with_defaults()),
         }
     }
 
@@ -3029,9 +3012,10 @@ impl PyEnvironmentalMonitor {
     }
 
     fn poll_sensors(&self) -> PyResult<PyEnvironmentalConditions> {
-        let mut monitor = self.inner.lock().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
-        })?;
+        let mut monitor = self
+            .inner
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
         monitor
             .poll_sensors()
             .map(PyEnvironmentalConditions::from)
@@ -3056,9 +3040,10 @@ impl PyEnvironmentalMonitor {
     }
 
     fn set_conditions(&self, conditions: PyEnvironmentalConditions) -> PyResult<()> {
-        let mut monitor = self.inner.lock().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e))
-        })?;
+        let mut monitor = self
+            .inner
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Lock failed: {}", e)))?;
         // Convert Python conditions to Rust conditions
         let rust_conditions = environmental_monitor::EnvironmentalConditions {
             timestamp: ptp::PtpTimestamp::new(0, 0),
@@ -3283,11 +3268,7 @@ impl PyRecordingStatistics {
     fn __repr__(&self) -> String {
         format!(
             "RecordingStatistics(state={}, frames={}, dropped={}, session={:?}, duration={:.2}s)",
-            self.state,
-            self.frames_recorded,
-            self.dropped_frames,
-            self.current_session_id,
-            self.duration_seconds
+            self.state, self.frames_recorded, self.dropped_frames, self.current_session_id, self.duration_seconds
         )
     }
 }
@@ -3413,9 +3394,9 @@ impl PyVisualRecorder {
     fn new(config: PyVisualRecorderConfig) -> Self {
         let rust_config: visual_recording::VisualRecorderConfig = config.into();
         Self {
-            inner: Arc::new(parking_lot::Mutex::new(
-                visual_recording::VisualRecorder::new(rust_config),
-            )),
+            inner: Arc::new(parking_lot::Mutex::new(visual_recording::VisualRecorder::new(
+                rust_config,
+            ))),
         }
     }
 
@@ -3426,26 +3407,24 @@ impl PyVisualRecorder {
             config.recording_dir = dir;
         }
         Self {
-            inner: Arc::new(parking_lot::Mutex::new(
-                visual_recording::VisualRecorder::new(config),
-            )),
+            inner: Arc::new(parking_lot::Mutex::new(visual_recording::VisualRecorder::new(config))),
         }
     }
 
     /// Start a new recording session
     fn start_session(&self, session_id: String) -> PyResult<String> {
         let mut recorder = self.inner.lock();
-        recorder.start_session(&session_id).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to start session: {}", e))
-        })
+        recorder
+            .start_session(&session_id)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to start session: {}", e)))
     }
 
     /// Stop current recording session
     fn stop_session(&self) -> PyResult<PyVisualMetadata> {
         let mut recorder = self.inner.lock();
-        let metadata = recorder.stop_session().map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to stop session: {}", e))
-        })?;
+        let metadata = recorder
+            .stop_session()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to stop session: {}", e)))?;
         Ok(metadata.into())
     }
 
@@ -3804,9 +3783,9 @@ impl PyNavigationEngine {
         anchor: &PyVector30D,
         anchor_island: Option<String>,
     ) -> PyResult<PyNavigationWaypoint> {
-        let waypoint =
-            self.inner
-                .clamp_to_safe_distance(&target.inner, &anchor.inner, anchor_island);
+        let waypoint = self
+            .inner
+            .clamp_to_safe_distance(&target.inner, &anchor.inner, anchor_island);
         Ok(PyNavigationWaypoint { inner: waypoint })
     }
 
@@ -3827,9 +3806,7 @@ impl PyNavigationEngine {
         if let Some(island) = self.inner.find_nearest_island(&target.inner) {
             Ok(Some(PyAudioIsland {
                 key: island.key.clone(),
-                features: PyVector30D {
-                    inner: island.features,
-                },
+                features: PyVector30D { inner: island.features },
                 species: island.species.clone(),
             }))
         } else {
@@ -3865,9 +3842,7 @@ impl PyNavigationWaypoint {
         match self.inner.mode {
             island_hopping::NavigationMode::Interpolation => "Interpolation".to_string(),
             island_hopping::NavigationMode::Extrapolation => "Extrapolation".to_string(),
-            island_hopping::NavigationMode::ExtrapolationClamped => {
-                "ExtrapolationClamped".to_string()
-            }
+            island_hopping::NavigationMode::ExtrapolationClamped => "ExtrapolationClamped".to_string(),
         }
     }
 
@@ -3911,11 +3886,7 @@ pub struct PyAudioIsland {
 impl PyAudioIsland {
     #[new]
     fn new(key: String, features: PyVector30D, species: String) -> Self {
-        Self {
-            key,
-            features,
-            species,
-        }
+        Self { key, features, species }
     }
 
     fn __repr__(&self) -> String {
@@ -3972,7 +3943,6 @@ pub use TechArchConfig as Config;
 
 impl TechArchConfig {
     pub fn from_json(json: &str) -> Result<Self> {
-        serde_json::from_str(json)
-            .map_err(|e| anyhow::anyhow!("Failed to parse TechArchConfig from JSON: {}", e))
+        serde_json::from_str(json).map_err(|e| anyhow::anyhow!("Failed to parse TechArchConfig from JSON: {}", e))
     }
 }

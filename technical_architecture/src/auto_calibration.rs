@@ -85,12 +85,7 @@ impl CalibrationResult {
         }
     }
 
-    pub fn failed(
-        timestamp: PtpTimestamp,
-        loopback_gain_db: f32,
-        expected_gain_db: f32,
-        drift_db: f32,
-    ) -> Self {
+    pub fn failed(timestamp: PtpTimestamp, loopback_gain_db: f32, expected_gain_db: f32, drift_db: f32) -> Self {
         Self {
             timestamp,
             loopback_gain_db,
@@ -207,8 +202,7 @@ impl CalibrationEngine {
 
         // Step 5: Calculate gain drift per frequency band
         log::debug!("Calibration: Calculating gain drift");
-        let (loopback_gain_db, expected_gain_db, drift_db) =
-            self.calculate_gain_drift(&frequency_response);
+        let (loopback_gain_db, expected_gain_db, drift_db) = self.calculate_gain_drift(&frequency_response);
 
         // Step 6: Determine if calibration passed
         let passed = drift_db.abs() <= self.config.acceptable_drift_db;
@@ -275,8 +269,7 @@ impl CalibrationEngine {
     /// Generate calibration tone audio
     fn generate_calibration_tone(&self) -> Result<Vec<f32>> {
         let sample_rate = 48000;
-        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0
-            * sample_rate as f64) as usize;
+        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0 * sample_rate as f64) as usize;
 
         let mut audio = Vec::with_capacity(duration_samples);
 
@@ -339,8 +332,7 @@ impl CalibrationEngine {
 
         // For now, return simulated audio with expected gain
         let sample_rate = 48000;
-        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0
-            * sample_rate as f64) as usize;
+        let duration_samples = (self.config.calibration_tone.duration_ms as f64 / 1000.0 * sample_rate as f64) as usize;
 
         let mut captured = Vec::with_capacity(duration_samples);
         for i in 0..duration_samples {
@@ -386,11 +378,7 @@ impl CalibrationEngine {
     }
 
     /// Update gain compensation table
-    fn update_gain_table(
-        &self,
-        _frequency_response: &[(f32, f32)],
-        drift_db: f32,
-    ) -> Result<Vec<GainAdjustment>> {
+    fn update_gain_table(&self, _frequency_response: &[(f32, f32)], drift_db: f32) -> Result<Vec<GainAdjustment>> {
         let mut gain_table = self.gain_table.lock().unwrap();
         let key = "main_output";
 

@@ -3,14 +3,13 @@
 //!
 //! Uses Neural Boundary Detection to segment, then caches 105D features.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 /// Cached segment with NBD boundary info
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,12 +38,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -105,11 +99,11 @@ fn compute_105d_f32(extractor: &MicroDynamicsExtractor, audio: &[f32]) -> Option
     Some(features)
 }
 
-fn boundary_type_str(bt: technical_architecture::NeuralBoundaryType) -> String {
+fn boundary_type_str(bt: technical_architecture::BoundaryType) -> String {
     match bt {
-        technical_architecture::NeuralBoundaryType::Hard => "Hard".to_string(),
-        technical_architecture::NeuralBoundaryType::Soft => "Soft".to_string(),
-        technical_architecture::NeuralBoundaryType::Transitional => "Transitional".to_string(),
+        technical_architecture::BoundaryType::Hard => "Hard".to_string(),
+        technical_architecture::BoundaryType::Soft => "Soft".to_string(),
+        technical_architecture::BoundaryType::Transitional => "Transitional".to_string(),
     }
 }
 
@@ -193,11 +187,9 @@ fn main() -> anyhow::Result<()> {
                 // Count boundary types
                 for b in &boundaries {
                     match b.boundary_type {
-                        technical_architecture::NeuralBoundaryType::Hard => hard_count += 1,
-                        technical_architecture::NeuralBoundaryType::Soft => soft_count += 1,
-                        technical_architecture::NeuralBoundaryType::Transitional => {
-                            trans_count += 1
-                        }
+                        technical_architecture::BoundaryType::Hard => hard_count += 1,
+                        technical_architecture::BoundaryType::Soft => soft_count += 1,
+                        technical_architecture::BoundaryType::Transitional => trans_count += 1,
                     }
                 }
 
@@ -261,9 +253,15 @@ fn main() -> anyhow::Result<()> {
             let mut file = File::create(&cache_file)?;
             file.write_all(json.as_bytes())?;
 
-            println!("  Batch {:4}: {} files, {} segments | Totals: {} files, {} segments, {} boundaries",
-                batch_num, total_files - (batch_num-1)*batch_size, batch_segments.len(),
-                total_files, total_segments, total_boundaries);
+            println!(
+                "  Batch {:4}: {} files, {} segments | Totals: {} files, {} segments, {} boundaries",
+                batch_num,
+                total_files - (batch_num - 1) * batch_size,
+                batch_segments.len(),
+                total_files,
+                total_segments,
+                total_boundaries
+            );
 
             batch_segments.clear();
         }

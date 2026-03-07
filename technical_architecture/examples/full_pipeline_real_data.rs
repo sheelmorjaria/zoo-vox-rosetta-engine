@@ -16,11 +16,12 @@
 // For full dataset (871K files):
 //   Adjust MAX_FILES constant below
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs;
 use std::path::{Path, PathBuf};
 use technical_architecture::{
-    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate,
-    LinguisticAnalysis, MicroDynamicsExtractor, ParallelExtractionPipeline, VocalizationResult,
+    ClusteredPhrase, ExtractionConfig, ExtractionPhraseCandidate as PhraseCandidate, LinguisticAnalysis,
+    MicroDynamicsExtractor, ParallelExtractionPipeline, VocalizationResult,
 };
 
 // Configuration
@@ -97,10 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Vocalizations processed: {}", vocalization_results.len());
     println!(
         "   Total phrases extracted: {}",
-        vocalization_results
-            .iter()
-            .map(|v| v.phrases.len())
-            .sum::<usize>()
+        vocalization_results.iter().map(|v| v.phrases.len()).sum::<usize>()
     );
     println!("   Clustered phrases: {}", clustered_phrases.len());
     println!("   Processing time: {:.2}s", processing_time.as_secs_f64());
@@ -171,10 +169,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Audio File Discovery
 // ============================================================================
 
-fn discover_audio_files(
-    base_dir: &Path,
-    max_files: usize,
-) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+fn discover_audio_files(base_dir: &Path, max_files: usize) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
     let mut audio_files = Vec::new();
 
     // Get date folders
@@ -192,10 +187,7 @@ fn discover_audio_files(
         let folder_path = folder.path();
         println!(
             "  - Checking: {}",
-            folder_path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
+            folder_path.file_name().unwrap_or_default().to_string_lossy()
         );
 
         // Collect audio files in this folder
@@ -296,10 +288,7 @@ fn process_audio_files_parallel(
 
 fn process_single_audio_file(file_path: &Path, index: usize) -> Result<VocalizationResult, String> {
     // Extract file name and infer context
-    let file_name = file_path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("unknown.flac");
+    let file_name = file_path.file_name().and_then(|s| s.to_str()).unwrap_or("unknown.flac");
 
     // Parse context from filename
     let context = if file_name.starts_with("Phee") {
@@ -407,20 +396,13 @@ fn display_linguistic_results(
     println!("   Slope (α): {:.4}", analysis.zipf.slope_alpha);
     println!("   Correlation (R²): {:.4}", analysis.zipf.correlation_r2);
     println!("   Efficiency: {:?}", analysis.zipf.efficiency);
-    println!(
-        "   Unique phrases: {}",
-        analysis.zipf.phrase_frequencies.len()
-    );
+    println!("   Unique phrases: {}", analysis.zipf.phrase_frequencies.len());
     println!();
 
     // Top 10 phrases
     println!("   Top 10 Most Frequent Phrases:");
     for (i, phrase_id) in analysis.zipf.ranked_phrases.iter().take(10).enumerate() {
-        let freq = analysis
-            .zipf
-            .phrase_frequencies
-            .get(phrase_id)
-            .unwrap_or(&0);
+        let freq = analysis.zipf.phrase_frequencies.get(phrase_id).unwrap_or(&0);
         println!("     {:2}. {} (freq: {})", i + 1, phrase_id, freq);
     }
     println!();
@@ -457,10 +439,7 @@ fn display_linguistic_results(
         .filter(|p| p.is_truly_atomic)
         .count();
 
-    println!(
-        "   Total phrases: {}",
-        analysis.updated_atomic_phrases.len()
-    );
+    println!("   Total phrases: {}", analysis.updated_atomic_phrases.len());
     println!(
         "   Truly atomic: {} ({:.1}%)",
         truly_atomic,

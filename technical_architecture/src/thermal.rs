@@ -156,33 +156,25 @@ impl ThermalGovernor {
     /// Start thermal monitoring
     pub async fn start_monitoring(&self) -> Result<()> {
         info!("Starting thermal monitoring");
-        self.monitoring_active
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.monitoring_active.store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     /// Stop thermal monitoring
     pub async fn stop_monitoring(&self) -> Result<()> {
         info!("Stopping thermal monitoring");
-        self.monitoring_active
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.monitoring_active.store(false, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     /// Monitor thermal state (called periodically)
     pub async fn monitor(&self) -> Result<()> {
-        if !self
-            .monitoring_active
-            .load(std::sync::atomic::Ordering::SeqCst)
-        {
+        if !self.monitoring_active.load(std::sync::atomic::Ordering::SeqCst) {
             return Ok(());
         }
 
         // Read temperature
-        let reading = self
-            .read_temperature()
-            .await
-            .context("Failed to read temperature")?;
+        let reading = self.read_temperature().await.context("Failed to read temperature")?;
 
         // Update current temperature
         *self.current_temp.write().await = Some(reading.clone());
@@ -211,10 +203,7 @@ impl ThermalGovernor {
             self.handle_thermal_state(new_state).await?;
         }
 
-        debug!(
-            "Temperature: {:.1}°C, State: {:?}",
-            reading.temp_c, new_state
-        );
+        debug!("Temperature: {:.1}°C, State: {:?}", reading.temp_c, new_state);
 
         Ok(())
     }
@@ -319,9 +308,7 @@ impl ThermalGovernor {
         let state = *self.state.read().await;
         let current_temp = self.current_temp.read().await.clone();
         let avg_temp = self.get_average_temp().await;
-        let monitoring_active = self
-            .monitoring_active
-            .load(std::sync::atomic::Ordering::SeqCst);
+        let monitoring_active = self.monitoring_active.load(std::sync::atomic::Ordering::SeqCst);
 
         ThermalStats {
             current_state: state,
@@ -348,10 +335,7 @@ impl ThermalGovernor {
         *self.current_temp.write().await = Some(reading);
         let new_state = self.calculate_thermal_state(temp_c);
         *self.state.write().await = new_state;
-        info!(
-            "Mock temperature set to {:.1}°C (state: {:?})",
-            temp_c, new_state
-        );
+        info!("Mock temperature set to {:.1}°C (state: {:?})", temp_c, new_state);
     }
 }
 

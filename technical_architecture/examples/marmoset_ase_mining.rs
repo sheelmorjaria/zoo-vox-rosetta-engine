@@ -12,6 +12,7 @@
 //! If ASE clustering finds multiple clusters where Euclidean found one,
 //! we have discovered "Hidden Phonology" in marmoset vocalizations.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::{Array1, Array2};
 use rand::seq::SliceRandom;
 use rayon::prelude::*;
@@ -193,11 +194,10 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Count call types
-    let call_type_counts: HashMap<String, usize> =
-        all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
-            *acc.entry(seg.call_type.clone()).or_insert(0) += 1;
-            acc
-        });
+    let call_type_counts: HashMap<String, usize> = all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
+        *acc.entry(seg.call_type.clone()).or_insert(0) += 1;
+        acc
+    });
 
     println!("Call Type Distribution:");
     let mut sorted_types: Vec<_> = call_type_counts.iter().collect();
@@ -264,8 +264,7 @@ fn main() -> anyhow::Result<()> {
         // Create ASE-weighted feature matrix
         // Transform: weighted_features = features * sqrt(weights)
         // This makes Euclidean distance equivalent to weighted Euclidean
-        let sqrt_weights: Array1<f64> =
-            Array1::from_vec(weights.iter().map(|&w| w.sqrt()).collect());
+        let sqrt_weights: Array1<f64> = Array1::from_vec(weights.iter().map(|&w| w.sqrt()).collect());
 
         let mut weighted_matrix = Array2::<f64>::zeros((n_samples, n_features));
         for i in 0..n_samples {
@@ -349,10 +348,7 @@ fn main() -> anyhow::Result<()> {
 
         // Always show giant cluster composition for verification
         println!("    Total clusters found: {}", stats.n_clusters);
-        println!(
-            "    Cluster IDs: {:?}",
-            cluster_members.keys().collect::<Vec<_>>()
-        );
+        println!("    Cluster IDs: {:?}", cluster_members.keys().collect::<Vec<_>>());
 
         // Find the largest cluster
         let largest_cluster = cluster_members
@@ -387,16 +383,13 @@ fn main() -> anyhow::Result<()> {
             println!();
             println!("    → MULTIPLE CLUSTERS FOUND! Showing all:");
 
-            let mut sorted_clusters: Vec<_> =
-                cluster_members.iter().filter(|(&l, _)| l != -1).collect();
+            let mut sorted_clusters: Vec<_> = cluster_members.iter().filter(|(&l, _)| l != -1).collect();
             sorted_clusters.sort_by_key(|(_, m)| std::cmp::Reverse(m.len()));
 
             for (label, members) in sorted_clusters.iter().take(5) {
                 let mut type_counts: HashMap<&str, usize> = HashMap::new();
                 for &idx in members.iter() {
-                    *type_counts
-                        .entry(all_segments[idx].call_type.as_str())
-                        .or_insert(0) += 1;
+                    *type_counts.entry(all_segments[idx].call_type.as_str()).or_insert(0) += 1;
                 }
                 let mut sorted: Vec<_> = type_counts.iter().collect();
                 sorted.sort_by(|a, b| b.1.cmp(a.1));
@@ -437,10 +430,7 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     // Find best result
-    let best = results
-        .iter()
-        .min_by(|a, b| a.4.partial_cmp(&b.4).unwrap())
-        .unwrap();
+    let best = results.iter().min_by(|a, b| a.4.partial_cmp(&b.4).unwrap()).unwrap();
 
     println!("  ┌─────────────────────────────────────────────────────────────────────────┐");
     println!("  │  VERDICT                                                                │");
@@ -448,10 +438,7 @@ fn main() -> anyhow::Result<()> {
 
     if best.4 < 0.5 {
         println!("  │  ✓ ASE FOUND HIDDEN PHONOLOGY!                                         │");
-        println!(
-            "  │    Best config: {}                                  ",
-            best.0
-        );
+        println!("  │    Best config: {}                                  ", best.0);
         println!(
             "  │    Cluster entropy dropped to {:.0}% (from 100%)                       ",
             best.4 * 100.0
@@ -460,10 +447,7 @@ fn main() -> anyhow::Result<()> {
         println!("  │    → Use Bag-of-Phrases with ASE weighting                             │");
     } else if best.4 < 0.8 {
         println!("  │  ~ PARTIAL DISCRIMINATION                                               │");
-        println!(
-            "  │    Best config: {}                                  ",
-            best.0
-        );
+        println!("  │    Best config: {}                                  ", best.0);
         println!(
             "  │    Cluster entropy: {:.0}% (improved from 100%)                        ",
             best.4 * 100.0

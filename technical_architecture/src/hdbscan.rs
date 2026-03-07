@@ -23,16 +23,8 @@ impl Eq for OrderedFloat {}
 impl PartialOrd for OrderedFloat {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // Handle NaN by treating it as infinity
-        let a = if self.0.is_nan() {
-            f64::INFINITY
-        } else {
-            self.0
-        };
-        let b = if other.0.is_nan() {
-            f64::INFINITY
-        } else {
-            other.0
-        };
+        let a = if self.0.is_nan() { f64::INFINITY } else { self.0 };
+        let b = if other.0.is_nan() { f64::INFINITY } else { other.0 };
         a.partial_cmp(&b)
     }
 }
@@ -190,11 +182,7 @@ struct KdTree {
 }
 
 impl KdTree {
-    fn new(
-        mut points: Vec<(usize, Vec<f64>)>,
-        depth: usize,
-        metric: DistanceMetric,
-    ) -> Option<Box<KdTree>> {
+    fn new(mut points: Vec<(usize, Vec<f64>)>, depth: usize, metric: DistanceMetric) -> Option<Box<KdTree>> {
         if points.is_empty() {
             return None;
         }
@@ -231,17 +219,10 @@ impl KdTree {
     fn find_knn(&self, query: &[f64], k: usize) -> Vec<(usize, f64)> {
         let mut heap = BinaryHeap::new();
         self.search(query, k, &mut heap);
-        heap.into_iter()
-            .map(|Reverse((dist, idx))| (idx, dist.0))
-            .collect()
+        heap.into_iter().map(|Reverse((dist, idx))| (idx, dist.0)).collect()
     }
 
-    fn search(
-        &self,
-        query: &[f64],
-        k: usize,
-        heap: &mut BinaryHeap<Reverse<(OrderedFloat, usize)>>,
-    ) {
+    fn search(&self, query: &[f64], k: usize, heap: &mut BinaryHeap<Reverse<(OrderedFloat, usize)>>) {
         // Distance to this node
         let dist = match self.metric {
             DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(query, &self.points[0]),
@@ -301,15 +282,9 @@ impl HdbscanClustering {
     }
 
     /// Create a new HDBSCAN clustering algorithm with specified distance metric
-    pub fn with_metric(
-        min_cluster_size: usize,
-        min_samples: usize,
-        metric: DistanceMetric,
-    ) -> Result<Self> {
+    pub fn with_metric(min_cluster_size: usize, min_samples: usize, metric: DistanceMetric) -> Result<Self> {
         if min_cluster_size < 2 {
-            return Err(HdbscanError::InvalidMinClusterSize {
-                min: min_cluster_size,
-            });
+            return Err(HdbscanError::InvalidMinClusterSize { min: min_cluster_size });
         }
         if min_samples < 1 {
             return Err(HdbscanError::InvalidMinSamples { min: min_samples });
@@ -365,8 +340,7 @@ impl HdbscanClustering {
         println!("  ✅ Core distances computed");
 
         // Step 2: Pre-compute feature rows
-        let feature_rows: Vec<Vec<f64>> =
-            (0..n_samples).map(|i| features.row(i).to_vec()).collect();
+        let feature_rows: Vec<Vec<f64>> = (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
         println!("  📊 Building MST with Binary Heap...");
 
@@ -388,9 +362,7 @@ impl HdbscanClustering {
         let metric = self.metric;
 
         // Build point list for KD-tree
-        let points: Vec<(usize, Vec<f64>)> = (0..n_samples)
-            .map(|i| (i, features.row(i).to_vec()))
-            .collect();
+        let points: Vec<(usize, Vec<f64>)> = (0..n_samples).map(|i| (i, features.row(i).to_vec())).collect();
 
         // Build KD-tree with the selected metric
         let kd_tree = KdTree::new(points, 0, metric);
@@ -398,8 +370,7 @@ impl HdbscanClustering {
         match kd_tree {
             Some(tree) => {
                 // Parallel KNN queries using KD-tree
-                let feature_rows: Vec<Vec<f64>> =
-                    (0..n_samples).map(|i| features.row(i).to_vec()).collect();
+                let feature_rows: Vec<Vec<f64>> = (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
                 let core_distances: Vec<f64> = feature_rows
                     .par_iter()
@@ -478,8 +449,7 @@ impl HdbscanClustering {
 
         // Create HNSW index with appropriate distance metric
         // For normalized vectors + L2, this is equivalent to cosine distance
-        let hnsw: Hnsw<f32, DistL2> =
-            Hnsw::new(nb_connection, n_dims, max_layer, ef_construction, DistL2 {});
+        let hnsw: Hnsw<f32, DistL2> = Hnsw::new(nb_connection, n_dims, max_layer, ef_construction, DistL2 {});
 
         println!("  📝 Inserting {} points into HNSW index...", n_samples);
         let insert_start = std::time::Instant::now();
@@ -496,10 +466,7 @@ impl HdbscanClustering {
             insert_start.elapsed().as_secs_f64()
         );
 
-        println!(
-            "  🔍 Querying {} nearest neighbors for each point...",
-            min_samples
-        );
+        println!("  🔍 Querying {} nearest neighbors for each point...", min_samples);
         let query_start = std::time::Instant::now();
 
         // Query KNN for each point using HNSW
@@ -545,12 +512,7 @@ impl HdbscanClustering {
     ///
     /// Memory complexity: O(N * k) instead of O(N²)
     /// For N=91,080 with k=30: 2.7M edges instead of 4.1B edges (~32 MB vs ~32 GB)
-    fn build_mst_optimized(
-        &self,
-        feature_rows: &[Vec<f64>],
-        core_distances: &[f64],
-        n: usize,
-    ) -> Vec<MstEdge> {
+    fn build_mst_optimized(&self, feature_rows: &[Vec<f64>], core_distances: &[f64], n: usize) -> Vec<MstEdge> {
         let k = self.min_samples;
         let metric = self.metric;
 
@@ -585,13 +547,8 @@ impl HdbscanClustering {
                 if i < *j {
                     // Only add edge once (undirected graph)
                     // Use mutual reachability distance
-                    let dist_m = self.mutual_reachability_distance(
-                        &feature_rows[i],
-                        &feature_rows[*j],
-                        i,
-                        *j,
-                        core_distances,
-                    );
+                    let dist_m =
+                        self.mutual_reachability_distance(&feature_rows[i], &feature_rows[*j], i, *j, core_distances);
 
                     all_edges.push(MstEdge {
                         from: i,
@@ -633,12 +590,7 @@ impl HdbscanClustering {
     ///
     /// Uses a simple heuristic: connect each point to its nearest neighbors
     /// in a subset of the data (every m-th point) to build an initial graph.
-    fn build_mst_fallback_sparse(
-        &self,
-        feature_rows: &[Vec<f64>],
-        core_distances: &[f64],
-        n: usize,
-    ) -> Vec<MstEdge> {
+    fn build_mst_fallback_sparse(&self, feature_rows: &[Vec<f64>], core_distances: &[f64], n: usize) -> Vec<MstEdge> {
         let k = self.min_samples;
         let sample_rate = std::cmp::max(1, n / 1000); // Sample every n/1000th point
 
@@ -651,13 +603,8 @@ impl HdbscanClustering {
             for step in 1..=std::cmp::min(n, k * 10) {
                 let j = (i + step * sample_rate) % n;
                 if j != i {
-                    let dist = self.mutual_reachability_distance(
-                        &feature_rows[i],
-                        &feature_rows[j],
-                        i,
-                        j,
-                        core_distances,
-                    );
+                    let dist =
+                        self.mutual_reachability_distance(&feature_rows[i], &feature_rows[j], i, j, core_distances);
                     neighbors.push((j, dist));
                 }
             }
@@ -717,9 +664,8 @@ impl HdbscanClustering {
 
                 // Update stability
                 let lambda = 1.0 / edge.weight.0;
-                let new_stability = cluster_stability[root_from]
-                    + cluster_stability[root_to]
-                    + lambda * (new_size as f64);
+                let new_stability =
+                    cluster_stability[root_from] + cluster_stability[root_to] + lambda * (new_size as f64);
 
                 // Merge clusters
                 uf.union(edge.from, edge.to);
@@ -759,8 +705,7 @@ impl HdbscanClustering {
         let min_samples = self.min_samples;
         let metric = self.metric;
 
-        let feature_rows: Vec<Vec<f64>> =
-            (0..n_samples).map(|i| features.row(i).to_vec()).collect();
+        let feature_rows: Vec<Vec<f64>> = (0..n_samples).map(|i| features.row(i).to_vec()).collect();
 
         let core_distances: Vec<f64> = (0..n_samples)
             .into_par_iter()
@@ -770,10 +715,9 @@ impl HdbscanClustering {
                 for j in 0..n_samples {
                     if i != j {
                         let dist = match metric {
-                            DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(
-                                &feature_rows[i],
-                                &feature_rows[j],
-                            ),
+                            DistanceMetric::Euclidean => {
+                                DistanceMetric::euclidean_distance(&feature_rows[i], &feature_rows[j])
+                            }
                             DistanceMetric::Cosine => {
                                 DistanceMetric::cosine_distance(&feature_rows[i], &feature_rows[j])
                             }
@@ -796,14 +740,7 @@ impl HdbscanClustering {
     }
 
     /// Compute mutual reachability distance
-    fn mutual_reachability_distance(
-        &self,
-        a: &[f64],
-        b: &[f64],
-        i: usize,
-        j: usize,
-        core_distances: &[f64],
-    ) -> f64 {
+    fn mutual_reachability_distance(&self, a: &[f64], b: &[f64], i: usize, j: usize, core_distances: &[f64]) -> f64 {
         let dist = match self.metric {
             DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(a, b),
             DistanceMetric::Cosine => DistanceMetric::cosine_distance(a, b),

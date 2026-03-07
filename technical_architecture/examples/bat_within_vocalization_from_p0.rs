@@ -11,6 +11,7 @@
 //
 // Usage: cargo run --release --example bat_within_vocalization_from_p0
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -178,9 +179,7 @@ struct Annotation {
     file_name: String,
 }
 
-fn load_annotations(
-    path: impl AsRef<Path>,
-) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut mapping = HashMap::new();
 
@@ -201,12 +200,9 @@ fn load_annotations(
     Ok(mapping)
 }
 
-fn load_segments(
-    phase0_dir: &Path,
-) -> Result<HashMap<String, Vec<Segment>>, Box<dyn std::error::Error>> {
+fn load_segments(phase0_dir: &Path) -> Result<HashMap<String, Vec<Segment>>, Box<dyn std::error::Error>> {
     let segments_path = phase0_dir.join("all_segments.json");
-    let segments_json: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     let mut file_segments: HashMap<String, Vec<Segment>> = HashMap::new();
 
@@ -283,10 +279,7 @@ fn analyze_within_vocalization_sequences(
             for window in cluster_sequence.windows(2) {
                 let bigram = window.to_vec();
                 all_bigrams.push(bigram.clone());
-                context_bigrams
-                    .entry(ctx)
-                    .or_insert_with(Vec::new)
-                    .push(bigram);
+                context_bigrams.entry(ctx).or_insert_with(Vec::new).push(bigram);
             }
             for window in cluster_sequence.windows(3) {
                 all_trigrams.push(window.to_vec());
@@ -336,9 +329,7 @@ fn analyze_within_vocalization_sequences(
     })
 }
 
-fn analyze_transitions(
-    file_sequences: &[FileSequence],
-) -> Result<Vec<Transition>, Box<dyn std::error::Error>> {
+fn analyze_transitions(file_sequences: &[FileSequence]) -> Result<Vec<Transition>, Box<dyn std::error::Error>> {
     let mut transition_map: HashMap<(i32, i32), Transition> = HashMap::new();
 
     for seq in file_sequences {
@@ -346,14 +337,12 @@ fn analyze_transitions(
             let from = window[0];
             let to = window[1];
 
-            let entry = transition_map
-                .entry((from, to))
-                .or_insert_with(|| Transition {
-                    from_cluster: from,
-                    to_cluster: to,
-                    count: 0,
-                    contexts: HashSet::new(),
-                });
+            let entry = transition_map.entry((from, to)).or_insert_with(|| Transition {
+                from_cluster: from,
+                to_cluster: to,
+                count: 0,
+                contexts: HashSet::new(),
+            });
 
             entry.count += 1;
             if let Some(ctx) = seq.context {
@@ -382,15 +371,14 @@ fn find_common_patterns(
             for window in seq.cluster_sequence.windows(pattern_len) {
                 let pattern = window.to_vec();
 
-                let entry =
-                    pattern_counts
-                        .entry(pattern.clone())
-                        .or_insert_with(|| SequencePattern {
-                            pattern: pattern.clone(),
-                            occurrences: 0,
-                            files: Vec::new(),
-                            contexts: HashSet::new(),
-                        });
+                let entry = pattern_counts
+                    .entry(pattern.clone())
+                    .or_insert_with(|| SequencePattern {
+                        pattern: pattern.clone(),
+                        occurrences: 0,
+                        files: Vec::new(),
+                        contexts: HashSet::new(),
+                    });
 
                 entry.occurrences += 1;
                 entry.files.push(seq.file_name.clone());
@@ -435,11 +423,7 @@ fn analyze_context_patterns(
         let avg_length = lengths.iter().sum::<f64>() / lengths.len() as f64;
 
         // Calculate standard deviation
-        let variance = lengths
-            .iter()
-            .map(|&l| (l - avg_length).powi(2))
-            .sum::<f64>()
-            / lengths.len() as f64;
+        let variance = lengths.iter().map(|&l| (l - avg_length).powi(2)).sum::<f64>() / lengths.len() as f64;
         let std_dev = variance.sqrt();
 
         // Analyze bigrams
@@ -609,10 +593,7 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    println!(
-        "   Unique clusters: {}",
-        analysis.cluster_statistics.unique_clusters
-    );
+    println!("   Unique clusters: {}", analysis.cluster_statistics.unique_clusters);
     println!("   Total files analyzed: {}", analysis.file_sequences.len());
     println!();
 
@@ -753,11 +734,7 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!();
 
     println!("   Context-specific entropies:");
-    let mut ctx_entropies: Vec<_> = analysis
-        .entropy_analysis
-        .context_bigram_entropies
-        .iter()
-        .collect();
+    let mut ctx_entropies: Vec<_> = analysis.entropy_analysis.context_bigram_entropies.iter().collect();
     ctx_entropies.sort_by(|a, b| a.0.cmp(b.0));
 
     for (ctx, entropy) in ctx_entropies {
@@ -785,17 +762,10 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
         .sum::<f64>()
         / analysis.context_patterns.len() as f64;
 
-    let avg_entropy = analysis
-        .entropy_analysis
-        .context_bigram_entropies
-        .values()
-        .sum::<f64>()
+    let avg_entropy = analysis.entropy_analysis.context_bigram_entropies.values().sum::<f64>()
         / analysis.entropy_analysis.context_bigram_entropies.len() as f64;
 
-    println!(
-        "   Average sequence length: {:.2} phrases per vocalization",
-        avg_len
-    );
+    println!("   Average sequence length: {:.2} phrases per vocalization", avg_len);
     println!("   Average bigram entropy: {:.3} bits", avg_entropy);
     println!();
 
@@ -838,10 +808,7 @@ fn display_results(analysis: &WithinVocalizationAnalysis) {
     println!();
 
     if analysis.common_patterns.len() > 10 {
-        println!(
-            "   ✅ {} cross-context patterns found:",
-            analysis.common_patterns.len()
-        );
+        println!("   ✅ {} cross-context patterns found:", analysis.common_patterns.len());
         println!("      → Some sequences are shared across behavioral contexts");
         println!("      → May represent UNIVERSAL syntactic structures");
     } else {

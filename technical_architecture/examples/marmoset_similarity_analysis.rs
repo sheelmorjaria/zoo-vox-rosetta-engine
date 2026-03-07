@@ -19,6 +19,7 @@
 //   cargo run --release --example marmoset_similarity_analysis
 //   cargo run --release --example marmoset_similarity_analysis -- --limit 100
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -177,8 +178,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let analysis_start = Instant::now();
 
-    let analysis =
-        SimilarityAnalysis::analyze(&feature_matrix, &call_types, &file_names, &feature_names);
+    let analysis = SimilarityAnalysis::analyze(&feature_matrix, &call_types, &file_names, &feature_names);
 
     println!(
         "   ✅ Analysis complete in {:.2}s",
@@ -200,11 +200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("   🔧 Building k-NN classifier...");
-    let classifier = KnnClassifier::new(
-        feature_matrix.clone(),
-        call_types.clone(),
-        file_names.clone(),
-    );
+    let classifier = KnnClassifier::new(feature_matrix.clone(), call_types.clone(), file_names.clone());
 
     println!("   🔍 Finding optimal k (testing k=1,3,5,7,9)...");
     let k_values = vec![1, 3, 5, 7, 9];
@@ -216,10 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   └────────────────────────────────────────────────────────────────┘");
     println!();
     println!("   📊 Optimal k: {}", cv_results.optimal_k);
-    println!(
-        "   📊 Mean Accuracy: {:.1}%",
-        cv_results.mean_accuracy * 100.0
-    );
+    println!("   📊 Mean Accuracy: {:.1}%", cv_results.mean_accuracy * 100.0);
     println!();
 
     println!("   📊 Per-Class Accuracy:");
@@ -273,11 +266,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(results) => {
                 println!("      Top 5 similar:");
                 for (i, r) in results.iter().enumerate() {
-                    let match_marker = if &r.call_type == demo_type {
-                        "✓"
-                    } else {
-                        "✗"
-                    };
+                    let match_marker = if &r.call_type == demo_type { "✓" } else { "✗" };
                     println!(
                         "         {}. {} {:.3} ({}) {}",
                         i + 1,

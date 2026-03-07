@@ -144,10 +144,7 @@ impl PhraseCandidate {
             duration_ms: metadata.get("duration_ms").copied().unwrap_or(0.0),
             f0_range_hz: metadata.get("f0_range_hz").copied().unwrap_or(0.0),
             // Grit Factors (3)
-            harmonic_to_noise_ratio: metadata
-                .get("harmonic_to_noise_ratio")
-                .copied()
-                .unwrap_or(0.0),
+            harmonic_to_noise_ratio: metadata.get("harmonic_to_noise_ratio").copied().unwrap_or(0.0),
             spectral_flatness: metadata.get("spectral_flatness").copied().unwrap_or(0.0),
             harmonicity: metadata.get("harmonicity").copied().unwrap_or(0.0),
             // Motion Factors (7)
@@ -176,10 +173,7 @@ impl PhraseCandidate {
             // Rhythm Factors (3)
             median_ici_ms: metadata.get("median_ici_ms").copied().unwrap_or(0.0),
             onset_rate_hz: metadata.get("onset_rate_hz").copied().unwrap_or(0.0),
-            ici_coefficient_of_variation: metadata
-                .get("ici_coefficient_of_variation")
-                .copied()
-                .unwrap_or(0.0),
+            ici_coefficient_of_variation: metadata.get("ici_coefficient_of_variation").copied().unwrap_or(0.0),
         };
 
         Ok(Self::new(
@@ -295,16 +289,10 @@ impl VectorSpaceQueryEngine {
         // Build indexes
         for (idx, phrase) in self.phrases.iter().enumerate() {
             // Species index
-            self.species_index
-                .entry(phrase.species.clone())
-                .or_default()
-                .push(idx);
+            self.species_index.entry(phrase.species.clone()).or_default().push(idx);
 
             // Cluster index
-            self.cluster_index
-                .entry(phrase.cluster_id)
-                .or_default()
-                .push(idx);
+            self.cluster_index.entry(phrase.cluster_id).or_default().push(idx);
         }
 
         // Calculate feature statistics
@@ -339,14 +327,12 @@ impl VectorSpaceQueryEngine {
                 duration_ms: variance.duration_ms + diff.duration_ms * diff.duration_ms,
                 harmonic_to_noise_ratio: variance.harmonic_to_noise_ratio
                     + diff.harmonic_to_noise_ratio * diff.harmonic_to_noise_ratio,
-                spectral_flatness: variance.spectral_flatness
-                    + diff.spectral_flatness * diff.spectral_flatness,
+                spectral_flatness: variance.spectral_flatness + diff.spectral_flatness * diff.spectral_flatness,
                 harmonicity: variance.harmonicity + diff.harmonicity * diff.harmonicity,
                 attack_time_ms: variance.attack_time_ms + diff.attack_time_ms * diff.attack_time_ms,
                 decay_time_ms: variance.decay_time_ms + diff.decay_time_ms * diff.decay_time_ms,
                 sustain_level: variance.sustain_level + diff.sustain_level * diff.sustain_level,
-                vibrato_rate_hz: variance.vibrato_rate_hz
-                    + diff.vibrato_rate_hz * diff.vibrato_rate_hz,
+                vibrato_rate_hz: variance.vibrato_rate_hz + diff.vibrato_rate_hz * diff.vibrato_rate_hz,
                 vibrato_depth: variance.vibrato_depth + diff.vibrato_depth * diff.vibrato_depth,
                 jitter: variance.jitter + diff.jitter * diff.jitter,
                 shimmer: variance.shimmer + diff.shimmer * diff.shimmer,
@@ -439,8 +425,7 @@ impl VectorSpaceQueryEngine {
                 mean_f0_hz: diff.mean_f0_hz / self.feature_stds.mean_f0_hz,
                 f0_range_hz: diff.f0_range_hz / self.feature_stds.f0_range_hz,
                 duration_ms: diff.duration_ms / self.feature_stds.duration_ms,
-                harmonic_to_noise_ratio: diff.harmonic_to_noise_ratio
-                    / self.feature_stds.harmonic_to_noise_ratio,
+                harmonic_to_noise_ratio: diff.harmonic_to_noise_ratio / self.feature_stds.harmonic_to_noise_ratio,
                 spectral_flatness: diff.spectral_flatness / self.feature_stds.spectral_flatness,
                 harmonicity: diff.harmonicity / self.feature_stds.harmonicity,
                 attack_time_ms: diff.attack_time_ms / self.feature_stds.attack_time_ms,
@@ -486,8 +471,7 @@ impl VectorSpaceQueryEngine {
             let duration_score = 1.0 / (1.0 + duration_distance / query.duration_tolerance_ms);
 
             // Combine scores
-            phrase.acoustic_score =
-                0.5 * phrase.acoustic_score + 0.25 * (f0_score + duration_score);
+            phrase.acoustic_score = 0.5 * phrase.acoustic_score + 0.25 * (f0_score + duration_score);
 
             // Context score (soft constraint)
             if query.preferred_contexts.contains(&phrase.context) {
@@ -498,17 +482,12 @@ impl VectorSpaceQueryEngine {
             }
 
             // Novelty score (reward exploration)
-            let cluster_usage = self
-                .cluster_index
-                .get(&phrase.cluster_id)
-                .map(|v| v.len())
-                .unwrap_or(1);
+            let cluster_usage = self.cluster_index.get(&phrase.cluster_id).map(|v| v.len()).unwrap_or(1);
             phrase.novelty_score = query.novelty_weight * (1.0 / cluster_usage as f32);
 
             // Total score
-            phrase.total_score = query.acoustic_weight * phrase.acoustic_score
-                + phrase.context_score
-                + phrase.novelty_score;
+            phrase.total_score =
+                query.acoustic_weight * phrase.acoustic_score + phrase.context_score + phrase.novelty_score;
 
             candidates.push(phrase);
         }
@@ -558,11 +537,7 @@ impl VectorSpaceQueryEngine {
 
         // Determine if cross-persona
         let clusters_used: Vec<i32> = sources.iter().map(|(c, _)| c.cluster_id).collect();
-        let is_cross_persona = clusters_used
-            .iter()
-            .collect::<std::collections::HashSet<_>>()
-            .len()
-            > 1;
+        let is_cross_persona = clusters_used.iter().collect::<std::collections::HashSet<_>>().len() > 1;
 
         // Calculate discovery potential
         let discovery_potential = if is_cross_persona && sources.len() >= 2 {
@@ -574,10 +549,7 @@ impl VectorSpaceQueryEngine {
 
         // Generate reasoning
         let source_names: Vec<String> = sources.iter().map(|(c, _)| c.phrase_id.clone()).collect();
-        let clusters_str: Vec<String> = sources
-            .iter()
-            .map(|(c, _)| format!("C{}", c.cluster_id))
-            .collect();
+        let clusters_str: Vec<String> = sources.iter().map(|(c, _)| format!("C{}", c.cluster_id)).collect();
         let reasoning = format!(
             "Interpolating {} sources: {} (clusters: {})",
             sources.len(),
@@ -641,9 +613,7 @@ impl MetadataSynthesizer {
             ..Default::default()
         };
 
-        let recipe = self
-            .query_engine
-            .query_interpolation_targets(&query, 2, species_filter);
+        let recipe = self.query_engine.query_interpolation_targets(&query, 2, species_filter);
 
         // Generate placeholder audio (actual synthesis would call granular engine)
         let audio = self.generate_placeholder_audio(&recipe, 200.0);
@@ -685,38 +655,21 @@ impl MetadataSynthesizer {
             .unwrap_or_default();
 
         if phrases_a.is_empty() || phrases_b.is_empty() {
-            anyhow::bail!(
-                "Cannot find phrases for clusters {} and {}",
-                cluster_a_id,
-                cluster_b_id
-            );
+            anyhow::bail!("Cannot find phrases for clusters {} and {}", cluster_a_id, cluster_b_id);
         }
 
         // Select best from each cluster (by harmonicity)
         let best_a = phrases_a
             .iter()
-            .max_by(|a, b| {
-                a.features
-                    .harmonicity
-                    .partial_cmp(&b.features.harmonicity)
-                    .unwrap()
-            })
+            .max_by(|a, b| a.features.harmonicity.partial_cmp(&b.features.harmonicity).unwrap())
             .unwrap();
         let best_b = phrases_b
             .iter()
-            .max_by(|a, b| {
-                a.features
-                    .harmonicity
-                    .partial_cmp(&b.features.harmonicity)
-                    .unwrap()
-            })
+            .max_by(|a, b| a.features.harmonicity.partial_cmp(&b.features.harmonicity).unwrap())
             .unwrap();
 
         // Create sources
-        let sources = vec![
-            (best_a.clone(), 1.0 - blend_ratio),
-            (best_b.clone(), blend_ratio),
-        ];
+        let sources = vec![(best_a.clone(), 1.0 - blend_ratio), (best_b.clone(), blend_ratio)];
 
         // Calculate target
         let target_params = SynthesisTarget::from_interpolation(&sources);
@@ -853,8 +806,7 @@ pub mod python_bindings {
             dict.set_item("f0_range_hz", f.f0_range_hz).unwrap();
             dict.set_item("harmonic_to_noise_ratio", f.harmonic_to_noise_ratio)
                 .unwrap();
-            dict.set_item("spectral_flatness", f.spectral_flatness)
-                .unwrap();
+            dict.set_item("spectral_flatness", f.spectral_flatness).unwrap();
             dict.set_item("harmonicity", f.harmonicity).unwrap();
             dict.set_item("attack_time_ms", f.attack_time_ms).unwrap();
             dict.set_item("decay_time_ms", f.decay_time_ms).unwrap();
@@ -923,9 +875,9 @@ pub mod python_bindings {
 
         fn load_phrases(&mut self, phrases: Vec<PyPhraseCandidate>) -> PyResult<()> {
             let rust_phrases: Vec<PhraseCandidate> = phrases.into_iter().map(|p| p.0).collect();
-            self.0.load_phrases(rust_phrases).map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to load phrases: {}", e))
-            })
+            self.0
+                .load_phrases(rust_phrases)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to load phrases: {}", e)))
         }
 
         fn synthesize_by_target(
@@ -936,16 +888,9 @@ pub mod python_bindings {
             preferred_contexts: Vec<String>,
         ) -> PyResult<(PySynthesisRecipe, Vec<f32>)> {
             self.0
-                .synthesize_by_target(
-                    target_f0_hz,
-                    target_duration_ms,
-                    species.as_deref(),
-                    preferred_contexts,
-                )
+                .synthesize_by_target(target_f0_hz, target_duration_ms, species.as_deref(), preferred_contexts)
                 .map(|(recipe, audio)| (PySynthesisRecipe(recipe), audio))
-                .map_err(|e| {
-                    pyo3::exceptions::PyRuntimeError::new_err(format!("Synthesis failed: {}", e))
-                })
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Synthesis failed: {}", e)))
         }
 
         fn synthesize_ghost_word(
@@ -958,17 +903,10 @@ pub mod python_bindings {
             self.0
                 .synthesize_ghost_word(cluster_a_id, cluster_b_id, blend_ratio, species.as_deref())
                 .map(|(recipe, audio)| (PySynthesisRecipe(recipe), audio))
-                .map_err(|e| {
-                    pyo3::exceptions::PyRuntimeError::new_err(format!(
-                        "Ghost word synthesis failed: {}",
-                        e
-                    ))
-                })
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Ghost word synthesis failed: {}", e)))
         }
     }
 }
 
 #[cfg(feature = "python-bindings")]
-pub use python_bindings::{
-    PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe,
-};
+pub use python_bindings::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};

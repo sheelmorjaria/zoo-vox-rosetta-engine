@@ -48,9 +48,9 @@ pub type Result<T> = std::result::Result<T, HmmError>;
 pub struct HiddenMarkovModel {
     n_states: usize,
     n_observations: usize,
-    initial_probs: Array1<f64>, // (n_states,) - initial state distribution
+    initial_probs: Array1<f64>,     // (n_states,) - initial state distribution
     transition_matrix: Array2<f64>, // (n_states, n_states) - state transition probs
-    emission_probs: Array2<f64>, // (n_states, n_observations) - emission probs
+    emission_probs: Array2<f64>,    // (n_states, n_observations) - emission probs
 }
 
 impl HiddenMarkovModel {
@@ -149,12 +149,7 @@ impl HiddenMarkovModel {
     /// * `sequences` - Vector of observation sequences
     /// * `max_iterations` - Maximum EM iterations (default: 100)
     /// * `tolerance` - Convergence tolerance (default: 1e-6)
-    pub fn fit(
-        &mut self,
-        sequences: &[Vec<usize>],
-        max_iterations: usize,
-        tolerance: f64,
-    ) -> Result<()> {
+    pub fn fit(&mut self, sequences: &[Vec<usize>], max_iterations: usize, tolerance: f64) -> Result<()> {
         if sequences.is_empty() {
             return Err(HmmError::InsufficientData { min: 1, actual: 0 });
         }
@@ -171,14 +166,11 @@ impl HiddenMarkovModel {
             // Process each sequence
             for sequence in sequences {
                 if sequence.len() < 2 {
-                    return Err(HmmError::SequenceTooShort {
-                        len: sequence.len(),
-                    });
+                    return Err(HmmError::SequenceTooShort { len: sequence.len() });
                 }
 
                 // E-step: Forward-backward
-                let (alpha, beta, gamma, xi, seq_log_likelihood) =
-                    self.forward_backward(sequence)?;
+                let (alpha, beta, gamma, xi, seq_log_likelihood) = self.forward_backward(sequence)?;
 
                 log_likelihood += seq_log_likelihood;
 
@@ -293,9 +285,7 @@ impl HiddenMarkovModel {
                 let mut sum = 0.0;
                 for j in 0..self.n_states {
                     if obs_next < self.n_observations {
-                        sum += self.transition_matrix[[i, j]]
-                            * self.emission_probs[[j, obs_next]]
-                            * beta[[t + 1, j]];
+                        sum += self.transition_matrix[[i, j]] * self.emission_probs[[j, obs_next]] * beta[[t + 1, j]];
                     }
                 }
                 beta[[t, i]] = sum;
@@ -311,9 +301,7 @@ impl HiddenMarkovModel {
         // Compute gamma (state probabilities)
         let mut gamma = Array2::zeros((t_len, self.n_states));
         for t in 0..t_len {
-            let sum: f64 = (0..self.n_states)
-                .map(|i| alpha[[t, i]] * beta[[t, i]])
-                .sum();
+            let sum: f64 = (0..self.n_states).map(|i| alpha[[t, i]] * beta[[t, i]]).sum();
 
             if sum > 0.0 {
                 for i in 0..self.n_states {
@@ -352,14 +340,7 @@ impl HiddenMarkovModel {
 
         // Compute log-likelihood
         let log_likelihood: f64 = (0..t_len)
-            .map(|t| {
-                alpha
-                    .row(t)
-                    .iter()
-                    .filter(|&&x| x > 0.0)
-                    .map(|&x| x.ln())
-                    .sum::<f64>()
-            })
+            .map(|t| alpha.row(t).iter().filter(|&&x| x > 0.0).map(|&x| x.ln()).sum::<f64>())
             .sum();
 
         Ok((alpha, beta, gamma, xi, log_likelihood))
@@ -415,9 +396,7 @@ impl HiddenMarkovModel {
     /// Most likely state sequence and probability
     pub fn decode_viterbi(&self, sequence: &[usize]) -> Result<(Vec<usize>, f64)> {
         if sequence.len() < 2 {
-            return Err(HmmError::SequenceTooShort {
-                len: sequence.len(),
-            });
+            return Err(HmmError::SequenceTooShort { len: sequence.len() });
         }
 
         let t_len = sequence.len();
@@ -524,9 +503,7 @@ impl HiddenMarkovModel {
     /// Get log-likelihood of observation sequence
     pub fn score(&self, sequence: &[usize]) -> Result<f64> {
         if sequence.len() < 2 {
-            return Err(HmmError::SequenceTooShort {
-                len: sequence.len(),
-            });
+            return Err(HmmError::SequenceTooShort { len: sequence.len() });
         }
 
         let (_, _, _, _, log_likelihood) = self.forward_backward(sequence)?;
@@ -575,8 +552,7 @@ mod tests {
         let mut hmm = HiddenMarkovModel::new(2, 2, 42).unwrap();
         hmm.fit(&sequences, 50, 1e-4).unwrap();
 
-        // Should converge without error
-        assert!(true, "HMM should converge on simple sequences");
+        // Should converge without error - just reaching this point means success
     }
 
     /// Test 2: HMM rejects invalid parameters

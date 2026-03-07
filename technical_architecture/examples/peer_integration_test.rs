@@ -3,6 +3,7 @@
 //! This example demonstrates the peer controller heartbeat monitoring system.
 //! Run this example, then in another terminal run the Python heartbeat client.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use anyhow::Result;
 use std::time::Duration;
 use technical_architecture::{OperationMode, PeerController, PeerControllerConfig};

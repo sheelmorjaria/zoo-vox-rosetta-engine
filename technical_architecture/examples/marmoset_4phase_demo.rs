@@ -9,6 +9,7 @@
 //
 // Marmoset call types simulated: Phee, Twitter, Trill, Tsik, Seep
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════════════╗");
     println!("║   4-Phase Lexicon-to-Syntax Pipeline: Marmoset (Structure Demo)            ║");

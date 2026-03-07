@@ -4,6 +4,7 @@
 //! Extracts and NORMALIZES 105D features so texture dimensions
 //! contribute meaningfully to distance calculations.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use crossbeam::channel::{bounded, Receiver, Sender};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -13,8 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::thread;
 use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, MicroDynamicsFeatures45D,
-    NeuralBoundaryDetector,
+    BoundaryDetectorConfig, MicroDynamicsExtractor, MicroDynamicsFeatures45D, NeuralBoundaryDetector,
 };
 
 #[derive(Debug, Clone, Serialize)]
@@ -63,12 +63,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -104,10 +99,7 @@ fn get_call_type(filename: &str) -> String {
     }
 }
 
-fn compute_105d_normalized(
-    extractor: &MicroDynamicsExtractor,
-    audio: &[f32],
-) -> Option<[f32; 105]> {
+fn compute_105d_normalized(extractor: &MicroDynamicsExtractor, audio: &[f32]) -> Option<[f32; 105]> {
     let base = extractor.extract_45d(audio).ok()?;
     let mut features = [0.0f32; 105];
 
@@ -235,11 +227,7 @@ fn compute_105d_normalized(
     features[90] = if ici < 20.0 { 1.0 } else { 0.0 };
     features[91] = if ici >= 20.0 && ici < 50.0 { 1.0 } else { 0.0 };
     features[92] = if ici >= 50.0 && ici < 100.0 { 1.0 } else { 0.0 };
-    features[93] = if ici >= 100.0 && ici < 200.0 {
-        1.0
-    } else {
-        0.0
-    };
+    features[93] = if ici >= 100.0 && ici < 200.0 { 1.0 } else { 0.0 };
     features[94] = if ici >= 200.0 { 1.0 } else { 0.0 };
 
     // Rhythm Features (5D)
@@ -326,11 +314,10 @@ fn main() -> anyhow::Result<()> {
                     let mut segments = Vec::new();
 
                     if let Ok((audio, sr)) = load_wav(&work.path) {
-                        let mut detector =
-                            NeuralBoundaryDetector::with_config(BoundaryDetectorConfig {
-                                sample_rate: sr,
-                                ..nbd_config.clone()
-                            });
+                        let mut detector = NeuralBoundaryDetector::with_config(BoundaryDetectorConfig {
+                            sample_rate: sr,
+                            ..nbd_config.clone()
+                        });
 
                         let boundaries = detector.detect_boundaries(&audio);
 
@@ -360,8 +347,7 @@ fn main() -> anyhow::Result<()> {
                             let start_ms = 0.0;
                             let end_ms = seg_audio.len() as f32 / sample_rate * 1000.0;
 
-                            if let Some(features) = compute_105d_normalized(&extractor, &seg_audio)
-                            {
+                            if let Some(features) = compute_105d_normalized(&extractor, &seg_audio) {
                                 let boundary_type = if seg_idx == 0 {
                                     "Start".to_string()
                                 } else if let Some(b) = boundaries.get(seg_idx - 1) {
@@ -411,14 +397,10 @@ fn main() -> anyhow::Result<()> {
 
         batch_buffer.extend(segments);
         if batch_buffer.len() >= batch_size {
-            let filename = format!("{}/nbd_batch_{:04d}.json", output_dir.display(), batch_num);
+            let filename = format!("{}/nbd_batch_{:04}.json", output_dir.display(), batch_num);
             let file = File::create(&filename)?;
             serde_json::to_writer(BufWriter::new(file), &batch_buffer)?;
-            println!(
-                "  Wrote {} segments to batch {}",
-                batch_buffer.len(),
-                batch_num
-            );
+            println!("  Wrote {} segments to batch {}", batch_buffer.len(), batch_num);
             batch_buffer.clear();
             batch_num += 1;
         }
@@ -426,14 +408,10 @@ fn main() -> anyhow::Result<()> {
 
     // Final batch
     if !batch_buffer.is_empty() {
-        let filename = format!("{}/nbd_batch_{:04d}.json", output_dir.display(), batch_num);
+        let filename = format!("{}/nbd_batch_{:04}.json", output_dir.display(), batch_num);
         let file = File::create(&filename)?;
         serde_json::to_writer(BufWriter::new(file), &batch_buffer)?;
-        println!(
-            "  Wrote {} segments to batch {}",
-            batch_buffer.len(),
-            batch_num
-        );
+        println!("  Wrote {} segments to batch {}", batch_buffer.len(), batch_num);
     }
 
     for worker in workers {
@@ -463,10 +441,7 @@ fn main() -> anyhow::Result<()> {
     println!(
         "  Feature mean range: [{:.2}, {:.2}]",
         feature_means.iter().cloned().fold(f64::INFINITY, f64::min),
-        feature_means
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, f64::max)
+        feature_means.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
     );
     println!();
 

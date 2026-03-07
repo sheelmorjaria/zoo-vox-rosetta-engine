@@ -12,6 +12,7 @@
 //! - Marine mammals: Weight FM slope and rhythm high
 //! - Insects: Weight high-frequency modulation high
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -268,11 +269,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!(
-        "  Train: {}, Test: {}",
-        train_samples.len(),
-        test_samples.len()
-    );
+    println!("  Train: {}, Test: {}", train_samples.len(), test_samples.len());
     println!();
 
     // Build prototypes
@@ -312,24 +309,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Filter test samples to detection task
-    let detection_test: Vec<_> = test_samples
-        .iter()
-        .filter(|s| s.task == "detection")
-        .collect();
+    let detection_test: Vec<_> = test_samples.iter().filter(|s| s.task == "detection").collect();
 
     println!("Testing on {} detection samples", detection_test.len());
     println!();
 
     // Create engines
-    let mut engine_unweighted =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
-    let mut engine_weighted =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_unweighted = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_weighted = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Fit normalization on both
     {
-        let mut matrix =
-            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -355,19 +346,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let threshold = 0.5;
     let eval_samples: Vec<&Sample> = detection_test.iter().take(5000).cloned().cloned().collect();
 
-    let (unweighted_f1, unweighted_per_dataset) = evaluate_with_engine(
-        &eval_samples,
-        &prototypes_by_dataset,
-        &engine_unweighted,
-        threshold,
-    );
+    let (unweighted_f1, unweighted_per_dataset) =
+        evaluate_with_engine(&eval_samples, &prototypes_by_dataset, &engine_unweighted, threshold);
 
-    let (weighted_f1, weighted_per_dataset) = evaluate_with_engine(
-        &eval_samples,
-        &prototypes_by_dataset,
-        &engine_weighted,
-        threshold,
-    );
+    let (weighted_f1, weighted_per_dataset) =
+        evaluate_with_engine(&eval_samples, &prototypes_by_dataset, &engine_weighted, threshold);
 
     let improvement = (weighted_f1 - unweighted_f1) / unweighted_f1 * 100.0;
 
@@ -506,16 +489,12 @@ fn evaluate_with_engine(
         let detected = best_sim >= threshold;
         let is_correct = best_dataset == sample.source_dataset;
 
-        *per_dataset_total
-            .entry(sample.source_dataset.clone())
-            .or_insert(0) += 1;
+        *per_dataset_total.entry(sample.source_dataset.clone()).or_insert(0) += 1;
 
         if detected {
             if is_correct {
                 tp += 1;
-                *per_dataset_correct
-                    .entry(sample.source_dataset.clone())
-                    .or_insert(0) += 1;
+                *per_dataset_correct.entry(sample.source_dataset.clone()).or_insert(0) += 1;
             } else {
                 fp += 1;
             }
@@ -524,11 +503,7 @@ fn evaluate_with_engine(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -562,10 +537,7 @@ fn evaluate_with_engine(
     (f1, per_dataset_f1)
 }
 
-fn load_audio_raw(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     use std::fs::File;
     use std::io::Read;
 

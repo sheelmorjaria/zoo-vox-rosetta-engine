@@ -7,6 +7,7 @@
 // Usage:
 //   cargo run --release --example beans_parallel_acoustic_similarity
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -187,11 +188,7 @@ impl FastFeatureExtractor {
         let max_lag = (self.sample_rate as f64 / 100.0).min(n as f64 / 2.0) as usize;
 
         let mean = audio.iter().map(|&x| x as f64).sum::<f64>() / n as f64;
-        let variance: f64 = audio
-            .iter()
-            .map(|&x| (x as f64 - mean).powi(2))
-            .sum::<f64>()
-            / n as f64;
+        let variance: f64 = audio.iter().map(|&x| (x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
         if variance < 1e-10 {
             return None;
         }
@@ -277,10 +274,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let geometric_mean = nonzero
-            .iter()
-            .product::<f64>()
-            .powf(1.0 / nonzero.len() as f64);
+        let geometric_mean = nonzero.iter().product::<f64>().powf(1.0 / nonzero.len() as f64);
         let arithmetic_mean = nonzero.iter().sum::<f64>() / nonzero.len() as f64;
 
         if arithmetic_mean > 0.0 {
@@ -365,9 +359,7 @@ impl FastFeatureExtractor {
         let sustain_start = (n as f64 * 0.3) as usize;
         let sustain_end = (n as f64 * 0.7) as usize;
         let sustain = if sustain_end > sustain_start {
-            envelope[sustain_start..sustain_end].iter().sum::<f64>()
-                / (sustain_end - sustain_start) as f64
-                / max_amp
+            envelope[sustain_start..sustain_end].iter().sum::<f64>() / (sustain_end - sustain_start) as f64 / max_amp
         } else {
             0.0
         };
@@ -383,11 +375,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let weighted_sum: f64 = spectrum
-            .iter()
-            .enumerate()
-            .map(|(i, &mag)| i as f64 * mag)
-            .sum();
+        let weighted_sum: f64 = spectrum.iter().enumerate().map(|(i, &mag)| i as f64 * mag).sum();
         let total_mag: f64 = spectrum.iter().sum();
 
         if total_mag > 0.0 {
@@ -430,11 +418,7 @@ impl FastFeatureExtractor {
         let duration = audio.len() as f64 / self.sample_rate as f64;
         let vib_rate = crossings as f64 / duration / 2.0;
 
-        let variance: f64 = f0_contour
-            .iter()
-            .map(|f| (f - mean_f0).powi(2))
-            .sum::<f64>()
-            / f0_contour.len() as f64;
+        let variance: f64 = f0_contour.iter().map(|f| (f - mean_f0).powi(2)).sum::<f64>() / f0_contour.len() as f64;
 
         (vib_rate.min(50.0), variance.sqrt().min(1000.0))
     }
@@ -462,11 +446,8 @@ impl FastFeatureExtractor {
         }
 
         let mean_period = periods.iter().sum::<usize>() as f64 / periods.len() as f64;
-        let variance: f64 = periods
-            .iter()
-            .map(|p| (*p as f64 - mean_period).powi(2))
-            .sum::<f64>()
-            / periods.len() as f64;
+        let variance: f64 =
+            periods.iter().map(|p| (*p as f64 - mean_period).powi(2)).sum::<f64>() / periods.len() as f64;
 
         (variance.sqrt() / mean_period).min(1.0).max(0.0)
     }
@@ -503,8 +484,7 @@ impl FastFeatureExtractor {
             return 0.0;
         }
 
-        let variance: f64 =
-            peaks.iter().map(|p| (p - mean_peak).powi(2)).sum::<f64>() / peaks.len() as f64;
+        let variance: f64 = peaks.iter().map(|p| (p - mean_peak).powi(2)).sum::<f64>() / peaks.len() as f64;
 
         (variance.sqrt() / mean_peak).min(1.0).max(0.0)
     }
@@ -538,10 +518,7 @@ impl FastFeatureExtractor {
 
         for start in (0..n).step_by(window) {
             let end = (start + window).min(n);
-            let energy = audio[start..end]
-                .iter()
-                .map(|x| (*x as f64) * (*x as f64))
-                .sum::<f64>();
+            let energy = audio[start..end].iter().map(|x| (*x as f64) * (*x as f64)).sum::<f64>();
 
             if energy > prev_energy * 2.0 && prev_energy > 0.0 {
                 onsets.push(start);
@@ -559,19 +536,10 @@ impl FastFeatureExtractor {
             .collect();
 
         let mean_ici = icis.iter().sum::<f64>() / icis.len() as f64;
-        let variance =
-            icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
+        let variance = icis.iter().map(|ici| (ici - mean_ici).powi(2)).sum::<f64>() / icis.len() as f64;
         let std_ici = variance.sqrt();
-        let ici_cv = if mean_ici > 0.0 {
-            std_ici / mean_ici
-        } else {
-            0.0
-        };
-        let onset_rate = if mean_ici > 0.0 {
-            1000.0 / mean_ici
-        } else {
-            0.0
-        };
+        let ici_cv = if mean_ici > 0.0 { std_ici / mean_ici } else { 0.0 };
+        let onset_rate = if mean_ici > 0.0 { 1000.0 / mean_ici } else { 0.0 };
 
         (mean_ici, onset_rate, ici_cv)
     }
@@ -589,12 +557,7 @@ struct ParallelSimilarityProcessor {
 }
 
 impl ParallelSimilarityProcessor {
-    fn new(
-        chunk_size: usize,
-        sample_rate: u32,
-        feature_dim: usize,
-        similarity_threshold: f64,
-    ) -> Self {
+    fn new(chunk_size: usize, sample_rate: u32, feature_dim: usize, similarity_threshold: f64) -> Self {
         Self {
             chunk_size,
             sample_rate,
@@ -667,10 +630,7 @@ impl ParallelSimilarityProcessor {
         let n_failed = failed.load(Ordering::Relaxed);
         let throughput = n_processed as f64 / elapsed.as_secs_f64();
 
-        println!(
-            "\r  Progress: {}/{} samples processed",
-            n_processed, n_samples
-        );
+        println!("\r  Progress: {}/{} samples processed", n_processed, n_samples);
         println!();
         println!("Extraction complete:");
         println!("  ├─ Processed: {} samples", n_processed);
@@ -707,10 +667,7 @@ impl ParallelSimilarityProcessor {
 // Type Discovery (streaming, memory-efficient)
 // ============================================================================
 
-fn build_global_types_streaming(
-    features: &[ExtractedFeatures],
-    similarity_threshold: f64,
-) -> Vec<AcousticType> {
+fn build_global_types_streaming(features: &[ExtractedFeatures], similarity_threshold: f64) -> Vec<AcousticType> {
     if features.is_empty() {
         return Vec::new();
     }
@@ -761,14 +718,11 @@ fn build_global_types_streaming(
             // Add to existing type
             let n_in_type = types[type_idx].count + 1;
             types[type_idx].count = n_in_type;
-            types[type_idx]
-                .sample_ids
-                .push(features[i].sample_id.clone());
+            types[type_idx].sample_ids.push(features[i].sample_id.clone());
 
             // Update centroid (moving average)
             for (j, val) in features[i].features.iter().enumerate().take(FEATURE_DIM) {
-                types[type_idx].centroid[j] +=
-                    (val - types[type_idx].centroid[j]) / n_in_type as f64;
+                types[type_idx].centroid[j] += (val - types[type_idx].centroid[j]) / n_in_type as f64;
             }
         } else {
             // Create new type
@@ -782,12 +736,7 @@ fn build_global_types_streaming(
         }
 
         if (i + 1) % 10000 == 0 {
-            println!(
-                "    Processed {}/{} samples, {} types so far",
-                i + 1,
-                n,
-                types.len()
-            );
+            println!("    Processed {}/{} samples, {} types so far", i + 1, n, types.len());
         }
     }
 
@@ -827,10 +776,7 @@ fn build_global_types_streaming(
 // Statistics & Classification
 // ============================================================================
 
-fn compute_statistics(
-    features: &[ExtractedFeatures],
-    types: &[AcousticType],
-) -> (f64, f64, f64, f64) {
+fn compute_statistics(features: &[ExtractedFeatures], types: &[AcousticType]) -> (f64, f64, f64, f64) {
     if features.is_empty() || types.is_empty() {
         return (0.0, 0.0, 0.0, 0.0);
     }
@@ -957,10 +903,7 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
         m
     };
 
-    let eval_labels: Vec<String> = eval_indices
-        .iter()
-        .map(|&idx| labels[idx].clone())
-        .collect();
+    let eval_labels: Vec<String> = eval_indices.iter().map(|&idx| labels[idx].clone()).collect();
 
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     engine.fit_normalization(&eval_features);
@@ -1022,9 +965,7 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
     (accuracy, K_NEIGHBORS)
 }
 
-fn analyze_labels(
-    features: &[ExtractedFeatures],
-) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn analyze_labels(features: &[ExtractedFeatures]) -> (HashMap<String, usize>, HashMap<String, usize>) {
     let mut source_datasets = HashMap::new();
     let mut task_types = HashMap::new();
 
@@ -1078,10 +1019,7 @@ fn main() -> Result<()> {
     println!("  ├─ Feature Dimension: {}D", FEATURE_DIM);
     println!("  ├─ Similarity Threshold: {:.2}", SIMILARITY_THRESHOLD);
     println!("  ├─ k-NN Neighbors: {}", K_NEIGHBORS);
-    println!(
-        "  └─ Parallel: Rayon with {} threads",
-        rayon::current_num_threads()
-    );
+    println!("  └─ Parallel: Rayon with {} threads", rayon::current_num_threads());
     println!();
 
     let total_start = Instant::now();
@@ -1092,12 +1030,8 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let processor = ParallelSimilarityProcessor::new(
-        CHUNK_SIZE,
-        manifest.resample_rate,
-        FEATURE_DIM,
-        SIMILARITY_THRESHOLD,
-    );
+    let processor =
+        ParallelSimilarityProcessor::new(CHUNK_SIZE, manifest.resample_rate, FEATURE_DIM, SIMILARITY_THRESHOLD);
 
     let features = processor.process_parallel(&manifest, base_path);
 
@@ -1115,8 +1049,7 @@ fn main() -> Result<()> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
-    let (type_entropy, avg_intra, avg_inter, separation) =
-        compute_statistics(&features, &global_types);
+    let (type_entropy, avg_intra, avg_inter, separation) = compute_statistics(&features, &global_types);
 
     println!("Type Discovery:");
     println!("  ├─ Global Types: {}", global_types.len());
@@ -1225,10 +1158,7 @@ fn main() -> Result<()> {
         "  ├─ Intra-type similarity: {:.4}",
         assessment.avg_intra_type_similarity
     );
-    println!(
-        "  ├─ Inter-type distance: {:.4}",
-        assessment.avg_inter_type_distance
-    );
+    println!("  ├─ Inter-type distance: {:.4}", assessment.avg_inter_type_distance);
     println!("  └─ Separation ratio: {:.2}x", assessment.separation_ratio);
     println!();
 

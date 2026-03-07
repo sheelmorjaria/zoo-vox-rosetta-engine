@@ -7,6 +7,7 @@
 //! For graded systems, the trajectory (how the call changes) is the message,
 //! not just the type ID.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -16,8 +17,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, HierarchicalThresholds,
-    SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, HierarchicalThresholds, SimilarityMetric,
+    ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -31,8 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚══════════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let base_dir =
-        PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
+    let base_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
 
     // =========================================================================
     // Step 1: Extract Features
@@ -68,16 +68,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let segmenter = DynamicSegmenter::new(segmenter_config.clone(), sample_rate);
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                sample_rate,
-            )));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(sample_rate)));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64)
-                    .ok()
-                    .map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
             };
 
             let result = segmenter.segment(&audio, extract_fn, filename);
@@ -129,21 +125,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Get all feature vectors for this cluster
-        let vectors: Vec<Vec<f64>> = pt
-            .indices
-            .iter()
-            .map(|&idx| all_candidates[idx].0.clone())
-            .collect();
+        let vectors: Vec<Vec<f64>> = pt.indices.iter().map(|&idx| all_candidates[idx].0.clone()).collect();
 
         // Compute centroid
         let centroid = compute_centroid(&vectors);
 
         // Compute average distance to centroid (intra-cluster spread)
-        let avg_distance: f64 = vectors
-            .iter()
-            .map(|v| cosine_distance(v, &centroid))
-            .sum::<f64>()
-            / vectors.len() as f64;
+        let avg_distance: f64 =
+            vectors.iter().map(|v| cosine_distance(v, &centroid)).sum::<f64>() / vectors.len() as f64;
 
         // Compute max distance (outliers)
         let max_distance = vectors
@@ -158,10 +147,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .fold(f64::INFINITY, f64::min);
 
         // Compute variance of distances (cluster coherence)
-        let distances: Vec<f64> = vectors
-            .iter()
-            .map(|v| cosine_distance(v, &centroid))
-            .collect();
+        let distances: Vec<f64> = vectors.iter().map(|v| cosine_distance(v, &centroid)).collect();
         let distance_variance = compute_variance(&distances);
 
         cluster_stats.push(ClusterStats {
@@ -186,11 +172,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Calculate overall metrics
-    let avg_intra_variance: f64 = cluster_stats
-        .iter()
-        .map(|s| s.avg_distance_to_centroid)
-        .sum::<f64>()
-        / cluster_stats.len() as f64;
+    let avg_intra_variance: f64 =
+        cluster_stats.iter().map(|s| s.avg_distance_to_centroid).sum::<f64>() / cluster_stats.len() as f64;
 
     let max_intra_variance = cluster_stats
         .iter()
@@ -215,14 +198,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ OVERALL METRICS                                                             │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!(
-        "│ Average Intra-Cluster Distance:  {:.4}",
-        avg_intra_variance
-    );
-    println!(
-        "│ Maximum Intra-Cluster Distance:  {:.4}",
-        max_intra_variance
-    );
+    println!("│ Average Intra-Cluster Distance:  {:.4}", avg_intra_variance);
+    println!("│ Maximum Intra-Cluster Distance:  {:.4}", max_intra_variance);
     println!("│ Classification: {}", system_classification);
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -382,12 +359,7 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     hint.with_extension("flac");
 
     let mut probed = symphonia::default::get_probe()
-        .format(
-            &hint,
-            mss,
-            &FormatOptions::default(),
-            &MetadataOptions::default(),
-        )
+        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
         .map_err(|e| format!("Probe failed: {}", e))?;
 
     let track = probed.format.default_track().ok_or("No track")?;
@@ -467,8 +439,7 @@ fn cluster_by_similarity(
             }
         }
 
-        let avg_dur: f32 =
-            indices.iter().map(|&idx| candidates[idx].1).sum::<f32>() / indices.len() as f32;
+        let avg_dur: f32 = indices.iter().map(|&idx| candidates[idx].1).sum::<f32>() / indices.len() as f32;
 
         types.push(PhraseType {
             type_id: format!("Type_{}", types.len() + 1),
@@ -517,8 +488,7 @@ fn compute_variance(values: &[f64]) -> f64 {
     }
 
     let mean: f64 = values.iter().sum::<f64>() / values.len() as f64;
-    let variance: f64 =
-        values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
+    let variance: f64 = values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
 
     variance
 }

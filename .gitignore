@@ -263,3 +263,9 @@ test_provenance_zero_alloc/
 media/texts/*.svg
 media/videos/**/*.mp4
 media/videos/**/*.txt
+
+# Build output/logs
+technical_architecture/in
+
+# Generated documents
+*.docx

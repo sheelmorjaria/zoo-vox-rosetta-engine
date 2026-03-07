@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --release --example bat_acoustic_validation
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -89,8 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let transition_analysis =
-        analyze_true_transitions(&segments, &annotations, &acoustic_analysis)?;
+    let transition_analysis = analyze_true_transitions(&segments, &annotations, &acoustic_analysis)?;
 
     // ========================================================================
     // Save Results
@@ -207,9 +207,7 @@ struct DominantPattern {
 // Data Loading
 // ============================================================================
 
-fn load_annotations(
-    path: impl AsRef<Path>,
-) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
+fn load_annotations(path: impl AsRef<Path>) -> Result<HashMap<String, i32>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut mapping = HashMap::new();
 
@@ -232,21 +230,13 @@ fn load_annotations(
 
 fn load_segments(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::Error>> {
     let segments_path = phase0_dir.join("all_segments.json");
-    let segments_json: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     let mut segments = Vec::new();
 
     if let Some(arr) = segments_json.as_array() {
         for segment in arr {
-            if let (
-                Some(segment_id),
-                Some(file_name),
-                Some(start),
-                Some(end),
-                Some(cluster_id),
-                Some(features),
-            ) = (
+            if let (Some(segment_id), Some(file_name), Some(start), Some(end), Some(cluster_id), Some(features)) = (
                 segment["segment_id"].as_u64(),
                 segment["file_name"].as_str(),
                 segment["start_time_ms"].as_f64(),
@@ -257,10 +247,7 @@ fn load_segments(phase0_dir: &Path) -> Result<Vec<Segment>, Box<dyn std::error::
                 let duration = end - start;
 
                 // Convert features to Vec<f32>
-                let feature_vec: Vec<f32> = features
-                    .iter()
-                    .filter_map(|v| v.as_f64().map(|f| f as f32))
-                    .collect();
+                let feature_vec: Vec<f32> = features.iter().filter_map(|v| v.as_f64().map(|f| f as f32)).collect();
 
                 segments.push(Segment {
                     segment_id: segment_id as usize,
@@ -424,10 +411,7 @@ fn detect_position_bias(segments: &[Segment]) -> Result<(), Box<dyn std::error::
     let n = position_cluster_pairs.len();
     let sum_pos: usize = position_cluster_pairs.iter().map(|(p, _)| p).sum();
     let sum_cluster: i32 = position_cluster_pairs.iter().map(|(_, c)| c).sum();
-    let sum_pos_cluster: i32 = position_cluster_pairs
-        .iter()
-        .map(|(p, c)| *c as i32 * *p as i32)
-        .sum();
+    let sum_pos_cluster: i32 = position_cluster_pairs.iter().map(|(p, c)| *c as i32 * *p as i32).sum();
 
     let mean_pos = sum_pos as f64 / n as f64;
     let mean_cluster = sum_cluster as f64 / n as f64;
@@ -473,9 +457,7 @@ fn detect_position_bias(segments: &[Segment]) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn validate_acoustic_coherence(
-    segments: &[Segment],
-) -> Result<AcousticAnalysis, Box<dyn std::error::Error>> {
+fn validate_acoustic_coherence(segments: &[Segment]) -> Result<AcousticAnalysis, Box<dyn std::error::Error>> {
     println!("   📊 Computing Acoustic Distances...");
     println!();
 
@@ -534,8 +516,7 @@ fn validate_acoustic_coherence(
 
             if !distances.is_empty() {
                 let mean = distances.iter().sum::<f64>() / distances.len() as f64;
-                let variance = distances.iter().map(|&d| (d - mean).powi(2)).sum::<f64>()
-                    / distances.len() as f64;
+                let variance = distances.iter().map(|&d| (d - mean).powi(2)).sum::<f64>() / distances.len() as f64;
                 let std = variance.sqrt();
 
                 within_stats.push(ClusterDistanceStats {
@@ -556,10 +537,7 @@ fn validate_acoustic_coherence(
             let cluster_a = clusters_to_analyze[i];
             let cluster_b = clusters_to_analyze[j];
 
-            if let (Some(segs_a), Some(segs_b)) = (
-                cluster_segments.get(&cluster_a),
-                cluster_segments.get(&cluster_b),
-            ) {
+            if let (Some(segs_a), Some(segs_b)) = (cluster_segments.get(&cluster_a), cluster_segments.get(&cluster_b)) {
                 let sample_size = 20.min(segs_a.len()).min(segs_b.len());
                 let mut distances = Vec::new();
 
@@ -584,13 +562,9 @@ fn validate_acoustic_coherence(
 
     // Calculate silhouette-like score
     let silhouette = if !within_stats.is_empty() && !between_distances.is_empty() {
-        let avg_within =
-            within_stats.iter().map(|s| s.mean_distance).sum::<f64>() / within_stats.len() as f64;
-        let avg_between = between_distances
-            .iter()
-            .map(|d| d.mean_distance)
-            .sum::<f64>()
-            / between_distances.len() as f64;
+        let avg_within = within_stats.iter().map(|s| s.mean_distance).sum::<f64>() / within_stats.len() as f64;
+        let avg_between =
+            between_distances.iter().map(|d| d.mean_distance).sum::<f64>() / between_distances.len() as f64;
         (avg_between - avg_within) / avg_between.max(avg_within)
     } else {
         0.0
@@ -618,10 +592,7 @@ fn validate_acoustic_coherence(
     println!();
 
     println!("   📊 Between-Cluster Distances (Sample):");
-    println!(
-        "   {:<10} {:<10} {:>12}",
-        "Cluster A", "Cluster B", "Mean Distance"
-    );
+    println!("   {:<10} {:<10} {:>12}", "Cluster A", "Cluster B", "Mean Distance");
     println!("{}", "-".repeat(40));
 
     for dist in between_distances.iter().take(15) {
@@ -699,10 +670,7 @@ fn analyze_true_transitions(
             all_transitions.push(transition.clone());
 
             if let Some(ctx) = context {
-                context_transitions
-                    .entry(ctx)
-                    .or_insert_with(Vec::new)
-                    .push(transition);
+                context_transitions.entry(ctx).or_insert_with(Vec::new).push(transition);
             }
         }
     }
@@ -779,8 +747,7 @@ fn analyze_true_transitions(
     let cross_context_similarity = if entropy_by_context.len() > 1 {
         let entropies: Vec<f64> = entropy_by_context.values().copied().collect();
         let mean = avg_entropy;
-        let variance =
-            entropies.iter().map(|&e| (e - mean).powi(2)).sum::<f64>() / entropies.len() as f64;
+        let variance = entropies.iter().map(|&e| (e - mean).powi(2)).sum::<f64>() / entropies.len() as f64;
         1.0 / (1.0 + variance) // Higher similarity when variance is low
     } else {
         0.0
@@ -829,10 +796,7 @@ fn analyze_true_transitions(
     }
     println!();
 
-    println!(
-        "   📊 Cross-Context Similarity: {:.4}",
-        cross_context_similarity
-    );
+    println!("   📊 Cross-Context Similarity: {:.4}", cross_context_similarity);
     println!("   📊 Syntax Evidence Score: {:.4}", syntax_evidence_score);
     println!();
 
@@ -883,10 +847,7 @@ fn truncate_string(s: &str, max_len: usize) -> String {
     }
 }
 
-fn print_recommendations(
-    acoustic_analysis: &AcousticAnalysis,
-    transition_analysis: &TransitionAnalysis,
-) {
+fn print_recommendations(acoustic_analysis: &AcousticAnalysis, transition_analysis: &TransitionAnalysis) {
     println!(
         "   Based on {} segments analyzed across {} clusters:",
         acoustic_analysis.total_segments_analyzed, acoustic_analysis.cluster_count
@@ -895,14 +856,8 @@ fn print_recommendations(
 
     // Cluster quality assessment
     println!("   📊 Cluster Quality Assessment:");
-    println!(
-        "      Silhouette Score: {:.4}",
-        acoustic_analysis.silhouette_score
-    );
-    println!(
-        "      Assessment: {}",
-        acoustic_analysis.coherence_assessment
-    );
+    println!("      Silhouette Score: {:.4}", acoustic_analysis.silhouette_score);
+    println!("      Assessment: {}", acoustic_analysis.coherence_assessment);
     println!();
 
     if acoustic_analysis.silhouette_score < 0.2 {

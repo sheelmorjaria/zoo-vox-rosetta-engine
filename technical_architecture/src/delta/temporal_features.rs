@@ -197,10 +197,7 @@ mod tests {
 
         // Delta should oscillate (vibrato rate)
         let delta_variance: f32 = delta.iter().map(|d| d * d).sum::<f32>() / delta.len() as f32;
-        assert!(
-            delta_variance > 0.0,
-            "Delta should capture vibrato modulation"
-        );
+        assert!(delta_variance > 0.0, "Delta should capture vibrato modulation");
     }
 
     #[test]
@@ -233,10 +230,7 @@ mod tests {
 
         // Should detect acceleration
         let dd_sum: f32 = delta_delta.iter().sum();
-        assert!(
-            dd_sum > 0.0,
-            "Delta-delta should detect glissando acceleration"
-        );
+        assert!(dd_sum > 0.0, "Delta-delta should detect glissando acceleration");
     }
 
     #[test]
@@ -285,10 +279,7 @@ mod tests {
 
         // Delta should be positive during attack
         let positive_delta: usize = delta.iter().filter(|&&d| d > 0.0).count();
-        assert!(
-            positive_delta > delta.len() / 2,
-            "Delta should detect attack"
-        );
+        assert!(positive_delta > delta.len() / 2, "Delta should detect attack");
     }
 
     #[test]
@@ -302,10 +293,7 @@ mod tests {
 
         // Delta should be negative during decay
         let negative_delta: usize = delta.iter().filter(|&&d| d < 0.0).count();
-        assert!(
-            negative_delta > delta.len() / 2,
-            "Delta should detect decay"
-        );
+        assert!(negative_delta > delta.len() / 2, "Delta should detect decay");
     }
 
     #[test]
@@ -323,10 +311,8 @@ mod tests {
         for i in 0..2 {
             envelope.push(1.0 - 0.2 * (i as f32 / 2.0));
         }
-        // Sustain
-        for _ in 0..3 {
-            envelope.push(0.8);
-        }
+        // Sustain (constant level)
+        envelope.extend(std::iter::repeat_n(0.8, 3));
         // Release
         for i in 0..2 {
             envelope.push(0.8 * (1.0 - i as f32 / 2.0));
@@ -447,10 +433,7 @@ mod tests {
         let (delta, delta_delta) = computer.compute(&flux).unwrap();
 
         // Delta should capture rhythm
-        let delta_changes: usize = delta
-            .windows(2)
-            .filter(|w| (w[1] - w[0]).abs() > 10.0)
-            .count();
+        let delta_changes: usize = delta.windows(2).filter(|w| (w[1] - w[0]).abs() > 10.0).count();
         assert!(delta_changes >= 2, "Delta should capture rhythmic changes");
     }
 
@@ -460,16 +443,13 @@ mod tests {
 
         // Noisy flux values
         let flux: Vec<f32> = (0..10)
-            .map(|i| 10.0 + (i as f32 * 2.0) + 0.5 * (i as f32 % 3.0) as f32)
+            .map(|i| 10.0 + (i as f32 * 2.0) + 0.5 * (i as f32 % 3.0))
             .collect();
 
         let (delta, _) = computer.compute(&flux).unwrap();
 
         // Should still detect trend
         let delta_mean: f32 = delta.iter().sum::<f32>() / delta.len() as f32;
-        assert!(
-            (delta_mean - 2.0).abs() < 1.0,
-            "Delta should be robust to noise"
-        );
+        assert!((delta_mean - 2.0).abs() < 1.0, "Delta should be robust to noise");
     }
 }

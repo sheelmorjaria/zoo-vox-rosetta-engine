@@ -6,6 +6,7 @@
 //!
 //! This upgrades from Level 2.5 → Level 3 in seconds instead of hours.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -44,8 +45,7 @@ fn main() -> anyhow::Result<()> {
 
     let cache_dir = Path::new("bat_nbd_cache_normalized");
     let output_dir = Path::new("bat_nbd_cache_level3");
-    let annotations_path =
-        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv");
+    let annotations_path = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv");
 
     fs::create_dir_all(output_dir)?;
 
@@ -181,16 +181,7 @@ fn main() -> anyhow::Result<()> {
         .collect();
 
     // Aggregate results
-    for (
-        cache_file,
-        upgraded,
-        local_matched,
-        local_emitters,
-        local_addressees,
-        local_pairs,
-        local_self,
-    ) in results
-    {
+    for (cache_file, upgraded, local_matched, local_emitters, local_addressees, local_pairs, local_self) in results {
         total_segments += upgraded.len();
         matched_segments += local_matched;
 

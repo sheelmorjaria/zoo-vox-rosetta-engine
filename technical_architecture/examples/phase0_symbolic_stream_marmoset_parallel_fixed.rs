@@ -9,6 +9,7 @@
 //
 // Usage: cargo run --release --example phase0_symbolic_stream_marmoset_parallel_fixed [--limit N] [--resume]
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -226,8 +227,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args: Vec<String> = std::env::args().collect();
     let mut vocalizations_dir = PathBuf::from("/home/sheel/birdsong_analysis/data/Vocalizations");
-    let mut results_dir =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase0_results_fixed");
+    let mut results_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase0_results_fixed");
     let mut limit = None;
     let mut resume = false;
 
@@ -261,10 +261,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let num_cpus = num_cpus::get();
     println!("   💻 Detected {} CPU cores", num_cpus);
     let parallel_chunks = num_cpus * 4;
-    println!(
-        "   ⚡ Using {} parallel chunks for processing",
-        parallel_chunks
-    );
+    println!("   ⚡ Using {} parallel chunks for processing", parallel_chunks);
     println!();
 
     if !vocalizations_dir.exists() {
@@ -281,17 +278,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(n) = limit {
         let original_len = flac_files.len();
         flac_files.truncate(n.min(original_len));
-        println!(
-            "📊 Limited to {} files (was {})",
-            flac_files.len(),
-            original_len
-        );
+        println!("📊 Limited to {} files (was {})", flac_files.len(), original_len);
     }
 
-    println!(
-        "   📂 Vocalizations Directory: {}",
-        vocalizations_dir.display()
-    );
+    println!("   📂 Vocalizations Directory: {}", vocalizations_dir.display());
     println!("   🔢 Total FLAC files: {}", flac_files.len());
     println!("   💾 Results Directory: {}", results_dir.display());
     println!();
@@ -311,10 +301,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("   ✅ Checkpoint loaded successfully!");
                 println!("      ├─ Processed at: {}", checkpoint.processed_at);
                 println!("      ├─ Previous files: {}", checkpoint.all_features.len());
-                println!(
-                    "      └─ Total files in checkpoint: {}",
-                    checkpoint.total_files
-                );
+                println!("      └─ Total files in checkpoint: {}", checkpoint.total_files);
 
                 for feat in checkpoint.all_features {
                     all_file_names.push(feat.file_name.clone());
@@ -391,10 +378,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|chunk| {
                 let mut local_features = Vec::new();
                 for (file_path, call_type) in chunk {
-                    let filename = file_path
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("unknown");
+                    let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
 
                     match load_flac_file(file_path) {
                         Ok(audio) => {
@@ -406,19 +390,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         file_name: filename.to_string(),
                                         call_type: call_type.name().to_string(),
                                         phrase_index: 0,
-                                        features: feature_vec
-                                            .into_iter()
-                                            .map(|v| v as f64)
-                                            .collect(),
-                                        duration_ms: audio.len() as f64 / sample_rate as f64
-                                            * 1000.0,
+                                        features: feature_vec.into_iter().map(|v| v as f64).collect(),
+                                        duration_ms: audio.len() as f64 / sample_rate as f64 * 1000.0,
                                     });
                                 }
                                 Err(e) => {
-                                    eprintln!(
-                                        "      Warning: Feature extraction failed for {}: {}",
-                                        filename, e
-                                    );
+                                    eprintln!("      Warning: Feature extraction failed for {}: {}", filename, e);
                                 }
                             }
                         }
@@ -596,17 +573,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cluster_start = Instant::now();
 
-    let hdbscan =
-        HdbscanClustering::with_metric(min_cluster_size, min_samples, DistanceMetric::Euclidean)?;
+    let hdbscan = HdbscanClustering::with_metric(min_cluster_size, min_samples, DistanceMetric::Euclidean)?;
 
     println!("   🔍 Running HDBSCAN...");
     let labels = hdbscan.fit_predict(&feature_matrix)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!(
-        "   ✅ Clustering complete in {:.2}s",
-        cluster_time.as_secs_f64()
-    );
+    println!("   ✅ Clustering complete in {:.2}s", cluster_time.as_secs_f64());
     println!();
 
     println!("┌─────────────────────────────────────────────────────────────────┐");
@@ -655,13 +628,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_offset = 100;
     let symbolic_stream: Vec<i32> = labels
         .iter()
-        .map(|&label| {
-            if label == -1 {
-                0
-            } else {
-                label + cluster_offset
-            }
-        })
+        .map(|&label| if label == -1 { 0 } else { label + cluster_offset })
         .collect();
 
     let mut symbol_counts: HashMap<i32, usize> = HashMap::new();
@@ -688,10 +655,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      ├──────────┼──────────┼─────────────┤");
     for (symbol, count) in sorted_symbols.iter().take(10) {
         let percentage = (**count as f64 / symbolic_stream.len() as f64) * 100.0;
-        println!(
-            "      │ {:>8} │ {:>8} │ {:>10.1}% │",
-            symbol, count, percentage
-        );
+        println!("      │ {:>8} │ {:>8} │ {:>10.1}% │", symbol, count, percentage);
     }
     println!("      └──────────┴──────────┴─────────────┘");
     println!();
@@ -733,10 +697,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    fs::write(
-        &clusters_path,
-        serde_json::to_string_pretty(&clusters_output)?,
-    )?;
+    fs::write(&clusters_path, serde_json::to_string_pretty(&clusters_output)?)?;
     println!("   💾 Clusters saved: {}", clusters_path.display());
 
     let stream_path = results_dir.join("symbolic_stream.txt");
@@ -751,11 +712,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let readable_path = results_dir.join("symbolic_stream_readable.csv");
     let mut readable_content = String::from("file_name,call_type,cluster_id,symbol\n");
     for (file_info, label) in all_features.iter().zip(labels.iter()) {
-        let symbol = if *label == -1 {
-            0
-        } else {
-            *label + cluster_offset
-        };
+        let symbol = if *label == -1 { 0 } else { *label + cluster_offset };
         readable_content.push_str(&format!(
             "{},{},{},{}\n",
             file_info.file_name, file_info.call_type, label, symbol
@@ -843,8 +800,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();

@@ -10,22 +10,24 @@ Usage:
 """
 
 import json
-import numpy as np
 import struct
 from pathlib import Path
-from sklearn.metrics import accuracy_score
+
 import joblib
+import numpy as np
+from sklearn.metrics import accuracy_score
 
 FEATURE_DIM = 112
 TEXTURE_DIM = 66
 TEXTURE_START = 46
 
+
 def load_bincode_features(filepath):
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
@@ -33,39 +35,45 @@ def load_bincode_features(filepath):
         data = f.read(length * 4)
         return np.frombuffer(data, dtype=np.float32).copy()
 
+
 # Taxonomic routing (simplified from Rust)
 TAXON_WEIGHTS = {
-    'Cetacean': {'ici': 3.0, 'fm': 2.5, 'centroid': 2.0},
-    'Mysticete': {'duration': 3.0, 'harmonic': 2.5, 'f0': 2.0},
-    'Songbird': {'f0': 1.8, 'harmonicity': 1.5, 'spectral': 1.5},
-    'Insect': {'rhythm': 3.5, 'centroid': 2.5, 'dynamics': 2.0},
-    'Mammal': {'formants': 2.0, 'fm': 2.5, 'f0': 1.5},
-    'Amphibian': {'dynamics': 3.0, 'rhythm': 2.5, 'f0': 2.0},
+    "Cetacean": {"ici": 3.0, "fm": 2.5, "centroid": 2.0},
+    "Mysticete": {"duration": 3.0, "harmonic": 2.5, "f0": 2.0},
+    "Songbird": {"f0": 1.8, "harmonicity": 1.5, "spectral": 1.5},
+    "Insect": {"rhythm": 3.5, "centroid": 2.5, "dynamics": 2.0},
+    "Mammal": {"formants": 2.0, "fm": 2.5, "f0": 1.5},
+    "Amphibian": {"dynamics": 3.0, "rhythm": 2.5, "f0": 2.0},
 }
+
 
 def map_species_to_taxon(species):
     s = species.lower()
-    if any(x in s for x in ['dolphin', 'porpoise', 'sperm', 'beaked', 'delphinid']):
-        return 'Cetacean'
-    if any(x in s for x in ['humpback', 'blue whale', 'minke', 'balaenopter']):
-        return 'Mysticete'
-    if any(x in s for x in ['sparrow', 'finch', 'warbler', 'thrush', 'robin', 'cardinal', 'towhee']):
-        return 'Songbird'
-    if any(x in s for x in ['cricket', 'mosquito', 'cicada', 'anopheles', 'aedes']):
-        return 'Insect'
-    if any(x in s for x in ['frog', 'toad', 'peeper']):
-        return 'Amphibian'
-    if any(x in s for x in ['bat', 'gibbon', 'monkey']):
-        return 'Mammal'
-    return 'Unknown'
+    if any(x in s for x in ["dolphin", "porpoise", "sperm", "beaked", "delphinid"]):
+        return "Cetacean"
+    if any(x in s for x in ["humpback", "blue whale", "minke", "balaenopter"]):
+        return "Mysticete"
+    if any(
+        x in s for x in ["sparrow", "finch", "warbler", "thrush", "robin", "cardinal", "towhee"]
+    ):
+        return "Songbird"
+    if any(x in s for x in ["cricket", "mosquito", "cicada", "anopheles", "aedes"]):
+        return "Insect"
+    if any(x in s for x in ["frog", "toad", "peeper"]):
+        return "Amphibian"
+    if any(x in s for x in ["bat", "gibbon", "monkey"]):
+        return "Mammal"
+    return "Unknown"
+
 
 def apply_taxonomic_mask(features, taxon):
     """Apply simple taxonomic weighting"""
     weights = np.ones(FEATURE_DIM)
     # Simplified: boost texture features for known taxa
-    if taxon != 'Unknown':
+    if taxon != "Unknown":
         weights[46:] *= 1.5  # Boost texture
     return features * weights
+
 
 def main():
     print("╔═══════════════════════════════════════════════════════════════════╗")
@@ -76,8 +84,8 @@ def main():
     # Load models
     print("Loading models...")
     rf_data = joblib.load("full_rf_model.joblib")
-    rf = rf_data['model']
-    rf_scaler = rf_data['scaler']
+    rf = rf_data["model"]
+    rf_scaler = rf_data["scaler"]
     print(f"  RF accuracy: {rf_data['accuracy']:.2f}%")
 
     # Load manifest
@@ -101,8 +109,12 @@ def main():
 
     for sample in samples[n_train:]:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
-        
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
+
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
             full_path = cache_dir / cache_file
@@ -148,6 +160,7 @@ def main():
     print("║  Using 66D texture features + masking outperforms 112D full      ║")
     print("║  Biological priors guide the network to relevant features        ║")
     print("╚═══════════════════════════════════════════════════════════════════╝")
+
 
 if __name__ == "__main__":
     main()

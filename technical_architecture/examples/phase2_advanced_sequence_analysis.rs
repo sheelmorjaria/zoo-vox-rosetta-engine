@@ -11,6 +11,7 @@
 //
 // Usage: cargo run --release --example phase2_advanced_sequence_analysis
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -157,10 +158,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Save sequences by context
     let seq_path = results_dir.join("sequences_by_context.json");
-    fs::write(
-        &seq_path,
-        serde_json::to_string_pretty(&sequences_by_context)?,
-    )?;
+    fs::write(&seq_path, serde_json::to_string_pretty(&sequences_by_context)?)?;
     println!("   💾 Sequences saved: {}", seq_path.display());
     println!();
 
@@ -269,12 +267,9 @@ fn load_annotations(path: impl AsRef<Path>) -> Result<Vec<Annotation>, Box<dyn s
 
 /// Load file-to-segments mapping from all_segments.json
 /// Returns: HashMap<file_name, Vec<level1_cluster_id>>
-fn load_file_segments(
-    results_dir: &Path,
-) -> Result<HashMap<String, Vec<i32>>, Box<dyn std::error::Error>> {
+fn load_file_segments(results_dir: &Path) -> Result<HashMap<String, Vec<i32>>, Box<dyn std::error::Error>> {
     let segments_path = results_dir.join("all_segments.json");
-    let segments_json: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
+    let segments_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&segments_path)?)?;
 
     println!("   📖 Parsing segment data...");
 
@@ -307,10 +302,7 @@ fn load_file_segments(
     println!("      Total segments: {}", total_count);
     println!("      Noise segments (skipped): {}", noise_count);
     println!("      Valid segments: {}", total_count - noise_count);
-    println!(
-        "      Unique files with valid segments: {}",
-        file_segments.len()
-    );
+    println!("      Unique files with valid segments: {}", file_segments.len());
 
     // Calculate average segments per file
     let avg_segments = if file_segments.is_empty() {
@@ -369,10 +361,7 @@ fn group_sequences_by_context(
     println!();
 
     // Validate unique cluster IDs
-    let all_ids: HashSet<i32> = file_segments
-        .values()
-        .flat_map(|ids| ids.iter().copied())
-        .collect();
+    let all_ids: HashSet<i32> = file_segments.values().flat_map(|ids| ids.iter().copied()).collect();
     println!("   📊 Cluster ID Statistics:");
     println!("      Unique cluster IDs (raw): {}", all_ids.len());
     println!(

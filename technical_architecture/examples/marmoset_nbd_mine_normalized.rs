@@ -6,6 +6,7 @@
 //! Uses random subsampling for statistical efficiency.
 //! Adapted from bat_nbd_mine.rs for marmoset data structure.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use rand::seq::SliceRandom;
 use rayon::prelude::*;
@@ -92,14 +93,8 @@ fn main() -> anyhow::Result<()> {
 
     if all_segments.len() > max_samples {
         println!();
-        println!(
-            "  ⚠  Large dataset detected ({} segments).",
-            all_segments.len()
-        );
-        println!(
-            "  Downsampling to {} for HDBSCAN efficiency...",
-            max_samples
-        );
+        println!("  ⚠  Large dataset detected ({} segments).", all_segments.len());
+        println!("  Downsampling to {} for HDBSCAN efficiency...", max_samples);
         println!("  (If discrete motifs exist, they will form clusters in any random sample)");
         println!();
 
@@ -290,10 +285,7 @@ fn main() -> anyhow::Result<()> {
             let pct = **count as f64 / cluster_0_indices.len() as f64 * 100.0;
             let bar_len = (pct / 2.5) as usize; // Max 40 chars
             let bar = "█".repeat(bar_len);
-            println!(
-                "  │  {:14}: {:6} ({:5.1}%) {:<40}",
-                call_type, count, pct, bar
-            );
+            println!("  │  {:14}: {:6} ({:5.1}%) {:<40}", call_type, count, pct, bar);
         }
         println!("  └─────────────────────────────────────────────────────────────────────────┘");
         println!();
@@ -329,11 +321,7 @@ fn main() -> anyhow::Result<()> {
             .sum();
 
         let max_entropy = (type_vec.len() as f64).log2(); // Max entropy if uniform
-        let normalized_entropy = if max_entropy > 0.0 {
-            entropy / max_entropy
-        } else {
-            0.0
-        };
+        let normalized_entropy = if max_entropy > 0.0 { entropy / max_entropy } else { 0.0 };
 
         println!("  │  Call Type Diversity Metrics:                                           ");
         println!(
@@ -365,9 +353,7 @@ fn main() -> anyhow::Result<()> {
             println!("  │  → FEATURES TOO SIMILAR: Uniform type mix                              ");
             println!("  │    Normalized 105D features don't discriminate between call types.     ");
             println!("  │    Marmosets use GRADED CONTINUUM, not discrete motifs.               ");
-            println!(
-                "  │                                                                          "
-            );
+            println!("  │                                                                          ");
             println!("  │    ⚠ THIS IS THE 'HOLY GRAIL' FINDING! ⚠                               ");
             println!("  │    Same acoustic substrate used for different call types.             ");
         } else {
@@ -425,9 +411,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Count stats in parallel using fold/reduce pattern
-fn count_stats_parallel(
-    segments: &[CachedSegmentNBD],
-) -> (HashMap<String, usize>, HashMap<String, usize>) {
+fn count_stats_parallel(segments: &[CachedSegmentNBD]) -> (HashMap<String, usize>, HashMap<String, usize>) {
     use std::sync::Mutex;
 
     let calltype_counts = Mutex::new(HashMap::new());
@@ -442,10 +426,7 @@ fn count_stats_parallel(
         }
     });
 
-    (
-        calltype_counts.into_inner().unwrap(),
-        file_counts.into_inner().unwrap(),
-    )
+    (calltype_counts.into_inner().unwrap(), file_counts.into_inner().unwrap())
 }
 
 fn print_full_stats(

@@ -9,6 +9,7 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_hierarchical_discovery
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -20,8 +21,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
-    SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric,
+    ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -133,8 +134,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total_start = Instant::now();
 
-    let data_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/zebra_finch/zebra_finch");
+    let data_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/zebra_finch/zebra_finch");
     let vocalizations_dir = data_dir.join("vocalizations");
     let annotations_path = data_dir.join("annotations.csv");
 
@@ -173,25 +173,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Hierarchical Configuration:");
     println!("  Level 0 (Motifs):");
-    println!(
-        "    ├─ Min Duration: {}ms",
-        motif_config.min_phrase_duration_ms
-    );
+    println!("    ├─ Min Duration: {}ms", motif_config.min_phrase_duration_ms);
     println!("    └─ Change Threshold: {}", motif_config.change_threshold);
     println!("  Level 1 (Syllables):");
-    println!(
-        "    ├─ Min Duration: {}ms",
-        syllable_config.min_phrase_duration_ms
-    );
-    println!(
-        "    └─ Change Threshold: {}",
-        syllable_config.change_threshold
-    );
+    println!("    ├─ Min Duration: {}ms", syllable_config.min_phrase_duration_ms);
+    println!("    └─ Change Threshold: {}", syllable_config.change_threshold);
     println!("  Level 2 (Notes):");
-    println!(
-        "    ├─ Min Duration: {}ms",
-        note_config.min_phrase_duration_ms
-    );
+    println!("    ├─ Min Duration: {}ms", note_config.min_phrase_duration_ms);
     println!("    └─ Change Threshold: {}", note_config.change_threshold);
     println!();
 
@@ -227,17 +215,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    SAMPLE_RATE,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
                 let result = motif_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
@@ -310,17 +294,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    SAMPLE_RATE,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
                 let result = syllable_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
@@ -368,17 +348,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    SAMPLE_RATE,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
                 let result = note_segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
@@ -424,9 +400,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     println!(
         "│ SYLLABLES     │ {:>5} │ {:>10} │ {:>8.1}ms  │ 30-150ms             │",
-        syllable_stats.total_phrases,
-        syllable_stats.total_candidates,
-        syllable_stats.avg_duration_ms
+        syllable_stats.total_phrases, syllable_stats.total_candidates, syllable_stats.avg_duration_ms
     );
     println!(
         "│ NOTES         │ {:>5} │ {:>10} │ {:>8.1}ms  │ 10-50ms              │",
@@ -437,14 +411,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Zebra Finch Vocal Hierarchy:");
     println!("  └─ Motif ({} types, ~350ms)", motif_stats.total_phrases);
-    println!(
-        "      └─ Syllable ({} types, ~50-100ms)",
-        syllable_stats.total_phrases
-    );
-    println!(
-        "          └─ Note ({} types, ~15-30ms)",
-        note_stats.total_phrases
-    );
+    println!("      └─ Syllable ({} types, ~50-100ms)", syllable_stats.total_phrases);
+    println!("          └─ Note ({} types, ~15-30ms)", note_stats.total_phrases);
     println!();
 
     // Save report
@@ -550,10 +518,7 @@ fn cluster_phrases(
     clusters
 }
 
-fn compute_centroid(
-    indices: &[usize],
-    candidates: &[(DynamicPhraseCandidate, String)],
-) -> Vec<f64> {
+fn compute_centroid(indices: &[usize], candidates: &[(DynamicPhraseCandidate, String)]) -> Vec<f64> {
     if indices.is_empty() {
         return vec![0.0; FEATURE_DIM];
     }
@@ -575,10 +540,7 @@ fn compute_centroid(
     centroid
 }
 
-fn compute_level_stats(
-    candidates: &[(DynamicPhraseCandidate, String)],
-    clusters: &[PhraseCluster],
-) -> LevelStats {
+fn compute_level_stats(candidates: &[(DynamicPhraseCandidate, String)], clusters: &[PhraseCluster]) -> LevelStats {
     let mut duration_dist: HashMap<String, usize> = HashMap::new();
     for (cand, _) in candidates {
         let bucket = match cand.duration_ms {
@@ -596,11 +558,7 @@ fn compute_level_stats(
     let avg_duration = if candidates.is_empty() {
         0.0
     } else {
-        candidates
-            .iter()
-            .map(|(c, _)| c.duration_ms as f64)
-            .sum::<f64>()
-            / candidates.len() as f64
+        candidates.iter().map(|(c, _)| c.duration_ms as f64).sum::<f64>() / candidates.len() as f64
     };
 
     let top_phrases: Vec<PhraseInfo> = clusters
@@ -656,10 +614,7 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader

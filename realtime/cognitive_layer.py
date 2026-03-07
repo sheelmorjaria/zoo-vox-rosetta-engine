@@ -170,6 +170,7 @@ class FewShotLearner:
         # Learning statistics
         self.success_history = deque(maxlen=100)
         self.learning_rate = config.adaptation_rate
+        self.logger = logging.getLogger(__name__)
 
     def extract_features(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
         """Extract audio features for learning"""

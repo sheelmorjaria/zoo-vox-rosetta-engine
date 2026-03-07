@@ -7,6 +7,7 @@
 //! - Turn-Taking Prediction: Response timing and patterns
 //! - Targeted Playback: "Digital Ventriloquism"
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -211,10 +212,7 @@ fn main() -> anyhow::Result<()> {
     // Group segments by file to find sequences
     let mut by_file: HashMap<String, Vec<&Segment>> = HashMap::new();
     for seg in &all_segments {
-        by_file
-            .entry(seg.source_file.clone())
-            .or_default()
-            .push(seg);
+        by_file.entry(seg.source_file.clone()).or_default().push(seg);
     }
 
     // Find turn-taking patterns (A→B transitions)
@@ -233,9 +231,7 @@ fn main() -> anyhow::Result<()> {
             if curr.emitter != next.emitter {
                 // curr.addressee == next.emitter means "A called B, B responded"
                 if curr.addressee == next.emitter {
-                    *turn_patterns
-                        .entry((curr.emitter, next.emitter))
-                        .or_insert(0) += 1;
+                    *turn_patterns.entry((curr.emitter, next.emitter)).or_insert(0) += 1;
                     response_times.push(next.start_ms - curr.end_ms);
                 }
             }

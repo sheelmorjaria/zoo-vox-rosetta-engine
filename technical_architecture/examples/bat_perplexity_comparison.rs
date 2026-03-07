@@ -4,6 +4,7 @@
 //! Detailed perplexity analysis comparing bat communication patterns
 //! with marmosets (conversational) and zebra finches (fixed song).
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 
@@ -62,12 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Detailed interpretation
     println!("\n=== DETAILED INTERPRETATION ===");
-    interpret_bat_communication(
-        bigram_perplexity,
-        bigram_ratio,
-        vocab.len(),
-        sequences.len(),
-    );
+    interpret_bat_communication(bigram_perplexity, bigram_ratio, vocab.len(), sequences.len());
 
     Ok(())
 }
@@ -137,10 +133,7 @@ fn generate_bat_motif_sequences(num_sequences: usize) -> Vec<PhraseSequence> {
         let pattern_idx = i % motif_patterns.len();
         let pattern = &motif_patterns[pattern_idx];
 
-        let phrases: Vec<String> = pattern
-            .iter()
-            .map(|&idx| format!("phrase_{}", idx))
-            .collect();
+        let phrases: Vec<String> = pattern.iter().map(|&idx| format!("phrase_{}", idx)).collect();
 
         sequences.push(PhraseSequence {
             source_id: format!("bat_motif_{}", i),
@@ -205,12 +198,7 @@ fn analyze_by_context(sequences: &[PhraseSequence]) -> Result<(), Box<dyn std::e
             0.0
         };
 
-        println!(
-            "  {:<13} | {:>9} | {:>16.4}",
-            context,
-            seqs.len(),
-            perplexity
-        );
+        println!("  {:<13} | {:>9} | {:>16.4}", context, seqs.len(), perplexity);
     }
 
     Ok(())
@@ -251,11 +239,7 @@ fn print_comparison(bat_perplexity: f64, bat_ratio: f64) {
         "Zebra Finch (Song)",
         zebra_finch_perplexity,
         zebra_finch_ratio,
-        if zebra_finch_ratio < 0.7 {
-            "FIXED"
-        } else {
-            "FLEX"
-        }
+        if zebra_finch_ratio < 0.7 { "FIXED" } else { "FLEX" }
     );
     println!("└────────────────────────────┴──────────────┴──────────────┴──────────────┘");
 
@@ -289,12 +273,7 @@ fn print_comparison(bat_perplexity: f64, bat_ratio: f64) {
     }
 }
 
-fn interpret_bat_communication(
-    perplexity: f64,
-    ratio: f64,
-    vocab_size: usize,
-    num_sequences: usize,
-) {
+fn interpret_bat_communication(perplexity: f64, ratio: f64, vocab_size: usize, num_sequences: usize) {
     println!("Egyptian Fruit Bat Communication Profile:");
     println!();
 

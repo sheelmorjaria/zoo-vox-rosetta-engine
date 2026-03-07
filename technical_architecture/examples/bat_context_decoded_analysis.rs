@@ -3,6 +3,7 @@
 // Maps context IDs to behavioral meanings and analyzes correlations
 // between emotional intensity, social complexity, and syllable repetition patterns.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -383,26 +384,14 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
         .collect();
 
     // Correlation analysis
-    let rep: Vec<f64> = decoded_statistics
-        .iter()
-        .map(|d| d.repetition_rate)
-        .collect();
+    let rep: Vec<f64> = decoded_statistics.iter().map(|d| d.repetition_rate).collect();
     let intensity: Vec<f64> = decoded_statistics
         .iter()
         .map(|d| d.emotional_intensity as f64)
         .collect();
-    let complexity: Vec<f64> = decoded_statistics
-        .iter()
-        .map(|d| d.social_complexity as f64)
-        .collect();
-    let duration: Vec<f64> = decoded_statistics
-        .iter()
-        .map(|d| d.avg_duration_ms)
-        .collect();
-    let phrases: Vec<f64> = decoded_statistics
-        .iter()
-        .map(|d| d.avg_phrases_per_call)
-        .collect();
+    let complexity: Vec<f64> = decoded_statistics.iter().map(|d| d.social_complexity as f64).collect();
+    let duration: Vec<f64> = decoded_statistics.iter().map(|d| d.avg_duration_ms).collect();
+    let phrases: Vec<f64> = decoded_statistics.iter().map(|d| d.avg_phrases_per_call).collect();
 
     let rep_vs_intensity = compute_pearson(&rep, &intensity);
     let rep_vs_complexity = compute_pearson(&rep, &complexity);
@@ -439,8 +428,7 @@ fn analyze_decoded(results: &CombinedResults) -> DecodedAnalysis {
     let key_findings = identify_key_findings(&decoded_statistics, &rep_vs_intensity, results);
 
     // Scientific summary
-    let scientific_summary =
-        generate_scientific_summary(&decoded_statistics, &rep_vs_intensity, results);
+    let scientific_summary = generate_scientific_summary(&decoded_statistics, &rep_vs_intensity, results);
 
     DecodedAnalysis {
         context_mapping,
@@ -505,7 +493,10 @@ fn identify_key_findings(
         findings.push(KeyFinding {
             rank: 1,
             title: "Maximum Syllable Repetition".to_string(),
-            observation: format!("{} shows {:.1}% repetition rate", highest.context_name, highest.repetition_rate),
+            observation: format!(
+                "{} shows {:.1}% repetition rate",
+                highest.context_name, highest.repetition_rate
+            ),
             statistic: format!("{} vocalizations analyzed", highest.n_vocalizations),
             interpretation: format!(
                 "{} contexts ({}) require emphatic communication, achieved through syllable repetition",
@@ -537,13 +528,9 @@ fn identify_key_findings(
         findings.push(KeyFinding {
             rank: 3,
             title: "Context Modulation Range".to_string(),
-            observation: format!(
-                "Repetition varies by {:.1} percentage points across contexts",
-                range
-            ),
+            observation: format!("Repetition varies by {:.1} percentage points across contexts", range),
             statistic: format!("χ² = 2071.70, p < 0.0001"),
-            interpretation: "Context significantly influences temporal syntax structure"
-                .to_string(),
+            interpretation: "Context significantly influences temporal syntax structure".to_string(),
         });
     }
 
@@ -551,8 +538,19 @@ fn identify_key_findings(
     findings.push(KeyFinding {
         rank: 4,
         title: "Intensity-Repetition Relationship".to_string(),
-        observation: format!("Correlation r = {:.3} between emotional intensity and repetition", corr.r),
-        statistic: format!("p = {:.4}, {}", corr.p, if corr.significant { "significant" } else { "not significant" }),
+        observation: format!(
+            "Correlation r = {:.3} between emotional intensity and repetition",
+            corr.r
+        ),
+        statistic: format!(
+            "p = {:.4}, {}",
+            corr.p,
+            if corr.significant {
+                "significant"
+            } else {
+                "not significant"
+            }
+        ),
         interpretation: if corr.r < -0.3 {
             "Higher emotional intensity leads to more syllable repetition - bats emphasize urgent messages".to_string()
         } else {
@@ -565,8 +563,7 @@ fn identify_key_findings(
     sorted_by_n.sort_by(|a, b| b.n_vocalizations.cmp(&a.n_vocalizations));
 
     if let Some(most_common) = sorted_by_n.first() {
-        let pct = most_common.n_vocalizations as f64 / results.metadata.total_vocalizations as f64
-            * 100.0;
+        let pct = most_common.n_vocalizations as f64 / results.metadata.total_vocalizations as f64 * 100.0;
         findings.push(KeyFinding {
             rank: 5,
             title: "Dominant Communication Context".to_string(),
@@ -616,9 +613,7 @@ fn generate_scientific_summary(
         ),
         sample_size: format!(
             "N = {} vocalizations, {} phrases detected, {} with repeated motifs",
-            results.metadata.total_vocalizations,
-            results.metadata.total_phrases,
-            results.metadata.total_motifs
+            results.metadata.total_vocalizations, results.metadata.total_phrases, results.metadata.total_motifs
         ),
         statistical_evidence: format!(
             "Chi-square test: χ² = 2071.70, p < 0.0001. \
@@ -661,11 +656,7 @@ impl DecodedAnalysis {
         for (id, info) in contexts.iter().take(12) {
             println!(
                 "   │ {:>3} │ {:<22} │ {:<13} │ {:>8} │ {:>9} │",
-                id,
-                info.short_name,
-                info.category,
-                info.emotional_intensity,
-                info.social_complexity
+                id, info.short_name, info.category, info.emotional_intensity, info.social_complexity
             );
         }
         println!("   └─────┴────────────────────────┴───────────────┴──────────┴───────────┘");
@@ -723,29 +714,23 @@ impl DecodedAnalysis {
             }
         );
 
-        println!(
-            "\n   Interpretation: {}",
-            self.correlation_analysis.interpretation
-        );
+        println!("\n   Interpretation: {}", self.correlation_analysis.interpretation);
 
         println!("\n📊 CATEGORY ANALYSIS:");
         println!("   High Arousal (Distress, Agonistic, Protest):");
         println!(
             "      Mean repetition: {:.1}%, N = {}",
-            self.category_analysis.high_arousal.mean_repetition,
-            self.category_analysis.high_arousal.n_vocalizations
+            self.category_analysis.high_arousal.mean_repetition, self.category_analysis.high_arousal.n_vocalizations
         );
         println!("   Social (Mating, Food Dispute, Social, Antiphonal):");
         println!(
             "      Mean repetition: {:.1}%, N = {}",
-            self.category_analysis.social.mean_repetition,
-            self.category_analysis.social.n_vocalizations
+            self.category_analysis.social.mean_repetition, self.category_analysis.social.n_vocalizations
         );
         println!("   Low Arousal (Resting, Isolation, Landing):");
         println!(
             "      Mean repetition: {:.1}%, N = {}",
-            self.category_analysis.low_arousal.mean_repetition,
-            self.category_analysis.low_arousal.n_vocalizations
+            self.category_analysis.low_arousal.mean_repetition, self.category_analysis.low_arousal.n_vocalizations
         );
 
         println!("\n📊 KEY FINDINGS:");
@@ -825,10 +810,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n📂 Loading combined analysis results...");
     let results = load_results(&results_path)?;
-    println!(
-        "   Loaded {} context statistics",
-        results.context_statistics.len()
-    );
+    println!("   Loaded {} context statistics", results.context_statistics.len());
 
     println!("\n🔬 Running decoded analysis...");
     let analysis = analyze_decoded(&results);

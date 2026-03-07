@@ -5,6 +5,7 @@
 //!
 //! Dataset: ~/birdsong_analysis/data/Vocalizations/
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
@@ -78,11 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let all_files: Vec<_> = walkdir::WalkDir::new(&marmoset_data_path)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .map_or(false, |ext| ext == "flac" || ext == "wav")
-        })
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "flac" || ext == "wav"))
         .take(MAX_FILES)
         .collect();
 
@@ -112,10 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =========================================================================
     // STEP 2: Feature Extraction
     // =========================================================================
-    println!(
-        "[2/4] Extracting 45D features from {} files...",
-        total_files
-    );
+    println!("[2/4] Extracting 45D features from {} files...", total_files);
 
     let extract_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
@@ -251,10 +245,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let num_types = phrase_types.len();
-    println!(
-        "  Found {} phrase types from {} phrases",
-        num_types, total_phrases
-    );
+    println!("  Found {} phrase types from {} phrases", num_types, total_phrases);
 
     // Build semantic dictionary
     let mut type_to_labels: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -417,10 +408,7 @@ fn load_wav_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> {
         return Err(format!("Unsupported bits per sample: {}", bits_per_sample).into());
     };
 
-    Ok(AudioData {
-        samples,
-        sample_rate,
-    })
+    Ok(AudioData { samples, sample_rate })
 }
 
 fn load_flac_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> {
@@ -442,8 +430,7 @@ fn load_flac_file(path: &Path) -> Result<AudioData, Box<dyn std::error::Error>> 
     let metadata_opts = MetadataOptions::default();
     let decoder_opts = DecoderOptions::default();
 
-    let probed =
-        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;

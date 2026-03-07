@@ -326,12 +326,7 @@ impl AcousticSimilarityEngine {
     }
 
     /// Find k most similar phrases to query
-    pub fn find_similar(
-        &self,
-        query: &Array1<f64>,
-        candidates: &[Array1<f64>],
-        k: usize,
-    ) -> Vec<(usize, f64)> {
+    pub fn find_similar(&self, query: &Array1<f64>, candidates: &[Array1<f64>], k: usize) -> Vec<(usize, f64)> {
         let mut distances: Vec<(usize, f64)> = candidates
             .iter()
             .enumerate()
@@ -455,17 +450,10 @@ impl SimilarityAnalysis {
 
                     // Track least similar within type (highest distance)
                     if least_similar_within.is_none()
-                        || dist
-                            > least_similar_within
-                                .as_ref()
-                                .map(|(_, _, d)| *d)
-                                .unwrap_or(0.0)
+                        || dist > least_similar_within.as_ref().map(|(_, _, d)| *d).unwrap_or(0.0)
                     {
-                        least_similar_within = Some((
-                            file_names[indices[i]].clone(),
-                            file_names[indices[j]].clone(),
-                            dist,
-                        ));
+                        least_similar_within =
+                            Some((file_names[indices[i]].clone(), file_names[indices[j]].clone(), dist));
                     }
                 }
             }
@@ -500,14 +488,9 @@ impl SimilarityAnalysis {
 
                         // Track most similar cross-type pair (lowest distance)
                         if most_similar_cross.is_none()
-                            || dist
-                                < most_similar_cross
-                                    .as_ref()
-                                    .map(|(_, _, d)| *d)
-                                    .unwrap_or(f64::MAX)
+                            || dist < most_similar_cross.as_ref().map(|(_, _, d)| *d).unwrap_or(f64::MAX)
                         {
-                            most_similar_cross =
-                                Some((file_names[idx_a].clone(), file_names[idx_b].clone(), dist));
+                            most_similar_cross = Some((file_names[idx_a].clone(), file_names[idx_b].clone(), dist));
                         }
                     }
                 }
@@ -542,9 +525,7 @@ impl SimilarityAnalysis {
             // Between-type variance
             let type_means: Vec<f64> = type_indices
                 .values()
-                .map(|indices| {
-                    indices.iter().map(|&i| col[i]).sum::<f64>() / indices.len().max(1) as f64
-                })
+                .map(|indices| indices.iter().map(|&i| col[i]).sum::<f64>() / indices.len().max(1) as f64)
                 .collect();
 
             let grand_mean = if !type_means.is_empty() {
@@ -554,11 +535,7 @@ impl SimilarityAnalysis {
             };
 
             let between_var = if !type_means.is_empty() {
-                type_means
-                    .iter()
-                    .map(|m| (m - grand_mean).powi(2))
-                    .sum::<f64>()
-                    / type_means.len() as f64
+                type_means.iter().map(|m| (m - grand_mean).powi(2)).sum::<f64>() / type_means.len() as f64
             } else {
                 0.0
             };
@@ -616,10 +593,7 @@ impl SimilarityAnalysis {
         // Convert feature_discrimination to struct format
         let feature_discrimination_struct: Vec<FeatureDiscrimination> = feature_discrimination
             .into_iter()
-            .map(|(feature_name, f_ratio)| FeatureDiscrimination {
-                feature_name,
-                f_ratio,
-            })
+            .map(|(feature_name, f_ratio)| FeatureDiscrimination { feature_name, f_ratio })
             .collect();
 
         Self {
@@ -631,12 +605,10 @@ impl SimilarityAnalysis {
                 file_b,
                 score,
             }),
-            least_similar_within_type: least_similar_within.map(|(file_a, file_b, score)| {
-                FilePair {
-                    file_a,
-                    file_b,
-                    score,
-                }
+            least_similar_within_type: least_similar_within.map(|(file_a, file_b, score)| FilePair {
+                file_a,
+                file_b,
+                score,
             }),
             feature_discrimination: feature_discrimination_struct,
             avg_within_distance: avg_within,
@@ -653,18 +625,9 @@ impl SimilarityAnalysis {
         println!("╚═══════════════════════════════════════════════════════════════╝");
 
         println!("\n📊 Overall Separation Metrics:");
-        println!(
-            "   • Average within-type distance: {:.4}",
-            self.avg_within_distance
-        );
-        println!(
-            "   • Average between-type distance: {:.4}",
-            self.avg_between_distance
-        );
-        println!(
-            "   • Separation ratio: {:.2}x (higher = better)",
-            self.separation_ratio
-        );
+        println!("   • Average within-type distance: {:.4}", self.avg_within_distance);
+        println!("   • Average between-type distance: {:.4}", self.avg_between_distance);
+        println!("   • Separation ratio: {:.2}x (higher = better)", self.separation_ratio);
 
         println!("\n📊 Within-Call-Type Similarity (higher = more cohesive):");
         let mut within: Vec<_> = self.within_type_similarity.iter().collect();
@@ -677,18 +640,12 @@ impl SimilarityAnalysis {
         let mut between: Vec<_> = self.between_type_list.iter().collect();
         between.sort_by(|a, b| b.distance.partial_cmp(&a.distance).unwrap());
         for entry in between.iter().take(10) {
-            println!(
-                "   • {} ↔ {}: {:.4}",
-                entry.type_a, entry.type_b, entry.distance
-            );
+            println!("   • {} ↔ {}: {:.4}", entry.type_a, entry.type_b, entry.distance);
         }
 
         if let Some(pair) = &self.most_similar_cross_type {
             println!("\n⚠️  Most similar cross-type pair:");
-            println!(
-                "   {} ↔ {} (distance: {:.4})",
-                pair.file_a, pair.file_b, pair.score
-            );
+            println!("   {} ↔ {} (distance: {:.4})", pair.file_a, pair.file_b, pair.score);
             if pair.score < 0.5 {
                 println!("   ⚠️  WARNING: Low distance suggests potential call type confusion");
             }
@@ -696,10 +653,7 @@ impl SimilarityAnalysis {
 
         if let Some(pair) = &self.least_similar_within_type {
             println!("\n⚠️  Least similar within-type pair:");
-            println!(
-                "   {} ↔ {} (distance: {:.4})",
-                pair.file_a, pair.file_b, pair.score
-            );
+            println!("   {} ↔ {} (distance: {:.4})", pair.file_a, pair.file_b, pair.score);
             if pair.score > 2.0 {
                 println!("   ⚠️  WARNING: High within-type variance detected");
             }
@@ -868,11 +822,7 @@ impl KnnClassifier {
 
         // Distance-weighted voting
         let mut votes: HashMap<String, f64> = HashMap::new();
-        let total_weight: f64 = distances
-            .iter()
-            .take(k)
-            .map(|(_, d)| 1.0 / (d + 1e-10))
-            .sum();
+        let total_weight: f64 = distances.iter().take(k).map(|(_, d)| 1.0 / (d + 1e-10)).sum();
 
         for (idx, dist) in distances.iter().take(k) {
             let label = &self.train_labels[*idx];
@@ -1089,12 +1039,7 @@ impl SimilarityIndex {
 
     /// Find phrases most similar to query
     pub fn search(&self, query: &Array1<f64>, k: usize) -> Vec<SearchResult> {
-        let candidates: Vec<_> = self
-            .features
-            .rows()
-            .into_iter()
-            .map(|r| r.to_owned())
-            .collect();
+        let candidates: Vec<_> = self.features.rows().into_iter().map(|r| r.to_owned()).collect();
 
         let distances = self.engine.find_similar(query, &candidates, k);
 
@@ -1151,18 +1096,16 @@ impl SimilarityIndex {
 
         let n_neighbors = neighbors.len();
 
-        let type_counts: HashMap<String, usize> = neighbors
-            .iter()
-            .map(|(i, _)| self.call_types[*i].clone())
-            .fold(HashMap::new(), |mut acc, ct| {
-                *acc.entry(ct).or_default() += 1;
-                acc
-            });
+        let type_counts: HashMap<String, usize> =
+            neighbors
+                .iter()
+                .map(|(i, _)| self.call_types[*i].clone())
+                .fold(HashMap::new(), |mut acc, ct| {
+                    *acc.entry(ct).or_default() += 1;
+                    acc
+                });
 
-        let dominant_type = type_counts
-            .iter()
-            .max_by_key(|(_, c)| *c)
-            .map(|(t, _)| t.clone());
+        let dominant_type = type_counts.iter().max_by_key(|(_, c)| *c).map(|(t, _)| t.clone());
 
         let type_purity = if n_neighbors > 0 {
             type_counts.values().max().copied().unwrap_or(0) as f64 / n_neighbors as f64
@@ -1285,18 +1228,8 @@ mod tests {
     #[test]
     fn test_knn_classifier() {
         let features = create_test_features();
-        let labels = vec![
-            "A".to_string(),
-            "A".to_string(),
-            "B".to_string(),
-            "B".to_string(),
-        ];
-        let files = vec![
-            "f1".to_string(),
-            "f2".to_string(),
-            "f3".to_string(),
-            "f4".to_string(),
-        ];
+        let labels = vec!["A".to_string(), "A".to_string(), "B".to_string(), "B".to_string()];
+        let files = vec!["f1".to_string(), "f2".to_string(), "f3".to_string(), "f4".to_string()];
 
         let classifier = KnnClassifier::new(features, labels, files);
 
@@ -1310,18 +1243,8 @@ mod tests {
     #[test]
     fn test_similarity_index() {
         let features = create_test_features();
-        let files = vec![
-            "f1".to_string(),
-            "f2".to_string(),
-            "f3".to_string(),
-            "f4".to_string(),
-        ];
-        let types = vec![
-            "A".to_string(),
-            "A".to_string(),
-            "B".to_string(),
-            "B".to_string(),
-        ];
+        let files = vec!["f1".to_string(), "f2".to_string(), "f3".to_string(), "f4".to_string()];
+        let types = vec!["A".to_string(), "A".to_string(), "B".to_string(), "B".to_string()];
 
         let index = SimilarityIndex::new(features, files, types);
 
@@ -1335,18 +1258,8 @@ mod tests {
     #[test]
     fn test_similarity_analysis() {
         let features = create_test_features();
-        let labels = vec![
-            "A".to_string(),
-            "A".to_string(),
-            "B".to_string(),
-            "B".to_string(),
-        ];
-        let files = vec![
-            "f1".to_string(),
-            "f2".to_string(),
-            "f3".to_string(),
-            "f4".to_string(),
-        ];
+        let labels = vec!["A".to_string(), "A".to_string(), "B".to_string(), "B".to_string()];
+        let files = vec!["f1".to_string(), "f2".to_string(), "f3".to_string(), "f4".to_string()];
         let feature_names = vec!["f0", "f1", "f2", "f3", "f4"];
 
         let analysis = SimilarityAnalysis::analyze(&features, &labels, &files, &feature_names);
@@ -1401,9 +1314,12 @@ impl PyAcousticSimilarityEngine {
             "Cosine" | "cosine" => DistanceMetric::Cosine,
             "Manhattan" | "manhattan" => DistanceMetric::Manhattan,
             "Chebyshev" | "chebyshev" => DistanceMetric::Chebyshev,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err(
-                format!("Unknown metric: {}. Valid options: WeightedEuclidean, Cosine, Manhattan, Chebyshev", metric)
-            )),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Unknown metric: {}. Valid options: WeightedEuclidean, Cosine, Manhattan, Chebyshev",
+                    metric
+                )))
+            }
         };
         Ok(Self {
             inner: AcousticSimilarityEngine::with_metric(feature_dim, distance_metric),

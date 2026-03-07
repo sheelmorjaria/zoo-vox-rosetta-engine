@@ -12,6 +12,7 @@
 //
 // Usage: cargo run --release --example bat_within_call_context_analysis
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -149,7 +150,7 @@ struct RepetitionStats {
 struct VocabularyComplexityAnalysis {
     // Which contexts have richer vocabulary?
     context_entropy_ranking: Vec<ContextEntropyRanking>,
-    simple_calls_by_context: HashMap<i32, usize>, // entropy < 0.3
+    simple_calls_by_context: HashMap<i32, usize>,  // entropy < 0.3
     complex_calls_by_context: HashMap<i32, usize>, // entropy >= 0.3
     interpretation: String,
 }
@@ -205,8 +206,8 @@ struct ContextPhraseRate {
 struct MotifContextAssociation {
     // Which motif patterns are associated with which contexts?
     pattern_context_distribution: HashMap<String, Vec<(i32, f64)>>, // pattern -> [(context, percentage)]
-    context_specific_patterns: HashMap<i32, Vec<String>>, // context -> patterns that are overrepresented
-    universal_patterns: Vec<String>,                      // patterns found across all contexts
+    context_specific_patterns: HashMap<i32, Vec<String>>,           // context -> patterns that are overrepresented
+    universal_patterns: Vec<String>,                                // patterns found across all contexts
 }
 
 // =============================================================================
@@ -226,19 +227,14 @@ fn load_annotations(path: &PathBuf) -> Result<Vec<Annotation>, Box<dyn std::erro
     Ok(annotations)
 }
 
-fn load_within_call_results(
-    path: &PathBuf,
-) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
+fn load_within_call_results(path: &PathBuf) -> Result<Vec<WithinCallAnalysis>, Box<dyn std::error::Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let results = serde_json::from_reader(reader)?;
     Ok(results)
 }
 
-fn analyze_combined(
-    analyses: &[WithinCallAnalysis],
-    annotations: &[Annotation],
-) -> CombinedAnalysisResults {
+fn analyze_combined(analyses: &[WithinCallAnalysis], annotations: &[Annotation]) -> CombinedAnalysisResults {
     // Build file_name -> context mapping
     let file_context_map: HashMap<String, i32> = annotations
         .iter()
@@ -309,9 +305,7 @@ fn analyze_combined(
     }
 }
 
-fn compute_context_statistics(
-    by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>,
-) -> Vec<ContextStatistics> {
+fn compute_context_statistics(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> Vec<ContextStatistics> {
     let mut stats = Vec::new();
 
     for (&context_id, analyses) in by_context {
@@ -320,28 +314,18 @@ fn compute_context_statistics(
         let n_motifs: usize = analyses.iter().map(|a| a.motifs.len()).sum();
 
         let avg_phrases_per_call = n_phrases as f64 / n_vocalizations as f64;
-        let avg_duration_ms =
-            analyses.iter().map(|a| a.total_duration_ms).sum::<f64>() / n_vocalizations as f64;
+        let avg_duration_ms = analyses.iter().map(|a| a.total_duration_ms).sum::<f64>() / n_vocalizations as f64;
 
-        let analyses_with_phrases: Vec<_> =
-            analyses.iter().filter(|a| a.stats.n_phrases > 0).collect();
+        let analyses_with_phrases: Vec<_> = analyses.iter().filter(|a| a.stats.n_phrases > 0).collect();
 
         let avg_entropy = if !analyses_with_phrases.is_empty() {
-            analyses_with_phrases
-                .iter()
-                .map(|a| a.stats.type_entropy)
-                .sum::<f64>()
-                / analyses_with_phrases.len() as f64
+            analyses_with_phrases.iter().map(|a| a.stats.type_entropy).sum::<f64>() / analyses_with_phrases.len() as f64
         } else {
             0.0
         };
 
         let avg_phrase_rate = if !analyses_with_phrases.is_empty() {
-            analyses_with_phrases
-                .iter()
-                .map(|a| a.stats.phrase_rate)
-                .sum::<f64>()
-                / analyses_with_phrases.len() as f64
+            analyses_with_phrases.iter().map(|a| a.stats.phrase_rate).sum::<f64>() / analyses_with_phrases.len() as f64
         } else {
             0.0
         };
@@ -419,10 +403,7 @@ fn analyze_repetition(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> Re
 
     context_scores.sort_by(|a, b| b.repetition_rate.partial_cmp(&a.repetition_rate).unwrap());
 
-    let overall_repetition_rate = context_scores
-        .iter()
-        .map(|s| s.n_with_repetition as f64)
-        .sum::<f64>()
+    let overall_repetition_rate = context_scores.iter().map(|s| s.n_with_repetition as f64).sum::<f64>()
         / context_scores.iter().map(|s| s.n_calls as f64).sum::<f64>()
         * 100.0;
 
@@ -456,15 +437,9 @@ fn analyze_repetition(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> Re
             chi_square,
             p_value,
             most_repetitive.unwrap_or(-1),
-            context_scores
-                .first()
-                .map(|s| s.repetition_rate)
-                .unwrap_or(0.0),
+            context_scores.first().map(|s| s.repetition_rate).unwrap_or(0.0),
             least_repetitive.unwrap_or(-1),
-            context_scores
-                .last()
-                .map(|s| s.repetition_rate)
-                .unwrap_or(0.0)
+            context_scores.last().map(|s| s.repetition_rate).unwrap_or(0.0)
         )
     } else {
         format!(
@@ -520,9 +495,7 @@ fn erf(x: f64) -> f64 {
     sign * y
 }
 
-fn analyze_vocabulary_complexity(
-    by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>,
-) -> VocabularyComplexityAnalysis {
+fn analyze_vocabulary_complexity(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> VocabularyComplexityAnalysis {
     let mut rankings: Vec<ContextEntropyRanking> = Vec::new();
     let mut simple_by_context: HashMap<i32, usize> = HashMap::new();
     let mut complex_by_context: HashMap<i32, usize> = HashMap::new();
@@ -603,11 +576,7 @@ fn analyze_duration(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> Dura
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         let median = sorted[sorted.len() / 2];
-        let variance = duration_vals
-            .iter()
-            .map(|d| (d - mean).powi(2))
-            .sum::<f64>()
-            / duration_vals.len() as f64;
+        let variance = duration_vals.iter().map(|d| (d - mean).powi(2)).sum::<f64>() / duration_vals.len() as f64;
 
         durations.push(ContextDuration {
             context_id,
@@ -626,10 +595,7 @@ fn analyze_duration(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> Dura
     let shortest = durations.last().map(|d| d.context_id);
 
     // Simplified variance explained (ratio of between-group to total variance)
-    let overall_mean: f64 = durations
-        .iter()
-        .map(|d| d.mean_ms * d.n_calls as f64)
-        .sum::<f64>()
+    let overall_mean: f64 = durations.iter().map(|d| d.mean_ms * d.n_calls as f64).sum::<f64>()
         / durations.iter().map(|d| d.n_calls as f64).sum::<f64>();
 
     let between_var: f64 = durations
@@ -669,8 +635,7 @@ fn analyze_phrase_rate(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> P
         }
 
         let mean = rate_vals.iter().sum::<f64>() / rate_vals.len() as f64;
-        let variance =
-            rate_vals.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / rate_vals.len() as f64;
+        let variance = rate_vals.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / rate_vals.len() as f64;
 
         let mut sorted = rate_vals.clone();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -696,9 +661,7 @@ fn analyze_phrase_rate(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> P
     }
 }
 
-fn analyze_motif_context_association(
-    by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>,
-) -> MotifContextAssociation {
+fn analyze_motif_context_association(by_context: &HashMap<i32, Vec<&WithinCallAnalysis>>) -> MotifContextAssociation {
     let mut pattern_context_counts: HashMap<String, HashMap<i32, usize>> = HashMap::new();
     let mut total_by_context: HashMap<i32, usize> = HashMap::new();
 
@@ -748,14 +711,9 @@ fn analyze_motif_context_association(
     // Find context-specific patterns (>50% in one context)
     let mut context_specific: HashMap<i32, Vec<String>> = HashMap::new();
     for (pattern, dist) in &pattern_context_distribution {
-        if let Some((dominant_ctx, dominant_pct)) =
-            dist.iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-        {
+        if let Some((dominant_ctx, dominant_pct)) = dist.iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap()) {
             if *dominant_pct > 50.0 {
-                context_specific
-                    .entry(*dominant_ctx)
-                    .or_default()
-                    .push(pattern.clone());
+                context_specific.entry(*dominant_ctx).or_default().push(pattern.clone());
             }
         }
     }
@@ -849,11 +807,7 @@ fn generate_key_findings(
             "📊 PREVALENCE: Context {} is most common ({:.1}% of vocalizations, {} calls). \
              Avg {:.1} phrases/call, {:.1}% with motifs.",
             top_context.context_id,
-            top_context.n_vocalizations as f64
-                / context_stats
-                    .iter()
-                    .map(|c| c.n_vocalizations)
-                    .sum::<usize>() as f64
+            top_context.n_vocalizations as f64 / context_stats.iter().map(|c| c.n_vocalizations).sum::<usize>() as f64
                 * 100.0,
             top_context.n_vocalizations,
             top_context.avg_phrases_per_call,
@@ -875,18 +829,12 @@ impl CombinedAnalysisResults {
         println!("╚═══════════════════════════════════════════════════════════════╝");
 
         println!("\n📊 METADATA");
-        println!(
-            "   ├─ Total vocalizations: {:>12}",
-            self.metadata.total_vocalizations
-        );
+        println!("   ├─ Total vocalizations: {:>12}", self.metadata.total_vocalizations);
         println!(
             "   ├─ Matched with annotations: {:>8}",
             self.metadata.total_with_annotations
         );
-        println!(
-            "   ├─ Unique contexts: {:>15}",
-            self.metadata.unique_contexts
-        );
+        println!("   ├─ Unique contexts: {:>15}", self.metadata.unique_contexts);
         println!("   ├─ Total phrases: {:>16}", self.metadata.total_phrases);
         println!("   └─ Total motifs: {:>18}", self.metadata.total_motifs);
 
@@ -900,11 +848,7 @@ impl CombinedAnalysisResults {
         for ctx in self.context_statistics.iter().take(10) {
             println!(
                 "   {:<10} {:>10} {:>12.1} {:>9.1}% {:>10.0}ms",
-                ctx.context_id,
-                ctx.n_vocalizations,
-                ctx.avg_phrases_per_call,
-                ctx.pct_with_motifs,
-                ctx.avg_duration_ms
+                ctx.context_id, ctx.n_vocalizations, ctx.avg_phrases_per_call, ctx.pct_with_motifs, ctx.avg_duration_ms
             );
         }
 
@@ -915,9 +859,7 @@ impl CombinedAnalysisResults {
         );
         println!(
             "   ├─ Most repetitive context: {} ({:.1}%)",
-            self.repetition_analysis
-                .most_repetitive_context
-                .unwrap_or(-1),
+            self.repetition_analysis.most_repetitive_context.unwrap_or(-1),
             self.repetition_analysis
                 .context_repetition_scores
                 .first()
@@ -926,9 +868,7 @@ impl CombinedAnalysisResults {
         );
         println!(
             "   └─ Least repetitive context: {} ({:.1}%)",
-            self.repetition_analysis
-                .least_repetitive_context
-                .unwrap_or(-1),
+            self.repetition_analysis.least_repetitive_context.unwrap_or(-1),
             self.repetition_analysis
                 .context_repetition_scores
                 .last()
@@ -937,10 +877,7 @@ impl CombinedAnalysisResults {
         );
 
         println!("\n📊 STATISTICAL TEST");
-        println!(
-            "   {}",
-            self.repetition_analysis.statistical_summary.interpretation
-        );
+        println!("   {}", self.repetition_analysis.statistical_summary.interpretation);
 
         println!("\n📊 VOCABULARY COMPLEXITY (Top 5 by entropy)");
         println!(
@@ -949,12 +886,7 @@ impl CombinedAnalysisResults {
         );
         println!("   {}", "-".repeat(48));
 
-        for ranking in self
-            .vocabulary_complexity
-            .context_entropy_ranking
-            .iter()
-            .take(5)
-        {
+        for ranking in self.vocabulary_complexity.context_entropy_ranking.iter().take(5) {
             println!(
                 "   {:<10} {:>10} {:>12.4} {:>11.1}%",
                 ranking.context_id, ranking.n_calls, ranking.mean_entropy, ranking.pct_complex
@@ -1017,24 +949,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let data_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats");
     let annotations_path = data_dir.join("annotations.csv");
-    let within_call_path =
-        data_dir.join("within_call_phrase_results/bat_within_call_analyses.json");
+    let within_call_path = data_dir.join("within_call_phrase_results/bat_within_call_analyses.json");
     let output_dir = data_dir.join("within_call_context_analysis");
 
     std::fs::create_dir_all(&output_dir)?;
 
     // Load data
-    println!(
-        "📂 Loading annotations from: {}",
-        annotations_path.display()
-    );
+    println!("📂 Loading annotations from: {}", annotations_path.display());
     let annotations = load_annotations(&annotations_path)?;
     println!("   Loaded {} annotations", annotations.len());
 
-    println!(
-        "\n📂 Loading within-call results from: {}",
-        within_call_path.display()
-    );
+    println!("\n📂 Loading within-call results from: {}", within_call_path.display());
     let analyses = load_within_call_results(&within_call_path)?;
     println!("   Loaded {} within-call analyses", analyses.len());
     println!();

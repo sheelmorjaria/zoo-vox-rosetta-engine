@@ -317,12 +317,7 @@ impl TimeSeriesArchiver {
     ) -> Result<Vec<TimeSeriesPoint>> {
         // In production, this would query InfluxDB
         // For now, return empty vec
-        log::debug!(
-            "Querying measurement '{}' from {:?} to {:?}",
-            measurement,
-            start,
-            end
-        );
+        log::debug!("Querying measurement '{}' from {:?} to {:?}", measurement, start, end);
         Ok(Vec::new())
     }
 
@@ -340,11 +335,7 @@ impl TimeSeriesArchiver {
         // 3. Compress using specified compression
         // 4. Write to file
 
-        log::debug!(
-            "Exporting measurement '{}' to Parquet: {:?}",
-            measurement,
-            output_path
-        );
+        log::debug!("Exporting measurement '{}' to Parquet: {:?}", measurement, output_path);
 
         Ok(0)
     }
@@ -361,20 +352,12 @@ impl TimeSeriesArchiver {
     }
 
     /// Downsample old data to lower resolution
-    pub fn downsample_data(
-        &self,
-        source_policy: &RetentionPolicy,
-        target_policy: &RetentionPolicy,
-    ) -> Result<u64> {
+    pub fn downsample_data(&self, source_policy: &RetentionPolicy, target_policy: &RetentionPolicy) -> Result<u64> {
         // In production, this would:
         // 1. Query data at source resolution
         // 2. Aggregate to target resolution
         // 3. Write to target retention policy
-        log::debug!(
-            "Downsampling from '{}' to '{}'",
-            source_policy.name,
-            target_policy.name
-        );
+        log::debug!("Downsampling from '{}' to '{}'", source_policy.name, target_policy.name);
         Ok(0)
     }
 
@@ -597,11 +580,7 @@ mod tests {
     fn test_archiver_write_multiple_points() {
         let archiver = TimeSeriesArchiver::with_default_url("http://localhost:8086");
 
-        let points = vec![
-            create_test_point(),
-            create_test_point(),
-            create_test_point(),
-        ];
+        let points = vec![create_test_point(), create_test_point(), create_test_point()];
 
         assert!(archiver.write_points(points).is_ok());
     }

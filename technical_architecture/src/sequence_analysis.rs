@@ -166,11 +166,7 @@ impl MultipleSequenceAligner {
     }
 
     /// Progressive alignment following guide tree
-    fn progressive_align(
-        &self,
-        sequences: &[Vec<i32>],
-        _guide_tree: &[Vec<usize>],
-    ) -> Result<Vec<Vec<i32>>> {
+    fn progressive_align(&self, sequences: &[Vec<i32>], _guide_tree: &[Vec<usize>]) -> Result<Vec<Vec<i32>>> {
         // Simplified: align each sequence to the first one
         let mut aligned = Vec::new();
         let reference = &sequences[0];
@@ -410,19 +406,11 @@ pub struct SequenceHmm {
 
 impl SequenceHmm {
     pub fn new(n_states: usize, n_symbols: usize) -> Self {
-        Self {
-            n_states,
-            n_symbols,
-        }
+        Self { n_states, n_symbols }
     }
 
     /// Train HMM using Baum-Welch algorithm
-    pub fn train(
-        &self,
-        sequences: &[Vec<i32>],
-        max_iterations: usize,
-        tolerance: f64,
-    ) -> Result<HmmAnalysisResult> {
+    pub fn train(&self, sequences: &[Vec<i32>], max_iterations: usize, tolerance: f64) -> Result<HmmAnalysisResult> {
         if sequences.is_empty() {
             return Err(SequenceAnalysisError::InsufficientData { min: 1, actual: 0 });
         }
@@ -436,18 +424,10 @@ impl SequenceHmm {
 
         for iteration in 0..max_iterations {
             // E-step: Compute expected counts
-            let (gamma, xi, log_likelihood) =
-                self.expectation_step(sequences, &transition, &emission, &initial)?;
+            let (gamma, xi, log_likelihood) = self.expectation_step(sequences, &transition, &emission, &initial)?;
 
             // M-step: Update parameters
-            self.maximization_step(
-                sequences,
-                &gamma,
-                &xi,
-                &mut transition,
-                &mut emission,
-                &mut initial,
-            );
+            self.maximization_step(sequences, &gamma, &xi, &mut transition, &mut emission, &mut initial);
 
             // Check convergence
             if (log_likelihood - prev_log_likelihood).abs() < tolerance {
@@ -468,18 +448,10 @@ impl SequenceHmm {
 
         // Convert Array2 matrices to Vec for serialization
         let transition_vec: Vec<Vec<f64>> = (0..transition.nrows())
-            .map(|row| {
-                (0..transition.ncols())
-                    .map(|col| transition[[row, col]])
-                    .collect()
-            })
+            .map(|row| (0..transition.ncols()).map(|col| transition[[row, col]]).collect())
             .collect();
         let emission_vec: Vec<Vec<f64>> = (0..emission.nrows())
-            .map(|row| {
-                (0..emission.ncols())
-                    .map(|col| emission[[row, col]])
-                    .collect()
-            })
+            .map(|row| (0..emission.ncols()).map(|col| emission[[row, col]]).collect())
             .collect();
 
         Ok(HmmAnalysisResult {
@@ -649,28 +621,16 @@ impl SequenceHmm {
     }
 
     /// Generate human-readable state descriptions
-    fn describe_states(
-        &self,
-        transition: &Array2<f64>,
-        emission: &Array2<f64>,
-    ) -> Vec<StateDescription> {
+    fn describe_states(&self, transition: &Array2<f64>, emission: &Array2<f64>) -> Vec<StateDescription> {
         let mut descriptions = Vec::new();
 
         for state in 0..self.n_states {
             // Find top emissions
-            let mut emissions: Vec<(usize, f64)> = emission
-                .row(state)
-                .iter()
-                .enumerate()
-                .map(|(i, &p)| (i, p))
-                .collect();
+            let mut emissions: Vec<(usize, f64)> =
+                emission.row(state).iter().enumerate().map(|(i, &p)| (i, p)).collect();
             emissions.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-            let top_emissions = emissions
-                .iter()
-                .take(5)
-                .map(|(i, p)| (*i as i32, *p))
-                .collect();
+            let top_emissions = emissions.iter().take(5).map(|(i, p)| (*i as i32, *p)).collect();
 
             // Compute emission entropy
             let mut entropy = 0.0;
@@ -1150,17 +1110,9 @@ impl ContextClassifier {
     }
 
     /// Extract most predictive sequences
-    fn extract_predictive_sequences(
-        &self,
-        _features: &[Vec<f64>],
-        _labels: &[usize],
-    ) -> Vec<(Vec<i32>, f64)> {
+    fn extract_predictive_sequences(&self, _features: &[Vec<f64>], _labels: &[usize]) -> Vec<(Vec<i32>, f64)> {
         // Placeholder - would analyze feature importances
-        vec![
-            (vec![101, 102], 0.85),
-            (vec![102, 103], 0.78),
-            (vec![104, 105], 0.72),
-        ]
+        vec![(vec![101, 102], 0.85), (vec![102, 103], 0.78), (vec![104, 105], 0.72)]
     }
 }
 
@@ -1190,10 +1142,7 @@ impl SequenceAnalysisSuite {
         println!();
 
         // Flatten sequences for methods that need all data
-        let all_sequences: Vec<_> = sequences_by_context
-            .values()
-            .flat_map(|v| v.clone())
-            .collect();
+        let all_sequences: Vec<_> = sequences_by_context.values().flat_map(|v| v.clone()).collect();
 
         let mut report = SequenceAnalysisReport::default();
 
@@ -1218,16 +1167,11 @@ impl SequenceAnalysisSuite {
                     println!("      Found {} conserved regions", n_conserved);
 
                     for (start, end, score) in &msa_result.conserved_regions {
-                        println!(
-                            "      Region [{}-{}]: conservation={:.2}",
-                            start, end, score
-                        );
+                        println!("      Region [{}-{}]: conservation={:.2}", start, end, score);
                     }
 
                     report.msa_conserved_regions += n_conserved;
-                    report
-                        .msa_results
-                        .insert(format!("{}_vs_{}", ctx1, ctx2), msa_result);
+                    report.msa_results.insert(format!("{}_vs_{}", ctx1, ctx2), msa_result);
                 }
             }
         }
@@ -1242,10 +1186,7 @@ impl SequenceAnalysisSuite {
         println!();
 
         // Calculate required symbol capacity from unique phrase labels
-        let unique_symbols: HashSet<i32> = all_sequences
-            .iter()
-            .flat_map(|s| s.iter().copied())
-            .collect();
+        let unique_symbols: HashSet<i32> = all_sequences.iter().flat_map(|s| s.iter().copied()).collect();
         let n_symbols = unique_symbols.len().max(200); // At least 200, or actual unique count
         let n_states = 5.min(unique_symbols.len()); // Use 5 states or fewer if limited symbols
 
@@ -1334,16 +1275,10 @@ impl SequenceAnalysisSuite {
         match motif_analyzer.find_motifs(&transitions_by_context) {
             Ok(motif_result) => {
                 println!("   Found {} motifs", motif_result.motifs.len());
-                println!(
-                    "   Multi-context motifs: {}",
-                    motif_result.multi_context_motifs.len()
-                );
+                println!("   Multi-context motifs: {}", motif_result.multi_context_motifs.len());
 
                 for &(motif_id, n_ctx) in &motif_result.multi_context_motifs {
-                    println!(
-                        "      Motif {}: appears in {} contexts",
-                        motif_id, n_ctx as usize
-                    );
+                    println!("      Motif {}: appears in {} contexts", motif_id, n_ctx as usize);
                 }
 
                 report.network_motifs = motif_result.motifs.len();
@@ -1367,18 +1302,9 @@ impl SequenceAnalysisSuite {
 
         match classifier.compare_feature_types(sequences_by_context) {
             Ok(ml_result) => {
-                println!(
-                    "   Bag-of-Words Accuracy: {:.2}%",
-                    ml_result.bow_accuracy * 100.0
-                );
-                println!(
-                    "   N-Gram Syntax Accuracy: {:.2}%",
-                    ml_result.ngram_accuracy * 100.0
-                );
-                println!(
-                    "   Improvement: {:.2}%",
-                    ml_result.accuracy_improvement * 100.0
-                );
+                println!("   Bag-of-Words Accuracy: {:.2}%", ml_result.bow_accuracy * 100.0);
+                println!("   N-Gram Syntax Accuracy: {:.2}%", ml_result.ngram_accuracy * 100.0);
+                println!("   Improvement: {:.2}%", ml_result.accuracy_improvement * 100.0);
 
                 println!();
                 println!("   Most predictive sequences:");
@@ -1434,10 +1360,7 @@ impl SequenceAnalysisSuite {
     }
 
     /// Get pairs of contexts for comparison
-    fn get_context_pairs(
-        &self,
-        contexts: &HashMap<String, Vec<Vec<i32>>>,
-    ) -> Vec<(String, String)> {
+    fn get_context_pairs(&self, contexts: &HashMap<String, Vec<Vec<i32>>>) -> Vec<(String, String)> {
         let ctx_names: Vec<_> = contexts.keys().cloned().collect();
         let mut pairs = Vec::new();
 

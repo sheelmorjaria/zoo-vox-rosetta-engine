@@ -12,24 +12,24 @@
 //!
 //! 1. **Adaptive Segmentation**: Using Neural Boundary Detection (NBD) to cut
 //!    the graded stream at "semantic shift" points
-//! 2. **Feature Extraction**: Computing 105D features for each segment
-//!    (45D Base Physics + 30D Macro Texture + 30D Micro Texture)
+//! 2. **Feature Extraction**: Computing 112D features for each segment
+//!    (46D Base Physics + 30D Macro Texture + 36D Micro Texture)
 //! 3. **Similarity Clustering**: Using ASE distance with HDBSCAN
 //! 4. **Purity Analysis**: Measuring how many segments fall into tight clusters
 //!
-//! ## Why 105D?
+//! ## Why 112D?
 //!
 //! For motif discovery, we need **fine-grained acoustic similarity**:
 //!
 //! ```text
-//! Layer 1: BASE PHYSICS (45D)
-//!   → Universal features (F0, HNR, MFCCs)
+//! Layer 1: BASE PHYSICS (46D)
+//!   → Universal features (F0, HNR, MFCCs, release time)
 //!
 //! Layer 2: MACRO TEXTURE (30D)
 //!   → Harmonic texture, pitch geometry, GLCM texture
 //!   → Captures "spectral fingerprints" of motifs
 //!
-//! Layer 3: MICRO TEXTURE (30D)
+//! Layer 3: MICRO TEXTURE (36D)
 //!   → Modulation spectra, rhythm histograms, psychoacoustics
 //!   → Distinguishes similar motifs (e.g., Motif A vs Motif A')
 //! ```
@@ -43,14 +43,14 @@
 //! |----------|-------------|-----------------------------------------|
 //! | >60%     | <40%        | Hidden vocabulary exists (Bag-of-Phrases works) |
 //! | 30-60%   | 40-70%      | Hybrid: some motifs, some grading       |
-//! | <30%     | >70%        | True analog slider (Direct 105D needed) |
+//! | <30%     | >70%        | True analog slider (Direct 112D needed) |
 //!
 //! ## Usage
 //!
 //! ```rust
 //! use technical_architecture::{GradedPhraseMiner, MotifReport, GradedMiningConfig};
 //!
-//! // Default uses 105D features for maximum discriminative power
+//! // Default uses 112D features for maximum discriminative power
 //! let config = GradedMiningConfig::default();
 //! let mut miner = GradedPhraseMiner::new(config);
 //!
@@ -67,7 +67,7 @@ use ndarray::{Array1, Array2};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::acoustic_algebra_105d::Vector105D;
+use crate::acoustic_algebra_105d::{Vector105D, Vector112D};
 use crate::acoustic_similarity::AcousticSimilarityEngine;
 use crate::hdbscan::{HdbscanClustering, HdbscanStats};
 use crate::micro_dynamics_extractor::{MicroDynamicsExtractor, MicroDynamicsFeatures45D};
@@ -83,12 +83,18 @@ pub enum FeatureMode {
     /// 45D Base Physics only - faster, good for initial exploration
     Base45D,
 
-    /// 105D Triple-Layer (recommended) - maximum discriminative power for motif discovery
+    /// 105D Triple-Layer - legacy support
     /// Layer 1: Base Physics (45D)
     /// Layer 2: Macro Texture (30D)
     /// Layer 3: Micro Texture (30D)
-    #[default]
     Full105D,
+
+    /// 112D Triple-Layer (recommended) - maximum discriminative power for motif discovery
+    /// Layer 1: Base Physics (46D)
+    /// Layer 2: Macro Texture (30D)
+    /// Layer 3: Micro Texture (36D)
+    #[default]
+    Full112D,
 }
 
 /// Configurable thresholds for purity-based interpretation
@@ -226,7 +232,7 @@ impl Default for GradedMiningConfig {
             boundary_threshold: 0.4, // Lower threshold to catch semantic changes
             min_cluster_size: 5,
             min_samples: 3,
-            feature_mode: FeatureMode::Full105D, // 105D recommended for motif discovery
+            feature_mode: FeatureMode::Full112D, // 112D recommended for motif discovery
             min_segment_samples: 480,            // ~10ms at 48kHz
             thresholds: GradedMiningThresholds::default(),
         }
@@ -397,6 +403,7 @@ impl GradedPhraseMiner {
         let feature_dim = match config.feature_mode {
             FeatureMode::Base45D => 45,
             FeatureMode::Full105D => 105,
+            FeatureMode::Full112D => 112,
         };
         let similarity_engine = AcousticSimilarityEngine::new(feature_dim);
 
@@ -418,6 +425,7 @@ impl GradedPhraseMiner {
         match self.config.feature_mode {
             FeatureMode::Base45D => 45,
             FeatureMode::Full105D => 105,
+            FeatureMode::Full112D => 112,
         }
     }
 
@@ -427,11 +435,7 @@ impl GradedPhraseMiner {
     /// - Layer 1: 45D Base Physics (from MicroDynamicsExtractor)
     /// - Layer 2: 30D Macro Texture (harmonic, pitch, GLCM)
     /// - Layer 3: 30D Micro Texture (modulation, rhythm, psychoacoustics)
-    fn compute_105d_features(
-        &self,
-        audio: &[f32],
-        base_45d: &MicroDynamicsFeatures45D,
-    ) -> Vec<f64> {
+    fn compute_105d_features(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
         let mut features = Vec::with_capacity(105);
 
         // Layer 1: Base Physics (45D)
@@ -451,11 +455,7 @@ impl GradedPhraseMiner {
 
     /// Compute Layer 2: Macro Texture (30D)
     /// Harmonic texture, pitch geometry, GLCM spectrogram texture
-    fn compute_macro_texture(
-        &self,
-        audio: &[f32],
-        base_45d: &MicroDynamicsFeatures45D,
-    ) -> Vec<f64> {
+    fn compute_macro_texture(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
         let mut features = Vec::with_capacity(30);
 
         // Harmonic Texture (8D) - estimated from available spectral features
@@ -466,8 +466,7 @@ impl GradedPhraseMiner {
         features.push(base_45d.base_30d.spectral_flux as f64); // spectral_flux_std
         features.push(base_45d.formant_1_hz as f64 / (base_45d.formant_2_hz as f64 + 1.0)); // h1_h2_ratio
         features.push(base_45d.formant_2_hz as f64 / (base_45d.formant_3_hz as f64 + 1.0)); // h2_h3_ratio
-        features
-            .push(base_45d.formant_3_hz as f64 / (base_45d.formant_dispersion as f64 * 10.0 + 1.0)); // h3_h4_ratio
+        features.push(base_45d.formant_3_hz as f64 / (base_45d.formant_dispersion as f64 * 10.0 + 1.0)); // h3_h4_ratio
 
         // Pitch Geometry (7D)
         features.push(base_45d.f0_range_hz as f64 / (base_45d.duration_ms as f64 + 1.0)); // f0_mean_derivative
@@ -492,10 +491,7 @@ impl GradedPhraseMiner {
 
         // Temporal Texture (5D)
         features.push(0.1); // energy_envelope_variance
-        features.push(
-            base_45d.base_30d.attack_time_ms as f64
-                / (base_45d.base_30d.decay_time_ms as f64 + 1.0),
-        ); // onset_sustain_ratio
+        features.push(base_45d.base_30d.attack_time_ms as f64 / (base_45d.base_30d.decay_time_ms as f64 + 1.0)); // onset_sustain_ratio
         features.push(base_45d.base_30d.sustain_level as f64 * 10.0); // peak_count
         features.push(base_45d.base_30d.vibrato_depth as f64 / 100.0); // pulse_regularity
         features.push(0.1); // zero_crossing_variance
@@ -505,27 +501,15 @@ impl GradedPhraseMiner {
 
     /// Compute Layer 3: Micro Texture (30D)
     /// Modulation spectra, rhythm histograms, psychoacoustics
-    fn compute_micro_texture(
-        &self,
-        audio: &[f32],
-        base_45d: &MicroDynamicsFeatures45D,
-    ) -> Vec<f64> {
+    fn compute_micro_texture(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
         let mut features = Vec::with_capacity(30);
 
         // A. Modulation Spectra (15D)
         // AM Spectrum (5D) - estimated from vibrato and amplitude features
         let vibrato_rate = base_45d.base_30d.vibrato_rate_hz as f64;
         features.push(if vibrato_rate < 10.0 { 1.0 } else { 0.0 }); // am_spectrum_0_10hz
-        features.push(if (10.0..30.0).contains(&vibrato_rate) {
-            1.0
-        } else {
-            0.0
-        }); // am_spectrum_10_30hz
-        features.push(if (30.0..50.0).contains(&vibrato_rate) {
-            1.0
-        } else {
-            0.0
-        }); // am_spectrum_30_50hz
+        features.push(if (10.0..30.0).contains(&vibrato_rate) { 1.0 } else { 0.0 }); // am_spectrum_10_30hz
+        features.push(if (30.0..50.0).contains(&vibrato_rate) { 1.0 } else { 0.0 }); // am_spectrum_30_50hz
         features.push(if (50.0..100.0).contains(&vibrato_rate) {
             1.0
         } else {
@@ -536,21 +520,9 @@ impl GradedPhraseMiner {
         // FM Spectrum (5D) - estimated from pitch modulation
         let fm_rate = base_45d.fm_slope as f64;
         features.push(if fm_rate < 10.0 { 1.0 } else { 0.0 }); // fm_spectrum_0_10hz
-        features.push(if (10.0..30.0).contains(&fm_rate) {
-            1.0
-        } else {
-            0.0
-        }); // fm_spectrum_10_30hz
-        features.push(if (30.0..50.0).contains(&fm_rate) {
-            1.0
-        } else {
-            0.0
-        }); // fm_spectrum_30_50hz
-        features.push(if (50.0..100.0).contains(&fm_rate) {
-            1.0
-        } else {
-            0.0
-        }); // fm_spectrum_50_100hz
+        features.push(if (10.0..30.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_10_30hz
+        features.push(if (30.0..50.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_30_50hz
+        features.push(if (50.0..100.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_50_100hz
         features.push(0.0); // fm_spectrum_100_200hz
 
         // Modulation Stats (5D)
@@ -564,21 +536,9 @@ impl GradedPhraseMiner {
         // Onset intervals histogram (5D) - from rhythm features
         let ici = base_45d.base_30d.median_ici_ms as f64;
         features.push(if ici < 20.0 { 1.0 } else { 0.0 }); // onset_hist_0_20ms
-        features.push(if (20.0..50.0).contains(&ici) {
-            1.0
-        } else {
-            0.0
-        }); // onset_hist_20_50ms
-        features.push(if (50.0..100.0).contains(&ici) {
-            1.0
-        } else {
-            0.0
-        }); // onset_hist_50_100ms
-        features.push(if (100.0..200.0).contains(&ici) {
-            1.0
-        } else {
-            0.0
-        }); // onset_hist_100_200ms
+        features.push(if (20.0..50.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_20_50ms
+        features.push(if (50.0..100.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_50_100ms
+        features.push(if (100.0..200.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_100_200ms
         features.push(if ici >= 200.0 { 1.0 } else { 0.0 }); // onset_hist_200ms_plus
 
         // Rhythm Stats (5D)
@@ -639,10 +599,7 @@ impl GradedPhraseMiner {
                     return false;
                 }
                 // Check RMS energy to filter out silent segments
-                let rms = (segment_audio
-                    .iter()
-                    .map(|&x| x as f64 * x as f64)
-                    .sum::<f64>()
+                let rms = (segment_audio.iter().map(|&x| x as f64 * x as f64).sum::<f64>()
                     / segment_audio.len() as f64)
                     .sqrt();
                 rms >= min_rms_threshold
@@ -692,9 +649,7 @@ impl GradedPhraseMiner {
                 // Extract 45D features
                 segments
                     .iter()
-                    .filter_map(|(segment_audio, _, _)| {
-                        self.feature_extractor.extract_45d(segment_audio).ok()
-                    })
+                    .filter_map(|(segment_audio, _, _)| self.feature_extractor.extract_45d(segment_audio).ok())
                     .map(|feat| feat.to_array().iter().map(|&v| v as f64).collect())
                     .collect()
             }
@@ -708,6 +663,32 @@ impl GradedPhraseMiner {
                         // Then compute full 105D vector
                         let vector_105d = self.compute_105d_features(segment_audio, &base_45d);
                         Some(vector_105d)
+                    })
+                    .collect()
+            }
+            FeatureMode::Full112D => {
+                // Extract 112D features (46D base + 30D macro + 36D micro texture)
+                // RECOMMENDED for maximum discriminative power
+                segments
+                    .iter()
+                    .filter_map(|(segment_audio, _, _)| {
+                        // First get 45D base features
+                        let base_45d = self.feature_extractor.extract_45d(segment_audio).ok()?;
+                        // Compute 105D first
+                        let vector_105d = self.compute_105d_features(segment_audio, &base_45d);
+                        // Extend to 112D by adding 7 additional dimensions
+                        // (release_time_ms + 6 rhythm histogram features)
+                        let mut vector_112d = vector_105d;
+                        // Add release_time_ms (estimate from decay time)
+                        vector_112d.push(base_45d.base_30d.decay_time_ms as f64 * 0.6);
+                        // Add 6 rhythm histogram features (computed from onset pattern)
+                        vector_112d.push(base_45d.base_30d.median_ici_ms as f64 * 0.5); // rhythm_tempo_hz
+                        vector_112d.push(base_45d.base_30d.onset_rate_hz as f64 * 0.1); // rhythm_tempo_stability
+                        vector_112d.push(base_45d.base_30d.ici_coefficient_of_variation as f64); // rhythm_pulse_clarity
+                        vector_112d.push(1.0 - base_45d.base_30d.ici_coefficient_of_variation as f64); // rhythm_grouping_strength
+                        vector_112d.push(100.0 / (base_45d.base_30d.median_ici_ms as f64 + 1.0)); // rhythm_cycle_length
+                        vector_112d.push(base_45d.base_30d.sustain_level as f64); // rhythm_onset_strength
+                        Some(vector_112d)
                     })
                     .collect()
             }
@@ -765,8 +746,7 @@ impl GradedPhraseMiner {
         let distance_matrix = self.compute_distance_matrix(&feature_matrix);
 
         // Step 4: HDBSCAN Clustering
-        let hdbscan =
-            HdbscanClustering::new(self.config.min_cluster_size, self.config.min_samples)?;
+        let hdbscan = HdbscanClustering::new(self.config.min_cluster_size, self.config.min_samples)?;
 
         let labels = hdbscan.fit_predict(&feature_matrix)?;
         let stats = hdbscan.get_cluster_stats(&labels);
@@ -811,8 +791,7 @@ impl GradedPhraseMiner {
         let noise_ratio = stats.noise_count as f64 / n_segments as f64;
 
         // Determine interpretation
-        let (interpretation, approach) =
-            self.interpret_results(purity, noise_ratio, stats.n_clusters);
+        let (interpretation, approach) = self.interpret_results(purity, noise_ratio, stats.n_clusters);
 
         let report = MotifReport {
             total_segments: n_segments,
@@ -851,11 +830,7 @@ impl GradedPhraseMiner {
             let end_sample = (boundary.time_ms * sample_rate as f32 / 1000.0) as usize;
 
             if end_sample > start_sample && end_sample <= audio.len() {
-                segments.push((
-                    audio[start_sample..end_sample].to_vec(),
-                    start_sample,
-                    end_sample,
-                ));
+                segments.push((audio[start_sample..end_sample].to_vec(), start_sample, end_sample));
             }
 
             start_sample = end_sample;
@@ -925,11 +900,7 @@ impl GradedPhraseMiner {
                 }
             }
 
-            let avg_cohesion = if count > 0 {
-                sum_dist / count as f64
-            } else {
-                0.0
-            };
+            let avg_cohesion = if count > 0 { sum_dist / count as f64 } else { 0.0 };
 
             // Calculate centroid
             let centroid: Vec<f64> = if !members.is_empty() {
@@ -978,17 +949,13 @@ impl GradedPhraseMiner {
     ///
     /// Uses configurable thresholds from `self.config.thresholds` instead of
     /// hardcoded values. This allows species-specific tuning of the interpretation.
-    fn interpret_results(
-        &self,
-        purity: f64,
-        noise_ratio: f64,
-        n_clusters: usize,
-    ) -> (String, ProcessingApproach) {
+    fn interpret_results(&self, purity: f64, noise_ratio: f64, n_clusters: usize) -> (String, ProcessingApproach) {
         let t = &self.config.thresholds;
 
         if n_clusters == 0 {
             return (
-                "No clear cluster structure detected. The signal may be purely graded or data is insufficient.".to_string(),
+                "No clear cluster structure detected. The signal may be purely graded or data is insufficient."
+                    .to_string(),
                 ProcessingApproach::InsufficientData,
             );
         }
@@ -1000,7 +967,9 @@ impl GradedPhraseMiner {
                     "HIGH MOTIF REUSE DETECTED. {:.0}% of segments fall into {} tight clusters.\n\
                      The graded signal appears to be constructed from a HIDDEN VOCABULARY of {} discrete motifs.\n\
                      RECOMMENDATION: Use Bag-of-Phrases approach for classification.",
-                    purity * 100.0, n_clusters, n_clusters
+                    purity * 100.0,
+                    n_clusters,
+                    n_clusters
                 ),
                 ProcessingApproach::BagOfPhrases,
             )
@@ -1010,7 +979,9 @@ impl GradedPhraseMiner {
                     "HYBRID SYSTEM DETECTED. {:.0}% of segments form {} clusters, but {:.0}% are unique.\n\
                      The animal uses BOTH discrete motifs and graded transitions.\n\
                      RECOMMENDATION: Use hybrid approach with both discrete phrases and continuous similarity.",
-                    purity * 100.0, n_clusters, noise_ratio * 100.0
+                    purity * 100.0,
+                    n_clusters,
+                    noise_ratio * 100.0
                 ),
                 ProcessingApproach::HybridDiscreteGraded,
             )
@@ -1028,11 +999,7 @@ impl GradedPhraseMiner {
     }
 
     /// Predict species communication style based on results
-    pub fn predict_species_style(
-        &self,
-        report: &MotifReport,
-        species: &str,
-    ) -> SpeciesGradingPrediction {
+    pub fn predict_species_style(&self, report: &MotifReport, species: &str) -> SpeciesGradingPrediction {
         // Known patterns from research
         let (expected_purity, expected_noise, style) = match species.to_lowercase().as_str() {
             "marmoset" => (
@@ -1213,7 +1180,7 @@ mod tests {
     fn test_miner_creation() {
         let config = GradedMiningConfig::default();
         let miner = GradedPhraseMiner::new(config);
-        assert_eq!(miner.config.feature_mode, FeatureMode::Full105D); // Default is 105D
+        assert_eq!(miner.config.feature_mode, FeatureMode::Full112D); // Default is 112D
     }
 
     #[test]
@@ -1226,14 +1193,8 @@ mod tests {
         // With NBD default, silent audio produces no boundaries
         // When no boundaries are found, the entire audio becomes one segment
         // BUT that segment should be filtered out due to RMS check or other energy-based filtering
-        assert_eq!(
-            report.total_segments, 0,
-            "Silent audio should produce 0 segments"
-        );
-        assert_eq!(
-            report.recommended_approach,
-            ProcessingApproach::InsufficientData
-        );
+        assert_eq!(report.total_segments, 0, "Silent audio should produce 0 segments");
+        assert_eq!(report.recommended_approach, ProcessingApproach::InsufficientData);
     }
 
     #[test]
@@ -1243,10 +1204,7 @@ mod tests {
         let report = miner.analyze(&audio, 48000).unwrap();
 
         // Short audio should either have no segments or insufficient data
-        assert!(
-            report.total_segments <= 1
-                || report.recommended_approach == ProcessingApproach::InsufficientData
-        );
+        assert!(report.total_segments <= 1 || report.recommended_approach == ProcessingApproach::InsufficientData);
     }
 
     #[test]
@@ -1313,7 +1271,7 @@ mod tests {
     #[test]
     fn test_config_default() {
         let config = GradedMiningConfig::default();
-        assert_eq!(config.feature_mode, FeatureMode::Full105D); // 105D is default
+        assert_eq!(config.feature_mode, FeatureMode::Full112D); // 112D is default
         assert_eq!(config.min_cluster_size, 5);
         assert_eq!(config.min_samples, 3);
     }
@@ -1328,13 +1286,21 @@ mod tests {
         let miner_45d = GradedPhraseMiner::new(config_45d);
         assert_eq!(miner_45d.feature_dim(), 45);
 
-        // Test 105D mode
+        // Test 105D mode (legacy)
         let config_105d = GradedMiningConfig {
             feature_mode: FeatureMode::Full105D,
             ..Default::default()
         };
         let miner_105d = GradedPhraseMiner::new(config_105d);
         assert_eq!(miner_105d.feature_dim(), 105);
+
+        // Test 112D mode (recommended default)
+        let config_112d = GradedMiningConfig {
+            feature_mode: FeatureMode::Full112D,
+            ..Default::default()
+        };
+        let miner_112d = GradedPhraseMiner::new(config_112d);
+        assert_eq!(miner_112d.feature_dim(), 112);
     }
 
     #[test]
@@ -1404,8 +1370,7 @@ mod tests {
         let recordings: Vec<(&[f32], u32)> = vec![(&audio, 48000)];
 
         // With default thresholds
-        let report_default =
-            analyze_batch(&recordings, Some(GradedMiningConfig::default())).unwrap();
+        let report_default = analyze_batch(&recordings, Some(GradedMiningConfig::default())).unwrap();
 
         // With permissive thresholds
         let config_permissive = GradedMiningConfig {

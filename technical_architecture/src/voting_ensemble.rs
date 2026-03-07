@@ -105,11 +105,7 @@ impl ModelPrediction {
 
     /// Get the top-K predicted class indices
     pub fn top_k_indices(&self, k: usize) -> Vec<usize> {
-        let mut indexed: Vec<(usize, f32)> = self.probabilities
-            .iter()
-            .enumerate()
-            .map(|(i, &p)| (i, p))
-            .collect();
+        let mut indexed: Vec<(usize, f32)> = self.probabilities.iter().enumerate().map(|(i, &p)| (i, p)).collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         indexed.iter().take(k).map(|(i, _)| *i).collect()
     }
@@ -140,7 +136,11 @@ pub struct EnsembleInput {
 
 impl EnsembleInput {
     pub fn new(nn_probs: Vec<f32>, rf_probs: Vec<f32>, label: usize) -> Self {
-        Self { nn_probs, rf_probs, label }
+        Self {
+            nn_probs,
+            rf_probs,
+            label,
+        }
     }
 
     pub fn nn_prediction(&self) -> ModelPrediction {
@@ -196,7 +196,10 @@ impl Default for GridSearchOptimizer {
 
 impl GridSearchOptimizer {
     pub fn new(step: f32) -> Self {
-        Self { step, ..Default::default() }
+        Self {
+            step,
+            ..Default::default()
+        }
     }
 
     /// Find optimal NN weight using grid search
@@ -245,12 +248,14 @@ impl GridSearchOptimizer {
     fn predict_with_weight(&self, nn_probs: &[f32], rf_probs: &[f32], nn_weight: f32) -> usize {
         let rf_weight = 1.0 - nn_weight;
 
-        let ensemble_probs: Vec<f32> = nn_probs.iter()
+        let ensemble_probs: Vec<f32> = nn_probs
+            .iter()
             .zip(rf_probs.iter())
             .map(|(nn_p, rf_p)| (nn_p * nn_weight) + (rf_p * rf_weight))
             .collect();
 
-        ensemble_probs.iter()
+        ensemble_probs
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i)
@@ -279,7 +284,11 @@ impl GridSearchOptimizer {
         println!("-------|---------");
 
         for (w, acc) in &result.weight_accuracy_curve {
-            let marker = if (*w - result.optimal_weight).abs() < 0.01 { " ★" } else { "" };
+            let marker = if (*w - result.optimal_weight).abs() < 0.01 {
+                " ★"
+            } else {
+                ""
+            };
             println!("{:.2}   | {:.2}%{}", w, acc * 100.0, marker);
         }
 
@@ -287,12 +296,23 @@ impl GridSearchOptimizer {
         println!("╔═══════════════════════════════════════════════════════════════════╗");
         println!("║  Summary                                                         ║");
         println!("╠═══════════════════════════════════════════════════════════════════╣");
-        println!("║  NN Only:      {:>6.2}%                                          ║", result.nn_only_accuracy * 100.0);
-        println!("║  RF Only:      {:>6.2}%                                          ║", result.rf_only_accuracy * 100.0);
-        println!("║  Optimal:      {:>6.2}% (weight={:.2})                           ║",
-            result.optimal_accuracy * 100.0, result.optimal_weight);
-        println!("║  Improvement:  {:>+6.2}%                                         ║",
-            result.improvement_over_best_single() * 100.0);
+        println!(
+            "║  NN Only:      {:>6.2}%                                          ║",
+            result.nn_only_accuracy * 100.0
+        );
+        println!(
+            "║  RF Only:      {:>6.2}%                                          ║",
+            result.rf_only_accuracy * 100.0
+        );
+        println!(
+            "║  Optimal:      {:>6.2}% (weight={:.2})                           ║",
+            result.optimal_accuracy * 100.0,
+            result.optimal_weight
+        );
+        println!(
+            "║  Improvement:  {:>+6.2}%                                         ║",
+            result.improvement_over_best_single() * 100.0
+        );
         println!("╚═══════════════════════════════════════════════════════════════════╝");
     }
 }
@@ -353,7 +373,8 @@ impl EnsembleVoter {
 
         let ensemble_probs = self.fuse_probabilities(nn_probs, rf_probs, weight);
 
-        let (pred_class, confidence) = ensemble_probs.iter()
+        let (pred_class, confidence) = ensemble_probs
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, &p)| (i, p))
@@ -371,10 +392,7 @@ impl EnsembleVoter {
         };
 
         // Get top-K indices from NN
-        let mut indexed: Vec<(usize, f32)> = nn_probs.iter()
-            .enumerate()
-            .map(|(i, &p)| (i, p))
-            .collect();
+        let mut indexed: Vec<(usize, f32)> = nn_probs.iter().enumerate().map(|(i, &p)| (i, p)).collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         let top_k_indices: Vec<usize> = indexed.iter().take(k).map(|(i, _)| *i).collect();
 
@@ -415,7 +433,8 @@ impl EnsembleVoter {
     /// Fuse probabilities with given weight
     fn fuse_probabilities(&self, nn_probs: &[f32], rf_probs: &[f32], nn_weight: f32) -> Vec<f32> {
         let rf_weight = 1.0 - nn_weight;
-        nn_probs.iter()
+        nn_probs
+            .iter()
             .zip(rf_probs.iter())
             .map(|(nn_p, rf_p)| (nn_p * nn_weight) + (rf_p * rf_weight))
             .collect()
@@ -424,7 +443,8 @@ impl EnsembleVoter {
     /// Predict with specific weight
     fn predict_with_weight(&self, nn_probs: &[f32], rf_probs: &[f32], nn_weight: f32) -> usize {
         let ensemble_probs = self.fuse_probabilities(nn_probs, rf_probs, nn_weight);
-        ensemble_probs.iter()
+        ensemble_probs
+            .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(i, _)| i)
@@ -497,12 +517,28 @@ impl EnsembleMetrics {
         let mut valid_classes = 0;
 
         for c in 0..num_classes {
-            let tp = predictions.iter().zip(labels.iter()).filter(|(p, l)| **p == c && **l == c).count();
-            let fp = predictions.iter().zip(labels.iter()).filter(|(p, l)| **p == c && **l != c).count();
-            let fn_ = predictions.iter().zip(labels.iter()).filter(|(p, l)| **p != c && **l == c).count();
+            let tp = predictions
+                .iter()
+                .zip(labels.iter())
+                .filter(|(p, l)| **p == c && **l == c)
+                .count();
+            let fp = predictions
+                .iter()
+                .zip(labels.iter())
+                .filter(|(p, l)| **p == c && **l != c)
+                .count();
+            let fn_ = predictions
+                .iter()
+                .zip(labels.iter())
+                .filter(|(p, l)| **p != c && **l == c)
+                .count();
 
             let class_precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-            let class_recall = if tp + fn_ > 0 { tp as f64 / (tp + fn_) as f64 } else { 0.0 };
+            let class_recall = if tp + fn_ > 0 {
+                tp as f64 / (tp + fn_) as f64
+            } else {
+                0.0
+            };
 
             let class_count = labels.iter().filter(|&&l| l == c).count();
             if class_count > 0 {
@@ -512,9 +548,21 @@ impl EnsembleMetrics {
             }
         }
 
-        let precision = if valid_classes > 0 { precision_sum / valid_classes as f64 } else { 0.0 };
-        let recall = if valid_classes > 0 { recall_sum / valid_classes as f64 } else { 0.0 };
-        let f1_score = if precision + recall > 0.0 { 2.0 * precision * recall / (precision + recall) } else { 0.0 };
+        let precision = if valid_classes > 0 {
+            precision_sum / valid_classes as f64
+        } else {
+            0.0
+        };
+        let recall = if valid_classes > 0 {
+            recall_sum / valid_classes as f64
+        } else {
+            0.0
+        };
+        let f1_score = if precision + recall > 0.0 {
+            2.0 * precision * recall / (precision + recall)
+        } else {
+            0.0
+        };
 
         Self {
             accuracy,
@@ -593,22 +641,22 @@ mod tests {
 
         // Case 1: NN correct, RF wrong
         data.push(EnsembleInput::new(
-            create_test_probabilities(10, 3, 0.8),  // NN predicts 3 correctly
-            create_test_probabilities(10, 5, 0.6),  // RF predicts 5 wrongly
+            create_test_probabilities(10, 3, 0.8), // NN predicts 3 correctly
+            create_test_probabilities(10, 5, 0.6), // RF predicts 5 wrongly
             3,
         ));
 
         // Case 2: RF correct, NN wrong
         data.push(EnsembleInput::new(
-            create_test_probabilities(10, 7, 0.6),  // NN predicts 7 wrongly
-            create_test_probabilities(10, 2, 0.8),  // RF predicts 2 correctly
+            create_test_probabilities(10, 7, 0.6), // NN predicts 7 wrongly
+            create_test_probabilities(10, 2, 0.8), // RF predicts 2 correctly
             2,
         ));
 
         let result = optimizer.optimize(&data);
 
         // Should find some optimal weight
-        assert!(result.optimal_weight >= 0.0 && result.optimal_weight <= 1.0);
+        assert!((0.0..=1.0).contains(&result.optimal_weight));
         assert!(result.optimal_accuracy > 0.0);
     }
 
@@ -645,8 +693,8 @@ mod tests {
         // Create data where RF is always correct
         let data = vec![
             EnsembleInput::new(
-                create_test_probabilities(5, 1, 0.6),  // NN wrong
-                create_test_probabilities(5, 0, 0.9),  // RF correct
+                create_test_probabilities(5, 1, 0.6), // NN wrong
+                create_test_probabilities(5, 0, 0.9), // RF correct
                 0,
             ),
             EnsembleInput::new(
@@ -704,8 +752,8 @@ mod tests {
         let config = VotingEnsembleConfig::with_static_weight(0.0);
         let voter = EnsembleVoter::new(config);
 
-        let nn_probs = vec![0.9, 0.1];  // NN says 0
-        let rf_probs = vec![0.1, 0.9];  // RF says 1
+        let nn_probs = vec![0.9, 0.1]; // NN says 0
+        let rf_probs = vec![0.1, 0.9]; // RF says 1
 
         // Weight 0 means 100% RF
         assert_eq!(voter.predict(&nn_probs, &rf_probs), 1);
@@ -716,8 +764,8 @@ mod tests {
         let config = VotingEnsembleConfig::with_static_weight(1.0);
         let voter = EnsembleVoter::new(config);
 
-        let nn_probs = vec![0.9, 0.1];  // NN says 0
-        let rf_probs = vec![0.1, 0.9];  // RF says 1
+        let nn_probs = vec![0.9, 0.1]; // NN says 0
+        let rf_probs = vec![0.1, 0.9]; // RF says 1
 
         // Weight 1 means 100% NN
         assert_eq!(voter.predict(&nn_probs, &rf_probs), 0);
@@ -815,7 +863,7 @@ mod tests {
             EnsembleInput::new(
                 vec![0.4, 0.6],
                 vec![0.9, 0.1], // RF says 0, NN says 1 -> ensemble may say 0
-                1, // Wrong (ensemble will predict 0)
+                1,              // Wrong (ensemble will predict 0)
             ),
         ];
 

@@ -183,18 +183,10 @@ impl PhraseDiscoveryPipeline {
     /// Create a new pipeline with the given configuration
     pub fn new(config: PhraseDiscoveryConfig) -> Self {
         let segmenter_config = match config.atomic_granularity {
-            AtomicGranularity::Motif => {
-                DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds)
-            }
-            AtomicGranularity::Syllable => {
-                DynamicSegmenterConfig::for_syllable_level(&config.hierarchical_thresholds)
-            }
-            AtomicGranularity::Note => {
-                DynamicSegmenterConfig::for_note_level(&config.hierarchical_thresholds)
-            }
-            AtomicGranularity::Contour => {
-                DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds)
-            }
+            AtomicGranularity::Motif => DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds),
+            AtomicGranularity::Syllable => DynamicSegmenterConfig::for_syllable_level(&config.hierarchical_thresholds),
+            AtomicGranularity::Note => DynamicSegmenterConfig::for_note_level(&config.hierarchical_thresholds),
+            AtomicGranularity::Contour => DynamicSegmenterConfig::for_motif_level(&config.hierarchical_thresholds),
         };
 
         let segmenter = DynamicSegmenter::new(segmenter_config, config.sample_rate);
@@ -257,9 +249,7 @@ impl PhraseDiscoveryPipeline {
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64)
-                    .ok()
-                    .map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
             };
 
             let result = self.segmenter.segment(audio, extract_fn, source_file);
@@ -294,9 +284,9 @@ impl PhraseDiscoveryPipeline {
 
         // Step 3: Acoustic Similarity Clustering (Discover Types)
         let cluster_start = std::time::Instant::now();
-        let analysis_result =
-            self.analyzer
-                .discover_phrases(prototypes, "pipeline", &self.config.species);
+        let analysis_result = self
+            .analyzer
+            .discover_phrases(prototypes, "pipeline", &self.config.species);
         cluster_time = cluster_start.elapsed().as_millis();
 
         // Step 4: Build output
@@ -364,11 +354,7 @@ impl PhraseDiscoveryPipeline {
     }
 
     /// Convert DynamicPhraseCandidate (45D) to PhrasePrototype (30D)
-    fn candidate_to_prototype(
-        &self,
-        candidate: &DynamicPhraseCandidate,
-        source_file: &str,
-    ) -> PhrasePrototype {
+    fn candidate_to_prototype(&self, candidate: &DynamicPhraseCandidate, source_file: &str) -> PhrasePrototype {
         // Convert 45D features to 30D by taking the first 30 dimensions
         // This is a simplification - in practice you'd want a more sophisticated mapping
         let mut arr = [0.0f64; 30];
@@ -404,9 +390,7 @@ impl PhraseDiscoveryPipeline {
     fn build_transitions(&self, sequence: &[String]) -> HashMap<(String, String), usize> {
         let mut transitions = HashMap::new();
         for window in sequence.windows(2) {
-            *transitions
-                .entry((window[0].clone(), window[1].clone()))
-                .or_insert(0) += 1;
+            *transitions.entry((window[0].clone(), window[1].clone())).or_insert(0) += 1;
         }
         transitions
     }

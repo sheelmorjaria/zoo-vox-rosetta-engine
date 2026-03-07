@@ -10,6 +10,7 @@
 //! - Discrete motifs (atomic level)
 //! - Discrete syntax (N-gram level)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -67,10 +68,7 @@ fn main() -> anyhow::Result<()> {
 
     // Load species annotations
     let species_map = load_species_annotations(&annotations_path)?;
-    println!(
-        "  Loaded species annotations for {} files",
-        species_map.len()
-    );
+    println!("  Loaded species annotations for {} files", species_map.len());
 
     // Get audio files
     let audio_files: Vec<PathBuf> = fs::read_dir(&bird_songs_dir)?
@@ -103,10 +101,7 @@ fn main() -> anyhow::Result<()> {
     // Group by species
     let mut species_segments: HashMap<String, Vec<&Segment>> = HashMap::new();
     for seg in &all_segments {
-        species_segments
-            .entry(seg.species.clone())
-            .or_default()
-            .push(seg);
+        species_segments.entry(seg.species.clone()).or_default().push(seg);
     }
 
     println!("  Found {} species", species_segments.len());
@@ -128,8 +123,7 @@ fn main() -> anyhow::Result<()> {
         println!("  {} ({} segments)", species, segments.len());
 
         // Recurrence analysis
-        let unique_states: std::collections::HashSet<u32> =
-            segments.iter().map(|s| s.state_id).collect();
+        let unique_states: std::collections::HashSet<u32> = segments.iter().map(|s| s.state_id).collect();
         let recurrence_rate = 1.0 - (unique_states.len() as f64 / segments.len() as f64);
 
         // N-gram analysis
@@ -170,11 +164,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Sort by bigram reuse
-    all_stats.sort_by(|a, b| {
-        b.bigram_reuse_rate
-            .partial_cmp(&a.bigram_reuse_rate)
-            .unwrap()
-    });
+    all_stats.sort_by(|a, b| b.bigram_reuse_rate.partial_cmp(&a.bigram_reuse_rate).unwrap());
 
     // Comparison table
     println!("═══════════════════════════════════════════════════════════════════════════");
@@ -187,16 +177,8 @@ fn main() -> anyhow::Result<()> {
     println!("  ├─────────────────────────────────────────────────────────────────────────┤");
 
     for stats in &all_stats {
-        let motifs = if stats.has_discrete_motifs {
-            "✓"
-        } else {
-            "✗"
-        };
-        let syntax = if stats.has_discrete_syntax {
-            "✓"
-        } else {
-            "✗"
-        };
+        let motifs = if stats.has_discrete_motifs { "✓" } else { "✗" };
+        let syntax = if stats.has_discrete_syntax { "✓" } else { "✗" };
         println!(
             "  │  {:17} │ {:8} │ {:5.1}%  │ {:5.1}% │   {}    │    {}     │",
             stats.species,
@@ -349,12 +331,7 @@ fn load_wav(path: &Path) -> anyhow::Result<Vec<f32>> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"data" {
             data_start = pos + 8;
@@ -383,11 +360,8 @@ fn compute_state(audio: &[f32]) -> u32 {
     // Compute simple acoustic state from statistics
     let mean = audio.iter().sum::<f32>() / audio.len() as f32;
     let energy = audio.iter().map(|x| x * x).sum::<f32>() / audio.len() as f32;
-    let zero_crossings = audio
-        .windows(2)
-        .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-        .count() as f32
-        / audio.len() as f32;
+    let zero_crossings =
+        audio.windows(2).filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0)).count() as f32 / audio.len() as f32;
 
     // Discretize into state bins
     let energy_bin = (energy * 100.0) as u32 % 10;
@@ -400,10 +374,7 @@ fn analyze_ngrams(segments: &[&Segment]) -> (f64, f64, Vec<(Vec<u32>, usize)>) {
     // Group by file
     let mut file_sequences: HashMap<&str, Vec<u32>> = HashMap::new();
     for seg in segments {
-        file_sequences
-            .entry(&seg.source_file)
-            .or_default()
-            .push(seg.state_id);
+        file_sequences.entry(&seg.source_file).or_default().push(seg.state_id);
     }
 
     // Count bigrams
@@ -436,9 +407,7 @@ fn analyze_ngrams(segments: &[&Segment]) -> (f64, f64, Vec<(Vec<u32>, usize)>) {
             continue;
         }
         for i in 0..seq.len() - 2 {
-            *trigram_counts
-                .entry((seq[i], seq[i + 1], seq[i + 2]))
-                .or_insert(0) += 1;
+            *trigram_counts.entry((seq[i], seq[i + 1], seq[i + 2])).or_insert(0) += 1;
             trigram_total += 1;
         }
     }

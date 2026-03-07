@@ -11,6 +11,7 @@
 //!   - Noise Ratio: 50-70%
 //!   - Interpretation: Reuses some motifs (alarm chirps) but grades transitions (Phees)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use anyhow::Result;
 use std::fs;
 use std::path::Path;
@@ -39,12 +40,7 @@ fn load_wav(path: &Path) -> Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(16)];
@@ -170,10 +166,7 @@ fn main() -> Result<()> {
     println!("│  Summary                                                            │");
     println!("├─────────────────────────────────────────────────────────────────────┤");
     println!("  Total files: {}", file_count);
-    println!(
-        "  Total duration: {:.2} seconds",
-        total_duration_ms / 1000.0
-    );
+    println!("  Total duration: {:.2} seconds", total_duration_ms / 1000.0);
     println!();
 
     println!("├─────────────────────────────────────────────────────────────────────┤");

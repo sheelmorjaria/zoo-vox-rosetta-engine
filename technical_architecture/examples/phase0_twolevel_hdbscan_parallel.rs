@@ -10,6 +10,7 @@
 //   - Incremental checkpointing for resume capability
 //   - Full timestamp tracking for audio extraction
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use std::fs;
 use std::path::Path;
@@ -110,13 +111,9 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
 
     let track_id = track.id;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
-    let sample_rate = track
-        .codec_params
-        .sample_rate
-        .ok_or("Missing sample rate")?;
+    let sample_rate = track.codec_params.sample_rate.ok_or("Missing sample rate")?;
 
     let mut audio_samples = Vec::new();
 
@@ -124,9 +121,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
         let packet = match format.next_packet() {
             Ok(packet) => packet,
             Err(symphonia::core::errors::Error::ResetRequired) => continue,
-            Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
-            {
+            Err(symphonia::core::errors::Error::IoError(ref e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 break
             }
             Err(e) => return Err(format!("Failed to read packet: {}", e).into()),
@@ -151,8 +146,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> =
-                                plane.iter().map(|&s| s as f32 / 32768.0).collect();
+                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / 32768.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -160,8 +154,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U8(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> =
-                                plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
+                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 128.0) / 128.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -169,10 +162,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::U16(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> = plane
-                                .iter()
-                                .map(|&s| (s as f32 - 32768.0) / 32768.0)
-                                .collect();
+                            let samples: Vec<f32> = plane.iter().map(|&s| (s as f32 - 32768.0) / 32768.0).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -180,8 +170,7 @@ fn load_audio_file(file_path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::err
                     AudioBufferRef::S32(buf) => {
                         let audio_buffer = buf.as_ref();
                         for plane in audio_buffer.planes().planes() {
-                            let samples: Vec<f32> =
-                                plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
+                            let samples: Vec<f32> = plane.iter().map(|&s| s as f32 / i32::MAX as f32).collect();
                             audio_samples.extend(samples);
                             break;
                         }
@@ -451,10 +440,7 @@ fn segment_by_energy(frames: &[FrameFeatures], sample_rate: u32) -> Vec<usize> {
     // Find local minima as potential boundaries
     for i in 2..smoothed.len().saturating_sub(2) {
         let prev_avg = smoothed[i - 2..i].iter().sum::<f64>() / 3.0;
-        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)]
-            .iter()
-            .sum::<f64>()
-            / 3.0;
+        let next_avg = smoothed[i + 1..=(i + 3).min(smoothed.len() - 1)].iter().sum::<f64>() / 3.0;
         let current = smoothed[i];
 
         if current < prev_avg * 0.5 && current < next_avg * 0.5 {
@@ -492,13 +478,8 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
             let mean_before = before.iter().sum::<f64>() / before.len() as f64;
             let mean_after = after.iter().sum::<f64>() / after.len() as f64;
 
-            let var_before = before
-                .iter()
-                .map(|&x| (x - mean_before).powi(2))
-                .sum::<f64>()
-                / before.len() as f64;
-            let var_after =
-                after.iter().map(|&x| (x - mean_after).powi(2)).sum::<f64>() / after.len() as f64;
+            let var_before = before.iter().map(|&x| (x - mean_before).powi(2)).sum::<f64>() / before.len() as f64;
+            let var_after = after.iter().map(|&x| (x - mean_after).powi(2)).sum::<f64>() / after.len() as f64;
 
             let pooled_std = ((var_before + var_after) / 2.0).sqrt();
             if pooled_std > 0.001 {
@@ -525,10 +506,7 @@ fn combine_segmentation_methods(frames: &[FrameFeatures], sample_rate: u32) -> V
     let energy_bounds = segment_by_energy(frames, sample_rate);
     let change_bounds = segment_by_change_point(frames);
 
-    let mut combined: Vec<usize> = energy_bounds
-        .into_iter()
-        .chain(change_bounds.into_iter())
-        .collect();
+    let mut combined: Vec<usize> = energy_bounds.into_iter().chain(change_bounds.into_iter()).collect();
 
     combined.sort();
     combined.dedup();
@@ -537,10 +515,7 @@ fn combine_segmentation_methods(frames: &[FrameFeatures], sample_rate: u32) -> V
     let min_spacing = 10;
     let mut filtered = Vec::new();
     for boundary in combined {
-        if filtered
-            .last()
-            .map_or(true, |&last| boundary - last >= min_spacing)
-        {
+        if filtered.last().map_or(true, |&last| boundary - last >= min_spacing) {
             filtered.push(boundary);
         }
     }
@@ -568,10 +543,7 @@ fn process_single_vocalization(
     file_idx: usize,
     file_path: &Path,
 ) -> Result<Vec<PhraseSegment>, Box<dyn std::error::Error>> {
-    let file_name = file_path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("unknown.wav");
+    let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown.wav");
 
     // Load audio
     let (audio, sample_rate) = load_audio_file(file_path)?;
@@ -749,19 +721,14 @@ fn estimate_f0_range_from_audio(audio: &[f32], sample_rate: u32) -> f32 {
 // Checkpointing Functions
 // =============================================================================
 
-fn save_checkpoint(
-    results_dir: &Path,
-    checkpoint: &ProcessingCheckpoint,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn save_checkpoint(results_dir: &Path, checkpoint: &ProcessingCheckpoint) -> Result<(), Box<dyn std::error::Error>> {
     let checkpoint_path = results_dir.join("checkpoint.json");
     let json = serde_json::to_string_pretty(checkpoint)?;
     fs::write(&checkpoint_path, json)?;
     Ok(())
 }
 
-fn load_checkpoint(
-    results_dir: &Path,
-) -> Result<Option<ProcessingCheckpoint>, Box<dyn std::error::Error>> {
+fn load_checkpoint(results_dir: &Path) -> Result<Option<ProcessingCheckpoint>, Box<dyn std::error::Error>> {
     let checkpoint_path = results_dir.join("checkpoint.json");
     if !checkpoint_path.exists() {
         return Ok(None);
@@ -775,10 +742,7 @@ fn load_checkpoint(
 fn load_existing_segments(results_dir: &Path) -> Vec<PhraseSegment> {
     match load_checkpoint(results_dir) {
         Ok(Some(checkpoint)) => {
-            println!(
-                "   📂 Found checkpoint: {} files completed",
-                checkpoint.completed_files
-            );
+            println!("   📂 Found checkpoint: {} files completed", checkpoint.completed_files);
             checkpoint.all_segments
         }
         _ => vec![],
@@ -832,8 +796,7 @@ fn build_vocabulary(
     println!("   ✅ Vocabulary built in {:.2}s", vocab_time.as_secs_f64());
 
     // Group segments by cluster
-    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> =
-        std::collections::HashMap::new();
+    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> = std::collections::HashMap::new();
 
     for (segment_idx, &label) in labels.iter().enumerate() {
         if label >= 0 {
@@ -855,11 +818,7 @@ fn build_vocabulary(
 
         let durations: Vec<f64> = segments.iter().map(|s| s.duration_ms).collect();
         let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
-        let variance = durations
-            .iter()
-            .map(|&d| (d - avg_duration).powi(2))
-            .sum::<f64>()
-            / durations.len() as f64;
+        let variance = durations.iter().map(|&d| (d - avg_duration).powi(2)).sum::<f64>() / durations.len() as f64;
         let std_duration = variance.sqrt();
 
         vocabulary.push(VocabularyItem {
@@ -896,12 +855,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let data_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats");
     // Use test directory for initial testing - comment out to use full dataset
-    let audio_dir =
-        if Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio_test").exists() {
-            data_dir.join("audio_test")
-        } else {
-            data_dir.join("audio")
-        };
+    let audio_dir = if Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio_test").exists() {
+        data_dir.join("audio_test")
+    } else {
+        data_dir.join("audio")
+    };
     let results_dir = data_dir.join("phase0_twolevel_hdbscan_results");
 
     fs::create_dir_all(&results_dir)?;
@@ -909,13 +867,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Discover WAV files
     let mut wav_files: Vec<_> = fs::read_dir(&audio_dir)?
         .filter_map(|entry| entry.ok())
-        .filter(|entry| {
-            entry
-                .path()
-                .extension()
-                .map(|e| e == "wav")
-                .unwrap_or(false)
-        })
+        .filter(|entry| entry.path().extension().map(|e| e == "wav").unwrap_or(false))
         .map(|entry| entry.path())
         .collect();
 
@@ -947,11 +899,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize Level 2 HDBSCAN with Cosine distance metric
     // Cosine focuses on spectral pattern/shape rather than absolute F0 values
-    let level2_hdbscan = HdbscanClustering::with_metric(
-        LEVEL2_MIN_CLUSTER_SIZE,
-        LEVEL2_MIN_SAMPLES,
-        DistanceMetric::Cosine,
-    )?;
+    let level2_hdbscan =
+        HdbscanClustering::with_metric(LEVEL2_MIN_CLUSTER_SIZE, LEVEL2_MIN_SAMPLES, DistanceMetric::Cosine)?;
 
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Level 1: Parallel Within-Vocalization Segmentation                      │");
@@ -1033,10 +982,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
     println!("   ✅ Processed {} vocalizations", all_segments.len());
-    println!(
-        "   📝 Total phrase segments discovered: {}",
-        all_segments.len()
-    );
+    println!("   📝 Total phrase segments discovered: {}", all_segments.len());
     println!("   ⏱️  Level 1 time: {:.2}s", level1_time.as_secs_f64());
     println!();
 
@@ -1076,11 +1022,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             println!(
                 "      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
-                item.vocabulary_id,
-                item.phrase_count,
-                item.avg_duration_ms,
-                item.std_duration_ms,
-                vocab_type
+                item.vocabulary_id, item.phrase_count, item.avg_duration_ms, item.std_duration_ms, vocab_type
             );
         }
 
@@ -1135,8 +1077,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate symbolic stream with cluster IDs
     let mut symbolic_stream: Vec<i32> = Vec::new();
-    let mut segment_to_vocab: std::collections::HashMap<usize, i32> =
-        std::collections::HashMap::new();
+    let mut segment_to_vocab: std::collections::HashMap<usize, i32> = std::collections::HashMap::new();
 
     // Build mapping from segment to vocabulary ID
     for vocab in &vocabulary {
@@ -1154,10 +1095,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     for segment in sorted_segments {
-        let vocab_id = segment_to_vocab
-            .get(&segment.segment_id)
-            .copied()
-            .unwrap_or(-1); // -1 for noise/unclassified
+        let vocab_id = segment_to_vocab.get(&segment.segment_id).copied().unwrap_or(-1); // -1 for noise/unclassified
         symbolic_stream.push(vocab_id);
     }
 

@@ -11,6 +11,7 @@
 // - Shannon Entropy: Distribution evenness across birds
 // - Permutation Test: Statistical significance vs random chance
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -77,14 +78,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Load within-call results
-    let results_path =
-        "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_songs_within_call.json";
+    let results_path = "/home/sheel/birdsong_analysis/within_call_results/zebra_finch_songs_within_call.json";
     let json_data = fs::read_to_string(results_path)?;
     let dataset: serde_json::Value = serde_json::from_str(&json_data)?;
 
-    let file_analyses = dataset["file_analyses"]
-        .as_array()
-        .ok_or("No file analyses")?;
+    let file_analyses = dataset["file_analyses"].as_array().ok_or("No file analyses")?;
     println!("Loaded {} file analyses", file_analyses.len());
 
     // Extract bird ID from file path
@@ -95,23 +93,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let file_name = fa["file_name"].as_str().unwrap_or("unknown");
 
         // Determine bird ID from file path pattern
-        let bird_id =
-            if file_name.contains("Bird") || file_name.starts_with(|c: char| c.is_digit(10)) {
-                // Extract bird number from path or assign based on position
-                // For synthetic data, use "synthetic" as bird
-                if file_name.contains("synth") {
-                    "synthetic".to_string()
-                } else {
-                    // Group files by their index ranges (assuming sequential per bird)
-                    let num = file_name
-                        .trim_end_matches(".wav")
-                        .parse::<usize>()
-                        .unwrap_or(0);
-                    format!("bird_{}", num / 60) // Rough approximation
-                }
+        let bird_id = if file_name.contains("Bird") || file_name.starts_with(|c: char| c.is_digit(10)) {
+            // Extract bird number from path or assign based on position
+            // For synthetic data, use "synthetic" as bird
+            if file_name.contains("synth") {
+                "synthetic".to_string()
             } else {
-                "unknown".to_string()
-            };
+                // Group files by their index ranges (assuming sequential per bird)
+                let num = file_name.trim_end_matches(".wav").parse::<usize>().unwrap_or(0);
+                format!("bird_{}", num / 60) // Rough approximation
+            }
+        } else {
+            "unknown".to_string()
+        };
 
         bird_files.entry(bird_id).or_default().push(fa);
     }
@@ -219,8 +213,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Permutation test
     println!("Running permutation test (1000 iterations)...");
 
-    let observed_mean =
-        metrics.iter().map(|m| m.generality_score).sum::<f64>() / metrics.len() as f64;
+    let observed_mean = metrics.iter().map(|m| m.generality_score).sum::<f64>() / metrics.len() as f64;
     let mut rng = rand::thread_rng();
     let mut null_means: Vec<f64> = Vec::new();
 
@@ -237,11 +230,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let null_mean: f64 = null_means.iter().sum::<f64>() / null_means.len() as f64;
     let null_std: f64 = {
-        let variance = null_means
-            .iter()
-            .map(|x| (x - null_mean).powi(2))
-            .sum::<f64>()
-            / null_means.len() as f64;
+        let variance = null_means.iter().map(|x| (x - null_mean).powi(2)).sum::<f64>() / null_means.len() as f64;
         variance.sqrt()
     };
 
@@ -256,8 +245,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Summary statistics
-    let avg_generality =
-        metrics.iter().map(|m| m.generality_score).sum::<f64>() / metrics.len() as f64;
+    let avg_generality = metrics.iter().map(|m| m.generality_score).sum::<f64>() / metrics.len() as f64;
     let avg_entropy = metrics.iter().map(|m| m.shannon_entropy).sum::<f64>() / metrics.len() as f64;
     let universal_phrases = metrics.iter().filter(|m| m.generality_score >= 0.9).count();
     let bird_specific_phrases = metrics.iter().filter(|m| m.generality_score < 0.2).count();
@@ -278,18 +266,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║                                                                           ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║  Summary Statistics:                                                      ║");
-    println!(
-        "║    • Total phrases analyzed: {:>10}",
-        format!("{}", total_phrases)
-    );
+    println!("║    • Total phrases analyzed: {:>10}", format!("{}", total_phrases));
     println!(
         "║    • Unique phrase types:    {:>10}",
         format!("{}", unique_phrase_types)
     );
-    println!(
-        "║    • Birds/individuals:      {:>10}",
-        format!("{}", total_birds)
-    );
+    println!("║    • Birds/individuals:      {:>10}", format!("{}", total_birds));
     println!("║    • Average generality:     {:>10.3}", avg_generality);
     println!("║    • Average entropy:        {:>10.3} bits", avg_entropy);
     println!(
@@ -324,12 +306,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for m in metrics.iter().take(15) {
         println!(
             "{:>6} {:>10} {:>8} {:>10.3} {:>10.3} {:>15}",
-            m.phrase_id,
-            m.total_occurrences,
-            m.birds_using,
-            m.generality_score,
-            m.shannon_entropy,
-            m.classification
+            m.phrase_id, m.total_occurrences, m.birds_using, m.generality_score, m.shannon_entropy, m.classification
         );
     }
     println!();

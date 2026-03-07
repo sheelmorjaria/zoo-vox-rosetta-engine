@@ -9,11 +9,11 @@
 //! 6. Synthesize: GranularConcatenativeSynthesizer applies Delta
 //! 7. Speak: Output valid, context-aware response
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use technical_architecture::{
     bio_acoustic_agent::{
-        AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent,
-        ContextDeltaCalculator, EnvState, FormantBarrierValidator, InteractionContext,
-        SourceMetadata, SynthesisRequest,
+        AcousticInventory, AcousticModality, AcousticPrototype, BioAcousticAgent, ContextDeltaCalculator, EnvState,
+        FormantBarrierValidator, InteractionContext, SourceMetadata, SynthesisRequest,
     },
     rosetta_pipeline::ContextEnrichedPhrase,
 };
@@ -316,9 +316,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    ├─ Source: '{}' prototype", plan.source_label);
     println!(
         "    ├─ F0: {:.0}Hz → {:.0}Hz (+{:.0}Hz)",
-        plan.source_metadata.mean_f0_hz,
-        plan.target_metadata.mean_f0_hz,
-        plan.delta.delta_mean_f0_hz
+        plan.source_metadata.mean_f0_hz, plan.target_metadata.mean_f0_hz, plan.delta.delta_mean_f0_hz
     );
     println!(
         "    ├─ Loudness: {:.2} → {:.2}",

@@ -4,6 +4,7 @@
 //! Loads existing bat_nbd_cache_channel and normalizes features
 //! so all 105 dimensions contribute equally to distance calculations.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
@@ -217,11 +218,7 @@ fn main() -> anyhow::Result<()> {
     let batch_size = 500;
     let n_batches = (normalized_segments.len() + batch_size - 1) / batch_size;
 
-    println!(
-        "  Saving {} batches to {}...",
-        n_batches,
-        output_dir.display()
-    );
+    println!("  Saving {} batches to {}...", n_batches, output_dir.display());
 
     for (i, chunk) in normalized_segments.chunks(batch_size).enumerate() {
         let filename = format!("{}/nbd_batch_{:04}.json", output_dir.display(), i + 1);

@@ -17,6 +17,7 @@
 //!   cargo run --release --example multi_species_complete_analysis -- dolphin
 //!   cargo run --release --example multi_species_complete_analysis -- zebra_finch
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -29,8 +30,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, AtomicGranularity, DynamicPhraseCandidate, DynamicSegmenter,
-    DynamicSegmenterConfig, HierarchicalThresholds, SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, AtomicGranularity, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
+    HierarchicalThresholds, SimilarityMetric, ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -267,10 +268,7 @@ fn run_complete_analysis(config: SpeciesConfig) -> Result<(), Box<dyn std::error
         "  ├─ Min Phrase Duration: {}ms",
         config.segmenter_config.min_phrase_duration_ms
     );
-    println!(
-        "  ├─ Change Threshold: {}",
-        config.segmenter_config.change_threshold
-    );
+    println!("  ├─ Change Threshold: {}", config.segmenter_config.change_threshold);
     println!("  └─ Max Files: {}", config.max_files);
     println!();
 
@@ -309,18 +307,14 @@ fn run_complete_analysis(config: SpeciesConfig) -> Result<(), Box<dyn std::error
                 }
 
                 let audio = resample_audio(&audio, file_info.sample_rate, config.sample_rate);
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    config.sample_rate,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(config.sample_rate)));
 
                 let result = segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &file_info.filename,
                 );
@@ -345,11 +339,7 @@ fn run_complete_analysis(config: SpeciesConfig) -> Result<(), Box<dyn std::error
     println!("[3/4] Clustering Phrases");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    let clusters = cluster_phrases(
-        &all_candidates,
-        config.similarity_threshold,
-        config.min_occurrences,
-    );
+    let clusters = cluster_phrases(&all_candidates, config.similarity_threshold, config.min_occurrences);
     println!("Discovered {} phrase types", clusters.len());
 
     // ========================================================================
@@ -416,16 +406,10 @@ fn run_complete_analysis(config: SpeciesConfig) -> Result<(), Box<dyn std::error
     );
     println!(
         "│ Notes{}    │ {:>5} │ {:>10} │ {:>8.1}ms                               │",
-        note_marker,
-        hierarchical.notes.phrase_types,
-        hierarchical.notes.candidates,
-        hierarchical.notes.avg_duration_ms
+        note_marker, hierarchical.notes.phrase_types, hierarchical.notes.candidates, hierarchical.notes.avg_duration_ms
     );
     println!("│                                                                             │");
-    println!(
-        "│ * = ATOMIC LEVEL (carrier of meaning for {})",
-        config.name
-    );
+    println!("│ * = ATOMIC LEVEL (carrier of meaning for {})", config.name);
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
@@ -456,10 +440,7 @@ fn run_complete_analysis(config: SpeciesConfig) -> Result<(), Box<dyn std::error
         fingerprint.duration_range_ms.0, fingerprint.duration_range_ms.1
     );
     println!("│ Avg Duration:       {:.1}ms", fingerprint.avg_duration_ms);
-    println!(
-        "│ Call Types:         {}",
-        fingerprint.call_type_distribution.len()
-    );
+    println!("│ Call Types:         {}", fingerprint.call_type_distribution.len());
     for niche in &fingerprint.acoustic_niches {
         println!("│ • {}: {:.1}%", niche.name, niche.occurrence_percent);
     }
@@ -519,17 +500,13 @@ fn analyze_hierarchical(
             }
             let audio = resample_audio(&audio, file_info.sample_rate, config.sample_rate);
 
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                config.sample_rate,
-            )));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(config.sample_rate)));
 
             // Extract at each level
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64)
-                    .ok()
-                    .map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
             };
 
             motif_candidates.extend(
@@ -552,10 +529,8 @@ fn analyze_hierarchical(
 
     // Cluster at each level
     let motif_clusters = cluster_phrases_simple(&motif_candidates, config.similarity_threshold, 2);
-    let syllable_clusters =
-        cluster_phrases_simple(&syllable_candidates, config.similarity_threshold * 0.9, 2);
-    let note_clusters =
-        cluster_phrases_simple(&note_candidates, config.similarity_threshold * 0.8, 2);
+    let syllable_clusters = cluster_phrases_simple(&syllable_candidates, config.similarity_threshold * 0.9, 2);
+    let note_clusters = cluster_phrases_simple(&note_candidates, config.similarity_threshold * 0.8, 2);
 
     Ok(HierarchicalResults {
         motifs: LevelSummary {
@@ -564,11 +539,7 @@ fn analyze_hierarchical(
             avg_duration_ms: if motif_candidates.is_empty() {
                 0.0
             } else {
-                motif_candidates
-                    .iter()
-                    .map(|c| c.duration_ms as f64)
-                    .sum::<f64>()
-                    / motif_candidates.len() as f64
+                motif_candidates.iter().map(|c| c.duration_ms as f64).sum::<f64>() / motif_candidates.len() as f64
             },
             duration_distribution: compute_duration_distribution(&motif_candidates),
         },
@@ -578,11 +549,7 @@ fn analyze_hierarchical(
             avg_duration_ms: if syllable_candidates.is_empty() {
                 0.0
             } else {
-                syllable_candidates
-                    .iter()
-                    .map(|c| c.duration_ms as f64)
-                    .sum::<f64>()
-                    / syllable_candidates.len() as f64
+                syllable_candidates.iter().map(|c| c.duration_ms as f64).sum::<f64>() / syllable_candidates.len() as f64
             },
             duration_distribution: compute_duration_distribution(&syllable_candidates),
         },
@@ -592,11 +559,7 @@ fn analyze_hierarchical(
             avg_duration_ms: if note_candidates.is_empty() {
                 0.0
             } else {
-                note_candidates
-                    .iter()
-                    .map(|c| c.duration_ms as f64)
-                    .sum::<f64>()
-                    / note_candidates.len() as f64
+                note_candidates.iter().map(|c| c.duration_ms as f64).sum::<f64>() / note_candidates.len() as f64
             },
             duration_distribution: compute_duration_distribution(&note_candidates),
         },
@@ -624,9 +587,7 @@ fn analyze_syntax(
     for cluster in clusters {
         for &idx in &cluster.member_indices {
             if let Some((cand, _)) = candidates.get(idx) {
-                phrase_to_id
-                    .entry(cand.id.clone())
-                    .or_insert(cluster.phrase_id);
+                phrase_to_id.entry(cand.id.clone()).or_insert(cluster.phrase_id);
             }
         }
     }
@@ -663,10 +624,7 @@ fn analyze_syntax(
         for window in seq.windows(2) {
             let from_total = from_totals.get(&window[0]).copied().unwrap_or(0);
             if from_total > 0 {
-                let count = transitions
-                    .get(&(window[0], window[1]))
-                    .copied()
-                    .unwrap_or(0);
+                let count = transitions.get(&(window[0], window[1])).copied().unwrap_or(0);
                 let prob = count as f64 / from_total as f64;
                 if prob > 0.0 {
                     log_prob += prob.ln();
@@ -760,10 +718,7 @@ fn analyze_fingerprint(
     }
 
     // Duration stats
-    let durations: Vec<f64> = candidates
-        .iter()
-        .map(|(c, _)| c.duration_ms as f64)
-        .collect();
+    let durations: Vec<f64> = candidates.iter().map(|(c, _)| c.duration_ms as f64).collect();
     let min_dur = durations.iter().cloned().fold(f64::INFINITY, f64::min);
     let max_dur = durations.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     let avg_dur = durations.iter().sum::<f64>() / durations.len() as f64;
@@ -772,17 +727,11 @@ fn analyze_fingerprint(
     let total = candidates.len() as f64;
 
     // Short calls niche
-    let short_calls: Vec<_> = candidates
-        .iter()
-        .filter(|(c, _)| c.duration_ms < 150.0)
-        .collect();
+    let short_calls: Vec<_> = candidates.iter().filter(|(c, _)| c.duration_ms < 150.0).collect();
     let short_percent = short_calls.len() as f64 / total * 100.0;
 
     // Long calls niche
-    let long_calls: Vec<_> = candidates
-        .iter()
-        .filter(|(c, _)| c.duration_ms > 400.0)
-        .collect();
+    let long_calls: Vec<_> = candidates.iter().filter(|(c, _)| c.duration_ms > 400.0).collect();
     let long_percent = long_calls.len() as f64 / total * 100.0;
 
     let mut niches = Vec::new();
@@ -792,10 +741,7 @@ fn analyze_fingerprint(
             name: "Short Calls".to_string(),
             call_types: short_types.into_iter().collect(),
             occurrence_percent: short_percent,
-            avg_duration_ms: short_calls
-                .iter()
-                .map(|(c, _)| c.duration_ms as f64)
-                .sum::<f64>()
+            avg_duration_ms: short_calls.iter().map(|(c, _)| c.duration_ms as f64).sum::<f64>()
                 / short_calls.len().max(1) as f64,
         });
     }
@@ -805,10 +751,7 @@ fn analyze_fingerprint(
             name: "Long Calls".to_string(),
             call_types: long_types.into_iter().collect(),
             occurrence_percent: long_percent,
-            avg_duration_ms: long_calls
-                .iter()
-                .map(|(c, _)| c.duration_ms as f64)
-                .sum::<f64>()
+            avg_duration_ms: long_calls.iter().map(|(c, _)| c.duration_ms as f64).sum::<f64>()
                 / long_calls.len().max(1) as f64,
         });
     }
@@ -861,9 +804,7 @@ fn load_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::erro
             Ok(files.into_iter().take(config.max_files).collect())
         }
         AnnotationFormat::EgyptianBat => {
-            let annotations_path = config
-                .data_dir
-                .join("annotations_1k_subset_with_call_types.csv");
+            let annotations_path = config.data_dir.join("annotations_1k_subset_with_call_types.csv");
             let audio_dir = config.data_dir.join("audio");
 
             let file = File::open(annotations_path)?;
@@ -906,11 +847,7 @@ fn load_files(config: &SpeciesConfig) -> Result<Vec<FileInfo>, Box<dyn std::erro
             let mut files = Vec::new();
 
             // Recursively scan all subdirectories for FLAC files
-            fn scan_marmoset_dir(
-                dir: &Path,
-                files: &mut Vec<FileInfo>,
-                max_files: usize,
-            ) -> std::io::Result<()> {
+            fn scan_marmoset_dir(dir: &Path, files: &mut Vec<FileInfo>, max_files: usize) -> std::io::Result<()> {
                 if files.len() >= max_files {
                     return Ok(());
                 }
@@ -1004,11 +941,7 @@ fn cluster_phrases(
     clusters
 }
 
-fn cluster_phrases_simple(
-    candidates: &[DynamicPhraseCandidate],
-    threshold: f32,
-    min_size: usize,
-) -> Vec<Vec<usize>> {
+fn cluster_phrases_simple(candidates: &[DynamicPhraseCandidate], threshold: f32, min_size: usize) -> Vec<Vec<usize>> {
     if candidates.is_empty() {
         return Vec::new();
     }
@@ -1074,10 +1007,7 @@ fn compute_duration_distribution(candidates: &[DynamicPhraseCandidate]) -> HashM
 }
 
 fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
-    let extension = path
-        .extension()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_lowercase());
+    let extension = path.extension().and_then(|s| s.to_str()).map(|s| s.to_lowercase());
 
     match extension.as_deref() {
         Some("wav") => load_wav_audio(path),
@@ -1091,10 +1021,7 @@ fn load_wav_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader
@@ -1131,10 +1058,7 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
         .format(&hint, mss, &format_opts, &metadata_opts)
         .map_err(|e| format!("Failed to probe FLAC: {}", e))?;
 
-    let track = probed
-        .format
-        .default_track()
-        .ok_or("No default track in FLAC file")?;
+    let track = probed.format.default_track().ok_or("No default track in FLAC file")?;
     let track_id = track.id;
 
     let mut decoder = symphonia::default::get_codecs()
@@ -1146,9 +1070,7 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     loop {
         let packet = match probed.format.next_packet() {
             Ok(packet) => packet,
-            Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
-            {
+            Err(symphonia::core::errors::Error::IoError(ref e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 break
             }
             Err(_) => break,

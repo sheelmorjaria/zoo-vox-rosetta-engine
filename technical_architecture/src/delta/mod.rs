@@ -41,11 +41,7 @@ mod tests {
         let temporal_computer = TemporalDeltaComputer::new(DeltaWidth::N2);
 
         // Test MFCC delta computation
-        let mfcc_frames = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![1.1, 2.1, 3.1],
-            vec![1.2, 2.2, 3.2],
-        ];
+        let mfcc_frames = vec![vec![1.0, 2.0, 3.0], vec![1.1, 2.1, 3.1], vec![1.2, 2.2, 3.2]];
         let (delta, delta_delta) = mfcc_computer.compute(&mfcc_frames).unwrap();
 
         assert_eq!(delta.len(), 3);

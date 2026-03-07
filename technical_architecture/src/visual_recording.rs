@@ -145,22 +145,14 @@ impl VisualMetadata {
     }
 
     fn now_ns() -> u64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos() as u64
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64
     }
 
     pub fn add_audio_sync_event(&mut self, event: AudioSyncEvent) {
         self.audio_sync_events.push(event);
     }
 
-    pub fn add_context_annotation(
-        &mut self,
-        timestamp_ns: u64,
-        annotation_type: &str,
-        data: serde_json::Value,
-    ) {
+    pub fn add_context_annotation(&mut self, timestamp_ns: u64, annotation_type: &str, data: serde_json::Value) {
         self.context_annotations.push(ContextAnnotation {
             timestamp_ns,
             annotation_type: annotation_type.to_string(),
@@ -353,10 +345,7 @@ impl VisualRecorder {
         // Check state transition
         let current_state = self.state();
         if !current_state.can_transition_to(&RecordingState::Starting) {
-            return Err(anyhow::anyhow!(
-                "Cannot start from {:?} state",
-                current_state
-            ));
+            return Err(anyhow::anyhow!("Cannot start from {:?} state", current_state));
         }
 
         // Transition to Starting
@@ -399,10 +388,7 @@ impl VisualRecorder {
         let current_state = self.state();
 
         if !current_state.can_transition_to(&RecordingState::Stopping) {
-            return Err(anyhow::anyhow!(
-                "Cannot stop from {:?} state",
-                current_state
-            ));
+            return Err(anyhow::anyhow!("Cannot stop from {:?} state", current_state));
         }
 
         // Transition to Stopping
@@ -534,10 +520,7 @@ mod visual_recording_tests {
         metadata.add_audio_sync_event(event);
 
         assert_eq!(metadata.audio_sync_events.len(), 1);
-        assert_eq!(
-            metadata.audio_sync_events[0].phrase_key,
-            Some("phrase_001".to_string())
-        );
+        assert_eq!(metadata.audio_sync_events[0].phrase_key, Some("phrase_001".to_string()));
     }
 
     #[test]
@@ -551,10 +534,7 @@ mod visual_recording_tests {
         );
 
         assert_eq!(metadata.context_annotations.len(), 1);
-        assert_eq!(
-            metadata.context_annotations[0].annotation_type,
-            "environment"
-        );
+        assert_eq!(metadata.context_annotations[0].annotation_type, "environment");
     }
 
     #[test]

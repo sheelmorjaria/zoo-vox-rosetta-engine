@@ -22,13 +22,12 @@ Source: https://huggingface.co/datasets/EarthSpeciesProject/BEANS-Zero
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
 try:
-    from datasets import load_dataset
     import numpy as np
+    from datasets import load_dataset
 except ImportError:
     print("Error: Required packages not installed.")
     print("Please install with: pip install datasets numpy")
@@ -40,30 +39,30 @@ DATASET_NAME = "EarthSpeciesProject/BEANS-Zero"
 
 def list_component_datasets(ds):
     """List all component datasets in BEANS-Zero."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("BEANS-Zero Component Datasets")
-    print("="*60)
+    print("=" * 60)
 
     components, counts = np.unique(ds["dataset_name"], return_counts=True)
 
     print(f"\n{'Dataset':<40} {'Samples':>10}")
-    print("-"*52)
+    print("-" * 52)
 
     total = 0
     for component, count in sorted(zip(components, counts), key=lambda x: -x[1]):
         print(f"{component:<40} {count:>10,}")
         total += count
 
-    print("-"*52)
+    print("-" * 52)
     print(f"{'TOTAL':<40} {total:>10,}")
     print()
 
 
 def preview_sample(ds, idx=0):
     """Preview a sample from the dataset."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(f"Sample Preview (index {idx})")
-    print("="*60)
+    print("=" * 60)
 
     sample = ds[idx]
 
@@ -73,7 +72,7 @@ def preview_sample(ds, idx=0):
     print(f"File Name:      {sample.get('file_name', 'N/A')}")
 
     # Parse metadata
-    metadata = sample.get('metadata', '{}')
+    metadata = sample.get("metadata", "{}")
     if isinstance(metadata, str):
         try:
             metadata = json.loads(metadata)
@@ -84,9 +83,11 @@ def preview_sample(ds, idx=0):
     print(f"Sample Rate:    {metadata.get('sample_rate', 'N/A')} Hz")
 
     # Audio info
-    audio = sample.get('audio', {})
+    audio = sample.get("audio", {})
     if isinstance(audio, dict):
-        print(f"Audio Array:    Shape {audio.get('array', []).shape if hasattr(audio.get('array', []), 'shape') else 'N/A'}")
+        print(
+            f"Audio Array:    Shape {audio.get('array', []).shape if hasattr(audio.get('array', []), 'shape') else 'N/A'}"
+        )
     else:
         print(f"Audio Type:     {type(audio).__name__}")
 
@@ -124,7 +125,7 @@ def download_dataset(output_dir: Path, split: str = "test"):
         "split": split,
         "total_samples": len(ds),
         "source_url": f"https://huggingface.co/datasets/{DATASET_NAME}",
-        "component_datasets": list(set(ds["dataset_name"]))
+        "component_datasets": list(set(ds["dataset_name"])),
     }
 
     metadata_path = output_dir / "metadata.json"
@@ -138,7 +139,7 @@ def download_dataset(output_dir: Path, split: str = "test"):
 
 def stream_dataset():
     """Stream dataset for preview without full download."""
-    print(f"\nStreaming BEANS-Zero dataset...")
+    print("\nStreaming BEANS-Zero dataset...")
     print(f"Source: {DATASET_NAME}")
     print()
 
@@ -150,7 +151,7 @@ def stream_dataset():
     for i, sample in enumerate(ds):
         if i >= 3:
             break
-        print(f"\nSample {i+1}:")
+        print(f"\nSample {i + 1}:")
         print(f"  Dataset: {sample.get('dataset_name', 'N/A')}")
         print(f"  Instruction: {sample.get('instruction_text', 'N/A')[:100]}...")
         print(f"  Output: {sample.get('output', 'N/A')}")
@@ -173,42 +174,34 @@ Examples:
 
   # Stream preview without downloading
   python scripts/beans_fetch.py --stream
-        """
+        """,
     )
 
     parser.add_argument(
-        "--output-dir", "-o",
+        "--output-dir",
+        "-o",
         type=Path,
         default=Path("./beans_zero_data"),
-        help="Directory to save the dataset (default: ./beans_zero_data)"
+        help="Directory to save the dataset (default: ./beans_zero_data)",
     )
     parser.add_argument(
-        "--split", "-s",
-        type=str,
-        default="test",
-        help="Dataset split to download (default: test)"
+        "--split", "-s", type=str, default="test", help="Dataset split to download (default: test)"
     )
     parser.add_argument(
-        "--stream",
-        action="store_true",
-        help="Stream dataset instead of downloading (for preview)"
+        "--stream", action="store_true", help="Stream dataset instead of downloading (for preview)"
     )
     parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List available component datasets and exit"
+        "--list", action="store_true", help="List available component datasets and exit"
     )
     parser.add_argument(
-        "--preview",
-        action="store_true",
-        help="Preview first sample after download"
+        "--preview", action="store_true", help="Preview first sample after download"
     )
 
     args = parser.parse_args()
 
-    print("="*60)
+    print("=" * 60)
     print("BEANS-Zero Dataset Fetcher")
-    print("="*60)
+    print("=" * 60)
 
     if args.stream:
         stream_dataset()
@@ -225,9 +218,9 @@ Examples:
     if args.preview:
         preview_sample(ds, 0)
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Download complete!")
-    print("="*60)
+    print("=" * 60)
     print(f"\nDataset saved to: {args.output_dir}")
     print(f"Load with: ds = load_from_disk('{args.output_dir}/beans_zero_{args.split}')")
 

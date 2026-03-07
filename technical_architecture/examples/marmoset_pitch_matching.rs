@@ -9,15 +9,14 @@
 //! - NBD Segments: High Recurrence (semantic cuts isolate reusable motifs)
 //! - Energy Segments: Low Recurrence (cuts through motifs, creating broken shapes)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::{Array1, Array2};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 /// Segment info
 #[derive(Debug, Clone)]
@@ -157,10 +156,7 @@ fn main() -> anyhow::Result<()> {
     // Match threshold (Euclidean distance in normalized 6D space)
     let match_threshold = 1.5; // About 1.5 standard deviations
 
-    println!(
-        "  Match Threshold: {} (Euclidean distance in 6D)",
-        match_threshold
-    );
+    println!("  Match Threshold: {} (Euclidean distance in 6D)", match_threshold);
     println!("  Lower = stricter match requirement");
     println!();
 

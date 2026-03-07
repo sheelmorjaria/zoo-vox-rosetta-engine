@@ -11,6 +11,7 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_atomic_phrases
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -122,8 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total_start = Instant::now();
 
     // Configuration
-    let data_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/zebra_finch/zebra_finch");
+    let data_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/zebra_finch/zebra_finch");
     let vocalizations_dir = data_dir.join("vocalizations");
     let annotations_path = data_dir.join("annotations.csv");
 
@@ -181,11 +181,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .flat_map(|ann| {
             let count = processed.fetch_add(1, Ordering::Relaxed);
             if count % 100 == 0 {
-                println!(
-                    "  Progress: {}/{} files",
-                    count + 1,
-                    max_files.min(total_files)
-                );
+                println!("  Progress: {}/{} files", count + 1, max_files.min(total_files));
             }
 
             let audio_path = vocalizations_dir.join(&ann.filename);
@@ -262,14 +258,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             phrase.members.push(candidate.id.clone());
-            *phrase
-                .call_types
-                .entry(candidate.call_type.clone())
-                .or_insert(0) += 1;
-            *phrase
-                .bird_names
-                .entry(candidate.bird_name.clone())
-                .or_insert(0) += 1;
+            *phrase.call_types.entry(candidate.call_type.clone()).or_insert(0) += 1;
+            *phrase.bird_names.entry(candidate.bird_name.clone()).or_insert(0) += 1;
             phrase.source_files.insert(candidate.source_file.clone());
         } else {
             // Create new phrase
@@ -340,11 +330,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        phrase.intra_cluster_similarity = if count > 0 {
-            total_sim / count as f64
-        } else {
-            0.0
-        };
+        phrase.intra_cluster_similarity = if count > 0 { total_sim / count as f64 } else { 0.0 };
 
         // Reuse score (how many different files use this phrase)
         phrase.reuse_score = phrase.source_files.len() as f64;
@@ -366,8 +352,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         atomic_phrases[i].inter_cluster_distance = min_dist;
-        atomic_phrases[i].separation_score =
-            min_dist / (1.0 - atomic_phrases[i].intra_cluster_similarity + 0.001);
+        atomic_phrases[i].separation_score = min_dist / (1.0 - atomic_phrases[i].intra_cluster_similarity + 0.001);
     }
 
     let clustering_time = clustering_start.elapsed();
@@ -396,36 +381,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     // Compute statistics
-    let avg_cluster_size = atomic_phrases
-        .iter()
-        .map(|p| p.members.len())
-        .sum::<usize>() as f64
-        / atomic_phrases.len().max(1) as f64;
-    let avg_intra_similarity = atomic_phrases
-        .iter()
-        .map(|p| p.intra_cluster_similarity)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_inter_distance = atomic_phrases
-        .iter()
-        .map(|p| p.inter_cluster_distance)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_separation = atomic_phrases
-        .iter()
-        .map(|p| p.separation_score)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_reuse = atomic_phrases.iter().map(|p| p.reuse_score).sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
+    let avg_cluster_size =
+        atomic_phrases.iter().map(|p| p.members.len()).sum::<usize>() as f64 / atomic_phrases.len().max(1) as f64;
+    let avg_intra_similarity =
+        atomic_phrases.iter().map(|p| p.intra_cluster_similarity).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_inter_distance =
+        atomic_phrases.iter().map(|p| p.inter_cluster_distance).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_separation =
+        atomic_phrases.iter().map(|p| p.separation_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_reuse = atomic_phrases.iter().map(|p| p.reuse_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
 
     // Call type distribution in atomic phrases
     let mut phrase_call_distribution: HashMap<String, usize> = HashMap::new();
     for phrase in &atomic_phrases {
         for (call_type, _) in &phrase.call_types {
-            *phrase_call_distribution
-                .entry(call_type.clone())
-                .or_insert(0) += 1;
+            *phrase_call_distribution.entry(call_type.clone()).or_insert(0) += 1;
         }
     }
 
@@ -442,10 +412,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Quality Metrics:");
     println!("  ├─ Avg Cluster Size: {:.1}", avg_cluster_size);
-    println!(
-        "  ├─ Avg Intra-Cluster Similarity: {:.3}",
-        avg_intra_similarity
-    );
+    println!("  ├─ Avg Intra-Cluster Similarity: {:.3}", avg_intra_similarity);
     println!("  ├─ Avg Inter-Cluster Distance: {:.3}", avg_inter_distance);
     println!("  ├─ Avg Separation Score: {:.2}", avg_separation);
     println!("  └─ Avg Reuse Score: {:.1} files/phrase", avg_reuse);
@@ -607,11 +574,7 @@ fn extract_phrase_candidates(
             let start_ms = start as f64 / SAMPLE_RATE as f64 * 1000.0;
 
             candidates.push(PhraseCandidate {
-                id: format!(
-                    "{}_seg{}",
-                    annotation.filename.replace(".wav", ""),
-                    segment_idx
-                ),
+                id: format!("{}_seg{}", annotation.filename.replace(".wav", ""), segment_idx),
                 features: features.to_vector().to_vec(),
                 source_file: annotation.filename.clone(),
                 call_type: annotation.call_type.clone(),

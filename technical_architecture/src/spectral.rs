@@ -198,14 +198,12 @@ impl SpectralModule {
                 let mut imag = 0.0f64;
 
                 for (i, &sample) in audio[start..end].iter().enumerate() {
-                    let phase = 2.0 * std::f64::consts::PI * freq_bin as f64 * i as f64
-                        / window_size as f64;
+                    let phase = 2.0 * std::f64::consts::PI * freq_bin as f64 * i as f64 / window_size as f64;
                     real += sample as f64 * phase.cos();
                     imag -= sample as f64 * phase.sin();
                 }
 
-                spectrogram[frame][freq_bin] =
-                    (real * real + imag * imag).sqrt() / window_size as f64;
+                spectrogram[frame][freq_bin] = (real * real + imag * imag).sqrt() / window_size as f64;
             }
         }
 
@@ -213,11 +211,7 @@ impl SpectralModule {
     }
 
     /// Detect frequency contours using ridge following
-    fn detect_contours(
-        &self,
-        spectrogram: &[Vec<f64>],
-        sample_rate: u32,
-    ) -> Vec<Vec<(usize, usize)>> {
+    fn detect_contours(&self, spectrogram: &[Vec<f64>], sample_rate: u32) -> Vec<Vec<(usize, usize)>> {
         if spectrogram.is_empty() {
             return Vec::new();
         }
@@ -270,12 +264,7 @@ impl SpectralModule {
     }
 
     /// Create a FrequencyContour from a ridge
-    fn create_contour(
-        &self,
-        id: usize,
-        ridge: Vec<(usize, usize)>,
-        sample_rate: u32,
-    ) -> FrequencyContour {
+    fn create_contour(&self, id: usize, ridge: Vec<(usize, usize)>, sample_rate: u32) -> FrequencyContour {
         let n_freqs = (sample_rate as f64 / 2.0 / self.frequency_resolution) as usize;
 
         // Convert ridge to frequency trajectory
@@ -307,11 +296,7 @@ impl SpectralModule {
     }
 
     /// Extract features from a frequency trajectory
-    pub fn extract_contour_features(
-        &self,
-        frequencies: &[f64],
-        _sample_rate: u32,
-    ) -> ContourFeatures {
+    pub fn extract_contour_features(&self, frequencies: &[f64], _sample_rate: u32) -> ContourFeatures {
         if frequencies.is_empty() {
             return ContourFeatures {
                 f_start: 0.0,
@@ -372,9 +357,7 @@ impl SpectralModule {
             let current_slope = frequencies[i] - frequencies[i - 1];
 
             // Sign change indicates inflection
-            if (prev_slope > 0.0 && current_slope < 0.0)
-                || (prev_slope < 0.0 && current_slope > 0.0)
-            {
+            if (prev_slope > 0.0 && current_slope < 0.0) || (prev_slope < 0.0 && current_slope > 0.0) {
                 inflections += 1;
             }
 

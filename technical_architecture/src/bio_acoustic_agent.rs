@@ -243,10 +243,7 @@ impl AcousticModality {
             Self::Harmonic
         }
         // Low HNR + High spectral flatness + Short duration = Transient
-        else if meta.harmonic_to_noise_ratio < 10.0
-            && meta.entropy > 0.5
-            && meta.duration_ms < 100.0
-        {
+        else if meta.harmonic_to_noise_ratio < 10.0 && meta.entropy > 0.5 && meta.duration_ms < 100.0 {
             Self::Transient
         } else {
             Self::Mixed
@@ -317,10 +314,7 @@ impl AcousticInventory {
     }
 
     /// Save to JSON file
-    pub fn save<P: AsRef<std::path::Path>>(
-        &self,
-        path: P,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
         let file = std::fs::File::create(path)?;
         let writer = std::io::BufWriter::new(file);
         serde_json::to_writer_pretty(writer, self)?;
@@ -563,17 +557,15 @@ impl FormantBarrierValidator {
         let target_modality = AcousticModality::from_metadata(target);
 
         if source_modality != target_modality {
-            if source_modality == AcousticModality::Harmonic
-                && target_modality == AcousticModality::Transient
-            {
+            if source_modality == AcousticModality::Harmonic && target_modality == AcousticModality::Transient {
                 violations.push(
-                    "FORMANT BARRIER VIOLATION: Cannot create a Transient (click) from a Harmonic (tone) via warping".to_string()
+                    "FORMANT BARRIER VIOLATION: Cannot create a Transient (click) from a Harmonic (tone) via warping"
+                        .to_string(),
                 );
-            } else if source_modality == AcousticModality::Transient
-                && target_modality == AcousticModality::Harmonic
-            {
+            } else if source_modality == AcousticModality::Transient && target_modality == AcousticModality::Harmonic {
                 violations.push(
-                    "FORMANT BARRIER VIOLATION: Cannot create a Harmonic (tone) from a Transient (click) via warping".to_string()
+                    "FORMANT BARRIER VIOLATION: Cannot create a Harmonic (tone) from a Transient (click) via warping"
+                        .to_string(),
                 );
             }
         }
@@ -715,17 +707,11 @@ pub struct BioAcousticAgent {
 impl BioAcousticAgent {
     /// Create new agent with inventory
     pub fn new(inventory: AcousticInventory, sample_rate: u32) -> Self {
-        Self {
-            inventory,
-            sample_rate,
-        }
+        Self { inventory, sample_rate }
     }
 
     /// Load agent from inventory file
-    pub fn load<P: AsRef<std::path::Path>>(
-        path: P,
-        sample_rate: u32,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn load<P: AsRef<std::path::Path>>(path: P, sample_rate: u32) -> Result<Self, Box<dyn std::error::Error>> {
         let inventory = AcousticInventory::load(path)?;
         Ok(Self::new(inventory, sample_rate))
     }
@@ -758,10 +744,7 @@ impl BioAcousticAgent {
         let source_audio = prototype.audio_buffer.clone();
 
         // Step 2: Calculate deltas
-        let mut deltas = vec![ContextDeltaCalculator::calculate(
-            request.environment,
-            request.context,
-        )];
+        let mut deltas = vec![ContextDeltaCalculator::calculate(request.environment, request.context)];
 
         // Add grading delta if specified
         if let Some(grading) = request.grading_override {
@@ -811,11 +794,7 @@ impl BioAcousticAgent {
     }
 
     /// Quick synthesis: label + environment -> plan
-    pub fn quick_synthesize(
-        &self,
-        label: &str,
-        environment: EnvState,
-    ) -> Result<SynthesisPlan, String> {
+    pub fn quick_synthesize(&self, label: &str, environment: EnvState) -> Result<SynthesisPlan, String> {
         let request = SynthesisRequest::new(label)
             .with_environment(environment)
             .with_context(InteractionContext::Reply);
@@ -848,22 +827,20 @@ mod tests {
 
     #[test]
     fn test_acoustic_modality_classification() {
-        let mut harmonic = SourceMetadata::default();
-        harmonic.harmonic_to_noise_ratio = 20.0;
-        harmonic.entropy = 0.2;
-        assert_eq!(
-            AcousticModality::from_metadata(&harmonic),
-            AcousticModality::Harmonic
-        );
+        let harmonic = SourceMetadata {
+            harmonic_to_noise_ratio: 20.0,
+            entropy: 0.2,
+            ..Default::default()
+        };
+        assert_eq!(AcousticModality::from_metadata(&harmonic), AcousticModality::Harmonic);
 
-        let mut transient = SourceMetadata::default();
-        transient.harmonic_to_noise_ratio = 5.0;
-        transient.entropy = 0.7;
-        transient.duration_ms = 50.0;
-        assert_eq!(
-            AcousticModality::from_metadata(&transient),
-            AcousticModality::Transient
-        );
+        let transient = SourceMetadata {
+            harmonic_to_noise_ratio: 5.0,
+            entropy: 0.7,
+            duration_ms: 50.0,
+            ..Default::default()
+        };
+        assert_eq!(AcousticModality::from_metadata(&transient), AcousticModality::Transient);
     }
 
     #[test]
@@ -887,19 +864,25 @@ mod tests {
 
     #[test]
     fn test_formant_barrier_validation() {
-        let mut source = SourceMetadata::default();
-        source.harmonic_to_noise_ratio = 25.0;
-        source.entropy = 0.1;
+        let source = SourceMetadata {
+            harmonic_to_noise_ratio: 25.0,
+            entropy: 0.1,
+            ..Default::default()
+        };
 
         // Valid small change
-        let mut target_small = source.clone();
-        target_small.harmonic_to_noise_ratio = 30.0;
+        let target_small = SourceMetadata {
+            harmonic_to_noise_ratio: 30.0,
+            ..source.clone()
+        };
         let result = FormantBarrierValidator::validate(&source, &target_small);
         assert!(result.is_valid);
 
         // Invalid large change
-        let mut target_large = source.clone();
-        target_large.harmonic_to_noise_ratio = 50.0;
+        let target_large = SourceMetadata {
+            harmonic_to_noise_ratio: 50.0,
+            ..source.clone()
+        };
         let result = FormantBarrierValidator::validate(&source, &target_large);
         assert!(!result.is_valid);
     }

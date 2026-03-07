@@ -16,11 +16,12 @@ Usage:
 """
 
 import json
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 # Configuration
@@ -95,7 +96,8 @@ class RosettaNetPL(nn.Module):
 
         # Weighted cross-entropy loss with label smoothing
         loss = F.cross_entropy(
-            logits, y,
+            logits,
+            y,
             weight=self.class_weights[y],
             label_smoothing=LABEL_SMOOTHING,
         )
@@ -109,7 +111,8 @@ class RosettaNetPL(nn.Module):
 
         # Weighted cross-entropy loss with label smoothing
         loss = F.cross_entropy(
-            logits, y,
+            logits,
+            y,
             weight=self.class_weights[y],
             label_smoothing=LABEL_SMOOTHING,
         )
@@ -133,12 +136,12 @@ class RosettaNetPL(nn.Module):
 
 def load_bincode_features(filepath):
     """Load features stored in Rust bincode format (Vec<f32>)"""
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         # Read length as varint (bincode uses varint encoding)
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
@@ -171,7 +174,11 @@ def load_data():
 
     for sample in samples:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
 
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
@@ -211,7 +218,9 @@ def load_data():
         dtype=torch.float32,
     )
 
-    print(f"  Class weights: min={min(class_weights.values()):.2f}, max={max(class_weights.values()):.2f}")
+    print(
+        f"  Class weights: min={min(class_weights.values()):.2f}, max={max(class_weights.values()):.2f}"
+    )
 
     # Split into train/validation (90/10)
     n_train = int(len(all_features) * 0.9)
@@ -326,7 +335,11 @@ def evaluate_model():
     for i in range(eval_start, len(samples)):
         sample = samples[i]
         audio_file = sample["audio_file"]
-        true_label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
+        true_label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
 
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:

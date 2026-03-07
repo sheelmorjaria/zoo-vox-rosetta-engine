@@ -8,6 +8,7 @@
 //
 // Bat-specific: 250kHz sample rate for ultrasonic vocalizations
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -111,8 +112,7 @@ impl PhraseSegmenter {
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 =
-                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
+            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
@@ -155,8 +155,7 @@ impl PhraseSegmenter {
                                 id: phrase_count,
                                 start_ms: start_sample as f64 / sample_rate * 1000.0,
                                 end_ms: end_sample as f64 / sample_rate * 1000.0,
-                                duration_ms: (end_sample - start_sample) as f64 / sample_rate
-                                    * 1000.0,
+                                duration_ms: (end_sample - start_sample) as f64 / sample_rate * 1000.0,
                                 start_sample,
                                 end_sample,
                                 features: Vec::new(),
@@ -270,12 +269,7 @@ impl WithinCallAnalyzer {
         }
     }
 
-    pub fn analyze(
-        &self,
-        audio: &[f32],
-        file_name: &str,
-        call_type: Option<&str>,
-    ) -> WithinCallAnalysis {
+    pub fn analyze(&self, audio: &[f32], file_name: &str, call_type: Option<&str>) -> WithinCallAnalysis {
         let mut phrases = self.segmenter.segment(audio);
 
         // Extract features for each phrase
@@ -295,15 +289,11 @@ impl WithinCallAnalyzer {
                     features.spectral_flatness as f64,
                     features.harmonic_to_noise_ratio as f64,
                 ];
-                phrase
-                    .features
-                    .extend(features.mfcc.iter().map(|&v| v as f64));
+                phrase.features.extend(features.mfcc.iter().map(|&v| v as f64));
                 phrase.features.push(features.spectral_flux as f64);
                 phrase.features.push(features.median_ici_ms as f64);
                 phrase.features.push(features.onset_rate_hz as f64);
-                phrase
-                    .features
-                    .push(features.ici_coefficient_of_variation as f64);
+                phrase.features.push(features.ici_coefficient_of_variation as f64);
             }
         }
 
@@ -312,10 +302,7 @@ impl WithinCallAnalyzer {
         let mut similarity_matrix = vec![vec![0.0f64; n]; n];
         let mut distance_matrix = vec![vec![0.0f64; n]; n];
 
-        let actual_dim = phrases
-            .first()
-            .map(|p| p.features.len())
-            .unwrap_or(self.feature_dim);
+        let actual_dim = phrases.first().map(|p| p.features.len()).unwrap_or(self.feature_dim);
         let engine = AcousticSimilarityEngine::new(actual_dim);
 
         for i in 0..n {
@@ -373,8 +360,7 @@ impl WithinCallAnalyzer {
         WithinCallAnalysis {
             file_name: file_name.to_string(),
             call_type: call_type.map(|s| s.to_string()),
-            total_duration_ms: audio.len() as f64 / self.segmenter.config.sample_rate as f64
-                * 1000.0,
+            total_duration_ms: audio.len() as f64 / self.segmenter.config.sample_rate as f64 * 1000.0,
             phrases,
             n_phrase_types,
             phrase_types,
@@ -387,11 +373,7 @@ impl WithinCallAnalyzer {
         }
     }
 
-    fn discover_phrase_types(
-        &self,
-        phrases: &[PhraseCandidate],
-        distance_matrix: &[Vec<f64>],
-    ) -> (Vec<i32>, usize) {
+    fn discover_phrase_types(&self, phrases: &[PhraseCandidate], distance_matrix: &[Vec<f64>]) -> (Vec<i32>, usize) {
         let n = phrases.len();
         if n == 0 {
             return (vec![], 0);
@@ -543,11 +525,9 @@ impl WithinCallAnalyzer {
             0.0
         };
 
-        let avg_within_type_similarity =
-            self.compute_within_type_similarity(phrase_types, similarity_matrix);
+        let avg_within_type_similarity = self.compute_within_type_similarity(phrase_types, similarity_matrix);
 
-        let avg_between_type_distance =
-            self.compute_between_type_distance(phrase_types, distance_matrix);
+        let avg_between_type_distance = self.compute_between_type_distance(phrase_types, distance_matrix);
 
         let total_duration_ms: f64 = phrases.iter().map(|p| p.duration_ms).sum();
         let phrase_rate = if total_duration_ms > 0.0 {
@@ -571,11 +551,7 @@ impl WithinCallAnalyzer {
         }
     }
 
-    fn compute_within_type_similarity(
-        &self,
-        phrase_types: &[i32],
-        similarity_matrix: &[Vec<f64>],
-    ) -> f64 {
+    fn compute_within_type_similarity(&self, phrase_types: &[i32], similarity_matrix: &[Vec<f64>]) -> f64 {
         let mut total_sim = 0.0;
         let mut count = 0;
 
@@ -595,11 +571,7 @@ impl WithinCallAnalyzer {
         }
     }
 
-    fn compute_between_type_distance(
-        &self,
-        phrase_types: &[i32],
-        distance_matrix: &[Vec<f64>],
-    ) -> f64 {
+    fn compute_between_type_distance(&self, phrase_types: &[i32], distance_matrix: &[Vec<f64>]) -> f64 {
         let mut total_dist = 0.0;
         let mut count = 0;
 
@@ -639,10 +611,7 @@ impl WithinCallAnalysis {
             "   • Average phrase duration: {:.1} ms",
             self.stats.avg_phrase_duration_ms
         );
-        println!(
-            "   • Phrase rate: {:.2} phrases/sec",
-            self.stats.phrase_rate
-        );
+        println!("   • Phrase rate: {:.2} phrases/sec", self.stats.phrase_rate);
         println!("   • Type entropy: {:.3} bits", self.stats.type_entropy);
 
         if !self.motifs.is_empty() {
@@ -654,10 +623,7 @@ impl WithinCallAnalysis {
                     .map(|t| format!("{}", t))
                     .collect::<Vec<_>>()
                     .join("-");
-                println!(
-                    "   • Pattern [{}]: {} occurrences",
-                    pattern_str, motif.occurrences
-                );
+                println!("   • Pattern [{}]: {} occurrences", pattern_str, motif.occurrences);
             }
         }
     }
@@ -686,8 +652,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -749,17 +714,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Bat dataset configuration
-    let vocalizations_dir =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio");
-    let output_dir = PathBuf::from(
-        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results",
-    );
+    let vocalizations_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio");
+    let output_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results");
 
     if !vocalizations_dir.exists() {
-        println!(
-            "❌ Bat audio directory not found: {}",
-            vocalizations_dir.display()
-        );
+        println!("❌ Bat audio directory not found: {}", vocalizations_dir.display());
         return Ok(());
     }
 
@@ -829,10 +788,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let results: Vec<Option<WithinCallAnalysis>> = batch
             .par_iter()
             .map(|path| {
-                let filename = path
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown");
+                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
                 let analyzer = WithinCallAnalyzer::new(config.clone(), 30);
 
                 match load_wav_file(path) {
@@ -903,11 +859,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total_phrases: usize = all_analyses.iter().map(|a| a.stats.n_phrases).sum();
     let total_types: usize = all_analyses.iter().map(|a| a.n_phrase_types).sum();
-    let avg_entropy: f64 = all_analyses
-        .iter()
-        .map(|a| a.stats.type_entropy)
-        .sum::<f64>()
-        / all_analyses.len().max(1) as f64;
+    let avg_entropy: f64 =
+        all_analyses.iter().map(|a| a.stats.type_entropy).sum::<f64>() / all_analyses.len().max(1) as f64;
 
     let files_with_motifs: usize = all_analyses.iter().filter(|a| !a.motifs.is_empty()).count();
 

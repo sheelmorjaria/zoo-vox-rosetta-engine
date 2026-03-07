@@ -6,6 +6,7 @@
 // - Rigid internal structure (high PMI)
 // - Flexible external connections (high suffix entropy)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs;
 use std::path::Path;
 use technical_architecture::{
@@ -53,8 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let cluster_to_phrase: std::collections::HashMap<usize, String> = corpus_data
-        ["cluster_to_phrase"]
+    let cluster_to_phrase: std::collections::HashMap<usize, String> = corpus_data["cluster_to_phrase"]
         .as_object()
         .unwrap()
         .iter()
@@ -63,10 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Corpus loaded successfully");
     println!("   Sessions: {}", sessions.len());
-    println!(
-        "   Total phrases: {}",
-        sessions.iter().map(|s| s.len()).sum::<usize>()
-    );
+    println!("   Total phrases: {}", sessions.iter().map(|s| s.len()).sum::<usize>());
     println!("   Vocabulary size: {}", cluster_to_phrase.len());
     println!();
 
@@ -84,10 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Total sequences: {}", stats.total_sequences);
     println!("  Total symbols: {}", stats.total_symbols);
     println!("  Vocabulary size: {}", stats.vocabulary_size);
-    println!(
-        "  Avg sequence length: {:.1} symbols",
-        stats.avg_sequence_length
-    );
+    println!("  Avg sequence length: {:.1} symbols", stats.avg_sequence_length);
     println!("  Unique n-grams: {}", stats.unique_ngrams);
     println!();
 
@@ -132,12 +126,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })
             .collect();
 
-        println!(
-            "  {:>2}. {:30} | freq: {:>3}",
-            i + 1,
-            phrase_names.join(" → "),
-            count
-        );
+        println!("  {:>2}. {:30} | freq: {:>3}", i + 1, phrase_names.join(" → "), count);
     }
     println!();
 
@@ -177,12 +166,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })
             .collect();
 
-        println!(
-            "  {:>2}. {:30} | PMI: {:.3}",
-            i + 1,
-            phrase_names.join(" → "),
-            pmi
-        );
+        println!("  {:>2}. {:30} | PMI: {:.3}", i + 1, phrase_names.join(" → "), pmi);
     }
     println!();
 
@@ -382,10 +366,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sessions.len(),
         sessions.iter().map(|s| s.len()).sum::<usize>()
     );
-    println!(
-        "  • Vocabulary: {} unique phrase types",
-        cluster_to_phrase.len()
-    );
+    println!("  • Vocabulary: {} unique phrase types", cluster_to_phrase.len());
     println!("  • Phrase X candidates: {}", phrases_x.len());
     println!();
 

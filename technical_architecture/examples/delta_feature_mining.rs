@@ -12,6 +12,7 @@
 //! If animals reuse a "sweep trajectory" (e.g., always slide down at 5kHz/ms),
 //! the positions may be different, but the VELOCITIES will cluster.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::{Array1, Array2};
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -152,14 +153,8 @@ fn main() -> anyhow::Result<()> {
     let deltas = compute_delta_features(&all_segments);
     let n_deltas = deltas.len();
 
-    println!(
-        "  Computed {} delta vectors from {} segments",
-        n_deltas, n_segments
-    );
-    println!(
-        "  Delta ratio: {:.1}%",
-        n_deltas as f64 / n_segments as f64 * 100.0
-    );
+    println!("  Computed {} delta vectors from {} segments", n_deltas, n_segments);
+    println!("  Delta ratio: {:.1}%", n_deltas as f64 / n_segments as f64 * 100.0);
     println!();
 
     if n_deltas < 100 {
@@ -255,12 +250,7 @@ fn main() -> anyhow::Result<()> {
         println!("  Top Trajectory Clusters:");
         for (label, members) in sorted_clusters.iter().take(10) {
             let pct = members.len() as f64 / n_deltas as f64 * 100.0;
-            println!(
-                "    • Trajectory {:3}: {:6} deltas ({:.1}%)",
-                label,
-                members.len(),
-                pct
-            );
+            println!("    • Trajectory {:3}: {:6} deltas ({:.1}%)", label, members.len(), pct);
         }
         println!();
     }

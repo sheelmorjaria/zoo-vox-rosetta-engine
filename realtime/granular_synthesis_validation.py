@@ -45,7 +45,8 @@ try:
 
     spec = importlib.util.spec_from_file_location(
         "technical_architecture",
-        "/mnt/c/Users/sheel/Desktop/src/technical_architecture/target/release/libtechnical_architecture.so",
+        "/mnt/c/Users/sheel/Desktop/src/technical_architecture/"
+        "target/release/libtechnical_architecture.so",
     )
     module = importlib.util.module_from_spec(spec)
     sys.modules["technical_architecture"] = module

@@ -295,10 +295,7 @@ impl SynthesisPipeline {
 
         // Create dummy export path
         let metadata_path = self.output_dir.join("metadata.json");
-        let _ = std::fs::write(
-            &metadata_path,
-            format!("{{\"vocabulary_count\": {}}}", all_vocab.len()),
-        );
+        let _ = std::fs::write(&metadata_path, format!("{{\"vocabulary_count\": {}}}", all_vocab.len()));
 
         // Call simplified export
         let _metadata_path = self
@@ -320,11 +317,7 @@ impl SynthesisPipeline {
     }
 
     /// Create metadata for a vocabulary item
-    fn create_metadata(
-        &self,
-        vocab: &VocabularyItem,
-        segments: &[AudioSegmentForSynthesis],
-    ) -> SynthesisMetadata {
+    fn create_metadata(&self, vocab: &VocabularyItem, segments: &[AudioSegmentForSynthesis]) -> SynthesisMetadata {
         // Compute prosodic features
         let mut f0_contours = Vec::new();
         let mut intensities = Vec::new();
@@ -335,9 +328,7 @@ impl SynthesisPipeline {
             f0_contours.extend(f0);
 
             // Extract intensity
-            let rms = (segment.audio.iter().map(|&x| x * x).sum::<f32>()
-                / segment.audio.len() as f32)
-                .sqrt();
+            let rms = (segment.audio.iter().map(|&x| x * x).sum::<f32>() / segment.audio.len() as f32).sqrt();
             intensities.push(rms as f64);
         }
 
@@ -348,10 +339,7 @@ impl SynthesisPipeline {
         };
 
         let f0_min = f0_contours.iter().cloned().fold(f64::INFINITY, f64::min);
-        let f0_max = f0_contours
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, f64::max);
+        let f0_max = f0_contours.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
 
         let intensity_mean = if intensities.is_empty() {
             0.0
@@ -411,11 +399,7 @@ impl SynthesisPipeline {
     /// # Arguments
     /// * `vocab_id` - Vocabulary ID to synthesize
     /// * `params` - Synthesis parameters
-    pub fn synthesize_metadata_driven(
-        &self,
-        vocab_id: &str,
-        params: &MetadataDrivenParams,
-    ) -> Result<Vec<f32>> {
+    pub fn synthesize_metadata_driven(&self, vocab_id: &str, params: &MetadataDrivenParams) -> Result<Vec<f32>> {
         let _vocab = self
             .mapper
             .get_vocabulary(vocab_id)
@@ -431,15 +415,13 @@ impl SynthesisPipeline {
         // Generate sine wave with F0 modulation
         for (i, &f0) in f0_per_frame.iter().enumerate() {
             let t = i as f64 / 48000.0;
-            let sample =
-                params.intensity as f32 * (2.0 * std::f64::consts::PI * f0 * t).sin() as f32;
+            let sample = params.intensity as f32 * (2.0 * std::f64::consts::PI * f0 * t).sin() as f32;
 
             audio.push(sample);
         }
 
         // Apply spectral shaping (simplified)
-        audio =
-            self.apply_spectral_shape(&audio, params.spectral_centroid, params.spectral_bandwidth);
+        audio = self.apply_spectral_shape(&audio, params.spectral_centroid, params.spectral_bandwidth);
 
         Ok(audio)
     }
@@ -523,8 +505,7 @@ impl SynthesisPipeline {
 
         // Synthesize by concatenating grains with overlap
         let target_samples = (duration * source_segment.sample_rate as f64) as usize;
-        let hop_samples =
-            (params.hop_size_ms * source_segment.sample_rate as f64 / 1000.0) as usize;
+        let hop_samples = (params.hop_size_ms * source_segment.sample_rate as f64 / 1000.0) as usize;
 
         let mut audio = vec![0.0f32; target_samples];
         let mut grain_idx = 0;
@@ -559,11 +540,7 @@ impl SynthesisPipeline {
     /// # Arguments
     /// * `vocab_id` - Vocabulary ID to synthesize
     /// * `params` - Concatenative synthesis parameters
-    pub fn synthesize_concatenative(
-        &self,
-        vocab_id: &str,
-        params: &ConcatenativeParams,
-    ) -> Result<Vec<f32>> {
+    pub fn synthesize_concatenative(&self, vocab_id: &str, params: &ConcatenativeParams) -> Result<Vec<f32>> {
         let vocab = self
             .mapper
             .get_vocabulary(vocab_id)
@@ -586,9 +563,7 @@ impl SynthesisPipeline {
             .min_by(|a, b| {
                 let diff_a = (a.duration - target_duration).abs();
                 let diff_b = (b.duration - target_duration).abs();
-                diff_a
-                    .partial_cmp(&diff_b)
-                    .unwrap_or(std::cmp::Ordering::Equal)
+                diff_a.partial_cmp(&diff_b).unwrap_or(std::cmp::Ordering::Equal)
             })
             .unwrap();
 
@@ -669,18 +644,14 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
-    use crate::vocabulary_mapper::{
-        AnnotationDataset, DurationStats, VocabularyOccurrence, VocalizationContext,
-    };
+    use crate::vocabulary_mapper::{AnnotationDataset, DurationStats, VocabularyOccurrence, VocalizationContext};
 
     /// Test 1: Create synthesis pipeline
     #[test]
     fn test_synthesis_pipeline_creation() {
         let temp_dir = TempDir::new().unwrap();
 
-        let annotations = AnnotationDataset {
-            annotations: vec![],
-        };
+        let annotations = AnnotationDataset { annotations: vec![] };
         let mapper = VocabularyMapper::new(annotations, 48000);
 
         let segmenter = AudioSegmenter::new(
@@ -727,9 +698,7 @@ mod tests {
     #[test]
     fn test_f0_interpolation() {
         let temp_dir = TempDir::new().unwrap();
-        let annotations = AnnotationDataset {
-            annotations: vec![],
-        };
+        let annotations = AnnotationDataset { annotations: vec![] };
         let mapper = VocabularyMapper::new(annotations, 48000);
         let segmenter = AudioSegmenter::new(
             temp_dir.path().to_path_buf(),
@@ -753,9 +722,7 @@ mod tests {
     #[test]
     fn test_metadata_driven_synthesis() {
         let temp_dir = TempDir::new().unwrap();
-        let annotations = AnnotationDataset {
-            annotations: vec![],
-        };
+        let annotations = AnnotationDataset { annotations: vec![] };
 
         let mut mapper = VocabularyMapper::new(annotations, 48000);
 
@@ -772,8 +739,7 @@ mod tests {
         let time_ranges = vec![(0.0, 0.1)];
         let feature_series = vec![arr2(&[[1.0, 2.0], [3.0, 4.0]])];
 
-        let _result =
-            mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
+        let _result = mapper.map_vocabulary(&cluster_labels, &file_paths, &time_ranges, &feature_series);
 
         // Don't need to actually export for this test
 
@@ -791,8 +757,7 @@ mod tests {
 
         // May fail if segments can't be loaded (test file doesn't exist)
         // That's acceptable for this unit test
-        if result.is_ok() {
-            let audio = result.unwrap();
+        if let Ok(audio) = result {
             assert!(!audio.is_empty(), "Should produce audio");
         }
     }

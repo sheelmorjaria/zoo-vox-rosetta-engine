@@ -10,6 +10,7 @@
 //! Each call = sequence of syllables
 //! Syllable sequences = N-gram patterns
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -50,9 +51,7 @@ fn main() -> anyhow::Result<()> {
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let base_dir = dirs::home_dir()
-        .unwrap()
-        .join("birdsong_analysis/data/Vocalizations");
+    let base_dir = dirs::home_dir().unwrap().join("birdsong_analysis/data/Vocalizations");
 
     // Find FLAC files
     println!("  Finding FLAC files...");
@@ -90,10 +89,7 @@ fn main() -> anyhow::Result<()> {
     let total_syllables: usize = file_syllables.iter().map(|v| v.len()).sum();
     let avg_syllables = total_syllables as f64 / total_files as f64;
 
-    println!(
-        "  Extracted {} syllables from {} files",
-        total_syllables, total_files
-    );
+    println!("  Extracted {} syllables from {} files", total_syllables, total_files);
     println!("  Average {:.2} syllables per vocalization", avg_syllables);
     println!();
 
@@ -107,8 +103,7 @@ fn main() -> anyhow::Result<()> {
 
     // Count states
     let all_syllables: Vec<&Syllable> = file_syllables.iter().flatten().collect();
-    let unique_states: std::collections::HashSet<u32> =
-        all_syllables.iter().map(|s| s.state_id).collect();
+    let unique_states: std::collections::HashSet<u32> = all_syllables.iter().map(|s| s.state_id).collect();
     let recurrence_rate = 1.0 - (unique_states.len() as f64 / all_syllables.len() as f64);
 
     println!("  Unique syllable states: {}", unique_states.len());
@@ -139,9 +134,7 @@ fn main() -> anyhow::Result<()> {
         // Trigrams
         if seq.len() >= 3 {
             for i in 0..seq.len() - 2 {
-                *trigram_counts
-                    .entry((seq[i], seq[i + 1], seq[i + 2]))
-                    .or_insert(0) += 1;
+                *trigram_counts.entry((seq[i], seq[i + 1], seq[i + 2])).or_insert(0) += 1;
                 trigram_total += 1;
             }
         }
@@ -227,11 +220,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!(
         "  │  Discrete syntax: {}                                               ",
-        if has_discrete_syntax {
-            "✓ YES"
-        } else {
-            "✗ NO"
-        }
+        if has_discrete_syntax { "✓ YES" } else { "✗ NO" }
     );
     println!("  └─────────────────────────────────────────────────────────────────────────┘");
     println!();
@@ -264,11 +253,7 @@ fn main() -> anyhow::Result<()> {
         "  │  Marmoset (this)  │ {:7.1} │ {:10.1}%  │ {}                   │",
         avg_syllables,
         bigram_reuse_rate * 100.0,
-        if has_discrete_syntax {
-            "DISCR"
-        } else {
-            "GRADED"
-        }
+        if has_discrete_syntax { "DISCR" } else { "GRADED" }
     );
     println!("  │  Sperm Whale      │  1032.3  │       97.4%  │ DISCR                    │");
     println!("  │  Egyptian Bat     │    17.2  │       87.9%  │ DISCR                    │");
@@ -443,11 +428,7 @@ fn load_flac(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
 fn compute_state(audio: &[f32]) -> u32 {
     let energy = audio.iter().map(|x| x * x).sum::<f32>() / audio.len() as f32;
-    let zcr = audio
-        .windows(2)
-        .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-        .count() as f32
-        / audio.len() as f32;
+    let zcr = audio.windows(2).filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0)).count() as f32 / audio.len() as f32;
 
     let energy_bin = (energy * 1000.0) as u32 % 20;
     let zcr_bin = (zcr * 100.0) as u32 % 10;

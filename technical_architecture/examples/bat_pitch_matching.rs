@@ -3,6 +3,7 @@
 //!
 //! "Search vs. Cluster" experiment to test segment reusability.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -75,18 +76,14 @@ fn main() -> anyhow::Result<()> {
     let all_segments: Vec<_> = all_segments.into_iter().take(max_samples).collect();
     let n_samples = all_segments.len();
 
-    println!(
-        "  Loaded {} segments (using {} for analysis)",
-        total_samples, n_samples
-    );
+    println!("  Loaded {} segments (using {} for analysis)", total_samples, n_samples);
     println!();
 
     // Count contexts
-    let context_counts: HashMap<i32, usize> =
-        all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
-            *acc.entry(seg.context).or_insert(0) += 1;
-            acc
-        });
+    let context_counts: HashMap<i32, usize> = all_segments.iter().fold(HashMap::new(), |mut acc, seg| {
+        *acc.entry(seg.context).or_insert(0) += 1;
+        acc
+    });
 
     println!("Context Distribution:");
     let mut sorted_contexts: Vec<_> = context_counts.iter().collect();
@@ -161,10 +158,7 @@ fn main() -> anyhow::Result<()> {
     let match_threshold = 1.5;
     let match_samples = 5000.min(n_samples);
 
-    println!(
-        "  Match Threshold: {} (Euclidean distance in 6D)",
-        match_threshold
-    );
+    println!("  Match Threshold: {} (Euclidean distance in 6D)", match_threshold);
     println!("  Searching within {} samples...", match_samples);
     println!();
 

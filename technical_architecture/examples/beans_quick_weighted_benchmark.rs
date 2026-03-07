@@ -2,6 +2,7 @@
 //!
 //! Tests the hypothesis with 10,000 samples instead of 92,000
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -124,11 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let split_point = (samples.len() as f64 * 0.7) as usize;
     let train_samples: Vec<_> = samples.iter().take(split_point).collect();
     let test_samples: Vec<_> = samples.iter().skip(split_point).collect();
-    println!(
-        "  Train: {}, Test: {}",
-        train_samples.len(),
-        test_samples.len()
-    );
+    println!("  Train: {}, Test: {}", train_samples.len(), test_samples.len());
 
     // Build prototypes
     let mut prototypes: HashMap<String, Vec<f64>> = HashMap::new();
@@ -159,15 +156,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Create engines
-    let mut engine_unw =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
-    let mut engine_wgt =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_unw = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_wgt = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Fit normalization
     {
-        let mut matrix =
-            ndarray::Array2::<f64>::zeros((train_samples.len().min(5000), FEATURE_DIM));
+        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(5000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(5000).enumerate() {
             for (j, &v) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = v;
@@ -253,11 +247,7 @@ fn evaluate(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -272,10 +262,7 @@ fn evaluate(
     (f1, HashMap::new())
 }
 
-fn load_audio_f32(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_f32(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let mut file = File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;

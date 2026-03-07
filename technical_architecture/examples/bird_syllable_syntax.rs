@@ -12,6 +12,7 @@
 //! - zebra_finch: 3,405 files, 216KB avg
 //! - bird_songs: 687 files, 391KB avg
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -55,21 +56,15 @@ fn main() -> anyhow::Result<()> {
     let datasets = vec![
         (
             "11905533 (Bird)",
-            dirs::home_dir()
-                .unwrap()
-                .join("birdsong_analysis/data/11905533"),
+            dirs::home_dir().unwrap().join("birdsong_analysis/data/11905533"),
         ),
         (
             "zebra_finch",
-            dirs::home_dir()
-                .unwrap()
-                .join("birdsong_analysis/data/zebra_finch"),
+            dirs::home_dir().unwrap().join("birdsong_analysis/data/zebra_finch"),
         ),
         (
             "Whistle_Signals (Dolphin)",
-            dirs::home_dir()
-                .unwrap()
-                .join("birdsong_analysis/data/Whistle_Signals"),
+            dirs::home_dir().unwrap().join("birdsong_analysis/data/Whistle_Signals"),
         ),
         (
             "Dominica (Sperm Whale)",
@@ -108,12 +103,7 @@ fn main() -> anyhow::Result<()> {
                     if sub_path.is_dir() {
                         if let Ok(sub_entries) = fs::read_dir(&sub_path) {
                             for sub_entry in sub_entries.flatten() {
-                                if sub_entry
-                                    .path()
-                                    .extension()
-                                    .map(|x| x == "wav")
-                                    .unwrap_or(false)
-                                {
+                                if sub_entry.path().extension().map(|x| x == "wav").unwrap_or(false) {
                                     sub_files.push(sub_entry.path());
                                     if sub_files.len() >= 300 {
                                         break;
@@ -151,11 +141,7 @@ fn main() -> anyhow::Result<()> {
     println!("  │  Dataset         │ Files │ Syllables │ Syl/File │ Bigram Reuse │ Syntax│");
     println!("  ├─────────────────────────────────────────────────────────────────────────┤");
 
-    all_results.sort_by(|a, b| {
-        b.bigram_reuse_rate
-            .partial_cmp(&a.bigram_reuse_rate)
-            .unwrap()
-    });
+    all_results.sort_by(|a, b| b.bigram_reuse_rate.partial_cmp(&a.bigram_reuse_rate).unwrap());
 
     for r in &all_results {
         let syntax = if r.has_discrete_syntax {
@@ -217,10 +203,7 @@ fn analyze_dataset(
     let total_syllables: usize = file_syllables.iter().map(|v| v.len()).sum();
     let avg_syllables = total_syllables as f64 / total_files as f64;
 
-    println!(
-        "  Extracted {} syllables from {} files",
-        total_syllables, total_files
-    );
+    println!("  Extracted {} syllables from {} files", total_syllables, total_files);
     println!("  Average {:.1} syllables per file", avg_syllables);
     println!();
 
@@ -231,8 +214,7 @@ fn analyze_dataset(
 
     // Count states and recurrences
     let all_syllables: Vec<&SyllableSegment> = file_syllables.iter().flatten().collect();
-    let unique_states: std::collections::HashSet<u32> =
-        all_syllables.iter().map(|s| s.state_id).collect();
+    let unique_states: std::collections::HashSet<u32> = all_syllables.iter().map(|s| s.state_id).collect();
     let recurrence_rate = 1.0 - (unique_states.len() as f64 / all_syllables.len() as f64);
 
     println!("  Unique states: {}", unique_states.len());
@@ -263,9 +245,7 @@ fn analyze_dataset(
         // Trigrams
         if seq.len() >= 3 {
             for i in 0..seq.len() - 2 {
-                *trigram_counts
-                    .entry((seq[i], seq[i + 1], seq[i + 2]))
-                    .or_insert(0) += 1;
+                *trigram_counts.entry((seq[i], seq[i + 1], seq[i + 2])).or_insert(0) += 1;
                 trigram_total += 1;
             }
         }
@@ -434,12 +414,7 @@ fn load_wav_with_sr(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -469,11 +444,7 @@ fn load_wav_with_sr(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
 fn compute_state(audio: &[f32]) -> u32 {
     let energy = audio.iter().map(|x| x * x).sum::<f32>() / audio.len() as f32;
-    let zcr = audio
-        .windows(2)
-        .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-        .count() as f32
-        / audio.len() as f32;
+    let zcr = audio.windows(2).filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0)).count() as f32 / audio.len() as f32;
 
     let energy_bin = (energy * 1000.0) as u32 % 20;
     let zcr_bin = (zcr * 100.0) as u32 % 10;

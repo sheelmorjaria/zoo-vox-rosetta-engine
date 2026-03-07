@@ -12,14 +12,13 @@
 //! - Meerkat
 //! - Marmoset (for comparison)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 #[derive(Debug, Clone)]
 struct SpeciesConfig {
@@ -88,21 +87,13 @@ fn main() -> anyhow::Result<()> {
         },
         SpeciesConfig {
             name: "Dolphin".to_string(),
-            data_dir: PathBuf::from(
-                dirs::home_dir()
-                    .unwrap()
-                    .join("birdsong_analysis/data/Whistle_Signals"),
-            ),
+            data_dir: PathBuf::from(dirs::home_dir().unwrap().join("birdsong_analysis/data/Whistle_Signals")),
             file_pattern: "*.wav".to_string(),
             sample_rate: 192000,
         },
         SpeciesConfig {
             name: "Orcas".to_string(),
-            data_dir: PathBuf::from(
-                dirs::home_dir()
-                    .unwrap()
-                    .join("birdsong_analysis/data/orcas/audio"),
-            ),
+            data_dir: PathBuf::from(dirs::home_dir().unwrap().join("birdsong_analysis/data/orcas/audio")),
             file_pattern: "*.wav".to_string(),
             sample_rate: 44100,
         },
@@ -150,10 +141,7 @@ fn main() -> anyhow::Result<()> {
             Ok(analysis) => {
                 println!("  ✓ {} files processed", analysis.total_files);
                 println!("  ✓ {} segments extracted", analysis.total_segments);
-                println!(
-                    "  ✓ {:.1} segments/file average",
-                    analysis.avg_segments_per_file
-                );
+                println!("  ✓ {:.1} segments/file average", analysis.avg_segments_per_file);
                 println!(
                     "  ✓ Recurrence rate: {:.1}%",
                     analysis.recurrence_stats.recurrence_rate * 100.0
@@ -287,10 +275,7 @@ fn analyze_species(config: &SpeciesConfig, output_dir: &Path) -> anyhow::Result<
     let recurrence_stats = compute_recurrence(&all_segments);
 
     println!("  Recurrence analysis:");
-    println!(
-        "    • Unique patterns: {}",
-        recurrence_stats.unique_segments
-    );
+    println!("    • Unique patterns: {}", recurrence_stats.unique_segments);
     println!(
         "    • Recurrence rate: {:.1}%",
         recurrence_stats.recurrence_rate * 100.0
@@ -326,10 +311,7 @@ fn analyze_species(config: &SpeciesConfig, output_dir: &Path) -> anyhow::Result<
     })
 }
 
-fn process_audio_file(
-    path: &Path,
-    nbd_config: &BoundaryDetectorConfig,
-) -> anyhow::Result<Vec<SegmentInfo>> {
+fn process_audio_file(path: &Path, nbd_config: &BoundaryDetectorConfig) -> anyhow::Result<Vec<SegmentInfo>> {
     let audio = load_wav(path)?;
     if audio.is_empty() {
         return Ok(Vec::new());
@@ -396,12 +378,7 @@ fn load_wav(path: &Path) -> anyhow::Result<Vec<f32>> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -456,8 +433,7 @@ fn compute_feature_hash(audio: &[f32]) -> u64 {
     let mean = envelope.iter().sum::<f32>() / envelope.len() as f32;
     let max = envelope.iter().cloned().fold(0.0f32, f32::max);
     let std = {
-        let variance: f32 =
-            envelope.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / envelope.len() as f32;
+        let variance: f32 = envelope.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / envelope.len() as f32;
         variance.sqrt()
     };
 

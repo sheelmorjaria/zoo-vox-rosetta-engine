@@ -245,11 +245,8 @@ impl RhythmFeatures {
         let mean_interval_ms = total_duration_ms / interval_count as f64;
 
         let std_interval_ms = if interval_count > 1 {
-            let variance: f64 = intervals
-                .iter()
-                .map(|&d| (d - mean_interval_ms).powi(2))
-                .sum::<f64>()
-                / (interval_count - 1) as f64;
+            let variance: f64 =
+                intervals.iter().map(|&d| (d - mean_interval_ms).powi(2)).sum::<f64>() / (interval_count - 1) as f64;
             variance.sqrt()
         } else {
             0.0
@@ -268,22 +265,14 @@ impl RhythmFeatures {
         };
 
         // Regularity: inverse of CV, capped at 1.0
-        let regularity = if cv > 0.0 {
-            (1.0 / (1.0 + cv)).min(1.0)
-        } else {
-            1.0
-        };
+        let regularity = if cv > 0.0 { (1.0 / (1.0 + cv)).min(1.0) } else { 1.0 };
 
         // Tempo trend: linear regression slope of intervals
         let tempo_trend = if interval_count > 1 {
             let n = interval_count as f64;
             let sum_x: f64 = (0..interval_count).map(|i| i as f64).sum();
             let sum_y: f64 = intervals.iter().sum();
-            let sum_xy: f64 = intervals
-                .iter()
-                .enumerate()
-                .map(|(i, &y)| i as f64 * y)
-                .sum();
+            let sum_xy: f64 = intervals.iter().enumerate().map(|(i, &y)| i as f64 * y).sum();
             let sum_xx: f64 = (0..interval_count).map(|i| (i as f64).powi(2)).sum();
 
             let denominator = n * sum_xx - sum_x * sum_x;
@@ -487,10 +476,7 @@ impl RhythmSequencer {
 
     /// Add a known pattern
     pub fn add_pattern(&mut self, pattern: RhythmPattern) {
-        let species_patterns = self
-            .patterns_by_species
-            .entry(pattern.species.clone())
-            .or_default();
+        let species_patterns = self.patterns_by_species.entry(pattern.species.clone()).or_default();
 
         // Check if we should replace an existing pattern
         if species_patterns.len() >= self.config.max_patterns_per_species {
@@ -519,11 +505,7 @@ impl RhythmSequencer {
     }
 
     /// Recognize a rhythm pattern from observed intervals
-    pub fn recognize_pattern(
-        &mut self,
-        species: &str,
-        intervals: &[f64],
-    ) -> RhythmRecognitionResult {
+    pub fn recognize_pattern(&mut self, species: &str, intervals: &[f64]) -> RhythmRecognitionResult {
         let features = RhythmFeatures::from_intervals(intervals);
         let mut similarity_scores: HashMap<String, f64> = HashMap::new();
 
@@ -579,28 +561,15 @@ impl RhythmSequencer {
     }
 
     /// Compute similarity between features and a pattern
-    fn compute_pattern_similarity(
-        &self,
-        features: &RhythmFeatures,
-        pattern: &RhythmPattern,
-    ) -> f64 {
-        let pattern_features = RhythmFeatures::from_intervals(
-            &pattern
-                .intervals
-                .iter()
-                .map(|i| i.duration_ms)
-                .collect::<Vec<_>>(),
-        );
+    fn compute_pattern_similarity(&self, features: &RhythmFeatures, pattern: &RhythmPattern) -> f64 {
+        let pattern_features =
+            RhythmFeatures::from_intervals(&pattern.intervals.iter().map(|i| i.duration_ms).collect::<Vec<_>>());
 
         self.compute_feature_similarity(features, &pattern_features)
     }
 
     /// Compute similarity between features and a template
-    fn compute_template_similarity(
-        &self,
-        features: &RhythmFeatures,
-        template: &RhythmTemplate,
-    ) -> f64 {
+    fn compute_template_similarity(&self, features: &RhythmFeatures, template: &RhythmTemplate) -> f64 {
         // Create synthetic features from template
         let template_features = RhythmFeatures {
             mean_interval_ms: template.mean_interval_ms,
@@ -625,8 +594,7 @@ impl RhythmSequencer {
         // Weighted combination of feature similarities
         let mean_sim = self.gaussian_similarity(a.mean_interval_ms, b.mean_interval_ms, 200.0);
         let cv_sim = self.gaussian_similarity(a.cv, b.cv, 0.3);
-        let count_sim =
-            self.gaussian_similarity(a.interval_count as f64, b.interval_count as f64, 3.0);
+        let count_sim = self.gaussian_similarity(a.interval_count as f64, b.interval_count as f64, 3.0);
         let regularity_sim = self.gaussian_similarity(a.regularity, b.regularity, 0.2);
 
         // Weighted average
@@ -664,13 +632,7 @@ impl RhythmSequencer {
     }
 
     /// Learn a new pattern from observed intervals
-    pub fn learn_pattern(
-        &mut self,
-        species: &str,
-        name: &str,
-        intervals: &[f64],
-        context: &str,
-    ) -> RhythmPattern {
+    pub fn learn_pattern(&mut self, species: &str, name: &str, intervals: &[f64], context: &str) -> RhythmPattern {
         let id = format!("{}_{}", species, name);
         let mut pattern = RhythmPattern::new(&id, name, species, context);
 
@@ -916,11 +878,7 @@ mod tests {
 
         // Check intervals are roughly around the template mean (500ms)
         for &i in &intervals {
-            assert!(
-                i > 300.0 && i < 700.0,
-                "Interval {} outside expected range",
-                i
-            );
+            assert!(i > 300.0 && i < 700.0, "Interval {} outside expected range", i);
         }
     }
 
@@ -1002,9 +960,7 @@ mod tests {
 
         // Dolphin should have signature whistle template
         let dolphin = sequencer.get_templates("dolphin");
-        assert!(dolphin
-            .iter()
-            .any(|t| t.name == "signature_whistle_exchange"));
+        assert!(dolphin.iter().any(|t| t.name == "signature_whistle_exchange"));
     }
 
     #[test]

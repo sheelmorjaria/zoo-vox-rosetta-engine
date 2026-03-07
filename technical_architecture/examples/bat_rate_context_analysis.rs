@@ -13,6 +13,7 @@
 //!   3. Mean ICI (ms): Inter-call interval
 //!   4. Amplitude Slope: How intensity changes over burst
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use rand::seq::SliceRandom;
 use rayon::prelude::*;
@@ -198,18 +199,9 @@ fn main() -> anyhow::Result<()> {
 
     // Feature statistics
     let durations: Vec<f64> = temporal_features.iter().map(|tf| tf.duration_ms).collect();
-    let rates: Vec<f64> = temporal_features
-        .iter()
-        .map(|tf| tf.onset_rate_hz)
-        .collect();
-    let icis: Vec<f64> = temporal_features
-        .iter()
-        .map(|tf| tf.median_ici_ms)
-        .collect();
-    let slopes: Vec<f64> = temporal_features
-        .iter()
-        .map(|tf| tf.attack_decay_ratio)
-        .collect();
+    let rates: Vec<f64> = temporal_features.iter().map(|tf| tf.onset_rate_hz).collect();
+    let icis: Vec<f64> = temporal_features.iter().map(|tf| tf.median_ici_ms).collect();
+    let slopes: Vec<f64> = temporal_features.iter().map(|tf| tf.attack_decay_ratio).collect();
 
     println!("  Feature Statistics:");
     println!(
@@ -447,10 +439,7 @@ fn main() -> anyhow::Result<()> {
 
     println!("  Hypothesis Test:");
     println!("    • Predicted: Temporal features would give ~70% accuracy");
-    println!(
-        "    • Observed:  {:.1}% accuracy with 4D temporal features",
-        accuracy
-    );
+    println!("    • Observed:  {:.1}% accuracy with 4D temporal features", accuracy);
     println!();
 
     if accuracy > 50.0 {

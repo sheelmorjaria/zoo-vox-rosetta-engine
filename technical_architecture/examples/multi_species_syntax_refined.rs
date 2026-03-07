@@ -5,6 +5,7 @@
 //!
 //! Hypothesis: Poor discretization may hide discrete syntax.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -132,16 +133,9 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn analyze_with_modulus(
-    segments: &[SegmentInfo],
-    modulus: u64,
-    method_name: &str,
-) -> RefinedSyntaxAnalysis {
+fn analyze_with_modulus(segments: &[SegmentInfo], modulus: u64, method_name: &str) -> RefinedSyntaxAnalysis {
     // Discretize using hash % modulus
-    let discretized: Vec<u32> = segments
-        .iter()
-        .map(|s| (s.feature_hash % modulus) as u32)
-        .collect();
+    let discretized: Vec<u32> = segments.iter().map(|s| (s.feature_hash % modulus) as u32).collect();
 
     let unique_states: std::collections::HashSet<u32> = discretized.iter().cloned().collect();
     let n_states = unique_states.len();

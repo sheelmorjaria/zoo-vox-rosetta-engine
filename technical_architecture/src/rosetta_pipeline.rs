@@ -333,8 +333,7 @@ impl RosettaPipeline {
         let global_weights = FeatureWeights::unified();
 
         // Create global similarity engine
-        let mut global_engine =
-            AcousticSimilarityEngine::with_metric(FEATURE_DIM, DistanceMetric::Cosine);
+        let mut global_engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, DistanceMetric::Cosine);
         global_engine.set_feature_weights(&global_weights.to_weight_vector());
 
         // Create dynamic segmenter
@@ -381,10 +380,7 @@ impl RosettaPipeline {
     }
 
     /// Load bundle from file
-    pub fn load_bundle_from_file<P: AsRef<Path>>(
-        &mut self,
-        path: P,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn load_bundle_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<(), Box<dyn std::error::Error>> {
         let bundle = RosettaBundle::load(path)?;
         self.load_bundle(bundle);
         Ok(())
@@ -441,10 +437,7 @@ impl RosettaPipeline {
     }
 
     /// Identify species by comparing to all loaded species prototypes
-    fn identify_species(
-        &self,
-        features: &[f32],
-    ) -> Result<(String, f64), Box<dyn std::error::Error>> {
+    fn identify_species(&self, features: &[f32]) -> Result<(String, f64), Box<dyn std::error::Error>> {
         if self.species_bundles.is_empty() {
             return Ok(("unknown".to_string(), 0.0));
         }
@@ -458,8 +451,7 @@ impl RosettaPipeline {
         for (species_name, bundle) in &self.species_bundles {
             // Compare to all centroids in this species' dictionary
             for centroid in bundle.semantic_dictionary.type_centroids.values() {
-                let proto: Array1<f64> =
-                    Array1::from_vec(centroid.iter().map(|&f| f as f64).collect());
+                let proto: Array1<f64> = Array1::from_vec(centroid.iter().map(|&f| f as f64).collect());
                 let dist = self.global_engine.distance(&query, &proto);
                 let sim = 1.0 - dist;
 
@@ -537,11 +529,7 @@ impl RosettaPipeline {
     }
 
     /// Enrich phrase with contextual information
-    fn enrich_with_context(
-        &self,
-        mut phrase: ContextEnrichedPhrase,
-        env_state: &EnvState,
-    ) -> ContextEnrichedPhrase {
+    fn enrich_with_context(&self, mut phrase: ContextEnrichedPhrase, env_state: &EnvState) -> ContextEnrichedPhrase {
         // Set environmental state
         phrase.environmental_state = env_state.clone();
 
@@ -577,7 +565,12 @@ impl RosettaPipeline {
 
 impl Default for RosettaPipeline {
     fn default() -> Self {
-        Self::new().expect("Failed to create default RosettaPipeline")
+        // SAFETY: RosettaPipeline::new() with default config cannot fail:
+        // - FeatureWeights::unified() is infallible
+        // - AcousticSimilarityEngine creation is infallible
+        // - DynamicSegmenter creation is infallible
+        #[allow(clippy::expect_used)]
+        Self::new().expect("default config cannot fail")
     }
 }
 
@@ -670,12 +663,7 @@ mod tests {
             num_types: 0,
         };
 
-        let bundle = RosettaBundle::new(
-            "marmoset",
-            FeatureWeights::marmoset(),
-            dict,
-            FeatureWeights::unified(),
-        );
+        let bundle = RosettaBundle::new("marmoset", FeatureWeights::marmoset(), dict, FeatureWeights::unified());
 
         // Test serialization/deserialization
         let json = serde_json::to_string(&bundle).unwrap();
@@ -687,17 +675,8 @@ mod tests {
     fn test_infer_intent() {
         let pipeline = RosettaPipeline::new().unwrap();
 
-        assert_eq!(
-            pipeline.infer_intent("Phee", &EnvState::Wind),
-            "Long_Range_Contact"
-        );
-        assert_eq!(
-            pipeline.infer_intent("Tsik", &EnvState::Storm),
-            "Emergency_Alert"
-        );
-        assert_eq!(
-            pipeline.infer_intent("Twitter", &EnvState::Quiet),
-            "Social_Bonding"
-        );
+        assert_eq!(pipeline.infer_intent("Phee", &EnvState::Wind), "Long_Range_Contact");
+        assert_eq!(pipeline.infer_intent("Tsik", &EnvState::Storm), "Emergency_Alert");
+        assert_eq!(pipeline.infer_intent("Twitter", &EnvState::Quiet), "Social_Bonding");
     }
 }

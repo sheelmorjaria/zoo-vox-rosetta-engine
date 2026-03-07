@@ -34,10 +34,7 @@ impl AutocorrEstimator {
     /// Create a new estimator with custom F0 range
     pub fn with_range(sample_rate: u32, min_f0_hz: f32, max_f0_hz: f32) -> Self {
         assert!(min_f0_hz < max_f0_hz, "min_f0 must be less than max_f0");
-        assert!(
-            max_f0_hz < sample_rate as f32 / 2.0,
-            "max_f0 must be below Nyquist"
-        );
+        assert!(max_f0_hz < sample_rate as f32 / 2.0, "max_f0 must be below Nyquist");
 
         Self {
             sample_rate,
@@ -179,11 +176,7 @@ mod tests {
 
         let (f0, confidence) = estimator.estimate(&tone);
 
-        assert!(
-            (f0 - 1000.0).abs() < 50.0,
-            "F0 should be ~1000 Hz, got {}",
-            f0
-        );
+        assert!((f0 - 1000.0).abs() < 50.0, "F0 should be ~1000 Hz, got {}", f0);
         assert!(confidence > 0.5, "Confidence should be > 0.5 for pure tone");
     }
 
@@ -197,12 +190,7 @@ mod tests {
             let (f0, _) = estimator.estimate(&tone);
 
             let error_pct = (f0 - target_f0).abs() / target_f0 * 100.0;
-            assert!(
-                error_pct < 15.0,
-                "Error {}% at {} Hz is too high",
-                error_pct,
-                target_f0
-            );
+            assert!(error_pct < 15.0, "Error {}% at {} Hz is too high", error_pct, target_f0);
         }
     }
 
@@ -248,10 +236,7 @@ mod tests {
 
         let (f0, _) = estimator.estimate(&tone);
 
-        assert!(
-            (f0 - 3000.0).abs() < 200.0,
-            "Should detect F0 in specified range"
-        );
+        assert!((f0 - 3000.0).abs() < 200.0, "Should detect F0 in specified range");
     }
 
     #[test]
@@ -273,10 +258,7 @@ mod tests {
 
         let (_, confidence) = estimator.estimate(&tone);
 
-        assert!(
-            confidence >= 0.0 && confidence <= 1.0,
-            "Confidence must be in [0, 1]"
-        );
+        assert!((0.0..=1.0).contains(&confidence), "Confidence must be in [0, 1]");
     }
 
     // =========================================================================
@@ -297,10 +279,7 @@ mod tests {
 
         // Both should detect approximately the same frequency
         let difference = (yin_f0 - auto_f0).abs();
-        assert!(
-            difference < 100.0,
-            "YIN and autocorr should agree within 100 Hz"
-        );
+        assert!(difference < 100.0, "YIN and autocorr should agree within 100 Hz");
     }
 
     #[test]
@@ -328,13 +307,7 @@ mod tests {
         );
 
         // Both should have reasonable confidence
-        assert!(
-            yin_conf >= 0.0 && yin_conf <= 1.0,
-            "YIN confidence should be valid"
-        );
-        assert!(
-            auto_conf >= 0.0 && auto_conf <= 1.0,
-            "Autocorr confidence should be valid"
-        );
+        assert!((0.0..=1.0).contains(&yin_conf), "YIN confidence should be valid");
+        assert!((0.0..=1.0).contains(&auto_conf), "Autocorr confidence should be valid");
     }
 }

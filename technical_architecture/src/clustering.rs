@@ -156,8 +156,7 @@ impl DbscanClustering {
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> ClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> =
-            std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
         let mut noise_count = 0;
 
         for &label in labels {
@@ -219,17 +218,16 @@ impl StandardScaler {
         let n_features = features.ncols();
 
         // Compute mean for each feature
-        let means = features.mean_axis(Axis(0)).ok_or_else(|| {
-            ClusteringError::FeatureExtractionFailed("Failed to compute mean".to_string())
-        })?;
+        let means = features
+            .mean_axis(Axis(0))
+            .ok_or_else(|| ClusteringError::FeatureExtractionFailed("Failed to compute mean".to_string()))?;
 
         // Compute standard deviation for each feature
         let mut scales = Array1::zeros(n_features);
         for i in 0..n_features {
             let col = features.column(i);
             let mean = means[i];
-            let variance =
-                col.iter().map(|&x| (x - mean) * (x - mean)).sum::<f64>() / col.len() as f64;
+            let variance = col.iter().map(|&x| (x - mean) * (x - mean)).sum::<f64>() / col.len() as f64;
             scales[i] = variance.sqrt();
         }
 
@@ -248,12 +246,14 @@ impl StandardScaler {
 
     /// Transform features using fitted scaler
     pub fn transform(&self, features: &Array2<f64>) -> Result<Array2<f64>> {
-        let means = self.means.as_ref().ok_or_else(|| {
-            ClusteringError::FeatureExtractionFailed("Scaler not fitted".to_string())
-        })?;
-        let scales = self.scales.as_ref().ok_or_else(|| {
-            ClusteringError::FeatureExtractionFailed("Scaler not fitted".to_string())
-        })?;
+        let means = self
+            .means
+            .as_ref()
+            .ok_or_else(|| ClusteringError::FeatureExtractionFailed("Scaler not fitted".to_string()))?;
+        let scales = self
+            .scales
+            .as_ref()
+            .ok_or_else(|| ClusteringError::FeatureExtractionFailed("Scaler not fitted".to_string()))?;
 
         let mut normalized = features.clone();
         for mut row in normalized.rows_mut() {
@@ -389,8 +389,7 @@ impl MiniBatchKMeans {
                 if counts[k] > 0 {
                     for d in 0..n_dims {
                         let update = updates[k][d] / counts[k] as f64;
-                        centers[k][d] =
-                            (1.0 - learning_rate) * centers[k][d] + learning_rate * update;
+                        centers[k][d] = (1.0 - learning_rate) * centers[k][d] + learning_rate * update;
                     }
                 }
             }
@@ -468,11 +467,7 @@ impl MiniBatchKMeans {
     }
 
     /// Find nearest center for a sample
-    fn find_nearest_center(
-        &self,
-        sample: ndarray::ArrayView1<f64>,
-        centers: &[Vec<f64>],
-    ) -> (usize, f64) {
+    fn find_nearest_center(&self, sample: ndarray::ArrayView1<f64>, centers: &[Vec<f64>]) -> (usize, f64) {
         let mut nearest = 0;
         let mut min_dist = f64::MAX;
 
@@ -506,8 +501,7 @@ impl MiniBatchKMeans {
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> ClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> =
-            std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
 
         for &label in labels {
             *cluster_counts.entry(label).or_insert(0) += 1;
@@ -706,13 +700,7 @@ mod tests {
         let mut scaler = StandardScaler::new();
 
         // Create features with different scales
-        let features = arr2(&[
-            [1.0, 100.0],
-            [2.0, 200.0],
-            [3.0, 300.0],
-            [4.0, 400.0],
-            [5.0, 500.0],
-        ]);
+        let features = arr2(&[[1.0, 100.0], [2.0, 200.0], [3.0, 300.0], [4.0, 400.0], [5.0, 500.0]]);
 
         let normalized = scaler.fit_transform(&features).unwrap();
 
@@ -844,10 +832,7 @@ mod tests {
         let labels1 = kmeans1.fit_predict(&features).unwrap();
         let labels2 = kmeans2.fit_predict(&features).unwrap();
 
-        assert_eq!(
-            labels1, labels2,
-            "Should produce identical results with same seed"
-        );
+        assert_eq!(labels1, labels2, "Should produce identical results with same seed");
     }
 
     /// Test 16: MiniBatch K-Means cluster statistics

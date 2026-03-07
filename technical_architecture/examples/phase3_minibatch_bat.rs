@@ -7,14 +7,14 @@
 //
 // Usage: cargo run --release --example phase3_minibatch_bat
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats");
     let audio_dir = data_dir.join("audio");
-    let results_dir =
-        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
+    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
     let features_path = results_dir.join("bat_features.bincode");
     let output_path = results_dir.join("minibatch_clusters.json");
 
@@ -180,10 +180,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!(
-        "   Clustered phrases:    {}",
-        n_features - stats.noise_count
-    );
+    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
     println!();
 
     if !stats.cluster_sizes.is_empty() {
@@ -318,36 +315,28 @@ fn discover_wav_files(dir: &Path) -> Result<Vec<String>, Box<dyn std::error::Err
     Ok(wav_files)
 }
 
-fn extract_features_from_files(
-    file_names: &[String],
-) -> Result<Vec<ExtractedFeatures>, Box<dyn std::error::Error>> {
+fn extract_features_from_files(file_names: &[String]) -> Result<Vec<ExtractedFeatures>, Box<dyn std::error::Error>> {
     use rayon::prelude::*;
 
     let audio_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio");
 
     let features: Vec<_> = file_names
         .par_iter()
-        .filter_map(|file_name| {
-            match extract_single_feature(&audio_dir.join(file_name), file_name) {
+        .filter_map(
+            |file_name| match extract_single_feature(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
-                    eprintln!(
-                        "Warning: Failed to extract features from {}: {}",
-                        file_name, e
-                    );
+                    eprintln!("Warning: Failed to extract features from {}: {}", file_name, e);
                     None
                 }
-            }
-        })
+            },
+        )
         .collect();
 
     Ok(features)
 }
 
-fn extract_single_feature(
-    file_path: &Path,
-    file_name: &str,
-) -> Result<ExtractedFeatures, Box<dyn std::error::Error>> {
+fn extract_single_feature(file_path: &Path, file_name: &str) -> Result<ExtractedFeatures, Box<dyn std::error::Error>> {
     use technical_architecture::MicroDynamicsExtractor;
 
     // Load WAV file using hound
@@ -356,10 +345,7 @@ fn extract_single_feature(
     let sample_rate = spec.sample_rate;
 
     // Read samples as f32
-    let audio: Vec<f32> = reader
-        .into_samples::<f32>()
-        .filter_map(|s| s.ok())
-        .collect();
+    let audio: Vec<f32> = reader.into_samples::<f32>().filter_map(|s| s.ok()).collect();
 
     if audio.is_empty() {
         return Err("No audio samples found".into());
@@ -444,10 +430,7 @@ fn extract_features_from_files_progress(
             match extract_single_feature(&audio_dir.join(file_name), file_name) {
                 Ok(f) => Some(f),
                 Err(e) => {
-                    eprintln!(
-                        "Warning: Failed to extract features from {}: {}",
-                        file_name, e
-                    );
+                    eprintln!("Warning: Failed to extract features from {}: {}", file_name, e);
                     None
                 }
             }

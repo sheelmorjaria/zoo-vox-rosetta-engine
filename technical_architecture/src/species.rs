@@ -797,11 +797,7 @@ impl SpeciesConfigFactory {
             },
             context_rules: ContextRules {
                 decoding_method: DecodingMethod::DurationThreshold,
-                context_labels: vec![
-                    "feeding".to_string(),
-                    "mating".to_string(),
-                    "landing".to_string(),
-                ],
+                context_labels: vec!["feeding".to_string(), "mating".to_string(), "landing".to_string()],
             },
             atomic_granularity: AtomicGranularity::Syllable, // SYLLABLES carry meaning for bats
             hierarchical_thresholds: HierarchicalThresholds::bat(),
@@ -828,11 +824,7 @@ impl SpeciesConfigFactory {
             },
             context_rules: ContextRules {
                 decoding_method: DecodingMethod::SequencePattern,
-                context_labels: vec![
-                    "hunting".to_string(),
-                    "social".to_string(),
-                    "travel".to_string(),
-                ],
+                context_labels: vec!["hunting".to_string(), "social".to_string(), "travel".to_string()],
             },
             atomic_granularity: AtomicGranularity::Contour,
             hierarchical_thresholds: HierarchicalThresholds::dolphin(),
@@ -944,10 +936,7 @@ mod tests {
         let config = SpeciesConfigFactory::create("dolphin");
 
         assert_eq!(config.species(), "Dolphin");
-        assert_eq!(
-            config.encoding_strategy(),
-            EncodingStrategy::FrequencyModulated
-        );
+        assert_eq!(config.encoding_strategy(), EncodingStrategy::FrequencyModulated);
         assert_eq!(config.modality(), AnalysisModality::Spectral);
         assert!(config.requires_module(AnalysisModule::Spectral));
     }

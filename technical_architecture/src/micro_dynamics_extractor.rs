@@ -717,18 +717,12 @@ impl MicroDynamicsFeatures15D {
     pub fn validate(&self) -> Result<(), String> {
         // RMS energy: should be positive but not saturating
         if self.rms_energy < 0.0 || self.rms_energy > 1.0 {
-            return Err(format!(
-                "rms_energy {} out of range [0, 1]",
-                self.rms_energy
-            ));
+            return Err(format!("rms_energy {} out of range [0, 1]", self.rms_energy));
         }
 
         // Vibrato depth: typical marmoset range 0-200 cents
         if self.vibrato_depth < 0.0 || self.vibrato_depth > 500.0 {
-            return Err(format!(
-                "vibrato_depth {} out of range [0, 500]",
-                self.vibrato_depth
-            ));
+            return Err(format!("vibrato_depth {} out of range [0, 500]", self.vibrato_depth));
         }
 
         // HNR: should be positive for harmonic vocalizations
@@ -738,16 +732,10 @@ impl MicroDynamicsFeatures15D {
 
         // Temporal features: positive values
         if self.attack_time_ms < 0.0 || self.attack_time_ms > 500.0 {
-            return Err(format!(
-                "attack_time_ms {} out of range [0, 500]",
-                self.attack_time_ms
-            ));
+            return Err(format!("attack_time_ms {} out of range [0, 500]", self.attack_time_ms));
         }
         if self.decay_time_ms < 0.0 || self.decay_time_ms > 1000.0 {
-            return Err(format!(
-                "decay_time_ms {} out of range [0, 1000]",
-                self.decay_time_ms
-            ));
+            return Err(format!("decay_time_ms {} out of range [0, 1000]", self.decay_time_ms));
         }
 
         // Shimmer: typically 0-0.2
@@ -1646,8 +1634,7 @@ impl MicroDynamicsExtractor {
         }
 
         // Vibrato rate = 1 / mean_interval
-        let mean_interval_ms =
-            intervals.iter().sum::<usize>() as f32 / intervals.len() as f32 / sr * 1000.0;
+        let mean_interval_ms = intervals.iter().sum::<usize>() as f32 / intervals.len() as f32 / sr * 1000.0;
         let vibrato_rate = if mean_interval_ms > 0.0 {
             1000.0 / mean_interval_ms
         } else {
@@ -1791,9 +1778,7 @@ impl MicroDynamicsExtractor {
 
         // Add small value to avoid log(0)
         let epsilon = 1e-10;
-        let geometric_mean = (spectrum.iter().map(|&x| (x + epsilon).ln()).sum::<f32>()
-            / spectrum.len() as f32)
-            .exp();
+        let geometric_mean = (spectrum.iter().map(|&x| (x + epsilon).ln()).sum::<f32>() / spectrum.len() as f32).exp();
         let arithmetic_mean = spectrum.iter().sum::<f32>() / spectrum.len() as f32;
 
         if arithmetic_mean > 0.0 {
@@ -1865,8 +1850,7 @@ impl MicroDynamicsExtractor {
 
         for i in 1..envelope.len().saturating_sub(1) {
             let derivative = envelope[i + 1] - envelope[i - 1];
-            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance)
-            {
+            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance) {
                 onsets.push(i);
             }
         }
@@ -1923,8 +1907,7 @@ impl MicroDynamicsExtractor {
 
         for i in 1..envelope.len().saturating_sub(1) {
             let derivative = envelope[i + 1] - envelope[i - 1];
-            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance)
-            {
+            if derivative > threshold && onsets.last().is_none_or(|&last| i - last >= min_distance) {
                 onsets.push(i);
             }
         }
@@ -2094,9 +2077,8 @@ impl MicroDynamicsExtractor {
         }
 
         // Apply windowing function (Hamming window)
-        let hamming_window = |n: usize, size: usize| -> f32 {
-            0.54 - 0.46 * (2.0 * PI * n as f32 / (size - 1) as f32).cos()
-        };
+        let hamming_window =
+            |n: usize, size: usize| -> f32 { 0.54 - 0.46 * (2.0 * PI * n as f32 / (size - 1) as f32).cos() };
 
         let num_frames = (audio.len() - frame_size) / hop_size + 1;
         let mut mfcc_frames = Vec::with_capacity(num_frames);
@@ -2202,11 +2184,7 @@ impl MicroDynamicsExtractor {
             }
 
             // Normalize: sqrt(2/n) for k > 0, sqrt(1/n) for k = 0
-            let scale = if k == 0 {
-                1.0 / n.sqrt()
-            } else {
-                (2.0 / n).sqrt()
-            };
+            let scale = if k == 0 { 1.0 / n.sqrt() } else { (2.0 / n).sqrt() };
 
             mfcc[k] = sum * scale;
         }
@@ -2338,13 +2316,7 @@ impl MicroDynamicsExtractor {
     }
 
     /// Direct F0 estimation (used by estimate_f0_range to avoid recursion)
-    fn estimate_f0_direct(
-        &self,
-        audio: &[f32],
-        sr: f32,
-        min_f0: f32,
-        max_f0: f32,
-    ) -> (f32, f32, f32) {
+    fn estimate_f0_direct(&self, audio: &[f32], sr: f32, min_f0: f32, max_f0: f32) -> (f32, f32, f32) {
         if audio.len() < 2 {
             return (0.0, 0.0, 0.0);
         }
@@ -2464,10 +2436,7 @@ impl MicroDynamicsExtractor {
                 if flux > threshold {
                     // Debounce: ensure minimum distance between onsets
                     let min_distance = (sr * 0.01) as usize; // 10ms
-                    if onsets
-                        .last()
-                        .is_none_or(|&last| sample_idx - last >= min_distance)
-                    {
+                    if onsets.last().is_none_or(|&last| sample_idx - last >= min_distance) {
                         onsets.push(sample_idx);
                     }
                 }
@@ -2644,8 +2613,7 @@ impl MicroDynamicsExtractor {
                 let mut sum_real = 0.0;
                 let mut sum_imag = 0.0;
                 for (i, &sample) in audio.iter().enumerate().take(fft_size) {
-                    let angle =
-                        -2.0 * std::f64::consts::PI * (k as f64) * (i as f64) / (fft_size as f64);
+                    let angle = -2.0 * std::f64::consts::PI * (k as f64) * (i as f64) / (fft_size as f64);
                     sum_real += (sample as f64) * angle.cos();
                     sum_imag += (sample as f64) * angle.sin();
                 }
@@ -2702,12 +2670,7 @@ impl MicroDynamicsExtractor {
                 3.0 // Normal distribution kurtosis
             };
 
-            (
-                centroid as f32,
-                spread as f32,
-                skewness as f32,
-                kurtosis as f32,
-            )
+            (centroid as f32, spread as f32, skewness as f32, kurtosis as f32)
         } else {
             (0.0, 0.0, 0.0, 3.0)
         };
@@ -2809,10 +2772,7 @@ impl MicroDynamicsExtractor {
 
         // Compute mean of delta MFCCs (compact representation)
         let mfcc_delta_mean: f32 = if !delta_mfcc.is_empty() {
-            delta_mfcc
-                .iter()
-                .flat_map(|frame| frame.iter())
-                .sum::<f32>()
+            delta_mfcc.iter().flat_map(|frame| frame.iter()).sum::<f32>()
                 / (delta_mfcc.len() * delta_mfcc[0].len()) as f32
         } else {
             0.0
@@ -3271,10 +3231,7 @@ impl MicroDynamicsExtractor {
         let zero_crossing_rate = if audio.len() < 2 {
             0.0
         } else {
-            let crossings = audio
-                .windows(2)
-                .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-                .count();
+            let crossings = audio.windows(2).filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0)).count();
             crossings as f32 / (audio.len() - 1) as f32
         };
 
@@ -3506,9 +3463,7 @@ impl PyMicroDynamicsFeatures {
 
     /// Convert to 30D feature vector as numpy array
     fn to_vector30d(&self, mean_f0_hz: f32, duration_ms: f32, f0_range_hz: f32) -> Vec<f32> {
-        let v = self
-            .inner
-            .to_vector30d(mean_f0_hz, duration_ms, f0_range_hz);
+        let v = self.inner.to_vector30d(mean_f0_hz, duration_ms, f0_range_hz);
         vec![
             v.mean_f0_hz,
             v.duration_ms,
@@ -3575,15 +3530,12 @@ impl PyMicroDynamicsExtractor {
     ///
     /// Returns:
     ///     MicroDynamicsFeatures object containing all extracted features
-    fn extract<'py>(
-        &self,
-        py: Python<'py>,
-        audio: PyReadonlyArray1<f32>,
-    ) -> PyResult<Py<PyMicroDynamicsFeatures>> {
+    fn extract<'py>(&self, py: Python<'py>, audio: PyReadonlyArray1<f32>) -> PyResult<Py<PyMicroDynamicsFeatures>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
-        })?;
+        let features = self
+            .inner
+            .extract(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
 
         Ok(Py::new(py, PyMicroDynamicsFeatures { inner: features })?)
     }
@@ -3607,9 +3559,10 @@ impl PyMicroDynamicsExtractor {
         f0_range_hz: f32,
     ) -> PyResult<Py<PyArray1<f32>>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
-        })?;
+        let features = self
+            .inner
+            .extract(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
 
         let py_features = PyMicroDynamicsFeatures { inner: features };
         let vector = py_features.to_vector30d(mean_f0_hz, duration_ms, f0_range_hz);
@@ -3633,13 +3586,10 @@ impl PyMicroDynamicsExtractor {
         audio: PyReadonlyArray1<f32>,
     ) -> PyResult<(Py<PyArray1<f32>>, f32, f32, f32)> {
         let audio_slice = audio.as_slice()?;
-        let (features, mean_f0, f0_range, f0_confidence) =
-            self.inner.extract_with_f0(audio_slice).map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!(
-                    "Feature extraction failed: {}",
-                    e
-                ))
-            })?;
+        let (features, mean_f0, f0_range, f0_confidence) = self
+            .inner
+            .extract_with_f0(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
 
         let duration_ms = audio_slice.len() as f32 / self.inner.sample_rate as f32 * 1000.0;
 
@@ -3662,11 +3612,7 @@ impl PyMicroDynamicsExtractor {
     ///
     /// Returns:
     ///     Tuple of (mean_f0_hz, f0_range_hz, f0_confidence)
-    fn estimate_f0<'py>(
-        &self,
-        _py: Python<'py>,
-        audio: PyReadonlyArray1<f32>,
-    ) -> PyResult<(f32, f32, f32)> {
+    fn estimate_f0<'py>(&self, _py: Python<'py>, audio: PyReadonlyArray1<f32>) -> PyResult<(f32, f32, f32)> {
         let audio_slice = audio.as_slice()?;
         let (mean_f0, f0_range, confidence) = self.inner.estimate_f0(audio_slice);
         Ok((mean_f0, f0_range, confidence))
@@ -3679,11 +3625,7 @@ impl PyMicroDynamicsExtractor {
     ///
     /// Returns:
     ///     List of onset sample indices
-    fn detect_onsets<'py>(
-        &self,
-        py: Python<'py>,
-        audio: PyReadonlyArray1<f32>,
-    ) -> PyResult<Vec<usize>> {
+    fn detect_onsets<'py>(&self, py: Python<'py>, audio: PyReadonlyArray1<f32>) -> PyResult<Vec<usize>> {
         let audio_slice = audio.as_slice()?;
         let onsets = self.inner.detect_onsets(audio_slice);
         Ok(onsets)
@@ -3721,20 +3663,16 @@ impl PyMicroDynamicsExtractor {
         let audio_slice = audio.as_slice()?;
 
         // Extract 56D features
-        let features_56d = self.inner.extract_56d(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!(
-                "56D feature extraction failed: {}",
-                e
-            ))
-        })?;
+        let features_56d = self
+            .inner
+            .extract_56d(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("56D feature extraction failed: {}", e)))?;
 
         // Convert to 30D base vector for comparison
         let duration_ms = audio_slice.len() as f32 / self.inner.sample_rate as f32 * 1000.0;
         let mean_f0 = 5000.0; // Default value - in production would estimate
         let f0_range = 1000.0; // Default value - in production would estimate
-        let vector30d = features_56d
-            .base_30d
-            .to_vector30d(mean_f0, duration_ms, f0_range);
+        let vector30d = features_56d.base_30d.to_vector30d(mean_f0, duration_ms, f0_range);
         let features_30d_vec = vector30d.to_array();
 
         // Build 56D feature vector
@@ -3819,20 +3757,16 @@ impl PyMicroDynamicsExtractor {
         let audio_slice = audio.as_slice()?;
 
         // Extract 37D features
-        let features_37d = self.inner.extract_37d(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!(
-                "37D feature extraction failed: {}",
-                e
-            ))
-        })?;
+        let features_37d = self
+            .inner
+            .extract_37d(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("37D feature extraction failed: {}", e)))?;
 
         // Convert to 30D base vector for comparison
         let duration_ms = audio_slice.len() as f32 / self.inner.sample_rate as f32 * 1000.0;
         let mean_f0 = 5000.0; // Default value - in production would estimate
         let f0_range = 1000.0; // Default value - in production would estimate
-        let vector30d = features_37d
-            .base_30d
-            .to_vector30d(mean_f0, duration_ms, f0_range);
+        let vector30d = features_37d.base_30d.to_vector30d(mean_f0, duration_ms, f0_range);
         let features_30d_vec = vector30d.to_array();
 
         // Build 37D feature vector
@@ -3922,20 +3856,16 @@ impl PyMicroDynamicsExtractor {
         let audio_slice = audio.as_slice()?;
 
         // Extract 45D features
-        let features_45d = self.inner.extract_45d(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!(
-                "45D feature extraction failed: {}",
-                e
-            ))
-        })?;
+        let features_45d = self
+            .inner
+            .extract_45d(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("45D feature extraction failed: {}", e)))?;
 
         // Convert to 30D base vector for comparison
         let duration_ms = audio_slice.len() as f32 / self.inner.sample_rate as f32 * 1000.0;
         let mean_f0 = 5000.0; // Default value - in production would estimate
         let f0_range = 1000.0; // Default value - in production would estimate
-        let vector30d = features_45d
-            .base_30d
-            .to_vector30d(mean_f0, duration_ms, f0_range);
+        let vector30d = features_45d.base_30d.to_vector30d(mean_f0, duration_ms, f0_range);
         let features_30d_vec = vector30d.to_array();
 
         // Build 45D feature vector using to_array method
@@ -3974,20 +3904,14 @@ impl PyMicroDynamicsExtractor {
     /// features_15d = extractor.extract_rfe_optimized(audio)
     /// print(f"15D shape: {features_15d.shape}")  # (15,)
     /// ```
-    fn extract_rfe_optimized<'py>(
-        &self,
-        py: Python<'py>,
-        audio: PyReadonlyArray1<f32>,
-    ) -> PyResult<Py<PyArray1<f32>>> {
+    fn extract_rfe_optimized<'py>(&self, py: Python<'py>, audio: PyReadonlyArray1<f32>) -> PyResult<Py<PyArray1<f32>>> {
         let audio_slice = audio.as_slice()?;
 
         // Extract RFE-optimized 15D features
-        let features_15d = self.inner.extract_rfe_optimized(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!(
-                "RFE feature extraction failed: {}",
-                e
-            ))
-        })?;
+        let features_15d = self
+            .inner
+            .extract_rfe_optimized(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("RFE feature extraction failed: {}", e)))?;
 
         // Convert to Python array
         let py_15d = PyArray1::from_vec(py, features_15d);
@@ -4024,15 +3948,9 @@ impl PyMicroDynamicsExtractor {
         let audio_slice = audio.as_slice()?;
 
         // Extract RFE-optimal 19D bat features
-        let features_19d = self
-            .inner
-            .extract_rfe_optimal_19d_bat(audio_slice)
-            .map_err(|e| {
-                pyo3::exceptions::PyRuntimeError::new_err(format!(
-                    "RFE 19D bat feature extraction failed: {}",
-                    e
-                ))
-            })?;
+        let features_19d = self.inner.extract_rfe_optimal_19d_bat(audio_slice).map_err(|e| {
+            pyo3::exceptions::PyRuntimeError::new_err(format!("RFE 19D bat feature extraction failed: {}", e))
+        })?;
 
         // Convert to Python array
         let py_19d = PyArray1::from_vec(py, features_19d);
@@ -4041,10 +3959,7 @@ impl PyMicroDynamicsExtractor {
     }
 
     fn __repr__(&self) -> String {
-        format!(
-            "MicroDynamicsExtractor(sample_rate={})",
-            self.inner.sample_rate
-        )
+        format!("MicroDynamicsExtractor(sample_rate={})", self.inner.sample_rate)
     }
 }
 
@@ -4205,7 +4120,7 @@ mod tests {
         assert!(features.formant_f2 >= 0.0);
         assert!(features.formant_f3 >= 0.0);
         assert!(features.fm_depth_hz >= 0.0);
-        assert!(features.roughness >= 0.0 && features.roughness <= 1.0);
+        assert!((0.0..=1.0).contains(&features.roughness));
     }
 
     #[test]
@@ -4254,10 +4169,7 @@ mod tests {
         let features37 = extractor.extract_37d(&audio).unwrap();
 
         // Base 30D features should be consistent
-        assert_eq!(
-            features30.attack_time_ms,
-            features37.base_30d.attack_time_ms
-        );
+        assert_eq!(features30.attack_time_ms, features37.base_30d.attack_time_ms);
         assert_eq!(features30.decay_time_ms, features37.base_30d.decay_time_ms);
     }
 
@@ -4288,10 +4200,7 @@ mod tests {
         let features37 = extractor.extract_37d(&audio).unwrap();
 
         // 37D should extend 30D
-        assert_eq!(
-            features30.attack_time_ms,
-            features37.base_30d.attack_time_ms
-        );
+        assert_eq!(features30.attack_time_ms, features37.base_30d.attack_time_ms);
 
         // Verify all 7 new features are present
         assert!(features37.pitch_entropy.is_finite());
@@ -4312,8 +4221,8 @@ mod tests {
         let features = extractor.extract_37d(&audio).unwrap();
 
         // Validate feature ranges
-        assert!(features.pitch_entropy >= 0.0 && features.pitch_entropy <= 1.0);
-        assert!(features.roughness >= 0.0 && features.roughness <= 1.0);
+        assert!((0.0..=1.0).contains(&features.pitch_entropy));
+        assert!((0.0..=1.0).contains(&features.roughness));
         assert!(features.fm_depth_hz >= 0.0);
         assert!(features.harmonic_deviation >= 0.0);
         assert!(features.formant_f1 >= 0.0);
@@ -4360,10 +4269,7 @@ mod tests {
         let audio: Vec<f32> = vec![];
 
         let result = extractor.extract_39d(&audio);
-        assert!(
-            result.is_err(),
-            "39D extraction should fail for empty audio"
-        );
+        assert!(result.is_err(), "39D extraction should fail for empty audio");
     }
 
     #[test]
@@ -4385,14 +4291,8 @@ mod tests {
         let features_39d = extractor.extract_39d(&audio).unwrap();
 
         // Base 30D features should match
-        assert_eq!(
-            features_39d.base_30d.attack_time_ms,
-            features_30d.attack_time_ms
-        );
-        assert_eq!(
-            features_39d.base_30d.decay_time_ms,
-            features_30d.decay_time_ms
-        );
+        assert_eq!(features_39d.base_30d.attack_time_ms, features_30d.attack_time_ms);
+        assert_eq!(features_39d.base_30d.decay_time_ms, features_30d.decay_time_ms);
     }
 
     #[test]
@@ -4429,10 +4329,7 @@ mod tests {
         let audio: Vec<f32> = vec![];
 
         let result = extractor.extract_56d(&audio);
-        assert!(
-            result.is_err(),
-            "56D extraction should fail for empty audio"
-        );
+        assert!(result.is_err(), "56D extraction should fail for empty audio");
     }
 
     #[test]
@@ -4447,10 +4344,7 @@ mod tests {
             assert!(delta.is_finite(), "Delta values should be finite");
         }
         for &delta_delta in &features.mfcc_delta_delta {
-            assert!(
-                delta_delta.is_finite(),
-                "Delta-delta values should be finite"
-            );
+            assert!(delta_delta.is_finite(), "Delta-delta values should be finite");
         }
     }
 
@@ -4463,14 +4357,8 @@ mod tests {
         let features_56d = extractor.extract_56d(&audio).unwrap();
 
         // Base 30D features should match
-        assert_eq!(
-            features_56d.base_30d.attack_time_ms,
-            features_30d.attack_time_ms
-        );
-        assert_eq!(
-            features_56d.base_30d.decay_time_ms,
-            features_30d.decay_time_ms
-        );
+        assert_eq!(features_56d.base_30d.attack_time_ms, features_30d.attack_time_ms);
+        assert_eq!(features_56d.base_30d.decay_time_ms, features_30d.decay_time_ms);
     }
 
     #[test]

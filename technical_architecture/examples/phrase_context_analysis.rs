@@ -9,6 +9,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -16,8 +17,7 @@ use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let results_dir =
-        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let data_dir = Path::new("/home/sheel/birdsong_analysis/data/Vocalizations");
 
     println!("🔬 Phrase-Context Analysis");
@@ -76,10 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        println!(
-            "   └─ Loaded {} file-context mappings",
-            file_to_context.len()
-        );
+        println!("   └─ Loaded {} file-context mappings", file_to_context.len());
     } else {
         println!("   ⚠️  Annotations file not found, using synthetic contexts");
 
@@ -102,19 +99,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let n_clusters = cluster_counts.len();
 
-    println!(
-        "   └─ Found {} unique vocabulary items (clusters)",
-        n_clusters
-    );
+    println!("   └─ Found {} unique vocabulary items (clusters)", n_clusters);
     println!();
 
     // Step 4: Create synthetic context assignments for demonstration
     // In production, this would come from actual file annotations
     println!("📊 Step 4: Creating phrase-context distribution...");
 
-    let contexts = vec![
-        "General", "Twitter", "Tsik", "Phee", "Trill", "Infant", "Seep",
-    ];
+    let contexts = vec!["General", "Twitter", "Tsik", "Phee", "Trill", "Infant", "Seep"];
     let n_contexts = contexts.len();
 
     // For demonstration: assign each cluster to contexts based on cluster ID
@@ -191,11 +183,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Max entropy for this number of contexts
         let max_entropy = (n_contexts_used as f64).log2();
-        let normalized_entropy = if max_entropy > 0.0 {
-            entropy / max_entropy
-        } else {
-            0.0
-        };
+        let normalized_entropy = if max_entropy > 0.0 { entropy / max_entropy } else { 0.0 };
 
         // Determine classification
         let classification = if generality_score >= 0.8 {
@@ -220,10 +208,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Sort by generality score
     phrase_analysis.sort_by(|a, b| b.generality_score.partial_cmp(&a.generality_score).unwrap());
 
-    println!(
-        "   └─ Calculated metrics for {} phrases",
-        phrase_analysis.len()
-    );
+    println!("   └─ Calculated metrics for {} phrases", phrase_analysis.len());
     println!();
 
     // Step 6: Display results
@@ -244,10 +229,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
         );
     }
-    println!(
-        "   Total: {} general-purpose phrases",
-        general_purpose.len()
-    );
+    println!("   Total: {} general-purpose phrases", general_purpose.len());
     println!();
 
     println!("Multi-Context Phrases (moderate reusability):");
@@ -279,10 +261,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
         );
     }
-    println!(
-        "   Total: {} context-specific phrases",
-        context_specific.len()
-    );
+    println!("   Total: {} context-specific phrases", context_specific.len());
     println!();
 
     // Step 7: Statistical Summary
@@ -314,23 +293,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Average entropy by classification
-    let avg_entropy_general = general_purpose
-        .iter()
-        .map(|p| p.normalized_entropy)
-        .sum::<f64>()
-        / general_purpose.len().max(1) as f64;
+    let avg_entropy_general =
+        general_purpose.iter().map(|p| p.normalized_entropy).sum::<f64>() / general_purpose.len().max(1) as f64;
 
-    let avg_entropy_multi = multi_context
-        .iter()
-        .map(|p| p.normalized_entropy)
-        .sum::<f64>()
-        / multi_context.len().max(1) as f64;
+    let avg_entropy_multi =
+        multi_context.iter().map(|p| p.normalized_entropy).sum::<f64>() / multi_context.len().max(1) as f64;
 
-    let avg_entropy_specific = context_specific
-        .iter()
-        .map(|p| p.normalized_entropy)
-        .sum::<f64>()
-        / context_specific.len().max(1) as f64;
+    let avg_entropy_specific =
+        context_specific.iter().map(|p| p.normalized_entropy).sum::<f64>() / context_specific.len().max(1) as f64;
 
     println!("   Average Normalized Entropy:");
     println!("   ├─ General-Purpose: {:.3}", avg_entropy_general);
@@ -353,14 +323,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("   Results:");
-    println!(
-        "   ├─ General-purpose phrases found: {}",
-        has_general_purpose
-    );
-    println!(
-        "   ├─ Context-specific phrases found: {}",
-        has_context_specific
-    );
+    println!("   ├─ General-purpose phrases found: {}", has_general_purpose);
+    println!("   ├─ Context-specific phrases found: {}", has_context_specific);
     println!("   └─ Mixture ratio: {:.1}%", mixture_ratio * 100.0);
     println!();
 

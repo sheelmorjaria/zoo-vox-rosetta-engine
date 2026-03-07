@@ -3,6 +3,7 @@
 // This analysis discovers phrase-level structure within sperm whale click trains
 // using acoustic similarity-based clustering.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
@@ -86,8 +87,7 @@ impl PhraseSegmenter {
         for i in 0..n_windows {
             let start = i * window_samples;
             let end = (start + window_samples).min(n);
-            let rms: f32 =
-                audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
+            let rms: f32 = audio[start..end].iter().map(|x| x * x).sum::<f32>().sqrt() / (end - start) as f32;
             energy_profile.push(rms);
         }
 
@@ -127,9 +127,7 @@ impl PhraseSegmenter {
                             id: phrase_count,
                             start_ms: start_sample as f64 / sample_rate * 1000.0,
                             end_ms: end_sample as f64 / sample_rate * 1000.0,
-                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64
-                                / sample_rate
-                                * 1000.0,
+                            duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
                             start_sample,
                             end_sample,
                             n_samples: end_sample.saturating_sub(start_sample),
@@ -156,8 +154,7 @@ impl PhraseSegmenter {
                     id: phrase_count,
                     start_ms: start_sample as f64 / sample_rate * 1000.0,
                     end_ms: end_sample as f64 / sample_rate * 1000.0,
-                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate
-                        * 1000.0,
+                    duration_ms: (end_sample.saturating_sub(start_sample)) as f64 / sample_rate * 1000.0,
                     start_sample,
                     end_sample,
                     n_samples: end_sample.saturating_sub(start_sample),
@@ -218,11 +215,7 @@ impl SimpleFeatureExtractor {
 
         // Mean and variance
         let mean: f64 = audio.iter().map(|x| *x as f64).sum::<f64>() / n as f64;
-        let var: f64 = audio
-            .iter()
-            .map(|x| (*x as f64 - mean).powi(2))
-            .sum::<f64>()
-            / n as f64;
+        let var: f64 = audio.iter().map(|x| (*x as f64 - mean).powi(2)).sum::<f64>() / n as f64;
         features[4] = var.sqrt();
         features[5] = mean;
 
@@ -243,10 +236,7 @@ impl SimpleFeatureExtractor {
 
             // Attack time (normalized)
             let threshold = max_val * 0.9;
-            let attack_sample = audio
-                .iter()
-                .position(|&x| x.abs() >= threshold)
-                .unwrap_or(n);
+            let attack_sample = audio.iter().position(|&x| x.abs() >= threshold).unwrap_or(n);
             features[8] = attack_sample as f64 / n as f64;
 
             // Decay time (normalized)
@@ -283,15 +273,12 @@ impl SimpleFeatureExtractor {
         let mut envelope = Vec::new();
         for i in (0..n.saturating_sub(window_size)).step_by(window_size / 2) {
             let window = &audio[i..i + window_size];
-            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>()
-                / window_size as f64)
-                .sqrt();
+            let rms = (window.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / window_size as f64).sqrt();
             envelope.push(rms);
         }
         if envelope.len() >= 2 {
             let emean = envelope.iter().sum::<f64>() / envelope.len() as f64;
-            let evar =
-                envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
+            let evar = envelope.iter().map(|e| (e - emean).powi(2)).sum::<f64>() / envelope.len() as f64;
             features[11] = evar.sqrt() / (emean + 1e-10);
         }
 
@@ -410,8 +397,7 @@ pub fn load_audio(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn Error>> {
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let probed =
-        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
+    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No default track")?;
@@ -597,12 +583,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Find WAV files
     let wav_files: Vec<PathBuf> = std::fs::read_dir(data_dir)?
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .map(|ext| ext == "wav")
-                .unwrap_or(false)
-        })
+        .filter(|e| e.path().extension().map(|ext| ext == "wav").unwrap_or(false))
         .map(|e| e.path())
         .collect();
 
@@ -625,12 +606,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for (i, path) in wav_files.iter().enumerate() {
         let file_name = path.file_name().unwrap().to_string_lossy();
-        print!(
-            "\r[{}/{}] Analyzing: {:.50}...",
-            i + 1,
-            wav_files.len(),
-            file_name
-        );
+        print!("\r[{}/{}] Analyzing: {:.50}...", i + 1, wav_files.len(), file_name);
         std::io::Write::flush(&mut std::io::stdout())?;
 
         match analyze_file(path, config.clone(), similarity_threshold) {
@@ -657,20 +633,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         0.0
     };
     let avg_types = if n_files > 0 {
-        file_analyses
-            .iter()
-            .map(|f| f.n_phrase_types as f64)
-            .sum::<f64>()
-            / n_files as f64
+        file_analyses.iter().map(|f| f.n_phrase_types as f64).sum::<f64>() / n_files as f64
     } else {
         0.0
     };
     let avg_entropy = if n_files > 0 {
-        file_analyses
-            .iter()
-            .map(|f| f.stats.type_entropy)
-            .sum::<f64>()
-            / n_files as f64
+        file_analyses.iter().map(|f| f.stats.type_entropy).sum::<f64>() / n_files as f64
     } else {
         0.0
     };
@@ -683,40 +651,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("║                                                                           ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║  Statistics:                                                              ║");
-    println!(
-        "║    • Files analyzed:       {:>10}",
-        format!("{}", n_files)
-    );
-    println!(
-        "║    • Total phrases:        {:>10}",
-        format!("{}", total_phrases)
-    );
-    println!(
-        "║    • Unique phrase types:  {:>10}",
-        format!("{}", all_types.len())
-    );
+    println!("║    • Files analyzed:       {:>10}", format!("{}", n_files));
+    println!("║    • Total phrases:        {:>10}", format!("{}", total_phrases));
+    println!("║    • Unique phrase types:  {:>10}", format!("{}", all_types.len()));
     println!("║    • Avg phrases/file:     {:>10.1}", avg_phrases);
     println!("║    • Avg types/file:       {:>10.1}", avg_types);
     println!("║    • Avg type entropy:     {:>10.3} bits", avg_entropy);
     println!("║                                                                           ║");
     println!("╠═══════════════════════════════════════════════════════════════════════════╣");
     println!("║  Analysis Parameters:                                                    ║");
-    println!(
-        "║    • Min phrase duration:  {:>10.0} ms",
-        config.min_phrase_ms
-    );
-    println!(
-        "║    • Max phrase duration:  {:>10.0} ms",
-        config.max_phrase_ms
-    );
-    println!(
-        "║    • Min gap:              {:>10.0} ms",
-        config.min_gap_ms
-    );
-    println!(
-        "║    • Similarity threshold: {:>10.2}",
-        similarity_threshold
-    );
+    println!("║    • Min phrase duration:  {:>10.0} ms", config.min_phrase_ms);
+    println!("║    • Max phrase duration:  {:>10.0} ms", config.max_phrase_ms);
+    println!("║    • Min gap:              {:>10.0} ms", config.min_gap_ms);
+    println!("║    • Similarity threshold: {:>10.2}", similarity_threshold);
     println!("║                                                                           ║");
     println!("╚═══════════════════════════════════════════════════════════════════════════╝");
     println!();

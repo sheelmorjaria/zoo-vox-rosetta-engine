@@ -3,6 +3,7 @@
 //!
 //! Uses Rayon for parallel file processing.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -10,9 +11,7 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CachedSegmentNBD {
@@ -47,12 +46,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -132,9 +126,9 @@ fn process_file(
             let end = (b.time_ms * sr as f32 / 1000.0) as usize;
             if end > start && end <= audio.len() && end - start >= min_len {
                 let btype = match b.boundary_type {
-                    technical_architecture::NeuralBoundaryType::Hard => "Hard",
-                    technical_architecture::NeuralBoundaryType::Soft => "Soft",
-                    technical_architecture::NeuralBoundaryType::Transitional => "Transitional",
+                    technical_architecture::BoundaryType::Hard => "Hard",
+                    technical_architecture::BoundaryType::Soft => "Soft",
+                    technical_architecture::BoundaryType::Transitional => "Transitional",
                 };
                 segs.push((start, end, btype.to_string()));
             }
@@ -224,10 +218,7 @@ fn main() -> anyhow::Result<()> {
     let batch_num = Arc::new(Mutex::new(0usize));
     let batch_buffer = Arc::new(Mutex::new(Vec::<CachedSegmentNBD>::new()));
 
-    println!(
-        "Processing with {} threads...",
-        rayon::current_num_threads()
-    );
+    println!("Processing with {} threads...", rayon::current_num_threads());
     println!("─────────────────────────────────────────────────────────────────────────");
 
     let batch_size = 500;
@@ -267,12 +258,7 @@ fn main() -> anyhow::Result<()> {
                             let _ = f.write_all(json.as_bytes());
                         }
                     }
-                    println!(
-                        "  Batch {:4}: {} segments cached ({} total)",
-                        *bn,
-                        buf.len(),
-                        *ts
-                    );
+                    println!("  Batch {:4}: {} segments cached ({} total)", *bn, buf.len(), *ts);
                     buf.clear();
                 }
             }

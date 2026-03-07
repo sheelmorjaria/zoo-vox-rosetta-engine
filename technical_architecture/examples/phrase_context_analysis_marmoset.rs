@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -27,8 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_time = Instant::now();
 
     // Configuration
-    let corpus_path =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
+    let corpus_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
     let results_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_results");
 
     fs::create_dir_all(&results_dir)?;
@@ -75,10 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut all_contexts: Vec<String> = Vec::new();
 
     for session_data in sessions_array {
-        let call_type = session_data["call_type"]
-            .as_str()
-            .unwrap_or("Unknown")
-            .to_string();
+        let call_type = session_data["call_type"].as_str().unwrap_or("Unknown").to_string();
 
         if !all_contexts.contains(&call_type) {
             all_contexts.push(call_type.clone());
@@ -167,11 +164,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ├────────────────────────────────────────────────────────────────────┤");
 
     for (i, metrics) in phrase_metrics.iter().take(20).enumerate() {
-        let contexts_str: Vec<String> = metrics
-            .context_distribution
-            .keys()
-            .map(|k| k.clone())
-            .collect();
+        let contexts_str: Vec<String> = metrics.context_distribution.keys().map(|k| k.clone()).collect();
 
         println!(
             "   │ {:6} │ {:.2} │ {:.2} │ {:5} │ {:25}…│",
@@ -196,10 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count phrases by generality levels
-    let universal_phrases = phrase_metrics
-        .iter()
-        .filter(|p| p.generality_score >= 0.99)
-        .count();
+    let universal_phrases = phrase_metrics.iter().filter(|p| p.generality_score >= 0.99).count();
     let broad_phrases = phrase_metrics
         .iter()
         .filter(|p| p.generality_score >= 0.5 && p.generality_score < 0.99)
@@ -208,10 +198,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|p| p.generality_score >= 0.2 && p.generality_score < 0.5)
         .count();
-    let narrow_phrases = phrase_metrics
-        .iter()
-        .filter(|p| p.generality_score < 0.2)
-        .count();
+    let narrow_phrases = phrase_metrics.iter().filter(|p| p.generality_score < 0.2).count();
 
     println!("   Generality Distribution:");
     println!(
@@ -237,11 +224,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Calculate average entropy
-    let avg_entropy: f64 = phrase_metrics
-        .iter()
-        .map(|p| p.normalized_entropy)
-        .sum::<f64>()
-        / phrase_metrics.len() as f64;
+    let avg_entropy: f64 =
+        phrase_metrics.iter().map(|p| p.normalized_entropy).sum::<f64>() / phrase_metrics.len() as f64;
 
     println!("   Average Normalized Entropy: {:.3}", avg_entropy);
     println!("      (0 = context-specific, 1 = evenly distributed)");

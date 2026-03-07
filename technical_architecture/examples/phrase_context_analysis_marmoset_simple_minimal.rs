@@ -2,6 +2,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_marmoset_simple_minimal
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -19,19 +20,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_time = Instant::now();
 
     // Configuration
-    let corpus_path =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_corpus_for_analysis.json");
-    let results_dir =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
+    let corpus_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_corpus_for_analysis.json");
+    let results_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phase1_generality_results");
 
     fs::create_dir_all(&results_dir)?;
 
     // Step 1: Load Corpus
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Step 1: Loading Corpus                                                │");
-    println!(
-        "└───────────────────────────────────────────────────────────────────────────────────┘"
-    );
+    println!("└───────────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     let content = fs::read_to_string(&corpus_path)?;
@@ -45,9 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 2: Build Phrase-Context Matrix
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Step 2: Building Phrase-Context Matrix                              │");
-    println!(
-        "└───────────────────────────────────────────────────────────────────────────────────┘"
-    );
+    println!("└───────────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     let mut matrix: HashMap<i32, HashMap<String, usize>> = HashMap::new();
@@ -61,11 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(arr) = session_data.as_array() {
             for phrase_id in arr.iter().filter_map(|v| v.as_i64()).map(|v| v as i32) {
                 if phrase_id >= 0 {
-                    *matrix
-                        .entry(phrase_id)
-                        .or_default()
-                        .entry(context.clone())
-                        .or_insert(0) += 1;
+                    *matrix.entry(phrase_id).or_default().entry(context.clone()).or_insert(0) += 1;
                     *phrase_totals.entry(phrase_id).or_insert(0) += 1;
                     *context_totals.entry(context.clone()).or_insert(0) += 1;
                 }
@@ -77,18 +68,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let n_contexts = context_totals.len();
     let total_obs: usize = phrase_totals.values().sum::<usize>();
 
-    println!(
-        "   📊 Matrix: {} phrases x {} contexts",
-        n_phrases, n_contexts
-    );
+    println!("   📊 Matrix: {} phrases x {} contexts", n_phrases, n_contexts);
     println!();
 
     // Step 3: Calculate Metrics
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Step 3: Calculating Metrics                                           │");
-    println!(
-        "└───────────────────────────────────────────────────────────────────────────────────┘"
-    );
+    println!("└───────────────────────────────────────────────────────────────────────────────────┘");
     println!();
 
     let n_contexts_f64 = context_totals.len() as f64;

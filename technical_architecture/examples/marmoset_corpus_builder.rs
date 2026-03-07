@@ -5,6 +5,7 @@
 //
 // Usage: cargo run --release --example marmoset_corpus_builder
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -23,10 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configuration
     let vocalizations_dir = PathBuf::from("/home/sheel/birdsong_analysis/data/Vocalizations");
-    let output_path =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
-    let output_symbolic_stream =
-        PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
+    let output_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_phrase_level_corpus.json");
+    let output_symbolic_stream = PathBuf::from("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
 
     // ========================================================================
     // Step 1: Scan Vocalizations Directory
@@ -190,14 +189,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "symbolic_streams": sessions,
     });
 
-    fs::write(
-        &output_symbolic_stream,
-        serde_json::to_string_pretty(&symbolic_stream)?,
-    )?;
-    println!(
-        "   💾 Symbolic stream: {}",
-        output_symbolic_stream.display()
-    );
+    fs::write(&output_symbolic_stream, serde_json::to_string_pretty(&symbolic_stream)?)?;
+    println!("   💾 Symbolic stream: {}", output_symbolic_stream.display());
     println!();
 
     // ========================================================================

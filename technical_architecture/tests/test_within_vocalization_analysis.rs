@@ -18,11 +18,8 @@
 // NOTE: The main implementation is in src/within_vocalization_analyzer.rs
 // This file contains the test specification and data fixtures.
 
-use std::f64::consts::PI;
-
 #[cfg(test)]
 mod within_vocalization_tests {
-    use super::*;
 
     // ========================================================================
     // Test Suite 1: Micro-Pause Detection
@@ -31,7 +28,6 @@ mod within_vocalization_tests {
     // that indicate phrase boundaries
 
     mod micro_pause_tests {
-        use super::*;
 
         #[test]
         fn test_detect_micro_pauses_in_synthetic_vocalization() {
@@ -79,7 +75,6 @@ mod within_vocalization_tests {
     // indicate transitions between phrase units
 
     mod f0_change_tests {
-        use super::*;
 
         #[test]
         fn test_detect_f0_shifts_in_multi_phrase_vocalization() {
@@ -128,7 +123,6 @@ mod within_vocalization_tests {
     // for robust phrase boundary detection
 
     mod combined_feature_tests {
-        use super::*;
 
         #[test]
         fn test_combine_pauses_and_f0_changes() {
@@ -174,7 +168,6 @@ mod within_vocalization_tests {
     // rather than random segments
 
     mod phrase_structure_tests {
-        use super::*;
 
         #[test]
         fn test_validate_phrase_coherence() {
@@ -220,7 +213,6 @@ mod within_vocalization_tests {
     // Goal: Apply the detection pipeline to real bat vocalizations
 
     mod real_data_tests {
-        use super::*;
 
         #[test]
         #[ignore] // Expensive test - run manually
@@ -271,7 +263,6 @@ mod within_vocalization_tests {
     // Goal: Ensure new features integrate with existing lexicon_to_syntax
 
     mod integration_tests {
-        use super::*;
 
         #[test]
         fn test_adaptive_segmentation_config() {
@@ -338,13 +329,9 @@ impl TestDataGenerator {
     ///
     /// # Returns
     /// Synthetic audio buffer with phrase boundaries
-    pub fn generate_multi_phrase_vocalization(
-        &self,
-        phrases: Vec<(f64, f64)>,
-        pause_duration_ms: f64,
-    ) -> Vec<f32> {
+    pub fn generate_multi_phrase_vocalization(&self, phrases: Vec<(f64, f64)>, pause_duration_ms: f64) -> Vec<f32> {
         let mut audio = Vec::new();
-        let pause_samples = (pause_duration_ms as f64 * self.sample_rate as f64 / 1000.0) as usize;
+        let pause_samples = (pause_duration_ms * self.sample_rate as f64 / 1000.0) as usize;
 
         for (i, (duration_ms, f0_hz)) in phrases.iter().enumerate() {
             // Generate phrase with sinusoid at F0
@@ -393,13 +380,13 @@ impl TestDataGenerator {
 
 #[cfg(test)]
 mod expected_results {
-    use super::*;
-
     /// These benchmarks define the expected behavior once implementation is complete
     /// They serve as acceptance criteria for the TDD process
-
+    #[allow(dead_code)]
     const MIN_PHRASE_DURATION_MS: f64 = 10.0;
+    #[allow(dead_code)]
     const MIN_PAUSE_DURATION_MS: f64 = 5.0;
+    #[allow(dead_code)]
     const MIN_F0_CHANGE_HZ: f64 = 2000.0;
 
     #[test]
@@ -408,7 +395,7 @@ mod expected_results {
         // EXPECTED: At least 30% of bat vocalizations should show multi-phrase structure
         // RATIONALE: If bat vocalizations are truly holistic, we'd expect 0%
         //          If they have sentence structure, we expect >30%
-        let expected_min_rate = 0.30;
+        let _expected_min_rate = 0.30;
 
         // TODO: Run on real corpus and measure detection rate
         // assert!(detection_rate >= expected_min_rate,
@@ -421,8 +408,8 @@ mod expected_results {
     fn benchmark_average_phrases_per_vocalization() {
         // EXPECTED: Average 1.5 - 3.0 phrases per vocalization
         // RATIONALE: 1.0 = holistic, >2.0 = clear multi-phrase structure
-        let expected_min = 1.5;
-        let expected_max = 3.0;
+        let _expected_min = 1.5;
+        let _expected_max = 3.0;
 
         // TODO: Calculate on detected phrases
         // assert!(avg_phrases >= expected_min && avg_phrases <= expected_max,
@@ -435,7 +422,7 @@ mod expected_results {
     fn benchmark_pmi_scores_within_vocalizations() {
         // EXPECTED: PMI scores > 2.0 for within-vocalization phrase transitions
         // RATIONALE: High PMI indicates fixed phrase order (syntax)
-        let expected_min_pmi = 2.0;
+        let _expected_min_pmi = 2.0;
 
         // TODO: Calculate PMI on detected phrase sequences
         // assert!(avg_pmi >= expected_min_pmi,

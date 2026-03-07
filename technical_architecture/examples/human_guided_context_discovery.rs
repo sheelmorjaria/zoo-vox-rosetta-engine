@@ -6,6 +6,7 @@
 //! - Egyptian Fruit Bats: /mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/
 //! - Marmoset Vocalizations: ~/birdsong_analysis/data/Vocalizations/
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -104,22 +105,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut contexts: Vec<_> = context_counts.iter().collect();
     contexts.sort_by_key(|(_, c)| std::cmp::Reverse(*c));
     for (ctx, count) in contexts.iter().take(10) {
-        println!(
-            "  {} ({}): {} files",
-            get_bat_context_name(**ctx),
-            ctx,
-            count
-        );
+        println!("  {} ({}): {} files", get_bat_context_name(**ctx), ctx, count);
     }
     println!();
 
     // =========================================================================
     // STEP 2: Feature Extraction (Whole File)
     // =========================================================================
-    println!(
-        "[2/4] Extracting 45D features from {} files...",
-        process_count
-    );
+    println!("[2/4] Extracting 45D features from {} files...", process_count);
 
     let extract_start = Instant::now();
     let processed = Arc::new(AtomicUsize::new(0));
@@ -250,10 +243,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let num_types = phrase_types.len();
-    println!(
-        "  Found {} phrase types from {} phrases",
-        num_types, total_phrases
-    );
+    println!("  Found {} phrase types from {} phrases", num_types, total_phrases);
 
     // Build semantic dictionary
     let mut type_to_labels: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -427,8 +417,5 @@ fn load_wav_f32(path: &str) -> Result<AudioData, Box<dyn std::error::Error>> {
         return Err(format!("Unsupported bits per sample: {}", bits_per_sample).into());
     };
 
-    Ok(AudioData {
-        samples,
-        sample_rate,
-    })
+    Ok(AudioData { samples, sample_rate })
 }

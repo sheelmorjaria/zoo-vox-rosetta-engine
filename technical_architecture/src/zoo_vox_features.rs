@@ -185,18 +185,11 @@ impl ZooVoxFeatureExtractor {
         // === SPECTRAL SHAPE FACTORS (4) - NEW ===
         let spectrum = self.compute_spectrum(&audio);
         features.spectral_centroid = self.compute_spectral_centroid(&spectrum);
-        features.spectral_spread =
-            self.compute_spectral_spread(&spectrum, features.spectral_centroid);
-        features.spectral_skewness = self.compute_spectral_skewness(
-            &spectrum,
-            features.spectral_centroid,
-            features.spectral_spread,
-        );
-        features.spectral_kurtosis = self.compute_spectral_kurtosis(
-            &spectrum,
-            features.spectral_centroid,
-            features.spectral_spread,
-        );
+        features.spectral_spread = self.compute_spectral_spread(&spectrum, features.spectral_centroid);
+        features.spectral_skewness =
+            self.compute_spectral_skewness(&spectrum, features.spectral_centroid, features.spectral_spread);
+        features.spectral_kurtosis =
+            self.compute_spectral_kurtosis(&spectrum, features.spectral_centroid, features.spectral_spread);
 
         // === MODULATION FACTORS (3) - NEW ===
         features.spectral_tilt = self.compute_spectral_tilt(&spectrum);
@@ -567,10 +560,7 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let diffs: f64 = f0_track
-            .windows(2)
-            .map(|w| (w[1] - w[0]).abs())
-            .sum::<f64>();
+        let diffs: f64 = f0_track.windows(2).map(|w| (w[1] - w[0]).abs()).sum::<f64>();
 
         (diffs / (f0_track.len() - 1) as f64) / mean_f0
     }
@@ -599,10 +589,7 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let diffs: f64 = amp_track
-            .windows(2)
-            .map(|w| (w[1] - w[0]).abs())
-            .sum::<f64>();
+        let diffs: f64 = amp_track.windows(2).map(|w| (w[1] - w[0]).abs()).sum::<f64>();
 
         (diffs / (amp_track.len() - 1) as f64) / mean_amp
     }
@@ -803,8 +790,7 @@ impl ZooVoxFeatureExtractor {
             return 0.0;
         }
 
-        let variance: f64 =
-            iois.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / iois.len() as f64;
+        let variance: f64 = iois.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / iois.len() as f64;
 
         variance.sqrt() / mean
     }
@@ -1116,8 +1102,7 @@ impl ZooVoxFeatureExtractor {
             let high_bin = (high_freq / freq_per_bin).min(spectrum.len() as f64) as usize;
 
             if high_bin > low_bin {
-                let energy: f64 =
-                    spectrum[low_bin..high_bin].iter().sum::<f64>() / (high_bin - low_bin) as f64;
+                let energy: f64 = spectrum[low_bin..high_bin].iter().sum::<f64>() / (high_bin - low_bin) as f64;
                 if energy > 0.0 {
                     octave_energies.push(10.0 * energy.log10());
                     octave_freqs.push((low_freq + high_freq) / 2.0);
@@ -1269,11 +1254,7 @@ impl ZooVoxFeatureExtractor {
         let probabilities: Vec<f64> = spectrum.iter().map(|x| x / total).collect();
 
         // Compute Shannon entropy
-        let entropy: f64 = probabilities
-            .iter()
-            .filter(|&&p| p > 1e-10)
-            .map(|&p| -p * p.ln())
-            .sum();
+        let entropy: f64 = probabilities.iter().filter(|&&p| p > 1e-10).map(|&p| -p * p.ln()).sum();
 
         // Normalize by maximum entropy (uniform distribution)
         let max_entropy = (spectrum.len() as f64).ln();
@@ -1323,15 +1304,12 @@ impl PyZooVoxFeatureExtractor {
     ///
     /// Returns:
     ///     Numpy array of 30 feature values
-    fn extract_30d<'py>(
-        &mut self,
-        py: Python<'py>,
-        audio: PyReadonlyArray1<f64>,
-    ) -> PyResult<Py<PyArray1<f64>>> {
+    fn extract_30d<'py>(&mut self, py: Python<'py>, audio: PyReadonlyArray1<f64>) -> PyResult<Py<PyArray1<f64>>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
-        })?;
+        let features = self
+            .inner
+            .extract(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
 
         let vector = features.to_vector();
         Ok(PyArray1::from_vec(py, vector.to_vec()).into_py(py))
@@ -1350,15 +1328,12 @@ impl PyZooVoxFeatureExtractor {
     ///
     /// Returns:
     ///     Numpy array of 45 feature values
-    fn extract_45d<'py>(
-        &mut self,
-        py: Python<'py>,
-        audio: PyReadonlyArray1<f64>,
-    ) -> PyResult<Py<PyArray1<f64>>> {
+    fn extract_45d<'py>(&mut self, py: Python<'py>, audio: PyReadonlyArray1<f64>) -> PyResult<Py<PyArray1<f64>>> {
         let audio_slice = audio.as_slice()?;
-        let features = self.inner.extract_45d(audio_slice).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e))
-        })?;
+        let features = self
+            .inner
+            .extract_45d(audio_slice)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Feature extraction failed: {}", e)))?;
 
         let vector = features.to_vector();
         Ok(PyArray1::from_vec(py, vector.to_vec()).into_py(py))

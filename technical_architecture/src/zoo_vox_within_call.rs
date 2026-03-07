@@ -204,8 +204,7 @@ impl WithinCallAnalyzer {
     /// within a single species' vocal repertoire.
     pub fn for_species(species: &str) -> Self {
         let config = WithinCallConfig::for_species(species);
-        let mut similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric);
+        let mut similarity_engine = AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         // Apply species-specific weights for Phase 2 analysis
         // This is the CORRECT use of species weights - within-species
@@ -224,8 +223,7 @@ impl WithinCallAnalyzer {
     /// Create analyzer for species with explicit weights
     pub fn for_species_with_weights(species: &str, weights: &FeatureWeights) -> Self {
         let config = WithinCallConfig::for_species(species);
-        let mut similarity_engine =
-            AcousticSimilarityEngine::with_metric(30, config.distance_metric);
+        let mut similarity_engine = AcousticSimilarityEngine::with_metric(30, config.distance_metric);
 
         // Convert 45D weights to 30D (first 6 feature groups)
         let weights_30d = weights.to_weight_vector_30d();
@@ -295,8 +293,7 @@ impl WithinCallAnalyzer {
         let similarity_matrix = self.compute_similarity_matrix(&feature_vectors);
 
         // Group phrases by similarity
-        let phrase_types =
-            self.group_by_similarity(&phrase_candidates, &similarity_matrix, &feature_vectors);
+        let phrase_types = self.group_by_similarity(&phrase_candidates, &similarity_matrix, &feature_vectors);
 
         // Build phrase sequence
         let phrase_sequence: Vec<String> = phrase_types
@@ -353,9 +350,7 @@ impl WithinCallAnalyzer {
 
         for i in 0..n {
             for j in i..n {
-                let sim = self
-                    .similarity_engine
-                    .similarity(&features[i], &features[j]);
+                let sim = self.similarity_engine.similarity(&features[i], &features[j]);
                 matrix[i][j] = sim;
                 matrix[j][i] = sim;
             }
@@ -410,9 +405,7 @@ impl WithinCallAnalyzer {
                         start_sample: 0, // Would be filled from actual segmentation
                         end_sample: 0,
                         features: phrase.features_30d.clone(),
-                        distance_to_centroid: self
-                            .similarity_engine
-                            .distance(&feature_vectors[idx], &centroid),
+                        distance_to_centroid: self.similarity_engine.distance(&feature_vectors[idx], &centroid),
                     }
                 })
                 .collect();
@@ -449,9 +442,8 @@ impl WithinCallAnalyzer {
                 .collect();
 
             let template = &phrases[i];
-            let centroid_features = AcousticFeatures30D::from_vector(
-                centroid.into_raw_vec().try_into().unwrap_or([0.0; 30]),
-            );
+            let centroid_features =
+                AcousticFeatures30D::from_vector(centroid.into_raw_vec().try_into().unwrap_or([0.0; 30]));
 
             phrase_types.push(DiscoveredPhraseType {
                 type_id: format!("{}_type_{}", template.species, phrase_types.len()),
@@ -471,11 +463,7 @@ impl WithinCallAnalyzer {
     }
 
     /// Compute centroid of a group of feature vectors
-    fn compute_centroid(
-        &self,
-        indices: &[usize],
-        feature_vectors: &[ndarray::Array1<f64>],
-    ) -> ndarray::Array1<f64> {
+    fn compute_centroid(&self, indices: &[usize], feature_vectors: &[ndarray::Array1<f64>]) -> ndarray::Array1<f64> {
         if indices.is_empty() {
             return ndarray::Array1::zeros(30);
         }
@@ -489,21 +477,14 @@ impl WithinCallAnalyzer {
     }
 
     /// Compute transition matrix from phrase sequence
-    fn compute_transition_matrix(
-        &self,
-        sequence: &[String],
-    ) -> HashMap<String, HashMap<String, usize>> {
+    fn compute_transition_matrix(&self, sequence: &[String]) -> HashMap<String, HashMap<String, usize>> {
         let mut matrix: HashMap<String, HashMap<String, usize>> = HashMap::new();
 
         for window in sequence.windows(2) {
             let from = &window[0];
             let to = &window[1];
 
-            *matrix
-                .entry(from.clone())
-                .or_default()
-                .entry(to.clone())
-                .or_insert(0) += 1;
+            *matrix.entry(from.clone()).or_default().entry(to.clone()).or_insert(0) += 1;
         }
 
         matrix
@@ -524,12 +505,8 @@ impl WithinCallAnalyzer {
         // Between-type: average distance between centroids
         for i in 0..phrase_types.len() {
             for j in (i + 1)..phrase_types.len() {
-                let a = ndarray::Array1::from_vec(
-                    phrase_types[i].centroid_features.to_vector().to_vec(),
-                );
-                let b = ndarray::Array1::from_vec(
-                    phrase_types[j].centroid_features.to_vector().to_vec(),
-                );
+                let a = ndarray::Array1::from_vec(phrase_types[i].centroid_features.to_vector().to_vec());
+                let b = ndarray::Array1::from_vec(phrase_types[j].centroid_features.to_vector().to_vec());
                 between_distances.push(self.similarity_engine.distance(&a, &b));
             }
         }
@@ -642,20 +619,13 @@ impl SimilarityBasedLibraryBuilder {
         &self,
         phrases: Vec<PhrasePrototype>,
         species: &str,
-    ) -> Result<
-        crate::zoo_vox_data_models::SpeciesPhraseLibrary,
-        crate::zoo_vox_library::LibraryError,
-    > {
+    ) -> Result<crate::zoo_vox_data_models::SpeciesPhraseLibrary, crate::zoo_vox_library::LibraryError> {
         let mut analyzer = WithinCallAnalyzer::for_species(species);
 
         // Use call_id from first phrase or generate one
         let call_id = phrases
             .first()
-            .map(|p| {
-                p.source_file
-                    .clone()
-                    .unwrap_or_else(|| "unknown_call".to_string())
-            })
+            .map(|p| p.source_file.clone().unwrap_or_else(|| "unknown_call".to_string()))
             .unwrap_or_else(|| "empty_call".to_string());
 
         // Discover phrase types using similarity
@@ -667,8 +637,7 @@ impl SimilarityBasedLibraryBuilder {
             .into_iter()
             .map(|pt| {
                 // Create merged phrase prototype
-                let mut phrase =
-                    PhrasePrototype::new(pt.type_id.clone(), pt.phrase_key, species.to_string());
+                let mut phrase = PhrasePrototype::new(pt.type_id.clone(), pt.phrase_key, species.to_string());
 
                 // Use centroid features
                 phrase.features_30d = pt.centroid_features;
@@ -836,12 +805,7 @@ mod tests {
             call_id: "test".to_string(),
             species: "marmoset".to_string(),
             phrase_types: Vec::new(),
-            phrase_sequence: vec![
-                "A".to_string(),
-                "B".to_string(),
-                "A".to_string(),
-                "B".to_string(),
-            ],
+            phrase_sequence: vec!["A".to_string(), "B".to_string(), "A".to_string(), "B".to_string()],
             transition_matrix: HashMap::new(),
             total_phrases: 4,
             unique_types: 2,

@@ -226,10 +226,7 @@ impl AudioSegmenter {
     ///
     /// # Returns
     /// Vector of extracted audio segments
-    pub fn extract_segments(
-        &self,
-        vocabulary: &VocabularyItem,
-    ) -> Result<Vec<AudioSegmentForSynthesis>> {
+    pub fn extract_segments(&self, vocabulary: &VocabularyItem) -> Result<Vec<AudioSegmentForSynthesis>> {
         let mut segments = Vec::new();
 
         for (idx, occurrence) in vocabulary.occurrences.iter().enumerate() {
@@ -250,9 +247,7 @@ impl AudioSegmenter {
         let audio_path = self.audio_dir.join(&occurrence.file_path);
 
         if !audio_path.exists() {
-            return Err(SegmenterError::AudioNotFound(
-                audio_path.to_string_lossy().to_string(),
-            ));
+            return Err(SegmenterError::AudioNotFound(audio_path.to_string_lossy().to_string()));
         }
 
         // Load audio using Symphonia
@@ -263,9 +258,7 @@ impl AudioSegmenter {
         let end = occurrence.end_sample.min(full_audio.len());
 
         if start >= end {
-            return Err(SegmenterError::InvalidAudioFormat(
-                "Invalid sample range".to_string(),
-            ));
+            return Err(SegmenterError::InvalidAudioFormat("Invalid sample range".to_string()));
         }
 
         let audio = full_audio[start..end].to_vec();
@@ -399,10 +392,7 @@ impl AudioSegmenter {
                     .iter()
                     .enumerate()
                     .map(|(i, &x)| {
-                        x * (0.5
-                            * (1.0
-                                - (2.0 * std::f64::consts::PI * i as f64 / (len - 1) as f64).cos()))
-                            as f32
+                        x * (0.5 * (1.0 - (2.0 * std::f64::consts::PI * i as f64 / (len - 1) as f64).cos())) as f32
                     })
                     .collect()
             }
@@ -414,14 +404,9 @@ impl AudioSegmenter {
     /// # Arguments
     /// * `segments` - Segments to export
     /// * `format` - Export format (wav, flac, etc.)
-    pub fn export_concatenative(
-        &self,
-        segments: &[AudioSegmentForSynthesis],
-        format: &str,
-    ) -> Result<Vec<PathBuf>> {
+    pub fn export_concatenative(&self, segments: &[AudioSegmentForSynthesis], format: &str) -> Result<Vec<PathBuf>> {
         let output_dir = self.output_dir.join("concatenative");
-        std::fs::create_dir_all(&output_dir)
-            .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
+        std::fs::create_dir_all(&output_dir).map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         let mut exported_paths = Vec::new();
 
@@ -442,8 +427,7 @@ impl AudioSegmenter {
     /// * `grains` - Grains to export
     pub fn export_grains(&self, grains: &[AudioGrain]) -> Result<Vec<PathBuf>> {
         let output_dir = self.output_dir.join("granular");
-        std::fs::create_dir_all(&output_dir)
-            .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
+        std::fs::create_dir_all(&output_dir).map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         let mut exported_paths = Vec::new();
 
@@ -464,8 +448,7 @@ impl AudioSegmenter {
     /// * `vocabulary` - Vocabulary items with features
     pub fn export_metadata(&self, _vocabulary: &[&VocabularyItem]) -> Result<PathBuf> {
         let output_dir = self.output_dir.join("metadata");
-        std::fs::create_dir_all(&output_dir)
-            .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
+        std::fs::create_dir_all(&output_dir).map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         // Export as JSON (simplified - just vocab IDs and stats)
         // In production, you'd serialize VocabularyItem properly
@@ -488,8 +471,7 @@ impl AudioSegmenter {
             sample_format: hound::SampleFormat::Int,
         };
 
-        let writer = WavWriter::create(path, spec)
-            .map_err(|e| SegmenterError::ExportError(e.to_string()))?;
+        let writer = WavWriter::create(path, spec).map_err(|e| SegmenterError::ExportError(e.to_string()))?;
 
         let mut writer = writer;
 
@@ -618,15 +600,9 @@ mod tests {
     #[test]
     fn test_export_metadata() {
         let temp_dir = TempDir::new().unwrap();
-        let segmenter = AudioSegmenter::new(
-            temp_dir.path().to_path_buf(),
-            temp_dir.path().join("output"),
-            48000,
-        );
+        let segmenter = AudioSegmenter::new(temp_dir.path().to_path_buf(), temp_dir.path().join("output"), 48000);
 
-        use crate::vocabulary_mapper::{
-            DurationStats, VocabularyItem, VocabularyOccurrence, VocalizationContext,
-        };
+        use crate::vocabulary_mapper::{DurationStats, VocabularyItem, VocabularyOccurrence, VocalizationContext};
 
         let vocab_item = VocabularyItem {
             vocab_id: "cluster_0".to_string(),
@@ -669,11 +645,7 @@ mod tests {
     #[test]
     fn test_empty_audio_handling() {
         let temp_dir = TempDir::new().unwrap();
-        let segmenter = AudioSegmenter::new(
-            temp_dir.path().to_path_buf(),
-            temp_dir.path().join("output"),
-            48000,
-        );
+        let segmenter = AudioSegmenter::new(temp_dir.path().to_path_buf(), temp_dir.path().join("output"), 48000);
 
         let segment = AudioSegmentForSynthesis {
             segment_id: "test".to_string(),

@@ -91,9 +91,15 @@ impl SourceMetadata112D {
     }
 
     // Delegate accessors to underlying features for convenience
-    pub fn mean_f0_hz(&self) -> f32 { self.features.mean_f0_hz }
-    pub fn duration_ms(&self) -> f32 { self.features.duration_ms }
-    pub fn rms_energy(&self) -> f32 { self.features.rms_energy }
+    pub fn mean_f0_hz(&self) -> f32 {
+        self.features.mean_f0_hz
+    }
+    pub fn duration_ms(&self) -> f32 {
+        self.features.duration_ms
+    }
+    pub fn rms_energy(&self) -> f32 {
+        self.features.rms_energy
+    }
 }
 
 // =============================================================================
@@ -137,12 +143,7 @@ impl ExemplarManager {
     ///
     /// If an exemplar already exists for this cluster, the one with
     /// higher quality score is kept.
-    pub fn register_exemplar(
-        &mut self,
-        cluster_id: u32,
-        audio: Vec<f32>,
-        features: RosettaFeatures,
-    ) {
+    pub fn register_exemplar(&mut self, cluster_id: u32, audio: Vec<f32>, features: RosettaFeatures) {
         let metadata = SourceMetadata112D::from_features_with_cluster(&features, cluster_id);
         let quality = metadata.quality_score();
 
@@ -368,7 +369,9 @@ impl CachedGranularSynthesizer {
             let duration_samples = ((event.duration_ms / 1000.0) * self.config.sample_rate as f64) as usize;
 
             // Copy source audio to output (with stretching/padding as needed)
-            let copy_len = duration_samples.min(source.audio.len()).min(output.len() - start_sample);
+            let copy_len = duration_samples
+                .min(source.audio.len())
+                .min(output.len() - start_sample);
 
             for i in 0..copy_len {
                 output[start_sample + i] += source.audio[i % source.audio.len()] * event.amplitude;

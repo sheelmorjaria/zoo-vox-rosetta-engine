@@ -33,8 +33,7 @@ impl ConfusionMatrix {
     }
 
     pub fn accuracy(&self) -> f32 {
-        let total =
-            self.true_positives + self.false_positives + self.true_negatives + self.false_negatives;
+        let total = self.true_positives + self.false_positives + self.true_negatives + self.false_negatives;
         if total == 0 {
             return 0.0;
         }
@@ -72,11 +71,7 @@ pub struct MetricCalculator;
 
 impl MetricCalculator {
     /// Calculate metrics from predictions and labels
-    pub fn calculate_metrics(
-        predictions: &[usize],
-        labels: &[usize],
-        _num_classes: usize,
-    ) -> ClassificationMetrics {
+    pub fn calculate_metrics(predictions: &[usize], labels: &[usize], _num_classes: usize) -> ClassificationMetrics {
         if predictions.is_empty() || labels.is_empty() || predictions.len() != labels.len() {
             return ClassificationMetrics::default();
         }

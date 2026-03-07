@@ -7,9 +7,7 @@
 //! This enables the Bio-Acoustic Agent to operate with learned dictionaries
 //! from the discovery pipeline.
 
-use crate::bio_acoustic_agent::{
-    AcousticInventory, AcousticModality, AcousticPrototype, SourceMetadata,
-};
+use crate::bio_acoustic_agent::{AcousticInventory, AcousticModality, AcousticPrototype, SourceMetadata};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -148,7 +146,7 @@ pub fn features_to_metadata(features: &[f64]) -> SourceMetadata {
         entropy: features[SPECTRAL_FLATNESS] as f32,
 
         // Psychoacoustic
-        loudness: 0.5, // Default, would need actual audio
+        loudness: 0.5,                                           // Default, would need actual audio
         sharpness: features[SPECTRAL_CENTROID] as f32 / 10000.0, // Normalize
         roughness: features[SPECTRAL_FLUX] as f32 / 10.0,
         tonality: features[HARMONICITY] as f32,
@@ -192,29 +190,24 @@ impl DictionaryLoader {
             return Err(LoadError::FileNotFound(path.display().to_string()));
         }
 
-        let content = std::fs::read_to_string(&path)
-            .map_err(|e| LoadError::IoError(path.display().to_string(), e))?;
+        let content = std::fs::read_to_string(&path).map_err(|e| LoadError::IoError(path.display().to_string(), e))?;
 
-        serde_json::from_str(&content)
-            .map_err(|e| LoadError::ParseError(path.display().to_string(), e))
+        serde_json::from_str(&content).map_err(|e| LoadError::ParseError(path.display().to_string(), e))
     }
 
     /// Load type centroids from JSON
     pub fn load_type_centroids(&self, species: &str) -> Result<TypeCentroids, LoadError> {
-        let path = self.base_path.join(format!(
-            "{}_guided_results/{}_type_centroids.json",
-            species, species
-        ));
+        let path = self
+            .base_path
+            .join(format!("{}_guided_results/{}_type_centroids.json", species, species));
 
         if !path.exists() {
             return Err(LoadError::FileNotFound(path.display().to_string()));
         }
 
-        let content = std::fs::read_to_string(&path)
-            .map_err(|e| LoadError::IoError(path.display().to_string(), e))?;
+        let content = std::fs::read_to_string(&path).map_err(|e| LoadError::IoError(path.display().to_string(), e))?;
 
-        serde_json::from_str(&content)
-            .map_err(|e| LoadError::ParseError(path.display().to_string(), e))
+        serde_json::from_str(&content).map_err(|e| LoadError::ParseError(path.display().to_string(), e))
     }
 
     /// Load both dictionaries
@@ -264,13 +257,7 @@ impl DictionaryLoader {
             // Average centroids
             let n = types.len() as f64;
             let avg_features: Vec<f64> = (0..45)
-                .map(|i| {
-                    types
-                        .iter()
-                        .map(|(_, c)| c.get(i).copied().unwrap_or(0.0))
-                        .sum::<f64>()
-                        / n
-                })
+                .map(|i| types.iter().map(|(_, c)| c.get(i).copied().unwrap_or(0.0)).sum::<f64>() / n)
                 .collect();
 
             // Convert to metadata

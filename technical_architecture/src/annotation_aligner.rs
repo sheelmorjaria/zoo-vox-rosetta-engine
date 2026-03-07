@@ -166,13 +166,10 @@ impl AnnotationAligner {
                 };
 
                 // Check if overlap meets thresholds
-                let overlap_ms = (candidate.end_ms.min(annotation.end_ms)
-                    - candidate.start_ms.max(annotation.start_ms))
-                .max(0.0);
+                let overlap_ms =
+                    (candidate.end_ms.min(annotation.end_ms) - candidate.start_ms.max(annotation.start_ms)).max(0.0);
 
-                if overlap >= self.config.overlap_threshold
-                    && overlap_ms >= self.config.min_overlap_ms
-                {
+                if overlap >= self.config.overlap_threshold && overlap_ms >= self.config.min_overlap_ms {
                     // Keep the best matching annotation
                     if best_match.is_none() || overlap > best_match.unwrap().1 {
                         best_match = Some((annotation, overlap, ann_idx));
@@ -332,11 +329,7 @@ impl AnnotationAligner {
         let first_fields: Vec<&str> = first_line.split(',').collect();
 
         // Check if first line is header
-        let start_idx = if first_fields[0].parse::<f32>().is_err() {
-            1
-        } else {
-            0
-        };
+        let start_idx = if first_fields[0].parse::<f32>().is_err() { 1 } else { 0 };
 
         // Process first line if it wasn't a header
         if start_idx == 0 {
@@ -371,25 +364,15 @@ impl AnnotationAligner {
             start_ms: start,
             end_ms: end,
             label: fields[2].trim().to_string(),
-            context: fields
-                .get(3)
-                .map(|s| s.trim().to_string())
-                .unwrap_or_default(),
-            confidence: fields
-                .get(4)
-                .and_then(|s| s.trim().parse().ok())
-                .unwrap_or(1.0),
-            annotator_id: fields
-                .get(5)
-                .map(|s| s.trim().to_string())
-                .unwrap_or_default(),
+            context: fields.get(3).map(|s| s.trim().to_string()).unwrap_or_default(),
+            confidence: fields.get(4).and_then(|s| s.trim().parse().ok()).unwrap_or(1.0),
+            annotator_id: fields.get(5).map(|s| s.trim().to_string()).unwrap_or_default(),
         })
     }
 
     /// Parse JSON format
     fn parse_json(&self, content: &str) -> Result<Vec<HumanAnnotation>, AnnotationParseError> {
-        serde_json::from_str(content)
-            .map_err(|e| AnnotationParseError::ParseError(format!("JSON parse error: {}", e)))
+        serde_json::from_str(content).map_err(|e| AnnotationParseError::ParseError(format!("JSON parse error: {}", e)))
     }
 }
 
@@ -550,10 +533,7 @@ impl SemanticPhraseDictionary {
         }
 
         // Convert counts to probabilities
-        let all_labels: std::collections::HashSet<_> = label_counts
-            .values()
-            .flat_map(|m| m.keys().cloned())
-            .collect();
+        let all_labels: std::collections::HashSet<_> = label_counts.values().flat_map(|m| m.keys().cloned()).collect();
 
         for (type_id, counts) in &label_counts {
             let total: usize = counts.values().sum();
@@ -722,9 +702,7 @@ mod tests {
         let aligner = AnnotationAligner::new();
         let content = "0.0\t1.0\tSong|Territory\n1.5\t2.5\tAlarm|Predator\n";
 
-        let annotations = aligner
-            .parse_annotations(content, AnnotationFormat::Audacity)
-            .unwrap();
+        let annotations = aligner.parse_annotations(content, AnnotationFormat::Audacity).unwrap();
 
         assert_eq!(annotations.len(), 2);
         assert_eq!(annotations[0].label, "Song");
@@ -799,11 +777,7 @@ mod tests {
             (2, "Type_B".to_string()),
         ];
 
-        let features = vec![
-            vec![0.1, 0.2, 0.3],
-            vec![0.15, 0.25, 0.35],
-            vec![0.8, 0.9, 1.0],
-        ];
+        let features = vec![vec![0.1, 0.2, 0.3], vec![0.15, 0.25, 0.35], vec![0.8, 0.9, 1.0]];
 
         let dict = SemanticPhraseDictionary::build(&labeled, &clusters, &features);
 

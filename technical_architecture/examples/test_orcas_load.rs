@@ -1,3 +1,4 @@
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::fs::File;
 use std::path::Path;
 use symphonia::core::audio::SampleBuffer;
@@ -21,16 +22,8 @@ fn main() {
 
         match load_audio(path) {
             Ok((samples, sr)) => {
-                let rms = (samples.iter().map(|x| (*x as f32).powi(2)).sum::<f32>()
-                    / samples.len() as f32)
-                    .sqrt();
-                println!(
-                    "{}: {} samples, SR={}, RMS={:.4}",
-                    i,
-                    samples.len(),
-                    sr,
-                    rms
-                );
+                let rms = (samples.iter().map(|x| (*x as f32).powi(2)).sum::<f32>() / samples.len() as f32).sqrt();
+                println!("{}: {} samples, SR={}, RMS={:.4}", i, samples.len(), sr, rms);
             }
             Err(e) => {
                 println!("{}: Error - {}", i, e);
@@ -48,20 +41,15 @@ fn load_audio(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::error::Error>
         hint.with_extension(ext.to_string_lossy().as_ref());
     }
 
-    let probed = symphonia::default::get_probe().format(
-        &hint,
-        mss,
-        &FormatOptions::default(),
-        &MetadataOptions::default(),
-    )?;
+    let probed =
+        symphonia::default::get_probe().format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())?;
     let mut format = probed.format;
 
     let track = format.default_track().ok_or("No track")?;
     let track_id = track.id;
     let sample_rate = track.codec_params.sample_rate.unwrap_or(48000);
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
     let mut samples = Vec::new();
     let mut sample_buf = None;

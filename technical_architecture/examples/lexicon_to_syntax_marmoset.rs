@@ -8,10 +8,11 @@
 //
 // Marmoset call types: Vocalization, Twitter, Tsik, Phee, Trill, Infant, Seep
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use technical_architecture::{
-    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, PipelineCheckpoint,
-    RefinementConfig, SegmentationConfig, VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, PipelineCheckpoint, RefinementConfig,
+    SegmentationConfig, VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -66,18 +67,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("📐 Segmentation Config:");
-    println!(
-        "   ├─ Min duration: {}ms",
-        segmentation_config.min_duration_ms
-    );
-    println!(
-        "   ├─ Max duration: {}ms",
-        segmentation_config.max_duration_ms
-    );
-    println!(
-        "   ├─ Onset threshold: {}",
-        segmentation_config.onset_threshold
-    );
+    println!("   ├─ Min duration: {}ms", segmentation_config.min_duration_ms);
+    println!("   ├─ Max duration: {}ms", segmentation_config.max_duration_ms);
+    println!("   ├─ Onset threshold: {}", segmentation_config.onset_threshold);
     println!("   └─ Sample rate: {}Hz", segmentation_config.sample_rate);
     println!();
 
@@ -130,14 +122,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ├─ HMM states: {:?}", refinement_config.n_states);
     println!("   ├─ GMM components: {}", refinement_config.n_components);
     println!("   ├─ Max iterations: {}", refinement_config.max_iterations);
-    println!(
-        "   ├─ Convergence: {}",
-        refinement_config.convergence_threshold
-    );
-    println!(
-        "   └─ Covariance regularization: {}",
-        refinement_config.covariance_reg
-    );
+    println!("   ├─ Convergence: {}", refinement_config.convergence_threshold);
+    println!("   └─ Covariance regularization: {}", refinement_config.covariance_reg);
     println!();
 
     // Create pipeline with custom configs
@@ -162,10 +148,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Collect WAV and FLAC files from audio directory (recursively)
     let mut audio_files = Vec::new();
-    fn collect_flac_files(
-        dir: &std::path::Path,
-        files: &mut Vec<std::path::PathBuf>,
-    ) -> std::io::Result<()> {
+    fn collect_flac_files(dir: &std::path::Path, files: &mut Vec<std::path::PathBuf>) -> std::io::Result<()> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
@@ -193,11 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Show sample files
     for (i, file) in audio_files.iter().take(5).enumerate() {
-        println!(
-            "   {}. {}",
-            i + 1,
-            file.file_name().unwrap().to_string_lossy()
-        );
+        println!("   {}. {}", i + 1, file.file_name().unwrap().to_string_lossy());
     }
     if audio_files.len() > 5 {
         println!("   ... and {} more", audio_files.len() - 5);
@@ -224,10 +203,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
     } else {
         println!("💾 No checkpoint found - starting fresh");
-        println!(
-            "   ├─ Checkpoint will be saved to: {}",
-            checkpoint_path.display()
-        );
+        println!("   ├─ Checkpoint will be saved to: {}", checkpoint_path.display());
         println!("   └─ Checkpoint interval: every 100 files");
         println!();
     }
@@ -259,10 +235,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let max_duration = durations.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
         let mean_duration = durations.iter().sum::<f64>() / durations.len() as f64;
 
-        println!(
-            "   ├─ Duration range: {:.1}ms - {:.1}ms",
-            min_duration, max_duration
-        );
+        println!("   ├─ Duration range: {:.1}ms - {:.1}ms", min_duration, max_duration);
         println!("   ├─ Mean duration: {:.1}ms", mean_duration);
 
         // Show sample phrases
@@ -289,10 +262,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let features = &result.phrase_features;
-    println!(
-        "📊 Extracted feature matrices for {} phrases",
-        features.len()
-    );
+    println!("📊 Extracted feature matrices for {} phrases", features.len());
 
     if !features.is_empty() {
         println!("   ├─ Feature dimensions: 30 (MicroDynamics)");
@@ -305,10 +275,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let d0 = feat.features[[0, 0]];
             let d1 = feat.features[[0, 1]];
             let d2 = feat.features[[0, 2]];
-            println!(
-                "      • {} - [{:.3}, {:.3}, {:.3}, ...]",
-                feat.phrase_id, d0, d1, d2
-            );
+            println!("      • {} - [{:.3}, {:.3}, {:.3}, ...]", feat.phrase_id, d0, d1, d2);
         }
     }
     println!();
@@ -325,10 +292,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vocabulary = &result.vocabulary;
     let stats = &result.vocabulary_stats;
 
-    println!(
-        "🔍 Discovered {} vocabulary items (phrase types)",
-        vocabulary.len()
-    );
+    println!("🔍 Discovered {} vocabulary items (phrase types)", vocabulary.len());
     println!();
 
     if !vocabulary.is_empty() {
@@ -368,12 +332,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sorted_vocab.sort_by(|a, b| b.size.cmp(&a.size));
 
         for (i, vocab) in sorted_vocab.iter().take(10).enumerate() {
-            println!(
-                "   {}. Cluster {} - {} phrases",
-                i + 1,
-                vocab.cluster_id,
-                vocab.size
-            );
+            println!("   {}. Cluster {} - {} phrases", i + 1, vocab.cluster_id, vocab.size);
             println!("      ├─ Coherence: {:.3}", vocab.coherence);
             println!(
                 "      ├─ Feature template: [{:.3}, {:.3}, {:.3}, ...]",
@@ -383,13 +342,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             println!(
                 "      └─ Sample phrase IDs: {}",
-                vocab
-                    .phrase_ids
-                    .iter()
-                    .take(3)
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                vocab.phrase_ids.iter().take(3).cloned().collect::<Vec<_>>().join(", ")
             );
         }
         if vocabulary.len() > 10 {
@@ -421,10 +374,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!();
         println!("   Sample Phoneme Models:");
         for model in phoneme_models.iter().take(5) {
-            println!(
-                "   ├─ Cluster {} - {} states",
-                model.cluster_id, model.n_states
-            );
+            println!("   ├─ Cluster {} - {} states", model.cluster_id, model.n_states);
             println!("   │  ├─ Log-likelihood: {:.3}", model.log_likelihood);
             println!("   │  └─ State labels: {}", model.state_labels.join(" → "));
         }

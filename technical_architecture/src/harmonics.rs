@@ -92,9 +92,7 @@ impl HarmonicDeviationCalculator {
             let start = expected_bin.saturating_sub(search_range);
             let end = (expected_bin + search_range + 1).min(spectrum.len());
 
-            let peak_bin = (start..end)
-                .max_by_key(|&i| spectrum[i] as i64)
-                .unwrap_or(expected_bin);
+            let peak_bin = (start..end).max_by_key(|&i| spectrum[i] as i64).unwrap_or(expected_bin);
 
             let actual_freq = peak_bin as f32 * bin_resolution;
 
@@ -217,10 +215,7 @@ impl HarmonicDeviationCalculator {
             len <<= 1;
         }
 
-        complex[..n / 2]
-            .iter()
-            .map(|&(r, i)| (r * r + i * i).sqrt())
-            .collect()
+        complex[..n / 2].iter().map(|&(r, i)| (r * r + i * i).sqrt()).collect()
     }
 }
 
@@ -325,6 +320,73 @@ impl InharmonicityCalculator {
     }
 }
 
+/// Helper: Generate sine wave
+fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    (0..num_samples)
+        .map(|i| {
+            let t = i as f32 / sample_rate as f32;
+            (2.0 * PI * freq_hz * t).sin()
+        })
+        .collect()
+}
+
+/// Helper: Generate perfect harmonic series
+fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let mut audio = vec![0.0; num_samples];
+
+    for h in 1..=num_harmonics {
+        let freq = f0 * h as f32;
+        let amplitude = 1.0 / h as f32; // Natural amplitude decay
+        for (i, sample) in audio.iter_mut().enumerate() {
+            let t = i as f32 / sample_rate as f32;
+            *sample += amplitude * (2.0 * PI * freq * t).sin();
+        }
+    }
+
+    audio
+}
+
+/// Helper: Generate inharmonic series (detuned harmonics)
+fn generate_inharmonic_series(
+    f0: f32,
+    num_partials: usize,
+    detune: f32,
+    sample_rate: u32,
+    duration_sec: f32,
+) -> Vec<f32> {
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let mut audio = vec![0.0; num_samples];
+
+    for h in 1..=num_partials {
+        // Add slight detuning to create inharmonicity
+        let freq = f0 * h as f32 * (1.0 + detune * h as f32);
+        let amplitude = 1.0 / h as f32;
+        for (i, sample) in audio.iter_mut().enumerate() {
+            let t = i as f32 / sample_rate as f32;
+            *sample += amplitude * (2.0 * PI * freq * t).sin();
+        }
+    }
+
+    audio
+}
+
+/// Helper: Generate white noise
+fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let num_samples = (duration_sec * sample_rate as f32) as usize;
+    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let mut rng: u32 = seed;
+
+    (0..num_samples)
+        .map(|_| {
+            rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
+            (rng as f32 / u32::MAX as f32) * 2.0 - 1.0
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -384,7 +446,7 @@ mod tests {
         let noise = generate_white_noise(48000, 0.1);
         let deviation = calculator.calculate(&noise);
         // Noise should give some deviation value
-        assert!(deviation >= 0.0 && deviation <= 1.0);
+        assert!((0.0..=1.0).contains(&deviation));
     }
 
     #[test]
@@ -465,7 +527,7 @@ mod tests {
         let calculator = InharmonicityCalculator::new(48000);
         let harmonic = generate_harmonic_series(440.0, 5, 48000, 0.1);
         let inharm = calculator.calculate(&harmonic);
-        assert!(inharm >= 0.0 && inharm <= 1.0);
+        assert!((0.0..=1.0).contains(&inharm));
     }
 
     #[test]
@@ -482,79 +544,4 @@ mod tests {
         // Two non-harmonic tones should have some inharmonicity
         assert!(inharm > 0.0);
     }
-}
-
-/// Helper: Generate sine wave
-fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    (0..num_samples)
-        .map(|i| {
-            let t = i as f32 / sample_rate as f32;
-            (2.0 * PI * freq_hz * t).sin()
-        })
-        .collect()
-}
-
-/// Helper: Generate perfect harmonic series
-fn generate_harmonic_series(
-    f0: f32,
-    num_harmonics: usize,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let mut audio = vec![0.0; num_samples];
-
-    for h in 1..=num_harmonics {
-        let freq = f0 * h as f32;
-        let amplitude = 1.0 / h as f32; // Natural amplitude decay
-        for (i, sample) in audio.iter_mut().enumerate() {
-            let t = i as f32 / sample_rate as f32;
-            *sample += amplitude * (2.0 * PI * freq * t).sin();
-        }
-    }
-
-    audio
-}
-
-/// Helper: Generate inharmonic series (detuned harmonics)
-fn generate_inharmonic_series(
-    f0: f32,
-    num_partials: usize,
-    detune: f32,
-    sample_rate: u32,
-    duration_sec: f32,
-) -> Vec<f32> {
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let mut audio = vec![0.0; num_samples];
-
-    for h in 1..=num_partials {
-        // Add slight detuning to create inharmonicity
-        let freq = f0 * h as f32 * (1.0 + detune * h as f32);
-        let amplitude = 1.0 / h as f32;
-        for (i, sample) in audio.iter_mut().enumerate() {
-            let t = i as f32 / sample_rate as f32;
-            *sample += amplitude * (2.0 * PI * freq * t).sin();
-        }
-    }
-
-    audio
-}
-
-/// Helper: Generate white noise
-fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .subsec_nanos();
-    let mut rng: u32 = seed;
-
-    (0..num_samples)
-        .map(|_| {
-            rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
-            (rng as f32 / u32::MAX as f32) * 2.0 - 1.0
-        })
-        .collect()
 }

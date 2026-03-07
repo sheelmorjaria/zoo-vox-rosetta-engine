@@ -8,10 +8,10 @@
 // Usage:
 //   cargo run --example batch_cluster_bat --release --features parallel-extraction
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::{Path, PathBuf};
 use technical_architecture::{
-    batch_process_and_cluster, ClusteredPhrase, ExtractionPhraseCandidate,
-    ParallelExtractionPipeline,
+    batch_process_and_cluster, ClusteredPhrase, ExtractionPhraseCandidate, ParallelExtractionPipeline,
 };
 
 // Configuration
@@ -64,8 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Count unique clusters
-    let unique_clusters: std::collections::HashSet<i32> =
-        clustered_phrases.iter().map(|cp| cp.cluster_id).collect();
+    let unique_clusters: std::collections::HashSet<i32> = clustered_phrases.iter().map(|cp| cp.cluster_id).collect();
 
     println!("📊 Clustering Statistics:");
     println!("   Total clustered phrases: {}", clustered_phrases.len());
@@ -168,11 +167,7 @@ fn calculate_zipf_law(clustered_phrases: &[ClusteredPhrase]) {
         ss_tot += variation * variation;
     }
 
-    let r_squared = if ss_tot > 1e-10 {
-        1.0 - (ss_res / ss_tot)
-    } else {
-        0.0
-    };
+    let r_squared = if ss_tot > 1e-10 { 1.0 - (ss_res / ss_tot) } else { 0.0 };
 
     println!("📈 Zipf's Law Analysis:");
     println!("   Slope (α): {:.4}", slope);

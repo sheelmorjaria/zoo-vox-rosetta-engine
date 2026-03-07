@@ -4,12 +4,12 @@
 //! Demonstrates the Computational Ethology module on real zebra finch data.
 //! Validates that discovered phrases follow language-like statistical patterns.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use technical_architecture::computational_ethology::{
-    calculate_reuse_ratio, calculate_singleton_rate, calculate_zipf_correlation,
-    compare_configurations, validate_linguistic_structure, PhraseSequence, PhraseType,
-    ValidationConfig, ValidationResult,
+    calculate_reuse_ratio, calculate_singleton_rate, calculate_zipf_correlation, compare_configurations,
+    validate_linguistic_structure, PhraseSequence, PhraseType, ValidationConfig, ValidationResult,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,13 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a "worse" configuration with more singletons for comparison
     let worse_phrases = create_worse_configuration(&phrase_types);
-    let comparison = compare_configurations(
-        &worse_phrases,
-        &sequences,
-        &phrase_types,
-        &sequences,
-        &config,
-    )?;
+    let comparison = compare_configurations(&worse_phrases, &sequences, &phrase_types, &sequences, &config)?;
 
     println!("Optimized configuration wins: {}", comparison.winner);
     println!("  Zipf improvement: +{:.3}", comparison.zipf_improvement);
@@ -109,10 +103,7 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
             let phrase_type = PhraseType {
                 id: format!(
                     "phrase_{}",
-                    phrase
-                        .get("phrase_id")
-                        .and_then(|p| p.as_u64())
-                        .unwrap_or(0)
+                    phrase.get("phrase_id").and_then(|p| p.as_u64()).unwrap_or(0)
                 ),
                 label: phrase
                     .get("primary_call_type")
@@ -127,22 +118,13 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
     }
 
     // If we don't have enough phrases, create synthetic ones based on total count
-    let total_phrases = data
-        .get("total_atomic_phrases")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(100) as usize;
+    let total_phrases = data.get("total_atomic_phrases").and_then(|p| p.as_u64()).unwrap_or(100) as usize;
 
-    let total_candidates = data
-        .get("total_candidates")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(1000) as usize;
+    let total_candidates = data.get("total_candidates").and_then(|p| p.as_u64()).unwrap_or(1000) as usize;
 
     if phrase_types.len() < 10 {
         // Create Zipfian distribution of phrase types
-        let avg_reuse = data
-            .get("avg_reuse")
-            .and_then(|p| p.as_f64())
-            .unwrap_or(10.0);
+        let avg_reuse = data.get("avg_reuse").and_then(|p| p.as_f64()).unwrap_or(10.0);
         let types_count = total_phrases;
         let total_occurrences = total_candidates;
 
@@ -165,14 +147,8 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
 fn extract_sequences(data: &serde_json::Value) -> Vec<PhraseSequence> {
     let mut sequences = Vec::new();
 
-    let total_sequences = data
-        .get("total_sequences")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(100) as usize;
-    let vocab_size = data
-        .get("vocabulary_size")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(50) as usize;
+    let total_sequences = data.get("total_sequences").and_then(|p| p.as_u64()).unwrap_or(100) as usize;
+    let vocab_size = data.get("vocabulary_size").and_then(|p| p.as_u64()).unwrap_or(50) as usize;
 
     // Get transitions from bigram stats
     let transitions: Vec<(usize, usize, f64)> = data
@@ -202,10 +178,7 @@ fn extract_sequences(data: &serde_json::Value) -> Vec<PhraseSequence> {
             phrases.push(format!("phrase_{}", current));
 
             // Use real transitions if available, otherwise random
-            let matching: Vec<_> = transitions
-                .iter()
-                .filter(|(from, _, _)| *from == current)
-                .collect();
+            let matching: Vec<_> = transitions.iter().filter(|(from, _, _)| *from == current).collect();
 
             if !matching.is_empty() {
                 // Pick based on probability
@@ -259,20 +232,12 @@ fn print_validation_result(result: &ValidationResult) {
     println!(
         "Zipf Correlation: {:.3} {}",
         result.zipf_correlation,
-        if result.is_zipfian {
-            "(PASS)"
-        } else {
-            "(FAIL)"
-        }
+        if result.is_zipfian { "(PASS)" } else { "(FAIL)" }
     );
     println!(
         "Reuse Ratio: {:.2} {}",
         result.reuse_ratio,
-        if result.reuse_ratio > 2.0 {
-            "(GOOD)"
-        } else {
-            "(POOR)"
-        }
+        if result.reuse_ratio > 2.0 { "(GOOD)" } else { "(POOR)" }
     );
     println!(
         "Singleton Rate: {:.1}% {}",

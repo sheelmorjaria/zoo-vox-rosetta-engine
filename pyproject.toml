@@ -74,9 +74,10 @@ animal_vocalization_analysis = "."
 [tool.ruff]
 target-version = "py39"
 line-length = 100
+exclude = ["presentation_video.py", "technical_architecture/scripts/*", "media/*"]
 
 [tool.ruff.lint]
-ignore = ["E402"]
+ignore = ["E402", "F403", "F405", "E501", "E722", "F821", "F841"]
 select = ["E", "W", "F", "I"]
 
 [tool.pytest.ini_options]

@@ -4,6 +4,7 @@
 //! Caches 105D features PLUS f0_start and f0_end for FM sweep analysis.
 //! Uses Rayon for parallel file processing.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,9 +12,7 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use technical_architecture::{
-    BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector,
-};
+use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 /// Cached segment with FM sweep info
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,12 +46,7 @@ fn load_wav(path: &Path) -> anyhow::Result<(Vec<f32>, u32)> {
 
     while pos < bytes.len() - 8 {
         let chunk_id = &bytes[pos..pos + 4];
-        let chunk_size = u32::from_le_bytes([
-            bytes[pos + 4],
-            bytes[pos + 5],
-            bytes[pos + 6],
-            bytes[pos + 7],
-        ]) as usize;
+        let chunk_size = u32::from_le_bytes([bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7]]) as usize;
 
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
@@ -142,11 +136,11 @@ fn extract_features_with_fm(
     Some((features, f0_start, f0_end, f0_mean, sweep_rate))
 }
 
-fn boundary_type_str(bt: technical_architecture::NeuralBoundaryType) -> String {
+fn boundary_type_str(bt: technical_architecture::BoundaryType) -> String {
     match bt {
-        technical_architecture::NeuralBoundaryType::Hard => "Hard".to_string(),
-        technical_architecture::NeuralBoundaryType::Soft => "Soft".to_string(),
-        technical_architecture::NeuralBoundaryType::Transitional => "Transitional".to_string(),
+        technical_architecture::BoundaryType::Hard => "Hard".to_string(),
+        technical_architecture::BoundaryType::Soft => "Soft".to_string(),
+        technical_architecture::BoundaryType::Transitional => "Transitional".to_string(),
     }
 }
 
@@ -281,17 +275,11 @@ fn main() -> anyhow::Result<()> {
 
     let total_segments = all_segments.len();
     println!();
-    println!(
-        "  Processed {} files, {} segments",
-        total_files, total_segments
-    );
+    println!("  Processed {} files, {} segments", total_files, total_segments);
 
     // Count sweep types
     let up_sweeps = all_segments.iter().filter(|s| s.sweep_rate > 100.0).count();
-    let down_sweeps = all_segments
-        .iter()
-        .filter(|s| s.sweep_rate < -100.0)
-        .count();
+    let down_sweeps = all_segments.iter().filter(|s| s.sweep_rate < -100.0).count();
     let flat_sweeps = all_segments
         .iter()
         .filter(|s| s.sweep_rate.abs() <= 100.0 && s.f0_start > 0.0)

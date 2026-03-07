@@ -1,7 +1,7 @@
 //! Rosetta-Net: Hybrid Deep Learning Architecture for Bioacoustics
 //! ===============================================================
 //!
-//! A multi-task learning architecture that combines the 105D Rosetta feature
+//! A multi-task learning architecture that combines the 112D Rosetta feature
 //! vector with neural network learning for improved bioacoustic classification.
 //!
 //! **Architecture:**
@@ -17,10 +17,10 @@
 //!          ↓
 //! ┌─────────────────────────────────────────┐
 //! │ HEAD A: "Rosetta Regression"            │
-//! │ Predicts 105D Micro-Dynamics Vector     │
-//! │ - Layer 1: Physics (45D)                │
+//! │ Predicts 112D Micro-Dynamics Vector     │
+//! │ - Layer 1: Physics (46D)                │
 //! │ - Layer 2: Macro Texture (30D)          │
-//! │ - Layer 3: Micro Texture (30D)          │
+//! │ - Layer 3: Micro Texture (36D)          │
 //! Loss: MSE (Mean Squared Error)            │
 //! └─────────────────────────────────────────┘
 //!          ↓
@@ -32,15 +32,15 @@
 //! ```
 //!
 //! **Key Insight:**
-//! By forcing the network to predict the 105D vector (Head A), we prevent it
+//! By forcing the network to predict the 112D vector (Head A), we prevent it
 //! from "cheating" with background noise. It MUST learn the physics of sound
 //! (F0, FM Slope, ICI, HNR) plus texture features (harmonic, pitch, GLCM,
 //! temporal, AM/FM, rhythm, psychoacoustics).
 //!
-//! **105D Feature Breakdown:**
-//! - Layer 1 (0-44): Base Physics - F0, duration, FM, AM, HNR, ICI, energy
-//! - Layer 2 (45-74): Macro Texture - Harmonic, pitch geometry, GLCM, temporal
-//! - Layer 3 (75-104): Micro Texture - AM/FM spectrum, rhythm, psychoacoustics
+//! **112D Feature Breakdown:**
+//! - Layer 1 (0-45): Base Physics - F0, duration, FM, AM, HNR, ICI, energy, release
+//! - Layer 2 (46-75): Macro Texture - Harmonic, pitch geometry, GLCM, temporal
+//! - Layer 3 (76-111): Micro Texture - AM/FM spectrum, rhythm, psychoacoustics
 //!
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
@@ -61,7 +61,7 @@ pub struct RosettaNetConfig {
     pub spectrogram_shape: (usize, usize),
     /// Latent dimension (encoder output)
     pub latent_dim: usize,
-    /// Number of Rosetta features (105D)
+    /// Number of Rosetta features (112D)
     pub rosetta_dim: usize,
     /// Number of classification classes
     pub num_classes: usize,
@@ -82,7 +82,7 @@ impl Default for RosettaNetConfig {
         Self {
             spectrogram_shape: (128, 128), // 128 time frames x 128 frequency bins
             latent_dim: 128,
-            rosetta_dim: 105,
+            rosetta_dim: 112,
             num_classes: 100, // Default: 100 species
             encoder_type: EncoderType::Cnn,
             dropout_rate: 0.3,
@@ -957,7 +957,7 @@ impl HybridEncoder {
 // Rosetta Regression Head (Head A)
 // ============================================================================
 
-/// Head A: Rosetta 105D Regression
+/// Head A: Rosetta 112D Regression
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RosettaRegressionHead {
     fc1: Linear,
@@ -1056,7 +1056,7 @@ pub struct RosettaNet {
 pub struct RosettaNetOutput {
     /// Latent representation
     pub latent: Array1<f32>,
-    /// Predicted 105D Rosetta features
+    /// Predicted 112D Rosetta features
     pub rosetta_features: Array1<f32>,
     /// Classification logits
     pub logits: Array1<f32>,
@@ -1188,7 +1188,7 @@ pub struct RosettaNetWithTCNOutput {
     pub temporal_features: Array1<f32>,
     /// Fused latent representation
     pub latent: Array1<f32>,
-    /// Predicted 105D Rosetta features
+    /// Predicted 112D Rosetta features
     pub rosetta_features: Array1<f32>,
     /// Classification logits
     pub logits: Array1<f32>,
@@ -1400,7 +1400,7 @@ pub fn contrastive_loss(distance: f32, is_same: bool, margin: f32) -> f32 {
 pub struct TrainingBatch {
     /// Spectrograms
     pub spectrograms: Vec<Array2<f32>>,
-    /// Target 105D features
+    /// Target 112D features
     pub rosetta_targets: Vec<Array1<f32>>,
     /// Target class indices
     pub class_targets: Vec<usize>,
@@ -1649,11 +1649,11 @@ mod tests {
 
     #[test]
     fn test_rosetta_regression_head() {
-        let head = RosettaRegressionHead::new(128, 105, 0.3);
+        let head = RosettaRegressionHead::new(128, 112, 0.3);
         let latent = Array1::<f32>::zeros(128);
         let output = head.forward(&latent);
 
-        assert_eq!(output.len(), 105);
+        assert_eq!(output.len(), 112);
     }
 
     #[test]
@@ -1671,7 +1671,7 @@ mod tests {
         let model = RosettaNet::new(config);
 
         assert_eq!(model.config().latent_dim, 128);
-        assert_eq!(model.config().rosetta_dim, 105);
+        assert_eq!(model.config().rosetta_dim, 112);
     }
 
     #[test]
@@ -1714,8 +1714,8 @@ mod tests {
 
     #[test]
     fn test_multi_task_loss() {
-        let rosetta_pred = Array1::zeros(105);
-        let rosetta_target = Array1::zeros(105);
+        let rosetta_pred = Array1::zeros(112);
+        let rosetta_target = Array1::zeros(112);
         let logits = Array1::zeros(10);
 
         let loss = multi_task_loss(&rosetta_pred, &rosetta_target, &logits, 0, 1.0, 1.0);
@@ -1728,7 +1728,7 @@ mod tests {
         let config = RosettaNetConfig::default();
         let siamese = SiameseRosettaNet::new(&config);
 
-        assert_eq!(siamese.rosetta_dim, 105);
+        assert_eq!(siamese.rosetta_dim, 112);
     }
 
     #[test]
@@ -1743,7 +1743,7 @@ mod tests {
         assert_eq!(weights.len(), config.rosetta_dim);
         // All weights should be positive (sigmoid output)
         for &w in weights.iter() {
-            assert!(w >= 0.0 && w <= 1.0);
+            assert!((0.0..=1.0).contains(&w ));
         }
     }
 
@@ -1781,7 +1781,7 @@ mod tests {
     fn test_training_batch() {
         let mut batch = TrainingBatch::new(10);
 
-        batch.add(Array2::<f32>::zeros((64, 64)), Array1::<f32>::zeros(105), 0);
+        batch.add(Array2::<f32>::zeros((64, 64)), Array1::<f32>::zeros(112), 0);
 
         assert_eq!(batch.len(), 1);
         assert!(!batch.is_empty());
@@ -1800,7 +1800,7 @@ mod tests {
         let config = RosettaNetConfig {
             spectrogram_shape: (32, 32),
             latent_dim: 64,
-            rosetta_dim: 105,
+            rosetta_dim: 112,
             num_classes: 10,
             ..Default::default()
         };
@@ -1824,7 +1824,7 @@ mod tests {
         assert!(metrics.rosetta_loss >= 0.0);
         assert!(metrics.classification_loss >= 0.0);
         assert!(metrics.total_loss >= 0.0);
-        assert!(metrics.accuracy >= 0.0 && metrics.accuracy <= 1.0);
+        assert!((0.0..=1.0).contains(&metrics.accuracy ));
     }
 
     #[test]
@@ -1840,7 +1840,7 @@ mod tests {
         let config = RosettaNetConfig {
             spectrogram_shape: (64, 128),
             latent_dim: 256,
-            rosetta_dim: 105,
+            rosetta_dim: 112,
             num_classes: 50,
             encoder_type: EncoderType::EfficientNet,
             dropout_rate: 0.5,

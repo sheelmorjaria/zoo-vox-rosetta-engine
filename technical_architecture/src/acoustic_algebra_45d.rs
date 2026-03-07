@@ -469,11 +469,7 @@ impl Vector45D {
     /// - 0.5 = midpoint
     /// - 1.0 = return other
     pub fn interpolate(&self, other: &Vector45D, alpha: f32) -> Vector45D {
-        debug_assert!(
-            (0.0..=1.0).contains(&alpha),
-            "Alpha must be in [0, 1], got {}",
-            alpha
-        );
+        debug_assert!((0.0..=1.0).contains(&alpha), "Alpha must be in [0, 1], got {}", alpha);
 
         let v1 = self.to_array();
         let v2 = other.to_array();
@@ -962,18 +958,16 @@ mod tests {
     fn test_distance_to_self() {
         let v = Vector45D::default();
         let dist = v.distance_to(&v);
-        assert!(
-            (dist - 0.0).abs() < 1e-6,
-            "Distance to self should be 0, got {}",
-            dist
-        );
+        assert!((dist - 0.0).abs() < 1e-6, "Distance to self should be 0, got {}", dist);
     }
 
     #[test]
     fn test_distance_to_different() {
         let v1 = Vector45D::default();
-        let mut v2 = Vector45D::default();
-        v2.mean_f0_hz = 8000.0; // 1000 Hz difference
+        let v2 = Vector45D {
+            mean_f0_hz: 8000.0,
+            ..Default::default()
+        };
 
         let dist = v1.distance_to(&v2);
         assert!(dist > 0.0, "Distance should be positive, got {}", dist);
@@ -982,8 +976,10 @@ mod tests {
     #[test]
     fn test_interpolate_alpha_zero() {
         let v1 = Vector45D::default();
-        let mut v2 = Vector45D::default();
-        v2.mean_f0_hz = 8000.0;
+        let v2 = Vector45D {
+            mean_f0_hz: 8000.0,
+            ..Default::default()
+        };
 
         let result = v1.interpolate(&v2, 0.0);
         assert_eq!(result, v1, "Alpha=0 should return first vector");
@@ -992,8 +988,10 @@ mod tests {
     #[test]
     fn test_interpolate_alpha_one() {
         let v1 = Vector45D::default();
-        let mut v2 = Vector45D::default();
-        v2.mean_f0_hz = 8000.0;
+        let v2 = Vector45D {
+            mean_f0_hz: 8000.0,
+            ..Default::default()
+        };
 
         let result = v1.interpolate(&v2, 1.0);
         assert_eq!(result, v2, "Alpha=1 should return second vector");
@@ -1076,12 +1074,7 @@ mod tests {
         let delta = VectorDelta45D::zero();
         let arr = delta.to_array();
         for (i, &val) in arr.iter().enumerate() {
-            assert!(
-                (val - 0.0).abs() < 1e-6,
-                "Delta[{}] should be 0, got {}",
-                i,
-                val
-            );
+            assert!((val - 0.0).abs() < 1e-6, "Delta[{}] should be 0, got {}", i, val);
         }
     }
 
@@ -1186,10 +1179,7 @@ mod tests {
         assert_eq!(weights.len(), 45, "Should have 45 weights");
 
         // Check critical weights are higher
-        assert!(
-            weights[0] > weights[11],
-            "F0 weight should be higher than jitter"
-        );
+        assert!(weights[0] > weights[11], "F0 weight should be higher than jitter");
         assert!(
             weights[9] > weights[11],
             "Vibrato rate weight should be higher than jitter"
@@ -1200,12 +1190,7 @@ mod tests {
     fn test_normalization_ranges_positive() {
         let ranges = Vector45D::normalization_ranges();
         for (i, &range) in ranges.iter().enumerate() {
-            assert!(
-                range > 0.0,
-                "Range[{}] should be positive, got {}",
-                i,
-                range
-            );
+            assert!(range > 0.0, "Range[{}] should be positive, got {}", i, range);
         }
     }
 

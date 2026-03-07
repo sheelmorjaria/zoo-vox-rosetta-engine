@@ -1,0 +1,3 @@
+# Minimal rustfmt config to prevent inheriting parent configs
+edition = "2021"
+max_width = 120

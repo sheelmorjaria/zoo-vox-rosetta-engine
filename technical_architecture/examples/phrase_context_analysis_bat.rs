@@ -9,6 +9,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_bat
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -78,10 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        println!(
-            "   └─ Loaded {} file-context mappings",
-            file_to_context.len()
-        );
+        println!("   └─ Loaded {} file-context mappings", file_to_context.len());
     } else {
         println!("   ⚠️  Annotations file not found, using synthetic contexts");
     }
@@ -183,11 +181,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             0.0
         };
 
-        let normalized_entropy = if max_entropy > 0.0 {
-            entropy / max_entropy
-        } else {
-            0.0
-        };
+        let normalized_entropy = if max_entropy > 0.0 { entropy / max_entropy } else { 0.0 };
 
         // Determine classification
         let classification = if generality_score >= 0.8 {
@@ -212,10 +206,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Sort by generality score
     phrase_analysis.sort_by(|a, b| b.generality_score.partial_cmp(&a.generality_score).unwrap());
 
-    println!(
-        "   └─ Calculated metrics for {} phrases",
-        phrase_analysis.len()
-    );
+    println!("   └─ Calculated metrics for {} phrases", phrase_analysis.len());
     println!();
 
     // ========================================================================
@@ -245,10 +236,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
         );
     }
-    println!(
-        "   Total: {} general-purpose phrases",
-        general_purpose.len()
-    );
+    println!("   Total: {} general-purpose phrases", general_purpose.len());
     println!();
 
     println!("Multi-Context Phrases (moderate reusability):");
@@ -280,10 +268,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             phrase.phrase_id, phrase.generality_score, phrase.entropy, phrase.total_count
         );
     }
-    println!(
-        "   Total: {} context-specific phrases",
-        context_specific.len()
-    );
+    println!("   Total: {} context-specific phrases", context_specific.len());
     println!();
 
     // ========================================================================
@@ -319,31 +304,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Average entropy by classification
     let avg_entropy_general = if n_general > 0 {
-        general_purpose
-            .iter()
-            .map(|p| p.normalized_entropy)
-            .sum::<f64>()
-            / n_general as f64
+        general_purpose.iter().map(|p| p.normalized_entropy).sum::<f64>() / n_general as f64
     } else {
         0.0
     };
 
     let avg_entropy_multi = if n_multi > 0 {
-        multi_context
-            .iter()
-            .map(|p| p.normalized_entropy)
-            .sum::<f64>()
-            / n_multi as f64
+        multi_context.iter().map(|p| p.normalized_entropy).sum::<f64>() / n_multi as f64
     } else {
         0.0
     };
 
     let avg_entropy_specific = if n_specific > 0 {
-        context_specific
-            .iter()
-            .map(|p| p.normalized_entropy)
-            .sum::<f64>()
-            / n_specific as f64
+        context_specific.iter().map(|p| p.normalized_entropy).sum::<f64>() / n_specific as f64
     } else {
         0.0
     };
@@ -372,14 +345,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("   Results:");
-    println!(
-        "   ├─ General-purpose phrases found: {}",
-        has_general_purpose
-    );
-    println!(
-        "   ├─ Context-specific phrases found: {}",
-        has_context_specific
-    );
+    println!("   ├─ General-purpose phrases found: {}", has_general_purpose);
+    println!("   ├─ Context-specific phrases found: {}", has_context_specific);
     println!("   └─ Mixture ratio: {:.1}%", mixture_ratio * 100.0);
     println!();
 

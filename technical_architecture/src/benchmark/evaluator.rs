@@ -37,18 +37,14 @@ impl FeatureEvaluator {
     }
 
     /// Evaluate extraction performance on dataset
-    pub fn evaluate_extraction(
-        &self,
-        dataset: &BenchmarkDataset,
-    ) -> Result<ExtractionReport, String> {
+    pub fn evaluate_extraction(&self, dataset: &BenchmarkDataset) -> Result<ExtractionReport, String> {
         let mut successful = 0;
         let mut failed = 0;
         let mut total_time = 0.0;
 
         for recording in &dataset.recordings {
             // Mock audio for testing (would load actual audio in production)
-            let mock_audio =
-                vec![0.0; (recording.duration_ms * recording.sample_rate as f32 / 1000.0) as usize];
+            let mock_audio = vec![0.0; (recording.duration_ms * recording.sample_rate as f32 / 1000.0) as usize];
 
             let start = std::time::Instant::now();
             let result = self.extractor.extract(&mock_audio);
@@ -76,10 +72,7 @@ impl FeatureEvaluator {
     }
 
     /// Evaluate classification performance
-    pub fn evaluate_classification(
-        &self,
-        dataset: &BenchmarkDataset,
-    ) -> Result<ClassificationReport, String> {
+    pub fn evaluate_classification(&self, dataset: &BenchmarkDataset) -> Result<ClassificationReport, String> {
         // Mock predictions for testing
         let predictions: Vec<usize> = (0..dataset.labels.len()).map(|i| i % 2).collect();
         let labels: Vec<usize> = dataset.labels.iter().map(|l| l.class_id).collect();
@@ -90,10 +83,7 @@ impl FeatureEvaluator {
     }
 
     /// Compare different feature dimensionalities
-    pub fn compare_dimensions(
-        &self,
-        _dataset: &BenchmarkDataset,
-    ) -> Result<ComparisonReport, String> {
+    pub fn compare_dimensions(&self, _dataset: &BenchmarkDataset) -> Result<ComparisonReport, String> {
         // Mock accuracies for testing
         let accuracy_30d = 0.85;
         let accuracy_39d = 0.88;
@@ -119,9 +109,7 @@ impl FeatureEvaluator {
         audio: &[f32],
         dim: FeatureDim,
     ) -> Result<crate::micro_dynamics_extractor::FeatureVector, String> {
-        self.extractor
-            .extract_dynamic(audio, dim)
-            .map_err(|e| e.to_string())
+        self.extractor.extract_dynamic(audio, dim).map_err(|e| e.to_string())
     }
 }
 
@@ -144,8 +132,7 @@ mod tests {
         let extractor = MicroDynamicsExtractor::new(48000);
         let evaluator = FeatureEvaluator::new(extractor);
 
-        // Should create successfully
-        assert!(true);
+        // Test passes if creation succeeds
     }
 
     #[test]
@@ -166,7 +153,7 @@ mod tests {
         let report = evaluator.evaluate_extraction(&dataset).unwrap();
 
         assert_eq!(report.total_processed, 2);
-        assert!(report.successful >= 0);
+        // Note: successful is usize, always >= 0
 
         std::fs::remove_dir_all(test_path).ok();
     }

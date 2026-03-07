@@ -5,6 +5,7 @@
 //
 // Usage: cargo run --release --example phase0_recluster_cosine
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -107,11 +108,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("      └─ Distance metric: COSINE (scale-invariant, pattern-based)");
     println!();
 
-    let hdbscan = HdbscanClustering::with_metric(
-        LEVEL2_MIN_CLUSTER_SIZE,
-        LEVEL2_MIN_SAMPLES,
-        DistanceMetric::Cosine,
-    )?;
+    let hdbscan = HdbscanClustering::with_metric(LEVEL2_MIN_CLUSTER_SIZE, LEVEL2_MIN_SAMPLES, DistanceMetric::Cosine)?;
 
     println!("   🔍 Running Level 2 HDBSCAN...");
     let vocab_start = Instant::now();
@@ -131,14 +128,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let labels = hdbscan.fit_predict_hnsw(&features_array)?;
     let vocab_time = vocab_start.elapsed();
 
-    println!(
-        "      ✅ Clustering completed in {:.2}s",
-        vocab_time.as_secs_f64()
-    );
+    println!("      ✅ Clustering completed in {:.2}s", vocab_time.as_secs_f64());
 
     // Group segments by cluster
-    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> =
-        std::collections::HashMap::new();
+    let mut cluster_map: std::collections::HashMap<i32, Vec<&PhraseSegment>> = std::collections::HashMap::new();
     for (segment_idx, &label) in labels.iter().enumerate() {
         if label >= 0 {
             cluster_map
@@ -159,11 +152,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let durations: Vec<f64> = segments.iter().map(|s| s.duration_ms).collect();
         let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
-        let variance = durations
-            .iter()
-            .map(|&d| (d - avg_duration).powi(2))
-            .sum::<f64>()
-            / durations.len() as f64;
+        let variance = durations.iter().map(|&d| (d - avg_duration).powi(2)).sum::<f64>() / durations.len() as f64;
         let std_duration = variance.sqrt();
 
         vocabulary.push(VocabularyItem {
@@ -211,11 +200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!(
             "      │ {:4} │ {:12} │ {:12.1} │ {:11.1} │ {:10} │",
-            item.vocabulary_id,
-            item.phrase_count,
-            item.avg_duration_ms,
-            item.std_duration_ms,
-            vocab_type
+            item.vocabulary_id, item.phrase_count, item.avg_duration_ms, item.std_duration_ms, vocab_type
         );
     }
 
@@ -277,8 +262,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let mut symbolic_stream: Vec<i32> = Vec::new();
-    let mut segment_to_vocab: std::collections::HashMap<usize, i32> =
-        std::collections::HashMap::new();
+    let mut segment_to_vocab: std::collections::HashMap<usize, i32> = std::collections::HashMap::new();
 
     for vocab in &vocabulary {
         for phrase in &vocab.example_phrases {
@@ -294,10 +278,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     for segment in sorted_segments {
-        let vocab_id = segment_to_vocab
-            .get(&segment.segment_id)
-            .copied()
-            .unwrap_or(-1);
+        let vocab_id = segment_to_vocab.get(&segment.segment_id).copied().unwrap_or(-1);
         symbolic_stream.push(vocab_id);
     }
 

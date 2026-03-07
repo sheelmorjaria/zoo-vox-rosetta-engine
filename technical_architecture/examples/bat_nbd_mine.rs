@@ -5,6 +5,7 @@
 //! Uses Rayon for parallel file loading and matrix construction.
 //! Uses random subsampling for statistical efficiency.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array2;
 use rand::seq::SliceRandom;
 use rayon::prelude::*;
@@ -88,8 +89,7 @@ fn main() -> anyhow::Result<()> {
     println!("  Loaded {} segments", total_loaded);
 
     // Count FULL dataset stats before subsampling
-    let (full_context_counts, full_emitter_counts, full_boundary_counts) =
-        count_stats_parallel(&all_segments);
+    let (full_context_counts, full_emitter_counts, full_boundary_counts) = count_stats_parallel(&all_segments);
 
     // ---------------------------------------------------------
     // DOWNSAMPLE FOR EFFICIENCY
@@ -98,14 +98,8 @@ fn main() -> anyhow::Result<()> {
 
     if all_segments.len() > max_samples {
         println!();
-        println!(
-            "  ⚠  Large dataset detected ({} segments).",
-            all_segments.len()
-        );
-        println!(
-            "  Downsampling to {} for HDBSCAN efficiency...",
-            max_samples
-        );
+        println!("  ⚠  Large dataset detected ({} segments).", all_segments.len());
+        println!("  Downsampling to {} for HDBSCAN efficiency...", max_samples);
         println!("  (If discrete motifs exist, they will form clusters in any random sample)");
         println!();
 
@@ -308,10 +302,7 @@ fn main() -> anyhow::Result<()> {
             let pct = **count as f64 / cluster_0_indices.len() as f64 * 100.0;
             let bar_len = (pct / 2.5) as usize; // Max 40 chars
             let bar = "█".repeat(bar_len);
-            println!(
-                "  │  Context {:2}: {:6} ({:5.1}%) {:<40}",
-                ctx, count, pct, bar
-            );
+            println!("  │  Context {:2}: {:6} ({:5.1}%) {:<40}", ctx, count, pct, bar);
         }
         println!("  └─────────────────────────────────────────────────────────────────────────┘");
         println!();
@@ -387,13 +378,9 @@ fn main() -> anyhow::Result<()> {
             println!("  │    Found a semantically meaningful cluster.                            ");
         } else if normalized_entropy > 0.8 {
             println!("  │  → FEATURES TOO SIMILAR: Uniform context mix                           ");
-            println!(
-                "  │    105D features don't discriminate between behavioral contexts.        "
-            );
+            println!("  │    105D features don't discriminate between behavioral contexts.        ");
             println!("  │    Context is encoded in RATE/DYNAMICS, not TEXTURE.                   ");
-            println!(
-                "  │                                                                          "
-            );
+            println!("  │                                                                          ");
             println!("  │    ⚠ THIS IS THE 'HOLY GRAIL' FINDING! ⚠                               ");
             println!("  │    Same acoustic substrate used for different behaviors.               ");
         } else {
@@ -448,11 +435,7 @@ fn main() -> anyhow::Result<()> {
 /// Count stats in parallel using fold/reduce pattern
 fn count_stats_parallel(
     segments: &[CachedSegmentNBD],
-) -> (
-    HashMap<i32, usize>,
-    HashMap<i32, usize>,
-    HashMap<String, usize>,
-) {
+) -> (HashMap<i32, usize>, HashMap<i32, usize>, HashMap<String, usize>) {
     use std::sync::Mutex;
 
     let context_counts = Mutex::new(HashMap::new());

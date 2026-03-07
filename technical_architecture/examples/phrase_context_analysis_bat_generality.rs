@@ -15,6 +15,7 @@
 //
 // Usage: cargo run --release --example phrase_context_analysis_bat_generality
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rand::Rng;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -326,21 +327,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "      ├─ Null mean generality:      {:.4} ± {:.4}",
         perm_result.null_mean_generality, perm_result.null_std_generality
     );
-    println!(
-        "      ├─ Z-score:                   {:.4}",
-        perm_result.z_score
-    );
-    println!(
-        "      ├─ P-value:                   {:.6}",
-        perm_result.p_value
-    );
+    println!("      ├─ Z-score:                   {:.4}", perm_result.z_score);
+    println!("      ├─ P-value:                   {:.6}", perm_result.p_value);
     println!(
         "      └─ Significant (α=0.05):      {}",
-        if perm_result.significant {
-            "YES ✨"
-        } else {
-            "NO"
-        }
+        if perm_result.significant { "YES ✨" } else { "NO" }
     );
     println!();
 
@@ -372,10 +363,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Shannon Entropy Distribution:");
     println!("      ├─ Mean:   {:.4} bits", summary.mean_shannon_entropy);
-    println!(
-        "      └─ Median: {:.4} bits",
-        summary.median_shannon_entropy
-    );
+    println!("      └─ Median: {:.4} bits", summary.median_shannon_entropy);
     println!();
 
     // ========================================================================
@@ -533,9 +521,7 @@ fn load_annotations(path: impl AsRef<Path>) -> Result<Vec<Annotation>, Box<dyn s
     Ok(annotations)
 }
 
-fn load_symbolic_stream(
-    results_dir: &Path,
-) -> Result<(Vec<i32>, Vec<String>), Box<dyn std::error::Error>> {
+fn load_symbolic_stream(results_dir: &Path) -> Result<(Vec<i32>, Vec<String>), Box<dyn std::error::Error>> {
     // Try to load from readable CSV first
     let csv_path = results_dir.join("symbolic_stream_readable.csv");
     if csv_path.exists() {
@@ -559,17 +545,11 @@ fn load_symbolic_stream(
 
     // Otherwise load from JSON and separate files
     let clusters_path = results_dir.join("hdbscan_clusters.json");
-    let clusters_json: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&clusters_path)?)?;
+    let clusters_json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&clusters_path)?)?;
 
     let labels = clusters_json["clustering"]["labels"]
         .as_array()
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_i64())
-                .map(|i| i as i32)
-                .collect()
-        })
+        .map(|arr| arr.iter().filter_map(|v| v.as_i64()).map(|i| i as i32).collect())
         .unwrap_or_default();
 
     let file_names_path = results_dir.join("bat_file_names.json");
@@ -605,11 +585,7 @@ fn build_phrase_context_matrix(
         }
 
         if let Some(&context) = file_context_map.get(file_name) {
-            *matrix
-                .entry(phrase_id)
-                .or_default()
-                .entry(context)
-                .or_insert(0) += 1;
+            *matrix.entry(phrase_id).or_default().entry(context).or_insert(0) += 1;
             *phrase_totals.entry(phrase_id).or_insert(0) += 1;
             *context_totals.entry(context).or_insert(0) += 1;
         }
@@ -657,13 +633,8 @@ fn calculate_generality_metrics(
         // Coefficient of variation (within-context consistency)
         let counts: Vec<f64> = context_counts.values().map(|&v| v as f64).collect();
         let mean = counts.iter().sum::<f64>() / counts.len() as f64;
-        let variance =
-            counts.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / counts.len() as f64;
-        let intra_context_cv = if mean > 0.0 {
-            variance.sqrt() / mean
-        } else {
-            0.0
-        };
+        let variance = counts.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / counts.len() as f64;
+        let intra_context_cv = if mean > 0.0 { variance.sqrt() / mean } else { 0.0 };
 
         metrics.push(GeneralityMetrics {
             phrase_id,
@@ -851,11 +822,7 @@ fn run_permutation_test(
 
     // Calculate statistics
     let null_mean = null_means.iter().sum::<f64>() / null_means.len() as f64;
-    let null_variance = null_means
-        .iter()
-        .map(|&x| (x - null_mean).powi(2))
-        .sum::<f64>()
-        / null_means.len() as f64;
+    let null_variance = null_means.iter().map(|&x| (x - null_mean).powi(2)).sum::<f64>() / null_means.len() as f64;
     let null_std = null_variance.sqrt();
 
     // Calculate z-score and p-value
@@ -892,11 +859,7 @@ fn compute_summary_statistics(metrics: &[GeneralityMetrics]) -> SummaryStatistic
     let mut sorted_gen = gen_scores.clone();
     sorted_gen.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let median_gen = sorted_gen[sorted_gen.len() / 2];
-    let var_gen = gen_scores
-        .iter()
-        .map(|x| (x - mean_gen).powi(2))
-        .sum::<f64>()
-        / gen_scores.len() as f64;
+    let var_gen = gen_scores.iter().map(|x| (x - mean_gen).powi(2)).sum::<f64>() / gen_scores.len() as f64;
 
     let entropies: Vec<f64> = metrics.iter().map(|m| m.shannon_entropy).collect();
     let mean_ent = entropies.iter().sum::<f64>() / entropies.len() as f64;
@@ -1033,10 +996,7 @@ fn serialize_pcm(pcm: &PhraseContextMatrix) -> PhraseContextMatrix {
     pcm.clone()
 }
 
-fn save_generality_csv(
-    metrics: &[GeneralityMetrics],
-    path: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn save_generality_csv(metrics: &[GeneralityMetrics], path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut wtr = csv::Writer::from_path(path)?;
 
     wtr.write_record(&[
@@ -1074,10 +1034,7 @@ fn save_generality_csv(
     Ok(())
 }
 
-fn save_matrix_csv(
-    pcm: &PhraseContextMatrix,
-    path: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn save_matrix_csv(pcm: &PhraseContextMatrix, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     use std::io::Write;
 
     let mut file = fs::File::create(path)?;
@@ -1090,11 +1047,7 @@ fn save_matrix_csv(
     writeln!(
         file,
         "phrase_id,{}",
-        contexts
-            .iter()
-            .map(|c| c.to_string())
-            .collect::<Vec<_>>()
-            .join(",")
+        contexts.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(",")
     )?;
 
     // Write rows
@@ -1105,12 +1058,7 @@ fn save_matrix_csv(
         if let Some(context_counts) = pcm.matrix.get(&phrase_id) {
             let counts: Vec<String> = contexts
                 .iter()
-                .map(|c| {
-                    context_counts
-                        .get(c)
-                        .map(|n| n.to_string())
-                        .unwrap_or("0".to_string())
-                })
+                .map(|c| context_counts.get(c).map(|n| n.to_string()).unwrap_or("0".to_string()))
                 .collect();
             writeln!(file, "{},{}", phrase_id, counts.join(","))?;
         }

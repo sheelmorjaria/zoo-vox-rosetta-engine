@@ -41,10 +41,7 @@ impl HierarchicalAggregator {
 
     /// Create with custom configuration
     pub fn with_config(sample_rate: u32, config: HierarchicalConfig) -> Self {
-        Self {
-            config,
-            sample_rate,
-        }
+        Self { config, sample_rate }
     }
 
     /// Extract hierarchical features across multiple time scales
@@ -80,13 +77,10 @@ impl HierarchicalAggregator {
             if frame.len() > 100 {
                 // Simplified: just use some statistics
                 let mean = frame.iter().sum::<f32>() / frame.len() as f32;
-                let variance =
-                    frame.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / frame.len() as f32;
+                let variance = frame.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / frame.len() as f32;
 
                 // Mock 13 MFCCs
-                let mfccs = (0..13)
-                    .map(|i| mean + 0.1 * i as f32 * variance.sqrt())
-                    .collect();
+                let mfccs = (0..13).map(|i| mean + 0.1 * i as f32 * variance.sqrt()).collect();
                 mfcc_frames.push(mfccs);
 
                 // Mock F0 (simplified)
@@ -104,15 +98,8 @@ impl HierarchicalAggregator {
         // Compute MFCC multi-scale per coefficient
         let mut mfcc_multi_scale: Vec<MultiScaleFeatures> = Vec::new();
         for coeff_idx in 0..13 {
-            if let Some(_coeff_values) = mfcc_frames
-                .first()
-                .map(|f| f.len())
-                .filter(|&l| l > coeff_idx)
-            {
-                let values: Vec<f32> = mfcc_frames
-                    .iter()
-                    .filter_map(|f| f.get(coeff_idx).copied())
-                    .collect();
+            if let Some(_coeff_values) = mfcc_frames.first().map(|f| f.len()).filter(|&l| l > coeff_idx) {
+                let values: Vec<f32> = mfcc_frames.iter().filter_map(|f| f.get(coeff_idx).copied()).collect();
                 mfcc_multi_scale.push(StatisticalAggregator::compute_all(&values));
             }
         }
@@ -130,8 +117,7 @@ impl HierarchicalAggregator {
             return Ok(vec![]);
         }
 
-        let frame_samples =
-            (self.config.frame_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let frame_samples = (self.config.frame_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
         let hop_samples = (self.config.hop_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
 
         if frame_samples == 0 || hop_samples == 0 {
@@ -171,10 +157,7 @@ impl HierarchicalAggregator {
         let mut aggregations = Vec::new();
 
         for feat_idx in 0..num_features {
-            let values: Vec<f32> = feature_frames
-                .iter()
-                .filter_map(|f| f.get(feat_idx).copied())
-                .collect();
+            let values: Vec<f32> = feature_frames.iter().filter_map(|f| f.get(feat_idx).copied()).collect();
 
             aggregations.push(StatisticalAggregator::compute_all(&values));
         }
@@ -333,9 +316,7 @@ mod tests {
     #[test]
     fn test_extract_hierarchical_long() {
         let aggregator = HierarchicalAggregator::new(48000);
-        let audio: Vec<f32> = (0..48000)
-            .map(|i| (i as f32 / 48000.0) * 2.0 - 1.0)
-            .collect();
+        let audio: Vec<f32> = (0..48000).map(|i| (i as f32 / 48000.0) * 2.0 - 1.0).collect();
         let extractor = MicroDynamicsExtractor::new(48000);
 
         let result = aggregator.extract_hierarchical(&audio, &extractor).unwrap();
@@ -412,11 +393,7 @@ mod tests {
     #[test]
     fn test_aggregate_frames_consistency() {
         let aggregator = HierarchicalAggregator::new(48000);
-        let frames = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![1.0, 2.0, 3.0],
-            vec![1.0, 2.0, 3.0],
-        ];
+        let frames = vec![vec![1.0, 2.0, 3.0], vec![1.0, 2.0, 3.0], vec![1.0, 2.0, 3.0]];
 
         let result = aggregator.aggregate_frames(&frames);
 

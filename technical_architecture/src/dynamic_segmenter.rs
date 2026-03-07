@@ -331,10 +331,7 @@ pub struct DynamicSegmenter {
 impl DynamicSegmenter {
     /// Create a new dynamic segmenter with the given configuration
     pub fn new(config: DynamicSegmenterConfig, sample_rate: u32) -> Self {
-        Self {
-            config,
-            sample_rate,
-        }
+        Self { config, sample_rate }
     }
 
     /// Create with default configuration
@@ -353,12 +350,7 @@ impl DynamicSegmenter {
     /// * `audio` - Audio samples
     /// * `extractor` - Function to extract 45D features from a frame
     /// * `source_id` - Identifier for the source file
-    pub fn segment<F>(
-        &self,
-        audio: &[f32],
-        extract_features: F,
-        source_id: &str,
-    ) -> SegmentationResult
+    pub fn segment<F>(&self, audio: &[f32], extract_features: F, source_id: &str) -> SegmentationResult
     where
         F: Fn(&[f32], u32) -> Option<Vec<f64>>,
     {
@@ -387,12 +379,7 @@ impl DynamicSegmenter {
         let change_points = self.find_change_points(&smoothed_curve);
 
         // 5. Convert boundaries to Phrase Candidates
-        let candidates = self.change_points_to_candidates(
-            &change_points,
-            &feature_stream,
-            &frame_times,
-            source_id,
-        );
+        let candidates = self.change_points_to_candidates(&change_points, &feature_stream, &frame_times, source_id);
 
         // Calculate statistics
         let total_duration_ms = (audio.len() as f32 / self.sample_rate as f32) * 1000.0;
@@ -412,16 +399,11 @@ impl DynamicSegmenter {
     }
 
     /// Extract a stream of feature vectors at high frame rate
-    fn extract_feature_stream<F>(
-        &self,
-        audio: &[f32],
-        extract_features: F,
-    ) -> (Vec<Vec<f64>>, Vec<f32>)
+    fn extract_feature_stream<F>(&self, audio: &[f32], extract_features: F) -> (Vec<Vec<f64>>, Vec<f32>)
     where
         F: Fn(&[f32], u32) -> Option<Vec<f64>>,
     {
-        let frame_samples =
-            ((self.config.frame_duration_ms / 1000.0) * self.sample_rate as f32) as usize;
+        let frame_samples = ((self.config.frame_duration_ms / 1000.0) * self.sample_rate as f32) as usize;
         let hop_samples = frame_samples / 2; // 50% overlap
 
         let mut features = Vec::new();
@@ -571,22 +553,13 @@ impl DynamicSegmenter {
                     }
 
                     let split_start_ms = frame_times.get(split_start).copied().unwrap_or(0.0);
-                    let split_end_ms = frame_times
-                        .get(split_end - 1)
-                        .copied()
-                        .unwrap_or(split_start_ms);
-                    let split_duration =
-                        split_end_ms - split_start_ms + self.config.frame_duration_ms;
+                    let split_end_ms = frame_times.get(split_end - 1).copied().unwrap_or(split_start_ms);
+                    let split_duration = split_end_ms - split_start_ms + self.config.frame_duration_ms;
 
                     if split_duration >= self.config.min_phrase_duration_ms {
-                        if let Some(candidate) = self.create_candidate(
-                            split_start,
-                            split_end,
-                            features,
-                            frame_times,
-                            source_id,
-                            phrase_idx,
-                        ) {
+                        if let Some(candidate) =
+                            self.create_candidate(split_start, split_end, features, frame_times, source_id, phrase_idx)
+                        {
                             candidates.push(candidate);
                             phrase_idx += 1;
                         }
@@ -594,14 +567,9 @@ impl DynamicSegmenter {
                 }
             } else {
                 // Create single candidate
-                if let Some(candidate) = self.create_candidate(
-                    start_frame,
-                    end_frame,
-                    features,
-                    frame_times,
-                    source_id,
-                    phrase_idx,
-                ) {
+                if let Some(candidate) =
+                    self.create_candidate(start_frame, end_frame, features, frame_times, source_id, phrase_idx)
+                {
                     candidates.push(candidate);
                     phrase_idx += 1;
                 }
@@ -763,10 +731,7 @@ impl AtomicPhraseAnalyzer {
     }
 
     /// Cluster candidates to discover atomic phrase types
-    pub fn discover_atomic_types(
-        &self,
-        candidates: &[DynamicPhraseCandidate],
-    ) -> Vec<AtomicPhraseType> {
+    pub fn discover_atomic_types(&self, candidates: &[DynamicPhraseCandidate]) -> Vec<AtomicPhraseType> {
         if candidates.is_empty() {
             return vec![];
         }
@@ -837,21 +802,14 @@ impl AtomicPhraseAnalyzer {
             .into_iter()
             .enumerate()
             .map(|(type_id, cluster)| {
-                let members: Vec<DynamicPhraseCandidate> =
-                    cluster.iter().map(|&idx| candidates[idx].clone()).collect();
+                let members: Vec<DynamicPhraseCandidate> = cluster.iter().map(|&idx| candidates[idx].clone()).collect();
 
                 // Compute centroid
-                let centroid = average_features(
-                    &members
-                        .iter()
-                        .map(|m| m.features.clone())
-                        .collect::<Vec<_>>(),
-                );
+                let centroid = average_features(&members.iter().map(|m| m.features.clone()).collect::<Vec<_>>());
 
                 // Compute quality metrics
                 let intra_similarity = compute_intra_cluster_similarity(&members, &centroid);
-                let avg_duration =
-                    members.iter().map(|m| m.duration_ms).sum::<f32>() / members.len() as f32;
+                let avg_duration = members.iter().map(|m| m.duration_ms).sum::<f32>() / members.len() as f32;
 
                 AtomicPhraseType {
                     type_id,

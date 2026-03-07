@@ -8,6 +8,7 @@
 //
 // Usage: cargo run --release --example segment_marmoset_corpus_to_phrases
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -66,10 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for (session_idx, session_data) in sessions_array.iter().enumerate() {
         let frames: Vec<i32> = if let Some(arr) = session_data.as_array() {
-            arr.iter()
-                .filter_map(|v| v.as_i64())
-                .map(|v| v as i32)
-                .collect()
+            arr.iter().filter_map(|v| v.as_i64()).map(|v| v as i32).collect()
         } else {
             continue;
         };
@@ -89,11 +87,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
 
         if (session_idx + 1) % 5 == 0 {
-            println!(
-                "      Processed {}/{} sessions",
-                session_idx + 1,
-                sessions_array.len()
-            );
+            println!("      Processed {}/{} sessions", session_idx + 1, sessions_array.len());
         }
     }
 
@@ -115,18 +109,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   📊 Statistics:");
     println!("      ├─ Total sessions: {}", phrase_level_sessions.len());
-    println!(
-        "      ├─ Total phrases (after segmentation): {}",
-        total_phrases
-    );
-    println!(
-        "      ├─ Average phrases per session: {:.1}",
-        avg_phrases_per_session
-    );
-    println!(
-        "      ├─ Average frames per phrase: {:.1}",
-        avg_frames_per_phrase
-    );
+    println!("      ├─ Total phrases (after segmentation): {}", total_phrases);
+    println!("      ├─ Average phrases per session: {:.1}", avg_phrases_per_session);
+    println!("      ├─ Average frames per phrase: {:.1}", avg_frames_per_phrase);
     println!();
 
     // Count phrase frequencies across all sessions

@@ -8,6 +8,7 @@
 //! - grains/state_XXX.wav      - Individual grain audio files
 //! - templates/context_X/YYY.wav - Concatenated template sequences
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
@@ -126,10 +127,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
             Err(e) => {
-                println!(
-                    "  ✗ State {:3}: {} - {}",
-                    grain.state_id, grain.source_file, e
-                );
+                println!("  ✗ State {:3}: {} - {}", grain.state_id, grain.source_file, e);
                 failed_count += 1;
             }
         }
@@ -172,11 +170,7 @@ fn main() -> anyhow::Result<()> {
 
         // Take top 5 templates per context
         for (i, template) in sorted.iter().take(5).enumerate() {
-            let output_path = context_dir.join(format!(
-                "template_{:02}_purity_{:.0}.wav",
-                i,
-                template.purity * 100.0
-            ));
+            let output_path = context_dir.join(format!("template_{:02}_purity_{:.0}.wav", i, template.purity * 100.0));
 
             // Build list of grain files to concatenate
             let grain_files: Vec<PathBuf> = template
@@ -274,12 +268,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Extract a segment from a WAV file (handles both float and integer formats)
-fn extract_audio_segment(
-    source_path: &Path,
-    output_path: &Path,
-    start_ms: f32,
-    end_ms: f32,
-) -> anyhow::Result<f32> {
+fn extract_audio_segment(source_path: &Path, output_path: &Path, start_ms: f32, end_ms: f32) -> anyhow::Result<f32> {
     let reader = hound::WavReader::open(source_path)?;
     let spec = reader.spec();
 

@@ -9,11 +9,11 @@
 //! Usage:
 //!   cargo run --release --example zoo_vox_within_call_demo
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use technical_architecture::species::SpeciesConfigFactory;
 use technical_architecture::{
-    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer,
-    WithinCallConfig, ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder,
-    ZooVoxPhraseExtractor,
+    AcousticFeatures30D, PhrasePrototype, SimilarityBasedLibraryBuilder, WithinCallAnalyzer, WithinCallConfig,
+    ZooVoxExtractionConfig, ZooVoxFeatureExtractor, ZooVoxLibraryBuilder, ZooVoxPhraseExtractor,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -77,10 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let num_phrases = (total_duration / (phrase_duration + gap_duration)) as usize;
-    println!(
-        "  Generated {:.0}-second synthetic vocalization",
-        total_duration
-    );
+    println!("  Generated {:.0}-second synthetic vocalization", total_duration);
     println!(
         "  Phrase duration: {}ms, Gap duration: {}ms",
         phrase_duration * 1000.0,
@@ -128,18 +125,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     for (i, pt) in result.phrase_types.iter().enumerate() {
-        println!(
-            "  Type {}: {} ({} occurrences)",
-            i + 1,
-            pt.type_id,
-            pt.occurrence_count
-        );
+        println!("  Type {}: {} ({} occurrences)", i + 1, pt.type_id, pt.occurrence_count);
         println!("    Phrase key: {}", pt.phrase_key);
         println!("    Centroid F0: {:.0} Hz", pt.centroid_features.mean_f0_hz);
-        println!(
-            "    Centroid Duration: {:.0} ms",
-            pt.centroid_features.duration_ms
-        );
+        println!("    Centroid Duration: {:.0} ms", pt.centroid_features.duration_ms);
         println!("    Intra-type variability: {:.4}", pt.intra_variability);
     }
     println!();
@@ -171,10 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ========================================================================
     println!("Step 5: Phrase Sequence and Transitions...\n");
 
-    println!(
-        "  Phrase sequence: {} phrases total",
-        result.phrase_sequence.len()
-    );
+    println!("  Phrase sequence: {} phrases total", result.phrase_sequence.len());
     for (i, phrase_id) in result.phrase_sequence.iter().take(10).enumerate() {
         print!("  {} ", phrase_id.split('_').last().unwrap_or("?"));
         if (i + 1) % 5 == 0 {
@@ -246,18 +232,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("marmoset", "Harmonic encoding", 0.85),
     ];
 
-    println!(
-        "  {:<15} {:<25} {:<12}",
-        "Species", "Encoding Type", "Sim Threshold"
-    );
+    println!("  {:<15} {:<25} {:<12}", "Species", "Encoding Type", "Sim Threshold");
     println!("  {}", "-".repeat(55));
 
     for (species, encoding, threshold) in &species_configs {
         let config = WithinCallConfig::for_species(species);
-        println!(
-            "  {:<15} {:<25} {:.2}",
-            species, encoding, config.similarity_threshold
-        );
+        println!("  {:<15} {:<25} {:.2}", species, encoding, config.similarity_threshold);
     }
     println!();
 

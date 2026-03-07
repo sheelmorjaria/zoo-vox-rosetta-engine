@@ -239,12 +239,7 @@ impl ArousalInferrer {
     }
 
     /// Infer arousal state from acoustic evidence
-    pub fn infer_arousal(
-        &self,
-        species: &str,
-        evidence: &ArousalEvidence,
-        timestamp_ms: u64,
-    ) -> InferredArousalState {
+    pub fn infer_arousal(&self, species: &str, evidence: &ArousalEvidence, timestamp_ms: u64) -> InferredArousalState {
         let thresholds = self
             .config
             .species_thresholds
@@ -324,8 +319,7 @@ impl ArousalInferrer {
         } else if rate < thresholds.rate_high {
             0.3 + 0.2 * (rate - thresholds.rate_low) / (thresholds.rate_high - thresholds.rate_low)
         } else if rate < thresholds.rate_urgent {
-            0.5 + 0.3 * (rate - thresholds.rate_high)
-                / (thresholds.rate_urgent - thresholds.rate_high)
+            0.5 + 0.3 * (rate - thresholds.rate_high) / (thresholds.rate_urgent - thresholds.rate_high)
         } else {
             0.8 + 0.2 * ((rate - thresholds.rate_urgent) / thresholds.rate_urgent).min(1.0)
         }
@@ -349,14 +343,11 @@ impl ArousalInferrer {
         if energy < thresholds.energy_low {
             0.2
         } else if energy < thresholds.energy_high {
-            0.3 + 0.2 * (energy - thresholds.energy_low)
-                / (thresholds.energy_high - thresholds.energy_low)
+            0.3 + 0.2 * (energy - thresholds.energy_low) / (thresholds.energy_high - thresholds.energy_low)
         } else if energy < thresholds.energy_urgent {
-            0.5 + 0.3 * (energy - thresholds.energy_high)
-                / (thresholds.energy_urgent - thresholds.energy_high)
+            0.5 + 0.3 * (energy - thresholds.energy_high) / (thresholds.energy_urgent - thresholds.energy_high)
         } else {
-            0.8 + 0.2
-                * ((energy - thresholds.energy_urgent) / (1.0 - thresholds.energy_urgent)).min(1.0)
+            0.8 + 0.2 * ((energy - thresholds.energy_urgent) / (1.0 - thresholds.energy_urgent)).min(1.0)
         }
     }
 
@@ -417,10 +408,7 @@ impl ArousalBasedSelector {
         let idx = self.sources.len();
         let arousal = source.arousal;
 
-        self.sources_by_arousal
-            .entry(arousal)
-            .or_default()
-            .push(idx);
+        self.sources_by_arousal.entry(arousal).or_default().push(idx);
 
         self.sources.push(source);
     }
@@ -434,12 +422,7 @@ impl ArousalBasedSelector {
     pub fn sources_by_arousal(&self, level: ArousalLevel) -> Vec<&ArousalTaggedSource> {
         self.sources_by_arousal
             .get(&level)
-            .map(|indices| {
-                indices
-                    .iter()
-                    .filter_map(|&i| self.sources.get(i))
-                    .collect()
-            })
+            .map(|indices| indices.iter().filter_map(|&i| self.sources.get(i)).collect())
             .unwrap_or_default()
     }
 
@@ -523,8 +506,8 @@ impl ArousalBasedSelector {
         let feature_similarity = self.cosine_similarity(&source.features, target_features);
 
         // Combined score
-        let combined_score = self.config.arousal_weight * arousal_match_score
-            + self.config.similarity_weight * feature_similarity;
+        let combined_score =
+            self.config.arousal_weight * arousal_match_score + self.config.similarity_weight * feature_similarity;
 
         SourceSelectionResult {
             source: source.clone(),
@@ -536,11 +519,7 @@ impl ArousalBasedSelector {
     }
 
     /// Calculate arousal match score
-    fn calculate_arousal_match(
-        &self,
-        source_arousal: ArousalLevel,
-        target_arousal: ArousalLevel,
-    ) -> f64 {
+    fn calculate_arousal_match(&self, source_arousal: ArousalLevel, target_arousal: ArousalLevel) -> f64 {
         if source_arousal == target_arousal {
             1.0
         } else {

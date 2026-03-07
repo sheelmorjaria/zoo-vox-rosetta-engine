@@ -56,10 +56,7 @@ impl YinEstimator {
     /// Create a new YIN estimator with custom F0 range
     pub fn with_range(sample_rate: u32, min_f0_hz: f32, max_f0_hz: f32) -> Self {
         assert!(min_f0_hz < max_f0_hz, "min_f0 must be less than max_f0");
-        assert!(
-            max_f0_hz < sample_rate as f32 / 2.0,
-            "max_f0 must be below Nyquist"
-        );
+        assert!(max_f0_hz < sample_rate as f32 / 2.0, "max_f0 must be below Nyquist");
 
         Self {
             sample_rate,
@@ -74,10 +71,7 @@ impl YinEstimator {
     /// Lower values are more selective but may miss weak pitch.
     /// Typical range: 0.01 to 0.3
     pub fn with_threshold(mut self, threshold: f32) -> Self {
-        assert!(
-            threshold > 0.0 && threshold < 1.0,
-            "threshold must be in (0, 1)"
-        );
+        assert!(threshold > 0.0 && threshold < 1.0, "threshold must be in (0, 1)");
         self.threshold = threshold;
         self
     }
@@ -182,12 +176,7 @@ impl YinEstimator {
     ///
     /// Scans from min_lag to max_lag for first value below threshold.
     /// Returns (lag, confidence) where confidence is based on dip depth.
-    fn find_threshold_dip(
-        &self,
-        cmnd: &[f32],
-        min_lag: usize,
-        max_lag: usize,
-    ) -> Option<(usize, f32)> {
+    fn find_threshold_dip(&self, cmnd: &[f32], min_lag: usize, max_lag: usize) -> Option<(usize, f32)> {
         let search_start = min_lag.max(1);
         let search_end = max_lag.min(cmnd.len() - 1);
 
@@ -247,12 +236,7 @@ mod tests {
     }
 
     /// Helper: Create a noisy signal
-    fn create_noisy_tone(
-        frequency_hz: f32,
-        snr_db: f32,
-        duration_sec: f32,
-        sample_rate: u32,
-    ) -> Vec<f32> {
+    fn create_noisy_tone(frequency_hz: f32, snr_db: f32, duration_sec: f32, sample_rate: u32) -> Vec<f32> {
         let tone = create_pure_tone(frequency_hz, duration_sec, sample_rate);
         let signal_power = tone.iter().map(|&x| x * x).sum::<f32>() / tone.len() as f32;
         let noise_power = signal_power / (10.0_f32).powf(snr_db / 10.0);
@@ -275,11 +259,7 @@ mod tests {
         let (f0, confidence) = estimator.estimate(&tone);
 
         // Allow 10% error for basic implementation
-        assert!(
-            (f0 - 1000.0).abs() < 100.0,
-            "F0 should be ~1000 Hz, got {}",
-            f0
-        );
+        assert!((f0 - 1000.0).abs() < 100.0, "F0 should be ~1000 Hz, got {}", f0);
         assert!(
             confidence >= 0.0,
             "Confidence should be non-negative, got {}",
@@ -294,11 +274,7 @@ mod tests {
 
         let (f0, confidence) = estimator.estimate(&tone);
 
-        assert!(
-            (f0 - 5000.0).abs() < 250.0,
-            "F0 should be ~5000 Hz, got {}",
-            f0
-        );
+        assert!((f0 - 5000.0).abs() < 250.0, "F0 should be ~5000 Hz, got {}", f0);
         assert!(confidence > 0.5, "Confidence should be > 0.5 for pure tone");
     }
 
@@ -309,15 +285,8 @@ mod tests {
 
         let (f0, confidence) = estimator.estimate(&tone);
 
-        assert!(
-            (f0 - 9000.0).abs() < 500.0,
-            "F0 should be ~9000 Hz, got {}",
-            f0
-        );
-        assert!(
-            confidence > 0.5,
-            "Confidence should be > 0.5 for high frequency"
-        );
+        assert!((f0 - 9000.0).abs() < 500.0, "F0 should be ~9000 Hz, got {}", f0);
+        assert!(confidence > 0.5, "Confidence should be > 0.5 for high frequency");
     }
 
     #[test]
@@ -330,12 +299,7 @@ mod tests {
             let (f0, _) = estimator.estimate(&tone);
 
             let error_pct = (f0 - target_f0).abs() / target_f0 * 100.0;
-            assert!(
-                error_pct < 10.0,
-                "Error {}% at {} Hz is too high",
-                error_pct,
-                target_f0
-            );
+            assert!(error_pct < 10.0, "Error {}% at {} Hz is too high", error_pct, target_f0);
         }
     }
 
@@ -347,10 +311,7 @@ mod tests {
 
         let (f0, _) = estimator.estimate(&tone);
 
-        assert!(
-            (f0 - 1234.567).abs() < 100.0,
-            "Sub-sample accuracy should be < 100 Hz"
-        );
+        assert!((f0 - 1234.567).abs() < 100.0, "Sub-sample accuracy should be < 100 Hz");
     }
 
     // =========================================================================
@@ -365,10 +326,7 @@ mod tests {
         let (f0, confidence) = estimator.estimate(&noisy_tone);
 
         assert!((f0 - 1000.0).abs() < 50.0, "Should detect F0 at 10dB SNR");
-        assert!(
-            confidence > 0.5,
-            "Confidence should be moderate at 10dB SNR"
-        );
+        assert!(confidence > 0.5, "Confidence should be moderate at 10dB SNR");
     }
 
     #[test]
@@ -380,10 +338,7 @@ mod tests {
 
         // At 0dB SNR, detection is challenging
         if f0 > 0.0 {
-            assert!(
-                (f0 - 2000.0).abs() < 200.0,
-                "Should roughly detect F0 at 0dB SNR"
-            );
+            assert!((f0 - 2000.0).abs() < 200.0, "Should roughly detect F0 at 0dB SNR");
             assert!(confidence < 0.8, "Confidence should be lower at 0dB SNR");
         }
         // It's acceptable to return (0.0, 0.0) for very noisy signals
@@ -402,26 +357,15 @@ mod tests {
         let (_, conf_0db) = estimator.estimate(&tone_0db);
 
         // All confidences should be valid
-        assert!(
-            conf_pure >= 0.0 && conf_pure <= 1.0,
-            "Pure tone confidence should be valid"
-        );
-        assert!(
-            conf_10db >= 0.0 && conf_10db <= 1.0,
-            "10dB confidence should be valid"
-        );
-        assert!(
-            conf_0db >= 0.0 && conf_0db <= 1.0,
-            "0dB confidence should be valid"
-        );
+        assert!((0.0..=1.0).contains(&conf_pure), "Pure tone confidence should be valid");
+        assert!((0.0..=1.0).contains(&conf_10db), "10dB confidence should be valid");
+        assert!((0.0..=1.0).contains(&conf_0db), "0dB confidence should be valid");
     }
 
     #[test]
     fn test_yin_white_noise() {
         let estimator = YinEstimator::new(48000);
-        let noise: Vec<f32> = (0..4800)
-            .map(|_| rand::random::<f32>() * 2.0 - 1.0)
-            .collect();
+        let noise: Vec<f32> = (0..4800).map(|_| rand::random::<f32>() * 2.0 - 1.0).collect();
 
         let (f0, confidence) = estimator.estimate(&noise);
 
@@ -487,11 +431,7 @@ mod tests {
 
         let (f0, confidence) = estimator.estimate(&tone_with_dc);
 
-        assert!(
-            (f0 - 1000.0).abs() < 150.0,
-            "Should handle DC offset, got {}",
-            f0
-        );
+        assert!((f0 - 1000.0).abs() < 150.0, "Should handle DC offset, got {}", f0);
         assert!(confidence >= 0.0, "Confidence should be non-negative");
     }
 
@@ -517,14 +457,8 @@ mod tests {
 
         let (_, confidence) = estimator.estimate(&pure_tone);
 
-        assert!(
-            confidence >= 0.0 && confidence <= 1.0,
-            "Confidence must be in [0, 1]"
-        );
-        assert!(
-            confidence > 0.1,
-            "Pure tone should have reasonable confidence"
-        );
+        assert!((0.0..=1.0).contains(&confidence), "Confidence must be in [0, 1]");
+        assert!(confidence > 0.1, "Pure tone should have reasonable confidence");
     }
 
     #[test]
@@ -535,10 +469,7 @@ mod tests {
         let (_, confidence) = estimator.estimate(&pure_tone);
 
         // With high threshold, only strong dips are accepted
-        assert!(
-            confidence >= 0.0 && confidence <= 1.0,
-            "Confidence should be in [0, 1]"
-        );
+        assert!((0.0..=1.0).contains(&confidence), "Confidence should be in [0, 1]");
     }
 
     #[test]
@@ -554,10 +485,7 @@ mod tests {
         let (_, conf_noisy) = estimator.estimate(&noisy_tone);
 
         // Pure tone should have higher or equal confidence
-        assert!(
-            conf_pure >= conf_noisy,
-            "Dip depth should correlate with confidence"
-        );
+        assert!(conf_pure >= conf_noisy, "Dip depth should correlate with confidence");
     }
 
     #[test]
@@ -567,10 +495,7 @@ mod tests {
 
         let (_, confidence) = estimator.estimate(&tone);
 
-        assert!(
-            confidence >= 0.0 && confidence <= 1.0,
-            "Confidence must be in [0, 1]"
-        );
+        assert!((0.0..=1.0).contains(&confidence), "Confidence must be in [0, 1]");
     }
 
     #[test]
@@ -582,7 +507,7 @@ mod tests {
         let (_, confidence) = estimator.estimate(&short_tone);
 
         assert!(
-            confidence >= 0.0 && confidence <= 1.0,
+            (0.0..=1.0).contains(&confidence),
             "Confidence should be clamped to [0, 1]"
         );
     }
@@ -634,16 +559,8 @@ mod tests {
         let ratio_200_50 = time_200.as_nanos() as f64 / time_50.as_nanos().max(1) as f64;
 
         // Allow 3x for overhead (not strict 2x and 4x)
-        assert!(
-            ratio_100_50 < 3.0,
-            "100ms should be < 3x 50ms, got {}",
-            ratio_100_50
-        );
-        assert!(
-            ratio_200_50 < 8.0,
-            "200ms should be < 8x 50ms, got {}",
-            ratio_200_50
-        );
+        assert!(ratio_100_50 < 3.0, "100ms should be < 3x 50ms, got {}", ratio_100_50);
+        assert!(ratio_200_50 < 8.0, "200ms should be < 8x 50ms, got {}", ratio_200_50);
     }
 
     #[test]
@@ -656,8 +573,7 @@ mod tests {
             let _ = estimator.estimate(&tone);
         }
 
-        // If we reach here without crashing, memory is stable
-        assert!(true);
+        // Test passes if we reach here without crashing (memory stable)
     }
 
     #[test]
@@ -676,10 +592,7 @@ mod tests {
         let elapsed = start.elapsed();
 
         // Should be fast due to cache-friendly sequential access
-        assert!(
-            elapsed.as_millis() < 50,
-            "10 iterations should complete in < 50ms"
-        );
+        assert!(elapsed.as_millis() < 50, "10 iterations should complete in < 50ms");
     }
 
     #[test]
@@ -697,10 +610,7 @@ mod tests {
         let (f0_3, _) = estimator3.estimate(&tone);
 
         assert_eq!(f0_1, f0_2, "Cloned estimators should produce same result");
-        assert_eq!(
-            f0_2, f0_3,
-            "Independent estimators should produce same result"
-        );
+        assert_eq!(f0_2, f0_3, "Independent estimators should produce same result");
     }
 
     // =========================================================================
@@ -826,10 +736,7 @@ mod tests {
         let (f0, _) = estimator.estimate(&signal);
 
         // YIN should suppress harmonic peaks and find true F0
-        assert!(
-            (f0 - 1000.0).abs() < 50.0,
-            "Should find true F0, not harmonics"
-        );
+        assert!((f0 - 1000.0).abs() < 50.0, "Should find true F0, not harmonics");
     }
 
     #[test]
@@ -847,10 +754,7 @@ mod tests {
         let (f0, _) = estimator.estimate(&signal);
 
         // Should detect somewhere in the middle
-        assert!(
-            f0 > 1000.0 && f0 < 2000.0,
-            "Should detect average frequency of chirp"
-        );
+        assert!(f0 > 1000.0 && f0 < 2000.0, "Should detect average frequency of chirp");
     }
 
     #[test]
@@ -890,9 +794,6 @@ mod tests {
         let (f0, _) = estimator.estimate(&signal);
 
         // Should detect center frequency
-        assert!(
-            (f0 - 1000.0).abs() < 100.0,
-            "Should detect center frequency with FM"
-        );
+        assert!((f0 - 1000.0).abs() < 100.0, "Should detect center frequency with FM");
     }
 }

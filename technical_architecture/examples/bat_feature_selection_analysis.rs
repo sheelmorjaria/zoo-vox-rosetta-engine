@@ -3,6 +3,7 @@
 // Analyzes which features provide the best clustering discrimination
 // Uses variance analysis and correlation to identify redundant features
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::{Array1, Array2};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -162,13 +163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for stat in feature_stats.iter().take(15) {
         println!(
             "   │ {:4} │ {:28} │ {:10.2e} │ {:10.2} │ {:8.2} │ {:.2} - {:.2} │",
-            stat.index,
-            feature_names[stat.index],
-            stat.variance,
-            stat.std,
-            stat.cv,
-            stat.min,
-            stat.max
+            stat.index, feature_names[stat.index], stat.variance, stat.std, stat.cv, stat.min, stat.max
         );
     }
 
@@ -203,10 +198,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   │ Idx  │ Name                         │ Contrib.   │ Percentage │");
     println!("   ├──────┼──────────────────────────────┼────────────┼────────────┤");
 
-    let mut cumulative = 0.0;
+    let mut _cumulative = 0.0;
     for (idx, &(feat_idx, contrib)) in contributions.iter().enumerate() {
         let pct = contrib / total_contribution * 100.0;
-        cumulative += pct;
+        _cumulative += pct;
         println!(
             "   │ {:4} │ {:28} │ {:10.2e} | {:9.2}%% │",
             feat_idx, feature_names[feat_idx], contrib, pct

@@ -10,30 +10,33 @@ Usage:
 """
 
 import json
-import numpy as np
 import struct
-from pathlib import Path
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-import joblib
 import time
+from pathlib import Path
+
+import joblib
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
 FEATURE_DIM = 112
 
+
 def load_bincode_features(filepath):
     """Load features stored in Rust bincode format"""
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
                 break
         data = f.read(length * 4)
         return np.frombuffer(data, dtype=np.float32).copy()
+
 
 def main():
     print("╔═══════════════════════════════════════════════════════════════════╗")
@@ -65,7 +68,11 @@ def main():
 
     for sample in samples:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
 
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
@@ -86,10 +93,10 @@ def main():
     # Use same split as NN (last 10% as test)
     n_samples = len(X)
     n_train = int(n_samples * 0.9)
-    
+
     X_train, y_train = X[:n_train], y[:n_train]
     X_test, y_test = X[n_train:], y[n_train:]
-    
+
     print(f"\nSplit: {len(X_train)} train, {len(X_test)} test")
 
     # Standardize
@@ -108,10 +115,10 @@ def main():
         n_estimators=300,
         max_depth=40,
         min_samples_split=3,
-        class_weight='balanced',
+        class_weight="balanced",
         n_jobs=-1,
         random_state=42,
-        verbose=1
+        verbose=1,
     )
 
     rf.fit(X_train_scaled, y_train)
@@ -130,11 +137,14 @@ def main():
     # Save model
     model_path = "full_rf_model.joblib"
     print(f"\nSaving model to: {model_path}")
-    joblib.dump({
-        'model': rf,
-        'scaler': scaler,
-        'accuracy': accuracy,
-    }, model_path)
+    joblib.dump(
+        {
+            "model": rf,
+            "scaler": scaler,
+            "accuracy": accuracy,
+        },
+        model_path,
+    )
 
     elapsed = time.time() - start_time
     print("\n╔═══════════════════════════════════════════════════════════════════╗")
@@ -145,8 +155,9 @@ def main():
     print("╚═══════════════════════════════════════════════════════════════════╝")
 
     print("\nEnsemble Components:")
-    print(f"  - Texture NN (66D + masking): 59.88%")
+    print("  - Texture NN (66D + masking): 59.88%")
     print(f"  - Full RF (112D):              {accuracy:.2f}%")
+
 
 if __name__ == "__main__":
     main()

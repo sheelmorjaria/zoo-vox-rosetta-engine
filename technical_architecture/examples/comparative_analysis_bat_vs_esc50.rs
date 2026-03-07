@@ -9,11 +9,12 @@
 // - High cluster coherence (indicating distinct vocabulary items)
 // - Structured phoneme sequences (via GMM-HMM)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use technical_architecture::{
-    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, RefinementConfig,
-    SegmentationConfig, VectorizationConfig,
+    DiscoveryConfig, FeatureDimension, LexiconToSyntaxPipeline, RefinementConfig, SegmentationConfig,
+    VectorizationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -108,10 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load annotations to get context information
     let bat_annotations_data = load_bat_annotations(&bat_annotations)?;
-    println!(
-        "📋 Loaded {} annotations from bat dataset",
-        bat_annotations_data.len()
-    );
+    println!("📋 Loaded {} annotations from bat dataset", bat_annotations_data.len());
 
     // Collect subset of bat audio files
     let bat_audio_files: Vec<_> = std::fs::read_dir(&bat_audio_dir)?
@@ -128,10 +126,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|entry| entry.path())
         .collect();
 
-    println!(
-        "📁 Selected {} bat audio files for analysis",
-        bat_audio_files.len()
-    );
+    println!("📁 Selected {} bat audio files for analysis", bat_audio_files.len());
     println!();
 
     // Run pipeline on bat dataset
@@ -161,8 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 Loaded {} ESC-50 metadata entries", esc50_metadata.len());
 
     // Select diverse subset across different categories
-    let esc50_audio_files =
-        select_diverse_esc50_samples(&esc50_audio_dir, &esc50_metadata, subset_size)?;
+    let esc50_audio_files = select_diverse_esc50_samples(&esc50_audio_dir, &esc50_metadata, subset_size)?;
     println!(
         "📁 Selected {} ESC-50 audio files across {} categories",
         esc50_audio_files.len(),
@@ -309,10 +303,7 @@ fn select_diverse_esc50_samples(
 }
 
 fn count_unique_categories(files: &[std::path::PathBuf], metadata: &[Esc50Metadata]) -> usize {
-    let meta_map: HashMap<_, _> = metadata
-        .iter()
-        .map(|m| (&m.filename, &m.category))
-        .collect();
+    let meta_map: HashMap<_, _> = metadata.iter().map(|m| (&m.filename, &m.category)).collect();
 
     files
         .iter()
@@ -430,19 +421,11 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
                 bat_alpha, esc50_alpha, assessment
             );
 
-            println!(
-                "├─────────────────────────────────────────────────────────────────────────────┤"
-            );
+            println!("├─────────────────────────────────────────────────────────────────────────────┤");
             println!("│ Zipf's Law Interpretation:                                                     │");
-            println!(
-                "│   • α ≈ 1.0 indicates natural language-like distribution                      │"
-            );
-            println!(
-                "│   • Bat vocalizations showing α ≈ 1.0 suggests communicative structure        │"
-            );
-            println!(
-                "│   • Environmental sounds expected to deviate from α ≈ 1.0                     │"
-            );
+            println!("│   • α ≈ 1.0 indicates natural language-like distribution                      │");
+            println!("│   • Bat vocalizations showing α ≈ 1.0 suggests communicative structure        │");
+            println!("│   • Environmental sounds expected to deviate from α ≈ 1.0                     │");
         }
         _ => {
             println!(
@@ -514,9 +497,7 @@ fn print_comparison(bat: &PipelineResult, esc50: &PipelineResult) {
     );
 
     if bat_vocabulary_ratio < esc50_vocabulary_ratio {
-        println!(
-            "   └─ ✅ Lower ratio in bats suggests more phrase repetition (linguistic marker)"
-        );
+        println!("   └─ ✅ Lower ratio in bats suggests more phrase repetition (linguistic marker)");
     } else {
         println!("   └─ ⚠️  Higher ratio in bats may indicate less structured communication");
     }

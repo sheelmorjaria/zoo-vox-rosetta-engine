@@ -339,8 +339,7 @@ impl AcousticSimulator {
 
         for i in 0..samples {
             // White noise
-            let white: f32 =
-                StdRng::seed_from_u64(self.rng_seed + i as u64).gen::<f32>() * 2.0 - 1.0;
+            let white: f32 = StdRng::seed_from_u64(self.rng_seed + i as u64).gen::<f32>() * 2.0 - 1.0;
 
             // Pink filter
             b[0] = 0.99886 * b[0] + 0.0555179 * white;
@@ -526,11 +525,7 @@ impl AcousticSimulator {
     }
 
     /// Simulate acoustic environment
-    pub fn simulate_environment(
-        &self,
-        signal: &[f32],
-        environment: &AcousticEnvironment,
-    ) -> Result<Vec<f32>> {
+    pub fn simulate_environment(&self, signal: &[f32], environment: &AcousticEnvironment) -> Result<Vec<f32>> {
         let mut output = signal.to_vec();
 
         // Add background noise based on environment
@@ -566,8 +561,7 @@ impl AcousticSimulator {
         let mut noise_layers = Vec::new();
 
         if environment.rain_intensity_mm_h > 0.0 {
-            let rain_noise =
-                self.generate_rain_noise(environment.rain_intensity_mm_h, target.len());
+            let rain_noise = self.generate_rain_noise(environment.rain_intensity_mm_h, target.len());
             noise_layers.push((NoiseProfile::rain(), rain_noise, 0.5));
         }
 
@@ -960,10 +954,7 @@ mod tests {
         let mixture = sim.create_test_mixture(&signal, &env, 10.0).unwrap();
 
         // Should have rain noise layer
-        assert!(mixture
-            .noise_layers
-            .iter()
-            .any(|(p, _, _)| p.name == "rain"));
+        assert!(mixture.noise_layers.iter().any(|(p, _, _)| p.name == "rain"));
     }
 
     #[test]
@@ -975,10 +966,7 @@ mod tests {
         let mixture = sim.create_test_mixture(&signal, &env, 10.0).unwrap();
 
         // Should have insect noise layer
-        assert!(mixture
-            .noise_layers
-            .iter()
-            .any(|(p, _, _)| p.name == "insects"));
+        assert!(mixture.noise_layers.iter().any(|(p, _, _)| p.name == "insects"));
     }
 
     #[test]
@@ -1006,10 +994,7 @@ mod tests {
         let vocalization = sim.generate_synthetic_vocalization(1000.0, 100.0, None);
 
         // Check approximate frequency by counting zero crossings
-        let crossings = vocalization
-            .windows(2)
-            .filter(|w| w[0] * w[1] < 0.0)
-            .count();
+        let crossings = vocalization.windows(2).filter(|w| w[0] * w[1] < 0.0).count();
 
         // For 1kHz signal, we expect roughly 100 crossings per 100ms
         // Allow wider tolerance due to envelope effects

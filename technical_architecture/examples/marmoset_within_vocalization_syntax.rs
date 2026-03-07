@@ -16,6 +16,7 @@
 // Usage:
 //   cargo run --example marmoset_within_vocalization_syntax --release [vocalizations_dir] [--min-cluster-size N]
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -28,8 +29,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use technical_architecture::{
-    hdbscan::HdbscanClustering, MicroDynamicsExtractor, WithinVocalizationAnalyzer,
-    WithinVocalizationConfig,
+    hdbscan::HdbscanClustering, MicroDynamicsExtractor, WithinVocalizationAnalyzer, WithinVocalizationConfig,
 };
 
 /// Marmoset call types (contexts)
@@ -279,8 +279,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -333,10 +332,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Extract 15D features from audio segment
-fn extract_15d_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_15d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     let features = extractor.extract_15d_marmoset(audio)?;
     Ok(features.to_array().to_vec())
@@ -409,11 +405,7 @@ fn segment_vocalization(
 }
 
 /// Discover vocabulary by clustering phrase candidates
-fn discover_vocabulary(
-    phrases: &[PhraseCandidate],
-    min_cluster_size: usize,
-    min_samples: usize,
-) -> Vec<VocabWord> {
+fn discover_vocabulary(phrases: &[PhraseCandidate], min_cluster_size: usize, min_samples: usize) -> Vec<VocabWord> {
     if phrases.is_empty() {
         return Vec::new();
     }
@@ -455,8 +447,7 @@ fn discover_vocabulary(
         let chunk_min_cluster_size = ((chunk.len() as f64).sqrt() as usize).max(5);
         let chunk_min_samples = (chunk_min_cluster_size * 3) / 4;
 
-        let chunk_vocabulary =
-            cluster_phrases_single_pass(chunk, chunk_min_cluster_size, chunk_min_samples);
+        let chunk_vocabulary = cluster_phrases_single_pass(chunk, chunk_min_cluster_size, chunk_min_samples);
 
         println!(
             "     → Found {} words in chunk {}",
@@ -468,10 +459,7 @@ fn discover_vocabulary(
 
     // Phase 2: Merge vocabularies by clustering their centroids
     println!();
-    println!(
-        "  🔄 Merging {} chunk vocabularies...",
-        chunk_vocabularies.len()
-    );
+    println!("  🔄 Merging {} chunk vocabularies...", chunk_vocabularies.len());
 
     let mut all_centroids: Vec<Vec<f32>> = Vec::new();
     let mut all_members: Vec<Vec<String>> = Vec::new();
@@ -511,12 +499,7 @@ fn discover_vocabulary(
         Ok(h) => h,
         Err(e) => {
             eprintln!("  ⚠ Failed to create HDBSCAN for merging: {:?}", e);
-            return create_vocabulary_from_components(
-                all_centroids,
-                all_members,
-                all_contexts,
-                all_sources,
-            );
+            return create_vocabulary_from_components(all_centroids, all_members, all_contexts, all_sources);
         }
     };
 
@@ -524,12 +507,7 @@ fn discover_vocabulary(
         Ok(l) => l,
         Err(e) => {
             eprintln!("  ⚠ HDBSCAN merge failed: {:?}", e);
-            return create_vocabulary_from_components(
-                all_centroids,
-                all_members,
-                all_contexts,
-                all_sources,
-            );
+            return create_vocabulary_from_components(all_centroids, all_members, all_contexts, all_sources);
         }
     };
 
@@ -537,17 +515,11 @@ fn discover_vocabulary(
     let mut merged_clusters: HashMap<i32, Vec<usize>> = HashMap::new();
     for (i, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            merged_clusters
-                .entry(label)
-                .or_insert_with(Vec::new)
-                .push(i);
+            merged_clusters.entry(label).or_insert_with(Vec::new).push(i);
         }
     }
 
-    println!(
-        "  ✅ Merged into {} final vocabulary words",
-        merged_clusters.len()
-    );
+    println!("  ✅ Merged into {} final vocabulary words", merged_clusters.len());
 
     // Build final vocabulary
     let mut final_vocabulary: Vec<VocabWord> = Vec::new();
@@ -617,10 +589,7 @@ fn cluster_phrases_single_pass(
     let mut cluster_map: HashMap<i32, Vec<&PhraseCandidate>> = HashMap::new();
     for (i, &label) in labels.iter().enumerate() {
         if label >= 0 {
-            cluster_map
-                .entry(label)
-                .or_insert_with(Vec::new)
-                .push(&phrases[i]);
+            cluster_map.entry(label).or_insert_with(Vec::new).push(&phrases[i]);
         }
     }
 
@@ -742,8 +711,7 @@ fn analyze_reuse_patterns(vocabulary: &[VocabWord], phrases: &[PhraseCandidate])
 
         if num_contexts >= 2 {
             // General purpose word (Grammar/Syntax)
-            let context_names: Vec<String> =
-                word.contexts.iter().map(|c| c.name().to_string()).collect();
+            let context_names: Vec<String> = word.contexts.iter().map(|c| c.name().to_string()).collect();
 
             general_purpose_words.push(GeneralPurposeWord {
                 word_id: word.word_id,
@@ -774,28 +742,17 @@ fn analyze_reuse_patterns(vocabulary: &[VocabWord], phrases: &[PhraseCandidate])
     for (call_type, &total_phrases) in &phrases_per_context {
         let context_name = call_type.name();
 
-        let context_words: Vec<_> = vocabulary
-            .iter()
-            .filter(|w| w.contexts.contains(call_type))
-            .collect();
+        let context_words: Vec<_> = vocabulary.iter().filter(|w| w.contexts.contains(call_type)).collect();
 
         let unique_words = context_words.len();
 
-        let general_purpose = context_words
-            .iter()
-            .filter(|w| w.contexts.len() >= 2)
-            .count();
+        let general_purpose = context_words.iter().filter(|w| w.contexts.len() >= 2).count();
 
-        let context_specific = context_words
-            .iter()
-            .filter(|w| w.contexts.len() == 1)
-            .count();
+        let context_specific = context_words.iter().filter(|w| w.contexts.len() == 1).count();
 
         // Find most frequent words in this context
-        let mut word_freq: Vec<(usize, usize)> = context_words
-            .iter()
-            .map(|w| (w.word_id, w.occurrence_count))
-            .collect();
+        let mut word_freq: Vec<(usize, usize)> =
+            context_words.iter().map(|w| (w.word_id, w.occurrence_count)).collect();
         word_freq.sort_by(|a, b| b.1.cmp(&a.1));
 
         context_statistics.insert(
@@ -817,14 +774,8 @@ fn analyze_reuse_patterns(vocabulary: &[VocabWord], phrases: &[PhraseCandidate])
     // Sort context specific words by occurrence count
     context_specific_words.sort_by(|a, b| b.occurrence_count.cmp(&a.occurrence_count));
 
-    println!(
-        "  ✅ Found {} general purpose words",
-        general_purpose_words.len()
-    );
-    println!(
-        "  ✅ Found {} context-specific words",
-        context_specific_words.len()
-    );
+    println!("  ✅ Found {} general purpose words", general_purpose_words.len());
+    println!("  ✅ Found {} context-specific words", context_specific_words.len());
 
     ReuseAnalysis {
         general_purpose_words,
@@ -851,11 +802,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
 
     // Sort phrases within each vocalization by start time
     for phrases_vec in vocalization_phrases.values_mut() {
-        phrases_vec.sort_by(|a, b| {
-            a.start_ms
-                .partial_cmp(&b.start_ms)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        phrases_vec.sort_by(|a, b| a.start_ms.partial_cmp(&b.start_ms).unwrap_or(std::cmp::Ordering::Equal));
     }
 
     // Extract bigrams and trigrams
@@ -948,8 +895,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
                 avg_sequence_length: if sequence_lengths.is_empty() {
                     0.0
                 } else {
-                    sequence_lengths.iter().map(|&x| x as f64).sum::<f64>()
-                        / sequence_lengths.len() as f64
+                    sequence_lengths.iter().map(|&x| x as f64).sum::<f64>() / sequence_lengths.len() as f64
                 },
                 sequence_lengths,
                 bigram_entropy,
@@ -984,10 +930,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
     }
 
     // Find bigrams shared across multiple contexts
-    let all_bigrams: HashSet<String> = context_bigrams
-        .values()
-        .flat_map(|set| set.iter().cloned())
-        .collect();
+    let all_bigrams: HashSet<String> = context_bigrams.values().flat_map(|set| set.iter().cloned()).collect();
 
     for bigram in all_bigrams {
         let mut contexts: Vec<CallType> = Vec::new();
@@ -1013,10 +956,7 @@ fn analyze_sequential_patterns(phrases: &[PhraseCandidate]) -> SequentialAnalysi
 
     println!("  ✅ Found {} unique bigrams", bigram_counts.len());
     println!("  ✅ Found {} unique trigrams", trigram_counts.len());
-    println!(
-        "  ✅ Found {} cross-context patterns",
-        cross_context_patterns.len()
-    );
+    println!("  ✅ Found {} cross-context patterns", cross_context_patterns.len());
 
     SequentialAnalysis {
         bigram_counts,
@@ -1098,19 +1038,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Apply limit if specified
     if let Some(n) = limit {
-        println!(
-            "📊 Processing limited to {} vocalizations (testing mode)",
-            n
-        );
+        println!("📊 Processing limited to {} vocalizations (testing mode)", n);
     }
 
     let vocalizations_dir = Path::new(&vocalizations_dir);
 
     if !vocalizations_dir.exists() {
-        println!(
-            "❌ Vocalizations directory not found: {}",
-            vocalizations_dir.display()
-        );
+        println!("❌ Vocalizations directory not found: {}", vocalizations_dir.display());
         return Err("Directory not found".into());
     }
 
@@ -1132,10 +1066,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let analyzer = WithinVocalizationAnalyzer::new(config);
 
-    println!(
-        "📂 Scanning vocalizations directory: {}",
-        vocalizations_dir.display()
-    );
+    println!("📂 Scanning vocalizations directory: {}", vocalizations_dir.display());
     println!();
 
     // Scan for FLAC files recursively (handles date subdirectories)
@@ -1170,11 +1101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(n) = limit {
         let original_len = all_files.len();
         all_files.truncate(n.min(original_len));
-        println!(
-            "📊 Limited to {} files (was {})",
-            all_files.len(),
-            original_len
-        );
+        println!("📊 Limited to {} files (was {})", all_files.len(), original_len);
     }
 
     println!();
@@ -1190,25 +1117,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Process in parallel
     all_files.par_iter().for_each(|(file_path, call_type)| {
-        let filename = file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown");
+        let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
 
         match load_flac_file(file_path) {
-            Ok(audio) => {
-                match segment_vocalization(&audio, filename, *call_type, &analyzer, sample_rate) {
-                    Ok(phrases) => {
-                        if !phrases.is_empty() {
-                            let mut global_phrases = all_phrases.lock().unwrap();
-                            global_phrases.extend(phrases);
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("  Warning: Segmentation failed for {}: {}", filename, e);
+            Ok(audio) => match segment_vocalization(&audio, filename, *call_type, &analyzer, sample_rate) {
+                Ok(phrases) => {
+                    if !phrases.is_empty() {
+                        let mut global_phrases = all_phrases.lock().unwrap();
+                        global_phrases.extend(phrases);
                     }
                 }
-            }
+                Err(e) => {
+                    eprintln!("  Warning: Segmentation failed for {}: {}", filename, e);
+                }
+            },
             Err(e) => {
                 eprintln!("  Warning: Failed to load {}: {}", filename, e);
             }
@@ -1261,8 +1183,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         // Perform HDBSCAN clustering
         let n_total = phrases.len();
-        let min_cluster_size_val =
-            min_cluster_size.unwrap_or_else(|| (n_total as f64).sqrt() as usize);
+        let min_cluster_size_val = min_cluster_size.unwrap_or_else(|| (n_total as f64).sqrt() as usize);
         let min_samples = (min_cluster_size_val * 3) / 4;
 
         discover_vocabulary(&phrases, min_cluster_size_val, min_samples)
@@ -1290,12 +1211,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Top 20 General Purpose Words (by occurrence count):");
-    for (i, word) in reuse_analysis
-        .general_purpose_words
-        .iter()
-        .take(20)
-        .enumerate()
-    {
+    for (i, word) in reuse_analysis.general_purpose_words.iter().take(20).enumerate() {
         println!(
             "  {:2}. Word {:>4} | {:>2} contexts | {:>4} occurrences | {:>4} vocalizations | {:?}",
             i + 1,
@@ -1315,8 +1231,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Group context-specific words by context
-    let mut context_specific_by_context: HashMap<String, Vec<&ContextSpecificWord>> =
-        HashMap::new();
+    let mut context_specific_by_context: HashMap<String, Vec<&ContextSpecificWord>> = HashMap::new();
     for word in &reuse_analysis.context_specific_words {
         context_specific_by_context
             .entry(word.context.clone())
@@ -1385,9 +1300,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // PHASE 4: SEQUENTIAL PATTERN ANALYSIS
 // ============================================================================
 
-fn run_sequential_analysis(
-    phrases: &[PhraseCandidate],
-) -> Result<SequentialAnalysis, Box<dyn std::error::Error>> {
+fn run_sequential_analysis(phrases: &[PhraseCandidate]) -> Result<SequentialAnalysis, Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│ Phase 4: Sequential Pattern Analysis                                   │");
     println!("│   (Discovering Syntactic Rules Through Phrase Ordering)                 │");
@@ -1404,8 +1317,7 @@ fn run_sequential_analysis(
     println!();
 
     println!("Top 20 Bigram Transitions:");
-    for (i, (from_phrase, to_phrase, count)) in analysis.top_transitions.iter().take(20).enumerate()
-    {
+    for (i, (from_phrase, to_phrase, count)) in analysis.top_transitions.iter().take(20).enumerate() {
         println!(
             "  {:2}. {:30} → {:30} ({:>3} occurrences)",
             i + 1,
@@ -1478,11 +1390,7 @@ fn run_sequential_analysis(
         println!("Top 15 Cross-Context Shared Patterns:");
         for (i, pattern) in analysis.cross_context_patterns.iter().take(15).enumerate() {
             let pattern_str = pattern.pattern.join(" → ");
-            println!(
-                "  {:2}. Pattern: {}",
-                i + 1,
-                truncate_string(&pattern_str, 50)
-            );
+            println!("  {:2}. Pattern: {}", i + 1, truncate_string(&pattern_str, 50));
             println!(
                 "      Shared across {} contexts: {:?}",
                 pattern.contexts.len(),
@@ -1500,27 +1408,15 @@ fn run_sequential_analysis(
     println!();
 
     // Calculate overall entropy across all contexts
-    let all_entropies: Vec<f64> = analysis
-        .context_sequences
-        .values()
-        .map(|s| s.bigram_entropy)
-        .collect();
+    let all_entropies: Vec<f64> = analysis.context_sequences.values().map(|s| s.bigram_entropy).collect();
 
     if !all_entropies.is_empty() {
         let avg_entropy = all_entropies.iter().sum::<f64>() / all_entropies.len() as f64;
         let min_entropy = all_entropies.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-        let max_entropy = all_entropies
-            .iter()
-            .fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+        let max_entropy = all_entropies.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
 
-        println!(
-            "Average bigram entropy (unpredictability): {:.3} bits",
-            avg_entropy
-        );
-        println!(
-            "Entropy range: [{:.3}, {:.3}] bits",
-            min_entropy, max_entropy
-        );
+        println!("Average bigram entropy (unpredictability): {:.3} bits", avg_entropy);
+        println!("Entropy range: [{:.3}, {:.3}] bits", min_entropy, max_entropy);
         println!();
 
         // Interpret entropy
@@ -1537,10 +1433,7 @@ fn run_sequential_analysis(
     }
 
     println!();
-    println!(
-        "Cross-context patterns: {}",
-        analysis.cross_context_patterns.len()
-    );
+    println!("Cross-context patterns: {}", analysis.cross_context_patterns.len());
     if !analysis.cross_context_patterns.is_empty() {
         let max_shared = analysis
             .cross_context_patterns

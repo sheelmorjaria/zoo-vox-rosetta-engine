@@ -5,13 +5,13 @@
 //
 // Usage: cargo run --release --example phase4_refinement_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let results_dir =
-        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let clusters_path = results_dir.join("minibatch_clusters.json");
     let models_output = results_dir.join("gmm_hmm_models.json");
@@ -26,9 +26,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load features
     println!("📂 Loading features...");
     let features_data = std::fs::read(&features_path)?;
-    let serializable_features: Vec<
-        technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable,
-    > = bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable> =
+        bincode::deserialize(&features_data)?;
     println!("   └─ {} features loaded", serializable_features.len());
     println!();
 
@@ -45,11 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|v| v.as_i64().unwrap() as i32)
         .collect();
 
-    println!(
-        "   └─ {} labels loaded ({} clusters)",
-        labels.len(),
-        n_clusters
-    );
+    println!("   └─ {} labels loaded ({} clusters)", labels.len(), n_clusters);
     println!();
 
     // Group features by cluster
@@ -84,10 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!(
-        "   └─ Grouped in {:.2}s",
-        group_start.elapsed().as_secs_f64()
-    );
+    println!("   └─ Grouped in {:.2}s", group_start.elapsed().as_secs_f64());
     println!();
 
     // Count phrases per cluster
@@ -100,10 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     for cluster_id in 0..n_clusters as i32 {
         let count = cluster_counts.get(&cluster_id).copied().unwrap_or(0);
-        let n_sequences = cluster_features
-            .get(&cluster_id)
-            .map(|v| v.len())
-            .unwrap_or(0);
+        let n_sequences = cluster_features.get(&cluster_id).map(|v| v.len()).unwrap_or(0);
         println!(
             "   Cluster {}: {} phrases, {} sequences",
             cluster_id, count, n_sequences
@@ -238,10 +227,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let train_time = train_start.elapsed();
     println!();
-    println!(
-        "   └─ Training completed in {:.2}s",
-        train_time.as_secs_f64()
-    );
+    println!("   └─ Training completed in {:.2}s", train_time.as_secs_f64());
     println!("   └─ {} models trained", models.len());
     println!();
 

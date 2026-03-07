@@ -2,6 +2,7 @@
 //
 // Analyzes aggregate statistics and consolidates phrase types
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -132,9 +133,7 @@ fn analyze_aggregate(analyses: &[WithinCallAnalysisFile]) -> AggregateAnalysis {
     for analysis in analyses {
         total_phrases += analysis.stats.n_phrases;
 
-        *phrases_per_call
-            .entry(analysis.stats.n_phrases)
-            .or_default() += 1;
+        *phrases_per_call.entry(analysis.stats.n_phrases).or_default() += 1;
 
         for phrase in &analysis.phrases {
             all_durations.push(phrase.duration_ms);
@@ -272,10 +271,7 @@ pub struct GlobalVocabulary {
     pub type_frequencies: Vec<(i32, usize)>,
 }
 
-fn consolidate_phrase_types(
-    analyses: &[WithinCallAnalysisFile],
-    similarity_threshold: f64,
-) -> GlobalVocabulary {
+fn consolidate_phrase_types(analyses: &[WithinCallAnalysisFile], similarity_threshold: f64) -> GlobalVocabulary {
     // Collect all phrase type representatives
     let mut local_types: Vec<(String, i32, Vec<f64>)> = Vec::new();
 
@@ -322,11 +318,7 @@ fn consolidate_phrase_types(
 
         for (i, global_features) in global_types.iter().enumerate() {
             let global_feat = Array1::from_vec(global_features.clone());
-            let dist: f64 = query
-                .iter()
-                .zip(global_feat.iter())
-                .map(|(a, b)| (a - b).powi(2))
-                .sum();
+            let dist: f64 = query.iter().zip(global_feat.iter()).map(|(a, b)| (a - b).powi(2)).sum();
             let sim = 1.0 - (-dist.sqrt()).exp();
 
             if sim >= similarity_threshold {
@@ -377,24 +369,15 @@ impl AggregateAnalysis {
         println!("╚═══════════════════════════════════════════════════════════════╝");
 
         println!("\n📊 OVERVIEW");
-        println!(
-            "   ├─ Total vocalizations: {:>12}",
-            self.total_vocalizations
-        );
+        println!("   ├─ Total vocalizations: {:>12}", self.total_vocalizations);
         println!("   ├─ Total phrases:       {:>12}", self.total_phrases);
-        println!(
-            "   └─ Avg phrases/call:    {:>12.2}",
-            self.avg_phrases_per_call
-        );
+        println!("   └─ Avg phrases/call:    {:>12.2}", self.avg_phrases_per_call);
 
         println!("\n📊 PHRASE DURATION (ms)");
         println!("   ├─ Min:    {:>8.1}", self.phrase_duration_stats.min_ms);
         println!("   ├─ Max:    {:>8.1}", self.phrase_duration_stats.max_ms);
         println!("   ├─ Mean:   {:>8.1}", self.phrase_duration_stats.mean_ms);
-        println!(
-            "   ├─ Median: {:>8.1}",
-            self.phrase_duration_stats.median_ms
-        );
+        println!("   ├─ Median: {:>8.1}", self.phrase_duration_stats.median_ms);
         println!("   ├─ Std:    {:>8.1}", self.phrase_duration_stats.std_ms);
         println!("   ├─ P10:    {:>8.1}", self.phrase_duration_stats.p10);
         println!("   ├─ P25:    {:>8.1}", self.phrase_duration_stats.p25);
@@ -437,9 +420,8 @@ impl AggregateAnalysis {
         println!("   ├─ Min entropy: {:.3}", self.entropy_stats.min);
         println!("   ├─ Max entropy: {:.3}", self.entropy_stats.max);
         println!("   ├─ Mean entropy: {:.3}", self.entropy_stats.mean);
-        let total_with_phrases = self.entropy_stats.simple_count
-            + self.entropy_stats.medium_count
-            + self.entropy_stats.complex_count;
+        let total_with_phrases =
+            self.entropy_stats.simple_count + self.entropy_stats.medium_count + self.entropy_stats.complex_count;
         println!(
             "   ├─ Simple (E<0.5): {} ({:.1}%)",
             self.entropy_stats.simple_count,
@@ -479,15 +461,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║    Bat Within-Call Results: Post-Processing Analysis          ║");
     println!("╚═══════════════════════════════════════════════════════════════╝");
 
-    let results_path = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results/bat_within_call_analyses.json");
-    let output_dir = PathBuf::from(
-        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results",
+    let results_path = PathBuf::from(
+        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results/bat_within_call_analyses.json",
     );
+    let output_dir = PathBuf::from("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/within_call_phrase_results");
 
-    println!(
-        "\n📂 Loading analysis results from: {}",
-        results_path.display()
-    );
+    println!("\n📂 Loading analysis results from: {}", results_path.display());
 
     let file = File::open(&results_path)?;
     let analyses: Vec<WithinCallAnalysisFile> = serde_json::from_reader(BufReader::new(file))?;
@@ -502,10 +481,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let aggregate_path = output_dir.join("aggregate_analysis.json");
     let file = File::create(&aggregate_path)?;
     serde_json::to_writer_pretty(BufWriter::new(file), &aggregate)?;
-    println!(
-        "\n💾 Saved aggregate analysis to: {}",
-        aggregate_path.display()
-    );
+    println!("\n💾 Saved aggregate analysis to: {}", aggregate_path.display());
 
     // Consolidate phrase types with different thresholds
     println!("\n╔═══════════════════════════════════════════════════════════════╗");
@@ -539,10 +515,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let file = File::create(&consolidation_path)?;
     serde_json::to_writer_pretty(BufWriter::new(file), &consolidation_data)?;
-    println!(
-        "\n💾 Saved consolidation analysis to: {}",
-        consolidation_path.display()
-    );
+    println!("\n💾 Saved consolidation analysis to: {}", consolidation_path.display());
 
     println!("\n╔═══════════════════════════════════════════════════════════════╗");
     println!("║                      ANALYSIS COMPLETE                         ║");

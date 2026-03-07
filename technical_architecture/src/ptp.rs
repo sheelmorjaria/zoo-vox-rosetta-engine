@@ -71,9 +71,7 @@ impl PtpTimestamp {
 
     /// Get current time as PTP timestamp
     pub fn now() -> Self {
-        let duration = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default();
+        let duration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
 
         Self {
             seconds: duration.as_secs(),
@@ -140,8 +138,7 @@ impl From<chrono::DateTime<chrono::Utc>> for PtpTimestamp {
 
 impl From<PtpTimestamp> for chrono::DateTime<chrono::Utc> {
     fn from(ts: PtpTimestamp) -> Self {
-        chrono::DateTime::from_timestamp(ts.seconds as i64, ts.nanos)
-            .unwrap_or_else(chrono::Utc::now)
+        chrono::DateTime::from_timestamp(ts.seconds as i64, ts.nanos).unwrap_or_else(chrono::Utc::now)
     }
 }
 
@@ -212,10 +209,7 @@ impl PtpClock {
 
         if self.config.grandmaster_ip.is_some() {
             // Slave mode - would start PTP daemon here
-            info!(
-                "PTP slave mode, grandmaster: {:?}",
-                self.config.grandmaster_ip
-            );
+            info!("PTP slave mode, grandmaster: {:?}", self.config.grandmaster_ip);
             *self.status.write().await = PtpStatus::Initializing;
         } else {
             // Grandmaster mode
@@ -223,8 +217,7 @@ impl PtpClock {
             *self.status.write().await = PtpStatus::Locked;
         }
 
-        self.running
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
 
         // Start background sync task
         let _status_lock = self.status.clone();
@@ -233,8 +226,7 @@ impl PtpClock {
         let sync_interval = 2_f64.powi(self.config.sync_interval_log2 as i32);
 
         tokio::spawn(async move {
-            let mut interval =
-                tokio::time::interval(tokio::time::Duration::from_secs_f64(sync_interval));
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs_f64(sync_interval));
 
             while running.load(std::sync::atomic::Ordering::SeqCst) {
                 interval.tick().await;
@@ -256,8 +248,7 @@ impl PtpClock {
     /// Stop PTP clock
     pub async fn stop(&self) -> Result<()> {
         info!("Stopping PTP clock");
-        self.running
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
         *self.status.write().await = PtpStatus::Faulty;
         Ok(())
     }

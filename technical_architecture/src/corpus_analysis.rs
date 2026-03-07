@@ -82,11 +82,17 @@ impl NGram {
     }
 
     /// Get the last symbol (for suffix analysis)
+    ///
+    /// # Safety
+    /// This method is safe because the constructor validates that `symbols.len() >= 2`.
+    /// The invariant is guaranteed by `NGram::new()` which rejects n-grams smaller than 2.
     pub fn last(&self) -> usize {
+        // SAFETY: Constructor guarantees symbols.len() >= 2, so last() always returns Some
+        #[allow(clippy::expect_used)]
         *self
             .symbols
             .last()
-            .expect("n-gram should have at least 2 symbols")
+            .expect("n-gram invariant violated: symbols is empty")
     }
 
     /// Get all internal transitions (for PMI calculation)
@@ -300,14 +306,8 @@ impl PMICalculator {
 
     /// Calculate PMI for a single transition: PMI(a, b) = log(P(a,b) / (P(a) * P(b)))
     pub fn pmi(&self, a: usize, b: usize) -> Result<f64> {
-        let p_a = self
-            .unigram_probs
-            .get(&a)
-            .ok_or(CorpusError::SymbolNotFound(a))?;
-        let p_b = self
-            .unigram_probs
-            .get(&b)
-            .ok_or(CorpusError::SymbolNotFound(b))?;
+        let p_a = self.unigram_probs.get(&a).ok_or(CorpusError::SymbolNotFound(a))?;
+        let p_b = self.unigram_probs.get(&b).ok_or(CorpusError::SymbolNotFound(b))?;
         let p_ab = self.bigram_probs.get(&(a, b)).unwrap_or(&0.0);
 
         if *p_a == 0.0 || *p_b == 0.0 || *p_ab == 0.0 {
@@ -392,11 +392,7 @@ impl SuffixEntropyCalculator {
                             let suffix = sequence[i + n];
 
                             *ngram_counts.entry(ng.clone()).or_insert(0) += 1;
-                            *suffix_counts
-                                .entry(ng)
-                                .or_default()
-                                .entry(suffix)
-                                .or_insert(0) += 1;
+                            *suffix_counts.entry(ng).or_default().entry(suffix).or_insert(0) += 1;
                         }
                     }
                 }
@@ -511,21 +507,11 @@ impl PhraseXDiscoveryEngine {
         let mut phrases_x = Vec::new();
 
         // Get all unique n-grams from the entropy calculator
-        let unique_ngrams: HashSet<NGram> = self
-            .entropy_calculator
-            .suffix_counts
-            .keys()
-            .cloned()
-            .collect();
+        let unique_ngrams: HashSet<NGram> = self.entropy_calculator.suffix_counts.keys().cloned().collect();
 
         for ngram in unique_ngrams {
             // Check minimum frequency
-            let frequency = self
-                .entropy_calculator
-                .ngram_counts
-                .get(&ngram)
-                .copied()
-                .unwrap_or(0);
+            let frequency = self.entropy_calculator.ngram_counts.get(&ngram).copied().unwrap_or(0);
 
             if frequency < self.min_frequency {
                 continue;
@@ -555,9 +541,7 @@ impl PhraseXDiscoveryEngine {
         phrases_x.sort_by(|a, b| {
             let score_a = a.rigidity_score + a.flexibility_score;
             let score_b = b.rigidity_score + b.flexibility_score;
-            score_b
-                .partial_cmp(&score_a)
-                .unwrap_or(std::cmp::Ordering::Equal)
+            score_b.partial_cmp(&score_a).unwrap_or(std::cmp::Ordering::Equal)
         });
 
         Ok(phrases_x)
@@ -580,11 +564,7 @@ impl PhraseXDiscoveryEngine {
     /// Analyze context variability for a phrase
     ///
     /// Returns examples of different contexts where this phrase appears
-    pub fn analyze_context_variability(
-        &self,
-        phrase: &PhraseX,
-        sequences: &[Vec<usize>],
-    ) -> Vec<Vec<usize>> {
+    pub fn analyze_context_variability(&self, phrase: &PhraseX, sequences: &[Vec<usize>]) -> Vec<Vec<usize>> {
         let mut contexts = Vec::new();
 
         for sequence in sequences {
@@ -654,8 +634,7 @@ impl CorpusStatistics {
         let miner = NGramMiner::default();
         let _unique_ngrams = miner.extract_from_corpus(sequences).len();
         // We need to deduplicate
-        let unique_ngrams_set: HashSet<_> =
-            miner.extract_from_corpus(sequences).into_iter().collect();
+        let unique_ngrams_set: HashSet<_> = miner.extract_from_corpus(sequences).into_iter().collect();
 
         Ok(Self {
             total_sequences,

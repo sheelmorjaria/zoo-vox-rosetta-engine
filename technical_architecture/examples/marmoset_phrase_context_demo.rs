@@ -5,6 +5,7 @@
 //
 // Usage: cargo run --release --example marmoset_phrase_context_demo
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 

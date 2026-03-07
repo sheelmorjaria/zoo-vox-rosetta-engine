@@ -130,16 +130,18 @@ class VocalizationQueryInterface:
 
         return AcousticFeatures(
             mean_f0_hz=features_data["mean_f0_hz"],
-            std_f0_hz=features_data["std_f0_hz"],
-            min_f0_hz=features_data["min_f0_hz"],
-            max_f0_hz=features_data["max_f0_hz"],
+            duration_ms=features_data.get(
+                "duration_ms", features_data.get("mean_duration_ms", 0.0)
+            ),
             f0_range_hz=features_data["f0_range_hz"],
-            duration_frames=features_data["duration_frames"],
-            voiced_ratio=features_data["voiced_ratio"],
-            f0_slope=features_data["f0_slope"],
-            modulation_rate=features_data["modulation_rate"],
-            acoustic_variance=features_data["acoustic_variance"],
-            mean_duration_ms=features_data["mean_duration_ms"],
+            std_f0_hz=features_data.get("std_f0_hz", 0.0),
+            min_f0_hz=features_data.get("min_f0_hz", 0.0),
+            max_f0_hz=features_data.get("max_f0_hz", 0.0),
+            duration_frames=features_data.get("duration_frames", 0),
+            voiced_ratio=features_data.get("voiced_ratio", 0.0),
+            f0_slope=features_data.get("f0_slope", 0.0),
+            modulation_rate=features_data.get("modulation_rate", 0.0),
+            acoustic_variance=features_data.get("acoustic_variance", 0.0),
         )
 
     def _build_indexes(self):
@@ -223,7 +225,7 @@ class VocalizationQueryInterface:
                 phrases.extend(species_data.phrase_library.items())
 
         for phrase_key, phrase in phrases:
-            if min_duration <= phrase.acoustic_features.mean_duration_ms <= max_duration:
+            if min_duration <= phrase.acoustic_features.duration_ms <= max_duration:
                 results.append((phrase_key, phrase))
 
         return results

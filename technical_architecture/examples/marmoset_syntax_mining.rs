@@ -9,6 +9,7 @@
 //! 2. Build sequences of states per file
 //! 3. Mine for repeated N-grams (reusable sequences)
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -162,10 +163,7 @@ fn main() -> anyhow::Result<()> {
     let total_files = file_data.len();
     let total_seqs = file_data.values().map(|(s, _)| s.len()).sum::<usize>();
 
-    println!(
-        "  Built {} sequences from {} files",
-        total_files, total_files
-    );
+    println!("  Built {} sequences from {} files", total_files, total_files);
     println!("  Total state transitions: {}", total_seqs);
     println!();
 

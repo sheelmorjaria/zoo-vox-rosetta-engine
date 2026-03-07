@@ -400,8 +400,7 @@ impl DtwDbscan {
 
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> DtwClusterStats {
-        let mut cluster_counts: std::collections::HashMap<i32, usize> =
-            std::collections::HashMap::new();
+        let mut cluster_counts: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
         let mut noise_count = 0;
 
         for &label in labels {
@@ -459,10 +458,7 @@ mod tests {
         let seq4 = vec![2.0, 3.0, 4.0, 5.0];
 
         let dist = dtw.compute(&seq3, &seq4).unwrap();
-        assert!(
-            dist > 0.0,
-            "Different sequences should have positive distance"
-        );
+        assert!(dist > 0.0, "Different sequences should have positive distance");
     }
 
     /// Test 2: Windowed DTW produces valid distances
@@ -474,10 +470,7 @@ mod tests {
         let seq2 = vec![1.0, 2.0, 3.0, 4.0];
 
         let dist = dtw.compute(&seq1, &seq2).unwrap();
-        assert!(
-            dist.is_finite(),
-            "Windowed DTW should produce finite distance"
-        );
+        assert!(dist.is_finite(), "Windowed DTW should produce finite distance");
         assert!(dist >= 0.0, "Distance should be non-negative");
     }
 
@@ -543,11 +536,7 @@ mod tests {
     /// Test 6: DTW-DBSCAN cluster statistics
     #[test]
     fn test_dtw_dbscan_stats() {
-        let sequences = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![1.1, 2.1, 3.1],
-            vec![4.0, 3.0, 2.0],
-        ];
+        let sequences = vec![vec![1.0, 2.0, 3.0], vec![1.1, 2.1, 3.1], vec![4.0, 3.0, 2.0]];
 
         let dbscan = DtwDbscan::new(1.0, 2, None);
         let labels = dbscan.fit_predict(&sequences).unwrap();
@@ -578,11 +567,7 @@ mod tests {
     fn test_dtw_distance_matrix() {
         let dtw = DtwMetric::unconstrained();
 
-        let sequences = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![2.0, 3.0, 4.0],
-            vec![3.0, 4.0, 5.0],
-        ];
+        let sequences = vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0], vec![3.0, 4.0, 5.0]];
 
         let dist_matrix = dtw.compute_distance_matrix(&sequences).unwrap();
 

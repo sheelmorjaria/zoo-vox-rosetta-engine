@@ -2,13 +2,12 @@
 //!
 //! This example tests the peer controller without requiring manual interaction.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use anyhow::Result;
 use serde_json;
 use std::thread;
 use std::time::Duration;
-use technical_architecture::{
-    HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig,
-};
+use technical_architecture::{HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig};
 use zmq::{Context, SocketType};
 
 fn main() -> Result<()> {
@@ -27,11 +26,7 @@ fn main() -> Result<()> {
     // Step 2: Verify starts in Passthrough Mode
     println!("\n[2/5] Checking initial state...");
     let mode = controller.tick()?;
-    assert_eq!(
-        mode,
-        OperationMode::Passthrough,
-        "Should start in Passthrough Mode"
-    );
+    assert_eq!(mode, OperationMode::Passthrough, "Should start in Passthrough Mode");
     println!("✓ Initial mode: PASSTHROUGH (correct)");
 
     // Step 3: Create Python heartbeat client (simulate)
@@ -77,11 +72,7 @@ fn main() -> Result<()> {
 
     // Verify we're in Interactive Mode
     let final_mode = controller.tick()?;
-    assert_eq!(
-        final_mode,
-        OperationMode::Interactive,
-        "Should be in Interactive Mode"
-    );
+    assert_eq!(final_mode, OperationMode::Interactive, "Should be in Interactive Mode");
     println!("✓ Sent 10 heartbeats, verified in Interactive Mode");
 
     // Step 5: Stop heartbeats and verify timeout
@@ -94,9 +85,7 @@ fn main() -> Result<()> {
     let start = std::time::Instant::now();
     let mut mode = OperationMode::Interactive;
 
-    while start.elapsed()
-        < Duration::from_millis(controller.get_config().heartbeat_timeout_ms + 100)
-    {
+    while start.elapsed() < Duration::from_millis(controller.get_config().heartbeat_timeout_ms + 100) {
         mode = controller.tick()?;
         if mode == OperationMode::Passthrough {
             break;

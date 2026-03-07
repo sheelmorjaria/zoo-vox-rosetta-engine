@@ -2,6 +2,7 @@
 //!
 //! Uses rayon for parallel feature extraction to speed up processing
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -135,11 +136,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let split_point = (samples.len() as f64 * 0.7) as usize;
     let train_samples: Vec<_> = samples.iter().take(split_point).collect();
     let test_samples: Vec<_> = samples.iter().skip(split_point).collect();
-    println!(
-        "  Train: {}, Test: {}",
-        train_samples.len(),
-        test_samples.len()
-    );
+    println!("  Train: {}, Test: {}", train_samples.len(), test_samples.len());
 
     // Build prototypes
     let mut prototypes: HashMap<String, Vec<f64>> = HashMap::new();
@@ -170,10 +167,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bench_start = Instant::now();
 
     // Create engines
-    let mut engine_unw =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
-    let mut engine_wgt =
-        AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_unw = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
+    let mut engine_wgt = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
 
     // Fit normalization
     {
@@ -205,10 +200,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Evaluate
     let threshold = 0.5;
-    let (unw_f1, unw_per_ds) =
-        evaluate_parallel(&test_samples, &prototypes, &engine_unw, threshold);
-    let (wgt_f1, wgt_per_ds) =
-        evaluate_parallel(&test_samples, &prototypes, &engine_wgt, threshold);
+    let (unw_f1, unw_per_ds) = evaluate_parallel(&test_samples, &prototypes, &engine_unw, threshold);
+    let (wgt_f1, wgt_per_ds) = evaluate_parallel(&test_samples, &prototypes, &engine_wgt, threshold);
     let improvement = (wgt_f1 - unw_f1) / unw_f1.max(0.001) * 100.0;
     let bench_time = bench_start.elapsed();
 
@@ -231,10 +224,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("┌─────────────────────────────────────────────────────────────────────────────┐");
     println!("│ PER-DATASET RESULTS                                                         │");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
-    println!(
-        "│ {:<25} {:>10} {:>10} {:>8}",
-        "Dataset", "Unweighted", "Weighted", "Δ"
-    );
+    println!("│ {:<25} {:>10} {:>10} {:>8}", "Dataset", "Unweighted", "Weighted", "Δ");
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
 
     let mut datasets: Vec<_> = unw_per_ds.keys().collect();
@@ -282,10 +272,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     println!("│ Feature Extraction: {:.1}s", extract_time.as_secs_f64());
     println!("│ Benchmark:          {:.1}s", bench_time.as_secs_f64());
-    println!(
-        "│ Total:              {:.1}s",
-        total_start.elapsed().as_secs_f64()
-    );
+    println!("│ Total:              {:.1}s", total_start.elapsed().as_secs_f64());
     println!("└─────────────────────────────────────────────────────────────────────────────┘");
 
     Ok(())
@@ -342,11 +329,7 @@ fn evaluate_parallel(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -380,10 +363,7 @@ fn evaluate_parallel(
     (f1, per_ds_f1)
 }
 
-fn load_audio_f32(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_f32(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let mut file = File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;

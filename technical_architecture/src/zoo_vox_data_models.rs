@@ -851,11 +851,7 @@ impl SpeciesPhraseLibrary {
     }
 
     /// Find similar phrases
-    pub fn find_similar(
-        &self,
-        query: &AcousticFeatures30D,
-        threshold: f64,
-    ) -> Vec<&PhrasePrototype> {
+    pub fn find_similar(&self, query: &AcousticFeatures30D, threshold: f64) -> Vec<&PhrasePrototype> {
         self.phrases
             .iter()
             .filter(|p| p.features_30d.cosine_similarity(query) >= threshold)
@@ -922,30 +918,20 @@ impl CrossSpeciesPhraseDatabase {
             .push(species.clone());
 
         // Update modality summary
-        self.modality_summary
-            .entry(modality)
-            .or_default()
-            .push(species);
+        self.modality_summary.entry(modality).or_default().push(species);
 
         // Add library
-        self.species_libraries
-            .insert(library.species.clone(), library);
+        self.species_libraries.insert(library.species.clone(), library);
     }
 
     /// Get total phrase count
     pub fn total_phrases(&self) -> usize {
-        self.species_libraries
-            .values()
-            .map(|l| l.total_phrases)
-            .sum()
+        self.species_libraries.values().map(|l| l.total_phrases).sum()
     }
 
     /// Get total occurrence count
     pub fn total_occurrences(&self) -> u64 {
-        self.species_libraries
-            .values()
-            .map(|l| l.total_occurrences)
-            .sum()
+        self.species_libraries.values().map(|l| l.total_occurrences).sum()
     }
 
     /// Save to JSON file
@@ -988,12 +974,7 @@ pub struct BehaviorAnnotation {
 
 impl BehaviorAnnotation {
     /// Create new annotation
-    pub fn new(
-        start: f64,
-        end: f64,
-        label: impl Into<String>,
-        category: impl Into<String>,
-    ) -> Self {
+    pub fn new(start: f64, end: f64, label: impl Into<String>, category: impl Into<String>) -> Self {
         Self {
             start_seconds: start,
             end_seconds: end,

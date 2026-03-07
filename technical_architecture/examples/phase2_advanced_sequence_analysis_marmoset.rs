@@ -11,6 +11,7 @@
 //
 // Usage: cargo run --release --example phase2_advanced_sequence_analysis_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -46,8 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let symbolic_stream_path =
-        Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
+    let symbolic_stream_path = Path::new("/mnt/c/Users/sheel/Desktop/src/marmoset_symbolic_stream.json");
 
     if !symbolic_stream_path.exists() {
         println!("   ⚠️  Symbolic stream not found!");
@@ -117,20 +117,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ngram_results = analyze_ngrams(&sequences_by_context)?;
     println!("      • Unique 2-grams: {}", ngram_results.unique_bigrams);
     println!("      • Unique 3-grams: {}", ngram_results.unique_trigrams);
-    println!(
-        "      • Cross-context 2-grams: {}",
-        ngram_results.cross_context_bigrams
-    );
+    println!("      • Cross-context 2-grams: {}", ngram_results.cross_context_bigrams);
     println!();
 
     // 3.2: Network Motif Analysis
     println!("   3.2: Network Motif Analysis");
     let motif_results = analyze_motifs(&sequences_by_context)?;
     println!("      • Recurring motifs found: {}", motif_results.n_motifs);
-    println!(
-        "      • Multi-context motifs: {}",
-        motif_results.multi_context_motifs
-    );
+    println!("      • Multi-context motifs: {}", motif_results.multi_context_motifs);
     println!();
 
     // 3.3: Pattern Statistics
@@ -138,10 +132,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stats = calculate_pattern_statistics(&sequences_by_context)?;
     println!("      • Avg sequence length: {:.1}", stats.avg_length);
     println!("      • Length variance: {:.2}", stats.length_variance);
-    println!(
-        "      • Unique phrase ratio: {:.3}",
-        stats.unique_phrase_ratio
-    );
+    println!("      • Unique phrase ratio: {:.3}", stats.unique_phrase_ratio);
     println!();
 
     // ========================================================================
@@ -235,9 +226,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Data Loading
 // ============================================================================
 
-fn load_symbolic_stream(
-    path: &Path,
-) -> Result<HashMap<String, Vec<Vec<i32>>>, Box<dyn std::error::Error>> {
+fn load_symbolic_stream(path: &Path) -> Result<HashMap<String, Vec<Vec<i32>>>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let json: serde_json::Value = serde_json::from_str(&content)?;
 
@@ -245,10 +234,7 @@ fn load_symbolic_stream(
 
     if let Some(arr) = json["symbolic_streams"].as_array() {
         for session_data in arr {
-            let call_type = session_data["call_type"]
-                .as_str()
-                .unwrap_or("Unknown")
-                .to_string();
+            let call_type = session_data["call_type"].as_str().unwrap_or("Unknown").to_string();
 
             let phrases: Vec<i32> = if let Some(phrases_arr) = session_data["phrases"].as_array() {
                 phrases_arr
@@ -353,10 +339,7 @@ fn analyze_motifs(
         .map(|(motif, _)| motif)
         .collect();
 
-    let multi_context = motif_contexts
-        .iter()
-        .filter(|(_, contexts)| contexts.len() > 1)
-        .count();
+    let multi_context = motif_contexts.iter().filter(|(_, contexts)| contexts.len() > 1).count();
 
     Ok(MotifResults {
         n_motifs: recurring_motifs.len(),

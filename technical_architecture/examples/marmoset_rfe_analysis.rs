@@ -16,6 +16,7 @@
 // 9. spectral_flatness   19. mfcc[8]         29. rms_energy
 // 10. hnr                20. mfcc[9]
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::path::Path;
 use symphonia::core::audio::{AudioBufferRef, Signal};
@@ -133,8 +134,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -168,11 +168,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::S24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| s.inner() as f32 / (i32::MAX >> 8) as f32));
                 }
             }
             AudioBufferRef::S16(buf) => {
@@ -202,21 +198,13 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| (s.inner() as f32 - 8388608.0) / 8388608.0));
                 }
             }
             AudioBufferRef::U32(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(
-                        samples
-                            .iter()
-                            .map(|&s| (s as f32 - 2147483648.0) / 2147483648.0),
-                    );
+                    audio_samples.extend(samples.iter().map(|&s| (s as f32 - 2147483648.0) / 2147483648.0));
                 }
             }
         }
@@ -226,10 +214,7 @@ fn load_flac_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Extract 29D features from audio
-fn extract_30d_features(
-    audio: &[f32],
-    sample_rate: u32,
-) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
+fn extract_30d_features(audio: &[f32], sample_rate: u32) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
     let features = extractor.extract(audio)?;
 
@@ -604,16 +589,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Energy"
         };
 
-        category_scores
-            .entry(category)
-            .or_insert_with(Vec::new)
-            .push(*score);
+        category_scores.entry(category).or_insert_with(Vec::new).push(*score);
     }
 
-    println!(
-        "{:<25} {:>15} {:>15}",
-        "Category", "Avg Fisher Score", "Rank"
-    );
+    println!("{:<25} {:>15} {:>15}", "Category", "Avg Fisher Score", "Rank");
     println!("{}", "-".repeat(55));
 
     let mut category_rankings: Vec<(&str, f64)> = category_scores
@@ -641,12 +620,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Most Discriminative Features for Marmoset Call Types:");
     println!("=======================================================");
     for (i, (feat_idx, score)) in top_features.iter().enumerate() {
-        println!(
-            "  {}. {} (Fisher Score: {:.6})",
-            i + 1,
-            FEATURE_NAMES[*feat_idx],
-            score
-        );
+        println!("  {}. {} (Fisher Score: {:.6})", i + 1, FEATURE_NAMES[*feat_idx], score);
     }
 
     println!();

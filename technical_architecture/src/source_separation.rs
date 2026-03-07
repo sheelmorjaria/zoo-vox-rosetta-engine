@@ -146,13 +146,9 @@ impl ConvTasNetSeparator {
         *self.inference_count.lock() += 1;
         *self.total_inference_time_us.lock() += elapsed;
 
-        let avg_time_us =
-            *self.total_inference_time_us.lock() as f64 / *self.inference_count.lock() as f64;
+        let avg_time_us = *self.total_inference_time_us.lock() as f64 / *self.inference_count.lock() as f64;
 
-        debug!(
-            "Separation completed in {}μs (avg: {}μs)",
-            elapsed, avg_time_us as u64
-        );
+        debug!("Separation completed in {}μs (avg: {}μs)", elapsed, avg_time_us as u64);
 
         Ok(result)
     }
@@ -317,7 +313,7 @@ mod tests {
 
         // Should still create separator (graceful fallback)
         let separator = ConvTasNetSeparator::new(config).await.unwrap();
-        assert!(!separator.is_ready() || true); // May or may not be ready
+        // Separator may or may not be ready depending on model availability
     }
 
     #[tokio::test]

@@ -1101,7 +1101,7 @@ mod tests {
         let accuracy = learner.evaluate_knn(&dataset, &labels, 3);
 
         // Accuracy should be between 0 and 1
-        assert!(accuracy >= 0.0 && accuracy <= 1.0);
+        assert!((0.0..=1.0).contains(&accuracy ));
     }
 }
 

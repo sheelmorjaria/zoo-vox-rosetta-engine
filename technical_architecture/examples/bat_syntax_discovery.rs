@@ -10,13 +10,10 @@
 // Research Goal: Prove that bat vocalizations follow syntactic rules
 // similar to human language grammar.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
-use technical_architecture::phrase_sequence_analyzer::{
-    PMIAnalysis, PhraseSequenceAnalyzer, SyntaxRules,
-};
-use technical_architecture::within_vocalization_analyzer::{
-    WithinVocalizationAnalyzer, WithinVocalizationConfig,
-};
+use technical_architecture::phrase_sequence_analyzer::{PMIAnalysis, PhraseSequenceAnalyzer, SyntaxRules};
+use technical_architecture::within_vocalization_analyzer::{WithinVocalizationAnalyzer, WithinVocalizationConfig};
 
 /// Load a single WAV file and return audio samples
 fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
@@ -43,8 +40,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -82,10 +78,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Analyze bat vocalizations for syntactic structure
-fn analyze_bat_syntax(
-    audio_dir: &Path,
-    sample_size: usize,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn analyze_bat_syntax(audio_dir: &Path, sample_size: usize) -> Result<(), Box<dyn std::error::Error>> {
     println!("========================================================================");
     println!("Syntactic Structure Discovery: Egyptian Fruit Bats");
     println!("========================================================================");
@@ -149,10 +142,7 @@ fn analyze_bat_syntax(
                     }
                 }
                 Err(e) => {
-                    eprintln!(
-                        "  Warning: Could not extract phrases from {}: {}",
-                        file_name, e
-                    );
+                    eprintln!("  Warning: Could not extract phrases from {}: {}", file_name, e);
                 }
             },
             Err(e) => {
@@ -162,14 +152,8 @@ fn analyze_bat_syntax(
     }
 
     println!("---");
-    println!(
-        "Extracted {} vocalizations with phrase structure",
-        all_phrases.len()
-    );
-    println!(
-        "Total phrases: {}",
-        all_phrases.iter().map(|p| p.len()).sum::<usize>()
-    );
+    println!("Extracted {} vocalizations with phrase structure", all_phrases.len());
+    println!("Total phrases: {}", all_phrases.iter().map(|p| p.len()).sum::<usize>());
     println!();
 
     // Step 2: Discover vocabulary (word types)
@@ -263,12 +247,7 @@ fn analyze_bat_syntax(
     println!("Most Common Patterns (n-grams):");
     println!("=================================");
     for (i, pattern) in patterns.iter().take(10).enumerate() {
-        println!(
-            "  {}. {:?} (occurs {} times)",
-            i + 1,
-            pattern.words,
-            pattern.count
-        );
+        println!("  {}. {:?} (occurs {} times)", i + 1, pattern.words, pattern.count);
     }
     println!();
 
@@ -281,10 +260,7 @@ fn analyze_bat_syntax(
     println!("Discovered Syntactic Rules:");
     println!("===========================");
     println!("Vocabulary size: {}", rules.vocabulary_size);
-    println!(
-        "Average sentence length: {:.2} words",
-        rules.avg_sentence_length
-    );
+    println!("Average sentence length: {:.2} words", rules.avg_sentence_length);
     println!();
 
     println!("Positional Grammar (most common word at each position):");
@@ -311,17 +287,11 @@ fn analyze_bat_syntax(
         println!("  → Word order is not random");
     } else if pmi.avg_pmi > 0.5 {
         println!("~ MODERATE EVIDENCE for syntactic structure:");
-        println!(
-            "  Average PMI {:.2} shows some word associations",
-            pmi.avg_pmi
-        );
+        println!("  Average PMI {:.2} shows some word associations", pmi.avg_pmi);
         println!("  → Partial word ordering may exist");
     } else {
         println!("✗ LIMITED EVIDENCE for fixed word order:");
-        println!(
-            "  Average PMI {:.2} indicates flexible word ordering",
-            pmi.avg_pmi
-        );
+        println!("  Average PMI {:.2} indicates flexible word ordering", pmi.avg_pmi);
         println!("  → Bat vocalizations may use combinatorial grammar");
         println!("  → Similar to human language flexibility");
     }
@@ -340,10 +310,7 @@ fn analyze_bat_syntax(
     println!();
     println!("Vocabulary richness:");
     println!("  {} unique word types discovered", rules.vocabulary_size);
-    println!(
-        "  Average {:.2} words per vocalization",
-        rules.avg_sentence_length
-    );
+    println!("  Average {:.2} words per vocalization", rules.avg_sentence_length);
 
     if rules.vocabulary_size > 20 {
         println!("  → Rich vocabulary suggests complex communication");

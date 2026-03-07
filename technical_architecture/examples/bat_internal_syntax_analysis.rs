@@ -10,6 +10,7 @@
 //
 // Usage: cargo run --example bat_internal_syntax_analysis --release
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -93,8 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // For this analysis, we need to extract features from audio files
     // Check if extraction results exist
-    let extraction_path =
-        "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized";
+    let extraction_path = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_results_optimized";
 
     let has_extraction = Path::new(extraction_path).exists();
 
@@ -275,10 +275,7 @@ fn analyze_within_turn_transitions(
     }
 
     println!("Transition Statistics:");
-    println!(
-        "  Unique emitter→addressee pairs: {}",
-        transition_counts.len()
-    );
+    println!("  Unique emitter→addressee pairs: {}", transition_counts.len());
     println!("  Unique emitters: {}", emitter_counts.len());
     println!("  Unique addressees: {}", addressee_counts.len());
     println!();
@@ -330,14 +327,8 @@ fn analyze_within_turn_transitions(
     }
 
     println!("Context-Dependent Communication Patterns:");
-    println!(
-        "  Unique context→emitter pairs: {}",
-        context_emitter_trans.len()
-    );
-    println!(
-        "  Unique context→addressee pairs: {}",
-        context_addressee_trans.len()
-    );
+    println!("  Unique context→emitter pairs: {}", context_emitter_trans.len());
+    println!("  Unique context→addressee pairs: {}", context_addressee_trans.len());
     println!();
 
     Ok(())
@@ -471,10 +462,7 @@ fn analyze_conversational_contingency(turns: &[BatTurn]) -> Result<(), Box<dyn s
     println!();
 
     // Find longest conversations
-    let mut conversation_lengths: Vec<_> = conversations
-        .iter()
-        .map(|(pair, turns)| (pair, turns.len()))
-        .collect();
+    let mut conversation_lengths: Vec<_> = conversations.iter().map(|(pair, turns)| (pair, turns.len())).collect();
 
     conversation_lengths.sort_by(|a, b| b.1.cmp(&a.1));
 
@@ -483,13 +471,7 @@ fn analyze_conversational_contingency(turns: &[BatTurn]) -> Result<(), Box<dyn s
     println!();
 
     for (i, ((e, a), count)) in conversation_lengths.iter().take(20).enumerate() {
-        println!(
-            "  {:2}. Emitter {} → Addressee {}: {} turns",
-            i + 1,
-            e,
-            a,
-            count
-        );
+        println!("  {:2}. Emitter {} → Addressee {}: {} turns", i + 1, e, a, count);
     }
     println!();
 
@@ -509,10 +491,7 @@ fn analyze_conversational_contingency(turns: &[BatTurn]) -> Result<(), Box<dyn s
 
     reciprocal_pairs.sort_by(|a, b| (b.1 .0 + b.1 .1).cmp(&(a.1 .0 + a.1 .1)));
 
-    let true_reciprocal = reciprocal_pairs
-        .iter()
-        .filter(|(_, (f, r))| *f > 0 && *r > 0)
-        .count();
+    let true_reciprocal = reciprocal_pairs.iter().filter(|(_, (f, r))| *f > 0 && *r > 0).count();
 
     println!("Reciprocity Analysis:");
     println!("  Total unique pairs: {}", reciprocal_pairs.len());

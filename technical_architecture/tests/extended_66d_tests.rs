@@ -97,8 +97,7 @@ mod tests_extended_66d {
         // HNR should be higher for rich harmonics
         println!(
             "HNR - Sine: {:.2}, Rich: {:.2}",
-            features_sine.base_30d.harmonic_to_noise_ratio,
-            features_rich.base_30d.harmonic_to_noise_ratio
+            features_sine.base_30d.harmonic_to_noise_ratio, features_rich.base_30d.harmonic_to_noise_ratio
         );
 
         // TODO: Extract 8D harmonic texture
@@ -298,10 +297,7 @@ mod tests_extended_66d {
             base_46d[9], base_46d[10], base_46d[11], base_46d[12]
         );
         println!("  │          release={:.1}ms", base_46d[13]);
-        println!(
-            "  │  [14-27] Fingerprint: MFCCs + spectral_flux={:.2}",
-            base_46d[27]
-        );
+        println!("  │  [14-27] Fingerprint: MFCCs + spectral_flux={:.2}", base_46d[27]);
         println!("  │  [28-45] Resonance, Shape, Modulation, Non-Linear");
         println!("  └─────────────────────────────────────────────────────────────────────────┘");
         println!();

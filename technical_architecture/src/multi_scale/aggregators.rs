@@ -59,8 +59,7 @@ impl StatisticalAggregator {
         }
 
         let mean = Self::mean(data);
-        let variance =
-            data.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / (data.len() - 1) as f32;
+        let variance = data.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / (data.len() - 1) as f32;
         variance.sqrt()
     }
 
@@ -83,11 +82,7 @@ impl StatisticalAggregator {
         }
 
         let n = data.len() as f32;
-        let m3 = data
-            .iter()
-            .map(|&x| ((x - mean) / std).powi(3))
-            .sum::<f32>()
-            / n;
+        let m3 = data.iter().map(|&x| ((x - mean) / std).powi(3)).sum::<f32>() / n;
         m3
     }
 
@@ -110,11 +105,7 @@ impl StatisticalAggregator {
         }
 
         let n = data.len() as f32;
-        let m4 = data
-            .iter()
-            .map(|&x| ((x - mean) / std).powi(4))
-            .sum::<f32>()
-            / n;
+        let m4 = data.iter().map(|&x| ((x - mean) / std).powi(4)).sum::<f32>() / n;
         m4 - 3.0 // Excess kurtosis
     }
 
@@ -208,10 +199,7 @@ mod tests {
 
         let std = StatisticalAggregator::std_dev(&data);
         // Should be approximately 1.0
-        assert!(
-            (std - 1.0).abs() < 0.2,
-            "STD should be ~1.0 for normal distribution"
-        );
+        assert!((std - 1.0).abs() < 0.2, "STD should be ~1.0 for normal distribution");
     }
 
     #[test]
@@ -227,10 +215,7 @@ mod tests {
         // Right-skewed data
         let data: Vec<f32> = (0..100).map(|i| i as f32).collect();
         let skew = StatisticalAggregator::skewness(&data);
-        assert!(
-            skew > 0.0,
-            "Right-skewed data should have positive skewness"
-        );
+        assert!(skew > 0.0, "Right-skewed data should have positive skewness");
     }
 
     #[test]
@@ -246,10 +231,7 @@ mod tests {
 
         let kurt = StatisticalAggregator::kurtosis(&data);
         // Should be approximately 0
-        assert!(
-            kurt.abs() < 1.0,
-            "Normal distribution should have ~0 excess kurtosis"
-        );
+        assert!(kurt.abs() < 1.0, "Normal distribution should have ~0 excess kurtosis");
     }
 
     #[test]
@@ -257,10 +239,7 @@ mod tests {
         // Uniform distribution: negative excess kurtosis (platykurtic)
         let data: Vec<f32> = (0..1000).map(|_| rand::random()).collect();
         let kurt = StatisticalAggregator::kurtosis(&data);
-        assert!(
-            kurt < 0.0,
-            "Uniform distribution should have negative excess kurtosis"
-        );
+        assert!(kurt < 0.0, "Uniform distribution should have negative excess kurtosis");
     }
 
     #[test]
@@ -275,10 +254,7 @@ mod tests {
         let data: Vec<f32> = (0..100).map(|i| i as f32).collect();
         let iqr = StatisticalAggregator::iqr(&data);
         // For uniform 0-99, Q1≈25, Q3≈75, IQR≈50
-        assert!(
-            (iqr - 50.0).abs() < 5.0,
-            "IQR should be ~50 for uniform 0-99"
-        );
+        assert!((iqr - 50.0).abs() < 5.0, "IQR should be ~50 for uniform 0-99");
     }
 
     // =========================================================================
@@ -362,10 +338,7 @@ mod tests {
         let sum1: f32 = data.iter().sum();
         let sum2: f32 = data.iter().rev().sum();
 
-        assert!(
-            (sum1 - sum2).abs() < 1e-5,
-            "Sums should be approximately associative"
-        );
+        assert!((sum1 - sum2).abs() < 1e-5, "Sums should be approximately associative");
     }
 
     #[test]
@@ -374,10 +347,7 @@ mod tests {
         let data: Vec<f32> = (0..10000).map(|_| 0.0001).collect();
 
         let mean = StatisticalAggregator::mean(&data);
-        assert!(
-            (mean - 0.0001).abs() < 1e-5,
-            "Should handle rounding errors"
-        );
+        assert!((mean - 0.0001).abs() < 1e-5, "Should handle rounding errors");
     }
 
     // =========================================================================
@@ -393,10 +363,7 @@ mod tests {
         let elapsed = start.elapsed();
 
         // Should be fast (O(N))
-        assert!(
-            elapsed.as_millis() < 10,
-            "Single-pass computation should be fast"
-        );
+        assert!(elapsed.as_millis() < 10, "Single-pass computation should be fast");
     }
 
     #[test]
@@ -406,7 +373,7 @@ mod tests {
 
         // Should not cause memory issues
         let _ = StatisticalAggregator::compute_all(&data);
-        assert!(true);
+        // Test passes if we reach here without memory issues
     }
 
     #[test]

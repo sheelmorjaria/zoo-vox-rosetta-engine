@@ -8,13 +8,14 @@
 //!   cargo run --release --example linguistic_validation -- --species zebra_finch
 //!   cargo run --release --example linguistic_validation -- --species bat
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
 use technical_architecture::computational_ethology::{
-    calculate_reuse_ratio, calculate_singleton_rate, calculate_zipf_correlation,
-    validate_linguistic_structure, PhraseSequence, PhraseType, ValidationConfig,
+    calculate_reuse_ratio, calculate_singleton_rate, calculate_zipf_correlation, validate_linguistic_structure,
+    PhraseSequence, PhraseType, ValidationConfig,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,9 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Usage: linguistic_validation [OPTIONS]");
                 println!();
                 println!("Options:");
-                println!(
-                    "  --species, -s <name>   Species to validate (marmoset, zebra_finch, bat)"
-                );
+                println!("  --species, -s <name>   Species to validate (marmoset, zebra_finch, bat)");
                 println!("  --path, -p <path>      Custom data path");
                 println!("  --help, -h             Show this help");
                 return Ok(());
@@ -56,10 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         i += 1;
     }
 
-    println!(
-        "=== Linguistic Structure Validation: {} ===\n",
-        species.to_uppercase()
-    );
+    println!("=== Linguistic Structure Validation: {} ===\n", species.to_uppercase());
 
     // Determine data path based on species
     let analysis_path = data_path.unwrap_or_else(|| match species.as_str() {
@@ -110,9 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match species.as_str() {
         "marmoset" => print_marmoset_analysis(&phrase_types),
         "dolphin" => print_dolphin_analysis(&phrase_types),
-        "sperm_whale" | "sperm-whale" | "whale" => {
-            print_sperm_whale_analysis(&phrase_types, zipf_correlation)
-        }
+        "sperm_whale" | "sperm-whale" | "whale" => print_sperm_whale_analysis(&phrase_types, zipf_correlation),
         _ => {}
     }
 
@@ -148,32 +142,28 @@ fn load_species_data(
             // Try atomic phrases report
             let atomic_path = format!("{}/atomic_phrases_report.json", base_path);
             if Path::new(&atomic_path).exists() {
-                let data: serde_json::Value =
-                    serde_json::from_str(&fs::read_to_string(&atomic_path)?)?;
+                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&atomic_path)?)?;
                 phrase_types = extract_phrase_types(&data);
             }
 
             // Try syntax analysis
             let syntax_path = format!("{}/syntax_analysis.json", base_path);
             if Path::new(&syntax_path).exists() {
-                let data: serde_json::Value =
-                    serde_json::from_str(&fs::read_to_string(&syntax_path)?)?;
+                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&syntax_path)?)?;
                 sequences = extract_sequences(&data);
             }
 
             // Try semantic dictionary (for marmoset)
             let dict_path = format!("{}/{}_semantic_dictionary.json", base_path, species);
             if Path::new(&dict_path).exists() && phrase_types.is_empty() {
-                let data: serde_json::Value =
-                    serde_json::from_str(&fs::read_to_string(&dict_path)?)?;
+                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&dict_path)?)?;
                 phrase_types = extract_from_semantic_dict(&data);
             }
 
             // Try type centroids
             let centroid_path = format!("{}/{}_type_centroids.json", base_path, species);
             if Path::new(&centroid_path).exists() && phrase_types.is_empty() {
-                let data: serde_json::Value =
-                    serde_json::from_str(&fs::read_to_string(&centroid_path)?)?;
+                let data: serde_json::Value = serde_json::from_str(&fs::read_to_string(&centroid_path)?)?;
                 phrase_types = extract_from_centroids(&data);
             }
         }
@@ -182,9 +172,7 @@ fn load_species_data(
     Ok((phrase_types, sequences))
 }
 
-fn load_species_specific_data(
-    species: &str,
-) -> Result<Vec<PhraseType>, Box<dyn std::error::Error>> {
+fn load_species_specific_data(species: &str) -> Result<Vec<PhraseType>, Box<dyn std::error::Error>> {
     match species {
         "marmoset" => load_marmoset_data(),
         "zebra_finch" | "zebra-finch" | "finch" => load_zebra_finch_data(),
@@ -374,10 +362,7 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
             let phrase_type = PhraseType {
                 id: format!(
                     "phrase_{}",
-                    phrase
-                        .get("phrase_id")
-                        .and_then(|p| p.as_u64())
-                        .unwrap_or(0)
+                    phrase.get("phrase_id").and_then(|p| p.as_u64()).unwrap_or(0)
                 ),
                 label: phrase
                     .get("primary_call_type")
@@ -393,14 +378,8 @@ fn extract_phrase_types(data: &serde_json::Value) -> Vec<PhraseType> {
 
     // If no phrases found, try creating from total counts
     if phrase_types.is_empty() {
-        let total_phrases = data
-            .get("total_atomic_phrases")
-            .and_then(|p| p.as_u64())
-            .unwrap_or(0) as usize;
-        let total_candidates = data
-            .get("total_candidates")
-            .and_then(|p| p.as_u64())
-            .unwrap_or(0) as usize;
+        let total_phrases = data.get("total_atomic_phrases").and_then(|p| p.as_u64()).unwrap_or(0) as usize;
+        let total_candidates = data.get("total_candidates").and_then(|p| p.as_u64()).unwrap_or(0) as usize;
 
         if total_phrases > 0 && total_candidates > 0 {
             // Create Zipfian distribution
@@ -426,8 +405,7 @@ fn extract_from_semantic_dict(data: &serde_json::Value) -> Vec<PhraseType> {
     if let Some(dict) = data.as_object() {
         for (type_id, labels) in dict {
             if let Some(labels_map) = labels.as_object() {
-                let total_count =
-                    labels_map.values().filter_map(|v| v.as_f64()).sum::<f64>() as usize;
+                let total_count = labels_map.values().filter_map(|v| v.as_f64()).sum::<f64>() as usize;
 
                 let primary_label = labels_map
                     .iter()
@@ -478,10 +456,7 @@ fn extract_from_centroids(data: &serde_json::Value) -> Vec<PhraseType> {
     phrase_types
 }
 
-fn generate_sequences_from_phrases(
-    phrase_types: &[PhraseType],
-    num_sequences: usize,
-) -> Vec<PhraseSequence> {
+fn generate_sequences_from_phrases(phrase_types: &[PhraseType], num_sequences: usize) -> Vec<PhraseSequence> {
     use rand::seq::SliceRandom;
     use rand::thread_rng;
 
@@ -534,14 +509,8 @@ fn generate_sequences_from_phrases(
 fn extract_sequences(data: &serde_json::Value) -> Vec<PhraseSequence> {
     let mut sequences = Vec::new();
 
-    let total_sequences = data
-        .get("total_sequences")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(50) as usize;
-    let vocab_size = data
-        .get("vocabulary_size")
-        .and_then(|p| p.as_u64())
-        .unwrap_or(20) as usize;
+    let total_sequences = data.get("total_sequences").and_then(|p| p.as_u64()).unwrap_or(50) as usize;
+    let vocab_size = data.get("vocabulary_size").and_then(|p| p.as_u64()).unwrap_or(20) as usize;
 
     // Get transitions from bigram stats
     let transitions: Vec<(usize, usize, f64)> = data
@@ -569,10 +538,7 @@ fn extract_sequences(data: &serde_json::Value) -> Vec<PhraseSequence> {
         for _ in 0..seq_len {
             phrases.push(format!("phrase_{}", current));
 
-            let matching: Vec<_> = transitions
-                .iter()
-                .filter(|(from, _, _)| *from == current)
-                .collect();
+            let matching: Vec<_> = transitions.iter().filter(|(from, _, _)| *from == current).collect();
 
             if !matching.is_empty() {
                 let rand_val = (i as f64 * 0.1) % 1.0;
@@ -630,18 +596,9 @@ fn run_synthetic_validation(species: &str) -> Result<(), Box<dyn std::error::Err
                 "marmoset_phrase_1".to_string(),
                 "marmoset_phrase_3".to_string(),
             ],
-            2 => vec![
-                "marmoset_phrase_1".to_string(),
-                "marmoset_phrase_2".to_string(),
-            ],
-            3 => vec![
-                "marmoset_phrase_0".to_string(),
-                "marmoset_phrase_0".to_string(),
-            ],
-            _ => vec![
-                "marmoset_phrase_4".to_string(),
-                "marmoset_phrase_5".to_string(),
-            ],
+            2 => vec!["marmoset_phrase_1".to_string(), "marmoset_phrase_2".to_string()],
+            3 => vec!["marmoset_phrase_0".to_string(), "marmoset_phrase_0".to_string()],
+            _ => vec!["marmoset_phrase_4".to_string(), "marmoset_phrase_5".to_string()],
         };
 
         sequences.push(PhraseSequence {
@@ -665,26 +622,16 @@ fn run_synthetic_validation(species: &str) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-fn print_validation_result(
-    result: &technical_architecture::computational_ethology::ValidationResult,
-) {
+fn print_validation_result(result: &technical_architecture::computational_ethology::ValidationResult) {
     println!(
         "Zipf Correlation: {:.3} {}",
         result.zipf_correlation,
-        if result.is_zipfian {
-            "(PASS)"
-        } else {
-            "(FAIL)"
-        }
+        if result.is_zipfian { "(PASS)" } else { "(FAIL)" }
     );
     println!(
         "Reuse Ratio: {:.2} {}",
         result.reuse_ratio,
-        if result.reuse_ratio > 2.0 {
-            "(GOOD)"
-        } else {
-            "(POOR)"
-        }
+        if result.reuse_ratio > 2.0 { "(GOOD)" } else { "(POOR)" }
     );
     println!(
         "Singleton Rate: {:.1}% {}",
@@ -791,25 +738,16 @@ fn print_sperm_whale_analysis(phrase_types: &[PhraseType], zipf_correlation: f64
     // Interpretation based on Zipf
     println!("\n  Zipf Interpretation:");
     if zipf_correlation > 0.8 {
-        println!(
-            "    High Zipf correlation ({:.3}) suggests:",
-            zipf_correlation
-        );
+        println!("    High Zipf correlation ({:.3}) suggests:", zipf_correlation);
         println!("    - Diverse coda vocabulary with rare variants");
         println!("    - Possible cultural transmission of codas");
         println!("    - Language-like distribution of click patterns");
     } else if zipf_correlation > 0.6 {
-        println!(
-            "    Moderate Zipf correlation ({:.3}) suggests:",
-            zipf_correlation
-        );
+        println!("    Moderate Zipf correlation ({:.3}) suggests:", zipf_correlation);
         println!("    - Mix of common codas and rare variants");
         println!("    - Some stereotyped patterns (clan identity)");
     } else {
-        println!(
-            "    Low Zipf correlation ({:.3}) suggests:",
-            zipf_correlation
-        );
+        println!("    Low Zipf correlation ({:.3}) suggests:", zipf_correlation);
         println!("    - Stereotyped coda repertoire");
         println!("    - Strong clan-specific dialect patterns");
     }

@@ -174,10 +174,7 @@ impl EnvironmentalConditions {
 
         // Check for marginal conditions
         if matches!(rain, RainIntensity::Moderate)
-            || matches!(
-                temp,
-                TemperatureClassification::Cold | TemperatureClassification::Hot
-            )
+            || matches!(temp, TemperatureClassification::Cold | TemperatureClassification::Hot)
         {
             return SessionViability::Marginal;
         }
@@ -693,10 +690,7 @@ mod tests {
     #[test]
     fn test_conditions_temperature_classification() {
         let conditions = create_test_conditions();
-        assert_eq!(
-            conditions.temperature_classification(),
-            TemperatureClassification::Mild
-        );
+        assert_eq!(conditions.temperature_classification(), TemperatureClassification::Mild);
     }
 
     #[test]
@@ -716,10 +710,7 @@ mod tests {
     fn test_conditions_hot_classification() {
         let mut conditions = create_test_conditions();
         conditions.temperature_celsius = 30.0;
-        assert_eq!(
-            conditions.temperature_classification(),
-            TemperatureClassification::Hot
-        );
+        assert_eq!(conditions.temperature_classification(), TemperatureClassification::Hot);
     }
 
     #[test]

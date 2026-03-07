@@ -14,6 +14,7 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_dynamic_phrases
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -25,8 +26,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, AtomicPhraseAnalyzer, AtomicPhraseType, DynamicPhraseCandidate,
-    DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, AtomicPhraseAnalyzer, AtomicPhraseType, DynamicPhraseCandidate, DynamicSegmenter,
+    DynamicSegmenterConfig, SimilarityMetric, ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -108,8 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total_start = Instant::now();
 
     // Configuration
-    let data_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/zebra_finch/zebra_finch");
+    let data_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/zebra_finch/zebra_finch");
     let vocalizations_dir = data_dir.join("vocalizations");
     let annotations_path = data_dir.join("annotations.csv");
 
@@ -119,10 +119,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Configuration:");
     println!("  ├─ Data Directory: {:?}", data_dir);
-    println!(
-        "  ├─ Frame Duration: {}ms",
-        segmenter_config.frame_duration_ms
-    );
+    println!("  ├─ Frame Duration: {}ms", segmenter_config.frame_duration_ms);
     println!(
         "  ├─ Min Phrase Duration: {}ms",
         segmenter_config.min_phrase_duration_ms
@@ -131,10 +128,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "  ├─ Max Phrase Duration: {}ms",
         segmenter_config.max_phrase_duration_ms
     );
-    println!(
-        "  ├─ Change Threshold: {}",
-        segmenter_config.change_threshold
-    );
+    println!("  ├─ Change Threshold: {}", segmenter_config.change_threshold);
     println!("  ├─ Peak Prominence: {}", segmenter_config.peak_prominence);
     println!("  └─ Feature Dimension: {}D", FEATURE_DIM);
     println!();
@@ -186,11 +180,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .flat_map(|ann| {
             let count = processed.fetch_add(1, Ordering::Relaxed);
             if count % 100 == 0 {
-                println!(
-                    "  Progress: {}/{} files",
-                    count + 1,
-                    max_files.min(total_files)
-                );
+                println!("  Progress: {}/{} files", count + 1, max_files.min(total_files));
             }
 
             let audio_path = vocalizations_dir.join(&ann.filename);
@@ -205,9 +195,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let audio = resample_audio(&audio, 44100, SAMPLE_RATE);
 
                 // Create feature extractor for this segment
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    SAMPLE_RATE,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
 
                 // Segment using dynamic approach
                 let result = segmenter.segment(
@@ -216,9 +204,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Convert frame to f64 for feature extraction
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
@@ -239,10 +225,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\nSegmentation Complete:");
     println!("  ├─ Candidates Extracted: {}", all_candidates.len());
-    println!(
-        "  ├─ Vocalizations Processed: {}",
-        max_files.min(total_files)
-    );
+    println!("  ├─ Vocalizations Processed: {}", max_files.min(total_files));
     println!("  ├─ Time: {:.1}s", segmentation_time.as_secs_f64());
     println!(
         "  └─ Throughput: {:.1} candidates/sec",
@@ -349,11 +332,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             count += 1;
         }
 
-        phrase.intra_similarity = if count > 0 {
-            total_sim / count as f64
-        } else {
-            0.0
-        };
+        phrase.intra_similarity = if count > 0 { total_sim / count as f64 } else { 0.0 };
         phrase.centroid = centroid;
     }
 
@@ -373,8 +352,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         atomic_phrases[i].inter_cluster_distance = min_dist;
-        atomic_phrases[i].separation_score =
-            min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
+        atomic_phrases[i].separation_score = min_dist / (1.0 - atomic_phrases[i].intra_similarity + 0.001);
     }
 
     let clustering_time = clustering_start.elapsed();
@@ -403,32 +381,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     // Compute statistics
-    let avg_cluster_size = atomic_phrases
-        .iter()
-        .map(|p| p.member_indices.len())
-        .sum::<usize>() as f64
+    let avg_cluster_size = atomic_phrases.iter().map(|p| p.member_indices.len()).sum::<usize>() as f64
         / atomic_phrases.len().max(1) as f64;
-    let avg_intra_similarity = atomic_phrases
-        .iter()
-        .map(|p| p.intra_similarity)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_inter_distance = atomic_phrases
-        .iter()
-        .map(|p| p.inter_cluster_distance)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
-    let avg_separation = atomic_phrases
-        .iter()
-        .map(|p| p.separation_score)
-        .sum::<f64>()
-        / atomic_phrases.len().max(1) as f64;
+    let avg_intra_similarity =
+        atomic_phrases.iter().map(|p| p.intra_similarity).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_inter_distance =
+        atomic_phrases.iter().map(|p| p.inter_cluster_distance).sum::<f64>() / atomic_phrases.len().max(1) as f64;
+    let avg_separation =
+        atomic_phrases.iter().map(|p| p.separation_score).sum::<f64>() / atomic_phrases.len().max(1) as f64;
 
     // Duration statistics
-    let durations: Vec<f32> = all_candidates
-        .iter()
-        .map(|(c, _, _)| c.duration_ms)
-        .collect();
+    let durations: Vec<f32> = all_candidates.iter().map(|(c, _, _)| c.duration_ms).collect();
     let avg_duration = durations.iter().sum::<f32>() as f64 / durations.len().max(1) as f64;
     let avg_phrases_per_voc = all_candidates.len() as f64 / max_files.min(total_files) as f64;
 
@@ -473,10 +436,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Segmentation Metrics:");
-    println!(
-        "  ├─ Avg Phrases per Vocalization: {:.1}",
-        avg_phrases_per_voc
-    );
+    println!("  ├─ Avg Phrases per Vocalization: {:.1}", avg_phrases_per_voc);
     println!("  └─ Avg Phrase Duration: {:.1}ms", avg_duration);
     println!();
 
@@ -496,10 +456,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Cluster Quality Metrics:");
     println!("  ├─ Avg Cluster Size: {:.1}", avg_cluster_size);
-    println!(
-        "  ├─ Avg Intra-Cluster Similarity: {:.3}",
-        avg_intra_similarity
-    );
+    println!("  ├─ Avg Intra-Cluster Similarity: {:.3}", avg_intra_similarity);
     println!("  ├─ Avg Inter-Cluster Distance: {:.3}", avg_inter_distance);
     println!("  ├─ Avg Separation Score: {:.2}", avg_separation);
     println!("  └─ Avg Reuse Score: {:.1} files/phrase", avg_reuse);
@@ -577,9 +534,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for phrase in &atomic_phrases {
         for &idx in &phrase.member_indices {
             let (_, call_type, _) = &all_candidates[idx];
-            *phrase_call_distribution
-                .entry(call_type.clone())
-                .or_insert(0) += 1;
+            *phrase_call_distribution.entry(call_type.clone()).or_insert(0) += 1;
         }
     }
 
@@ -662,10 +617,7 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader
@@ -701,10 +653,7 @@ fn resample_audio(audio: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
         .collect()
 }
 
-fn compute_centroid(
-    indices: &[usize],
-    candidates: &[(DynamicPhraseCandidate, String, String)],
-) -> Vec<f64> {
+fn compute_centroid(indices: &[usize], candidates: &[(DynamicPhraseCandidate, String, String)]) -> Vec<f64> {
     if indices.is_empty() {
         return vec![0.0; FEATURE_DIM];
     }

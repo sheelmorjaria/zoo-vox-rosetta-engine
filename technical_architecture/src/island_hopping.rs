@@ -359,11 +359,7 @@ impl Vector30D {
     /// - 0.5 = midpoint
     /// - 1.0 = return other
     pub fn interpolate(&self, other: &Vector30D, alpha: f32) -> Vector30D {
-        assert!(
-            (0.0..=1.0).contains(&alpha),
-            "Alpha must be in [0, 1], got {}",
-            alpha
-        );
+        assert!((0.0..=1.0).contains(&alpha), "Alpha must be in [0, 1], got {}", alpha);
 
         Vector30D {
             mean_f0_hz: self.mean_f0_hz * (1.0 - alpha) + other.mean_f0_hz * alpha,
@@ -371,8 +367,7 @@ impl Vector30D {
             duration_ms: self.duration_ms * (1.0 - alpha) + other.duration_ms * alpha,
             harmonic_to_noise_ratio: self.harmonic_to_noise_ratio * (1.0 - alpha)
                 + other.harmonic_to_noise_ratio * alpha,
-            spectral_flatness: self.spectral_flatness * (1.0 - alpha)
-                + other.spectral_flatness * alpha,
+            spectral_flatness: self.spectral_flatness * (1.0 - alpha) + other.spectral_flatness * alpha,
             harmonicity: self.harmonicity * (1.0 - alpha) + other.harmonicity * alpha,
             attack_time_ms: self.attack_time_ms * (1.0 - alpha) + other.attack_time_ms * alpha,
             decay_time_ms: self.decay_time_ms * (1.0 - alpha) + other.decay_time_ms * alpha,
@@ -416,8 +411,7 @@ impl Vector30D {
             mean_f0_hz: self.mean_f0_hz + direction.delta_mean_f0_hz * factor,
             f0_range_hz: self.f0_range_hz + direction.delta_f0_range_hz * factor,
             duration_ms: self.duration_ms + direction.delta_duration_ms * factor,
-            harmonic_to_noise_ratio: self.harmonic_to_noise_ratio
-                + direction.delta_harmonic_to_noise_ratio * factor,
+            harmonic_to_noise_ratio: self.harmonic_to_noise_ratio + direction.delta_harmonic_to_noise_ratio * factor,
             spectral_flatness: self.spectral_flatness + direction.delta_spectral_flatness * factor,
             harmonicity: self.harmonicity + direction.delta_harmonicity * factor,
             attack_time_ms: self.attack_time_ms + direction.delta_attack_time_ms * factor,
@@ -480,8 +474,7 @@ impl Vector30D {
             spectral_flux: self.spectral_flux + other.spectral_flux,
             median_ici_ms: self.median_ici_ms + other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + other.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation
-                + other.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation + other.ici_coefficient_of_variation,
         }
     }
 
@@ -517,8 +510,7 @@ impl Vector30D {
             spectral_flux: self.spectral_flux - other.spectral_flux,
             median_ici_ms: self.median_ici_ms - other.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - other.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation
-                - other.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation - other.ici_coefficient_of_variation,
         }
     }
 
@@ -617,8 +609,7 @@ impl std::ops::Add<Vector30D> for Vector30D {
             spectral_flux: self.spectral_flux + rhs.spectral_flux,
             median_ici_ms: self.median_ici_ms + rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz + rhs.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation
-                + rhs.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation + rhs.ici_coefficient_of_variation,
         }
     }
 }
@@ -657,8 +648,7 @@ impl std::ops::Sub<Vector30D> for Vector30D {
             spectral_flux: self.spectral_flux - rhs.spectral_flux,
             median_ici_ms: self.median_ici_ms - rhs.median_ici_ms,
             onset_rate_hz: self.onset_rate_hz - rhs.onset_rate_hz,
-            ici_coefficient_of_variation: self.ici_coefficient_of_variation
-                - rhs.ici_coefficient_of_variation,
+            ici_coefficient_of_variation: self.ici_coefficient_of_variation - rhs.ici_coefficient_of_variation,
         }
     }
 }
@@ -764,8 +754,7 @@ impl VectorDelta {
             delta_mean_f0_hz: target.mean_f0_hz - source.mean_f0_hz,
             delta_f0_range_hz: target.f0_range_hz - source.f0_range_hz,
             delta_duration_ms: target.duration_ms - source.duration_ms,
-            delta_harmonic_to_noise_ratio: target.harmonic_to_noise_ratio
-                - source.harmonic_to_noise_ratio,
+            delta_harmonic_to_noise_ratio: target.harmonic_to_noise_ratio - source.harmonic_to_noise_ratio,
             delta_spectral_flatness: target.spectral_flatness - source.spectral_flatness,
             delta_harmonicity: target.harmonicity - source.harmonicity,
             delta_attack_time_ms: target.attack_time_ms - source.attack_time_ms,
@@ -985,11 +974,7 @@ impl PhraseDatabase {
     }
 
     /// Find the nearest island within a specific species
-    pub fn find_nearest_30d_species(
-        &self,
-        target: &Vector30D,
-        species: &str,
-    ) -> Option<&AudioIsland> {
+    pub fn find_nearest_30d_species(&self, target: &Vector30D, species: &str) -> Option<&AudioIsland> {
         let keys = self.species_index.get(species)?;
         if keys.is_empty() {
             return None;
@@ -1129,21 +1114,14 @@ impl TimelineExecutor {
     }
 
     /// Render a single event to output buffer
-    fn render_event(
-        &self,
-        output: &mut [f32],
-        event: &TimelineEvent,
-        source: &[f32],
-    ) -> Result<()> {
+    fn render_event(&self, output: &mut [f32], event: &TimelineEvent, source: &[f32]) -> Result<()> {
         let start_sample = (event.start_ms / 1000.0 * self.sample_rate as f32) as usize;
         let duration_samples = (event.duration_ms / 1000.0 * self.sample_rate as f32) as usize;
         let end_sample = (start_sample + duration_samples).min(output.len());
 
         // Apply crossfade in
-        let crossfade_in_samples =
-            (event.crossfade_in_ms / 1000.0 * self.sample_rate as f32) as usize;
-        let crossfade_out_samples =
-            (event.crossfade_out_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let crossfade_in_samples = (event.crossfade_in_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let crossfade_out_samples = (event.crossfade_out_ms / 1000.0 * self.sample_rate as f32) as usize;
 
         for i in start_sample..end_sample {
             if i >= output.len() {
@@ -1225,8 +1203,7 @@ pub fn apply_delta_to_granular(
     };
 
     // Map spectral_flatness to roughness (higher flatness = more roughness)
-    let roughness_amount =
-        (base_params.roughness_amount + delta.delta_spectral_flatness).clamp(0.0, 1.0);
+    let roughness_amount = (base_params.roughness_amount + delta.delta_spectral_flatness).clamp(0.0, 1.0);
 
     // Map jitter to grain size variation (not directly modifying grain_size_ms here,
     // but this could be used for granular jitter effects)
@@ -1276,12 +1253,7 @@ impl NavigationEngine {
     }
 
     /// Extrapolate from origin in direction (Ocean Explorer - RISKY)
-    pub fn extrapolate(
-        &self,
-        origin: &Vector30D,
-        direction: &VectorDelta,
-        factor: f32,
-    ) -> Vector30D {
+    pub fn extrapolate(&self, origin: &Vector30D, direction: &VectorDelta, factor: f32) -> Vector30D {
         origin.extrapolate(direction, factor)
     }
 
@@ -1367,9 +1339,8 @@ mod tests {
     #[test]
     fn test_vector30d_new() {
         let v = Vector30D::new(
-            8000.0, 500.0, 60.0, 25.0, 0.4, 0.9, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02, 0.05, -12.0,
-            -6.0, -3.0, -1.5, -0.8, -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.6, 180.0, 10.0,
-            0.4,
+            8000.0, 500.0, 60.0, 25.0, 0.4, 0.9, 10.0, 25.0, 0.8, 8.0, 0.03, 0.02, 0.05, -12.0, -6.0, -3.0, -1.5, -0.8,
+            -0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.6, 180.0, 10.0, 0.4,
         );
         assert_approx_eq(v.mean_f0_hz, 8000.0, 1e-5);
         assert_approx_eq(v.duration_ms, 60.0, 1e-5);

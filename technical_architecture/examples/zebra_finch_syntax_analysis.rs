@@ -7,6 +7,7 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_syntax_analysis
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -18,8 +19,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
-    SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric,
+    ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -155,8 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total_start = Instant::now();
 
-    let data_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/zebra_finch/zebra_finch");
+    let data_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/zebra_finch/zebra_finch");
     let vocalizations_dir = data_dir.join("vocalizations");
     let annotations_path = data_dir.join("annotations.csv");
 
@@ -191,17 +191,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Vec::new();
                 }
 
-                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                    SAMPLE_RATE,
-                )));
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
                 let result = segmenter.segment(
                     &audio,
                     |frame, sr| {
                         let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                         let mut ext = extractor.lock().unwrap();
-                        ext.extract_45d(&frame_f64)
-                            .ok()
-                            .map(|f| f.to_vector().to_vec())
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
                     },
                     &ann.filename,
                 );
@@ -260,9 +256,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for cluster in &phrase_clusters {
         for &idx in &cluster.member_indices {
             if let Some((cand, _)) = flat_candidates.get(idx) {
-                phrase_to_id
-                    .entry(cand.id.clone())
-                    .or_insert(cluster.phrase_id);
+                phrase_to_id.entry(cand.id.clone()).or_insert(cluster.phrase_id);
             }
         }
     }
@@ -305,10 +299,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!(
-        "Bigram model: {} unique transitions",
-        bigram.transitions.len()
-    );
+    println!("Bigram model: {} unique transitions", bigram.transitions.len());
 
     let perplexity = bigram.perplexity(&sequences);
     let entropy = calculate_entropy(&bigram);
@@ -317,10 +308,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  ├─ Vocabulary Size: {} phrases", bigram.vocabulary.len());
     println!("  ├─ Unique Transitions: {}", bigram.transitions.len());
     println!("  ├─ Entropy: {:.3} bits", entropy);
-    println!(
-        "  └─ Perplexity: {:.2} (lower = more predictable)",
-        perplexity
-    );
+    println!("  └─ Perplexity: {:.2} (lower = more predictable)", perplexity);
 
     // ========================================================================
     // Find common patterns
@@ -550,10 +538,7 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader

@@ -139,9 +139,9 @@ fn test_stage1_segment_into_phrases_with_boundaries() {
 
 #[test]
 fn test_stage2_extractor_creation() {
-    let extractor = MicroDynamicsExtractor::new(44100);
+    let _extractor = MicroDynamicsExtractor::new(44100);
     // MicroDynamicsExtractor doesn't expose sample_rate directly
-    assert!(true);
+    // Just verify creation succeeds
 }
 
 #[test]
@@ -192,11 +192,7 @@ fn test_stage3_ngram_creation() {
 #[test]
 fn test_stage3_ngram_miner() {
     let miner = NGramMiner::default();
-    let sequences = vec![
-        vec![1, 2, 3, 4, 5],
-        vec![1, 2, 3, 6, 7],
-        vec![1, 2, 8, 9, 10],
-    ];
+    let sequences = vec![vec![1, 2, 3, 4, 5], vec![1, 2, 3, 6, 7], vec![1, 2, 8, 9, 10]];
 
     let ngrams = miner.extract_from_corpus(&sequences);
     assert!(!ngrams.is_empty());
@@ -320,7 +316,7 @@ fn test_stage4_cached_granular_synthesizer_register_source() {
 #[test]
 fn test_stage3_to_stage4_cluster_to_timeline() {
     // Create cluster sequence from Stage 3
-    let cluster_sequence = vec![1u32, 2, 3, 1, 2];
+    let cluster_sequence = [1u32, 2, 3, 1, 2];
 
     // Create synthesis timeline for Stage 4
     let mut timeline = SynthesisTimeline::new();
@@ -360,24 +356,20 @@ fn test_clustering_vocabulary_size() {
 #[test]
 fn test_clustering_assign_to_nearest() {
     // Simulate k-means clustering behavior with distinct centroids
-    let centroids = vec![
-        vec![0.0f32, 0.0, 0.0],    // Centroid 0: at origin
-        vec![5.0f32, 5.0, 5.0],    // Centroid 1: far from origin
-        vec![10.0f32, 10.0, 10.0], // Centroid 2: farthest
+    let centroids: [[f32; 3]; 3] = [
+        [0.0, 0.0, 0.0],    // Centroid 0: at origin
+        [5.0, 5.0, 5.0],    // Centroid 1: far from origin
+        [10.0, 10.0, 10.0], // Centroid 2: farthest
     ];
 
-    let features = vec![4.5f32, 4.5, 4.5]; // Closest to centroid 1
+    let features = [4.5f32, 4.5, 4.5]; // Closest to centroid 1
 
     // Find nearest centroid
     let mut min_dist = f32::MAX;
     let mut assigned_cluster = 0;
 
     for (i, centroid) in centroids.iter().enumerate() {
-        let dist: f32 = centroid
-            .iter()
-            .zip(features.iter())
-            .map(|(c, f)| (c - f).powi(2))
-            .sum();
+        let dist: f32 = centroid.iter().zip(features.iter()).map(|(c, f)| (c - f).powi(2)).sum();
         if dist < min_dist {
             min_dist = dist;
             assigned_cluster = i;
@@ -393,11 +385,7 @@ fn test_clustering_assign_to_nearest() {
 
 #[test]
 fn test_ngram_template_from_corpus() {
-    let sequences = vec![
-        vec![1, 2, 3, 4, 5],
-        vec![1, 2, 3, 6, 7],
-        vec![1, 2, 8, 9, 10],
-    ];
+    let sequences = vec![vec![1, 2, 3, 4, 5], vec![1, 2, 3, 6, 7], vec![1, 2, 8, 9, 10]];
 
     // Mine N-grams
     let miner = NGramMiner::default();
@@ -415,7 +403,7 @@ fn test_ngram_template_from_corpus() {
 #[test]
 fn test_ngram_template_to_timeline() {
     // Create N-gram template: [1, 2, 3, 1, 2]
-    let template = vec![1u32, 2, 3, 1, 2];
+    let template = [1u32, 2, 3, 1, 2];
 
     // Convert to synthesis timeline
     let mut timeline = SynthesisTimeline::new();

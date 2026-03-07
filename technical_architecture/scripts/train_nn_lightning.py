@@ -17,25 +17,25 @@ Usage:
 
 import json
 import struct
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping
-from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
-from torch import nn
 import torch.nn.functional as F
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 
 def load_bincode_features(filepath):
     """Load features stored in Rust bincode format (Vec<f32>)"""
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         # Read length as varint (bincode uses varint encoding)
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
@@ -44,6 +44,7 @@ def load_bincode_features(filepath):
         data = f.read(length * 4)  # 4 bytes per f32
         features = np.frombuffer(data, dtype=np.float32)
         return features.copy()  # Copy to make writable
+
 
 # Configuration
 BATCH_SIZE = 512
@@ -118,7 +119,8 @@ class RosettaNetPL(pl.LightningModule):
 
         # Weighted cross-entropy loss with label smoothing
         loss = F.cross_entropy(
-            logits, y,
+            logits,
+            y,
             weight=self.class_weights[y],
             label_smoothing=LABEL_SMOOTHING,
         )
@@ -132,7 +134,8 @@ class RosettaNetPL(pl.LightningModule):
 
         # Weighted cross-entropy loss with label smoothing
         loss = F.cross_entropy(
-            logits, y,
+            logits,
+            y,
             weight=self.class_weights[y],
             label_smoothing=LABEL_SMOOTHING,
         )
@@ -177,7 +180,11 @@ def load_data():
 
     for sample in samples:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
 
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
@@ -188,7 +195,7 @@ def load_data():
                     if features.shape[0] == FEATURE_DIM:
                         all_features.append(features)
                         all_labels.append(label)
-                except Exception as e:
+                except Exception:
                     # Skip corrupted files
                     pass
 
@@ -221,7 +228,9 @@ def load_data():
         dtype=torch.float32,
     )
 
-    print(f"  Class weights: min={min(class_weights.values()):.2f}, max={max(class_weights.values()):.2f}")
+    print(
+        f"  Class weights: min={min(class_weights.values()):.2f}, max={max(class_weights.values()):.2f}"
+    )
 
     # Split into train/validation (90/10)
     n_train = int(len(all_features) * 0.9)

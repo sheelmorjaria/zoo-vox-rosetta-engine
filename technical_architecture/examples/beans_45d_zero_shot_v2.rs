@@ -8,6 +8,7 @@
 //! - Split at sample level: 70% train/prototype, 30% test/eval
 //! - Evaluate detection on held-out samples from detection datasets
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -43,12 +44,7 @@ const PROTOTYPE_DATASETS: &[&str] = &[
 ];
 
 /// Datasets to evaluate detection on
-const DETECTION_EVAL_DATASETS: &[&str] = &[
-    "Enabirds",
-    "Hainan Gibbons",
-    "Rainforest Connection",
-    "HICEAS",
-];
+const DETECTION_EVAL_DATASETS: &[&str] = &["Enabirds", "Hainan Gibbons", "Rainforest Connection", "HICEAS"];
 
 /// Train/test split ratio (0.7 = 70% train, 30% test)
 const TRAIN_RATIO: f64 = 0.7;
@@ -187,14 +183,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Display configuration
     println!("Configuration:");
     println!("  ├─ Train Ratio: {}%", TRAIN_RATIO * 100.0);
-    println!(
-        "  ├─ Prototype Datasets: {} total",
-        PROTOTYPE_DATASETS.len()
-    );
-    println!(
-        "  └─ Detection Eval Datasets: {:?}",
-        DETECTION_EVAL_DATASETS
-    );
+    println!("  ├─ Prototype Datasets: {} total", PROTOTYPE_DATASETS.len());
+    println!("  └─ Detection Eval Datasets: {:?}", DETECTION_EVAL_DATASETS);
     println!();
 
     // Load manifest
@@ -340,10 +330,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let detection_results = evaluate_zero_shot_detection(&detection_test, &train_samples);
 
     println!("Detection Results:");
-    println!(
-        "  ├─ Precision: {:.1}%",
-        detection_results.precision * 100.0
-    );
+    println!("  ├─ Precision: {:.1}%", detection_results.precision * 100.0);
     println!("  ├─ Recall: {:.1}%", detection_results.recall * 100.0);
     println!("  ├─ F1 Score: {:.1}%", detection_results.f1_score * 100.0);
     println!(
@@ -385,10 +372,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         captioning_results.avg_semantic_similarity
     );
     println!("  ├─ BLEU-4 Score: {:.3}", captioning_results.bleu4_score);
-    println!(
-        "  └─ ROUGE-L Score: {:.3}",
-        captioning_results.rouge_l_score
-    );
+    println!("  └─ ROUGE-L Score: {:.3}", captioning_results.rouge_l_score);
     println!();
 
     // ========================================================================
@@ -430,10 +414,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("Detection Task:");
-    println!(
-        "  ├─ Precision: {:.1}%",
-        results.detection.precision * 100.0
-    );
+    println!("  ├─ Precision: {:.1}%", results.detection.precision * 100.0);
     println!("  ├─ Recall: {:.1}%", results.detection.recall * 100.0);
     println!("  └─ F1 Score: {:.1}%", results.detection.f1_score * 100.0);
     println!();
@@ -487,10 +468,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 // DETECTION EVALUATION
 // ============================================================================
 
-fn evaluate_zero_shot_detection(
-    test_samples: &[&Sample],
-    train_samples: &[&Sample],
-) -> DetectionResults {
+fn evaluate_zero_shot_detection(test_samples: &[&Sample], train_samples: &[&Sample]) -> DetectionResults {
     // Build prototypes from TRAIN samples only (grouped by dataset)
     let mut prototypes_by_dataset: HashMap<String, (Vec<Vec<f64>>, usize)> = HashMap::new();
 
@@ -533,8 +511,7 @@ fn evaluate_zero_shot_detection(
     // Create similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix =
-            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -582,11 +559,7 @@ fn evaluate_zero_shot_detection(
             }
         }
 
-        let precision = if tp + fp > 0 {
-            tp as f64 / (tp + fp) as f64
-        } else {
-            0.0
-        };
+        let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
         let recall = if tp + fn_count > 0 {
             tp as f64 / (tp + fn_count) as f64
         } else {
@@ -680,11 +653,7 @@ fn evaluate_zero_shot_detection(
         }
     }
 
-    let precision = if tp + fp > 0 {
-        tp as f64 / (tp + fp) as f64
-    } else {
-        0.0
-    };
+    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
     let recall = if tp + fn_count > 0 {
         tp as f64 / (tp + fn_count) as f64
     } else {
@@ -716,10 +685,7 @@ fn evaluate_zero_shot_detection(
 // CAPTIONING EVALUATION
 // ============================================================================
 
-fn evaluate_zero_shot_captioning(
-    test_samples: &[&Sample],
-    train_samples: &[&Sample],
-) -> CaptioningResults {
+fn evaluate_zero_shot_captioning(test_samples: &[&Sample], train_samples: &[&Sample]) -> CaptioningResults {
     // Build caption database from TRAIN samples only
     let caption_db: Vec<(&Sample, Vec<f64>)> = train_samples
         .iter()
@@ -735,8 +701,7 @@ fn evaluate_zero_shot_captioning(
     // Create similarity engine
     let mut engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, SimilarityMetric::Cosine);
     {
-        let mut matrix =
-            ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
+        let mut matrix = ndarray::Array2::<f64>::zeros((train_samples.len().min(10000), FEATURE_DIM));
         for (i, sample) in train_samples.iter().take(10000).enumerate() {
             for (j, &val) in sample.features.iter().enumerate() {
                 matrix[[i, j]] = val;
@@ -839,10 +804,7 @@ fn evaluate_zero_shot_captioning(
 // HELPER FUNCTIONS
 // ============================================================================
 
-fn load_audio_raw(
-    path: &str,
-    expected_samples: usize,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn load_audio_raw(path: &str, expected_samples: usize) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let bytes = std::fs::read(path)?;
 
     let audio: Vec<f64> = bytes

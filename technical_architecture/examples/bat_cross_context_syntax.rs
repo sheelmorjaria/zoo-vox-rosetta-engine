@@ -10,6 +10,7 @@
 // - 0-12: Different behavioral contexts
 // - Distribution varies: Context 11 (29,627), Context 12 (33,997), etc.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::path::Path;
 use symphonia::core::audio::{AudioBufferRef, Signal};
@@ -47,8 +48,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or("No valid audio track found")?;
 
-    let mut decoder =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
+    let mut decoder = symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
     let n_channels = decoder.codec_params().channels.map_or(1, |ch| ch.count());
 
     let mut audio_samples = Vec::new();
@@ -84,9 +84,7 @@ fn load_wav_file(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
 }
 
 /// Load context annotations from CSV
-fn load_annotations(
-    annotations_path: &Path,
-) -> Result<Vec<ContextAnnotation>, Box<dyn std::error::Error>> {
+fn load_annotations(annotations_path: &Path) -> Result<Vec<ContextAnnotation>, Box<dyn std::error::Error>> {
     let mut annotations = Vec::new();
     let content = std::fs::read_to_string(annotations_path)?;
 
@@ -196,8 +194,7 @@ fn analyze_context(
         num_vocalizations,
         total_phrases,
         vocabulary_size: word_types.len(),
-        avg_sequence_length: sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64
-            / sequences.len() as f64,
+        avg_sequence_length: sequences.iter().map(|s| s.words.len()).sum::<usize>() as f64 / sequences.len() as f64,
         avg_pmi: pmi.avg_pmi,
         max_pmi: pmi.max_pmi,
         high_pmi_count: pmi.high_pmi_transitions.len(),
@@ -213,8 +210,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     let audio_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/audio");
-    let annotations_path =
-        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv");
+    let annotations_path = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/annotations.csv");
 
     // Load annotations
     println!("Loading context annotations...");
@@ -234,10 +230,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut results = Vec::new();
     let sample_size = 500; // Max vocalizations per context
 
-    println!(
-        "Analyzing contexts (max {} vocalizations each)...",
-        sample_size
-    );
+    println!("Analyzing contexts (max {} vocalizations each)...", sample_size);
     println!("---");
 
     for context_id in contexts {
@@ -328,23 +321,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Statistical summary
     if !results.is_empty() {
-        let avg_pmi_mean: f64 =
-            results.iter().map(|r| r.avg_pmi).sum::<f64>() / results.len() as f64;
+        let avg_pmi_mean: f64 = results.iter().map(|r| r.avg_pmi).sum::<f64>() / results.len() as f64;
         let avg_pmi_std: f64 = {
             let mean = avg_pmi_mean;
-            let variance = results
-                .iter()
-                .map(|r| (r.avg_pmi - mean).powi(2))
-                .sum::<f64>()
-                / results.len() as f64;
+            let variance = results.iter().map(|r| (r.avg_pmi - mean).powi(2)).sum::<f64>() / results.len() as f64;
             variance.sqrt()
         };
 
-        let vocab_mean: f64 = results
-            .iter()
-            .map(|r| r.vocabulary_size as f64)
-            .sum::<f64>()
-            / results.len() as f64;
+        let vocab_mean: f64 = results.iter().map(|r| r.vocabulary_size as f64).sum::<f64>() / results.len() as f64;
 
         println!("Statistical Summary Across Contexts:");
         println!("====================================");
@@ -358,10 +342,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("=======================");
         if avg_pmi_std > 0.5 {
             println!("  ✓ SIGNIFICANT VARIATION in syntax across contexts");
-            println!(
-                "    PMI varies by {:.3} across contexts (std dev)",
-                avg_pmi_std
-            );
+            println!("    PMI varies by {:.3} across contexts (std dev)", avg_pmi_std);
             println!("    → Bat vocalization syntax DOES change with context");
             println!("    → Different contexts may have different communicative functions");
         } else {

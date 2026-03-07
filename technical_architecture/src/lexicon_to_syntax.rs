@@ -260,9 +260,7 @@ impl TryFrom<PhraseFeaturesSerializable> for PhraseFeatures {
 
     fn try_from(pfs: PhraseFeaturesSerializable) -> Result<Self> {
         let features = Array2::from_shape_vec((pfs.n_frames, pfs.feature_dim), pfs.features_flat)
-            .map_err(|e| {
-            PipelineError::VectorizationError(format!("Invalid feature shape: {}", e))
-        })?;
+            .map_err(|e| PipelineError::VectorizationError(format!("Invalid feature shape: {}", e)))?;
 
         Ok(Self {
             phrase_id: pfs.phrase_id,
@@ -455,36 +453,29 @@ impl PipelineCheckpoint {
 
     /// Save checkpoint to file
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let json = serde_json::to_string_pretty(self).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to serialize checkpoint: {}", e))
-        })?;
+        let json = serde_json::to_string_pretty(self)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to serialize checkpoint: {}", e)))?;
 
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.as_ref().parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
-                PipelineError::SegmentationError(format!(
-                    "Failed to create checkpoint directory: {}",
-                    e
-                ))
+                PipelineError::SegmentationError(format!("Failed to create checkpoint directory: {}", e))
             })?;
         }
 
-        std::fs::write(path, json).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to write checkpoint: {}", e))
-        })?;
+        std::fs::write(path, json)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to write checkpoint: {}", e)))?;
 
         Ok(())
     }
 
     /// Load checkpoint from file
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let json = std::fs::read_to_string(path).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to read checkpoint: {}", e))
-        })?;
+        let json = std::fs::read_to_string(path)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to read checkpoint: {}", e)))?;
 
-        serde_json::from_str(&json).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to deserialize checkpoint: {}", e))
-        })
+        serde_json::from_str(&json)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to deserialize checkpoint: {}", e)))
     }
 
     /// Check if checkpoint exists and is valid
@@ -614,18 +605,13 @@ impl LexiconToSyntaxPipeline {
     // =========================================================================
 
     /// Append segmented phrases to disk using JSON lines (for incremental saving)
-    fn append_phrases_to_disk<P: AsRef<Path>>(
-        &self,
-        phrases: &[SegmentedPhrase],
-        path: P,
-    ) -> Result<()> {
+    fn append_phrases_to_disk<P: AsRef<Path>>(&self, phrases: &[SegmentedPhrase], path: P) -> Result<()> {
         use std::io::Write;
 
         let path = path.as_ref();
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to create directory: {}", e))
-            })?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| PipelineError::SegmentationError(format!("Failed to create directory: {}", e)))?;
         }
 
         // Open in append mode
@@ -633,23 +619,18 @@ impl LexiconToSyntaxPipeline {
             .create(true)
             .append(true)
             .open(path)
-            .map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to open phrases file: {}", e))
-            })?;
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to open phrases file: {}", e)))?;
 
         // Append each phrase as a JSON line
         for phrase in phrases {
-            let json = serde_json::to_string(phrase).map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to serialize phrase: {}", e))
-            })?;
-            writeln!(file, "{}", json).map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to write phrase: {}", e))
-            })?;
+            let json = serde_json::to_string(phrase)
+                .map_err(|e| PipelineError::SegmentationError(format!("Failed to serialize phrase: {}", e)))?;
+            writeln!(file, "{}", json)
+                .map_err(|e| PipelineError::SegmentationError(format!("Failed to write phrase: {}", e)))?;
         }
 
-        file.flush().map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to flush phrases file: {}", e))
-        })?;
+        file.flush()
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to flush phrases file: {}", e)))?;
 
         Ok(())
     }
@@ -658,18 +639,16 @@ impl LexiconToSyntaxPipeline {
     fn load_phrases_from_disk<P: AsRef<Path>>(&self, path: P) -> Result<Vec<SegmentedPhrase>> {
         let path = path.as_ref();
 
-        let data = std::fs::read_to_string(path).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to read phrases: {}", e))
-        })?;
+        let data = std::fs::read_to_string(path)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to read phrases: {}", e)))?;
 
         let mut phrases = Vec::new();
         for line in data.lines() {
             if line.trim().is_empty() {
                 continue;
             }
-            let phrase: SegmentedPhrase = serde_json::from_str(line).map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to deserialize phrase: {}", e))
-            })?;
+            let phrase: SegmentedPhrase = serde_json::from_str(line)
+                .map_err(|e| PipelineError::SegmentationError(format!("Failed to deserialize phrase: {}", e)))?;
             phrases.push(phrase);
         }
 
@@ -677,68 +656,48 @@ impl LexiconToSyntaxPipeline {
     }
 
     /// Save segmented phrases to disk using bincode (deprecated - use append_phrases_to_disk)
-    fn save_phrases_to_disk<P: AsRef<Path>>(
-        &self,
-        phrases: &[SegmentedPhrase],
-        path: P,
-    ) -> Result<()> {
+    fn save_phrases_to_disk<P: AsRef<Path>>(&self, phrases: &[SegmentedPhrase], path: P) -> Result<()> {
         let path = path.as_ref();
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to create directory: {}", e))
-            })?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| PipelineError::SegmentationError(format!("Failed to create directory: {}", e)))?;
         }
 
-        let serialized = bincode::serialize(phrases).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to serialize phrases: {}", e))
-        })?;
+        let serialized = bincode::serialize(phrases)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to serialize phrases: {}", e)))?;
 
-        std::fs::write(path, serialized).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to write phrases: {}", e))
-        })?;
+        std::fs::write(path, serialized)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to write phrases: {}", e)))?;
 
         Ok(())
     }
 
     /// Save phrase features to disk using bincode
-    fn save_features_to_disk<P: AsRef<Path>>(
-        &self,
-        features: &[PhraseFeaturesSerializable],
-        path: P,
-    ) -> Result<()> {
+    fn save_features_to_disk<P: AsRef<Path>>(&self, features: &[PhraseFeaturesSerializable], path: P) -> Result<()> {
         let path = path.as_ref();
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                PipelineError::VectorizationError(format!("Failed to create directory: {}", e))
-            })?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| PipelineError::VectorizationError(format!("Failed to create directory: {}", e)))?;
         }
 
-        let serialized = bincode::serialize(features).map_err(|e| {
-            PipelineError::VectorizationError(format!("Failed to serialize features: {}", e))
-        })?;
+        let serialized = bincode::serialize(features)
+            .map_err(|e| PipelineError::VectorizationError(format!("Failed to serialize features: {}", e)))?;
 
-        std::fs::write(path, serialized).map_err(|e| {
-            PipelineError::VectorizationError(format!("Failed to write features: {}", e))
-        })?;
+        std::fs::write(path, serialized)
+            .map_err(|e| PipelineError::VectorizationError(format!("Failed to write features: {}", e)))?;
 
         Ok(())
     }
 
     /// Load phrase features from disk
-    fn load_features_from_disk<P: AsRef<Path>>(
-        &self,
-        path: P,
-    ) -> Result<Vec<PhraseFeaturesSerializable>> {
+    fn load_features_from_disk<P: AsRef<Path>>(&self, path: P) -> Result<Vec<PhraseFeaturesSerializable>> {
         let path = path.as_ref();
 
-        let data = std::fs::read(path).map_err(|e| {
-            PipelineError::VectorizationError(format!("Failed to read features: {}", e))
-        })?;
+        let data = std::fs::read(path)
+            .map_err(|e| PipelineError::VectorizationError(format!("Failed to read features: {}", e)))?;
 
-        let features: Vec<PhraseFeaturesSerializable> =
-            bincode::deserialize(&data).map_err(|e| {
-                PipelineError::VectorizationError(format!("Failed to deserialize features: {}", e))
-            })?;
+        let features: Vec<PhraseFeaturesSerializable> = bincode::deserialize(&data)
+            .map_err(|e| PipelineError::VectorizationError(format!("Failed to deserialize features: {}", e)))?;
 
         Ok(features)
     }
@@ -814,18 +773,17 @@ impl LexiconToSyntaxPipeline {
         let start = std::time::Instant::now();
 
         // Helper to save checkpoint
-        let save_checkpoint =
-            |checkpoint: &PipelineCheckpoint, phase: u8, phrase_count: usize| -> Result<()> {
-                let mut ck = checkpoint.clone();
-                ck.current_phase = phase;
-                ck.phrase_count = phrase_count;
-                ck.checkpoint_time = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
-                ck.save(checkpoint_path)?;
-                Ok(())
-            };
+        let save_checkpoint = |checkpoint: &PipelineCheckpoint, phase: u8, phrase_count: usize| -> Result<()> {
+            let mut ck = checkpoint.clone();
+            ck.current_phase = phase;
+            ck.phrase_count = phrase_count;
+            ck.checkpoint_time = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            ck.save(checkpoint_path)?;
+            Ok(())
+        };
 
         // =========================================================================
         // Phase 1: Segmentation (with resume capability)
@@ -839,8 +797,7 @@ impl LexiconToSyntaxPipeline {
             println!("🔪 Phase 1: Segmentation with checkpointing...");
 
             // Convert paths to PathBuf and filter already processed
-            let processed_set: std::collections::HashSet<String> =
-                checkpoint.processed_files.iter().cloned().collect();
+            let processed_set: std::collections::HashSet<String> = checkpoint.processed_files.iter().cloned().collect();
 
             let remaining_files: Vec<PathBuf> = audio_files
                 .iter()
@@ -879,9 +836,7 @@ impl LexiconToSyntaxPipeline {
 
                     // Track processed files
                     for path in chunk {
-                        checkpoint
-                            .processed_files
-                            .push(path.to_string_lossy().to_string());
+                        checkpoint.processed_files.push(path.to_string_lossy().to_string());
                     }
 
                     // Save phrases incrementally (append mode)
@@ -891,7 +846,8 @@ impl LexiconToSyntaxPipeline {
                     }
 
                     // Save checkpoint
-                    println!("   ├─ Batch {}: Processed {} / {} files ({} phrases), saving checkpoint...",
+                    println!(
+                        "   ├─ Batch {}: Processed {} / {} files ({} phrases), saving checkpoint...",
                         batch_idx + 1,
                         checkpoint.processed_files.len(),
                         audio_files.len(),
@@ -902,8 +858,7 @@ impl LexiconToSyntaxPipeline {
                     // Show ETA
                     let elapsed = start.elapsed().as_secs_f64();
                     let rate = checkpoint.processed_files.len() as f64 / elapsed;
-                    let remaining =
-                        (audio_files.len() - checkpoint.processed_files.len()) as f64 / rate;
+                    let remaining = (audio_files.len() - checkpoint.processed_files.len()) as f64 / rate;
                     println!("   │  └─ ETA: {:.1} hours", remaining / 3600.0);
                 }
 
@@ -925,10 +880,7 @@ impl LexiconToSyntaxPipeline {
         if checkpoint.current_phase >= 2 && features_path.exists() {
             println!("♻️  Phase 2 complete - features already on disk");
         } else {
-            println!(
-                "📊 Phase 2: Vectorization (batch size: {} phrases)...",
-                self.batch_size
-            );
+            println!("📊 Phase 2: Vectorization (batch size: {} phrases)...", self.batch_size);
 
             // Load phrases from disk in batches
             let all_phrases = self.load_phrases_from_disk(&phrases_path)?;
@@ -936,11 +888,7 @@ impl LexiconToSyntaxPipeline {
             let mut all_features: Vec<PhraseFeaturesSerializable> = Vec::new();
 
             for (batch_idx, batch) in all_phrases.chunks(self.batch_size).enumerate() {
-                println!(
-                    "   ├─ Batch {}/: Processing {} phrases...",
-                    batch_idx + 1,
-                    batch.len()
-                );
+                println!("   ├─ Batch {}/: Processing {} phrases...", batch_idx + 1, batch.len());
 
                 // Extract features for this batch
                 let batch_features: Vec<PhraseFeatures> = self.run_phase2_vectorization(batch)?;
@@ -975,10 +923,7 @@ impl LexiconToSyntaxPipeline {
         // =========================================================================
         println!("🔍 Phase 3: Discovery...");
         let all_features_serializable = self.load_features_from_disk(&features_path)?;
-        println!(
-            "   └─ Loaded {} features from disk",
-            all_features_serializable.len()
-        );
+        println!("   └─ Loaded {} features from disk", all_features_serializable.len());
 
         // Convert to PhraseFeatures for clustering
         let all_features: Vec<PhraseFeatures> = all_features_serializable
@@ -1009,15 +954,9 @@ impl LexiconToSyntaxPipeline {
     }
 
     /// Phase 1: Segmentation - The "Slicing" (Parallel)
-    fn run_phase1_segmentation<P: AsRef<Path>>(
-        &self,
-        audio_files: &[P],
-    ) -> Result<Vec<SegmentedPhrase>> {
+    fn run_phase1_segmentation<P: AsRef<Path>>(&self, audio_files: &[P]) -> Result<Vec<SegmentedPhrase>> {
         // Convert paths to PathBuf for Send/Sync
-        let paths: Vec<PathBuf> = audio_files
-            .iter()
-            .map(|p| p.as_ref().to_path_buf())
-            .collect();
+        let paths: Vec<PathBuf> = audio_files.iter().map(|p| p.as_ref().to_path_buf()).collect();
 
         // Process files in parallel using Rayon
         let results: Vec<Vec<SegmentedPhrase>> = paths
@@ -1079,10 +1018,7 @@ impl LexiconToSyntaxPipeline {
     }
 
     /// Phase 2: Vectorization - The "Embedding" (Parallel)
-    fn run_phase2_vectorization(
-        &self,
-        segmented_phrases: &[SegmentedPhrase],
-    ) -> Result<Vec<PhraseFeatures>> {
+    fn run_phase2_vectorization(&self, segmented_phrases: &[SegmentedPhrase]) -> Result<Vec<PhraseFeatures>> {
         let feature_dim = self.vectorization_config.feature_dimension;
 
         // Process phrases in parallel using Rayon
@@ -1230,9 +1166,7 @@ impl LexiconToSyntaxPipeline {
                             }
 
                             // 13 mfcc_delta_delta features (indices 43-55)
-                            for (i, &delta_delta_val) in
-                                features.mfcc_delta_delta.iter().enumerate()
-                            {
+                            for (i, &delta_delta_val) in features.mfcc_delta_delta.iter().enumerate() {
                                 arr[[0, 43 + i]] = delta_delta_val as f64;
                             }
                             (arr, 56)
@@ -1349,9 +1283,141 @@ impl LexiconToSyntaxPipeline {
                             // For now, we'll not support 39D in this pipeline
                             // as it's designed for 30D/37D/56D
                             return Err(PipelineError::VectorizationError(
-                                "39D features not yet supported in lexicon_to_syntax pipeline"
-                                    .to_string(),
+                                "39D features not yet supported in lexicon_to_syntax pipeline".to_string(),
                             ));
+                        }
+                        crate::micro_dynamics_extractor::FeatureVector::D112(features) => {
+                            // 112D RosettaFeatures - full feature vector for Universal Rosetta Stone
+                            let mut arr = Array2::zeros((1, 112));
+                            // Layer 1: Base Physics (46D) - indices 0-45
+                            arr[[0, 0]] = features.mean_f0_hz as f64;
+                            arr[[0, 1]] = features.duration_ms as f64;
+                            arr[[0, 2]] = features.f0_range_hz as f64;
+                            arr[[0, 3]] = features.rms_energy as f64;
+                            arr[[0, 4]] = features.zero_crossing_rate as f64;
+                            arr[[0, 5]] = features.peak_amplitude as f64;
+                            arr[[0, 6]] = features.harmonic_to_noise_ratio as f64;
+                            arr[[0, 7]] = features.harmonicity as f64;
+                            arr[[0, 8]] = features.spectral_flatness as f64;
+                            arr[[0, 9]] = features.attack_time_ms as f64;
+                            arr[[0, 10]] = features.decay_time_ms as f64;
+                            arr[[0, 11]] = features.sustain_level as f64;
+                            arr[[0, 12]] = features.release_time_ms as f64;
+                            // MFCCs (13) - indices 13-25
+                            arr[[0, 13]] = features.mfcc_0 as f64;
+                            arr[[0, 14]] = features.mfcc_1 as f64;
+                            arr[[0, 15]] = features.mfcc_2 as f64;
+                            arr[[0, 16]] = features.mfcc_3 as f64;
+                            arr[[0, 17]] = features.mfcc_4 as f64;
+                            arr[[0, 18]] = features.mfcc_5 as f64;
+                            arr[[0, 19]] = features.mfcc_6 as f64;
+                            arr[[0, 20]] = features.mfcc_7 as f64;
+                            arr[[0, 21]] = features.mfcc_8 as f64;
+                            arr[[0, 22]] = features.mfcc_9 as f64;
+                            arr[[0, 23]] = features.mfcc_10 as f64;
+                            arr[[0, 24]] = features.mfcc_11 as f64;
+                            arr[[0, 25]] = features.mfcc_12 as f64;
+                            // Spectral shape (4) - indices 26-29
+                            arr[[0, 26]] = features.spectral_centroid as f64;
+                            arr[[0, 27]] = features.spectral_spread as f64;
+                            arr[[0, 28]] = features.spectral_skewness as f64;
+                            arr[[0, 29]] = features.spectral_kurtosis as f64;
+                            // Rhythm (7) - indices 30-36
+                            arr[[0, 30]] = features.median_ici_ms as f64;
+                            arr[[0, 31]] = features.onset_rate_hz as f64;
+                            arr[[0, 32]] = features.ici_coefficient_of_variation as f64;
+                            arr[[0, 33]] = features.rhythm_regularity as f64;
+                            arr[[0, 34]] = features.jitter as f64;
+                            arr[[0, 35]] = features.shimmer as f64;
+                            arr[[0, 36]] = features.vibrato_depth as f64;
+                            // Modulation (4) - indices 37-40
+                            arr[[0, 37]] = features.vibrato_rate_hz as f64;
+                            arr[[0, 38]] = features.spectral_flux as f64;
+                            arr[[0, 39]] = features.spectral_rolloff as f64;
+                            arr[[0, 40]] = features.spectral_entropy as f64;
+                            // Extended (5) - indices 41-45
+                            arr[[0, 41]] = features.subharmonic_ratio as f64;
+                            arr[[0, 42]] = features.fm_depth_hz as f64;
+                            arr[[0, 43]] = features.am_depth as f64;
+                            arr[[0, 44]] = features.pitch_entropy as f64;
+                            arr[[0, 45]] = features.hnr_db as f64;
+                            // Layer 2: Macro Texture (30D) - indices 46-75
+                            arr[[0, 46]] = features.harmonic_slope as f64;
+                            arr[[0, 47]] = features.h1_h2_diff_db as f64;
+                            arr[[0, 48]] = features.harmonic_irregularity as f64;
+                            arr[[0, 49]] = features.harmonic_energy_variance as f64;
+                            arr[[0, 50]] = features.spectral_flux_std as f64;
+                            arr[[0, 51]] = features.h1_h2_ratio as f64;
+                            arr[[0, 52]] = features.h2_h3_ratio as f64;
+                            arr[[0, 53]] = features.h3_h4_ratio as f64;
+                            arr[[0, 54]] = features.harmonic_density as f64;
+                            arr[[0, 55]] = features.f0_mean_derivative as f64;
+                            arr[[0, 56]] = features.f0_curvature as f64;
+                            arr[[0, 57]] = features.f0_inflection_count as f64;
+                            arr[[0, 58]] = features.glissando_rate as f64;
+                            arr[[0, 59]] = features.vibrato_regularity as f64;
+                            arr[[0, 60]] = features.jitter_trend as f64;
+                            arr[[0, 61]] = features.pitch_complexity as f64;
+                            // GLCM texture (4) - indices 62-65
+                            arr[[0, 62]] = features.glcm_contrast as f64;
+                            arr[[0, 63]] = features.glcm_correlation as f64;
+                            arr[[0, 64]] = features.glcm_energy as f64;
+                            arr[[0, 65]] = features.glcm_homogeneity as f64;
+                            // Run-length texture (6) - indices 66-71
+                            arr[[0, 66]] = features.run_length_nonuniformity as f64;
+                            arr[[0, 67]] = features.long_run_emphasis as f64;
+                            arr[[0, 68]] = features.short_run_emphasis as f64;
+                            arr[[0, 69]] = features.granularity as f64;
+                            arr[[0, 70]] = features.vertical_strength as f64;
+                            arr[[0, 71]] = features.horizontal_correlation as f64;
+                            // Extended texture (4) - indices 72-75
+                            arr[[0, 72]] = features.texture_entropy as f64;
+                            arr[[0, 73]] = features.texture_homogeneity as f64;
+                            arr[[0, 74]] = features.texture_contrast as f64;
+                            arr[[0, 75]] = features.texture_energy as f64;
+                            // Layer 3: Micro Texture (36D) - indices 76-111
+                            // Spectral derivative (6) - indices 76-81
+                            arr[[0, 76]] = features.spectral_derivative_mean as f64;
+                            arr[[0, 77]] = features.spectral_derivative_std as f64;
+                            arr[[0, 78]] = features.spectral_derivative_skew as f64;
+                            arr[[0, 79]] = features.spectral_derivative_kurtosis as f64;
+                            arr[[0, 80]] = features.spectral_derivative_max as f64;
+                            arr[[0, 81]] = features.spectral_derivative_range as f64;
+                            // FM dynamics (5) - indices 82-86
+                            arr[[0, 82]] = features.fm_rate_mean as f64;
+                            arr[[0, 83]] = features.fm_rate_std as f64;
+                            arr[[0, 84]] = features.fm_depth_mean as f64;
+                            arr[[0, 85]] = features.fm_depth_std as f64;
+                            arr[[0, 86]] = features.fm_extent_hz as f64;
+                            // Dynamics (6) - indices 87-92
+                            arr[[0, 87]] = features.dynamics_rise_rate as f64;
+                            arr[[0, 88]] = features.dynamics_fall_rate as f64;
+                            arr[[0, 89]] = features.dynamics_range_db as f64;
+                            arr[[0, 90]] = features.dynamics_cv as f64;
+                            arr[[0, 91]] = features.dynamics_skew as f64;
+                            // ICI (5) - indices 92-96
+                            arr[[0, 92]] = features.ici_mean_ms as f64;
+                            arr[[0, 93]] = features.ici_std_ms as f64;
+                            arr[[0, 94]] = features.ici_skew as f64;
+                            arr[[0, 95]] = features.ici_kurtosis as f64;
+                            arr[[0, 96]] = features.ici_regularity as f64;
+                            // Rhythm (15) - indices 97-111
+                            arr[[0, 97]] = features.rhythm_tempo_hz as f64;
+                            arr[[0, 98]] = features.rhythm_tempo_stability as f64;
+                            arr[[0, 99]] = features.rhythm_pulse_clarity as f64;
+                            arr[[0, 100]] = features.rhythm_grouping_strength as f64;
+                            arr[[0, 101]] = features.rhythm_cycle_length as f64;
+                            arr[[0, 102]] = features.rhythm_onset_strength as f64;
+                            arr[[0, 103]] = features.rhythm_swing_factor as f64;
+                            arr[[0, 104]] = features.rhythm_syncopation as f64;
+                            arr[[0, 105]] = features.rhythm_density as f64;
+                            arr[[0, 106]] = features.rhythm_complexity as f64;
+                            arr[[0, 107]] = features.rhythm_entropy as f64;
+                            arr[[0, 108]] = features.rhythm_peak_rate_hz as f64;
+                            arr[[0, 109]] = features.rhythm_valley_depth as f64;
+                            arr[[0, 110]] = features.rhythm_crest_factor as f64;
+                            arr[[0, 111]] = features.rhythm_flux as f64;
+                            (arr, 112)
                         }
                     }
                 };
@@ -1414,10 +1480,7 @@ impl LexiconToSyntaxPipeline {
             })
             .collect();
 
-        let phrase_ids: Vec<String> = phrase_features
-            .iter()
-            .map(|pf| pf.phrase_id.clone())
-            .collect();
+        let phrase_ids: Vec<String> = phrase_features.iter().map(|pf| pf.phrase_id.clone()).collect();
 
         // Run DTW-DBSCAN clustering
         let cluster_labels = dtw_dbscan
@@ -1439,8 +1502,7 @@ impl LexiconToSyntaxPipeline {
         // Create vocabulary items
         let mut vocabulary = Vec::new();
         for (cluster_id, indices) in clusters {
-            let cluster_phrases: Vec<&PhraseFeatures> =
-                indices.iter().map(|&idx| &phrase_features[idx]).collect();
+            let cluster_phrases: Vec<&PhraseFeatures> = indices.iter().map(|&idx| &phrase_features[idx]).collect();
 
             // Compute centroid (feature template)
             let feature_template = self.compute_centroid(&cluster_phrases);
@@ -1473,10 +1535,8 @@ impl LexiconToSyntaxPipeline {
         phrase_features: &[PhraseFeatures],
     ) -> Result<Vec<PhonemeModel>> {
         // Create a mapping from phrase_id to features
-        let phrase_feature_map: HashMap<String, &PhraseFeatures> = phrase_features
-            .iter()
-            .map(|pf| (pf.phrase_id.clone(), pf))
-            .collect();
+        let phrase_feature_map: HashMap<String, &PhraseFeatures> =
+            phrase_features.iter().map(|pf| (pf.phrase_id.clone(), pf)).collect();
 
         // Train HMMs for all clusters in parallel
         let phoneme_models: Vec<PhonemeModel> = vocabulary
@@ -1554,9 +1614,8 @@ impl LexiconToSyntaxPipeline {
         }
 
         // Try to open and read WAV file using hound
-        let reader = hound::WavReader::open(path).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to open {}: {}", path.display(), e))
-        })?;
+        let reader = hound::WavReader::open(path)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to open {}: {}", path.display(), e)))?;
 
         let spec = reader.spec();
         let sample_rate = spec.sample_rate;
@@ -1566,10 +1625,7 @@ impl LexiconToSyntaxPipeline {
 
         let audio: Vec<f32> = if spec.sample_format == SampleFormat::Float {
             // IEEE Float format (32-bit float)
-            reader
-                .into_samples::<f32>()
-                .filter_map(|s| s.ok())
-                .collect()
+            reader.into_samples::<f32>().filter_map(|s| s.ok()).collect()
         } else if spec.bits_per_sample == 16 {
             // 16-bit integer
             reader
@@ -1636,9 +1692,8 @@ impl LexiconToSyntaxPipeline {
         hint.with_extension("flac");
 
         // Create the media source stream (use File directly, not BufReader)
-        let file = File::open(path).map_err(|e| {
-            PipelineError::SegmentationError(format!("Failed to open {}: {}", path.display(), e))
-        })?;
+        let file = File::open(path)
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to open {}: {}", path.display(), e)))?;
         let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
         // Create the probe header using the format options.
@@ -1652,29 +1707,23 @@ impl LexiconToSyntaxPipeline {
         // Probe the media source.
         let probed = symphonia::default::get_probe()
             .format(&hint, mss, &format_opts, &metadata_opts)
-            .map_err(|e| {
-                PipelineError::SegmentationError(format!(
-                    "Failed to probe {}: {}",
-                    path.display(),
-                    e
-                ))
-            })?;
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to probe {}: {}", path.display(), e)))?;
 
         // Get the instantiated format reader.
         let mut format = probed.format;
 
         // Get the default track and clone needed data
-        let track = format.default_track().ok_or_else(|| {
-            PipelineError::SegmentationError(format!("No default track in {}", path.display()))
-        })?;
+        let track = format
+            .default_track()
+            .ok_or_else(|| PipelineError::SegmentationError(format!("No default track in {}", path.display())))?;
 
         // Clone codec params to avoid borrow issues
         let codec_params = track.codec_params.clone();
 
         // Get the sample rate.
-        let sample_rate = codec_params.sample_rate.ok_or_else(|| {
-            PipelineError::SegmentationError(format!("No sample rate in {}", path.display()))
-        })?;
+        let sample_rate = codec_params
+            .sample_rate
+            .ok_or_else(|| PipelineError::SegmentationError(format!("No sample rate in {}", path.display())))?;
 
         // Get the number of channels.
         let n_channels = codec_params.channels.map(|c| c.count()).unwrap_or(1);
@@ -1685,9 +1734,7 @@ impl LexiconToSyntaxPipeline {
         // Create a decoder for the track.
         let mut decoder = symphonia::default::get_codecs()
             .make(&codec_params, &DecoderOptions::default())
-            .map_err(|e| {
-                PipelineError::SegmentationError(format!("Failed to create decoder: {}", e))
-            })?;
+            .map_err(|e| PipelineError::SegmentationError(format!("Failed to create decoder: {}", e)))?;
 
         // Decode the entire track.
         let mut audio_samples = Vec::new();
@@ -1939,11 +1986,7 @@ impl LexiconToSyntaxPipeline {
         let mean1 = self.mean_vector(seq1);
         let mean2 = self.mean_vector(seq2);
 
-        let dist: f64 = mean1
-            .iter()
-            .zip(mean2.iter())
-            .map(|(a, b)| (a - b).powi(2))
-            .sum();
+        let dist: f64 = mean1.iter().zip(mean2.iter()).map(|(a, b)| (a - b).powi(2)).sum();
 
         1.0 / (1.0 + dist.sqrt())
     }
@@ -1982,8 +2025,7 @@ impl LexiconToSyntaxPipeline {
         }
 
         let cluster_sizes: Vec<usize> = vocabulary.iter().map(|v| v.size).collect();
-        let avg_cluster_size =
-            cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len() as f64;
+        let avg_cluster_size = cluster_sizes.iter().sum::<usize>() as f64 / cluster_sizes.len() as f64;
         let max_cluster_size = *cluster_sizes.iter().max().unwrap_or(&0);
 
         // Compute Zipf's Law alpha (simplified)
@@ -2033,15 +2075,9 @@ impl LexiconToSyntaxPipeline {
     }
 
     /// Train GMM-HMM on a set of sequences
-    fn train_gmm_hmm(
-        &self,
-        sequences: &[&Array2<f64>],
-        n_states: usize,
-    ) -> Result<HiddenMarkovModel> {
+    fn train_gmm_hmm(&self, sequences: &[&Array2<f64>], n_states: usize) -> Result<HiddenMarkovModel> {
         if sequences.is_empty() {
-            return Err(PipelineError::RefinementError(
-                "No sequences to train".to_string(),
-            ));
+            return Err(PipelineError::RefinementError("No sequences to train".to_string()));
         }
 
         // Simplified: Create HMM with dummy discrete symbols
@@ -2100,11 +2136,7 @@ impl LexiconToSyntaxPipeline {
         match n_states {
             1 => vec!["Single".to_string()],
             2 => vec!["Onset".to_string(), "Offset".to_string()],
-            3 => vec![
-                "Onset".to_string(),
-                "Sustain".to_string(),
-                "Offset".to_string(),
-            ],
+            3 => vec!["Onset".to_string(), "Sustain".to_string(), "Offset".to_string()],
             4 => vec![
                 "Onset".to_string(),
                 "Attack".to_string(),
@@ -2217,20 +2249,14 @@ mod tests {
     #[test]
     fn test_feature_dimension_37d_default() {
         let pipeline = LexiconToSyntaxPipeline::new();
-        assert_eq!(
-            pipeline.vectorization_config.feature_dimension,
-            FeatureDimension::D37
-        );
+        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D37);
     }
 
     #[test]
     fn test_feature_dimension_configurable() {
         let pipeline = LexiconToSyntaxPipeline::new().with_feature_dimension(FeatureDimension::D30);
 
-        assert_eq!(
-            pipeline.vectorization_config.feature_dimension,
-            FeatureDimension::D30
-        );
+        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D30);
     }
 
     #[test]
@@ -2254,10 +2280,7 @@ mod tests {
 
         let pipeline = LexiconToSyntaxPipeline::new().with_feature_dimension(FeatureDimension::D15);
 
-        assert_eq!(
-            pipeline.vectorization_config.feature_dimension,
-            FeatureDimension::D15
-        );
+        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D15);
     }
 
     #[test]
@@ -2320,8 +2343,7 @@ mod tests {
         // Test serialization for 37D features
         let feat_37d = PhraseFeatures {
             phrase_id: "test_serialization".to_string(),
-            features: Array2::from_shape_vec((1, 37), (1..=37).map(|i| i as f64).collect())
-                .unwrap(),
+            features: Array2::from_shape_vec((1, 37), (1..=37).map(|i| i as f64).collect()).unwrap(),
             n_frames: 1,
             frame_rate: 100.0,
             feature_dim: 37,
@@ -2601,8 +2623,8 @@ mod tests {
 
         assert!(result.is_err());
         match result {
-            Err(PipelineError::AudioNotFound(_)) => assert!(true),
-            _ => assert!(false, "Expected AudioNotFound error"),
+            Err(PipelineError::AudioNotFound(_)) => {} // Expected case
+            _ => panic!("Expected AudioNotFound error"),
         }
     }
 

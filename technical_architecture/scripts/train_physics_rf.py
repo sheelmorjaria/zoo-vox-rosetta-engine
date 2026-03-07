@@ -11,27 +11,29 @@ Usage:
 """
 
 import json
-import numpy as np
 import struct
-from pathlib import Path
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, classification_report
-import joblib
 import time
+from pathlib import Path
+
+import joblib
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
 # Feature dimensions
 FEATURE_DIM = 112
 PHYSICS_DIM = 46  # Layer 1: indices 0-45
 
+
 def load_bincode_features(filepath):
     """Load features stored in Rust bincode format (Vec<f32>)"""
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         # Read length as varint (bincode uses varint encoding)
         length = 0
         shift = 0
         while True:
-            byte = struct.unpack('B', f.read(1))[0]
+            byte = struct.unpack("B", f.read(1))[0]
             length |= (byte & 0x7F) << shift
             shift += 7
             if byte & 0x80 == 0:
@@ -40,6 +42,7 @@ def load_bincode_features(filepath):
         data = f.read(length * 4)  # 4 bytes per f32
         features = np.frombuffer(data, dtype=np.float32)
         return features.copy()  # Copy to make writable
+
 
 def main():
     print("╔═══════════════════════════════════════════════════════════════════╗")
@@ -73,7 +76,11 @@ def main():
 
     for sample in samples:
         audio_file = sample["audio_file"]
-        label = sample["labels"]["output"] if sample["labels"]["output"] != "None" else f"task_{sample['labels']['task']}"
+        label = (
+            sample["labels"]["output"]
+            if sample["labels"]["output"] != "None"
+            else f"task_{sample['labels']['task']}"
+        )
 
         cache_file = cache_manifest["entries"].get(audio_file)
         if cache_file:
@@ -86,7 +93,7 @@ def main():
                         physics = features[:PHYSICS_DIM]
                         all_features.append(physics)
                         all_labels.append(label)
-                except Exception as e:
+                except Exception:
                     pass  # Skip problematic files
 
     print(f"  Loaded {len(all_features)} samples")
@@ -132,10 +139,10 @@ def main():
         n_estimators=200,
         max_depth=30,
         min_samples_split=5,
-        class_weight='balanced',
+        class_weight="balanced",
         n_jobs=-1,
         random_state=42,
-        verbose=1
+        verbose=1,
     )
 
     rf.fit(X_train_scaled, y_train)
@@ -170,29 +177,33 @@ def main():
     # Save model
     model_path = "physics_rf_model.joblib"
     print(f"\nSaving model to: {model_path}")
-    joblib.dump({
-        'model': rf,
-        'scaler': scaler,
-        'feature_dim': PHYSICS_DIM,
-        'accuracy': accuracy,
-    }, model_path)
+    joblib.dump(
+        {
+            "model": rf,
+            "scaler": scaler,
+            "feature_dim": PHYSICS_DIM,
+            "accuracy": accuracy,
+        },
+        model_path,
+    )
 
     # Summary
     elapsed = time.time() - start_time
     print("\n╔═══════════════════════════════════════════════════════════════════╗")
     print("║  Summary                                                          ║")
     print("╠═══════════════════════════════════════════════════════════════════╣")
-    print(f"║  Architecture:       Random Forest (Physics 46D)                 ║")
+    print("║  Architecture:       Random Forest (Physics 46D)                 ║")
     print(f"║  Test Accuracy:      {accuracy:>8.2f}%                                   ║")
     print(f"║  Total Time:         {elapsed:>8.1f}s                                    ║")
     print("╚═══════════════════════════════════════════════════════════════════╝")
 
     print("\nHybrid Expert Ensemble Summary:")
-    print(f"  - Texture NN (66D):  59.88%")
+    print("  - Texture NN (66D):  59.88%")
     print(f"  - Physics RF (46D):  {accuracy:.2f}%")
     print("  - Combined ensemble: (run ensemble evaluation)")
 
     return accuracy
+
 
 if __name__ == "__main__":
     main()

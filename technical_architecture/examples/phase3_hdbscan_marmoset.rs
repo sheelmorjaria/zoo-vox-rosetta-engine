@@ -5,14 +5,14 @@
 //
 // Usage: cargo run --release --example phase3_hdbscan_marmoset
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use std::time::Instant;
 use technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Paths to checkpoint data
-    let results_dir =
-        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let output_path = results_dir.join("hdbscan_clusters.json");
 
@@ -27,14 +27,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let load_start = Instant::now();
 
     let features_data = std::fs::read(&features_path)?;
-    println!(
-        "   ├─ Loaded {} MB of feature data",
-        features_data.len() / 1_048_576
-    );
+    println!("   ├─ Loaded {} MB of feature data", features_data.len() / 1_048_576);
 
     // Deserialize features
-    let serializable_features: Vec<PhraseFeaturesSerializable> =
-        bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<PhraseFeaturesSerializable> = bincode::deserialize(&features_data)?;
 
     let n_features = serializable_features.len();
     println!(
@@ -82,17 +78,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_start = Instant::now();
 
     // Create HDBSCAN clusterer
-    let hdbscan =
-        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
+    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     // Run clustering
     let labels = hdbscan.fit_predict(&feature_matrix)?;
 
     let cluster_time = cluster_start.elapsed();
-    println!(
-        "   └─ Clustering completed in {:.2}s",
-        cluster_time.as_secs_f64()
-    );
+    println!("   └─ Clustering completed in {:.2}s", cluster_time.as_secs_f64());
     println!();
 
     // Analyze results
@@ -104,10 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", n_features);
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!(
-        "   Clustered phrases:    {}",
-        n_features - stats.noise_count
-    );
+    println!("   Clustered phrases:    {}", n_features - stats.noise_count);
     println!(
         "   Clustering rate:      {:.1}%",
         (n_features - stats.noise_count) as f64 / n_features as f64 * 100.0

@@ -5,13 +5,13 @@
 //
 // Usage: cargo run --release --example phase4_refinement_bat
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let results_dir =
-        Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
+    let results_dir = Path::new("/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/lexicon_to_syntax_results");
     let features_path = results_dir.join("bat_features.bincode");
     let clusters_path = results_dir.join("minibatch_clusters.json");
     let models_output = results_dir.join("gmm_hmm_models.json");
@@ -31,10 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !features_path.exists() {
-        println!(
-            "   ⚠️  Features file not found: {}",
-            features_path.display()
-        );
+        println!("   ⚠️  Features file not found: {}", features_path.display());
         println!("   Please run Phase 3 first to extract features and generate clusters.");
         return Err("Features file not found".into());
     }
@@ -53,10 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     if !clusters_path.exists() {
-        println!(
-            "   ⚠️  Clusters file not found: {}",
-            clusters_path.display()
-        );
+        println!("   ⚠️  Clusters file not found: {}", clusters_path.display());
         println!("   Please run Phase 3 first to generate clusters.");
         return Err("Clusters file not found".into());
     }
@@ -72,11 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|v| v.as_i64().unwrap() as i32)
         .collect();
 
-    println!(
-        "   └─ {} labels loaded ({} clusters)",
-        labels.len(),
-        n_clusters
-    );
+    println!("   └─ {} labels loaded ({} clusters)", labels.len(), n_clusters);
     println!();
 
     // ========================================================================
@@ -110,10 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .push(feature_vec);
     }
 
-    println!(
-        "   └─ Grouped in {:.2}s",
-        group_start.elapsed().as_secs_f64()
-    );
+    println!("   └─ Grouped in {:.2}s", group_start.elapsed().as_secs_f64());
     println!();
 
     // ========================================================================
@@ -133,14 +120,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ─────────────────────────────────");
     for cluster_id in 0..n_clusters as i32 {
         let count = cluster_counts.get(&cluster_id).copied().unwrap_or(0);
-        let n_sequences = cluster_features
-            .get(&cluster_id)
-            .map(|v| v.len())
-            .unwrap_or(0);
-        println!(
-            "      {:3}    |  {:5}  |    {:3}",
-            cluster_id, count, n_sequences
-        );
+        let n_sequences = cluster_features.get(&cluster_id).map(|v| v.len()).unwrap_or(0);
+        println!("      {:3}    |  {:5}  |    {:3}", cluster_id, count, n_sequences);
     }
     println!();
 
@@ -225,8 +206,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             // Calculate average duration
-            let avg_duration_ms: f64 =
-                sequences.iter().map(|s| s.duration_ms).sum::<f64>() / sequences.len() as f64;
+            let avg_duration_ms: f64 = sequences.iter().map(|s| s.duration_ms).sum::<f64>() / sequences.len() as f64;
 
             // Calculate average sample rate
             let avg_sample_rate: u32 = if sequences.is_empty() {
@@ -263,10 +243,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let train_time = train_start.elapsed();
     println!();
-    println!(
-        "   └─ Training completed in {:.2}s",
-        train_time.as_secs_f64()
-    );
+    println!("   └─ Training completed in {:.2}s", train_time.as_secs_f64());
     println!("   └─ {} models trained", models.len());
     println!();
 

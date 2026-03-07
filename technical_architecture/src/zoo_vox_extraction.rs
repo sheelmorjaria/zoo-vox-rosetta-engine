@@ -4,9 +4,7 @@
 //! with species-specific strategies based on encoding type.
 
 use crate::species::SpeciesConfigFactory;
-use crate::zoo_vox_data_models::{
-    AcousticFeatures30D, BehaviorAnnotation, ContextAssociation, PhrasePrototype,
-};
+use crate::zoo_vox_data_models::{AcousticFeatures30D, BehaviorAnnotation, ContextAssociation, PhrasePrototype};
 use crate::zoo_vox_features::ZooVoxFeatureExtractor;
 
 /// Zoo Vox Rosetta extraction error type
@@ -161,8 +159,7 @@ impl ZooVoxPhraseExtractor {
             let segment_audio = &audio[start..end];
 
             // Skip very short segments
-            let duration_ms =
-                (segment_audio.len() as f64 / self.config.sample_rate as f64) * 1000.0;
+            let duration_ms = (segment_audio.len() as f64 / self.config.sample_rate as f64) * 1000.0;
             if duration_ms < self.config.min_phrase_duration_ms {
                 continue;
             }
@@ -253,10 +250,7 @@ impl ZooVoxPhraseExtractor {
     }
 
     /// Segment dolphin whistles (FM contours)
-    fn segment_whistles(
-        &self,
-        audio: &[f64],
-    ) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
+    fn segment_whistles(&self, audio: &[f64]) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
         if audio.is_empty() {
             return Ok(Vec::new());
         }
@@ -287,10 +281,7 @@ impl ZooVoxPhraseExtractor {
     }
 
     /// Segment combinatorial vocalizations (bird songs, orca calls)
-    fn segment_combinatorial(
-        &self,
-        audio: &[f64],
-    ) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
+    fn segment_combinatorial(&self, audio: &[f64]) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
         if audio.is_empty() {
             return Ok(Vec::new());
         }
@@ -300,15 +291,13 @@ impl ZooVoxPhraseExtractor {
 
         let mean = envelope.iter().sum::<f64>() / envelope.len() as f64;
         let std = {
-            let variance: f64 =
-                envelope.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / envelope.len() as f64;
+            let variance: f64 = envelope.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / envelope.len() as f64;
             variance.sqrt()
         };
 
         let threshold = mean + 0.5 * std;
 
-        let min_gap =
-            (self.config.sample_rate as f64 * self.config.min_silence_gap_ms / 1000.0) as usize;
+        let min_gap = (self.config.sample_rate as f64 * self.config.min_silence_gap_ms / 1000.0) as usize;
 
         let mut segments = Vec::new();
         let mut in_segment = false;
@@ -340,10 +329,7 @@ impl ZooVoxPhraseExtractor {
     }
 
     /// Default segmentation by silence gaps
-    fn segment_by_silence(
-        &self,
-        audio: &[f64],
-    ) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
+    fn segment_by_silence(&self, audio: &[f64]) -> Result<Vec<(usize, usize)>, ZooVoxExtractionError> {
         if audio.is_empty() {
             return Ok(Vec::new());
         }
@@ -354,10 +340,8 @@ impl ZooVoxPhraseExtractor {
         let threshold_db = self.config.silence_threshold_db;
         let threshold = max_val * 10.0_f64.powf(threshold_db / 20.0);
 
-        let min_gap =
-            (self.config.sample_rate as f64 * self.config.min_silence_gap_ms / 1000.0) as usize;
-        let min_duration =
-            (self.config.sample_rate as f64 * self.config.min_phrase_duration_ms / 1000.0) as usize;
+        let min_gap = (self.config.sample_rate as f64 * self.config.min_silence_gap_ms / 1000.0) as usize;
+        let min_duration = (self.config.sample_rate as f64 * self.config.min_phrase_duration_ms / 1000.0) as usize;
 
         let mut segments = Vec::new();
         let mut in_segment = false;
@@ -396,10 +380,9 @@ impl ZooVoxPhraseExtractor {
 
     /// Generate human-readable phrase key
     fn generate_phrase_key(&self, features: &AcousticFeatures30D) -> String {
-        let f0_bin =
-            (features.mean_f0_hz / self.config.f0_bin_size_hz).floor() * self.config.f0_bin_size_hz;
-        let dur_bin = (features.duration_ms / self.config.duration_bin_size_ms).floor()
-            * self.config.duration_bin_size_ms;
+        let f0_bin = (features.mean_f0_hz / self.config.f0_bin_size_hz).floor() * self.config.f0_bin_size_hz;
+        let dur_bin =
+            (features.duration_ms / self.config.duration_bin_size_ms).floor() * self.config.duration_bin_size_ms;
         format!("F0_{:.0}_DUR_{:.0}", f0_bin, dur_bin)
     }
 
@@ -416,10 +399,7 @@ impl ZooVoxPhraseExtractor {
 
             // Check overlap
             if start < ann_end && end > ann_start {
-                return Some(ContextAssociation::new(
-                    &ann.context_label,
-                    &ann.context_category,
-                ));
+                return Some(ContextAssociation::new(&ann.context_label, &ann.context_category));
             }
         }
         None

@@ -10,6 +10,7 @@
 //!
 //! Total: 30 + 1 + 1 + 6 + 6 = 44D (stored), with 39D used for compact representation
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::time::Instant;
 use technical_architecture::MicroDynamicsExtractor;
 
@@ -45,21 +46,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Attack time: {:.2} ms", features39.base_30d.attack_time_ms);
     println!("Decay time: {:.2} ms", features39.base_30d.decay_time_ms);
     println!("Sustain level: {:.2}", features39.base_30d.sustain_level);
-    println!(
-        "Vibrato rate: {:.2} Hz",
-        features39.base_30d.vibrato_rate_hz
-    );
-    println!(
-        "Vibrato depth: {:.2} cents",
-        features39.base_30d.vibrato_depth
-    );
+    println!("Vibrato rate: {:.2} Hz", features39.base_30d.vibrato_rate_hz);
+    println!("Vibrato depth: {:.2} cents", features39.base_30d.vibrato_depth);
     println!("Jitter: {:.4}", features39.base_30d.jitter);
     println!("Shimmer: {:.4}", features39.base_30d.shimmer);
     println!("Harmonicity: {:.2}", features39.base_30d.harmonicity);
-    println!(
-        "Spectral flatness: {:.2}",
-        features39.base_30d.spectral_flatness
-    );
+    println!("Spectral flatness: {:.2}", features39.base_30d.spectral_flatness);
     println!("HNR: {:.2} dB", features39.base_30d.harmonic_to_noise_ratio);
     println!();
 
@@ -75,10 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Rhythm Factors (3D) ---");
     println!("Median ICI: {:.2} ms", features39.base_30d.median_ici_ms);
     println!("Onset rate: {:.2} Hz", features39.base_30d.onset_rate_hz);
-    println!(
-        "ICI CV: {:.2}",
-        features39.base_30d.ici_coefficient_of_variation
-    );
+    println!("ICI CV: {:.2}", features39.base_30d.ici_coefficient_of_variation);
     println!();
 
     // Display delta features (compact)
@@ -100,18 +89,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Display multi-scale onset rate features
     println!("--- Multi-Scale Onset Rate Features (6D) ---");
     println!("Mean: {:.2} Hz", features39.onset_rate_multi_scale.mean);
-    println!(
-        "Std dev: {:.2} Hz",
-        features39.onset_rate_multi_scale.std_dev
-    );
-    println!(
-        "Skewness: {:.4}",
-        features39.onset_rate_multi_scale.skewness
-    );
-    println!(
-        "Kurtosis: {:.4}",
-        features39.onset_rate_multi_scale.kurtosis
-    );
+    println!("Std dev: {:.2} Hz", features39.onset_rate_multi_scale.std_dev);
+    println!("Skewness: {:.4}", features39.onset_rate_multi_scale.skewness);
+    println!("Kurtosis: {:.4}", features39.onset_rate_multi_scale.kurtosis);
     println!("Range: {:.2} Hz", features39.onset_rate_multi_scale.range);
     println!("IQR: {:.2} Hz", features39.onset_rate_multi_scale.iqr);
     println!();
@@ -188,10 +168,7 @@ fn validate_features(features: &technical_architecture::MicroDynamicsFeatures39D
         all_valid = false;
     }
     if !features.mfcc_delta_delta_mean.is_finite() {
-        println!(
-            "✗ ΔΔ MFCC mean not finite: {}",
-            features.mfcc_delta_delta_mean
-        );
+        println!("✗ ΔΔ MFCC mean not finite: {}", features.mfcc_delta_delta_mean);
         all_valid = false;
     }
 

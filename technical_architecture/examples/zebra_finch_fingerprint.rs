@@ -13,6 +13,7 @@
 //! Usage:
 //!   cargo run --release --example zebra_finch_fingerprint
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use ndarray::Array1;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,8 +25,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig,
-    SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicPhraseCandidate, DynamicSegmenter, DynamicSegmenterConfig, SimilarityMetric,
+    ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -155,8 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let total_start = Instant::now();
 
-    let data_dir = PathBuf::from(std::env::var("HOME").unwrap())
-        .join("birdsong_analysis/data/zebra_finch/zebra_finch");
+    let data_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/zebra_finch/zebra_finch");
     let vocalizations_dir = data_dir.join("vocalizations");
     let annotations_path = data_dir.join("annotations.csv");
 
@@ -187,56 +187,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let processed = Arc::new(AtomicUsize::new(0));
 
-    let all_candidates: Vec<(DynamicPhraseCandidate, String, String, Vec<f64>)> =
-        annotations_subset
-            .par_iter()
-            .flat_map(|ann| {
-                let count = processed.fetch_add(1, Ordering::Relaxed);
-                if count % 100 == 0 {
-                    println!("  Progress: {}/{}", count + 1, max_files);
+    let all_candidates: Vec<(DynamicPhraseCandidate, String, String, Vec<f64>)> = annotations_subset
+        .par_iter()
+        .flat_map(|ann| {
+            let count = processed.fetch_add(1, Ordering::Relaxed);
+            if count % 100 == 0 {
+                println!("  Progress: {}/{}", count + 1, max_files);
+            }
+
+            let audio_path = vocalizations_dir.join(&ann.filename);
+            if let Ok(audio) = load_audio(&audio_path) {
+                if audio.len() < 500 {
+                    return Vec::new();
                 }
 
-                let audio_path = vocalizations_dir.join(&ann.filename);
-                if let Ok(audio) = load_audio(&audio_path) {
-                    if audio.len() < 500 {
-                        return Vec::new();
-                    }
+                let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(SAMPLE_RATE)));
+                let result = segmenter.segment(
+                    &audio,
+                    |frame, sr| {
+                        let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
+                        let mut ext = extractor.lock().unwrap();
+                        ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
+                    },
+                    &ann.filename,
+                );
 
-                    let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                        SAMPLE_RATE,
-                    )));
-                    let result = segmenter.segment(
-                        &audio,
-                        |frame, sr| {
-                            let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
-                            let mut ext = extractor.lock().unwrap();
-                            ext.extract_45d(&frame_f64)
-                                .ok()
-                                .map(|f| f.to_vector().to_vec())
-                        },
-                        &ann.filename,
-                    );
+                result
+                    .candidates
+                    .into_iter()
+                    .map(|c| {
+                        // Compute additional acoustic properties from audio segment
+                        let start_sample = ((c.start_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
+                        let end_sample = ((c.end_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
+                        let segment = &audio[start_sample..end_sample.min(audio.len())];
 
-                    result
-                        .candidates
-                        .into_iter()
-                        .map(|c| {
-                            // Compute additional acoustic properties from audio segment
-                            let start_sample =
-                                ((c.start_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
-                            let end_sample = ((c.end_ms / 1000.0) * SAMPLE_RATE as f32) as usize;
-                            let segment = &audio[start_sample..end_sample.min(audio.len())];
+                        let acoustic = compute_acoustic_properties(segment, SAMPLE_RATE);
 
-                            let acoustic = compute_acoustic_properties(segment, SAMPLE_RATE);
-
-                            (c, ann.call_type.clone(), ann.name.clone(), acoustic)
-                        })
-                        .collect()
-                } else {
-                    Vec::new()
-                }
-            })
-            .collect();
+                        (c, ann.call_type.clone(), ann.name.clone(), acoustic)
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        })
+        .collect();
 
     println!("\nExtracted {} phrase candidates", all_candidates.len());
 
@@ -261,11 +255,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut vis_points: Vec<VisualizationPoint> = Vec::new();
 
     for cluster in &clusters {
-        let members: Vec<&(DynamicPhraseCandidate, String, String, Vec<f64>)> = cluster
-            .member_indices
-            .iter()
-            .map(|&idx| &all_candidates[idx])
-            .collect();
+        let members: Vec<&(DynamicPhraseCandidate, String, String, Vec<f64>)> =
+            cluster.member_indices.iter().map(|&idx| &all_candidates[idx]).collect();
 
         // Aggregate acoustic properties
         let mut durations = Vec::new();
@@ -346,8 +337,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let count = fps.iter().map(|fp| fp.occurrence_count).sum::<usize>();
             let avg_dur = fps.iter().map(|fp| fp.duration_ms).sum::<f64>() / fps.len() as f64;
             let avg_f0 = fps.iter().map(|fp| fp.mean_f0_hz).sum::<f64>() / fps.len() as f64;
-            let avg_flat =
-                fps.iter().map(|fp| fp.spectral_flatness).sum::<f64>() / fps.len() as f64;
+            let avg_flat = fps.iter().map(|fp| fp.spectral_flatness).sum::<f64>() / fps.len() as f64;
 
             let all_f0s: Vec<f64> = fps
                 .iter()
@@ -430,20 +420,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             name: "Short High-Pitched Calls".to_string(),
             call_types,
             duration_range: (
-                short_high
-                    .iter()
-                    .map(|fp| fp.duration_ms)
-                    .fold(f64::INFINITY, f64::min),
+                short_high.iter().map(|fp| fp.duration_ms).fold(f64::INFINITY, f64::min),
                 short_high
                     .iter()
                     .map(|fp| fp.duration_ms)
                     .fold(f64::NEG_INFINITY, f64::max),
             ),
             f0_range: (
-                short_high
-                    .iter()
-                    .map(|fp| fp.mean_f0_hz)
-                    .fold(f64::INFINITY, f64::min),
+                short_high.iter().map(|fp| fp.mean_f0_hz).fold(f64::INFINITY, f64::min),
                 short_high
                     .iter()
                     .map(|fp| fp.mean_f0_hz)
@@ -540,10 +524,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Niche analysis
     println!("\nACOUSTIC NICHES:");
     for niche in &niches {
-        println!(
-            "  • {}: {:.1}% of vocalizations",
-            niche.name, niche.occurrence_percent
-        );
+        println!("  • {}: {:.1}% of vocalizations", niche.name, niche.occurrence_percent);
         println!(
             "    Duration: {:.0}-{:.0}ms, F0: {:.0}-{:.0}Hz",
             niche.duration_range.0, niche.duration_range.1, niche.f0_range.0, niche.f0_range.1
@@ -725,10 +706,7 @@ fn load_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> {
     let spec = reader.spec();
 
     let audio: Vec<f32> = match spec.sample_format {
-        hound::SampleFormat::Float => reader
-            .into_samples::<f32>()
-            .filter_map(|s| s.ok())
-            .collect(),
+        hound::SampleFormat::Float => reader.into_samples::<f32>().filter_map(|s| s.ok()).collect(),
         hound::SampleFormat::Int => {
             let max_val = 2_i32.pow((spec.bits_per_sample - 1) as u32) as f32;
             reader

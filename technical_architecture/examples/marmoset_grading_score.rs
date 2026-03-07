@@ -9,6 +9,7 @@
 //! The grading_score indicates how far an instance is from its type centroid.
 //! Low score = typical example, High score = outlier/graded instance.
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -17,9 +18,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use technical_architecture::{
-    species::FeatureWeights, AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig,
-    EmissionStrategy, HierarchicalThresholds, SimilarityMetric, SpeciesConfigFactory,
-    TypedPhraseCandidate, ZooVoxFeatureExtractor,
+    species::FeatureWeights, AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, EmissionStrategy,
+    HierarchicalThresholds, SimilarityMetric, SpeciesConfigFactory, TypedPhraseCandidate, ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -37,8 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  • Continuous Path: Emit type ID + 45D vector (graded types)");
     println!();
 
-    let base_dir =
-        PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
+    let base_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
 
     // Get species config with feature weights
     let species_config = SpeciesConfigFactory::create("marmoset");
@@ -54,10 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =========================================================================
     // Step 1: Extract Candidates
     // =========================================================================
-    println!(
-        "[1/4] Extracting phrase candidates from {} files...",
-        max_files
-    );
+    println!("[1/4] Extracting phrase candidates from {} files...", max_files);
 
     let files = discover_marmoset_files(&base_dir, max_files);
     println!("Found {} FLAC files", files.len());
@@ -88,16 +84,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let segmenter = DynamicSegmenter::new(segmenter_config.clone(), sample_rate);
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                sample_rate,
-            )));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(sample_rate)));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64)
-                    .ok()
-                    .map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
             };
 
             let result = segmenter.segment(&audio, extract_fn, filename);
@@ -278,10 +270,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("├─────────────────────────────────────────────────────────────────────────────┤");
     println!("│ BANDWIDTH SAVINGS:");
     println!("│ Without grading: {} type IDs", total_candidates);
-    println!(
-        "│ With grading: {} type IDs + {} vectors",
-        total_discrete, total_graded
-    );
+    println!("│ With grading: {} type IDs + {} vectors", total_discrete, total_graded);
     println!(
         "│ Data reduction: {:.1}%",
         (1.0 - total_graded as f64 / total_candidates as f64) * 100.0
@@ -305,10 +294,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let medium = scores.iter().filter(|&&s| s >= 0.03 && s < 0.07).count();
         let high = scores.iter().filter(|&&s| s >= 0.07).count();
 
-        println!(
-            "│ {}: min={:.3}, max={:.3}, avg={:.3}",
-            type_id, min, max, avg
-        );
+        println!("│ {}: min={:.3}, max={:.3}, avg={:.3}", type_id, min, max, avg);
         println!(
             "│   Low (<0.03): {}, Medium (0.03-0.07): {}, High (>0.07): {}",
             low, medium, high
@@ -447,12 +433,7 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     hint.with_extension("flac");
 
     let mut probed = symphonia::default::get_probe()
-        .format(
-            &hint,
-            mss,
-            &FormatOptions::default(),
-            &MetadataOptions::default(),
-        )
+        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
         .map_err(|e| format!("Probe failed: {}", e))?;
 
     let track = probed.format.default_track().ok_or("No track")?;

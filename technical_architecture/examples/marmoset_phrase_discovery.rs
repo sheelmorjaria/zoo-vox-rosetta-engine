@@ -11,6 +11,7 @@
 //! Usage:
 //!   cargo run --release --example marmoset_phrase_discovery
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -22,8 +23,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use technical_architecture::{
-    AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, HierarchicalThresholds,
-    PhraseDiscoveryConfig, SimilarityMetric, ZooVoxFeatureExtractor,
+    AcousticSimilarityEngine, DynamicSegmenter, DynamicSegmenterConfig, HierarchicalThresholds, PhraseDiscoveryConfig,
+    SimilarityMetric, ZooVoxFeatureExtractor,
 };
 
 const FEATURE_DIM: usize = 45;
@@ -37,8 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╚══════════════════════════════════════════════════════════════════════════════╝");
     println!();
 
-    let base_dir =
-        PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
+    let base_dir = PathBuf::from(std::env::var("HOME").unwrap()).join("birdsong_analysis/data/Vocalizations");
 
     let config = PhraseDiscoveryConfig::marmoset();
     println!("Configuration:");
@@ -103,16 +103,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Segment
             let segmenter = DynamicSegmenter::new(segmenter_config.clone(), sample_rate);
-            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(
-                sample_rate,
-            )));
+            let extractor = Arc::new(std::sync::Mutex::new(ZooVoxFeatureExtractor::new(sample_rate)));
 
             let extract_fn = |frame: &[f32], _sr: u32| {
                 let frame_f64: Vec<f64> = frame.iter().map(|&x| x as f64).collect();
                 let mut ext = extractor.lock().unwrap();
-                ext.extract_45d(&frame_f64)
-                    .ok()
-                    .map(|f| f.to_vector().to_vec())
+                ext.extract_45d(&frame_f64).ok().map(|f| f.to_vector().to_vec())
             };
 
             let result = segmenter.segment(&audio, extract_fn, filename);
@@ -121,14 +117,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             result
                 .candidates
                 .into_iter()
-                .map(|c| {
-                    (
-                        c.features,
-                        c.duration_ms,
-                        filename.clone(),
-                        call_type.clone(),
-                    )
-                })
+                .map(|c| (c.features, c.duration_ms, filename.clone(), call_type.clone()))
                 .collect::<Vec<_>>()
         })
         .collect();
@@ -201,10 +190,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Find which type this belongs to
         for (type_idx, pt) in phrase_types.iter().enumerate() {
             if pt.indices.contains(&idx) {
-                file_phrases
-                    .entry(source_file.clone())
-                    .or_insert_with(Vec::new)
-                    .push((idx, type_idx, pt.type_id.clone()));
+                file_phrases.entry(source_file.clone()).or_insert_with(Vec::new).push((
+                    idx,
+                    type_idx,
+                    pt.type_id.clone(),
+                ));
                 break;
             }
         }
@@ -426,12 +416,7 @@ fn load_flac_audio(path: &Path) -> Result<Vec<f32>, Box<dyn std::error::Error>> 
     hint.with_extension("flac");
 
     let mut probed = symphonia::default::get_probe()
-        .format(
-            &hint,
-            mss,
-            &FormatOptions::default(),
-            &MetadataOptions::default(),
-        )
+        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
         .map_err(|e| format!("Probe failed: {}", e))?;
 
     let track = probed.format.default_track().ok_or("No track")?;
@@ -512,8 +497,7 @@ fn cluster_by_similarity(
         }
 
         // Calculate average duration
-        let avg_dur: f32 =
-            indices.iter().map(|&idx| candidates[idx].1).sum::<f32>() / indices.len() as f32;
+        let avg_dur: f32 = indices.iter().map(|&idx| candidates[idx].1).sum::<f32>() / indices.len() as f32;
 
         types.push(PhraseType {
             type_id: format!("Type_{}", types.len() + 1),

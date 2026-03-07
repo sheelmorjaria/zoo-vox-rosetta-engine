@@ -184,9 +184,7 @@ impl SequenceModule {
         let mut trigram_counts: HashMap<(i32, i32, i32), usize> = HashMap::new();
         if sequence.len() >= 3 {
             for window in sequence.windows(3) {
-                *trigram_counts
-                    .entry((window[0], window[1], window[2]))
-                    .or_default() += 1;
+                *trigram_counts.entry((window[0], window[1], window[2])).or_default() += 1;
             }
         }
 
@@ -299,11 +297,7 @@ impl SequenceModule {
             let from = window[0];
             let to = window[1];
 
-            *transition_counts
-                .entry(from)
-                .or_default()
-                .entry(to)
-                .or_default() += 1;
+            *transition_counts.entry(from).or_default().entry(to).or_default() += 1;
             *from_counts.entry(from).or_default() += 1;
         }
 
@@ -349,9 +343,7 @@ mod tests {
         let motifs = module.find_motifs(&sequence);
 
         // Should find [0, 1, 2] pattern appearing 3 times
-        assert!(motifs
-            .iter()
-            .any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
+        assert!(motifs.iter().any(|m| m.pattern == vec![0, 1, 2] && m.occurrences >= 3));
     }
 
     #[test]

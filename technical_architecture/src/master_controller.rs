@@ -17,12 +17,27 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Instant;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/// Get current Unix timestamp in milliseconds
+///
+/// # Errors
+/// Returns an error if the system clock is set before Unix epoch
+fn unix_timestamp_millis() -> Result<u64> {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .context("system clock is before Unix epoch")
+        .map(|d| d.as_millis() as u64)
+}
 
 // ============================================================================
 // Hardware Detection
@@ -52,10 +67,7 @@ pub fn detect_fpga() -> bool {
     // Check for FPGA kernel modules
     if let Ok(output) = std::process::Command::new("lsmod").output() {
         let modules = String::from_utf8_lossy(&output.stdout);
-        if modules.contains("xclmgmt")
-            || modules.contains("intel_fpga")
-            || modules.contains("ofpga")
-        {
+        if modules.contains("xclmgmt") || modules.contains("intel_fpga") || modules.contains("ofpga") {
             info!("FPGA kernel module detected");
             return true;
         }
@@ -375,9 +387,7 @@ pub trait CognitiveProcessor: Send + Sync {
     ) -> Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>;
 
     /// Request next decision from Python
-    fn decide_next_move(
-        &self,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>>;
+    fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>>;
 
     /// Provide feedback for reinforcement learning
     fn process_feedback(
@@ -441,8 +451,7 @@ impl PyCognitiveProcessor {
 
     /// Deserialize IntentToken from JSON from Python
     fn intent_from_json(&self, json: &str) -> Result<IntentToken> {
-        serde_json::from_str(json)
-            .map_err(|e| anyhow::anyhow!("Failed to parse IntentToken from JSON: {}", e))
+        serde_json::from_str(json).map_err(|e| anyhow::anyhow!("Failed to parse IntentToken from JSON: {}", e))
     }
 
     /// Serialize ExecutionReceipt to JSON for Python
@@ -472,9 +481,7 @@ impl CognitiveProcessor for PyCognitiveProcessor {
         })
     }
 
-    fn decide_next_move(
-        &self,
-    ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
+    fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
         let py_obj = self.python_object.clone();
 
         Box::pin(async move {
@@ -564,10 +571,7 @@ impl SharedMemoryRingBuffer {
 
     /// Write audio data to the next available slot
     pub fn write(&mut self, data: &[f32]) -> Result<()> {
-        let slot = self
-            .write_position
-            .fetch_add(1, std::sync::atomic::Ordering::AcqRel)
-            % self.config.num_slots;
+        let slot = self.write_position.fetch_add(1, std::sync::atomic::Ordering::AcqRel) % self.config.num_slots;
 
         if data.len() > self.buffers[slot].len() {
             return Err(anyhow::anyhow!("Data too large for buffer slot"));
@@ -579,12 +583,8 @@ impl SharedMemoryRingBuffer {
 
     /// Get read-only view of the latest slot for Python
     pub fn read_latest(&self) -> Option<&[f32]> {
-        let write_slot = self
-            .write_position
-            .load(std::sync::atomic::Ordering::Acquire);
-        let read_slot = self
-            .read_position
-            .load(std::sync::atomic::Ordering::Acquire);
+        let write_slot = self.write_position.load(std::sync::atomic::Ordering::Acquire);
+        let read_slot = self.read_position.load(std::sync::atomic::Ordering::Acquire);
 
         if read_slot == write_slot {
             return None; // No new data
@@ -638,18 +638,13 @@ impl AtomicParameters {
         Self {
             sensitivity_threshold: Arc::new(std::sync::atomic::AtomicU32::new(f32::to_bits(0.5))),
             output_gain: Arc::new(std::sync::atomic::AtomicU32::new(f32::to_bits(0.8))),
-            max_processing_time_ms: Arc::new(std::sync::atomic::AtomicU64::new(f64::to_bits(
-                100.0,
-            ))),
+            max_processing_time_ms: Arc::new(std::sync::atomic::AtomicU64::new(f64::to_bits(100.0))),
         }
     }
 
     /// Get sensitivity threshold (atomic read)
     pub fn get_sensitivity(&self) -> f32 {
-        f32::from_bits(
-            self.sensitivity_threshold
-                .load(std::sync::atomic::Ordering::Relaxed),
-        )
+        f32::from_bits(self.sensitivity_threshold.load(std::sync::atomic::Ordering::Relaxed))
     }
 
     /// Set sensitivity threshold (atomic write)
@@ -673,10 +668,7 @@ impl AtomicParameters {
 
     /// Get max processing time (atomic read)
     pub fn get_max_processing_time(&self) -> f64 {
-        f64::from_bits(
-            self.max_processing_time_ms
-                .load(std::sync::atomic::Ordering::Relaxed),
-        )
+        f64::from_bits(self.max_processing_time_ms.load(std::sync::atomic::Ordering::Relaxed))
     }
 
     /// Set max processing time (atomic write)
@@ -747,12 +739,7 @@ impl UnifiedMasterController {
             watchdog_config: WatchdogConfig::default(),
             audio_buffer,
             parameters: Arc::new(AtomicParameters::new()),
-            last_python_heartbeat: Arc::new(std::sync::atomic::AtomicU64::new(
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis() as u64,
-            )),
+            last_python_heartbeat: Arc::new(std::sync::atomic::AtomicU64::new(unix_timestamp_millis()?)),
             python_process: None,
             python_command: None,
             restart_attempts: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
@@ -776,16 +763,14 @@ impl UnifiedMasterController {
     /// Start the controller
     pub async fn start(&self) -> Result<()> {
         info!("Starting Unified Master Controller");
-        self.running
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     /// Stop the controller
     pub async fn stop(&self) -> Result<()> {
         info!("Stopping Unified Master Controller");
-        self.running
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
@@ -818,9 +803,7 @@ impl UnifiedMasterController {
         self.update_python_heartbeat();
 
         // 6. Validate Intent against Reality (The Gatekeeper)
-        let result = self
-            .validate_and_execute_intent(&intent, &health_status)
-            .await?;
+        let result = self.validate_and_execute_intent(&intent, &health_status).await?;
 
         // 7. Return Receipt to Python for Learning
         if let Some(ref cog_proc) = self.cog_proc {
@@ -864,23 +847,16 @@ impl UnifiedMasterController {
 
     /// Check watchdog and recover Python if needed
     async fn check_watchdog(&self) -> Result<()> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as u64;
+        let now = unix_timestamp_millis()?;
 
-        let last_heartbeat = self
-            .last_python_heartbeat
-            .load(std::sync::atomic::Ordering::Relaxed);
+        let last_heartbeat = self.last_python_heartbeat.load(std::sync::atomic::Ordering::Relaxed);
         let elapsed = now.saturating_sub(last_heartbeat);
 
         if elapsed > self.watchdog_config.python_timeout_ms {
             warn!("Python watchdog timeout: {}ms", elapsed);
 
             if self.watchdog_config.auto_restart_python {
-                let attempts = self
-                    .restart_attempts
-                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let attempts = self.restart_attempts.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
                 if attempts < self.watchdog_config.max_restart_attempts {
                     error!("Restarting Python process (attempt {})", attempts + 1);
@@ -909,21 +885,14 @@ impl UnifiedMasterController {
             // 2. Or use a named pipe/socket to trigger restart
             // 3. For now, just log the intent
 
-            info!(
-                "Python restart requested. External process manager should handle actual restart."
-            );
+            info!("Python restart requested. External process manager should handle actual restart.");
         } else {
             warn!("Python restart requested but no command configured.");
         }
 
         // Reset heartbeat to give Python time to restart
-        self.last_python_heartbeat.store(
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64,
-            std::sync::atomic::Ordering::SeqCst,
-        );
+        self.last_python_heartbeat
+            .store(unix_timestamp_millis()?, std::sync::atomic::Ordering::SeqCst);
 
         // Log with PTP timestamp
         let tech = self.tech_arch.read().await;
@@ -980,9 +949,7 @@ impl UnifiedMasterController {
                 }
 
                 // High complexity requires more headroom
-                if matches!(complexity, SynthesisComplexity::High)
-                    && !health.can_handle_high_complexity()
-                {
+                if matches!(complexity, SynthesisComplexity::High) && !health.can_handle_high_complexity() {
                     return Ok(ExecutionReceipt::Rejected {
                         session_id: intent.session_id.clone(),
                         action: intent.action.clone(),
@@ -1099,13 +1066,9 @@ impl UnifiedMasterController {
 
     /// Update Python heartbeat timestamp
     fn update_python_heartbeat(&self) {
-        self.last_python_heartbeat.store(
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64,
-            std::sync::atomic::Ordering::SeqCst,
-        );
+        let timestamp = unix_timestamp_millis().unwrap_or(0);
+        self.last_python_heartbeat
+            .store(timestamp, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Get shared audio buffer (for Python zero-copy access)
@@ -1177,8 +1140,7 @@ mod tests {
 
         /// Set panic flag
         fn set_panic(&self, value: bool) {
-            self.should_panic
-                .store(value, std::sync::atomic::Ordering::SeqCst);
+            self.should_panic.store(value, std::sync::atomic::Ordering::SeqCst);
         }
 
         /// Get current health context
@@ -1201,9 +1163,7 @@ mod tests {
             })
         }
 
-        fn decide_next_move(
-            &self,
-        ) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
+        fn decide_next_move(&self) -> Pin<Box<dyn std::future::Future<Output = Result<IntentToken>> + Send>> {
             let intents = self.pending_intents.clone();
             let panic = self.should_panic.load(std::sync::atomic::Ordering::SeqCst);
             let delay_ms = self.response_delay_ms;
@@ -1280,10 +1240,7 @@ mod tests {
         let deserialized: IntentToken = serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(deserialized.session_id, "test_session_serialization");
         assert_eq!(deserialized.max_latency_ms, 50.0);
-        assert_eq!(
-            deserialized.chain_hash,
-            Some("causal_chain_123".to_string())
-        );
+        assert_eq!(deserialized.chain_hash, Some("causal_chain_123".to_string()));
     }
 
     /// Test 2: Receipt Feedback Loop
@@ -1320,9 +1277,7 @@ mod tests {
         let receipts = mock.get_receipts().await;
         assert_eq!(receipts.len(), 1);
         match &receipts[0] {
-            ExecutionReceipt::Success {
-                synthesis_result, ..
-            } => {
+            ExecutionReceipt::Success { synthesis_result, .. } => {
                 assert!(synthesis_result.is_some());
                 let result = synthesis_result.as_ref().unwrap();
                 assert_eq!(result.mode, SynthesisMode::Horizontal);
@@ -1570,10 +1525,7 @@ mod tests {
         )
         .with_chain_hash(format!("{}->step_2", intent.chain_hash.unwrap()));
 
-        assert_eq!(
-            next_intent.chain_hash,
-            Some("chain_step_1->step_2".to_string())
-        );
+        assert_eq!(next_intent.chain_hash, Some("chain_step_1->step_2".to_string()));
     }
 
     /// Test 10: PTP Clock Consistency
@@ -1588,12 +1540,8 @@ mod tests {
         let ts3 = PtpTimestamp::now();
 
         // Verify monotonicity
-        assert!(
-            ts2.seconds > ts1.seconds || (ts2.seconds == ts1.seconds && ts2.nanos >= ts1.nanos)
-        );
-        assert!(
-            ts3.seconds > ts2.seconds || (ts3.seconds == ts2.seconds && ts3.nanos >= ts2.nanos)
-        );
+        assert!(ts2.seconds > ts1.seconds || (ts2.seconds == ts1.seconds && ts2.nanos >= ts1.nanos));
+        assert!(ts3.seconds > ts2.seconds || (ts3.seconds == ts2.seconds && ts3.nanos >= ts2.nanos));
 
         // Verify nanosecond precision
         assert!(ts1.nanos < 1_000_000_000);
@@ -1602,8 +1550,7 @@ mod tests {
 
         // Serialize/deserialize to verify consistency
         let json = serde_json::to_string(&ts1).expect("Failed to serialize");
-        let deserialized: PtpTimestamp =
-            serde_json::from_str(&json).expect("Failed to deserialize");
+        let deserialized: PtpTimestamp = serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(ts1.seconds, deserialized.seconds);
         assert_eq!(ts1.nanos, deserialized.nanos);
     }

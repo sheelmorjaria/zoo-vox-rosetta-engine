@@ -4,22 +4,19 @@
 //
 // Usage: cargo run --release --example phase3_hdbscan_test
 
+#![allow(clippy::all, dead_code, unused_imports, unused_variables)]
 use std::path::Path;
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Paths to checkpoint data
-    let results_dir =
-        Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
+    let results_dir = Path::new("/home/sheel/birdsong_analysis/data/marmoset_lexicon_to_syntax_results");
     let features_path = results_dir.join("phrase_features.bincode");
     let output_path = results_dir.join("hdbscan_clusters_test_10k.json");
 
     let subset_size = 10000; // Test with 10K samples first
 
-    println!(
-        "🔬 Phase 3: HDBSCAN Discovery (TEST - {} samples)",
-        subset_size
-    );
+    println!("🔬 Phase 3: HDBSCAN Discovery (TEST - {} samples)", subset_size);
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!("   Features: {}", features_path.display());
     println!("   Output:   {}", output_path.display());
@@ -30,15 +27,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let load_start = Instant::now();
 
     let features_data = std::fs::read(&features_path)?;
-    println!(
-        "   ├─ Loaded {} MB of feature data",
-        features_data.len() / 1_048_576
-    );
+    println!("   ├─ Loaded {} MB of feature data", features_data.len() / 1_048_576);
 
     // Deserialize features
-    let serializable_features: Vec<
-        technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable,
-    > = bincode::deserialize(&features_data)?;
+    let serializable_features: Vec<technical_architecture::lexicon_to_syntax::PhraseFeaturesSerializable> =
+        bincode::deserialize(&features_data)?;
 
     let n_features = serializable_features.len();
     println!("   ├─ Total features available: {}", n_features);
@@ -84,8 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cluster_start = Instant::now();
 
     // Create HDBSCAN clusterer
-    let hdbscan =
-        technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
+    let hdbscan = technical_architecture::hdbscan::HdbscanClustering::new(min_cluster_size, min_samples)?;
 
     // Run clustering
     let labels = hdbscan.fit_predict(&feature_matrix)?;
@@ -107,10 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total phrases:        {}", subset_features.len());
     println!("   Clusters found:       {}", stats.n_clusters);
     println!("   Noise points:         {}", stats.noise_count);
-    println!(
-        "   Clustered phrases:    {}",
-        subset_features.len() - stats.noise_count
-    );
+    println!("   Clustered phrases:    {}", subset_features.len() - stats.noise_count);
     println!(
         "   Clustering rate:      {:.1}%",
         (subset_features.len() - stats.noise_count) as f64 / subset_features.len() as f64 * 100.0
@@ -169,17 +158,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Extrapolate to full dataset
     let total_samples = n_features;
-    let estimated_time_sec =
-        (total_samples as f64 / subset_features.len() as f64) * cluster_time.as_secs_f64();
+    let estimated_time_sec = (total_samples as f64 / subset_features.len() as f64) * cluster_time.as_secs_f64();
     let estimated_time_hours = estimated_time_sec / 3600.0;
 
     println!("📈 Performance Extrapolation");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!("   Test samples:           {}", subset_features.len());
-    println!(
-        "   Test time:              {:.2}s",
-        cluster_time.as_secs_f64()
-    );
+    println!("   Test time:              {:.2}s", cluster_time.as_secs_f64());
     println!(
         "   Per-sample time:        {:.3}ms",
         cluster_time.as_millis() as f64 / subset_features.len() as f64
