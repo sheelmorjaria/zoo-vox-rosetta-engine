@@ -361,6 +361,22 @@ pub use neural_boundary::{segment_into_phrases, BoundaryDetectorConfig, Boundary
 // Rename to avoid conflict with within_vocalization_analyzer::PhraseBoundary
 pub use neural_boundary::{BoundaryType as NbdBoundaryType, PhraseBoundary as NbdPhraseBoundary};
 
+// Streaming exports (NEW - Real-time audio ingestion with system clock timestamps)
+pub use streaming::{
+    DebounceTimer, RealTimeTimestamp, SpectralChangeProfile, StreamingBuffer, StreamingConfig,
+};
+
+// PAM Router exports (NEW - Passive Acoustic Monitoring with stateless hierarchical classification)
+pub use pam_router::{
+    map_species_to_acoustic, AcousticGroup, PAMResult, PAMRouter, PAMRouterConfig,
+};
+
+// Active Learning exports (NEW - Uncertainty-based sample flagging for expert labeling)
+pub use active_learning::{
+    flag_for_active_learning, generate_sample_path, save_uncertain_sample,
+    ActiveLearningConfig, DetectionPayload,
+};
+
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
 pub use sequence::{Motif, NgramStats, SequenceAnalysis, SequenceModule};
 pub use species::{
@@ -545,6 +561,20 @@ pub use peer_controller_performance::{
     run_all_benchmarks, PeerControllerSimulator, PerformanceMetrics,
 };
 
+// RF Feature Stacking Ensemble exports (Physics 46D + Full 112D with confidence weighting)
+pub use rf_stacking_ensemble::{
+    ConfidenceWeightedStacker, DecisionTree, DetectionResult, EnsembleMetrics, FeatureStackingEnsemble, RFModel,
+    StackerResult, StackingConfig, TreeNode, DEFAULT_DETECTION_THRESHOLD, DEFAULT_PHYSICS_PREFERENCE, FULL_DIM,
+    PHYSICS_DIM,
+};
+
+// Hierarchical Ensemble Router exports (Two-Stage Classification with Curriculum NN + Feature Stacking RF)
+pub use hierarchical_ensemble_router::{
+    HierarchicalEnsembleRouter, NeuralNetworkModel, RouterConfig, RouterMetrics, RouterResult, SpecialistRegistry,
+    SpeciesCandidate, Stage1Result, Stage2Result, MAX_CANDIDATES, MIN_STAGE1_CONFIDENCE, STAGE1_NN_WEIGHT,
+    STAGE1_RF_WEIGHT, STAGE2_NN_WEIGHT, STAGE2_RF_WEIGHT,
+};
+
 // Import modules
 mod acoustic_simulator;
 mod auto_calibration;
@@ -573,8 +603,23 @@ mod wildlife_sentry;
 // Taxonomic-aware routing for hybrid expert architecture
 pub mod taxonomic_router;
 
+// Acoustic-aware routing for detection pipeline (13 acoustic groups)
+pub mod acoustic_router;
+
 // Voting Ensemble for Species Classification (NN + RF)
 pub mod voting_ensemble;
+
+// RF Feature Stacking Ensemble (Physics 46D + Full 112D with confidence weighting)
+pub mod rf_stacking_ensemble;
+
+// Hierarchical Ensemble Router (Two-Stage Classification: Group Detection + Species Discrimination)
+pub mod hierarchical_ensemble_router;
+
+// Zero-Shot Router (Metric Learning + k-NN for Open-Set Classification)
+pub mod zero_shot_router;
+
+// Classical ML (Random Forest, Decision Tree, Logistic Regression)
+pub mod classical_ml;
 
 // Taxonomic-Aware Feature Gating (Dynamic Feature Reweighting)
 pub mod feature_gating;
@@ -636,6 +681,15 @@ mod parallel_extraction;
 mod corpus_analysis;
 mod neural_boundary;
 
+// Streaming (NEW - Real-time audio ingestion with system clock timestamps)
+pub mod streaming;
+
+// PAM Router (NEW - Passive Acoustic Monitoring with stateless hierarchical classification)
+pub mod pam_router;
+
+// Active Learning (NEW - Uncertainty-based sample flagging for expert labeling)
+pub mod active_learning;
+
 // Within-Vocalization Analysis (NEW - Multi-phrase detection within vocalizations)
 pub mod within_vocalization_analyzer;
 
@@ -650,6 +704,9 @@ pub mod sequence;
 
 // Species Configuration (NEW - Zoo Vox Rosetta v2.0: Species-specific adaptation layer)
 pub mod species;
+
+// Acoustic Profile (NEW - Strategy Pattern for species-specific processing)
+pub mod acoustic_profile;
 
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System
 // 30D/45D acoustic feature extraction, phrase segmentation, and library management

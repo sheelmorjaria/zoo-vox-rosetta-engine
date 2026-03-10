@@ -269,3 +269,14 @@ technical_architecture/in
 
 # Generated documents
 *.docx
+
+# PAM Pipeline runtime directories
+uncertain_samples/
+technical_architecture/uncertain_samples/
+
+# Raw audio sample files (generated at runtime)
+*.raw.samples
+
+# Detection logs (generated at runtime)
+detections.log
+*_detections.jsonl
