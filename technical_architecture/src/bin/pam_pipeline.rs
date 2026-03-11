@@ -24,18 +24,15 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use std::io::{self, BufRead};
 use std::path::PathBuf;
-use std::time::SystemTime;
 
 use technical_architecture::{
     // Phase 1: Streaming
     DebounceTimer, NeuralBoundaryDetector, RealTimeTimestamp, StreamingBuffer, StreamingConfig,
     BoundaryDetectorConfig,
     // Phase 2: Routing
-    AcousticGroup, map_species_to_acoustic, PAMRouter, PAMRouterConfig, PAMResult,
+    AcousticGroup, PAMRouter, PAMRouterConfig, PAMResult,
     // Phase 4: Active Learning
     ActiveLearningConfig, DetectionPayload, flag_for_active_learning,
-    // Taxonomic types
-    taxonomic_router::ConsolidatedTaxon,
 };
 
 /// PAM Pipeline Configuration
@@ -451,6 +448,8 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::SystemTime;
+    use technical_architecture::taxonomic_router::ConsolidatedTaxon;
 
     #[test]
     fn test_extract_features_placeholder() {
