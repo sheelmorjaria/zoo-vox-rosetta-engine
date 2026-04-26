@@ -39,6 +39,7 @@ class FeatureEvent:
     features_112d: np.ndarray
     timestamp: float
     sequence: int
+    emitter_id: Optional[int] = None
 
     @classmethod
     def from_json(cls, data: dict) -> "FeatureEvent":
@@ -49,6 +50,7 @@ class FeatureEvent:
             features_112d=np.array(data["features_112d"], dtype=np.float32),
             timestamp=data["timestamp"],
             sequence=data["sequence"],
+            emitter_id=data.get("emitter_id"),
         )
 
     @classmethod
@@ -58,13 +60,16 @@ class FeatureEvent:
 
     def to_json_dict(self) -> dict:
         """Serialize to JSON-compatible dictionary"""
-        return {
+        result = {
             "event_type": self.event_type,
             "cluster_id": self.cluster_id,
             "features_112d": self.features_112d.tolist(),
             "timestamp": self.timestamp,
             "sequence": self.sequence,
         }
+        if self.emitter_id is not None:
+            result["emitter_id"] = self.emitter_id
+        return result
 
     def __repr__(self) -> str:
         return (

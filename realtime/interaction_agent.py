@@ -23,7 +23,7 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -39,6 +39,13 @@ from realtime.feature_subscriber import (
     FeatureEvent,
     FeatureSubscriber,
     FeatureSubscriberConfig,
+)
+
+# Import parsing strategy for Strategy Pattern
+from realtime.parsing_strategy import (
+    ParseResult,
+    ParsingStrategy,
+    ParsingStrategyFactory,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,6 +72,34 @@ class InteractionAgentConfig:
     response_cooldown_ms: float = 100.0
     max_responses_per_second: float = 5.0
     verbose_logging: bool = False
+
+    # Domain mode for Strategy Pattern (Sprint 1)
+    # "general" = CompositionalStrategy (default, segments = words)
+    # "bat" = HolophrasticStrategy (rigid idioms = atomic units)
+    domain_mode: str = "general"
+
+    # Optional segment meanings for parsing
+    segment_meanings: Optional[Dict[int, str]] = None
+
+    # Custom idioms for holophrastic mode (list of (segments, meaning, confidence))
+    custom_idioms: Optional[List[Tuple[List[int], str, float]]] = None
+
+    # ZeroMQ endpoint for Rust config REQ/REP channel
+    config_endpoint: Optional[str] = None
+
+    def get_parsing_strategy(self) -> ParsingStrategy:
+        """
+        Get the appropriate parsing strategy based on domain_mode.
+
+        Returns:
+            ParsingStrategy instance (CompositionalStrategy or HolophrasticStrategy)
+        """
+        return ParsingStrategyFactory.create(
+            domain_mode=self.domain_mode,
+            segment_meanings=self.segment_meanings,
+            custom_idioms=self.custom_idioms,
+            config_endpoint=self.config_endpoint,
+        )
 
 
 class InteractionAgent:
@@ -120,6 +155,9 @@ class InteractionAgent:
             ),
         )
 
+        # Initialize parsing strategy based on domain_mode (Sprint 1)
+        self.parser = self.config.get_parsing_strategy()
+
         # State management
         self.state = AgentState.IDLE
         self._running = False
@@ -135,9 +173,15 @@ class InteractionAgent:
         self._responses_sent = 0
         self._start_time: Optional[float] = None
 
+        # Parsing statistics (Sprint 1)
+        self._idioms_detected = 0
+        self._tokens_parsed = 0
+
         logger.info("InteractionAgent initialized")
         logger.info(f"  Feature endpoint: {self.config.feature_endpoint}")
         logger.info(f"  Action endpoint: {self.config.action_endpoint}")
+        logger.info(f"  Domain mode: {self.config.domain_mode}")
+        logger.info(f"  Parser: {self.parser.name}")
 
     def start(self) -> None:
         """Start the interaction agent"""
@@ -224,39 +268,59 @@ class InteractionAgent:
         """
         Process features through cognitive layer.
 
-        This method would integrate with the actual CognitiveLayer.
-        For now, it provides a simplified implementation.
+        This method integrates the parsing strategy (Sprint 1) with
+        context detection and synthesis parameter generation.
 
         Args:
             event: Feature event to process
 
         Returns:
-            Processing result with context and synthesis parameters
+            Processing result with context, parsed tokens, and synthesis parameters
         """
+        # Parse segment sequence using the strategy pattern (Sprint 1)
+        # Use cluster_id as the segment ID for parsing (sequence is just an ordering counter)
+        parse_result: Optional[ParseResult] = None
+        segment_sequence = [event.cluster_id]
+        if segment_sequence:
+            parse_result = self.parser.parse(segment_sequence)
+            self._tokens_parsed += len(parse_result.tokens)
+            self._idioms_detected += parse_result.idiom_count
+
+            # Log idiom detection for bat mode
+            if parse_result.idiom_count > 0 and self.config.verbose_logging:
+                logger.info(f"Detected {parse_result.idiom_count} idiom(s) in sequence")
+
         # Simplified context inference from 112D features
-        context = self._infer_context(event.features_112d)
+        context = self._infer_context(event.features_112d, event.emitter_id)
 
         # Calculate confidence
         confidence = self._calculate_confidence(event.features_112d, context)
 
-        return {
+        # Build result with parsed tokens
+        result = {
             "context_state": context,
             "confidence": confidence,
             "cluster_id": event.cluster_id,
             "sequence": event.sequence,
             "timestamp": event.timestamp,
             "features_112d": event.features_112d,
+            "emitter_id": event.emitter_id,
+            "parse_result": parse_result,  # Sprint 1: Include parsed tokens
+            "strategy_used": self.parser.name,  # Sprint 1: Track which strategy was used
         }
 
-    def _infer_context(self, features_112d: np.ndarray) -> str:
+        return result
+
+    def _infer_context(self, features_112d: np.ndarray, emitter_id: Optional[int] = None) -> str:
         """
-        Infer behavioral context from 112D features.
+        Infer behavioral context from 112D features and emitter identity.
 
         This is a simplified version. The full implementation would
         use the ProbabilisticContextMachine.
 
         Args:
             features_112d: 112D feature vector
+            emitter_id: Optional emitter identity from source separation
 
         Returns:
             Context string
@@ -402,6 +466,14 @@ class InteractionAgent:
             "responses_per_second": self._responses_sent / max(uptime, 1.0),
             "feature_subscriber": self.feature_subscriber.get_stats(),
             "action_publisher": self.action_publisher.get_stats(),
+            # Sprint 1: Parsing statistics
+            "parsing": {
+                "strategy": self.parser.name,
+                "domain_mode": self.config.domain_mode,
+                "is_holophrastic": self.parser.is_holophrastic,
+                "tokens_parsed": self._tokens_parsed,
+                "idioms_detected": self._idioms_detected,
+            },
         }
 
     def is_running(self) -> bool:

@@ -25,7 +25,7 @@ License: CC BY-ND 4.0 International
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class TokenType(Enum):
@@ -239,38 +239,14 @@ class HolophrasticStrategy(ParsingStrategy):
         """
         self._rigid_idioms = rigid_idioms or self._DEFAULT_RIGID_IDIOMS
         self._segment_meanings = segment_meanings or {}
-        self._valid_bigrams = valid_bigrams if valid_bigrams is not None else self._DEFAULT_VALID_BIGRAMS
+        self._valid_bigrams = (
+            valid_bigrams if valid_bigrams is not None else self._DEFAULT_VALID_BIGRAMS
+        )
         self._openers = openers if openers is not None else self._DEFAULT_OPENERS
         self._closers = closers if closers is not None else self._DEFAULT_CLOSERS
 
         # Build efficient lookup structures
         self._idiom_first_segments = {idiom[0][0]: i for i, idiom in enumerate(self._rigid_idioms)}
-
-    @classmethod
-    def from_rust_profile(cls, profile_data: Any) -> "HolophrasticStrategy":
-        """
-        Create strategy from acoustic profile data loaded from Rust.
-
-        Args:
-            profile_data: AcousticProfileData from config_client
-
-        Returns:
-            HolophrasticStrategy initialized with Rust data
-        """
-        bigrams = set(tuple(b) for b in profile_data.valid_bigrams)
-        openers = set(profile_data.openers)
-        closers = set(profile_data.closers)
-        idioms = [
-            ([s for s in idiom.segments], idiom.meaning, idiom.confidence)
-            for idiom in profile_data.rigid_idioms
-        ]
-
-        return cls(
-            rigid_idioms=idioms if idioms else None,
-            valid_bigrams=bigrams if bigrams else None,
-            openers=openers if openers else None,
-            closers=closers if closers else None,
-        )
 
     @property
     def name(self) -> str:
@@ -466,8 +442,7 @@ class HolophrasticStrategy(ParsingStrategy):
             HolophrasticStrategy with data loaded from Rust
         """
         rigid_idioms = [
-            (idiom.segments, idiom.meaning, idiom.confidence)
-            for idiom in profile_data.rigid_idioms
+            (idiom.segments, idiom.meaning, idiom.confidence) for idiom in profile_data.rigid_idioms
         ]
         return cls(
             rigid_idioms=rigid_idioms if rigid_idioms else None,
@@ -514,7 +489,11 @@ class ParsingStrategyFactory:
                 try:
                     from realtime.config_client import ConfigClient
 
-                    client = ConfigClient(endpoint=config_endpoint) if config_endpoint else ConfigClient()
+                    client = (
+                        ConfigClient(endpoint=config_endpoint)
+                        if config_endpoint
+                        else ConfigClient()
+                    )
                     profile = client.request_acoustic_profile("bat")
                     if profile is not None:
                         return HolophrasticStrategy.from_rust_profile(profile)

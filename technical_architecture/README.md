@@ -8,6 +8,7 @@ High-performance Rust execution layer for the animal vocalization analysis frame
 2. [Zoo Vox Rosetta Engine v2.0](#zoo-vox-rosetta-engine-v20)
 3. [Four-Stage Pipeline](#four-stage-pipeline)
    - [45D Acoustic Features](#45d-acoustic-feature-system)
+   - [112D Rosetta Features](#112d-rosetta-features)
    - [Dynamic Segmentation](#dynamic-segmentation-change-point-detection)
    - [Grading Score System](#grading-score-system)
    - [Cascaded Architecture](#cascaded-architecture-router--analyzer)
@@ -16,12 +17,14 @@ High-performance Rust execution layer for the animal vocalization analysis frame
    - [Rosetta Pipeline](#rosetta-pipeline-integrated-zoo-vox-rosetta-engine)
 5. [Research Workflow](#research-workflow)
 6. [Query Interface - Semantic Search](#query-interface---semantic-search)
-7. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
-8. [Build & Test](#build)
-9. [Architecture](#architecture)
-10. [Deployment](#deployment)
-11. [Performance](#performance)
-12. [Scientific Context](#scientific-context)
+7. [PAM Pipeline - Passive Acoustic Monitoring](#pam-pipeline---passive-acoustic-monitoring)
+8. [Closed-Loop Interaction Agent](#closed-loop-interaction-agent)
+9. [Granular Concatenative Synthesis](#granular-concatenative-synthesis)
+10. [Build & Test](#build)
+11. [Architecture](#architecture)
+12. [Deployment](#deployment)
+13. [Performance](#performance)
+14. [Scientific Context](#scientific-context)
 
 ---
 
@@ -347,6 +350,122 @@ The 45-dimensional feature vector provides comprehensive bioacoustic characteriz
 | **Modulation** | D15-D19 | AM rate/depth, FM rate/slope, spectral_flux | Dolphins, bats |
 | **Cepstral** | D20-D24 | MFCC 1-5 | All species |
 | **Formant** | D25-D29 | F1, F2, F3, B1, B2 | Primates, humans |
+
+---
+
+## 112D Rosetta Features
+
+### Overview
+
+The **112D Rosetta Feature Vector** is the complete universal representation for cross-species vocalization analysis. It builds upon the 45D acoustic foundation by adding macro-texture and micro-texture layers for fine-grained species discrimination.
+
+### Architecture (112D = 46D + 30D + 36D)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    112D ROSETTA FEATURES                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  LAYER 1 (46D)  │  │  LAYER 2 (30D)  │  │  LAYER 3 (36D)  │ │
+│  │  Base Physics   │  │  Macro Texture  │  │  Micro Texture  │ │
+│  │                 │  │                 │  │                 │ │
+│  │  - F0 (3D)      │  │  - Harmonic     │  │  - Spectral     │ │
+│  │  - Duration (1D)│  │    Texture      │  │    Derivatives  │ │
+│  │  - Energy (3D)  │  │  - Pitch        │  │  - FM/AM Bins   │ │
+│  │  - Harmonicity  │  │    Geometry     │  │  - ICI Bins     │ │
+│  │    (3D)         │  │  - GLCM Texture │  │  - Rhythm Hist  │ │
+│  │  - Envelope (4D)│  │                 │  │                 │ │
+│  │  - MFCC (14D)   │  │  Universal      │  │  Species-       │ │
+│  │  - Spectral     │  │  Taxonomy       │  │  Specific       │ │
+│  │    Shape (12D)  │  │  Classification │  │  Identity       │ │
+│  │  - Formants (6D)│  │                 │  │                 │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│           │                    │                    │           │
+│           └────────────────────┴────────────────────┘           │
+│                           │                                    │
+│                           ▼                                    │
+│              Universal Taxonomic Classification                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Layer 1: Base Physics (46D)
+
+Universal acoustic features that apply to all species:
+
+| Feature Group | Dimensions | Description |
+|---------------|------------|-------------|
+| F0 | 3D | mean, std_dev, range |
+| Duration | 1D | phrase duration in ms |
+| Energy | 3D | rms, max, dynamic_range |
+| Harmonicity | 3D | hnr, harmonic_to_noise, spectral_flatness |
+| Envelope | 4D | attack_time, decay_time, sustain_level, vibrato_depth |
+| MFCC | 14D | Spectral envelope coefficients |
+| Spectral Shape | 12D | centroid, spread, skewness, kurtosis, slope, etc. |
+| Formants | 6D | f1, f2, f3, b1, b2, b3 |
+
+### Layer 2: Macro Texture (30D)
+
+Species group discrimination through harmonic and pitch analysis:
+
+| Feature Group | Dimensions | Description |
+|---------------|------------|-------------|
+| Harmonic Texture | 12D | Harmonicity multi-scale (mean, std, skew, kurt, range, iqr) × 3 time windows |
+| Pitch Geometry | 9D | F0 contour statistics (mean, std, min, max, range, slope, etc.) |
+| GLCM Texture | 9D | Gray-level co-occurrence matrix (contrast, dissimilarity, homogeneity) |
+
+### Layer 3: Micro Texture (36D)
+
+Fine species identity through temporal and spectral micro-structure:
+
+| Feature Group | Dimensions | Description |
+|---------------|------------|-------------|
+| Spectral Derivatives | 13D | Delta MFCC coefficients |
+| FM/AM Bins | 8D | Frequency and amplitude modulation distribution |
+| ICI Bins | 10D | Inter-call interval histogram |
+| Rhythm Histogram | 5D | Onset rate and rhythmic patterns |
+
+### Extraction API
+
+```rust
+use technical_architecture::MicroDynamicsExtractor;
+
+// Create extractor with sample rate
+let extractor = MicroDynamicsExtractor::new(48000);
+
+// Extract 112D features from audio buffer
+let features_112d = extractor.extract_rosetta(&audio)?;
+
+// Access individual layers
+let base_physics = &features_112d.base_physics;  // 46D
+let macro_texture = &features_112d.macro_texture; // 30D
+let micro_texture = &features_112d.micro_texture; // 36D
+
+// Convert to flat vector for ML
+let flat_vector: Vec<f32> = features_112d.to_flat_vec(); // 112D
+```
+
+### Usage in PAM Pipeline
+
+The 112D features are the primary input for species classification in the PAM Pipeline:
+
+```rust
+use technical_architecture::{MicroDynamicsExtractor, PAMRouter};
+
+// Extract features
+let extractor = MicroDynamicsExtractor::new(48000);
+let features_112d = extractor.extract_rosetta(&phrase_audio)?;
+
+// Route to acoustic specialist
+let router = PAMRouter::with_acoustic_groups()?;
+let group = router.route_to_group(&features_112d)?;
+
+// Classify with species-specific model
+let result = router.classify(&features_112d, group)?;
+println!("Species: {}, Confidence: {:.2}", result.species, result.confidence);
+```
+
+---
 | **Micro-dynamics** | D30-D34 | Onset rate, median ICI, ICI CV, burst rate, gap rate | Sperm whales, insects |
 | **Psychoacoustic** | D35-D39 | Loudness, sharpness, roughness, fluctuation, tonality | All species |
 | **TFS** | D40-D44 | ACF peak, ACF strength, SFM, periodicity, entropy | All species |
@@ -1099,7 +1218,273 @@ by_duration = qi.search_by_duration(50, 200)
 
 ---
 
-## Granular Concatenative Synthesis
+## PAM Pipeline - Passive Acoustic Monitoring
+
+### Overview
+
+The **PAM Pipeline** is a complete 4-phase Passive Acoustic Monitoring system designed for field deployment in wildlife monitoring scenarios. It processes audio streams in real-time to detect and classify animal vocalizations.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PAM Pipeline Architecture                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────┐ │
+│  │   Phase 1    │───▶│   Phase 2    │───▶│   Phase 3    │───▶│  Phase 4  │ │
+│  │  Ingestion   │    │   Routing    │    │  Filtering   │    │  Output   │ │
+│  │  & Boundary  │    │  112D Feat   │    │  Threshold   │    │  & AL     │ │
+│  └──────────────┘    └──────────────┘    └──────────────┘    └───────────┘ │
+│         │                   │                   │                   │       │
+│         ▼                   ▼                   ▼                   ▼       │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────┐ │
+│  │ Streaming    │    │ PAMRouter    │    │ Confidence   │    │ Detection │ │
+│  │ Buffer       │    │ AcousticGrp  │    │ >= 1.5       │    │ Payload   │ │
+│  │ NBD          │    │ Specialists  │    │              │    │ JSON      │ │
+│  └──────────────┘    └──────────────┘    └──────────────┘    └───────────┘ │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase Descriptions
+
+| Phase | Component | Description |
+|-------|-----------|-------------|
+| **1** | Real-Time Ingestion & Boundary Detection | Streaming audio buffer with system timestamps and Neural Boundary Detection |
+| **2** | Feature Extraction & Hierarchical Routing | 112D Rosetta features → Acoustic Group routing |
+| **3** | Confidence Threshold Filtering | Confidence >= 1.5 required for detection |
+| **4** | Active Learning & Output | Uncertainty flagging and JSON payload output |
+
+### Acoustic Groups (13 Specialized Classifiers)
+
+| Group | Species | Acoustic Characteristics |
+|-------|---------|--------------------------|
+| HARMONIC_SONG | Songbirds, Zebra Finch | Rich harmonic content, clear F0 |
+| FREQUENCY_MODULATED | Dolphins, Bats | FM sweeps, whistles, clicks |
+| BROADBAND_NOISY | Primates, Macaques | Noisy screams, grunts |
+| PULED_STACCATO | Sperm Whales | Click trains, codas |
+| HARMONIC_TRILLED | Marmosets, Warblers | Rapid pitch modulation |
+| LOW_FREQUENCY | Elephants, Bison | < 500 Hz fundamental |
+| HIGH_FREQUENCY | Bats, Shrews | > 20 kHz ultrasonic |
+| COMPLEX_MULTIMODAL | Orca, Giant Otter | Multiple encoding strategies |
+| GRADUAL_TRANSITION | Meerkat, Suricata | Smooth vocalization transitions |
+| TRANSIENT_IMPULS | Seals, Sea Lions | Short impulsive sounds |
+| ENVIRONMENTAL_SOUND | Wind, Rain, Insects | Non-biological ambient |
+| UNKNOWN_CLASS | Unidentified | Insufficient training data |
+| SILENCE_BACKGROUND | Quiet periods | Below energy threshold |
+
+### Usage
+
+```bash
+# Real-time mode (read from stdin)
+cargo run --release --bin pam_pipeline -- --real-time
+
+# Process audio file (raw f32 samples)
+cargo run --release --bin pam_pipeline -- --input audio.raw
+
+# Custom confidence threshold
+cargo run --release --bin pam_pipeline -- --threshold 1.5 --input audio.raw
+
+# Verbose output
+cargo run --release --bin pam_pipeline -- --verbose --format jsonl --input audio.raw
+```
+
+### CLI Arguments
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--input` | None | Input audio file (raw f32 samples) |
+| `--real-time` | false | Read from stdin in real-time |
+| `--threshold` | 1.5 | Confidence threshold for detection |
+| `--sample-rate` | 44100 | Sample rate in Hz |
+| `--hop-size` | 512 | Hop size in samples |
+| `--min-phrase-duration` | 50.0 | Minimum phrase duration in ms |
+| `--al-low` | 1.4 | Active learning lower margin |
+| `--al-high` | 1.5 | Active learning upper margin |
+| `--format` | jsonl | Output format (jsonl, json, text) |
+| `--verbose` | false | Enable debug logging |
+
+### Output Format
+
+```json
+{
+  "timestamp": "2026-03-10T23:50:12Z",
+  "phrase_start_ms": 1234,
+  "phrase_duration_ms": 567,
+  "species": "zebra_finch",
+  "confidence": 1.87,
+  "acoustic_group": "HARMONIC_SONG",
+  "features_112d": [/* 112 float values */],
+  "active_learning_flag": false
+}
+```
+
+### Documentation
+
+See [`docs/pam_pipeline_guide.md`](docs/pam_pipeline_guide.md) for comprehensive documentation including:
+- Phase-by-phase architecture details
+- Active learning integration
+- Acoustic specialist methodology
+- Example workflows
+
+---
+
+## Closed-Loop Interaction Agent
+
+### Overview
+
+The **Closed-Loop Interaction Agent** enables real-time bidirectional communication between the Rust Execution Layer and Python Logic Layer for cognitive intelligence and decision-making.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CLOSED-LOOP AGENT SYSTEM                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                     RUST EXECUTION LAYER                              │   │
+│  │                                                                       │   │
+│  │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐   │   │
+│  │  │  Audio Input    │───►│       NBD       │───►│   112D Feature  │   │   │
+│  │  │  (48kHz, mono)  │    │  (Boundaries)   │    │   Extraction    │   │   │
+│  │  └─────────────────┘    └─────────────────┘    └────────┬────────┘   │   │
+│  │                                                          │            │   │
+│  │  ┌─────────────────┐                            ┌───────▼────────┐   │   │
+│  │  │   Synthesis     │◄───────────────────────────│   FeatureEvent │   │   │
+│  │  │   Pipeline      │                            │   Publisher    │   │   │
+│  │  └────────┬────────┘                            └────────────────┘   │   │
+│  │           │                                                     │   │   │
+│  │  ┌────────▼────────┐                            ┌────────────────┐   │   │
+│  │  │  Audio Output   │                            │   ActionSub-   │   │   │
+│  │  │  (Speaker/DAC)  │                            │   scriber      │   │   │
+│  │  └─────────────────┘                            └───────▲────────┘   │   │
+│  │                                                         │            │   │
+│  └─────────────────────────────────────────────────────────│────────────┘   │
+│                                                            │                │
+│                              ┌─────────────────────────────▼──────────────┐ │
+│                              │         ZeroMQ IPC Transport               │ │
+│                              │  ipc:///tmp/cognitive_features.ipc (PUB)   │ │
+│                              │  ipc:///tmp/cognitive_actions.ipc (SUB)    │ │
+│                              └─────────────────────────────┬──────────────┘ │
+│                                                          │                 │
+│  ┌───────────────────────────────────────────────────────▼──────────────┐  │
+│  │                     PYTHON LOGIC LAYER                                │  │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  FeatureSubscriber ◄─────────────────────────────────────────┐ │  │  │
+│  │  │  - Receives 112D features from Rust                          │ │  │  │
+│  │  │  - Context inference (alarm, contact, social)               │ │  │  │
+│  │  │  └──────────────────────────────────────────────────────────┘ │  │  │
+│  │  │                                                               │  │  │
+│  │  │  ┌─────────────────────────────────────────────────────────┐  │  │  │
+│  │  │  │  InteractionAgent (Cognitive Intelligence)              │  │  │  │
+│  │  │  │  - Strategy Pattern parsing (Compositional/Holophrastic)│ │  │  │
+│  │  │  │  - Confidence threshold gating                           │  │  │  │
+│  │  │  │  - Response rate limiting                                │  │  │  │
+│  │  │  └─────────────────────────────────────────────────────────┘  │  │  │
+│  │  │                                                               │  │  │
+│  │  │  ┌──────────────────────────────────────────────────────────┐ │  │  │
+│  │  │  │  ActionPublisher ──────────────────────────────────────►│ │  │  │
+│  │  │  │  - Sends synthesis timelines to Rust                    │ │  │  │
+│  │  └────────┴──────────────────────────────────────────────────────┘  │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+| Component | Language | Role |
+|-----------|----------|------|
+| `FeatureEventPublisher` | Rust | Streams 112D features over ZeroMQ PUB |
+| `FeatureSubscriber` | Python | Receives feature events with numpy arrays |
+| `InteractionAgent` | Python | Cognitive processing and decision making |
+| `ParsingStrategyFactory` | Python | Creates domain-specific parsers |
+| `ActionPublisher` | Python | Sends synthesis timelines to Rust |
+| `ActionSubscriber` | Rust | Receives synthesis commands |
+
+### Data Structures
+
+**FeatureEvent** (Rust → Python):
+```rust
+pub struct FeatureEvent {
+    pub cluster_id: u32,
+    pub features_112d: Vec<f32>,
+    pub timestamp: f64,
+    pub sequence: u64,
+    pub emitter_id: Option<i32>,  // NEW: Source separation identity
+}
+```
+
+**SynthesisAction** (Python → Rust):
+```python
+@dataclass
+class SynthesisAction:
+    timeline: List[TimelineEvent]
+    micro_deltas: List[MicroDynamicsDelta]
+    priority: int
+```
+
+### Strategy Pattern (Domain-Specific Parsing)
+
+The Interaction Agent supports different parsing strategies based on domain mode:
+
+| Strategy | Mode | Use Case |
+|----------|------|----------|
+| `CompositionalStrategy` | "general" | Segments = words (Marmoset, Songbirds) |
+| `HolophrasticStrategy` | "bat" | Rigid idioms = atomic units (Egyptian Fruit Bat) |
+
+```python
+from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+# Configure for bat-specific parsing
+config = InteractionAgentConfig(
+    domain_mode="bat",  # Use holophrastic strategy
+    feature_endpoint="ipc:///tmp/cognitive_features.ipc",
+    action_endpoint="ipc:///tmp/cognitive_actions.ipc",
+)
+
+agent = InteractionAgent(config)
+agent.start()
+```
+
+### Config Server (Python-Rust Data Sync)
+
+The `ConfigServer` provides REQ/REP endpoints for Python to load acoustic profile data from Rust:
+
+```rust
+// Rust side
+let server = ConfigServer::with_default_endpoint()?;
+let request = server.recv_request()?;
+let response = ConfigResponse {
+    request_id: request.request_id,
+    success: true,
+    data: Some(acoustic_profile_json),
+    error: None,
+};
+server.send_response(&response)?;
+```
+
+```python
+# Python side
+from realtime.config_client import ConfigClient
+
+client = ConfigClient()
+profile = client.request_acoustic_profile("bat")
+if profile:
+    print(f"Loaded {len(profile.valid_bigrams)} bigrams from Rust")
+```
+
+### Documentation
+
+See [`docs/closed_loop_agent_protocol.md`](docs/closed_loop_agent_protocol.md) for comprehensive documentation including:
+- Communication protocol specifications
+- Context inference engine
+- Response generation pipeline
+- Deployment configuration
+- Strategy Pattern usage (Section 15)
+
+---
 
 ### Overview
 
@@ -1457,6 +1842,14 @@ See `Cargo.toml` for full dependencies. Key dependencies:
 - `TDD_PLAN_FIELD_FEATURES.md` - Field deployment implementation plan (COMPLETE)
 - `TDD_PLAN_PRODUCTION_FEATURES.md` - Production features plan (COMPLETE)
 - `deployment/README.md` - Deployment instructions
+
+### New Documentation (2026)
+
+- `docs/pam_pipeline_guide.md` - Passive Acoustic Monitoring pipeline documentation
+- `docs/closed_loop_agent_protocol.md` - Closed-loop Interaction Agent methodology (v1.1.0)
+- `docs/acoustic_specialist_rf_methodology.md` - Acoustic specialist training methodology
+- `docs/detection_pipeline_methodology.md` - Detection pipeline methodology
+- `docs/classification_tasks.md` - Species classification task definitions
 
 ---
 

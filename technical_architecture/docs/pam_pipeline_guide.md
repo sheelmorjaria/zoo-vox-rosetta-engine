@@ -262,10 +262,10 @@ Location: `src/taxonomic_router.rs`
 ### Data Flow
 
 ```
-Phrase Samples → extract_features_112d()
+Phrase Samples → extract_features_placeholder()
                         │
                         ▼
-              Vec<f32> (112D feature vector)
+              Vec<f32> (112D feature vector placeholder)
                         │
                         ▼
               infer_acoustic_group_from_features()
@@ -279,6 +279,8 @@ Phrase Samples → extract_features_112d()
                         ▼
               Option<PAMResult> (species, confidence)
 ```
+
+**Note:** The current implementation uses placeholder feature extraction for demonstration. In production, this would be replaced with the full 112D feature extraction from `taxonomic_router.rs`.
 
 ---
 
