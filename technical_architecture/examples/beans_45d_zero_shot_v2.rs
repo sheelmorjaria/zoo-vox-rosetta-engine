@@ -582,7 +582,7 @@ fn evaluate_zero_shot_detection(test_samples: &[&Sample], train_samples: &[&Samp
     // Evaluate with best threshold
     let mut tp = 0usize;
     let mut fp = 0usize;
-    let mut tn = 0usize;
+    let tn = 0usize;
     let mut fn_count = 0usize;
 
     let mut per_species_metrics: HashMap<String, SpeciesDetectionMetrics> = HashMap::new();

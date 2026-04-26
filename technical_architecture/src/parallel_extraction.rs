@@ -1,7 +1,7 @@
 // Parallel Extraction Pipeline
 //
 // Implements parallel unified extraction pipeline for processing animal vocalization datasets.
-// Integrates 56D feature extraction (30D base + 13 Δ + 13 ΔΔ), PELT segmentation, and DBSCAN clustering with rayon parallelization.
+// Integrates 112D Rosetta feature extraction (using first 56D for clustering), PELT segmentation, and DBSCAN clustering with rayon parallelization.
 //
 // This replaces Python's parallel_unified_extraction.py with 10-50x performance improvement.
 
@@ -636,7 +636,7 @@ pub struct PhraseCandidate {
     /// Duration in milliseconds
     pub duration_ms: f64,
 
-    /// 56D feature vector (30D base + 13 Δ + 13 ΔΔ)
+    /// Feature vector (first 56D of 112D Rosetta: 46D Base Physics + 10D Macro Texture)
     pub features: Vec<f64>,
 
     /// RMS amplitude
@@ -957,7 +957,6 @@ pub struct ParallelExtractionPipeline {
     config: ExtractionConfig,
     feature_extractor: MicroDynamicsExtractor,
     segmenter: PeltSegmenter,
-    scaler: StandardScaler,
     /// Optional phrase audio library for collecting audio segments
     phrase_library: Option<PhraseAudioLibrary>,
 }
@@ -978,7 +977,6 @@ impl ParallelExtractionPipeline {
             config,
             feature_extractor,
             segmenter,
-            scaler: StandardScaler::new(),
             phrase_library: None,
         })
     }
@@ -1122,11 +1120,11 @@ impl ParallelExtractionPipeline {
         load_audio_file(&path).map_err(|e| ExtractionError::AudioLoadFailed(format!("Failed to load audio: {}", e)))
     }
 
-    /// Convert MicroDynamicsFeatures to feature matrix
-    fn features_to_matrix(&self, _features: &crate::MicroDynamicsFeatures) -> Array2<f64> {
+    /// Convert RosettaFeatures to feature matrix
+    fn features_to_matrix(&self, _features: &crate::RosettaFeatures) -> Array2<f64> {
         // For now, create a simple matrix
         // In real implementation, would extract frame-wise features
-        Array2::zeros((10, 30)) // 10 frames, 30 dimensions
+        Array2::zeros((10, 112)) // 10 frames, 112 dimensions
     }
 
     /// Convert changepoints to sentence segments
@@ -1184,10 +1182,10 @@ impl ParallelExtractionPipeline {
                 let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>() / window_samples as f32).sqrt();
 
                 if rms >= self.config.rms_threshold as f32 {
-                    // Extract 56D features from REAL audio (30D base + 13 Δ + 13 ΔΔ)
+                    // Extract 112D RosettaFeatures from audio
                     let extracted_features = self
                         .feature_extractor
-                        .extract_56d(window_audio)
+                        .extract(window_audio)
                         .map_err(|e| ExtractionError::FeatureExtractionFailed(e.to_string()))?;
 
                     let start_ms = (start as f64 / sample_rate as f64) * 1000.0;
@@ -1198,26 +1196,11 @@ impl ParallelExtractionPipeline {
                     if duration_ms >= self.config.min_phrase_duration_ms
                         && duration_ms <= self.config.max_phrase_duration_ms
                     {
-                        // Convert 56D features to flat Vec<f64>
-                        let vector30d = extracted_features.base_30d.to_vector30d(
-                            10000.0, // mean_f0_hz (estimated - can be improved with real pitch detection)
-                            duration_ms as f32,
-                            5000.0, // f0_range_hz (estimated)
-                        );
+                        // Use first 56D of the 112D features for compatibility
+                        let features_112d = extracted_features.to_array();
+                        let features: Vec<f64> = features_112d[..56].iter().map(|&x| x as f64).collect();
 
-                        let mut features: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
-
-                        // Append 13 mfcc_delta features
-                        for delta in &extracted_features.mfcc_delta {
-                            features.push(*delta as f64);
-                        }
-
-                        // Append 13 mfcc_delta_delta features
-                        for delta_delta in &extracted_features.mfcc_delta_delta {
-                            features.push(*delta_delta as f64);
-                        }
-
-                        // Final dimension: 30 + 13 + 13 = 56
+                        // Final dimension: 56 (subset of 112D)
 
                         phrases.push(PhraseCandidate {
                             phrase_id: format!("{}_{}", file_name, phrase_id),
@@ -1240,116 +1223,6 @@ impl ParallelExtractionPipeline {
         }
 
         Ok(phrases)
-    }
-
-    /// Extract phrases with audio segments for phrase library collection
-    fn extract_phrases_with_audio(
-        &self,
-        audio: &[f32],
-        sample_rate: u32,
-        file_name: &str,
-        species: &str,
-        context: &str,
-    ) -> Result<(Vec<PhraseCandidate>, Vec<PhraseAudioSegment>)> {
-        let mut phrases = Vec::new();
-        let mut segments = Vec::new();
-        let mut phrase_id = 0;
-
-        for &window_ms in &self.config.window_scales_ms {
-            let window_samples = (window_ms / 1000.0 * sample_rate as f64) as usize;
-
-            // Check if window fits in audio
-            if window_samples > audio.len() {
-                continue;
-            }
-
-            // Sliding window extraction with 50% overlap
-            let hop = window_samples / 2;
-            let mut start = 0;
-
-            while start + window_samples <= audio.len() {
-                let end = start + window_samples;
-                let window_audio = &audio[start..end];
-
-                // Check RMS threshold
-                let rms = (window_audio.iter().map(|&x| x * x).sum::<f32>() / window_samples as f32).sqrt();
-
-                if rms >= self.config.rms_threshold as f32 {
-                    // Extract 56D features from REAL audio (30D base + 13 Δ + 13 ΔΔ)
-                    let extracted_features = self
-                        .feature_extractor
-                        .extract_56d(window_audio)
-                        .map_err(|e| ExtractionError::FeatureExtractionFailed(e.to_string()))?;
-
-                    let start_ms = (start as f64 / sample_rate as f64) * 1000.0;
-                    let end_ms = (end as f64 / sample_rate as f64) * 1000.0;
-                    let duration_ms = end_ms - start_ms;
-
-                    // Check duration constraints
-                    if duration_ms >= self.config.min_phrase_duration_ms
-                        && duration_ms <= self.config.max_phrase_duration_ms
-                    {
-                        // Convert 56D features to flat Vec<f64>
-                        let vector30d = extracted_features.base_30d.to_vector30d(
-                            10000.0, // mean_f0_hz (estimated)
-                            duration_ms as f32,
-                            5000.0, // f0_range_hz (estimated)
-                        );
-
-                        let mut features: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
-
-                        // Append 13 mfcc_delta features
-                        for delta in &extracted_features.mfcc_delta {
-                            features.push(*delta as f64);
-                        }
-
-                        // Append 13 mfcc_delta_delta features
-                        for delta_delta in &extracted_features.mfcc_delta_delta {
-                            features.push(*delta_delta as f64);
-                        }
-
-                        // Final dimension: 30 + 13 + 13 = 56
-
-                        // Create phrase key
-                        let phrase_key = format!("F0_{:.0}_DUR_{:.0}", 10000.0 / 100.0, duration_ms);
-
-                        // Create phrase candidate
-                        phrases.push(PhraseCandidate {
-                            phrase_id: format!("{}_{}", file_name, phrase_id),
-                            file_name: file_name.to_string(),
-                            start_ms,
-                            end_ms,
-                            duration_ms,
-                            features: features.clone(),
-                            rms_amplitude: rms as f64,
-                            species: species.to_string(),
-                            context: context.to_string(),
-                        });
-
-                        // Create audio segment with REAL audio
-                        segments.push(PhraseAudioSegment::new(
-                            window_audio.to_vec(),
-                            sample_rate,
-                            phrase_key,
-                            file_name.to_string(),
-                            start_ms,
-                            end_ms,
-                            10000.0, // mean_f0_hz (estimated)
-                            5000.0,  // f0_range_hz (estimated)
-                            rms as f64,
-                            species.to_string(),
-                            context.to_string(),
-                        ));
-
-                        phrase_id += 1;
-                    }
-                }
-
-                start += hop;
-            }
-        }
-
-        Ok((phrases, segments))
     }
 
     /// Add audio segments to the phrase library
@@ -1580,7 +1453,7 @@ impl ParallelExtractionPipeline {
 /// Cluster phrase candidates using DBSCAN algorithm
 ///
 /// This function takes all phrase candidates from all files and clusters them
-/// based on their 56D feature similarity (30D base + 13 Δ + 13 ΔΔ), discovering reusable phrase types.
+/// based on their 56D feature similarity (46D Base Physics + 10D Macro Texture from 112D Rosetta), discovering reusable phrase types.
 pub fn cluster_phrase_candidates(
     candidates: Vec<PhraseCandidate>,
     eps: f64,
@@ -1813,9 +1686,9 @@ fn process_single_file_for_clustering(
         return Ok(Vec::new());
     }
 
-    // Extract features
+    // Extract features using 112D extractor
     let extractor = MicroDynamicsExtractor::new(sample_rate);
-    let features_56d = extractor.extract_56d(&audio_mono)?;
+    let features_112d = extractor.extract(&audio_mono)?;
 
     // Calculate duration from audio
     let duration_samples = audio_mono.len();
@@ -1824,26 +1697,11 @@ fn process_single_file_for_clustering(
     // Calculate RMS
     let rms = (audio_mono.iter().map(|&x| x * x).sum::<f32>() / audio_mono.len() as f32).sqrt();
 
-    // Convert 56D features to flat Vec<f64>
-    let vector30d = features_56d.base_30d.to_vector30d(
-        10000.0, // mean_f0_hz (estimated)
-        duration_ms as f32,
-        5000.0, // f0_range_hz (estimated)
-    );
+    // Use first 56D of the 112D features for compatibility
+    let features_array = features_112d.to_array();
+    let features_vec: Vec<f64> = features_array[..56].iter().map(|&x| x as f64).collect();
 
-    let mut features_vec: Vec<f64> = vector30d.to_array().iter().map(|&x| x as f64).collect();
-
-    // Append 13 mfcc_delta features
-    for delta in &features_56d.mfcc_delta {
-        features_vec.push(*delta as f64);
-    }
-
-    // Append 13 mfcc_delta_delta features
-    for delta_delta in &features_56d.mfcc_delta_delta {
-        features_vec.push(*delta_delta as f64);
-    }
-
-    // Final dimension: 30 + 13 + 13 = 56
+    // Final dimension: 56 (subset of 112D)
 
     // Create phrase candidate
     let candidate = PhraseCandidate {
@@ -3057,152 +2915,6 @@ pub fn export_phrases_for_synthesis(
     let file = File::create(output_path)?;
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, &synthesis_output)?;
-
-    Ok(())
-}
-
-/// Extract audio segments for concatenative synthesis
-///
-/// Extracts individual phrase WAV files from source audio for:
-/// - **Concatenative synthesis**: Unit selection and concatenation
-/// - **Audio library**: Reusable phrase audio clips
-/// - **Analysis tools**: Listen to individual phrases
-///
-/// Output structure:
-/// ```text
-/// output_dir/
-/// ├── phrases/              # Individual phrase WAV files
-/// │   ├── cluster_0/        # All phrases from cluster 0
-/// │   │   ├── phrase_001.wav
-/// │   │   └── phrase_002.wav
-/// │   └── cluster_1/
-/// │       └── phrase_003.wav
-/// ├── metadata.json         # Phrase metadata (JSON)
-/// └── cluster_info.json     # Cluster statistics
-/// ```
-#[cfg(feature = "hound")]
-pub fn extract_audio_segments(
-    audio_dir: &Path,
-    clustered_phrases: &[ClusteredPhrase],
-    output_dir: &Path,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    use hound::{WavSpec, WavWriter};
-    use std::fs::create_dir_all;
-
-    // Create output directories
-    let phrases_dir = output_dir.join("phrases");
-    create_dir_all(&phrases_dir)?;
-
-    println!("📂 Extracting audio segments for concatenative synthesis...");
-    println!("   Output directory: {}", output_dir.display());
-
-    // Group phrases by cluster
-    let mut cluster_groups: std::collections::HashMap<i32, Vec<&ClusteredPhrase>> = std::collections::HashMap::new();
-    for cp in clustered_phrases {
-        cluster_groups.entry(cp.cluster_id).or_default().push(cp);
-    }
-
-    // Extract phrases for each cluster
-    let mut extracted_count = 0;
-    for (cluster_id, phrases) in cluster_groups.iter() {
-        let cluster_dir = phrases_dir.join(format!("cluster_{}", cluster_id));
-        create_dir_all(&cluster_dir)?;
-
-        for (idx, cp) in phrases.iter().enumerate() {
-            // Load source audio
-            let audio_path = audio_dir.join(&cp.phrase.file_name);
-            if !audio_path.exists() {
-                eprintln!("   ⚠️  Warning: Audio file not found: {}", audio_path.display());
-                continue;
-            }
-
-            let (audio, sr) = load_wav_file(&audio_path).map_err(|e| format!("Failed to load audio: {}", e))?;
-
-            // Calculate sample positions
-            let start_sample = (cp.phrase.start_ms / 1000.0 * sr as f64) as usize;
-            let end_sample = (cp.phrase.end_ms / 1000.0 * sr as f64) as usize;
-
-            // Validate bounds
-            if start_sample >= audio.len() || end_sample > audio.len() || start_sample >= end_sample {
-                eprintln!("   ⚠️  Warning: Invalid time range for {}", cp.phrase.phrase_id);
-                continue;
-            }
-
-            // Extract segment
-            let segment = &audio[start_sample..end_sample];
-
-            // Write segment to WAV
-            let output_filename = format!("phrase_{:04}.wav", idx);
-            let output_path = cluster_dir.join(&output_filename);
-
-            let spec = WavSpec {
-                channels: 1,
-                sample_rate: sr,
-                bits_per_sample: 32,
-                sample_format: hound::SampleFormat::Float,
-            };
-
-            let mut writer = WavWriter::create(&output_path, spec)?;
-
-            for &sample in segment {
-                writer.write_sample(sample)?;
-            }
-
-            writer.finalize()?;
-
-            extracted_count += 1;
-
-            // Progress update every 100 phrases
-            if extracted_count % 100 == 0 {
-                println!("   🎵 Extracted {} segments...", extracted_count);
-            }
-        }
-    }
-
-    println!("   ✅ Extracted {} audio segments", extracted_count);
-
-    // Export metadata
-    let metadata_path = output_dir.join("metadata.json");
-    export_phrases_for_synthesis(clustered_phrases, &metadata_path)?;
-
-    // Export cluster info
-    let cluster_info_path = output_dir.join("cluster_info.json");
-    export_cluster_info(clustered_phrases, &cluster_info_path)?;
-
-    Ok(())
-}
-
-/// Export cluster statistics for synthesis
-fn export_cluster_info(
-    clustered_phrases: &[ClusteredPhrase],
-    output_path: &Path,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    use std::fs::File;
-    use std::io::BufWriter;
-
-    // Calculate cluster statistics
-    let mut cluster_sizes: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
-    for cp in clustered_phrases {
-        *cluster_sizes.entry(cp.cluster_id).or_insert(0) += 1;
-    }
-
-    let cluster_info: Vec<ClusterInfo> = cluster_sizes
-        .iter()
-        .map(|(cluster_id, &size)| ClusterInfo {
-            cluster_id: *cluster_id,
-            phrase_count: size,
-            cluster_type: if *cluster_id == -1 {
-                "noise".to_string()
-            } else {
-                "phrase".to_string()
-            },
-        })
-        .collect();
-
-    // Write to JSON
-    let file = File::create(output_path)?;
-    let writer = BufWriter::new(file);
-    serde_json::to_writer_pretty(writer, &cluster_info)?;
 
     Ok(())
 }

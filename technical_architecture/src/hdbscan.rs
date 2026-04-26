@@ -751,15 +751,6 @@ impl HdbscanClustering {
         dist.max(core_i).max(core_j)
     }
 
-    /// Distance between two vectors using the configured metric
-    #[inline]
-    fn distance(&self, a: &[f64], b: &[f64]) -> f64 {
-        match self.metric {
-            DistanceMetric::Euclidean => DistanceMetric::euclidean_distance(a, b),
-            DistanceMetric::Cosine => DistanceMetric::cosine_distance(a, b),
-        }
-    }
-
     /// Get cluster statistics
     pub fn get_cluster_stats(&self, labels: &[i32]) -> HdbscanStats {
         let mut cluster_counts: HashMap<i32, usize> = HashMap::new();

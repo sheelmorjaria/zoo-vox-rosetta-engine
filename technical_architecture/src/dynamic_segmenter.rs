@@ -716,8 +716,6 @@ pub struct AtomicPhraseAnalyzer {
     similarity_threshold: f32,
     /// Minimum occurrences to be considered atomic
     min_occurrences: usize,
-    /// Feature dimension
-    feature_dim: usize,
 }
 
 impl AtomicPhraseAnalyzer {
@@ -726,7 +724,6 @@ impl AtomicPhraseAnalyzer {
         Self {
             similarity_threshold,
             min_occurrences,
-            feature_dim: 45,
         }
     }
 

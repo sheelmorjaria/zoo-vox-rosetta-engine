@@ -53,17 +53,12 @@ mod tests_extended_66d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        // Get 46D base features
-        let features_45d = extractor.extract_45d(&signal).unwrap();
-        let base_46d = features_45d.to_array_46d();
+        // Get 112D Rosetta features
+        let features = extractor.extract(&signal).unwrap();
+        let full_112d = features.to_array();
 
-        assert_eq!(base_46d.len(), 46);
-        println!("46D base: {:?}", &base_46d[..10]);
-
-        // TODO: Add 66D extended features
-        // let extended_66d = extractor.extract_extended_66d(&signal).unwrap();
-        // let full_112d = [&base_46d[..], &extended_66d[..]].concat();
-        // assert_eq!(full_112d.len(), 112);
+        assert_eq!(full_112d.len(), 112);
+        println!("112D features (first 10): {:?}", &full_112d[..10]);
     }
 
     // =========================================================================
@@ -91,13 +86,13 @@ mod tests_extended_66d {
             rich.push(sample * 0.1);
         }
 
-        let features_sine = extractor.extract_45d(&sine).unwrap();
-        let features_rich = extractor.extract_45d(&rich).unwrap();
+        let features_sine = extractor.extract(&sine).unwrap();
+        let features_rich = extractor.extract(&rich).unwrap();
 
         // HNR should be higher for rich harmonics
         println!(
             "HNR - Sine: {:.2}, Rich: {:.2}",
-            features_sine.base_30d.harmonic_to_noise_ratio, features_rich.base_30d.harmonic_to_noise_ratio
+            features_sine.harmonic_to_noise_ratio, features_rich.harmonic_to_noise_ratio
         );
 
         // TODO: Extract 8D harmonic texture
@@ -128,13 +123,13 @@ mod tests_extended_66d {
         // FM sweep
         let sweep = generate_fm_sweep(44100, 100.0, 440.0, 2000.0);
 
-        let features_static = extractor.extract_45d(&static_pitch).unwrap();
-        let features_sweep = extractor.extract_45d(&sweep).unwrap();
+        let features_static = extractor.extract(&static_pitch).unwrap();
+        let features_sweep = extractor.extract(&sweep).unwrap();
 
         // FM slope should be higher for sweep
         println!(
-            "FM Slope - Static: {:.2}, Sweep: {:.2}",
-            features_static.fm_slope, features_sweep.fm_slope
+            "Glissando Rate - Static: {:.2}, Sweep: {:.2}",
+            features_static.glissando_rate, features_sweep.glissando_rate
         );
 
         // TODO: Extract 7D pitch geometry
@@ -158,11 +153,11 @@ mod tests_extended_66d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_45d(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         println!(
             "Vibrato Rate: {:.1} Hz, Depth: {:.1}",
-            features.base_30d.vibrato_rate_hz, features.base_30d.vibrato_depth
+            features.vibrato_rate_hz, features.vibrato_depth
         );
 
         // TODO: Extract 5D vibrato bins
@@ -189,13 +184,13 @@ mod tests_extended_66d {
         // Fast sweep
         let fast_sweep = generate_fm_sweep(44100, 100.0, 440.0, 4000.0);
 
-        let f_static = extractor.extract_45d(&static_tone).unwrap();
-        let f_slow = extractor.extract_45d(&slow_sweep).unwrap();
-        let f_fast = extractor.extract_45d(&fast_sweep).unwrap();
+        let f_static = extractor.extract(&static_tone).unwrap();
+        let f_slow = extractor.extract(&slow_sweep).unwrap();
+        let f_fast = extractor.extract(&fast_sweep).unwrap();
 
         println!(
-            "FM Slope - Static: {:.2}, Slow: {:.2}, Fast: {:.2}",
-            f_static.fm_slope, f_slow.fm_slope, f_fast.fm_slope
+            "Glissando Rate - Static: {:.2}, Slow: {:.2}, Fast: {:.2}",
+            f_static.glissando_rate, f_slow.glissando_rate, f_fast.glissando_rate
         );
 
         // TODO: Extract 5D FM bins
@@ -275,8 +270,8 @@ mod tests_extended_66d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_fm_sweep(44100, 200.0, 1000.0, 5000.0);
 
-        let features = extractor.extract_45d(&signal).unwrap();
-        let base_46d = features.to_array_46d();
+        let features = extractor.extract(&signal).unwrap();
+        let base_46d = features.to_array();
 
         println!("  46D Base Features:");
         println!("  ┌─────────────────────────────────────────────────────────────────────────┐");

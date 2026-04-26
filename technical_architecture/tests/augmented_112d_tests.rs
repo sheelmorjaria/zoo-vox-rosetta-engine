@@ -78,12 +78,12 @@ mod tests_augmented_112d {
             30.0, // release
         );
 
-        let features = extractor.extract_45d(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Attack, decay, sustain should exist
-        assert!(features.base_30d.attack_time_ms > 0.0);
-        assert!(features.base_30d.decay_time_ms > 0.0);
-        assert!(features.base_30d.sustain_level > 0.0);
+        assert!(features.attack_time_ms > 0.0);
+        assert!(features.decay_time_ms > 0.0);
+        assert!(features.sustain_level > 0.0);
 
         // TODO: This test will fail until we add release_time to the struct
         // assert!(features.release_time_ms > 0.0);
@@ -99,11 +99,11 @@ mod tests_augmented_112d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_45d(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Jitter should be present (might be near 0 for clean sine)
-        assert!(features.base_30d.jitter >= 0.0);
-        println!("Jitter: {:.4}", features.base_30d.jitter);
+        assert!(features.jitter >= 0.0);
+        println!("Jitter: {:.4}", features.jitter);
     }
 
     #[test]
@@ -113,8 +113,8 @@ mod tests_augmented_112d {
 
         // Clean signal
         let clean = generate_test_signal(44100, 100.0, 440.0);
-        let features_clean = extractor.extract_45d(&clean).unwrap();
-        let jitter_clean = features_clean.base_30d.jitter;
+        let features_clean = extractor.extract(&clean).unwrap();
+        let jitter_clean = features_clean.jitter;
 
         // Noisy signal (add frequency perturbation)
         let noisy: Vec<f32> = clean
@@ -125,8 +125,8 @@ mod tests_augmented_112d {
                 s * (1.0 + freq_perturbation)
             })
             .collect();
-        let features_noisy = extractor.extract_45d(&noisy).unwrap();
-        let jitter_noisy = features_noisy.base_30d.jitter;
+        let features_noisy = extractor.extract(&noisy).unwrap();
+        let jitter_noisy = features_noisy.jitter;
 
         println!("Jitter clean: {:.4}, noisy: {:.4}", jitter_clean, jitter_noisy);
 
@@ -145,11 +145,11 @@ mod tests_augmented_112d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_45d(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Shimmer should be present
-        assert!(features.base_30d.shimmer >= 0.0);
-        println!("Shimmer: {:.4}", features.base_30d.shimmer);
+        assert!(features.shimmer >= 0.0);
+        println!("Shimmer: {:.4}", features.shimmer);
     }
 
     #[test]
@@ -159,8 +159,8 @@ mod tests_augmented_112d {
 
         // Clean signal
         let clean = generate_test_signal(44100, 100.0, 440.0);
-        let features_clean = extractor.extract_45d(&clean).unwrap();
-        let shimmer_clean = features_clean.base_30d.shimmer;
+        let features_clean = extractor.extract(&clean).unwrap();
+        let shimmer_clean = features_clean.shimmer;
 
         // Signal with amplitude perturbation
         let perturbed: Vec<f32> = clean
@@ -171,8 +171,8 @@ mod tests_augmented_112d {
                 s * amp_perturbation
             })
             .collect();
-        let features_perturbed = extractor.extract_45d(&perturbed).unwrap();
-        let shimmer_perturbed = features_perturbed.base_30d.shimmer;
+        let features_perturbed = extractor.extract(&perturbed).unwrap();
+        let shimmer_perturbed = features_perturbed.shimmer;
 
         println!(
             "Shimmer clean: {:.4}, perturbed: {:.4}",
@@ -193,11 +193,11 @@ mod tests_augmented_112d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_45d(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Spectral flux should be present
-        assert!(features.base_30d.spectral_flux >= 0.0);
-        println!("Spectral Flux: {:.4}", features.base_30d.spectral_flux);
+        assert!(features.spectral_flux >= 0.0);
+        println!("Spectral Flux: {:.4}", features.spectral_flux);
     }
 
     #[test]
@@ -208,8 +208,8 @@ mod tests_augmented_112d {
 
         // Static tone
         let static_tone = generate_test_signal(sr, 100.0, 440.0);
-        let features_static = extractor.extract_45d(&static_tone).unwrap();
-        let flux_static = features_static.base_30d.spectral_flux;
+        let features_static = extractor.extract(&static_tone).unwrap();
+        let flux_static = features_static.spectral_flux;
 
         // FM sweep (frequency changes over time)
         let n_samples = (sr as f32 * 0.1) as usize;
@@ -220,8 +220,8 @@ mod tests_augmented_112d {
                 (2.0 * std::f32::consts::PI * freq * t).sin()
             })
             .collect();
-        let features_sweep = extractor.extract_45d(&sweep).unwrap();
-        let flux_sweep = features_sweep.base_30d.spectral_flux;
+        let features_sweep = extractor.extract(&sweep).unwrap();
+        let flux_sweep = features_sweep.spectral_flux;
 
         println!("Spectral Flux - Static: {:.4}, Sweep: {:.4}", flux_static, flux_sweep);
 
@@ -240,27 +240,25 @@ mod tests_augmented_112d {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features_45d = extractor.extract_45d(&signal).unwrap();
-        let arr_45d = features_45d.to_array();
+        let features = extractor.extract(&signal).unwrap();
+        let arr = features.to_array();
 
-        // Current 45D structure
-        assert_eq!(arr_45d.len(), 45);
+        // Full 112D structure
+        assert_eq!(arr.len(), 112);
 
-        // Verify existing ADSR features are in the 45D
-        // (Attack at index 6, Decay at 7, Sustain at 8)
-        // Note: Attack can be 0 for simple sine waves without envelope
-        assert!(arr_45d[6] >= 0.0); // Attack
-        assert!(arr_45d[7] >= 0.0); // Decay
-        assert!(arr_45d[8] >= 0.0); // Sustain
+        // Verify ADSR features are in base 46D (indices 6-9)
+        assert!(arr[6] >= 0.0); // Attack
+        assert!(arr[7] >= 0.0); // Decay
+        assert!(arr[8] >= 0.0); // Sustain
 
-        // Verify Jitter/Shimmer are in 45D (indices 11, 12)
-        assert!(arr_45d[11] >= 0.0); // Jitter
-        assert!(arr_45d[12] >= 0.0); // Shimmer
+        // Verify Jitter/Shimmer are in base 46D (indices 34-35)
+        assert!(arr[34] >= 0.0); // Jitter
+        assert!(arr[35] >= 0.0); // Shimmer
 
-        // Verify Spectral Flux is in 45D (index 26)
-        assert!(arr_45d[26] >= 0.0); // Spectral Flux
+        // Verify Spectral Flux is in base 46D (index 38)
+        assert!(arr[38] >= 0.0); // Spectral Flux
 
-        println!("45D array: {:?}", &arr_45d[..30]);
+        println!("112D array (first 30): {:?}", &arr[..30]);
     }
 
     // =========================================================================

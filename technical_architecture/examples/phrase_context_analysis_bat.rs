@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Get list of all unique contexts
-    let mut contexts_set: HashSet<String> = file_to_context.values().cloned().collect();
+    let contexts_set: HashSet<String> = file_to_context.values().cloned().collect();
     let mut contexts: Vec<String> = contexts_set.into_iter().collect();
     contexts.sort(); // Sort for consistent ordering
 

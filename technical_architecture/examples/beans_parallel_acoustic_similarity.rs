@@ -891,12 +891,6 @@ fn evaluate_knn(features: &[ExtractedFeatures]) -> (f64, usize) {
         let mut m = Array2::<f64>::zeros((eval_indices.len(), FEATURE_DIM));
         for (i, &idx) in eval_indices.iter().enumerate() {
             for j in 0..FEATURE_DIM {
-                let mut m = Array2::<f64>::zeros((features.len(), FEATURE_DIM));
-                for (i, f) in features.iter().enumerate() {
-                    for (j, &val) in f.features.iter().enumerate().take(FEATURE_DIM) {
-                        m[[i, j]] = val;
-                    }
-                }
                 m[[i, j]] = features[idx].features.get(j).copied().unwrap_or(0.0);
             }
         }

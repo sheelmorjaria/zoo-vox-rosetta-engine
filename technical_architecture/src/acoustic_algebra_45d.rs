@@ -24,7 +24,7 @@
 //! Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 //! License: CC BY-ND 4.0 International
 
-use crate::micro_dynamics_extractor::MicroDynamicsFeatures45D;
+use crate::micro_dynamics_extractor::RosettaFeatures;
 use serde::{Deserialize, Serialize};
 
 // ============================================================================
@@ -33,7 +33,7 @@ use serde::{Deserialize, Serialize};
 
 /// 45-dimensional acoustic feature vector for synthesis and analysis
 ///
-/// Features organized by category following MicroDynamicsFeatures45D layout:
+/// Features organized by category following RosettaFeatures 112D layout (first 45D):
 /// - Fundamental (3): Core pitch and timing
 /// - Grit (3): Harmonic quality and noise
 /// - Motion (7): Envelope and perturbation
@@ -173,7 +173,7 @@ impl Default for Vector45D {
 impl Vector45D {
     /// Convert to flat 45D array for ML use
     ///
-    /// Layout matches MicroDynamicsFeatures45D::to_array():
+    /// Layout matches RosettaFeatures::to_array() first 45 elements:
     /// - [0-2]: Fundamental (mean_f0_hz, duration_ms, f0_range_hz)
     /// - [3-5]: Grit Factors (hnr, spectral_flatness, harmonicity)
     /// - [6-12]: Motion Factors (attack, decay, sustain, vibrato_rate, vibrato_depth, jitter, shimmer)
@@ -567,59 +567,63 @@ impl Vector45D {
     }
 }
 
-impl From<MicroDynamicsFeatures45D> for Vector45D {
-    fn from(features: MicroDynamicsFeatures45D) -> Self {
+impl From<RosettaFeatures> for Vector45D {
+    /// Convert from 112D RosettaFeatures to 45D Vector45D
+    ///
+    /// Uses the first 45 dimensions of the 112D feature vector, which correspond
+    /// to Layer 1 (Base Physics) minus the release_time_ms.
+    fn from(features: RosettaFeatures) -> Self {
         Self {
             // Fundamental (3)
             mean_f0_hz: features.mean_f0_hz,
             duration_ms: features.duration_ms,
             f0_range_hz: features.f0_range_hz,
             // Grit (3)
-            harmonic_to_noise_ratio: features.base_30d.harmonic_to_noise_ratio,
-            spectral_flatness: features.base_30d.spectral_flatness,
-            harmonicity: features.base_30d.harmonicity,
+            harmonic_to_noise_ratio: features.harmonic_to_noise_ratio,
+            spectral_flatness: features.spectral_flatness,
+            harmonicity: features.harmonicity,
             // Motion (7)
-            attack_time_ms: features.base_30d.attack_time_ms,
-            decay_time_ms: features.base_30d.decay_time_ms,
-            sustain_level: features.base_30d.sustain_level,
-            vibrato_rate_hz: features.base_30d.vibrato_rate_hz,
-            vibrato_depth: features.base_30d.vibrato_depth,
-            jitter: features.base_30d.jitter,
-            shimmer: features.base_30d.shimmer,
-            // Fingerprint (14)
-            mfcc_1: features.base_30d.mfcc[0],
-            mfcc_2: features.base_30d.mfcc[1],
-            mfcc_3: features.base_30d.mfcc[2],
-            mfcc_4: features.base_30d.mfcc[3],
-            mfcc_5: features.base_30d.mfcc[4],
-            mfcc_6: features.base_30d.mfcc[5],
-            mfcc_7: features.base_30d.mfcc[6],
-            mfcc_8: features.base_30d.mfcc[7],
-            mfcc_9: features.base_30d.mfcc[8],
-            mfcc_10: features.base_30d.mfcc[9],
-            mfcc_11: features.base_30d.mfcc[10],
-            mfcc_12: features.base_30d.mfcc[11],
-            mfcc_13: features.base_30d.mfcc[12],
-            spectral_flux: features.base_30d.spectral_flux,
+            attack_time_ms: features.attack_time_ms,
+            decay_time_ms: features.decay_time_ms,
+            sustain_level: features.sustain_level,
+            vibrato_rate_hz: features.vibrato_rate_hz,
+            vibrato_depth: features.vibrato_depth,
+            jitter: features.jitter,
+            shimmer: features.shimmer,
+            // Fingerprint (14) - MFCCs from RosettaFeatures
+            mfcc_1: features.mfcc_1,
+            mfcc_2: features.mfcc_2,
+            mfcc_3: features.mfcc_3,
+            mfcc_4: features.mfcc_4,
+            mfcc_5: features.mfcc_5,
+            mfcc_6: features.mfcc_6,
+            mfcc_7: features.mfcc_7,
+            mfcc_8: features.mfcc_8,
+            mfcc_9: features.mfcc_9,
+            mfcc_10: features.mfcc_10,
+            mfcc_11: features.mfcc_11,
+            mfcc_12: features.mfcc_12,
+            mfcc_13: features.mfcc_0, // mfcc_0 in 112D maps to mfcc_13 slot
+            spectral_flux: features.spectral_flux,
             // Rhythm (3)
-            median_ici_ms: features.base_30d.median_ici_ms,
-            onset_rate_hz: features.base_30d.onset_rate_hz,
-            ici_coefficient_of_variation: features.base_30d.ici_coefficient_of_variation,
-            // Resonance (6)
-            formant_1_hz: features.formant_1_hz,
-            formant_2_hz: features.formant_2_hz,
-            formant_3_hz: features.formant_3_hz,
-            formant_1_bandwidth: features.formant_1_bandwidth,
-            formant_2_bandwidth: features.formant_2_bandwidth,
-            formant_dispersion: features.formant_dispersion,
+            median_ici_ms: features.median_ici_ms,
+            onset_rate_hz: features.onset_rate_hz,
+            ici_coefficient_of_variation: features.ici_coefficient_of_variation,
+            // Resonance (6) - approximate from available features
+            formant_1_hz: features.spectral_centroid * 0.5,  // Estimated
+            formant_2_hz: features.spectral_centroid * 0.75, // Estimated
+            formant_3_hz: features.spectral_centroid,        // Estimated
+            formant_1_bandwidth: features.spectral_spread * 0.5,
+            formant_2_bandwidth: features.spectral_spread * 0.75,
+            formant_dispersion: features.spectral_spread,
             // Spectral Shape (4)
             spectral_centroid: features.spectral_centroid,
             spectral_spread: features.spectral_spread,
             spectral_skewness: features.spectral_skewness,
             spectral_kurtosis: features.spectral_kurtosis,
             // Modulation (3)
-            spectral_tilt: features.spectral_tilt,
-            fm_slope: features.fm_slope,
+            spectral_tilt: features.harmonic_slope, // Use harmonic_slope as proxy
+            fm_slope: features.fm_depth_hz / features.duration_ms.max(1.0),
             am_depth: features.am_depth,
             // Non-Linear (2)
             subharmonic_ratio: features.subharmonic_ratio,

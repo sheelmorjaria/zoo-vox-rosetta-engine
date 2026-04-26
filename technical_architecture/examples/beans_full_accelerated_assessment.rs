@@ -144,7 +144,7 @@ impl Args {
 
 /// Manifest structure from download script
 #[derive(Debug, Clone, Deserialize)]
-struct Manifest {
+pub struct Manifest {
     dataset: String,
     split: String,
     n_samples: usize,
@@ -537,7 +537,7 @@ impl FastFeatureExtractor {
         let mut last_zc = 0;
 
         for i in 1..n {
-            if (audio[i - 1] < 0.0 && audio[i] >= 0.0) {
+            if audio[i - 1] < 0.0 && audio[i] >= 0.0 {
                 if last_zc > 0 {
                     periods.push(i - last_zc);
                 }

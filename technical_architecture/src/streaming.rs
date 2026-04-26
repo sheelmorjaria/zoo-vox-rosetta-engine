@@ -123,8 +123,7 @@ impl StreamingBuffer {
 
     /// Create a streaming buffer with custom configuration
     pub fn with_config(config: StreamingConfig) -> Self {
-        let buffer_size =
-            (config.buffer_duration_secs * config.sample_rate as f32) as usize;
+        let buffer_size = (config.buffer_duration_secs * config.sample_rate as f32) as usize;
         Self {
             config,
             buffer: VecDeque::with_capacity(buffer_size),
@@ -148,8 +147,7 @@ impl StreamingBuffer {
         }
 
         // Maintain buffer size limit
-        let max_samples =
-            (self.config.buffer_duration_secs * self.sample_rate as f32) as usize;
+        let max_samples = (self.config.buffer_duration_secs * self.sample_rate as f32) as usize;
         while self.buffer.len() > max_samples {
             self.buffer.pop_front();
         }
@@ -241,8 +239,7 @@ impl DebounceTimer {
     /// Returns `true` if the trigger is allowed (enough time has passed),
     /// `false` if it should be debounced.
     pub fn check_and_update(&mut self, current_sample: usize) -> bool {
-        let min_samples =
-            (self.min_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+        let min_samples = (self.min_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
 
         if let Some(last_sample) = self.last_trigger_sample {
             if current_sample.saturating_sub(last_sample) < min_samples {
@@ -269,8 +266,7 @@ impl DebounceTimer {
     /// Returns 0.0 if a trigger is currently allowed.
     pub fn time_until_next_trigger(&self, current_sample: usize) -> f32 {
         if let Some(last_sample) = self.last_trigger_sample {
-            let min_samples =
-                (self.min_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
+            let min_samples = (self.min_duration_ms / 1000.0 * self.sample_rate as f32) as usize;
             let elapsed = current_sample.saturating_sub(last_sample);
             if elapsed < min_samples {
                 let remaining_samples = min_samples - elapsed;
@@ -361,10 +357,7 @@ impl SpectralChangeProfile {
 
     /// Get the maximum combined change score
     pub fn max_change(&self) -> f32 {
-        self.combined_score
-            .iter()
-            .copied()
-            .fold(0.0f32, f32::max)
+        self.combined_score.iter().copied().fold(0.0f32, f32::max)
     }
 
     /// Find frames where combined score exceeds threshold
@@ -440,8 +433,7 @@ fn compute_zcr(frame: &[f32]) -> f32 {
 
     let mut crossings = 0usize;
     for i in 1..frame.len() {
-        if (frame[i - 1] >= 0.0 && frame[i] < 0.0) || (frame[i - 1] < 0.0 && frame[i] >= 0.0)
-        {
+        if (frame[i - 1] >= 0.0 && frame[i] < 0.0) || (frame[i - 1] < 0.0 && frame[i] >= 0.0) {
             crossings += 1;
         }
     }

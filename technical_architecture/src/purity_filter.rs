@@ -298,7 +298,7 @@ impl PurityFeatures {
 
     /// Extract from 45D feature vector
     pub fn from_45d(features: &[f32]) -> Self {
-        // Indices in 45D vector (from MicroDynamicsFeatures45D)
+        // Indices in 45D vector (from RosettaFeatures first 45 elements)
         // duration_ms is at index 1, rms is computed, hnr is at index 6, etc.
         Self {
             duration_ms: features.get(1).copied().unwrap_or(100.0),

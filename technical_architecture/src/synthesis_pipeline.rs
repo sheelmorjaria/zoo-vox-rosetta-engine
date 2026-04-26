@@ -166,7 +166,9 @@ impl From<GrainEnvelopeType> for GrainEnvelope {
     }
 }
 
-/// Concatenative synthesis unit
+///Concatenative synthesis unit
+// JUSTIFICATION: Serde type for deserialized/constructed by downstream Python consumers.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConcatenativeUnit {
     /// Unit ID
@@ -186,6 +188,8 @@ pub struct ConcatenativeUnit {
 }
 
 /// Context for concatenative unit
+// JUSTIFICATION: Serde type for deserialized/constructed by downstream Python consumers.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitContext {
     pub emitter_id: Option<String>,

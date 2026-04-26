@@ -417,7 +417,7 @@ fn evaluate_zero_shot_detection(detection_samples: &[&Sample], all_samples: &[Sa
     // Evaluate detection
     let mut tp = 0usize;
     let mut fp = 0usize;
-    let mut tn = 0usize;
+    let tn = 0usize;
     let mut fn_ = 0usize;
 
     let mut per_species_metrics: HashMap<String, SpeciesDetectionMetrics> = HashMap::new();
@@ -429,7 +429,7 @@ fn evaluate_zero_shot_detection(detection_samples: &[&Sample], all_samples: &[Sa
     for threshold in &thresholds {
         let mut thresh_tp = 0usize;
         let mut thresh_fp = 0usize;
-        let mut thresh_tn = 0usize;
+        let thresh_tn = 0usize;
         let mut thresh_fn = 0usize;
 
         for sample in detection_samples.iter().take(5000) {

@@ -359,6 +359,7 @@ impl BrightnessCalculator {
 }
 
 /// Helper function to generate sine wave for testing
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)
@@ -370,6 +371,7 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper function to generate white noise for testing
+#[cfg(test)]
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;

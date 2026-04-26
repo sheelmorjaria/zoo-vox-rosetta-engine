@@ -304,7 +304,6 @@ impl Default for SynthesisConfig112D {
 #[derive(Debug, Clone)]
 struct SourceEntry {
     audio: Vec<f32>,
-    metadata: SourceMetadata112D,
 }
 
 /// Cached Granular Synthesizer for semantic reconstruction
@@ -326,8 +325,8 @@ impl CachedGranularSynthesizer {
     }
 
     /// Register a source with 112D metadata
-    pub fn register_source(&mut self, cluster_id: u32, audio: Vec<f32>, metadata: SourceMetadata112D) {
-        self.sources.insert(cluster_id, SourceEntry { audio, metadata });
+    pub fn register_source(&mut self, cluster_id: u32, audio: Vec<f32>, _metadata: SourceMetadata112D) {
+        self.sources.insert(cluster_id, SourceEntry { audio });
     }
 
     /// Get the number of registered sources

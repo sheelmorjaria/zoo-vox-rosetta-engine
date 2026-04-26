@@ -224,21 +224,6 @@ impl AcousticSimilarityEngine {
         (features - &self.feature_means) / &self.feature_stds
     }
 
-    /// Normalize a feature matrix
-    fn normalize_matrix(&self, features: &Array2<f64>) -> Array2<f64> {
-        if !self.fitted {
-            return features.clone();
-        }
-
-        let mut normalized = features.clone();
-        for j in 0..features.ncols() {
-            let m = self.feature_means[j];
-            let s = self.feature_stds[j];
-            normalized.column_mut(j).mapv_inplace(|x| (x - m) / s);
-        }
-        normalized
-    }
-
     /// Compute similarity between two phrases
     ///
     /// Returns: 0.0 = identical, 1.0 = maximally different

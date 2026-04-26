@@ -176,7 +176,6 @@ pub struct PhraseDiscoveryPipeline {
     config: PhraseDiscoveryConfig,
     segmenter: DynamicSegmenter,
     analyzer: WithinCallAnalyzer,
-    extractor: ZooVoxFeatureExtractor,
 }
 
 impl PhraseDiscoveryPipeline {
@@ -191,13 +190,11 @@ impl PhraseDiscoveryPipeline {
 
         let segmenter = DynamicSegmenter::new(segmenter_config, config.sample_rate);
         let analyzer = WithinCallAnalyzer::new();
-        let extractor = ZooVoxFeatureExtractor::new(config.sample_rate);
 
         Self {
             config,
             segmenter,
             analyzer,
-            extractor,
         }
     }
 

@@ -319,6 +319,7 @@ impl AmDepthCalculator {
 }
 
 /// Helper: Generate sine wave
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)
@@ -330,6 +331,7 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate FM sweep with sinusoidal modulation (vibrato)
+#[cfg(test)]
 fn generate_fm_sweep(
     carrier: f32,
     min_freq: f32,
@@ -353,6 +355,7 @@ fn generate_fm_sweep(
 }
 
 /// Helper: Generate linear FM sweep
+#[cfg(test)]
 fn generate_linear_fm_sweep(start_freq: f32, end_freq: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
 
@@ -367,6 +370,7 @@ fn generate_linear_fm_sweep(start_freq: f32, end_freq: f32, sample_rate: u32, du
 }
 
 /// Helper: Generate trill (alternating frequencies)
+#[cfg(test)]
 fn generate_trill(freq1: f32, freq2: f32, rate: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let period_samples = (sample_rate as f32 / rate) as usize;
@@ -385,6 +389,7 @@ fn generate_trill(freq1: f32, freq2: f32, rate: f32, sample_rate: u32, duration_
 }
 
 /// Helper: Generate amplitude-modulated tone (tremolo)
+#[cfg(test)]
 fn generate_am_tone(carrier: f32, mod_rate: f32, mod_depth: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
 

@@ -290,6 +290,7 @@ impl TemporalCentroidCalculator {
 }
 
 /// Helper: Generate regular clicks (onsets)
+#[cfg(test)]
 fn generate_regular_clicks(sample_rate: u32, clicks_per_sec: f32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let interval_samples = (sample_rate as f32 / clicks_per_sec) as usize;
@@ -308,6 +309,7 @@ fn generate_regular_clicks(sample_rate: u32, clicks_per_sec: f32, duration_sec: 
 }
 
 /// Helper: Generate irregular clicks (random timing)
+#[cfg(test)]
 fn generate_irregular_clicks(sample_rate: u32, num_clicks: usize, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;
@@ -331,6 +333,7 @@ fn generate_irregular_clicks(sample_rate: u32, num_clicks: usize, duration_sec: 
 }
 
 /// Helper: Generate sine wave for testing
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)

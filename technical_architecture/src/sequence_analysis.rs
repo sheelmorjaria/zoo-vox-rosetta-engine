@@ -853,15 +853,11 @@ pub struct NetworkMotif {
 /// Network motif analyzer
 pub struct NetworkMotifAnalyzer {
     motif_size: usize,
-    n_randomizations: usize,
 }
 
 impl NetworkMotifAnalyzer {
-    pub fn new(motif_size: usize, n_randomizations: usize) -> Self {
-        Self {
-            motif_size,
-            n_randomizations,
-        }
+    pub fn new(motif_size: usize, _n_randomizations: usize) -> Self {
+        Self { motif_size }
     }
 
     /// Find network motifs in transition network
@@ -991,17 +987,11 @@ pub struct MlClassificationResult {
 }
 
 /// Supervised ML classifier for context prediction
-pub struct ContextClassifier {
-    n_estimators: usize,
-    max_depth: usize,
-}
+pub struct ContextClassifier {}
 
 impl ContextClassifier {
-    pub fn new(n_estimators: usize, max_depth: usize) -> Self {
-        Self {
-            n_estimators,
-            max_depth,
-        }
+    pub fn new(_n_estimators: usize, _max_depth: usize) -> Self {
+        Self {}
     }
 
     /// Train and compare bag-of-words vs n-gram features
@@ -1120,15 +1110,11 @@ impl ContextClassifier {
 // Main Sequence Analysis Orchestrator
 // ============================================================================
 
-pub struct SequenceAnalysisSuite {
-    data_dir: std::path::PathBuf,
-}
+pub struct SequenceAnalysisSuite {}
 
 impl SequenceAnalysisSuite {
-    pub fn new(data_dir: impl AsRef<std::path::Path>) -> Self {
-        Self {
-            data_dir: data_dir.as_ref().to_path_buf(),
-        }
+    pub fn new(_data_dir: impl AsRef<std::path::Path>) -> Self {
+        Self {}
     }
 
     /// Run all five analysis methods

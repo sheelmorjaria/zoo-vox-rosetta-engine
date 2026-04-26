@@ -71,7 +71,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features: RosettaFeatures = extractor.extract_rosetta(&signal).unwrap();
+        let features: RosettaFeatures = extractor.extract(&signal).unwrap();
 
         // Should have 112 total dimensions
         let arr = features.to_array();
@@ -84,7 +84,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Base 46D should not be all zeros
         let has_nonzero = features.base_46d().iter().any(|&x| x != 0.0);
@@ -97,7 +97,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Extended 66D should not be all zeros
         let has_nonzero = features.extended_66d().iter().any(|&x| x != 0.0);
@@ -114,7 +114,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Base 46D: 46 elements
         assert_eq!(features.base_46d().len(), 46);
@@ -132,25 +132,22 @@ mod tests_rosetta_features {
 
     #[test]
     fn test_rosetta_features_45d_consistency() {
-        // RosettaFeatures should be based on 45D features
-        // Note: The internal ordering differs between RosettaFeatures.base_46d() and
-        // Features45D.to_array(), but both should produce valid features
+        // RosettaFeatures should produce consistent features on repeated extraction
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let rosetta = extractor.extract_rosetta(&signal).unwrap();
-        let features_45d = extractor.extract_45d(&signal).unwrap();
+        let rosetta = extractor.extract(&signal).unwrap();
+        let rosetta2 = extractor.extract(&signal).unwrap();
 
-        // Both should have similar values for key features (though ordering differs)
-        // Test specific field values that should match
-        assert!((rosetta.mean_f0_hz - features_45d.mean_f0_hz).abs() < 1.0);
-        assert!((rosetta.duration_ms - features_45d.duration_ms).abs() < 1.0);
-        assert!((rosetta.f0_range_hz - features_45d.f0_range_hz).abs() < 10.0);
+        // Both extractions should produce identical results
+        assert!((rosetta.mean_f0_hz - rosetta2.mean_f0_hz).abs() < 0.01);
+        assert!((rosetta.duration_ms - rosetta2.duration_ms).abs() < 0.01);
+        assert!((rosetta.f0_range_hz - rosetta2.f0_range_hz).abs() < 0.01);
 
-        // Base 30D features should be preserved
-        assert!((rosetta.attack_time_ms - features_45d.base_30d.attack_time_ms).abs() < 1.0);
-        assert!((rosetta.decay_time_ms - features_45d.base_30d.decay_time_ms).abs() < 1.0);
-        assert!((rosetta.sustain_level - features_45d.base_30d.sustain_level).abs() < 0.1);
+        // Envelope features should be preserved
+        assert!((rosetta.attack_time_ms - rosetta2.attack_time_ms).abs() < 0.01);
+        assert!((rosetta.decay_time_ms - rosetta2.decay_time_ms).abs() < 0.01);
+        assert!((rosetta.sustain_level - rosetta2.sustain_level).abs() < 0.01);
     }
 
     // =========================================================================
@@ -163,7 +160,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 200.0, 8000.0); // 200ms, 8kHz (marmoset range)
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -178,7 +175,7 @@ mod tests_rosetta_features {
             50.0, // release
         );
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
 
         // Should extract features successfully
         assert_eq!(features.to_array().len(), 112);
@@ -194,7 +191,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(192000); // Higher sample rate for bats
         let signal = generate_test_signal(192000, 50.0, 40000.0); // 40kHz (bat range)
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -204,7 +201,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(96000);
         let signal = generate_test_signal(96000, 300.0, 8000.0); // 8kHz (dolphin range)
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -218,7 +215,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let silence = vec![0.0; 4410]; // 100ms of silence
 
-        let features = extractor.extract_rosetta(&silence).unwrap();
+        let features = extractor.extract(&silence).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -229,7 +226,7 @@ mod tests_rosetta_features {
         let short_signal = generate_test_signal(44100, 10.0, 440.0); // 10ms
 
         // Should either succeed or return an appropriate error
-        let result = extractor.extract_rosetta(&short_signal);
+        let result = extractor.extract(&short_signal);
         assert!(result.is_ok());
     }
 
@@ -239,7 +236,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let long_signal = generate_test_signal(44100, 2000.0, 440.0); // 2 seconds
 
-        let features = extractor.extract_rosetta(&long_signal).unwrap();
+        let features = extractor.extract(&long_signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -253,7 +250,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         let arr = features.to_array();
 
         // Check array length
@@ -282,7 +279,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -291,7 +288,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(48000);
         let signal = generate_test_signal(48000, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -300,7 +297,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(96000);
         let signal = generate_test_signal(96000, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         assert_eq!(features.to_array().len(), 112);
     }
 
@@ -314,7 +311,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         let cloned = features.clone();
 
         assert_eq!(features.to_array(), cloned.to_array());
@@ -326,7 +323,7 @@ mod tests_rosetta_features {
         let extractor = MicroDynamicsExtractor::new(44100);
         let signal = generate_test_signal(44100, 100.0, 440.0);
 
-        let features = extractor.extract_rosetta(&signal).unwrap();
+        let features = extractor.extract(&signal).unwrap();
         let debug_str = format!("{:?}", features);
 
         // Should contain key feature fields

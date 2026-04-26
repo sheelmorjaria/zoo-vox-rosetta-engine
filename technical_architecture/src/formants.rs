@@ -341,6 +341,7 @@ impl FormantBandwidthCalculator {
 }
 
 /// Helper: Generate sine wave
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)
@@ -352,6 +353,7 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate harmonic series
+#[cfg(test)]
 fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];

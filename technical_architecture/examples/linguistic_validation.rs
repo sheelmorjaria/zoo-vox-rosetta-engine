@@ -124,11 +124,10 @@ fn load_species_data(
     species: &str,
     analysis_path: &str,
 ) -> Result<(Vec<PhraseType>, Vec<PhraseSequence>), Box<dyn std::error::Error>> {
-    let mut phrase_types = Vec::new();
     let mut sequences = Vec::new();
 
     // FIRST: Try species-specific loaders (they have better data)
-    phrase_types = load_species_specific_data(species)?;
+    let mut phrase_types = load_species_specific_data(species)?;
 
     // THEN: Try analysis files if species-specific didn't work
     if phrase_types.is_empty() {
@@ -461,7 +460,7 @@ fn generate_sequences_from_phrases(phrase_types: &[PhraseType], num_sequences: u
     use rand::thread_rng;
 
     let mut sequences = Vec::new();
-    let mut rng = thread_rng();
+    let rng = thread_rng();
 
     // Sort phrases by occurrence count (descending)
     let mut sorted_phrases: Vec<_> = phrase_types.iter().collect();

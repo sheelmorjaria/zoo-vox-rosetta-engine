@@ -280,3 +280,13 @@ technical_architecture/uncertain_samples/
 # Detection logs (generated at runtime)
 detections.log
 *_detections.jsonl
+*.bincode
+
+
+# Large model files and gallery data
+*.bincode
+specialist_rf_models/
+*_gallery.json
+siamese_weights.json
+physics_rf_model.json
+reference_gallery.json

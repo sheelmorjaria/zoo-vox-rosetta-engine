@@ -591,7 +591,7 @@ impl FastFeatureExtractor {
         }
 
         // Inter-onset intervals
-        let mut icis: Vec<f64> = onsets
+        let icis: Vec<f64> = onsets
             .windows(2)
             .map(|w| (w[1] - w[0]) as f64 / self.sample_rate as f64 * 1000.0)
             .collect();

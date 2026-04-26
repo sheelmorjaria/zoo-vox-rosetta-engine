@@ -253,7 +253,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     let syllable_segmenter = DynamicSegmenter::new(syllable_config, SAMPLE_RATE);
-    let mut all_syllables: Vec<(DynamicPhraseCandidate, String, usize)> = Vec::new(); // (candidate, call_type, parent_motif_id)
+    let all_syllables: Vec<(DynamicPhraseCandidate, String, usize)> = Vec::new(); // (candidate, call_type, parent_motif_id)
     let mut hierarchy_samples: Vec<HierarchySample> = Vec::new();
 
     // Process each motif to find syllables

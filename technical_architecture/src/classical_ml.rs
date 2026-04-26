@@ -338,11 +338,7 @@ pub struct TreeNode {
 
 impl TreeNode {
     fn leaf(class_counts: Vec<usize>) -> Self {
-        let prediction = class_counts
-            .iter()
-            .enumerate()
-            .max_by_key(|(_, &c)| c)
-            .map(|(i, _)| i);
+        let prediction = class_counts.iter().enumerate().max_by_key(|(_, &c)| c).map(|(i, _)| i);
         Self {
             feature_idx: None,
             threshold: None,
@@ -382,6 +378,8 @@ pub struct DecisionTreeClassifier {
     n_classes: usize,
     /// Feature importances
     feature_importances: Array1<f32>,
+    /// Maximum features to consider at each split (None = all)
+    max_features: Option<usize>,
 }
 
 impl DecisionTreeClassifier {
@@ -393,7 +391,14 @@ impl DecisionTreeClassifier {
             min_samples_split,
             n_classes: 0,
             feature_importances: Array1::zeros(45),
+            max_features: None,
         }
+    }
+
+    /// Set max features per split
+    pub fn with_max_features(mut self, max_features: usize) -> Self {
+        self.max_features = Some(max_features);
+        self
     }
 
     /// Train the decision tree
@@ -426,12 +431,43 @@ impl DecisionTreeClassifier {
         Ok(())
     }
 
-    fn build_node(
+    /// Train the decision tree with raw arrays (supports arbitrary feature dimensions)
+    pub fn fit_raw(
+        &mut self,
+        features: &Array2<f32>,
+        indices: &[usize],
+        labels: &[usize],
+        n_classes: usize,
+        depth: usize,
+    ) -> Result<()> {
+        if indices.is_empty() {
+            anyhow::bail!("Cannot train on empty indices");
+        }
+
+        let n_features = features.ncols();
+        self.n_classes = n_classes;
+        self.nodes.clear();
+        self.feature_importances = Array1::zeros(n_features);
+
+        // Build tree recursively
+        self.build_node_raw(features, labels, indices, depth, n_features)?;
+
+        // Normalize feature importances
+        let total: f32 = self.feature_importances.sum();
+        if total > 0.0 {
+            self.feature_importances.mapv_inplace(|x| x / total);
+        }
+
+        Ok(())
+    }
+
+    fn build_node_raw(
         &mut self,
         x: &Array2<f32>,
         y: &[usize],
         indices: &[usize],
         depth: usize,
+        n_features: usize,
     ) -> Result<usize> {
         // Check stopping conditions
         if indices.is_empty() {
@@ -448,10 +484,7 @@ impl DecisionTreeClassifier {
 
         // Check if pure node
         let n_classes_present = class_counts.iter().filter(|&&c| c > 0).count();
-        if n_classes_present == 1
-            || depth >= self.max_depth
-            || indices.len() < self.min_samples_split
-        {
+        if n_classes_present == 1 || depth >= self.max_depth || indices.len() < self.min_samples_split {
             let node_idx = self.nodes.len();
             self.nodes.push(TreeNode::leaf(class_counts));
             return Ok(node_idx);
@@ -459,7 +492,7 @@ impl DecisionTreeClassifier {
 
         // Find best split
         let (best_feature, best_threshold, best_gain) =
-            self.find_best_split(x, y, indices, &class_counts)?;
+            self.find_best_split_raw(x, y, indices, &class_counts, n_features)?;
 
         if best_gain <= 0.0 {
             let node_idx = self.nodes.len();
@@ -473,9 +506,127 @@ impl DecisionTreeClassifier {
             .push(TreeNode::split(best_feature, best_threshold, class_counts));
 
         // Split indices
-        let (left_indices, right_indices): (Vec<_>, Vec<_>) = indices
-            .iter()
-            .partition(|&&i| x[[i, best_feature]] <= best_threshold);
+        let (left_indices, right_indices): (Vec<_>, Vec<_>) =
+            indices.iter().partition(|&&i| x[[i, best_feature]] <= best_threshold);
+
+        // Update feature importance
+        self.feature_importances[best_feature] += best_gain * indices.len() as f32;
+
+        // Build children
+        let left_idx = self.build_node_raw(x, y, &left_indices, depth + 1, n_features)?;
+        let right_idx = self.build_node_raw(x, y, &right_indices, depth + 1, n_features)?;
+
+        // Update node with children
+        self.nodes[node_idx].left = Some(left_idx);
+        self.nodes[node_idx].right = Some(right_idx);
+
+        Ok(node_idx)
+    }
+
+    fn find_best_split_raw(
+        &self,
+        x: &Array2<f32>,
+        y: &[usize],
+        indices: &[usize],
+        class_counts: &[usize],
+        n_features: usize,
+    ) -> Result<(usize, f32, f32)> {
+        let n = indices.len() as f32;
+        let parent_gini = Self::gini(class_counts);
+
+        let mut best_feature = 0;
+        let mut best_threshold = 0.0;
+        let mut best_gain = 0.0;
+
+        // Try each feature
+        for feat in 0..n_features {
+            // Get unique thresholds
+            let mut values: Vec<f32> = indices.iter().map(|&i| x[[i, feat]]).collect();
+            // Use total_cmp for proper ordering (handles NaN)
+            values.sort_by(|a: &f32, b: &f32| a.total_cmp(b));
+
+            // Try thresholds between consecutive values
+            for i in 1..values.len() {
+                if (values[i] - values[i - 1]).abs() < 1e-10 {
+                    continue;
+                }
+                let threshold = (values[i] + values[i - 1]) / 2.0;
+
+                // Calculate gain
+                let mut left_counts = vec![0usize; self.n_classes];
+                let mut right_counts = vec![0usize; self.n_classes];
+
+                for &idx in indices {
+                    if x[[idx, feat]] <= threshold {
+                        left_counts[y[idx]] += 1;
+                    } else {
+                        right_counts[y[idx]] += 1;
+                    }
+                }
+
+                let left_n = left_counts.iter().sum::<usize>() as f32;
+                let right_n = right_counts.iter().sum::<usize>() as f32;
+
+                if left_n == 0.0 || right_n == 0.0 {
+                    continue;
+                }
+
+                let left_gini = Self::gini(&left_counts);
+                let right_gini = Self::gini(&right_counts);
+
+                let weighted_gini = (left_n / n) * left_gini + (right_n / n) * right_gini;
+                let gain = parent_gini - weighted_gini;
+
+                if gain > best_gain {
+                    best_gain = gain;
+                    best_feature = feat;
+                    best_threshold = threshold;
+                }
+            }
+        }
+
+        Ok((best_feature, best_threshold, best_gain))
+    }
+
+    fn build_node(&mut self, x: &Array2<f32>, y: &[usize], indices: &[usize], depth: usize) -> Result<usize> {
+        // Check stopping conditions
+        if indices.is_empty() {
+            let node_idx = self.nodes.len();
+            self.nodes.push(TreeNode::leaf(vec![0; self.n_classes]));
+            return Ok(node_idx);
+        }
+
+        // Count classes
+        let mut class_counts = vec![0usize; self.n_classes];
+        for &i in indices {
+            class_counts[y[i]] += 1;
+        }
+
+        // Check if pure node
+        let n_classes_present = class_counts.iter().filter(|&&c| c > 0).count();
+        if n_classes_present == 1 || depth >= self.max_depth || indices.len() < self.min_samples_split {
+            let node_idx = self.nodes.len();
+            self.nodes.push(TreeNode::leaf(class_counts));
+            return Ok(node_idx);
+        }
+
+        // Find best split
+        let (best_feature, best_threshold, best_gain) = self.find_best_split(x, y, indices, &class_counts)?;
+
+        if best_gain <= 0.0 {
+            let node_idx = self.nodes.len();
+            self.nodes.push(TreeNode::leaf(class_counts));
+            return Ok(node_idx);
+        }
+
+        // Create split node
+        let node_idx = self.nodes.len();
+        self.nodes
+            .push(TreeNode::split(best_feature, best_threshold, class_counts));
+
+        // Split indices
+        let (left_indices, right_indices): (Vec<_>, Vec<_>) =
+            indices.iter().partition(|&&i| x[[i, best_feature]] <= best_threshold);
 
         // Update feature importance
         self.feature_importances[best_feature] += best_gain * indices.len() as f32;
@@ -788,14 +939,9 @@ impl RandomForestClassifier {
                     // Sample from each class proportionally to its weight
                     let total_weight: f32 = self.computed_weights.values().sum();
                     for (&class_idx, samples) in &class_samples {
-                        let weight = self
-                            .computed_weights
-                            .get(&class_idx)
-                            .copied()
-                            .unwrap_or(1.0);
+                        let weight = self.computed_weights.get(&class_idx).copied().unwrap_or(1.0);
                         let n_to_sample =
-                            ((weight / total_weight) * sample_size as f32 * self.n_classes as f32)
-                                as usize;
+                            ((weight / total_weight) * sample_size as f32 * self.n_classes as f32) as usize;
                         let n_to_sample = n_to_sample.min(samples.len()).max(1);
 
                         for _ in 0..n_to_sample {
@@ -810,11 +956,7 @@ impl RandomForestClassifier {
                         let r: f32 = rng.gen_range(0.0..total_weight);
                         let mut cumsum = 0.0;
                         for (&class_idx, samples) in &class_samples {
-                            cumsum += self
-                                .computed_weights
-                                .get(&class_idx)
-                                .copied()
-                                .unwrap_or(1.0);
+                            cumsum += self.computed_weights.get(&class_idx).copied().unwrap_or(1.0);
                             if cumsum >= r && !samples.is_empty() {
                                 let idx = *samples.choose(&mut rng).unwrap();
                                 indices.push(idx);
@@ -833,8 +975,7 @@ impl RandomForestClassifier {
             bootstrap_dataset.idx_to_label = dataset.idx_to_label.clone();
 
             for &i in &bootstrap_indices {
-                bootstrap_dataset
-                    .add_sample(dataset.features.row(i).to_owned(), &dataset.labels[i]);
+                bootstrap_dataset.add_sample(dataset.features.row(i).to_owned(), &dataset.labels[i]);
             }
 
             // Train tree
@@ -849,8 +990,156 @@ impl RandomForestClassifier {
 
         // Average feature importances
         if self.n_estimators > 0 {
-            self.feature_importances
-                .mapv_inplace(|x| x / self.n_estimators as f32);
+            self.feature_importances.mapv_inplace(|x| x / self.n_estimators as f32);
+        }
+
+        Ok(())
+    }
+
+    /// Train the Random Forest with raw arrays (supports arbitrary feature dimensions)
+    ///
+    /// This method bypasses the FeatureDataset 45D assertion and allows
+    /// training on features of any dimension (e.g., 112D for the Hierarchical Ensemble Router).
+    pub fn fit_raw(
+        &mut self,
+        features: &Array2<f32>,
+        labels: &[String],
+        label_to_idx: &HashMap<String, usize>,
+        idx_to_label: &HashMap<usize, String>,
+    ) -> Result<()> {
+        let n_samples = features.nrows();
+        if n_samples == 0 || labels.is_empty() {
+            anyhow::bail!("Cannot train on empty data");
+        }
+
+        let n_features = features.ncols();
+        self.n_classes = label_to_idx.len();
+        self.trees.clear();
+        self.feature_importances = Array1::zeros(n_features);
+
+        // Store label mappings
+        self.label_to_idx = label_to_idx.clone();
+        self.idx_to_label = idx_to_label.clone();
+
+        // Compute class weights
+        self.computed_weights.clear();
+        match &self.class_weight {
+            ClassWeightMode::None => {
+                for &class_idx in label_to_idx.values() {
+                    self.computed_weights.insert(class_idx, 1.0);
+                }
+            }
+            ClassWeightMode::Balanced => {
+                // Count samples per class
+                let mut class_counts: HashMap<usize, usize> = HashMap::new();
+                for label in labels {
+                    let class_idx = label_to_idx.get(label).copied().unwrap_or(0);
+                    *class_counts.entry(class_idx).or_default() += 1;
+                }
+
+                // Compute balanced weights
+                for (&class_idx, &count) in &class_counts {
+                    let weight = (n_samples as f32) / (self.n_classes as f32 * count as f32);
+                    self.computed_weights.insert(class_idx, weight);
+                }
+            }
+            ClassWeightMode::Custom(weights) => {
+                self.computed_weights = weights.clone();
+            }
+        }
+
+        use rand::seq::SliceRandom;
+        use rand::SeedableRng;
+        use rayon::prelude::*;
+
+        // Pre-generate all bootstrap samples (deterministic)
+        let bootstrap_samples: Vec<Vec<usize>> = (0..self.n_estimators)
+            .map(|tree_idx| {
+                let mut rng = rand::rngs::StdRng::seed_from_u64((tree_idx + 42) as u64);
+                let sample_size = (n_samples as f32 * 0.8) as usize;
+
+                match &self.class_weight {
+                    ClassWeightMode::None => {
+                        let all_indices: Vec<usize> = (0..n_samples).collect();
+                        let mut indices = Vec::with_capacity(sample_size);
+                        for _ in 0..sample_size {
+                            let idx = *all_indices.choose(&mut rng).unwrap();
+                            indices.push(idx);
+                        }
+                        indices
+                    }
+                    _ => {
+                        // Weighted bootstrap
+                        let mut indices = Vec::with_capacity(sample_size);
+
+                        // Group samples by class
+                        let mut class_samples: HashMap<usize, Vec<usize>> = HashMap::new();
+                        for (i, label) in labels.iter().enumerate() {
+                            let class_idx = label_to_idx.get(label).copied().unwrap_or(0);
+                            class_samples.entry(class_idx).or_default().push(i);
+                        }
+
+                        let total_weight: f32 = self.computed_weights.values().sum::<f32>();
+                        for (&class_idx, samples) in &class_samples {
+                            let weight = self.computed_weights.get(&class_idx).copied().unwrap_or(1.0);
+                            let n_from_class = ((weight / total_weight) * sample_size as f32) as usize;
+                            let n_from_class = n_from_class.min(samples.len());
+
+                            for _ in 0..n_from_class {
+                                if let Some(&idx) = samples.choose(&mut rng) {
+                                    indices.push(idx);
+                                }
+                            }
+                        }
+
+                        // Fill remaining with random samples
+                        while indices.len() < sample_size {
+                            let idx = (rng.gen::<f32>() * n_samples as f32) as usize;
+                            indices.push(idx.min(n_samples - 1));
+                        }
+
+                        indices
+                    }
+                }
+            })
+            .collect();
+
+        // Build trees in parallel
+        let n_features = features.ncols();
+        let max_depth = self.max_depth;
+        let min_samples_split = self.min_samples_split;
+        let max_features_val = self.max_features.unwrap_or_else(|| (n_features as f32).sqrt() as usize);
+        let n_classes = self.n_classes;
+
+        let results: Vec<(DecisionTreeClassifier, Array1<f32>)> = bootstrap_samples
+            .into_par_iter()
+            .map(|bootstrap_indices| {
+                let mut tree =
+                    DecisionTreeClassifier::new(max_depth, min_samples_split).with_max_features(max_features_val);
+
+                // Convert ALL labels to class indices
+                let label_indices: Vec<usize> = labels
+                    .iter()
+                    .map(|l| label_to_idx.get(l).copied().unwrap_or(0))
+                    .collect();
+
+                // Build tree (ignore error, return empty tree on failure)
+                let _ = tree.fit_raw(features, &bootstrap_indices, &label_indices, n_classes, 0);
+
+                let importances = tree.feature_importances().to_owned();
+                (tree, importances)
+            })
+            .collect();
+
+        // Accumulate results
+        for (tree, importances) in results {
+            self.feature_importances = &self.feature_importances + &importances;
+            self.trees.push(tree);
+        }
+
+        // Average feature importances
+        if self.n_estimators > 0 {
+            self.feature_importances.mapv_inplace(|x| x / self.n_estimators as f32);
         }
 
         Ok(())
@@ -925,6 +1214,21 @@ impl RandomForestClassifier {
     /// Get number of trees
     pub fn n_trees(&self) -> usize {
         self.trees.len()
+    }
+
+    /// Get number of classes
+    pub fn n_classes(&self) -> usize {
+        self.n_classes
+    }
+
+    /// Get label-to-index mapping
+    pub fn label_to_idx(&self) -> &HashMap<String, usize> {
+        &self.label_to_idx
+    }
+
+    /// Get index-to-label mapping
+    pub fn idx_to_label(&self) -> &HashMap<usize, String> {
+        &self.idx_to_label
     }
 }
 
@@ -1010,32 +1314,16 @@ pub fn evaluate_predictions(
             .iter()
             .enumerate()
             .filter(|(i, _)| *i != class_idx)
-            .map(|(i, row)| {
-                if class_idx < n_classes {
-                    row[class_idx]
-                } else {
-                    0
-                }
-            })
+            .map(|(i, row)| if class_idx < n_classes { row[class_idx] } else { 0 })
             .sum();
 
         // Support (actual count)
         let support: usize = confusion_matrix
             .iter()
-            .map(|row| {
-                if class_idx < n_classes {
-                    row[class_idx]
-                } else {
-                    0
-                }
-            })
+            .map(|row| if class_idx < n_classes { row[class_idx] } else { 0 })
             .sum();
 
-        let precision = if tp + fp > 0 {
-            tp as f32 / (tp + fp) as f32
-        } else {
-            0.0
-        };
+        let precision = if tp + fp > 0 { tp as f32 / (tp + fp) as f32 } else { 0.0 };
         let recall = if tp + fn_ > 0 {
             tp as f32 / (tp + fn_) as f32
         } else {
@@ -1313,10 +1601,7 @@ impl HierarchicalClassifier {
             self.level2.insert(group, classifier);
             self.group_label_maps.insert(
                 group,
-                (
-                    group_dataset.label_to_idx.clone(),
-                    group_dataset.idx_to_label.clone(),
-                ),
+                (group_dataset.label_to_idx.clone(), group_dataset.idx_to_label.clone()),
             );
         }
 
@@ -1697,16 +1982,7 @@ mod tests {
         let mut rf = RandomForestClassifier::new(10, 5, 2);
         rf.fit(&dataset).unwrap();
 
-        let batch = Array2::from_shape_fn(
-            (4, 45),
-            |(i, j)| {
-                if i < 2 {
-                    class_a[j]
-                } else {
-                    class_b[j]
-                }
-            },
-        );
+        let batch = Array2::from_shape_fn((4, 45), |(i, j)| if i < 2 { class_a[j] } else { class_b[j] });
 
         let predictions = rf.predict_batch(&batch);
 
@@ -1868,6 +2144,230 @@ mod tests {
         assert_eq!(decoded.n_trees(), 5);
     }
 
+    // =========================================================================
+    // TDD Test Suite: Taxonomic Groups
+    // =========================================================================
+
+    #[test]
+    fn test_taxonomic_group_from_species_name() {
+        // Whale → Cetacean
+        assert_eq!(
+            TaxonomicGroup::from_species_name("blue_whale"),
+            TaxonomicGroup::Cetacean
+        );
+        assert_eq!(
+            TaxonomicGroup::from_species_name("humpback_whale"),
+            TaxonomicGroup::Cetacean
+        );
+        assert_eq!(TaxonomicGroup::from_species_name("dolphin"), TaxonomicGroup::Cetacean);
+
+        // Finch → Bird
+        assert_eq!(TaxonomicGroup::from_species_name("zebra_finch"), TaxonomicGroup::Bird);
+        assert_eq!(TaxonomicGroup::from_species_name("sparrow"), TaxonomicGroup::Bird);
+
+        // Mosquito → Insect
+        assert_eq!(TaxonomicGroup::from_species_name("mosquito"), TaxonomicGroup::Insect);
+        assert_eq!(TaxonomicGroup::from_species_name("cricket"), TaxonomicGroup::Insect);
+
+        // Marmoset → Primate
+        assert_eq!(TaxonomicGroup::from_species_name("marmoset"), TaxonomicGroup::Primate);
+        assert_eq!(TaxonomicGroup::from_species_name("gibbon"), TaxonomicGroup::Primate);
+
+        // Bat → Bat
+        assert_eq!(
+            TaxonomicGroup::from_species_name("egyptian_fruit_bat"),
+            TaxonomicGroup::Bat
+        );
+        assert_eq!(TaxonomicGroup::from_species_name("bat"), TaxonomicGroup::Bat);
+
+        // Frog → Amphibian
+        assert_eq!(
+            TaxonomicGroup::from_species_name("tree_frog"),
+            TaxonomicGroup::Amphibian
+        );
+        assert_eq!(TaxonomicGroup::from_species_name("toad"), TaxonomicGroup::Amphibian);
+
+        // Bear → Mammal (other)
+        assert_eq!(TaxonomicGroup::from_species_name("brown_bear"), TaxonomicGroup::Mammal);
+        assert_eq!(TaxonomicGroup::from_species_name("elephant"), TaxonomicGroup::Mammal);
+
+        // Unknown species
+        assert_eq!(TaxonomicGroup::from_species_name("alien"), TaxonomicGroup::Unknown);
+        assert_eq!(TaxonomicGroup::from_species_name("xyz123"), TaxonomicGroup::Unknown);
+    }
+
+    #[test]
+    fn test_taxonomic_group_all() {
+        let all_groups = TaxonomicGroup::all();
+        assert_eq!(all_groups.len(), 8);
+        assert!(all_groups.contains(&TaxonomicGroup::Cetacean));
+        assert!(all_groups.contains(&TaxonomicGroup::Bird));
+        assert!(all_groups.contains(&TaxonomicGroup::Insect));
+        assert!(all_groups.contains(&TaxonomicGroup::Primate));
+        assert!(all_groups.contains(&TaxonomicGroup::Bat));
+        assert!(all_groups.contains(&TaxonomicGroup::Mammal));
+        assert!(all_groups.contains(&TaxonomicGroup::Amphibian));
+        assert!(all_groups.contains(&TaxonomicGroup::Unknown));
+    }
+
+    // =========================================================================
+    // TDD Test Suite: Hierarchical Classifier
+    // =========================================================================
+
+    #[test]
+    fn test_hierarchical_classifier_creation() {
+        let classifier = HierarchicalClassifier::new(10, 5, 2);
+        assert!(classifier.level2.is_empty());
+        assert!(classifier.species_to_group.is_empty());
+        assert!(classifier.group_label_maps.is_empty());
+    }
+
+    #[test]
+    fn test_hierarchical_classifier_fit_predict() {
+        let mut dataset = FeatureDataset::new();
+
+        // Create 3 groups with separable features
+        // Group 1: Cetacean (blue_whale) — feature[0] = 1.0
+        let mut whale_feat = Array1::zeros(45);
+        whale_feat[0] = 1.0;
+        for _ in 0..15 {
+            dataset.add_sample(whale_feat.clone(), "blue_whale");
+        }
+
+        // Group 2: Bird (zebra_finch) — feature[0] = 5.0
+        let mut finch_feat = Array1::zeros(45);
+        finch_feat[0] = 5.0;
+        for _ in 0..15 {
+            dataset.add_sample(finch_feat.clone(), "zebra_finch");
+        }
+
+        // Group 3: Primate (marmoset) — feature[0] = 10.0
+        let mut marmoset_feat = Array1::zeros(45);
+        marmoset_feat[0] = 10.0;
+        for _ in 0..15 {
+            dataset.add_sample(marmoset_feat.clone(), "marmoset");
+        }
+
+        let mut classifier = HierarchicalClassifier::new(10, 5, 2);
+        classifier.fit(&dataset).unwrap();
+
+        // Verify species_to_group mapping was built
+        assert!(!classifier.species_to_group.is_empty());
+        assert_eq!(
+            classifier.species_to_group.get("blue_whale"),
+            Some(&TaxonomicGroup::Cetacean)
+        );
+        assert_eq!(
+            classifier.species_to_group.get("zebra_finch"),
+            Some(&TaxonomicGroup::Bird)
+        );
+        assert_eq!(
+            classifier.species_to_group.get("marmoset"),
+            Some(&TaxonomicGroup::Primate)
+        );
+
+        // Predict each group
+        let (whale_pred, whale_group, _) = classifier.predict(&whale_feat);
+        let (finch_pred, finch_group, _) = classifier.predict(&finch_feat);
+        let (marmoset_pred, marmoset_group, _) = classifier.predict(&marmoset_feat);
+
+        // Groups should be correct
+        assert_eq!(whale_group, TaxonomicGroup::Cetacean);
+        assert_eq!(finch_group, TaxonomicGroup::Bird);
+        assert_eq!(marmoset_group, TaxonomicGroup::Primate);
+    }
+
+    #[test]
+    fn test_hierarchical_classifier_predict_batch() {
+        let mut dataset = FeatureDataset::new();
+
+        let mut feat_a = Array1::zeros(45);
+        feat_a[0] = 0.0;
+        let mut feat_b = Array1::zeros(45);
+        feat_b[0] = 10.0;
+
+        for _ in 0..15 {
+            dataset.add_sample(feat_a.clone(), "blue_whale");
+            dataset.add_sample(feat_b.clone(), "zebra_finch");
+        }
+
+        let mut classifier = HierarchicalClassifier::new(10, 5, 2);
+        classifier.fit(&dataset).unwrap();
+
+        // Batch predict
+        let batch = ndarray::Array2::from_shape_fn((5, 45), |(i, j)| if i < 3 { feat_a[j] } else { feat_b[j] });
+        let results = classifier.predict_batch(&batch);
+
+        assert_eq!(results.len(), 5);
+        // Each result should have a non-empty species string
+        for (species, group, confidence) in &results {
+            assert!(!species.is_empty());
+            assert!(*confidence >= 0.0);
+        }
+    }
+
+    #[test]
+    fn test_hierarchical_classifier_evaluate() {
+        let mut dataset = FeatureDataset::new();
+
+        // Create 4 species in 2 groups, 2 species per group
+        // Group Cetacean: blue_whale (feat[0]=0), sperm_whale (feat[0]=1)
+        // Group Bird: zebra_finch (feat[0]=10), bengal_finch (feat[0]=11)
+        let mut feat_bw = Array1::zeros(45);
+        feat_bw[0] = 0.0;
+        let mut feat_sw = Array1::zeros(45);
+        feat_sw[0] = 1.0;
+        let mut feat_zf = Array1::zeros(45);
+        feat_zf[0] = 10.0;
+        let mut feat_bf = Array1::zeros(45);
+        feat_bf[0] = 11.0;
+
+        for _ in 0..15 {
+            dataset.add_sample(feat_bw.clone(), "blue_whale");
+            dataset.add_sample(feat_sw.clone(), "sperm_whale");
+            dataset.add_sample(feat_zf.clone(), "zebra_finch");
+            dataset.add_sample(feat_bf.clone(), "bengal_finch");
+        }
+
+        let mut classifier = HierarchicalClassifier::new(10, 5, 2);
+        classifier.fit(&dataset).unwrap();
+
+        // Evaluate on training data
+        let metrics = classifier.evaluate(&dataset);
+        // On linearly separable data, accuracy should be high
+        assert!(
+            metrics.accuracy > 0.5,
+            "Expected accuracy > 0.5 on separable data, got {}",
+            metrics.accuracy
+        );
+    }
+
+    #[test]
+    fn test_balance_classes_uneven() {
+        let mut dataset = FeatureDataset::new();
+        let features = Array1::zeros(45);
+
+        // Create imbalanced dataset: 90 A, 10 B
+        for _ in 0..90 {
+            dataset.add_sample(features.clone(), "majority_a");
+        }
+        for _ in 0..10 {
+            dataset.add_sample(features.clone(), "minority_b");
+        }
+
+        assert_eq!(dataset.len(), 100);
+
+        let balanced = dataset.balance_classes(42);
+
+        // Both classes should have equal sample sizes (downsampled to minority)
+        assert_eq!(balanced.len(), 20);
+
+        // Verify class distribution
+        let count_a = balanced.labels.iter().filter(|l| *l == "majority_a").count();
+        let count_b = balanced.labels.iter().filter(|l| *l == "minority_b").count();
+        assert_eq!(count_a, count_b);
+    }
+
     #[test]
     fn test_full_training_pipeline() {
         // Create synthetic dataset
@@ -1903,9 +2403,6 @@ mod tests {
         let metrics = evaluate_predictions(&predictions, &test_labels, &test.idx_to_label);
 
         // Should achieve high accuracy on this simple dataset
-        assert!(
-            metrics.accuracy > 0.9,
-            "Accuracy should be > 90% on separable data"
-        );
+        assert!(metrics.accuracy > 0.9, "Accuracy should be > 90% on separable data");
     }
 }

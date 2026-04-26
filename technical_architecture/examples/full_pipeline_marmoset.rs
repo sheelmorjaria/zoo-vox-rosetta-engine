@@ -67,8 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
-    let (mut vocalization_results, mut clustered_phrases, mut annotations) =
-        convert_database_to_pipeline_format(phrases_data)?;
+    let (vocalization_results, clustered_phrases, annotations) = convert_database_to_pipeline_format(phrases_data)?;
 
     println!("✅ Data conversion complete");
     println!("   Vocalizations: {}", vocalization_results.len());

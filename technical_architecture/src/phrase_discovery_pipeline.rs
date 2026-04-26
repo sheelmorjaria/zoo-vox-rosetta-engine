@@ -31,6 +31,8 @@
 
 use std::collections::HashMap;
 
+use crate::acoustic_algebra_105d::Vector112D;
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -233,58 +235,26 @@ impl PhraseDiscoveryPipeline {
             && flatness <= self.config.purity_max_flatness
     }
 
-    /// Compute ASE-weighted distance matrix
+    /// Compute ASE-weighted distance matrix using Vector112D algebra
     fn compute_ase_distance_matrix(&self, segments: &[(usize, &[f32])]) -> Vec<Vec<f64>> {
         let n = segments.len();
         let mut matrix = vec![vec![0.0; n]; n];
 
+        // Pre-convert to Vector112D
+        let vectors: Vec<Vector112D> = segments
+            .iter()
+            .map(|(_, feat)| Vector112D::from_array(feat))
+            .collect();
+
         for i in 0..n {
             for j in (i + 1)..n {
-                let dist = self.ase_distance(segments[i].1, segments[j].1);
+                let dist = vectors[i].distance_to(&vectors[j]) as f64;
                 matrix[i][j] = dist;
                 matrix[j][i] = dist;
             }
         }
 
         matrix
-    }
-
-    /// ASE Distance: Weighted Physics + Texture
-    ///
-    /// Uses the strategic weighting:
-    ///   - Physics (46D) × 0.6 for broad taxonomy
-    ///   - Texture (66D) × 0.4 for fine species ID
-    fn ase_distance(&self, a: &[f32], b: &[f32]) -> f64 {
-        let min_len = a.len().min(b.len());
-        if min_len < 46 {
-            return f64::MAX;
-        }
-
-        // Physics distance (46D)
-        let physics_dist: f64 = (0..46)
-            .map(|i| {
-                let diff =
-                    (a.get(i).copied().unwrap_or(0.0) - b.get(i).copied().unwrap_or(0.0)).powi(2);
-                diff as f64
-            })
-            .sum::<f64>()
-            .sqrt();
-
-        // Texture distance (remaining dimensions - 66D for 112D total)
-        let texture_dist: f64 = (46..min_len)
-            .map(|i| {
-                let diff =
-                    (a.get(i).copied().unwrap_or(0.0) - b.get(i).copied().unwrap_or(0.0)).powi(2);
-                diff as f64
-            })
-            .sum::<f64>()
-            .sqrt();
-
-        // Weighted combination
-        let physics_weight = self.config.physics_weight as f64;
-        let texture_weight = self.config.texture_weight as f64;
-
-        physics_weight * physics_dist + texture_weight * texture_dist
     }
 
     /// Run HDBSCAN on pre-computed distance matrix
@@ -539,19 +509,16 @@ mod tests {
 
     #[test]
     fn test_ase_distance() {
-        let config = PhraseDiscoveryConfig::default();
-        let pipeline = PhraseDiscoveryPipeline::new(config);
-
         // Identical features = 0 distance
-        let a = vec![1.0f32; 112];
-        let b = vec![1.0f32; 112];
-        let dist = pipeline.ase_distance(&a, &b);
+        let a = Vector112D::from_array(&vec![1.0f32; 112]);
+        let b = Vector112D::from_array(&vec![1.0f32; 112]);
+        let dist = a.distance_to(&b);
         assert!(dist < 0.001);
 
         // Different features > 0 distance
-        let c = vec![0.0f32; 112];
-        let d = vec![2.0f32; 112];
-        let dist2 = pipeline.ase_distance(&c, &d);
+        let c = Vector112D::from_array(&vec![0.0f32; 112]);
+        let d = Vector112D::from_array(&vec![2.0f32; 112]);
+        let dist2 = c.distance_to(&d);
         assert!(dist2 > 0.0);
     }
 

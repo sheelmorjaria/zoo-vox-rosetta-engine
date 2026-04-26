@@ -51,9 +51,6 @@
 // ALLOWED WITH JUSTIFICATION: Scientific Computing/DSP-specific relaxations
 // ─────────────────────────────────────────────────────────────────────────────────
 
-// JUSTIFICATION: Library crate with many public API items not used internally.
-// Items are part of the public API and used by downstream consumers.
-#![allow(dead_code)]
 // JUSTIFICATION: Signal processing functions legitimately need many parameters
 // (sample_rate, window_size, hop_size, n_mels, fmin, fmax, etc.)
 // TODO: Consider using config structs for functions with >5 params
@@ -169,12 +166,9 @@ pub use metadata_synthesizer::{
 #[cfg(feature = "python-bindings")]
 pub use metadata_synthesizer::{PyMetadataQuery, PyMetadataSynthesizer, PyPhraseCandidate, PySynthesisRecipe};
 
-// Micro-dynamics extractor exports (NEW)
-pub use micro_dynamics_extractor::{
-    FeatureDim, FeatureVector, MicroDynamicsExtractor, MicroDynamicsFeatures, MicroDynamicsFeatures15D,
-    MicroDynamicsFeatures37D, MicroDynamicsFeatures39D, MicroDynamicsFeatures45D, MicroDynamicsFeatures56D,
-    MultiScaleValue, RosettaFeatures,
-};
+// Micro-dynamics extractor exports
+// Primary 112D feature type for cross-species analysis
+pub use micro_dynamics_extractor::{MicroDynamicsExtractor, RosettaFeatures};
 
 // Semantic Reconstruction exports (NEW - STAGE 4 of 112D pipeline)
 pub use semantic_reconstruction::{
@@ -183,7 +177,7 @@ pub use semantic_reconstruction::{
 };
 
 #[cfg(feature = "python-bindings")]
-pub use micro_dynamics_extractor::{PyMicroDynamicsExtractor, PyMicroDynamicsFeatures};
+pub use micro_dynamics_extractor::PyMicroDynamicsExtractor;
 
 // Pitch detection exports (NEW - YIN and autocorrelation)
 pub use pitch::{AutocorrEstimator, F0Estimate, PitchAlgorithm, YinEstimator};
@@ -357,24 +351,21 @@ pub use corpus_analysis::{
 };
 
 // Neural Boundary Detection exports (NEW - Stage 1 of synthesis pipeline)
-pub use neural_boundary::{segment_into_phrases, BoundaryDetectorConfig, BoundaryType, NeuralBoundaryDetector};
+pub use neural_boundary::{
+    segment_into_phrases, BoundaryDetectorConfig, BoundaryType, DetectionMode, NeuralBoundaryDetector,
+};
 // Rename to avoid conflict with within_vocalization_analyzer::PhraseBoundary
 pub use neural_boundary::{BoundaryType as NbdBoundaryType, PhraseBoundary as NbdPhraseBoundary};
 
 // Streaming exports (NEW - Real-time audio ingestion with system clock timestamps)
-pub use streaming::{
-    DebounceTimer, RealTimeTimestamp, SpectralChangeProfile, StreamingBuffer, StreamingConfig,
-};
+pub use streaming::{DebounceTimer, RealTimeTimestamp, SpectralChangeProfile, StreamingBuffer, StreamingConfig};
 
 // PAM Router exports (NEW - Passive Acoustic Monitoring with stateless hierarchical classification)
-pub use pam_router::{
-    map_species_to_acoustic, AcousticGroup, PAMResult, PAMRouter, PAMRouterConfig,
-};
+pub use pam_router::{map_species_to_acoustic, AcousticGroup, PAMResult, PAMRouter, PAMRouterConfig};
 
 // Active Learning exports (NEW - Uncertainty-based sample flagging for expert labeling)
 pub use active_learning::{
-    flag_for_active_learning, generate_sample_path, save_uncertain_sample,
-    ActiveLearningConfig, DetectionPayload,
+    flag_for_active_learning, generate_sample_path, save_uncertain_sample, ActiveLearningConfig, DetectionPayload,
 };
 
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
@@ -483,7 +474,10 @@ pub use ptp::{PtpClock, PtpTimestamp};
 pub use master_controller::PyCognitiveProcessor;
 
 // Peer controller exports
-pub use peer_controller::{AudioMuteState, HeartbeatMessage, OperationMode, PeerController, PeerControllerConfig};
+pub use peer_controller::{
+    AudioMuteState, ConfigRequest, ConfigResponse, ConfigServer, FeatureEvent, FeatureEventPublisher, HeartbeatMessage,
+    OperationMode, PeerController, PeerControllerConfig,
+};
 
 // Acoustic simulator exports (for TDD testing)
 pub use acoustic_simulator::{
@@ -707,6 +701,9 @@ pub mod species;
 
 // Acoustic Profile (NEW - Strategy Pattern for species-specific processing)
 pub mod acoustic_profile;
+pub use acoustic_profile::{
+    AcousticProfileExport, AcousticProfileFactory, BatProfile, GeneralProfile, PositionWeights, RigidIdiomExport,
+};
 
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System
 // 30D/45D acoustic feature extraction, phrase segmentation, and library management
@@ -3986,9 +3983,8 @@ fn technical_architecture(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyNavigationEngine>()?;
     m.add_class::<PyNavigationWaypoint>()?;
     m.add_class::<PyAudioIsland>()?;
-    // Micro-dynamics extractor classes (NEW - 30D feature extraction for BEANS)
+    // Micro-dynamics extractor classes (112D Rosetta Stone feature extraction)
     m.add_class::<PyMicroDynamicsExtractor>()?;
-    m.add_class::<PyMicroDynamicsFeatures>()?;
     // ZooVox 45D feature extractor and Acoustic Similarity Engine (NEW - BEANS benchmark integration)
     m.add_class::<PyZooVoxFeatureExtractor>()?;
     m.add_class::<PyAcousticSimilarityEngine>()?;

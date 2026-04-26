@@ -302,6 +302,7 @@ impl SpectralFlatnessCalculator {
 }
 
 /// Helper: Generate sine wave
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)
@@ -313,6 +314,7 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate white noise
+#[cfg(test)]
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;
@@ -328,6 +330,7 @@ fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
 }
 
 /// Helper: Generate sawtooth wave
+#[cfg(test)]
 fn generate_sawtooth(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let period_samples = sample_rate as f32 / freq_hz;
@@ -341,6 +344,7 @@ fn generate_sawtooth(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f
 }
 
 /// Helper: Generate square wave
+#[cfg(test)]
 fn generate_square(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let period_samples = sample_rate as f32 / freq_hz;

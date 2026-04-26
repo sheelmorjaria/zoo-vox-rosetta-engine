@@ -726,7 +726,7 @@ fn display_example_phrases_by_type(metrics: &[GeneralityMetrics], pcm: &PhraseCo
             PhraseType::Rare => "Rare",
         };
 
-        let mut examples: Vec<_> = metrics
+        let examples: Vec<_> = metrics
             .iter()
             .filter(|m| m.classification == phrase_type)
             .take(examples_per_type)

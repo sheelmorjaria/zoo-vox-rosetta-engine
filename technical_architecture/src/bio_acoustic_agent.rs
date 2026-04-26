@@ -699,15 +699,12 @@ pub struct SynthesisPlan {
 pub struct BioAcousticAgent {
     /// Acoustic inventory with prototypes
     inventory: AcousticInventory,
-
-    /// Sample rate for synthesis
-    sample_rate: u32,
 }
 
 impl BioAcousticAgent {
     /// Create new agent with inventory
-    pub fn new(inventory: AcousticInventory, sample_rate: u32) -> Self {
-        Self { inventory, sample_rate }
+    pub fn new(inventory: AcousticInventory, _sample_rate: u32) -> Self {
+        Self { inventory }
     }
 
     /// Load agent from inventory file

@@ -31,8 +31,8 @@ use std::path::{Path, PathBuf};
 
 use crate::classical_ml::RandomForestClassifier;
 use crate::taxonomic_router::{
-    apply_taxonomic_mask, consolidate_taxon, get_taxonomic_weights, map_species_to_taxon,
-    ConsolidatedTaxon, Taxon, FEATURE_DIM,
+    apply_taxonomic_mask, consolidate_taxon, get_taxonomic_weights, map_species_to_taxon, ConsolidatedTaxon, Taxon,
+    FEATURE_DIM,
 };
 
 // =============================================================================
@@ -200,11 +200,7 @@ pub fn map_species_to_acoustic(species: &str) -> AcousticGroup {
     }
 
     // === BIRD LOW FREQ ===
-    if s.contains("dove")
-        || s.contains("pigeon")
-        || s.contains("owl")
-        || s.contains("parrot")
-    {
+    if s.contains("dove") || s.contains("pigeon") || s.contains("owl") || s.contains("parrot") {
         return AcousticGroup::BirdLowFreq;
     }
 
@@ -225,11 +221,7 @@ pub fn map_species_to_acoustic(species: &str) -> AcousticGroup {
     }
 
     // === INSECT STRIDULATION ===
-    if s.contains("cricket")
-        || s.contains("cicada")
-        || s.contains("grasshopper")
-        || s.contains("katydid")
-    {
+    if s.contains("cricket") || s.contains("cicada") || s.contains("grasshopper") || s.contains("katydid") {
         return AcousticGroup::InsectStridulation;
     }
 
@@ -357,7 +349,10 @@ impl PAMRouter {
             (AcousticGroup::MarineMoan, "specialist_rf_marine_moan.json"),
             (AcousticGroup::Amphibian, "specialist_rf_amphibian.json"),
             (AcousticGroup::InsectWingbeat, "specialist_rf_insect_wingbeat.json"),
-            (AcousticGroup::InsectStridulation, "specialist_rf_insect_stridulation.json"),
+            (
+                AcousticGroup::InsectStridulation,
+                "specialist_rf_insect_stridulation.json",
+            ),
         ];
 
         for (group, filename) in &model_files {
@@ -378,8 +373,8 @@ impl PAMRouter {
     pub fn load_specialist(&mut self, group: AcousticGroup, path: &Path) -> Result<()> {
         let data = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read specialist model from {:?}", path))?;
-        let model: RandomForestClassifier = serde_json::from_str(&data)
-            .with_context(|| "Failed to parse specialist RF model JSON")?;
+        let model: RandomForestClassifier =
+            serde_json::from_str(&data).with_context(|| "Failed to parse specialist RF model JSON")?;
         self.specialists.insert(group, model);
         Ok(())
     }
@@ -388,11 +383,7 @@ impl PAMRouter {
     ///
     /// This is the main entry point for classification. The router is stateless
     /// per-segment, ensuring no state leakage between segments.
-    pub fn extract_and_route(
-        &self,
-        features_112d: &[f32],
-        group: AcousticGroup,
-    ) -> Result<Option<PAMResult>> {
+    pub fn extract_and_route(&self, features_112d: &[f32], group: AcousticGroup) -> Result<Option<PAMResult>> {
         let start = std::time::Instant::now();
 
         // Validate feature dimension
@@ -432,8 +423,8 @@ impl PAMRouter {
         let inference_time_us = start.elapsed().as_micros() as u64;
 
         // Check if this should be flagged for active learning
-        let active_learning = confidence >= self.config.active_learning_low
-            && confidence < self.config.active_learning_high;
+        let active_learning =
+            confidence >= self.config.active_learning_low && confidence < self.config.active_learning_high;
 
         Ok(Some(PAMResult {
             species,
@@ -506,62 +497,32 @@ mod tests {
         );
 
         // Whales
-        assert_eq!(
-            map_species_to_acoustic("Humpback Whale"),
-            AcousticGroup::MarineMoan
-        );
-        assert_eq!(
-            map_species_to_acoustic("Sperm Whale"),
-            AcousticGroup::MarineClick
-        );
+        assert_eq!(map_species_to_acoustic("Humpback Whale"), AcousticGroup::MarineMoan);
+        assert_eq!(map_species_to_acoustic("Sperm Whale"), AcousticGroup::MarineClick);
 
         // Birds
-        assert_eq!(
-            map_species_to_acoustic("Zebra Finch"),
-            AcousticGroup::BirdHighFreq
-        );
-        assert_eq!(
-            map_species_to_acoustic("Dove"),
-            AcousticGroup::BirdLowFreq
-        );
+        assert_eq!(map_species_to_acoustic("Zebra Finch"), AcousticGroup::BirdHighFreq);
+        assert_eq!(map_species_to_acoustic("Dove"), AcousticGroup::BirdLowFreq);
 
         // Primates
         assert_eq!(
             map_species_to_acoustic("Common Marmoset"),
             AcousticGroup::SonicShortMammal
         );
-        assert_eq!(
-            map_species_to_acoustic("Macaque"),
-            AcousticGroup::SonicShortMammal
-        );
+        assert_eq!(map_species_to_acoustic("Macaque"), AcousticGroup::SonicShortMammal);
 
         // Insects
-        assert_eq!(
-            map_species_to_acoustic("Mosquito"),
-            AcousticGroup::InsectWingbeat
-        );
-        assert_eq!(
-            map_species_to_acoustic("Cricket"),
-            AcousticGroup::InsectStridulation
-        );
+        assert_eq!(map_species_to_acoustic("Mosquito"), AcousticGroup::InsectWingbeat);
+        assert_eq!(map_species_to_acoustic("Cricket"), AcousticGroup::InsectStridulation);
 
         // Amphibians
-        assert_eq!(
-            map_species_to_acoustic("Tree Frog"),
-            AcousticGroup::Amphibian
-        );
+        assert_eq!(map_species_to_acoustic("Tree Frog"), AcousticGroup::Amphibian);
     }
 
     #[test]
     fn test_acoustic_group_display() {
-        assert_eq!(
-            format!("{}", AcousticGroup::UltrasonicMammal),
-            "Ultrasonic Mammal"
-        );
-        assert_eq!(
-            format!("{}", AcousticGroup::MarineWhistle),
-            "Marine Whistle"
-        );
+        assert_eq!(format!("{}", AcousticGroup::UltrasonicMammal), "Ultrasonic Mammal");
+        assert_eq!(format!("{}", AcousticGroup::MarineWhistle), "Marine Whistle");
     }
 
     #[test]

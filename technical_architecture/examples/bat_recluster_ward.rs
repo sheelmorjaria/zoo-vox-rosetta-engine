@@ -610,7 +610,7 @@ fn ward_agglomerative_clustering(
     };
 
     // Initialize with k-means++ for better starting points
-    let mut all_indices: Vec<usize> = (0..n).collect();
+    let all_indices: Vec<usize> = (0..n).collect();
     let mut centroids = initialize_centroids_kmeans_plus_plus(&all_indices, segments, precluster_size.min(n));
 
     // Assign initial clusters
@@ -949,7 +949,7 @@ fn analyze_transitions(
         }
 
         // Calculate entropy from bigram_counts_local before consuming it
-        let mut counts: Vec<usize> = bigram_counts_local.values().copied().collect();
+        let counts: Vec<usize> = bigram_counts_local.values().copied().collect();
         let total: usize = counts.iter().sum();
         let mut entropy = 0.0;
         for count in counts {

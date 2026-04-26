@@ -332,7 +332,7 @@ fn extract_audio_segment(source_path: &Path, output_path: &Path, start_ms: f32, 
                 }
                 let val = sample?;
                 // Scale to 16-bit
-                let int_val = ((val as i64 * 32767 / (1i64 << (spec.bits_per_sample - 1))) as i16);
+                let int_val = (val as i64 * 32767 / (1i64 << (spec.bits_per_sample - 1))) as i16;
                 writer.write_sample(int_val)?;
                 count += 1;
             }

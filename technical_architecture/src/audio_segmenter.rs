@@ -128,6 +128,7 @@ pub enum GrainEnvelope {
 // =============================================================================
 
 /// Metadata for metadata-driven synthesis
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct SynthesisMetadata {
     /// Vocabulary ID
@@ -200,7 +201,8 @@ pub struct AudioSegmenter {
     /// Output directory for segments
     output_dir: PathBuf,
 
-    /// Sample rate for processing
+    /// Sample rate for audio processing
+    #[allow(dead_code)]
     sample_rate: u32,
 }
 

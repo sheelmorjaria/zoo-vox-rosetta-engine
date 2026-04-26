@@ -36,7 +36,7 @@ use technical_architecture::{
     ExemplarManager,
     // Stage 2: Feature Extraction
     MicroDynamicsExtractor,
-    MicroDynamicsFeatures,
+    // MicroDynamicsFeatures removed - use RosettaFeatures
     // Stage 3: Corpus Analysis
     NGram,
     NGramMiner,
@@ -449,7 +449,7 @@ fn test_full_pipeline_stage1_to_stage2() {
 
     // Stage 2: Extract features from each segment
     let extractor = MicroDynamicsExtractor::new(sample_rate);
-    let mut all_features: Vec<MicroDynamicsFeatures> = Vec::new();
+    let mut all_features: Vec<RosettaFeatures> = Vec::new();
 
     for segment in &segments {
         if !segment.is_empty() {

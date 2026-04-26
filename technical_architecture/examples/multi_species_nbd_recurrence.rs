@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use technical_architecture::{BoundaryDetectorConfig, MicroDynamicsExtractor, NeuralBoundaryDetector};
+use technical_architecture::{BoundaryDetectorConfig, DetectionMode, MicroDynamicsExtractor, NeuralBoundaryDetector};
 
 #[derive(Debug, Clone)]
 struct SpeciesConfig {
@@ -250,6 +250,11 @@ fn analyze_species(config: &SpeciesConfig, output_dir: &Path) -> anyhow::Result<
         min_phrase_duration_ms: 5.0,
         threshold: 0.25,
         smoothing_frames: 2,
+        mode: DetectionMode::Phrase,
+        max_phrase_duration_ms: 5000.0,
+        smoothing_window_ms: 20.0,
+        energy_weight: 0.5,
+        spectral_weight: 0.5,
     };
 
     // Process files and collect segments
@@ -370,7 +375,8 @@ fn load_wav(path: &Path) -> anyhow::Result<Vec<f32>> {
     }
 
     let mut pos = 12;
-    let mut sample_rate = 0u32;
+    let sample_rate = 0u32; // Note: read from WAV but unused (config.sample_rate used instead)
+    let _ = sample_rate; // Suppress warning
     let mut audio_format = 0u16;
     let mut bits_per_sample = 0u16;
     let mut data_start = 0usize;
@@ -383,7 +389,8 @@ fn load_wav(path: &Path) -> anyhow::Result<Vec<f32>> {
         if chunk_id == b"fmt " {
             let fmt_data = &bytes[pos + 8..pos + 8 + chunk_size.min(18)];
             audio_format = u16::from_le_bytes([fmt_data[0], fmt_data[1]]);
-            sample_rate = u32::from_le_bytes([fmt_data[4], fmt_data[5], fmt_data[6], fmt_data[7]]);
+            // sample_rate is read from WAV header but not used (config.sample_rate is used instead)
+            let _sample_rate = u32::from_le_bytes([fmt_data[4], fmt_data[5], fmt_data[6], fmt_data[7]]);
             bits_per_sample = u16::from_le_bytes([fmt_data[14], fmt_data[15]]);
         } else if chunk_id == b"data" {
             data_start = pos + 8;

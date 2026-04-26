@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use crate::adaptive_segmentation::AdaptiveSegmenter;
 use crate::dtw::DtwDbscan;
 use crate::hmm::HiddenMarkovModel;
-use crate::micro_dynamics_extractor::{FeatureDim, MicroDynamicsExtractor};
+use crate::micro_dynamics_extractor::{MicroDynamicsExtractor, RosettaFeatures};
 
 // =============================================================================
 // Error Types
@@ -132,18 +132,19 @@ pub struct VectorizationConfig {
 }
 
 /// Feature dimensionality option for vectorization
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// Now simplified to use the 112D RosettaFeatures from MicroDynamicsExtractor
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FeatureDimension {
-    /// 15D RFE-Optimized features (identified via Recursive Feature Elimination for birds)
-    D15,
-    /// 19D RFE-Optimal features for Egyptian Fruit Bats
-    D19,
-    /// 30D base features (backward compatible)
+    /// 112D RosettaFeatures (recommended)
+    /// Layer 1: Base Physics (46D)
+    /// Layer 2: Macro Texture (30D)
+    /// Layer 3: Micro Texture (36D)
+    #[default]
+    D112,
+    /// Legacy: Use first 45 elements of 112D vector
+    D45,
+    /// Legacy: Use first 30 elements of 112D vector
     D30,
-    /// 37D with phylogenetic acoustic descriptors (30D + 8 new)
-    D37,
-    /// 56D full delta preservation (30D + 13 Δ + 13 ΔΔ)
-    D56,
 }
 
 impl Default for VectorizationConfig {
@@ -153,29 +154,16 @@ impl Default for VectorizationConfig {
             fft_size: 2048,
             hop_size: 512,
             normalize: true,
-            feature_dimension: FeatureDimension::D37, // Default to 37D for bioacoustics
-        }
-    }
-}
-
-impl From<FeatureDimension> for FeatureDim {
-    fn from(dim: FeatureDimension) -> Self {
-        match dim {
-            FeatureDimension::D15 => FeatureDim::D30, // RFE-Optimized uses extract_rfe_optimized, not extract_dynamic
-            FeatureDimension::D19 => FeatureDim::D19, // Bat RFE-Optimal uses extract_rfe_optimal_19d_bat
-            FeatureDimension::D30 => FeatureDim::D30,
-            FeatureDimension::D37 => FeatureDim::D37,
-            FeatureDimension::D56 => FeatureDim::D56,
+            feature_dimension: FeatureDimension::D112, // Default to 112D RosettaFeatures
         }
     }
 }
 
 /// Result from Phase 2: Feature time-series for one phrase
 /// Dimensionality depends on VectorizationConfig:
-/// - D15: 15D RFE-Optimized features (via Recursive Feature Elimination)
-/// - D30: 30D base features
-/// - D37: 30D + 8 phylogenetic acoustic descriptors
-/// - D56: 30D + 13 mfcc_delta + 13 mfcc_delta_delta
+/// - D112: Full 112D RosettaFeatures
+/// - D45: First 45 elements of 112D vector
+/// - D30: First 30 elements of 112D vector
 #[derive(Debug, Clone)]
 pub struct PhraseFeatures {
     /// Phrase ID (matches SegmentedPhrase)
@@ -527,9 +515,6 @@ pub struct LexiconToSyntaxPipeline {
     /// Configuration for Phase 4: Refinement
     refinement_config: RefinementConfig,
 
-    /// Sample rate for audio processing
-    sample_rate: u32,
-
     /// Batch size for disk-based processing (phrases per batch)
     batch_size: usize,
 }
@@ -542,7 +527,6 @@ impl LexiconToSyntaxPipeline {
             vectorization_config: VectorizationConfig::default(),
             discovery_config: DiscoveryConfig::default(),
             refinement_config: RefinementConfig::default(),
-            sample_rate: 48000,
             batch_size: 50000, // Default: process 50K phrases per batch
         }
     }
@@ -559,7 +543,6 @@ impl LexiconToSyntaxPipeline {
             vectorization_config,
             discovery_config,
             refinement_config,
-            sample_rate: 48000,
             batch_size: 50000,
         }
     }
@@ -653,23 +636,6 @@ impl LexiconToSyntaxPipeline {
         }
 
         Ok(phrases)
-    }
-
-    /// Save segmented phrases to disk using bincode (deprecated - use append_phrases_to_disk)
-    fn save_phrases_to_disk<P: AsRef<Path>>(&self, phrases: &[SegmentedPhrase], path: P) -> Result<()> {
-        let path = path.as_ref();
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| PipelineError::SegmentationError(format!("Failed to create directory: {}", e)))?;
-        }
-
-        let serialized = bincode::serialize(phrases)
-            .map_err(|e| PipelineError::SegmentationError(format!("Failed to serialize phrases: {}", e)))?;
-
-        std::fs::write(path, serialized)
-            .map_err(|e| PipelineError::SegmentationError(format!("Failed to write phrases: {}", e)))?;
-
-        Ok(())
     }
 
     /// Save phrase features to disk using bincode
@@ -1018,8 +984,16 @@ impl LexiconToSyntaxPipeline {
     }
 
     /// Phase 2: Vectorization - The "Embedding" (Parallel)
+    /// Uses the 112D RosettaFeatures extractor for all feature modes
     fn run_phase2_vectorization(&self, segmented_phrases: &[SegmentedPhrase]) -> Result<Vec<PhraseFeatures>> {
         let feature_dim = self.vectorization_config.feature_dimension;
+
+        // Determine target dimension based on feature mode
+        let target_dim = match feature_dim {
+            FeatureDimension::D112 => 112,
+            FeatureDimension::D45 => 45,
+            FeatureDimension::D30 => 30,
+        };
 
         // Process phrases in parallel using Rayon
         let phrase_features: Vec<PhraseFeatures> = segmented_phrases
@@ -1028,408 +1002,29 @@ impl LexiconToSyntaxPipeline {
                 // Create feature extractor with the phrase's sample rate
                 let extractor = MicroDynamicsExtractor::new(phrase.sample_rate);
 
-                // Handle RFE-Optimized features separately
-                let (feature_array, dim) = if feature_dim == FeatureDimension::D15 {
-                    // Use extract_rfe_optimized for D15 (birds)
-                    let rfe_features = extractor
-                        .extract_rfe_optimized(&phrase.audio)
-                        .map_err(|e| PipelineError::VectorizationError(e.to_string()))?;
+                // Extract 112D RosettaFeatures
+                let rosetta = extractor
+                    .extract(&phrase.audio)
+                    .map_err(|e| PipelineError::VectorizationError(e.to_string()))?;
 
-                    // Convert Vec<f32> to Array2
-                    let mut arr = Array2::zeros((1, 15));
-                    for (i, &val) in rfe_features.iter().enumerate() {
-                        if i < 15 {
-                            arr[[0, i]] = val as f64;
-                        }
-                    }
-                    (arr, 15)
-                } else if feature_dim == FeatureDimension::D19 {
-                    // Use extract_rfe_optimal_19d_bat for D19 (bats)
-                    let rfe_features = extractor
-                        .extract_rfe_optimal_19d_bat(&phrase.audio)
-                        .map_err(|e| PipelineError::VectorizationError(e.to_string()))?;
+                // Convert to array and slice to target dimension
+                let features_112d = rosetta.to_array();
+                let features_vec: Vec<f64> = features_112d[..target_dim].iter().map(|&v| v as f64).collect();
 
-                    // Convert Vec<f32> to Array2
-                    let mut arr = Array2::zeros((1, 19));
-                    for (i, &val) in rfe_features.iter().enumerate() {
-                        if i < 19 {
-                            arr[[0, i]] = val as f64;
-                        }
-                    }
-                    (arr, 19)
-                } else {
-                    // Extract features using the configured dimensionality
-                    let feature_vector = extractor
-                        .extract_dynamic(&phrase.audio, feature_dim.into())
-                        .map_err(|e| PipelineError::VectorizationError(e.to_string()))?;
-
-                    // Convert FeatureVector to Array2 based on dimensionality
-                    match &feature_vector {
-                        crate::micro_dynamics_extractor::FeatureVector::D30(features) => {
-                            let mut arr = Array2::zeros((1, 30));
-                            let base = features;
-                            arr[[0, 0]] = base.attack_time_ms as f64;
-                            arr[[0, 1]] = base.decay_time_ms as f64;
-                            arr[[0, 2]] = base.sustain_level as f64;
-                            arr[[0, 3]] = base.vibrato_rate_hz as f64;
-                            arr[[0, 4]] = base.vibrato_depth as f64;
-                            arr[[0, 5]] = base.jitter as f64;
-                            arr[[0, 6]] = base.shimmer as f64;
-                            arr[[0, 7]] = base.harmonicity as f64;
-                            arr[[0, 8]] = base.spectral_flatness as f64;
-                            arr[[0, 9]] = base.harmonic_to_noise_ratio as f64;
-                            arr[[0, 10]] = base.spectral_flux as f64;
-                            // MFCC coefficients (13)
-                            for (i, &mfcc_val) in base.mfcc.iter().enumerate() {
-                                arr[[0, 11 + i]] = mfcc_val as f64;
-                            }
-                            arr[[0, 24]] = base.median_ici_ms as f64;
-                            arr[[0, 25]] = base.onset_rate_hz as f64;
-                            arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
-                            // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms;
-                            arr[[0, 28]] = 0.0; // f0_mean placeholder
-                            arr[[0, 29]] = 0.0; // f0_std placeholder
-                            (arr, 30)
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D37(features) => {
-                            // Note: D37 struct actually has 30D base + 8 new features = 38D total
-                            let mut arr = Array2::zeros((1, 38));
-                            let base = &features.base_30d;
-                            // Base 30D features (indices 0-29)
-                            arr[[0, 0]] = base.attack_time_ms as f64;
-                            arr[[0, 1]] = base.decay_time_ms as f64;
-                            arr[[0, 2]] = base.sustain_level as f64;
-                            arr[[0, 3]] = base.vibrato_rate_hz as f64;
-                            arr[[0, 4]] = base.vibrato_depth as f64;
-                            arr[[0, 5]] = base.jitter as f64;
-                            arr[[0, 6]] = base.shimmer as f64;
-                            arr[[0, 7]] = base.harmonicity as f64;
-                            arr[[0, 8]] = base.spectral_flatness as f64;
-                            arr[[0, 9]] = base.harmonic_to_noise_ratio as f64;
-                            arr[[0, 10]] = base.spectral_flux as f64;
-                            // MFCC coefficients (13)
-                            for (i, &mfcc_val) in base.mfcc.iter().enumerate() {
-                                arr[[0, 11 + i]] = mfcc_val as f64;
-                            }
-                            arr[[0, 24]] = base.median_ici_ms as f64;
-                            arr[[0, 25]] = base.onset_rate_hz as f64;
-                            arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
-                            // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms;
-                            arr[[0, 28]] = 0.0; // f0_mean placeholder
-                            arr[[0, 29]] = 0.0; // f0_std placeholder
-
-                            // 8 new phylogenetic acoustic descriptors (indices 30-37)
-                            // Note: The struct is named MicroDynamicsFeatures37D but actually has 8 new features
-                            // making it 38D total (30D base + 8 new = 38D)
-                            arr[[0, 30]] = features.pitch_entropy as f64;
-                            arr[[0, 31]] = features.spectral_tilt as f64;
-                            arr[[0, 32]] = features.harmonic_deviation as f64;
-                            arr[[0, 33]] = features.formant_f1 as f64;
-                            arr[[0, 34]] = features.formant_f2 as f64;
-                            arr[[0, 35]] = features.formant_f3 as f64;
-                            arr[[0, 36]] = features.fm_depth_hz as f64;
-                            arr[[0, 37]] = features.roughness as f64; // roughness at index 37 (8th new feature)
-                            (arr, 38) // Return 38 as the dimensionality
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D56(features) => {
-                            let mut arr = Array2::zeros((1, 56));
-                            let base = &features.base_30d;
-                            // Base 30D features (indices 0-29)
-                            arr[[0, 0]] = base.attack_time_ms as f64;
-                            arr[[0, 1]] = base.decay_time_ms as f64;
-                            arr[[0, 2]] = base.sustain_level as f64;
-                            arr[[0, 3]] = base.vibrato_rate_hz as f64;
-                            arr[[0, 4]] = base.vibrato_depth as f64;
-                            arr[[0, 5]] = base.jitter as f64;
-                            arr[[0, 6]] = base.shimmer as f64;
-                            arr[[0, 7]] = base.harmonicity as f64;
-                            arr[[0, 8]] = base.spectral_flatness as f64;
-                            arr[[0, 9]] = base.harmonic_to_noise_ratio as f64;
-                            arr[[0, 10]] = base.spectral_flux as f64;
-                            // MFCC coefficients (13)
-                            for (i, &mfcc_val) in base.mfcc.iter().enumerate() {
-                                arr[[0, 11 + i]] = mfcc_val as f64;
-                            }
-                            arr[[0, 24]] = base.median_ici_ms as f64;
-                            arr[[0, 25]] = base.onset_rate_hz as f64;
-                            arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
-                            // Add placeholder values for remaining fields
-                            arr[[0, 27]] = phrase.duration_ms;
-                            arr[[0, 28]] = 0.0; // f0_mean placeholder
-                            arr[[0, 29]] = 0.0; // f0_std placeholder
-
-                            // 13 mfcc_delta features (indices 30-42)
-                            for (i, &delta_val) in features.mfcc_delta.iter().enumerate() {
-                                arr[[0, 30 + i]] = delta_val as f64;
-                            }
-
-                            // 13 mfcc_delta_delta features (indices 43-55)
-                            for (i, &delta_delta_val) in features.mfcc_delta_delta.iter().enumerate() {
-                                arr[[0, 43 + i]] = delta_delta_val as f64;
-                            }
-                            (arr, 56)
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D19(features) => {
-                            let mut arr = Array2::zeros((1, 19));
-                            // Temporal envelope features (top 3)
-                            arr[[0, 0]] = features.attack_time_ms as f64;
-                            arr[[0, 1]] = features.decay_time_ms as f64;
-                            arr[[0, 2]] = features.sustain_level as f64;
-                            // Motion factors
-                            arr[[0, 3]] = features.jitter as f64;
-                            arr[[0, 4]] = features.shimmer as f64;
-                            // Grit factors
-                            arr[[0, 5]] = features.harmonicity as f64;
-                            arr[[0, 6]] = features.harmonic_to_noise_ratio as f64;
-                            // Selected MFCCs
-                            arr[[0, 7]] = features.mfcc_2 as f64;
-                            arr[[0, 8]] = features.mfcc_3 as f64;
-                            arr[[0, 9]] = features.mfcc_5 as f64;
-                            arr[[0, 10]] = features.mfcc_6 as f64;
-                            arr[[0, 11]] = features.mfcc_10 as f64;
-                            // Rhythm factors
-                            arr[[0, 12]] = features.median_ici_ms as f64;
-                            arr[[0, 13]] = features.ici_coefficient_of_variation as f64;
-                            // Phylogenetic features
-                            arr[[0, 14]] = features.pitch_entropy as f64;
-                            arr[[0, 15]] = features.spectral_tilt as f64;
-                            arr[[0, 16]] = features.formant_f3 as f64;
-                            arr[[0, 17]] = features.fm_depth_hz as f64;
-                            arr[[0, 18]] = features.roughness as f64;
-                            (arr, 19)
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D15(features) => {
-                            let mut arr = Array2::zeros((1, 15));
-                            // Energy features (2)
-                            arr[[0, 0]] = features.rms_energy as f64;
-                            arr[[0, 1]] = features.vibrato_depth as f64;
-                            // MFCC features (4)
-                            arr[[0, 2]] = features.mfcc_0 as f64;
-                            arr[[0, 3]] = features.mfcc_1 as f64;
-                            arr[[0, 4]] = features.mfcc_3 as f64;
-                            arr[[0, 5]] = features.mfcc_4 as f64;
-                            // Timbre features (2)
-                            arr[[0, 6]] = features.spectral_flux as f64;
-                            arr[[0, 7]] = features.hnr as f64;
-                            // Temporal features (3)
-                            arr[[0, 8]] = features.decay_time_ms as f64;
-                            arr[[0, 9]] = features.sustain_level as f64;
-                            arr[[0, 10]] = features.attack_time_ms as f64;
-                            // Rhythm features (2)
-                            arr[[0, 11]] = features.ici_cv as f64;
-                            arr[[0, 12]] = features.onset_rate_hz as f64;
-                            // Modulation features (1)
-                            arr[[0, 13]] = features.vibrato_rate_hz as f64;
-                            // Perturbation features (1)
-                            arr[[0, 14]] = features.shimmer as f64;
-                            (arr, 15)
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D45(features) => {
-                            let mut arr = Array2::zeros((1, 45));
-                            let base = &features.base_30d;
-                            // Base 30D features (indices 0-29)
-                            arr[[0, 0]] = base.attack_time_ms as f64;
-                            arr[[0, 1]] = base.decay_time_ms as f64;
-                            arr[[0, 2]] = base.sustain_level as f64;
-                            arr[[0, 3]] = base.vibrato_rate_hz as f64;
-                            arr[[0, 4]] = base.vibrato_depth as f64;
-                            arr[[0, 5]] = base.jitter as f64;
-                            arr[[0, 6]] = base.shimmer as f64;
-                            arr[[0, 7]] = base.harmonicity as f64;
-                            arr[[0, 8]] = base.spectral_flatness as f64;
-                            arr[[0, 9]] = base.harmonic_to_noise_ratio as f64;
-                            arr[[0, 10]] = base.spectral_flux as f64;
-                            // MFCC coefficients (13)
-                            for (i, &mfcc_val) in base.mfcc.iter().enumerate() {
-                                arr[[0, 11 + i]] = mfcc_val as f64;
-                            }
-                            arr[[0, 24]] = base.median_ici_ms as f64;
-                            arr[[0, 25]] = base.onset_rate_hz as f64;
-                            arr[[0, 26]] = base.ici_coefficient_of_variation as f64;
-                            // Placeholder values for remaining base fields
-                            arr[[0, 27]] = phrase.duration_ms;
-                            arr[[0, 28]] = 0.0; // f0_mean placeholder
-                            arr[[0, 29]] = 0.0; // f0_std placeholder
-
-                            // Resonance (6): indices 30-35
-                            arr[[0, 30]] = features.formant_1_hz as f64;
-                            arr[[0, 31]] = features.formant_2_hz as f64;
-                            arr[[0, 32]] = features.formant_3_hz as f64;
-                            arr[[0, 33]] = features.formant_1_bandwidth as f64;
-                            arr[[0, 34]] = features.formant_2_bandwidth as f64;
-                            arr[[0, 35]] = features.formant_dispersion as f64;
-
-                            // Spectral Shape (4): indices 36-39
-                            arr[[0, 36]] = features.spectral_centroid as f64;
-                            arr[[0, 37]] = features.spectral_spread as f64;
-                            arr[[0, 38]] = features.spectral_skewness as f64;
-                            arr[[0, 39]] = features.spectral_kurtosis as f64;
-
-                            // Modulation (3): indices 40-42
-                            arr[[0, 40]] = features.spectral_tilt as f64;
-                            arr[[0, 41]] = features.fm_slope as f64;
-                            arr[[0, 42]] = features.am_depth as f64;
-
-                            // Non-Linear (2): indices 43-44
-                            arr[[0, 43]] = features.subharmonic_ratio as f64;
-                            arr[[0, 44]] = features.spectral_entropy as f64;
-
-                            (arr, 45)
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D39(_features) => {
-                            // 39D features use multi-scale aggregations
-                            // For now, we'll not support 39D in this pipeline
-                            // as it's designed for 30D/37D/56D
-                            return Err(PipelineError::VectorizationError(
-                                "39D features not yet supported in lexicon_to_syntax pipeline".to_string(),
-                            ));
-                        }
-                        crate::micro_dynamics_extractor::FeatureVector::D112(features) => {
-                            // 112D RosettaFeatures - full feature vector for Universal Rosetta Stone
-                            let mut arr = Array2::zeros((1, 112));
-                            // Layer 1: Base Physics (46D) - indices 0-45
-                            arr[[0, 0]] = features.mean_f0_hz as f64;
-                            arr[[0, 1]] = features.duration_ms as f64;
-                            arr[[0, 2]] = features.f0_range_hz as f64;
-                            arr[[0, 3]] = features.rms_energy as f64;
-                            arr[[0, 4]] = features.zero_crossing_rate as f64;
-                            arr[[0, 5]] = features.peak_amplitude as f64;
-                            arr[[0, 6]] = features.harmonic_to_noise_ratio as f64;
-                            arr[[0, 7]] = features.harmonicity as f64;
-                            arr[[0, 8]] = features.spectral_flatness as f64;
-                            arr[[0, 9]] = features.attack_time_ms as f64;
-                            arr[[0, 10]] = features.decay_time_ms as f64;
-                            arr[[0, 11]] = features.sustain_level as f64;
-                            arr[[0, 12]] = features.release_time_ms as f64;
-                            // MFCCs (13) - indices 13-25
-                            arr[[0, 13]] = features.mfcc_0 as f64;
-                            arr[[0, 14]] = features.mfcc_1 as f64;
-                            arr[[0, 15]] = features.mfcc_2 as f64;
-                            arr[[0, 16]] = features.mfcc_3 as f64;
-                            arr[[0, 17]] = features.mfcc_4 as f64;
-                            arr[[0, 18]] = features.mfcc_5 as f64;
-                            arr[[0, 19]] = features.mfcc_6 as f64;
-                            arr[[0, 20]] = features.mfcc_7 as f64;
-                            arr[[0, 21]] = features.mfcc_8 as f64;
-                            arr[[0, 22]] = features.mfcc_9 as f64;
-                            arr[[0, 23]] = features.mfcc_10 as f64;
-                            arr[[0, 24]] = features.mfcc_11 as f64;
-                            arr[[0, 25]] = features.mfcc_12 as f64;
-                            // Spectral shape (4) - indices 26-29
-                            arr[[0, 26]] = features.spectral_centroid as f64;
-                            arr[[0, 27]] = features.spectral_spread as f64;
-                            arr[[0, 28]] = features.spectral_skewness as f64;
-                            arr[[0, 29]] = features.spectral_kurtosis as f64;
-                            // Rhythm (7) - indices 30-36
-                            arr[[0, 30]] = features.median_ici_ms as f64;
-                            arr[[0, 31]] = features.onset_rate_hz as f64;
-                            arr[[0, 32]] = features.ici_coefficient_of_variation as f64;
-                            arr[[0, 33]] = features.rhythm_regularity as f64;
-                            arr[[0, 34]] = features.jitter as f64;
-                            arr[[0, 35]] = features.shimmer as f64;
-                            arr[[0, 36]] = features.vibrato_depth as f64;
-                            // Modulation (4) - indices 37-40
-                            arr[[0, 37]] = features.vibrato_rate_hz as f64;
-                            arr[[0, 38]] = features.spectral_flux as f64;
-                            arr[[0, 39]] = features.spectral_rolloff as f64;
-                            arr[[0, 40]] = features.spectral_entropy as f64;
-                            // Extended (5) - indices 41-45
-                            arr[[0, 41]] = features.subharmonic_ratio as f64;
-                            arr[[0, 42]] = features.fm_depth_hz as f64;
-                            arr[[0, 43]] = features.am_depth as f64;
-                            arr[[0, 44]] = features.pitch_entropy as f64;
-                            arr[[0, 45]] = features.hnr_db as f64;
-                            // Layer 2: Macro Texture (30D) - indices 46-75
-                            arr[[0, 46]] = features.harmonic_slope as f64;
-                            arr[[0, 47]] = features.h1_h2_diff_db as f64;
-                            arr[[0, 48]] = features.harmonic_irregularity as f64;
-                            arr[[0, 49]] = features.harmonic_energy_variance as f64;
-                            arr[[0, 50]] = features.spectral_flux_std as f64;
-                            arr[[0, 51]] = features.h1_h2_ratio as f64;
-                            arr[[0, 52]] = features.h2_h3_ratio as f64;
-                            arr[[0, 53]] = features.h3_h4_ratio as f64;
-                            arr[[0, 54]] = features.harmonic_density as f64;
-                            arr[[0, 55]] = features.f0_mean_derivative as f64;
-                            arr[[0, 56]] = features.f0_curvature as f64;
-                            arr[[0, 57]] = features.f0_inflection_count as f64;
-                            arr[[0, 58]] = features.glissando_rate as f64;
-                            arr[[0, 59]] = features.vibrato_regularity as f64;
-                            arr[[0, 60]] = features.jitter_trend as f64;
-                            arr[[0, 61]] = features.pitch_complexity as f64;
-                            // GLCM texture (4) - indices 62-65
-                            arr[[0, 62]] = features.glcm_contrast as f64;
-                            arr[[0, 63]] = features.glcm_correlation as f64;
-                            arr[[0, 64]] = features.glcm_energy as f64;
-                            arr[[0, 65]] = features.glcm_homogeneity as f64;
-                            // Run-length texture (6) - indices 66-71
-                            arr[[0, 66]] = features.run_length_nonuniformity as f64;
-                            arr[[0, 67]] = features.long_run_emphasis as f64;
-                            arr[[0, 68]] = features.short_run_emphasis as f64;
-                            arr[[0, 69]] = features.granularity as f64;
-                            arr[[0, 70]] = features.vertical_strength as f64;
-                            arr[[0, 71]] = features.horizontal_correlation as f64;
-                            // Extended texture (4) - indices 72-75
-                            arr[[0, 72]] = features.texture_entropy as f64;
-                            arr[[0, 73]] = features.texture_homogeneity as f64;
-                            arr[[0, 74]] = features.texture_contrast as f64;
-                            arr[[0, 75]] = features.texture_energy as f64;
-                            // Layer 3: Micro Texture (36D) - indices 76-111
-                            // Spectral derivative (6) - indices 76-81
-                            arr[[0, 76]] = features.spectral_derivative_mean as f64;
-                            arr[[0, 77]] = features.spectral_derivative_std as f64;
-                            arr[[0, 78]] = features.spectral_derivative_skew as f64;
-                            arr[[0, 79]] = features.spectral_derivative_kurtosis as f64;
-                            arr[[0, 80]] = features.spectral_derivative_max as f64;
-                            arr[[0, 81]] = features.spectral_derivative_range as f64;
-                            // FM dynamics (5) - indices 82-86
-                            arr[[0, 82]] = features.fm_rate_mean as f64;
-                            arr[[0, 83]] = features.fm_rate_std as f64;
-                            arr[[0, 84]] = features.fm_depth_mean as f64;
-                            arr[[0, 85]] = features.fm_depth_std as f64;
-                            arr[[0, 86]] = features.fm_extent_hz as f64;
-                            // Dynamics (6) - indices 87-92
-                            arr[[0, 87]] = features.dynamics_rise_rate as f64;
-                            arr[[0, 88]] = features.dynamics_fall_rate as f64;
-                            arr[[0, 89]] = features.dynamics_range_db as f64;
-                            arr[[0, 90]] = features.dynamics_cv as f64;
-                            arr[[0, 91]] = features.dynamics_skew as f64;
-                            // ICI (5) - indices 92-96
-                            arr[[0, 92]] = features.ici_mean_ms as f64;
-                            arr[[0, 93]] = features.ici_std_ms as f64;
-                            arr[[0, 94]] = features.ici_skew as f64;
-                            arr[[0, 95]] = features.ici_kurtosis as f64;
-                            arr[[0, 96]] = features.ici_regularity as f64;
-                            // Rhythm (15) - indices 97-111
-                            arr[[0, 97]] = features.rhythm_tempo_hz as f64;
-                            arr[[0, 98]] = features.rhythm_tempo_stability as f64;
-                            arr[[0, 99]] = features.rhythm_pulse_clarity as f64;
-                            arr[[0, 100]] = features.rhythm_grouping_strength as f64;
-                            arr[[0, 101]] = features.rhythm_cycle_length as f64;
-                            arr[[0, 102]] = features.rhythm_onset_strength as f64;
-                            arr[[0, 103]] = features.rhythm_swing_factor as f64;
-                            arr[[0, 104]] = features.rhythm_syncopation as f64;
-                            arr[[0, 105]] = features.rhythm_density as f64;
-                            arr[[0, 106]] = features.rhythm_complexity as f64;
-                            arr[[0, 107]] = features.rhythm_entropy as f64;
-                            arr[[0, 108]] = features.rhythm_peak_rate_hz as f64;
-                            arr[[0, 109]] = features.rhythm_valley_depth as f64;
-                            arr[[0, 110]] = features.rhythm_crest_factor as f64;
-                            arr[[0, 111]] = features.rhythm_flux as f64;
-                            (arr, 112)
-                        }
-                    }
-                };
+                // Convert to Array2
+                let mut arr = Array2::zeros((1, target_dim));
+                for (i, &val) in features_vec.iter().enumerate() {
+                    arr[[0, i]] = val;
+                }
 
                 let frame_rate = phrase.sample_rate as f64;
 
                 Ok(PhraseFeatures {
                     phrase_id: phrase.phrase_id.clone(),
-                    features: feature_array,
+                    features: arr,
                     n_frames: 1,
                     frame_rate,
-                    feature_dim: dim,
+                    feature_dim: target_dim,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -2224,7 +1819,7 @@ mod tests {
         assert_eq!(config.hop_size, 512);
         assert!(config.normalize);
         // Default to 37D for bioacoustics
-        assert_eq!(config.feature_dimension, FeatureDimension::D37);
+        assert_eq!(config.feature_dimension, FeatureDimension::D112);
     }
 
     #[test]
@@ -2249,7 +1844,7 @@ mod tests {
     #[test]
     fn test_feature_dimension_37d_default() {
         let pipeline = LexiconToSyntaxPipeline::new();
-        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D37);
+        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D112);
     }
 
     #[test]
@@ -2262,25 +1857,25 @@ mod tests {
     #[test]
     fn test_feature_dimension_56d() {
         let vec_config = VectorizationConfig {
-            feature_dimension: FeatureDimension::D56,
+            feature_dimension: FeatureDimension::D112,
             ..Default::default()
         };
 
-        assert_eq!(vec_config.feature_dimension, FeatureDimension::D56);
+        assert_eq!(vec_config.feature_dimension, FeatureDimension::D112);
     }
 
     #[test]
     fn test_feature_dimension_15d() {
         let vec_config = VectorizationConfig {
-            feature_dimension: FeatureDimension::D15,
+            feature_dimension: FeatureDimension::D30,
             ..Default::default()
         };
 
-        assert_eq!(vec_config.feature_dimension, FeatureDimension::D15);
+        assert_eq!(vec_config.feature_dimension, FeatureDimension::D30);
 
-        let pipeline = LexiconToSyntaxPipeline::new().with_feature_dimension(FeatureDimension::D15);
+        let pipeline = LexiconToSyntaxPipeline::new().with_feature_dimension(FeatureDimension::D30);
 
-        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D15);
+        assert_eq!(pipeline.vectorization_config.feature_dimension, FeatureDimension::D30);
     }
 
     #[test]
@@ -2363,23 +1958,8 @@ mod tests {
         assert_eq!(restored.n_frames, feat_37d.n_frames);
     }
 
-    #[test]
-    fn test_feature_dimension_conversion() {
-        // Test conversion from pipeline FeatureDimension to extractor FeatureDim
-        use crate::micro_dynamics_extractor::FeatureDim as ExtractorFeatureDim;
-
-        let dim = FeatureDimension::D30;
-        let extractor_dim: ExtractorFeatureDim = dim.into();
-        assert_eq!(extractor_dim, ExtractorFeatureDim::D30);
-
-        let dim = FeatureDimension::D37;
-        let extractor_dim: ExtractorFeatureDim = dim.into();
-        assert_eq!(extractor_dim, ExtractorFeatureDim::D37);
-
-        let dim = FeatureDimension::D56;
-        let extractor_dim: ExtractorFeatureDim = dim.into();
-        assert_eq!(extractor_dim, ExtractorFeatureDim::D56);
-    }
+    // Note: test_feature_dimension_conversion removed - FeatureDim no longer exists
+    // All modules now use RosettaFeatures (112D) directly
 
     // =========================================================================
     // Phase 3 Tests: Discovery
@@ -2677,5 +2257,123 @@ mod tests {
 
         assert_eq!(config.max_iterations, 200);
         assert_eq!(config.n_components, 2); // Default preserved
+    }
+
+    // =========================================================================
+    // TDD Test Suite: Checkpoint Save/Load
+    // =========================================================================
+
+    #[test]
+    fn test_checkpoint_save_load_roundtrip() {
+        let temp_dir = TempDir::new().unwrap();
+        let checkpoint_path = temp_dir.path().join("checkpoint.json");
+
+        let mut checkpoint = PipelineCheckpoint::new();
+        checkpoint.processed_files = vec!["audio1.wav".to_string(), "audio2.wav".to_string()];
+        checkpoint.phrase_count = 42;
+        checkpoint.current_phase = 2;
+
+        checkpoint.save(&checkpoint_path).unwrap();
+        assert!(checkpoint_path.exists());
+
+        let loaded = PipelineCheckpoint::load(&checkpoint_path).unwrap();
+
+        assert_eq!(loaded.processed_files, checkpoint.processed_files);
+        assert_eq!(loaded.phrase_count, 42);
+        assert_eq!(loaded.current_phase, 2);
+    }
+
+    #[test]
+    fn test_checkpoint_exists() {
+        let temp_dir = TempDir::new().unwrap();
+        let checkpoint_path = temp_dir.path().join("exists_test.json");
+
+        // Should not exist yet
+        assert!(!PipelineCheckpoint::exists(&checkpoint_path));
+
+        let checkpoint = PipelineCheckpoint::new();
+        checkpoint.save(&checkpoint_path).unwrap();
+
+        // Now should exist
+        assert!(PipelineCheckpoint::exists(&checkpoint_path));
+
+        // Delete and verify
+        std::fs::remove_file(&checkpoint_path).unwrap();
+        assert!(!PipelineCheckpoint::exists(&checkpoint_path));
+    }
+
+    #[test]
+    fn test_run_with_checkpoint_creates_file() {
+        let pipeline = LexiconToSyntaxPipeline::new();
+        let temp_dir = TempDir::new().unwrap();
+
+        let audio_file = temp_dir.path().join("test.wav");
+        let checkpoint_path = temp_dir.path().join("checkpoint.json");
+
+        // Create a valid WAV file
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 44100,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        {
+            let mut writer = hound::WavWriter::create(&audio_file, spec).unwrap();
+            for _ in 0..4410 {
+                writer.write_sample(0i16).unwrap();
+            }
+            writer.finalize().unwrap();
+        }
+
+        let result = pipeline.run_with_checkpoint(&[audio_file], checkpoint_path.clone(), 60);
+
+        // Pipeline should succeed
+        assert!(result.is_ok(), "Pipeline failed: {:?}", result.err());
+
+        // Checkpoint file should be created
+        assert!(checkpoint_path.exists(), "Checkpoint file should be created");
+    }
+
+    #[test]
+    fn test_pipeline_error_audio_not_found_message() {
+        let pipeline = LexiconToSyntaxPipeline::new();
+        let nonexistent = Path::new("/nonexistent/path/audio.wav");
+        let result = pipeline.run(&[nonexistent]);
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            PipelineError::AudioNotFound(msg) => {
+                assert!(msg.contains("nonexistent") || msg.contains("audio"));
+            }
+            other => panic!("Expected AudioNotFound, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_feature_dimension_d112() {
+        // D112 is the default and recommended dimensionality
+        let dim = FeatureDimension::D112;
+        // Verify it's the default
+        assert_eq!(dim, FeatureDimension::default());
+    }
+
+    #[test]
+    fn test_lexicon_statistics_with_clusters() {
+        let stats = LexiconStatistics {
+            total_vocabulary_items: 5,
+            total_phrases: 150,
+            noise_count: 30,
+            avg_cluster_size: 30.0,
+            max_cluster_size: 50,
+            zipf_alpha: Some(1.2),
+        };
+
+        assert_eq!(stats.total_vocabulary_items, 5);
+        assert_eq!(stats.total_phrases, 150);
+        assert_eq!(stats.noise_count, 30);
+        assert!((stats.avg_cluster_size - 30.0).abs() < 0.01);
+        assert_eq!(stats.max_cluster_size, 50);
+        assert!(stats.zipf_alpha.is_some());
+        assert!((stats.zipf_alpha.unwrap() - 1.2).abs() < 0.01);
     }
 }

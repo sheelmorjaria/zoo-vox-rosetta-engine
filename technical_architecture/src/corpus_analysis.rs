@@ -244,10 +244,6 @@ pub struct PMICalculator {
     unigram_probs: HashMap<usize, f64>,
     /// Bigram probabilities: P(symbol_a, symbol_b)
     bigram_probs: HashMap<(usize, usize), f64>,
-    /// Total number of symbols in corpus
-    total_symbols: usize,
-    /// Total number of bigrams in corpus
-    total_bigrams: usize,
 }
 
 impl PMICalculator {
@@ -299,8 +295,6 @@ impl PMICalculator {
         Ok(Self {
             unigram_probs,
             bigram_probs,
-            total_symbols,
-            total_bigrams,
         })
     }
 

@@ -321,6 +321,7 @@ impl InharmonicityCalculator {
 }
 
 /// Helper: Generate sine wave
+#[cfg(test)]
 fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     (0..num_samples)
@@ -332,6 +333,7 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
 }
 
 /// Helper: Generate perfect harmonic series
+#[cfg(test)]
 fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
     let mut audio = vec![0.0; num_samples];
@@ -349,6 +351,7 @@ fn generate_harmonic_series(f0: f32, num_harmonics: usize, sample_rate: u32, dur
 }
 
 /// Helper: Generate inharmonic series (detuned harmonics)
+#[cfg(test)]
 fn generate_inharmonic_series(
     f0: f32,
     num_partials: usize,
@@ -373,6 +376,7 @@ fn generate_inharmonic_series(
 }
 
 /// Helper: Generate white noise
+#[cfg(test)]
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
     use std::time::{SystemTime, UNIX_EPOCH};
     let num_samples = (duration_sec * sample_rate as f32) as usize;

@@ -388,6 +388,11 @@ pub struct FeatureEvent {
 
     /// Sequence number for ordering and gap detection
     pub sequence: u64,
+
+    /// Emitter identity from vocalization source separation
+    /// None when identity is unknown or not yet resolved
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emitter_id: Option<i32>,
 }
 
 impl FeatureEvent {
@@ -416,7 +421,14 @@ impl FeatureEvent {
             features_112d,
             timestamp,
             sequence,
+            emitter_id: None,
         })
+    }
+
+    /// Create a feature event with emitter identity
+    pub fn with_emitter(mut self, emitter_id: i32) -> Self {
+        self.emitter_id = Some(emitter_id);
+        self
     }
 
     /// Create a feature event from an existing array
@@ -437,6 +449,7 @@ impl FeatureEvent {
             features_112d: features_112d.to_vec(),
             timestamp,
             sequence,
+            emitter_id: None,
         }
     }
 
@@ -585,6 +598,26 @@ impl FeatureEventPublisher {
         self.publish(&event)
     }
 
+    /// Create and publish a feature event with emitter identity
+    ///
+    /// # Arguments
+    /// * `cluster_id` - Cluster ID from corpus analysis
+    /// * `features_112d` - 112D feature vector
+    /// * `emitter_id` - Emitter identity from source separation
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error
+    pub fn publish_features_with_emitter(
+        &mut self,
+        cluster_id: u32,
+        features_112d: Vec<f32>,
+        emitter_id: i32,
+    ) -> Result<()> {
+        self.sequence += 1;
+        let event = FeatureEvent::new(cluster_id, features_112d, self.sequence)?.with_emitter(emitter_id);
+        self.publish(&event)
+    }
+
     /// Check if publisher is ready
     pub fn is_ready(&self) -> bool {
         true // Socket is bound
@@ -619,9 +652,124 @@ pub struct EventPublisherStats {
 }
 
 // ============================================================================
-// Synthesis Action Types (for Python → Rust communication)
+// Config Server (REQ/REP for Python to load profile data from Rust)
 // ============================================================================
 
+/// Default endpoint for the config REQ/REP channel
+pub const CONFIG_ENDPOINT: &str = "ipc:///tmp/cognitive_config.ipc";
+
+/// Request from Python Logic Layer for configuration data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigRequest {
+    /// Type of config data requested (e.g., "acoustic_profile")
+    pub request_type: String,
+    /// Species name for species-specific data
+    pub species: String,
+    /// Unique request ID for correlation
+    pub request_id: String,
+}
+
+/// Response from Rust with configuration data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigResponse {
+    /// Request ID being responded to
+    pub request_id: String,
+    /// Whether the request was successful
+    pub success: bool,
+    /// JSON-encoded data payload
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+    /// Error message if unsuccessful
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+/// REQ/REP server that provides configuration data to Python at startup
+///
+/// Python connects, requests the acoustic profile for a species, and
+/// receives all grammar data (bigrams, openers, closers, idioms) from
+/// the authoritative Rust source. This eliminates data drift between layers.
+pub struct ConfigServer {
+    sock: zmq::Socket,
+    endpoint: String,
+}
+
+impl ConfigServer {
+    /// Create a new config server bound to the given endpoint
+    pub fn new(endpoint: &str) -> Result<Self> {
+        let ctx = zmq::Context::new();
+        let sock = ctx.socket(zmq::REP)?;
+        sock.bind(endpoint)?;
+
+        info!("ConfigServer bound to: {}", endpoint);
+
+        Ok(Self {
+            sock,
+            endpoint: endpoint.to_string(),
+        })
+    }
+
+    /// Create with default endpoint
+    pub fn with_default_endpoint() -> Result<Self> {
+        Self::new(CONFIG_ENDPOINT)
+    }
+
+    /// Receive a config request (blocking)
+    pub fn recv_request(&self) -> Result<ConfigRequest> {
+        let msg = self
+            .sock
+            .recv_string(0)
+            .map_err(|e| anyhow::anyhow!("Failed to recv: {:?}", e))?
+            .map_err(|e| anyhow::anyhow!("Failed to decode message: {:?}", e))?;
+        let request: ConfigRequest = serde_json::from_str(&msg)?;
+        Ok(request)
+    }
+
+    /// Send a config response
+    pub fn send_response(&self, response: &ConfigResponse) -> Result<()> {
+        let json = serde_json::to_vec(response)?;
+        self.sock.send(&json, 0)?;
+        Ok(())
+    }
+
+    /// Handle a single request/response cycle
+    pub fn handle_request(&self, request: ConfigRequest) -> Result<()> {
+        let response = match request.request_type.as_str() {
+            "acoustic_profile" => {
+                use crate::acoustic_profile::AcousticProfileFactory;
+                let profile = AcousticProfileFactory::create(&request.species);
+                let export = profile.to_export();
+                ConfigResponse {
+                    request_id: request.request_id,
+                    success: true,
+                    data: Some(serde_json::to_value(&export)?),
+                    error: None,
+                }
+            }
+            _ => ConfigResponse {
+                request_id: request.request_id,
+                success: false,
+                data: None,
+                error: Some(format!("Unknown request type: {}", request.request_type)),
+            },
+        };
+
+        self.send_response(&response)
+    }
+
+    /// Get the endpoint string
+    pub fn endpoint(&self) -> &str {
+        &self.endpoint
+    }
+}
+
+// ============================================================================
+// Synthesis Action Types (for Python → Rust communication)
+// ============================================================================
+// These types are serialized/deserialized via Serde for ZeroMQ IPC protocol.
+// The compiler sees them as "dead" because they're constructed on the Python
+// side and consumed via deserialization, not direct Rust construction.
+#[allow(dead_code)]
 /// Priority levels for synthesis actions
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -641,6 +789,7 @@ pub enum ActionPriority {
 }
 
 /// Single event in a synthesis timeline
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimelineEvent {
     /// Cluster ID for synthesis
@@ -657,10 +806,12 @@ pub struct TimelineEvent {
     pub amplitude: f32,
 }
 
+#[allow(dead_code)]
 fn default_amplitude() -> f32 {
     1.0
 }
 
+#[allow(dead_code)]
 impl TimelineEvent {
     /// Create a new timeline event
     pub fn new(cluster_id: u32, start_time_ms: f64, duration_ms: f64) -> Self {
@@ -686,6 +837,7 @@ impl TimelineEvent {
 }
 
 /// Micro-dynamics delta for synthesis modification
+#[allow(dead_code)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MicroDynamicsDelta {
     /// Change to mean F0 (Hz)
@@ -717,28 +869,25 @@ pub struct MicroDynamicsDelta {
     pub delta_rms_energy: f32,
 }
 
-fn is_zero_f32(v: &f32) -> bool {
-    *v == 0.0
-}
-
+#[allow(dead_code)]
 impl MicroDynamicsDelta {
-    /// Create a new delta with F0 shift
-    pub fn with_f0_shift(delta_hz: f32) -> Self {
+    /// Create with only F0 shift
+    pub fn with_f0_shift(delta_mean_f0_hz: f32) -> Self {
         Self {
-            delta_mean_f0_hz: delta_hz,
+            delta_mean_f0_hz,
             ..Default::default()
         }
     }
 
-    /// Create a new delta with duration shift
-    pub fn with_duration_shift(delta_ms: f32) -> Self {
+    /// Create with only duration shift
+    pub fn with_duration_shift(delta_duration_ms: f32) -> Self {
         Self {
-            delta_duration_ms: delta_ms,
+            delta_duration_ms,
             ..Default::default()
         }
     }
 
-    /// Check if any deltas are non-zero
+    /// Check if all deltas are zero (no-op)
     pub fn is_empty(&self) -> bool {
         self.delta_mean_f0_hz == 0.0
             && self.delta_duration_ms == 0.0
@@ -750,7 +899,13 @@ impl MicroDynamicsDelta {
     }
 }
 
+#[allow(dead_code)]
+fn is_zero_f32(v: &f32) -> bool {
+    *v == 0.0
+}
+
 /// Synthesis action command from Python
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SynthesisAction {
     /// Action type (e.g., "synthesize_timeline")
@@ -768,6 +923,7 @@ pub struct SynthesisAction {
     pub priority: ActionPriority,
 }
 
+#[allow(dead_code)]
 impl SynthesisAction {
     /// Create a new synthesis action
     pub fn new(timeline: Vec<TimelineEvent>) -> Self {
@@ -818,6 +974,7 @@ impl SynthesisAction {
 // ============================================================================
 
 /// Configuration for action subscriber
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ActionSubscriberConfig {
     /// ZeroMQ endpoint for action commands
@@ -848,6 +1005,7 @@ impl Default for ActionSubscriberConfig {
 ///
 /// Uses ZeroMQ SUB socket to receive synthesis timeline commands
 /// from the Python Logic Layer.
+#[allow(dead_code)]
 pub struct ActionSubscriber {
     /// ZeroMQ context
     #[allow(dead_code)]
@@ -863,6 +1021,7 @@ pub struct ActionSubscriber {
     actions_received: u64,
 }
 
+#[allow(dead_code)]
 impl ActionSubscriber {
     /// Create a new action subscriber
     pub fn new(config: ActionSubscriberConfig) -> Result<Self> {
@@ -948,6 +1107,7 @@ impl ActionSubscriber {
 }
 
 /// Statistics for action subscriber
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ActionSubscriberStats {
     /// Total actions received

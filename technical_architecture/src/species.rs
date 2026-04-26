@@ -654,6 +654,25 @@ impl SpeciesConfig {
     pub fn feature_weights(&self) -> &FeatureWeights {
         &self.feature_weights
     }
+
+    /// Create acoustic profile for this species (Sprint 2 integration)
+    ///
+    /// Returns an appropriate AcousticProfile implementation based on the species.
+    /// - Egyptian Fruit Bat: Returns BatProfile with position-weighted logic
+    /// - Other species: Returns GeneralProfile with uniform weights
+    pub fn create_acoustic_profile(&self) -> Box<dyn crate::acoustic_profile::AcousticProfile> {
+        crate::acoustic_profile::AcousticProfileFactory::create(&self.species)
+    }
+
+    /// Get domain mode string for this species
+    ///
+    /// Returns "bat" for bat species, "general" otherwise
+    pub fn domain_mode(&self) -> &'static str {
+        match self.species.to_lowercase().as_str() {
+            "egyptian fruit bat" | "egyptian_fruit_bat" | "fruit_bat" | "bat" => "bat",
+            _ => "general",
+        }
+    }
 }
 
 /// Factory for creating species-specific configurations

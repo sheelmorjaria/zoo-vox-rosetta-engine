@@ -7,8 +7,7 @@
 # - Consistent tokenization (LLMs see consistent patterns)
 # - Vertical clarity (easier to reason about line-by-line)
 #
-# Note: Only stable rustfmt options are used. For nightly-only features, see
-# the Boring Rust skill references/rustfmt.toml template.
+# Note: Only stable rustfmt options are used.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 edition = "2021"
@@ -21,11 +20,8 @@ edition = "2021"
 max_width = 120
 
 # ─────────────────────────────────────────────────────────────────────────────────
-# FORMATTING CHOICES
+# FORMATTING CHOICES (stable only)
 # ─────────────────────────────────────────────────────────────────────────────────
-
-# Use block indent (not visual indent) for cleaner diffs
-indent_style = "Block"
 
 # Tabs vs spaces
 hard_tabs = false
@@ -33,10 +29,6 @@ tab_spaces = 4
 
 # Newline style (Unix = LF)
 newline_style = "Unix"
-
-# Trailing commas help with diffs
-trailing_semicolon = true
-match_arm_trailing_comma = true
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # IMPORTS
@@ -55,6 +47,3 @@ use_field_init_shorthand = true
 
 # Use try shorthand: ? not try!
 use_try_shorthand = true
-
-# Empty function bodies
-empty_item_single_line = true

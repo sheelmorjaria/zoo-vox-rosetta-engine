@@ -70,8 +70,8 @@ use std::collections::HashMap;
 use crate::acoustic_algebra_105d::{Vector105D, Vector112D};
 use crate::acoustic_similarity::AcousticSimilarityEngine;
 use crate::hdbscan::{HdbscanClustering, HdbscanStats};
-use crate::micro_dynamics_extractor::{MicroDynamicsExtractor, MicroDynamicsFeatures45D};
-use crate::neural_boundary::{BoundaryDetectorConfig, NeuralBoundaryDetector};
+use crate::micro_dynamics_extractor::{MicroDynamicsExtractor, RosettaFeatures};
+use crate::neural_boundary::{BoundaryDetectorConfig, DetectionMode, NeuralBoundaryDetector};
 
 // =============================================================================
 // Configuration
@@ -394,6 +394,11 @@ impl GradedPhraseMiner {
             min_phrase_duration_ms: config.min_phrase_duration_ms,
             threshold: config.boundary_threshold,
             smoothing_frames: 3,
+            mode: DetectionMode::Phrase,
+            max_phrase_duration_ms: 5000.0,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         };
 
         let boundary_detector = NeuralBoundaryDetector::with_config(boundary_config);
@@ -429,133 +434,41 @@ impl GradedPhraseMiner {
         }
     }
 
-    /// Compute full 105D feature vector from audio
+    /// Extract 112D RosettaFeatures from audio segment
     ///
-    /// Combines:
-    /// - Layer 1: 45D Base Physics (from MicroDynamicsExtractor)
-    /// - Layer 2: 30D Macro Texture (harmonic, pitch, GLCM)
-    /// - Layer 3: 30D Micro Texture (modulation, rhythm, psychoacoustics)
-    fn compute_105d_features(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
-        let mut features = Vec::with_capacity(105);
-
-        // Layer 1: Base Physics (45D)
-        features.extend(base_45d.to_array().iter().map(|&v| v as f64));
-
-        // Layer 2 + 3: Compute additional 60D features
-        // For now, compute simplified versions - full implementation would use
-        // the functions from acoustic_algebra_105d.rs
-        let macro_texture = self.compute_macro_texture(audio, base_45d);
-        let micro_texture = self.compute_micro_texture(audio, base_45d);
-
-        features.extend(macro_texture);
-        features.extend(micro_texture);
-
-        features
+    /// Uses the full 112D feature vector from MicroDynamicsExtractor:
+    /// - Layer 1: Base Physics (46D) - indices 0-45
+    /// - Layer 2: Macro Texture (30D) - indices 46-75
+    /// - Layer 3: Micro Texture (36D) - indices 76-111
+    fn extract_112d_features(&self, audio: &[f32]) -> Result<Vec<f64>> {
+        let rosetta = self.feature_extractor.extract(audio)?;
+        Ok(rosetta.to_array().iter().map(|&v| v as f64).collect())
     }
 
-    /// Compute Layer 2: Macro Texture (30D)
-    /// Harmonic texture, pitch geometry, GLCM spectrogram texture
-    fn compute_macro_texture(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
-        let mut features = Vec::with_capacity(30);
+    /// Extract feature vector based on configured mode
+    ///
+    /// - Base45D: First 45 dimensions (subset of Base Physics)
+    /// - Full105D: First 105 dimensions (Base Physics + Macro + partial Micro)
+    /// - Full112D: Complete 112D vector (recommended)
+    fn extract_features_by_mode(&self, audio: &[f32]) -> Result<Vec<f64>> {
+        let features_112d = self.extract_112d_features(audio)?;
 
-        // Harmonic Texture (8D) - estimated from available spectral features
-        features.push(base_45d.spectral_tilt as f64); // harmonic_slope
-        features.push(base_45d.base_30d.harmonic_to_noise_ratio as f64 * 0.5); // h1_h2_diff_db
-        features.push(base_45d.base_30d.jitter as f64); // harmonic_irregularity
-        features.push(base_45d.base_30d.harmonic_to_noise_ratio as f64 * 0.1); // harmonic_energy_variance
-        features.push(base_45d.base_30d.spectral_flux as f64); // spectral_flux_std
-        features.push(base_45d.formant_1_hz as f64 / (base_45d.formant_2_hz as f64 + 1.0)); // h1_h2_ratio
-        features.push(base_45d.formant_2_hz as f64 / (base_45d.formant_3_hz as f64 + 1.0)); // h2_h3_ratio
-        features.push(base_45d.formant_3_hz as f64 / (base_45d.formant_dispersion as f64 * 10.0 + 1.0)); // h3_h4_ratio
+        let result = match self.config.feature_mode {
+            FeatureMode::Base45D => {
+                // Use first 45 dimensions of the 112D vector
+                features_112d[..45].to_vec()
+            }
+            FeatureMode::Full105D => {
+                // Use first 105 dimensions of the 112D vector
+                features_112d[..105].to_vec()
+            }
+            FeatureMode::Full112D => {
+                // Use complete 112D vector (recommended)
+                features_112d
+            }
+        };
 
-        // Pitch Geometry (7D)
-        features.push(base_45d.f0_range_hz as f64 / (base_45d.duration_ms as f64 + 1.0)); // f0_mean_derivative
-        features.push(base_45d.fm_slope as f64 * 0.5); // f0_curvature
-        features.push(0.0); // f0_inflection_count (requires pitch tracking)
-        features.push(base_45d.fm_slope as f64); // glissando_rate
-        features.push(base_45d.base_30d.vibrato_rate_hz as f64 / 10.0); // vibrato_regularity
-        features.push(base_45d.base_30d.jitter as f64 * 10.0); // jitter_trend
-        features.push(base_45d.f0_range_hz as f64 / (base_45d.mean_f0_hz as f64 + 1.0)); // pitch_entropy
-
-        // GLCM Spectrogram Texture (10D) - simplified from spectral features
-        features.push(base_45d.spectral_kurtosis as f64); // glcm_contrast
-        features.push(base_45d.spectral_skewness as f64 * 0.5); // glcm_correlation
-        features.push(1.0 - base_45d.base_30d.spectral_flatness as f64); // glcm_energy
-        features.push(1.0 - base_45d.base_30d.spectral_flatness as f64); // glcm_homogeneity
-        features.push(base_45d.spectral_spread as f64 * 0.01); // run_length_nonuniformity
-        features.push(base_45d.duration_ms as f64 / 100.0); // long_run_emphasis
-        features.push(1.0 / (base_45d.duration_ms as f64 / 100.0 + 1.0)); // short_run_emphasis
-        features.push(base_45d.base_30d.spectral_flatness as f64); // granularity
-        features.push(base_45d.am_depth as f64); // vertical_strength
-        features.push(base_45d.fm_slope as f64 * 0.1); // diagonal_strength
-
-        // Temporal Texture (5D)
-        features.push(0.1); // energy_envelope_variance
-        features.push(base_45d.base_30d.attack_time_ms as f64 / (base_45d.base_30d.decay_time_ms as f64 + 1.0)); // onset_sustain_ratio
-        features.push(base_45d.base_30d.sustain_level as f64 * 10.0); // peak_count
-        features.push(base_45d.base_30d.vibrato_depth as f64 / 100.0); // pulse_regularity
-        features.push(0.1); // zero_crossing_variance
-
-        features
-    }
-
-    /// Compute Layer 3: Micro Texture (30D)
-    /// Modulation spectra, rhythm histograms, psychoacoustics
-    fn compute_micro_texture(&self, audio: &[f32], base_45d: &MicroDynamicsFeatures45D) -> Vec<f64> {
-        let mut features = Vec::with_capacity(30);
-
-        // A. Modulation Spectra (15D)
-        // AM Spectrum (5D) - estimated from vibrato and amplitude features
-        let vibrato_rate = base_45d.base_30d.vibrato_rate_hz as f64;
-        features.push(if vibrato_rate < 10.0 { 1.0 } else { 0.0 }); // am_spectrum_0_10hz
-        features.push(if (10.0..30.0).contains(&vibrato_rate) { 1.0 } else { 0.0 }); // am_spectrum_10_30hz
-        features.push(if (30.0..50.0).contains(&vibrato_rate) { 1.0 } else { 0.0 }); // am_spectrum_30_50hz
-        features.push(if (50.0..100.0).contains(&vibrato_rate) {
-            1.0
-        } else {
-            0.0
-        }); // am_spectrum_50_100hz
-        features.push(base_45d.am_depth as f64); // am_spectrum_100_200hz
-
-        // FM Spectrum (5D) - estimated from pitch modulation
-        let fm_rate = base_45d.fm_slope as f64;
-        features.push(if fm_rate < 10.0 { 1.0 } else { 0.0 }); // fm_spectrum_0_10hz
-        features.push(if (10.0..30.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_10_30hz
-        features.push(if (30.0..50.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_30_50hz
-        features.push(if (50.0..100.0).contains(&fm_rate) { 1.0 } else { 0.0 }); // fm_spectrum_50_100hz
-        features.push(0.0); // fm_spectrum_100_200hz
-
-        // Modulation Stats (5D)
-        features.push(base_45d.base_30d.vibrato_rate_hz as f64); // am_center_freq
-        features.push(base_45d.fm_slope as f64); // fm_center_freq
-        features.push(base_45d.am_depth as f64); // am_bandwidth
-        features.push(base_45d.fm_slope as f64 * 0.5); // fm_bandwidth
-        features.push(base_45d.base_30d.vibrato_depth as f64); // modulation_depth_ratio
-
-        // B. Rhythm Histogram (10D)
-        // Onset intervals histogram (5D) - from rhythm features
-        let ici = base_45d.base_30d.median_ici_ms as f64;
-        features.push(if ici < 20.0 { 1.0 } else { 0.0 }); // onset_hist_0_20ms
-        features.push(if (20.0..50.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_20_50ms
-        features.push(if (50.0..100.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_50_100ms
-        features.push(if (100.0..200.0).contains(&ici) { 1.0 } else { 0.0 }); // onset_hist_100_200ms
-        features.push(if ici >= 200.0 { 1.0 } else { 0.0 }); // onset_hist_200ms_plus
-
-        // Rhythm Stats (5D)
-        features.push(base_45d.base_30d.median_ici_ms as f64); // median_ioi_ms
-        features.push(1.0 / (base_45d.base_30d.median_ici_ms as f64 / 1000.0 + 0.001)); // tempo_bpm
-        features.push(base_45d.base_30d.onset_rate_hz as f64); // onset_density
-        features.push(base_45d.base_30d.ici_coefficient_of_variation as f64); // ioi_cv
-        features.push(base_45d.base_30d.onset_rate_hz as f64 * 60.0); // rhythm_regularity
-
-        // C. Psychoacoustics (5D) - from spectral features
-        features.push(base_45d.spectral_centroid as f64 / 1000.0); // brightness
-        features.push(base_45d.base_30d.harmonic_to_noise_ratio as f64); // roughness
-        features.push(1.0 - base_45d.subharmonic_ratio as f64); // tonality
-        features.push(base_45d.spectral_entropy as f64); // sharpness
-        features.push(base_45d.base_30d.harmonicity as f64); // harmony
-
-        features
+        Ok(result)
     }
 
     /// Analyze a graded vocalization stream for hidden motifs
@@ -643,56 +556,12 @@ impl GradedPhraseMiner {
             });
         }
 
-        // Step 2: Feature Extraction based on configured mode
-        let feature_vectors: Vec<Vec<f64>> = match self.config.feature_mode {
-            FeatureMode::Base45D => {
-                // Extract 45D features
-                segments
-                    .iter()
-                    .filter_map(|(segment_audio, _, _)| self.feature_extractor.extract_45d(segment_audio).ok())
-                    .map(|feat| feat.to_array().iter().map(|&v| v as f64).collect())
-                    .collect()
-            }
-            FeatureMode::Full105D => {
-                // Extract 105D features (45D base + 30D macro + 30D micro texture)
-                segments
-                    .iter()
-                    .filter_map(|(segment_audio, _, _)| {
-                        // First get 45D base features
-                        let base_45d = self.feature_extractor.extract_45d(segment_audio).ok()?;
-                        // Then compute full 105D vector
-                        let vector_105d = self.compute_105d_features(segment_audio, &base_45d);
-                        Some(vector_105d)
-                    })
-                    .collect()
-            }
-            FeatureMode::Full112D => {
-                // Extract 112D features (46D base + 30D macro + 36D micro texture)
-                // RECOMMENDED for maximum discriminative power
-                segments
-                    .iter()
-                    .filter_map(|(segment_audio, _, _)| {
-                        // First get 45D base features
-                        let base_45d = self.feature_extractor.extract_45d(segment_audio).ok()?;
-                        // Compute 105D first
-                        let vector_105d = self.compute_105d_features(segment_audio, &base_45d);
-                        // Extend to 112D by adding 7 additional dimensions
-                        // (release_time_ms + 6 rhythm histogram features)
-                        let mut vector_112d = vector_105d;
-                        // Add release_time_ms (estimate from decay time)
-                        vector_112d.push(base_45d.base_30d.decay_time_ms as f64 * 0.6);
-                        // Add 6 rhythm histogram features (computed from onset pattern)
-                        vector_112d.push(base_45d.base_30d.median_ici_ms as f64 * 0.5); // rhythm_tempo_hz
-                        vector_112d.push(base_45d.base_30d.onset_rate_hz as f64 * 0.1); // rhythm_tempo_stability
-                        vector_112d.push(base_45d.base_30d.ici_coefficient_of_variation as f64); // rhythm_pulse_clarity
-                        vector_112d.push(1.0 - base_45d.base_30d.ici_coefficient_of_variation as f64); // rhythm_grouping_strength
-                        vector_112d.push(100.0 / (base_45d.base_30d.median_ici_ms as f64 + 1.0)); // rhythm_cycle_length
-                        vector_112d.push(base_45d.base_30d.sustain_level as f64); // rhythm_onset_strength
-                        Some(vector_112d)
-                    })
-                    .collect()
-            }
-        };
+        // Step 2: Feature Extraction using 112D RosettaFeatures
+        // All modes now use the 112D extractor, slicing to required dimensions
+        let feature_vectors: Vec<Vec<f64>> = segments
+            .iter()
+            .filter_map(|(segment_audio, _, _)| self.extract_features_by_mode(segment_audio).ok())
+            .collect();
 
         // Check if we have enough features after filtering
         if feature_vectors.len() < self.config.min_cluster_size {
@@ -1382,5 +1251,139 @@ mod tests {
         // Both should produce valid reports
         assert!(report_default.n_recordings > 0);
         assert!(report_permissive.n_recordings > 0);
+    }
+
+    // =========================================================================
+    // Additional Coverage: Reset, Batch, Species, Thresholds
+    // =========================================================================
+
+    #[test]
+    fn test_reset_clears_state() {
+        let mut miner = GradedPhraseMiner::new(GradedMiningConfig {
+            min_phrase_duration_ms: 30.0,
+            boundary_threshold: 0.3,
+            min_cluster_size: 2,
+            min_samples: 1,
+            feature_mode: FeatureMode::Base45D,
+            min_segment_samples: 240,
+            thresholds: GradedMiningThresholds::default(),
+        });
+
+        // Analyze some audio to populate internal state
+        let audio = generate_test_audio_with_gaps(48000);
+        let report1 = miner.analyze(&audio, 48000).unwrap();
+
+        // Reset should not panic and should allow re-analysis
+        miner.reset();
+
+        // Re-analyze after reset should produce same structure
+        let report2 = miner.analyze(&audio, 48000).unwrap();
+        assert_eq!(report1.total_segments, report2.total_segments);
+    }
+
+    #[test]
+    fn test_analyze_batch_multiple_clips() {
+        let clip1 = generate_test_audio(200.0, 48000);
+        let clip2 = generate_test_audio(300.0, 48000);
+        let clip3 = generate_test_audio(150.0, 48000);
+
+        let recordings: Vec<(&[f32], u32)> = vec![(&clip1, 48000), (&clip2, 48000), (&clip3, 48000)];
+
+        let report = analyze_batch(&recordings, None).unwrap();
+
+        // Should produce results for all 3 recordings
+        assert_eq!(report.n_recordings, 3);
+        assert_eq!(report.individual_reports.len(), 3);
+        // Aggregate stats should be computed
+        assert!(report.aggregate_stats.total_segments >= 0);
+    }
+
+    #[test]
+    fn test_species_prediction_all_styles() {
+        let miner = GradedPhraseMiner::with_defaults();
+
+        let report = MotifReport {
+            total_segments: 50,
+            num_clusters: 5,
+            noise_count: 25,
+            purity: 0.5,
+            noise_ratio: 0.5,
+            avg_cohesion: 0.5,
+            cluster_stats: Vec::new(),
+            segments: Vec::new(),
+            interpretation: String::new(),
+            recommended_approach: ProcessingApproach::HybridDiscreteGraded,
+            species_prediction: None,
+        };
+
+        // Test all supported species return valid predictions
+        for species in &[
+            "marmoset",
+            "bat",
+            "egyptian fruit bat",
+            "dolphin",
+            "finch",
+            "zebra finch",
+            "human",
+        ] {
+            let prediction = miner.predict_species_style(&report, species);
+            assert!(
+                !prediction.communication_style.is_empty(),
+                "Species '{}' should return non-empty style",
+                species
+            );
+        }
+
+        // Unknown species should also return a prediction
+        let unknown = miner.predict_species_style(&report, "alien");
+        assert!(unknown.communication_style.contains("Unknown"));
+    }
+
+    #[test]
+    fn test_feature_mode_112d_processing() {
+        let config = GradedMiningConfig {
+            feature_mode: FeatureMode::Full112D,
+            min_phrase_duration_ms: 30.0,
+            boundary_threshold: 0.3,
+            min_cluster_size: 2,
+            min_samples: 1,
+            min_segment_samples: 240,
+            thresholds: GradedMiningThresholds::default(),
+        };
+        let mut miner = GradedPhraseMiner::new(config);
+
+        // Should process without error in 112D mode
+        let audio = generate_test_audio_with_gaps(48000);
+        let report = miner.analyze(&audio, 48000);
+        assert!(report.is_ok(), "112D mode analysis should succeed");
+
+        let report = report.unwrap();
+        // Segments should use 112D features
+        for segment in &report.segments {
+            assert_eq!(segment.feature_mode, FeatureMode::Full112D);
+            assert_eq!(segment.features.len(), 112);
+        }
+    }
+
+    #[test]
+    fn test_thresholds_conservative_stricter_than_default() {
+        let defaults = GradedMiningThresholds::default();
+        let conservative = GradedMiningThresholds::conservative();
+
+        // Conservative should require higher purity
+        assert!(
+            conservative.bag_of_phrases_purity > defaults.bag_of_phrases_purity,
+            "Conservative purity ({}) should exceed default ({})",
+            conservative.bag_of_phrases_purity,
+            defaults.bag_of_phrases_purity
+        );
+
+        // Conservative should tolerate less noise
+        assert!(
+            conservative.bag_of_phrases_max_noise < defaults.bag_of_phrases_max_noise,
+            "Conservative max noise ({}) should be less than default ({})",
+            conservative.bag_of_phrases_max_noise,
+            defaults.bag_of_phrases_max_noise
+        );
     }
 }

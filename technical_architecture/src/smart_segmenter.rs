@@ -47,7 +47,7 @@ use std::time::Instant;
 
 use crate::dynamic_segmenter::{DynamicSegmenter, DynamicSegmenterConfig};
 use crate::neural_boundary::{
-    BoundaryDetectorConfig, BoundaryType, NeuralBoundaryDetector, PhraseBoundary,
+    BoundaryDetectorConfig, BoundaryType, DetectionMode, NeuralBoundaryDetector, PhraseBoundary,
 };
 
 // ============================================================================
@@ -221,6 +221,11 @@ impl SmartSegmenter {
             min_phrase_duration_ms: 50.0,
             threshold: 0.5,
             smoothing_frames: 3,
+            mode: DetectionMode::Phrase,
+            max_phrase_duration_ms: 5000.0,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         };
 
         Self {

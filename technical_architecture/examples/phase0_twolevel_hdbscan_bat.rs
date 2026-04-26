@@ -520,7 +520,7 @@ fn segment_by_change_point(frames: &[FrameFeatures]) -> Vec<usize> {
 
 /// Combine multiple segmentation methods using voting
 fn combine_segmentation_methods(frames: &[FrameFeatures], sample_rate: u32) -> Vec<(usize, usize)> {
-    let mut all_boundaries: Vec<usize> = Vec::new();
+    let all_boundaries: Vec<usize> = Vec::new();
 
     // Get boundaries from different methods
     let energy_bounds = segment_by_energy(frames, sample_rate);

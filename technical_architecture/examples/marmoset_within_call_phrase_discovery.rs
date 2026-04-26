@@ -609,7 +609,7 @@ fn load_flac_file(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::error::Er
             AudioBufferRef::S24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|s| s.into_i32() as f32 / 8388608.0));
+                    audio_samples.extend(samples.iter().map(|s| s.inner() as f32 / 8388608.0));
                 }
             }
             AudioBufferRef::S32(buf) => {
@@ -639,7 +639,7 @@ fn load_flac_file(path: &Path) -> Result<(Vec<f32>, u32), Box<dyn std::error::Er
             AudioBufferRef::U24(buf) => {
                 for ch in 0..n_channels {
                     let samples = buf.chan(ch);
-                    audio_samples.extend(samples.iter().map(|s| (s.into_u32() as f32 - 8388608.0) / 8388608.0));
+                    audio_samples.extend(samples.iter().map(|s| (s.inner() as f32 - 8388608.0) / 8388608.0));
                 }
             }
             AudioBufferRef::U32(buf) => {

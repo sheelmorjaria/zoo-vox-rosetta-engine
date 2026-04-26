@@ -26,22 +26,30 @@ use std::io::{self, BufRead};
 use std::path::PathBuf;
 
 use technical_architecture::{
-    // Phase 1: Streaming
-    DebounceTimer, NeuralBoundaryDetector, RealTimeTimestamp, StreamingBuffer, StreamingConfig,
-    BoundaryDetectorConfig,
+    flag_for_active_learning,
     // Phase 2: Routing
-    AcousticGroup, PAMRouter, PAMRouterConfig, PAMResult,
+    AcousticGroup,
     // Phase 4: Active Learning
-    ActiveLearningConfig, DetectionPayload, flag_for_active_learning,
+    ActiveLearningConfig,
+    BoundaryDetectorConfig,
+    // Phase 1: Streaming
+    DebounceTimer,
+    DetectionMode,
+    DetectionPayload,
+    // Phase 2: 112D Feature Extraction
+    MicroDynamicsExtractor,
+    NeuralBoundaryDetector,
+    PAMResult,
+    PAMRouter,
+    PAMRouterConfig,
+    RealTimeTimestamp,
+    StreamingBuffer,
+    StreamingConfig,
 };
 
 /// PAM Pipeline Configuration
 #[derive(Parser, Debug)]
-#[command(
-    name = "pam_pipeline",
-    about = "Passive Acoustic Monitoring Pipeline",
-    version
-)]
+#[command(name = "pam_pipeline", about = "Passive Acoustic Monitoring Pipeline", version)]
 struct Args {
     /// Input audio file (raw f32 samples)
     #[arg(short, long)]
@@ -106,6 +114,8 @@ struct PipelineState {
     al_config: ActiveLearningConfig,
     /// Debounce timer for detection
     debounce: DebounceTimer,
+    /// 112D feature extractor (MicroDynamicsExtractor)
+    feature_extractor: MicroDynamicsExtractor,
     /// Sample rate
     sample_rate: u32,
     /// Verbose mode
@@ -129,6 +139,11 @@ impl PipelineState {
             min_phrase_duration_ms: args.min_phrase_duration_ms,
             threshold: 0.3, // Lower threshold for better detection
             smoothing_frames: 3,
+            mode: DetectionMode::Phrase,
+            max_phrase_duration_ms: 5000.0,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         };
         let boundary_detector = NeuralBoundaryDetector::with_config(boundary_config);
 
@@ -138,12 +153,14 @@ impl PipelineState {
             active_learning_high: args.al_high,
             models_dir: PathBuf::from("specialist_rf_models"),
         };
-        let router = PAMRouter::with_config(router_config)
-            .context("Failed to initialize PAM router")?;
+        let router = PAMRouter::with_config(router_config).context("Failed to initialize PAM router")?;
 
         let al_config = ActiveLearningConfig::new(args.al_low, args.al_high);
 
         let debounce = DebounceTimer::new(args.min_phrase_duration_ms, args.sample_rate);
+
+        // Initialize 112D feature extractor using MicroDynamicsExtractor
+        let feature_extractor = MicroDynamicsExtractor::new(args.sample_rate);
 
         Ok(Self {
             buffer,
@@ -151,6 +168,7 @@ impl PipelineState {
             router,
             al_config,
             debounce,
+            feature_extractor,
             sample_rate: args.sample_rate,
             verbose: args.verbose,
         })
@@ -192,11 +210,7 @@ impl PipelineState {
         }
 
         // Process each phrase segment
-        let phrases = technical_architecture::segment_into_phrases(
-            &buffer_samples,
-            &boundaries,
-            self.sample_rate,
-        );
+        let phrases = technical_architecture::segment_into_phrases(&buffer_samples, &boundaries, self.sample_rate);
 
         for phrase_samples in phrases {
             // Debounce check
@@ -205,12 +219,20 @@ impl PipelineState {
                 continue;
             }
 
-            // Phase 2: Extract features and route
-            // (In production, this would use actual 112D feature extraction)
-            let features_112d = extract_features_placeholder(&phrase_samples);
+            // Phase 2: Extract 112D Rosetta features using MicroDynamicsExtractor
+            let features_112d = match extract_112d_features(&self.feature_extractor, &phrase_samples) {
+                Ok(f) => f,
+                Err(e) => {
+                    if self.verbose {
+                        eprintln!("[Error] Feature extraction failed: {}", e);
+                    }
+                    continue;
+                }
+            };
 
-            // Infer acoustic group from features
-            let group = infer_acoustic_group_from_features(&features_112d);
+            // Route to acoustic specialist WITHOUT segment-to-segment bias
+            // Uses ONLY the current segment's features to determine the group
+            let group = route_acoustic_group_from_features(&features_112d);
 
             // Phase 2 & 3: Classify with threshold filtering
             match self.router.classify(&features_112d, group) {
@@ -254,58 +276,123 @@ impl PipelineState {
     }
 }
 
-/// Extract 112D features (placeholder implementation)
+/// Extract 112D features using MicroDynamicsExtractor::extract_rosetta
 ///
-/// In production, this would use the full feature extraction pipeline
-/// from taxonomic_router.rs (46D Physics + 30D Macro + 36D Micro)
-fn extract_features_placeholder(audio: &[f32]) -> Vec<f32> {
-    // Placeholder: return 112 features based on simple audio statistics
-    let mut features = vec![0.0f32; 112];
-
+/// Uses the full 112D Rosetta feature extraction pipeline:
+/// - Layer 1 (46D): Base Physics - F0, duration, energy, harmonicity, envelope, MFCCs, spectral shape
+/// - Layer 2 (30D): Macro Texture - Harmonic texture, pitch geometry, GLCM texture
+/// - Layer 3 (36D): Micro Texture - Spectral derivatives, FM/AM bins, ICI bins, rhythm histogram
+fn extract_112d_features(extractor: &MicroDynamicsExtractor, audio: &[f32]) -> Result<Vec<f32>> {
     if audio.is_empty() {
-        return features;
+        // Return zero-initialized 112D vector for empty audio
+        return Ok(vec![0.0f32; 112]);
     }
 
-    // Basic statistics as placeholder features
-    let mean: f32 = audio.iter().sum::<f32>() / audio.len() as f32;
-    let variance: f32 = audio.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / audio.len() as f32;
-    let rms = variance.sqrt();
+    // Use extract for 112D RosettaFeatures
+    let rosetta_features = extractor
+        .extract(audio)
+        .context("Failed to extract 112D Rosetta features")?;
 
-    // Fill first few features with basic stats
-    features[0] = mean;
-    features[1] = rms;
-    features[2] = audio.len() as f32;
-    features[3] = variance;
+    // Convert to flat array for routing
+    let features_112d = rosetta_features.to_array().to_vec();
 
-    // Compute zero-crossing rate
-    let zcr = audio
-        .windows(2)
-        .filter(|w| (w[0] >= 0.0) != (w[1] >= 0.0))
-        .count() as f32
-        / audio.len() as f32;
-    features[4] = zcr;
-
-    features
+    Ok(features_112d)
 }
 
-/// Infer acoustic group from features
+/// Route to acoustic group from 112D features WITHOUT segment-to-segment bias
 ///
-/// In production, this would use a trained gatekeeper classifier
-fn infer_acoustic_group_from_features(features: &[f32]) -> AcousticGroup {
-    // Placeholder: use ZCR to roughly categorize
+/// This function determines the acoustic group SOLELY from the current segment's
+/// 112D features, using the acoustic characteristics defined for each group.
+///
+/// Feature Indices (from RosettaFeatures):
+/// - Index 0: mean_f0_hz - Fundamental frequency
+/// - Index 1: duration_ms - Segment duration
+/// - Index 4: zero_crossing_rate - Proxy for frequency content
+/// - Index 26: spectral_centroid - Spectral brightness
+///
+/// Acoustic Groups are defined by:
+/// - Frequency range (F0 / spectral centroid)
+/// - Duration range
+/// - Modulation patterns
+fn route_acoustic_group_from_features(features: &[f32]) -> AcousticGroup {
+    // Extract key features for routing (indices from RosettaFeatures::to_array)
+    // Layer 1: Base Physics indices
+    let mean_f0_hz = features.first().copied().unwrap_or(0.0);
+    let duration_ms = features.get(1).copied().unwrap_or(0.0);
+    let rms_energy = features.get(3).copied().unwrap_or(0.0);
     let zcr = features.get(4).copied().unwrap_or(0.0);
-    let rms = features.get(1).copied().unwrap_or(0.0);
+    let spectral_centroid = features.get(26).copied().unwrap_or(0.0);
 
-    // High ZCR suggests high frequency (ultrasonic or birds)
-    if zcr > 0.3 && rms > 0.1 {
-        AcousticGroup::UltrasonicMammal
-    } else if zcr > 0.2 {
-        AcousticGroup::BirdHighFreq
-    } else if rms > 0.5 {
-        AcousticGroup::MarineWhistle
+    // Use spectral centroid (Hz) and F0 to determine frequency band
+    // F0 is more reliable for tonal sounds, centroid for broadband
+    let effective_freq = if mean_f0_hz > 100.0 {
+        mean_f0_hz
     } else {
-        AcousticGroup::Unknown
+        spectral_centroid // Already in Hz from RosettaFeatures
+    };
+
+    // === ULTRASONIC MAMMALS (Bats): 20-80kHz, 5-100ms ===
+    if effective_freq >= 20000.0 && (5.0..=100.0).contains(&duration_ms) {
+        return AcousticGroup::UltrasonicMammal;
     }
+
+    // === SONIC LONG MAMMALS (Baleen Whales): 20-5000Hz, 500-5000ms ===
+    if (20.0..5000.0).contains(&effective_freq) && duration_ms >= 500.0 {
+        return AcousticGroup::SonicLongMammal;
+    }
+
+    // === MARINE WHISTLE (Dolphins): 2-24kHz, 100-1000ms ===
+    if (2000.0..24000.0).contains(&effective_freq) && (100.0..1000.0).contains(&duration_ms) {
+        return AcousticGroup::MarineWhistle;
+    }
+
+    // === MARINE CLICK (Porpoises): broadband, impulsive, <2ms ===
+    if duration_ms < 2.0 && zcr > 0.4 {
+        return AcousticGroup::MarineClick;
+    }
+
+    // === MARINE MOAN: Low F0, long duration fallback ===
+    if effective_freq < 500.0 && duration_ms >= 1000.0 {
+        return AcousticGroup::MarineMoan;
+    }
+
+    // === BIRD HIGH FREQ (Songbirds): 4-8kHz, 50-500ms ===
+    if (4000.0..8000.0).contains(&effective_freq) && (50.0..=500.0).contains(&duration_ms) {
+        return AcousticGroup::BirdHighFreq;
+    }
+
+    // === BIRD LOW FREQ (Doves, Owls): 200-1000Hz, 100-1000ms ===
+    if (200.0..1000.0).contains(&effective_freq) && duration_ms >= 100.0 {
+        return AcousticGroup::BirdLowFreq;
+    }
+
+    // === BIRD MECHANICAL (Hummingbirds): broadband, 10-100ms ===
+    if zcr > 0.3 && (10.0..=100.0).contains(&duration_ms) {
+        return AcousticGroup::BirdMechanical;
+    }
+
+    // === INSECT WINGBEAT (Mosquitoes): 100-1000Hz, steady tone ===
+    if (100.0..1000.0).contains(&effective_freq) && zcr < 0.15 && rms_energy > 0.1 {
+        return AcousticGroup::InsectWingbeat;
+    }
+
+    // === INSECT STRIDULATION (Crickets): 2-10kHz, broadband pulses ===
+    if (2000.0..10000.0).contains(&effective_freq) && zcr > 0.2 && duration_ms < 200.0 {
+        return AcousticGroup::InsectStridulation;
+    }
+
+    // === AMPHIBIAN: 500-5000Hz, pulsed ===
+    if (500.0..5000.0).contains(&effective_freq) && (50.0..=500.0).contains(&duration_ms) {
+        return AcousticGroup::Amphibian;
+    }
+
+    // === SONIC SHORT MAMMAL (Primates): mid F0, variable ===
+    if (100.0..8000.0).contains(&effective_freq) {
+        return AcousticGroup::SonicShortMammal;
+    }
+
+    // Default to Unknown if no group matches
+    AcousticGroup::Unknown
 }
 
 /// Create detection payload from PAM result
@@ -364,10 +451,7 @@ fn run_real_time(state: &mut PipelineState, format: OutputFormat) -> Result<()> 
 
         // Parse audio samples from input
         // Format: space-separated f32 values
-        let samples: Vec<f32> = line
-            .split_whitespace()
-            .filter_map(|s| s.parse::<f32>().ok())
-            .collect();
+        let samples: Vec<f32> = line.split_whitespace().filter_map(|s| s.parse::<f32>().ok()).collect();
 
         if samples.is_empty() {
             continue;
@@ -388,8 +472,7 @@ fn run_real_time(state: &mut PipelineState, format: OutputFormat) -> Result<()> 
 /// Run in file mode
 fn run_file(state: &mut PipelineState, input_path: &PathBuf, format: OutputFormat) -> Result<()> {
     // Read raw f32 samples from file
-    let data = std::fs::read(input_path)
-        .with_context(|| format!("Failed to read input file: {:?}", input_path))?;
+    let data = std::fs::read(input_path).with_context(|| format!("Failed to read input file: {:?}", input_path))?;
 
     // Convert bytes to f32 samples
     let samples: Vec<f32> = data
@@ -452,27 +535,28 @@ mod tests {
     use technical_architecture::taxonomic_router::ConsolidatedTaxon;
 
     #[test]
-    fn test_extract_features_placeholder() {
+    fn test_extract_112d_features() {
         let audio = vec![0.5f32; 1024];
-        let features = extract_features_placeholder(&audio);
+        let extractor = MicroDynamicsExtractor::new(44100);
+        let features = extract_112d_features(&extractor, &audio).unwrap();
 
         assert_eq!(features.len(), 112);
-        // Mean should be ~0.5 (index 0)
-        assert!((features[0] - 0.5).abs() < 0.01);
+        // Features should be extracted (not all zeros for non-trivial audio)
+        assert!(features.iter().any(|&f| f != 0.0));
     }
 
     #[test]
-    fn test_infer_acoustic_group() {
-        let high_zcr = vec![0.0, 0.0, 0.0, 0.0, 0.5]; // High ZCR
-        let group = infer_acoustic_group_from_features(&high_zcr);
-        assert!(matches!(
-            group,
-            AcousticGroup::UltrasonicMammal | AcousticGroup::BirdHighFreq
-        ));
+    fn test_route_acoustic_group() {
+        // Test routing with synthetic features
+        // 15kHz F0, 100ms duration → MarineWhistle (freq 2-24kHz, duration 100-1000ms)
+        let marine = vec![15000.0, 100.0, 5000.0, 0.1, 0.5];
+        let group = route_acoustic_group_from_features(&marine);
+        assert!(matches!(group, AcousticGroup::MarineWhistle));
 
-        let low_features = vec![0.0, 0.05, 0.0, 0.0, 0.1]; // Low ZCR, low RMS
-        let group = infer_acoustic_group_from_features(&low_features);
-        assert!(matches!(group, AcousticGroup::Unknown));
+        // 500Hz F0, 200ms duration → BirdLowFreq (freq 200-1000Hz, duration >= 100ms)
+        let low_freq = vec![500.0, 200.0, 200.0, 0.1, 0.1];
+        let group = route_acoustic_group_from_features(&low_freq);
+        assert!(matches!(group, AcousticGroup::BirdLowFreq));
     }
 
     #[test]

@@ -5,16 +5,27 @@
 //! boundary detector. The TCN maintains temporal resolution and learns to
 //! predict phrase boundaries based on semantic changes.
 //!
+//! ## Detection Modes
+//!
+//! 1. **Phrase Mode (Default)**: Fine-grained segmentation (~50ms segments)
+//! 2. **Individual Mode**: Whole-vocalization detection (~250ms+ segments)
+//!
 //! ## Key Insight
 //! Unlike energy-based CPD, the neural boundary detector learns from labeled
 //! data what constitutes a "semantic boundary" (e.g., syllable ends, call type
 //! changes) rather than just amplitude drops.
 //!
 //! ## Usage
-//! ```rust
+//! ```rust,ignore
 //! use technical_architecture::NeuralBoundaryDetector;
 //!
+//! // Phrase mode (default)
 //! let detector = NeuralBoundaryDetector::new(512, 44100);
+//!
+//! // Individual vocalization mode
+//! let detector = NeuralBoundaryDetector::individual_vocalization(512, 44100);
+//!
+//! let audio = vec![0.0f32; 1024];
 //! let boundaries = detector.detect_boundaries(&audio);
 //! // Returns: [(time_ms, confidence, BoundaryType), ...]
 //! ```
@@ -22,29 +33,113 @@
 use ndarray::{Array1, Array2};
 use serde::{Deserialize, Serialize};
 
+/// Detection strategy mode
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DetectionMode {
+    /// Fine-grained phrase detection (default ~50ms segments)
+    Phrase,
+    /// Whole vocalization detection (merged segments, ~250ms+)
+    Individual,
+}
+
 /// Configuration for the Neural Boundary Detector
 #[derive(Debug, Clone)]
 pub struct BoundaryDetectorConfig {
+    /// Detection mode (Phrase vs Individual)
+    pub mode: DetectionMode,
     /// Hop size in samples (default: 512 for ~11.6ms at 44.1kHz)
     pub hop_size: usize,
     /// Sample rate
     pub sample_rate: u32,
     /// Minimum phrase duration in ms (prevents rapid-fire boundaries)
+    /// Phrase Mode: ~50ms, Individual Mode: ~250ms
     pub min_phrase_duration_ms: f32,
+    /// Maximum phrase duration in ms
+    pub max_phrase_duration_ms: f32,
     /// Boundary threshold (0.0-1.0)
     pub threshold: f32,
     /// Smoothing window in frames
     pub smoothing_frames: usize,
+    /// Temporal smoothing window in ms (higher for Individual mode)
+    pub smoothing_window_ms: f32,
+    /// Weight for energy profile (lower for Individual mode)
+    pub energy_weight: f32,
+    /// Weight for spectral change profile (higher for Individual mode)
+    pub spectral_weight: f32,
 }
 
 impl Default for BoundaryDetectorConfig {
     fn default() -> Self {
         Self {
+            mode: DetectionMode::Phrase,
             hop_size: 512,
             sample_rate: 44100,
             min_phrase_duration_ms: 50.0,
+            max_phrase_duration_ms: 5000.0,
             threshold: 0.5,
             smoothing_frames: 3,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
+        }
+    }
+}
+
+impl BoundaryDetectorConfig {
+    /// Create configuration optimized for Individual Vocalization Detection
+    ///
+    /// This profile prioritizes spectral integrity over amplitude flux,
+    /// effectively merging graded segments into a single event.
+    pub fn individual_vocalization() -> Self {
+        Self {
+            mode: DetectionMode::Individual,
+
+            // 1. Debounce Enforcement: Increased min duration
+            min_phrase_duration_ms: 250.0,
+
+            // 2. Temporal Smoothing: Increased window to ride over graded fluctuations
+            smoothing_window_ms: 100.0,
+            smoothing_frames: 9, // ~100ms / 11.6ms hop
+
+            // 3. Boundary Fusion: Prioritize Spectral Profile over Energy
+            // Energy often dips in graded calls; Spectral profile stays consistent
+            energy_weight: 0.3,
+            spectral_weight: 0.7,
+
+            // Higher threshold for stronger boundaries only
+            threshold: 0.75,
+
+            ..Default::default()
+        }
+    }
+
+    /// Create configuration for Phrase Mode (default)
+    pub fn phrase() -> Self {
+        Self::default()
+    }
+
+    /// Create configuration optimized for Syllable Detection
+    /// Compromise between Phrase (50ms) and Individual (250ms)
+    pub fn syllable() -> Self {
+        Self {
+            mode: DetectionMode::Phrase, // Use phrase logic (local changes)
+
+            // 1. MINIMUM DURATION: 150ms (Crucial for Feature Stability)
+            // This ensures F0 contour has ~12 frames (enough for slope/jitter)
+            min_phrase_duration_ms: 150.0,
+
+            // 2. SMOOTHING: Moderate smoothing
+            smoothing_window_ms: 50.0,
+            smoothing_frames: 5,
+
+            // 3. WEIGHTS: Balanced
+            energy_weight: 0.4,
+            spectral_weight: 0.6,
+
+            // 4. THRESHOLD: Lower than Individual, to catch smaller breaks
+            threshold: 0.55,
+
+            ..Default::default()
         }
     }
 }
@@ -56,6 +151,8 @@ pub enum BoundaryType {
     Hard,
     /// Soft boundary - semantic change without energy drop
     Soft,
+    /// Semantic - meaning-based boundary
+    Semantic,
     /// Transitional - gradual change over time
     Transitional,
 }
@@ -78,8 +175,6 @@ pub struct PhraseBoundary {
 #[derive(Debug, Clone)]
 pub struct NeuralBoundaryDetector {
     config: BoundaryDetectorConfig,
-    /// Learned weights for boundary detection (temporal features)
-    temporal_weights: Array1<f32>,
     /// Energy weight for combining with semantic features
     energy_weight: f32,
     /// Spectral change weight
@@ -98,21 +193,39 @@ impl NeuralBoundaryDetector {
         })
     }
 
+    /// Create a boundary detector optimized for Individual Vocalization Detection
+    ///
+    /// This profile prioritizes spectral integrity over amplitude flux,
+    /// effectively merging graded segments into a single event.
+    pub fn individual_vocalization(hop_size: usize, sample_rate: u32) -> Self {
+        Self::with_config(BoundaryDetectorConfig {
+            hop_size,
+            sample_rate,
+            ..BoundaryDetectorConfig::individual_vocalization()
+        })
+    }
+
+    /// Create a boundary detector optimized for Syllable Detection
+    ///
+    /// Compromise between Phrase (50ms) and Individual (250ms) modes.
+    /// Uses 150ms minimum duration for feature stability.
+    pub fn syllable(hop_size: usize, sample_rate: u32) -> Self {
+        Self::with_config(BoundaryDetectorConfig {
+            hop_size,
+            sample_rate,
+            ..BoundaryDetectorConfig::syllable()
+        })
+    }
+
     /// Create a boundary detector with custom configuration
     pub fn with_config(config: BoundaryDetectorConfig) -> Self {
-        let temporal_weights = Array1::from_vec(vec![
-            1.0,  // Energy change
-            0.8,  // Spectral centroid change
-            0.6,  // Zero-crossing rate change
-            0.5,  // Spectral flatness change
-            -0.3, // Duration since last boundary
-        ]);
+        let energy_weight = config.energy_weight;
+        let spectral_change_weight = config.spectral_weight;
 
         Self {
             config,
-            temporal_weights,
-            energy_weight: 0.4,
-            spectral_change_weight: 0.6,
+            energy_weight,
+            spectral_change_weight,
             last_boundary_sample: 0,
         }
     }
@@ -269,7 +382,7 @@ impl NeuralBoundaryDetector {
             }
 
             let centroid = self.compute_spectral_centroid(&audio[start..end]);
-            let change = (centroid - prev_centroid).abs() / (prev_centroid + 100.0);
+            let change = (centroid - prev_centroid).abs() / prev_centroid.abs().max(centroid.abs()).max(1.0);
 
             profile.push(change.min(1.0));
             prev_centroid = centroid;
@@ -279,14 +392,32 @@ impl NeuralBoundaryDetector {
     }
 
     fn compute_spectral_centroid(&self, frame: &[f32]) -> f32 {
-        let mut zcr = 0usize;
-        for i in 1..frame.len() {
-            if (frame[i] >= 0.0) != (frame[i - 1] >= 0.0) {
-                zcr += 1;
-            }
+        // Spectral tilt: ratio of high-frequency energy to low-frequency energy
+        // This is a proxy for spectral centroid without full FFT
+        let n = frame.len();
+        if n == 0 {
+            return 0.0;
         }
 
-        zcr as f32 / frame.len() as f32 * self.config.sample_rate as f32 / 2.0
+        let mid = n / 2;
+        let mut low_e = 0.0;
+        let mut high_e = 0.0;
+
+        // Compare first half energy to second half (approximate spectral tilt)
+        for i in 0..mid {
+            low_e += frame[i].abs();
+        }
+        for i in mid..n {
+            high_e += frame[i].abs();
+        }
+
+        // Return a ratio representing "brightness"
+        // Higher value = more high freq content
+        if low_e > 1e-10 {
+            (high_e / low_e).min(10.0) // Clamp
+        } else {
+            0.0
+        }
     }
 
     fn smooth_probabilities(&self, probs: &[f32]) -> Vec<f32> {
@@ -436,11 +567,16 @@ mod tests {
     #[test]
     fn test_min_phrase_duration_debounce() {
         let mut detector = NeuralBoundaryDetector::with_config(BoundaryDetectorConfig {
+            mode: DetectionMode::Phrase,
             hop_size: 512,
             sample_rate: 44100,
             min_phrase_duration_ms: 100.0,
+            max_phrase_duration_ms: 5000.0,
             threshold: 0.3,
             smoothing_frames: 3,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         });
 
         let mut audio = Vec::new();
@@ -529,11 +665,16 @@ mod tests {
     fn test_nbd_detects_low_energy_fm_sweep() {
         // Use lower threshold for spectral change detection
         let mut detector = NeuralBoundaryDetector::with_config(BoundaryDetectorConfig {
+            mode: DetectionMode::Phrase,
             hop_size: 512,
             sample_rate: 250000, // Bat sample rate
             min_phrase_duration_ms: 20.0,
+            max_phrase_duration_ms: 5000.0,
             threshold: 0.3, // Lower threshold for low-energy signals
             smoothing_frames: 3,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         });
 
         // Generate FM sweep: 20kHz -> 80kHz at LOW amplitude (0.1 instead of 0.5)
@@ -573,11 +714,16 @@ mod tests {
     #[test]
     fn test_spectral_change_detects_timbral_shifts() {
         let mut detector = NeuralBoundaryDetector::with_config(BoundaryDetectorConfig {
+            mode: DetectionMode::Phrase,
             hop_size: 512,
             sample_rate: 44100,
             min_phrase_duration_ms: 50.0,
+            max_phrase_duration_ms: 5000.0,
             threshold: 0.15, // Lower threshold for timbral shift detection
             smoothing_frames: 3,
+            smoothing_window_ms: 20.0,
+            energy_weight: 0.5,
+            spectral_weight: 0.5,
         });
 
         // Create audio with distinct timbral sections

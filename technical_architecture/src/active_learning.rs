@@ -133,14 +133,12 @@ impl DetectionPayload {
 
     /// Convert to JSON string
     pub fn to_json(&self) -> Result<String> {
-        serde_json::to_string_pretty(self)
-            .with_context(|| "Failed to serialize DetectionPayload to JSON")
+        serde_json::to_string_pretty(self).with_context(|| "Failed to serialize DetectionPayload to JSON")
     }
 
     /// Parse from JSON string
     pub fn from_json(json: &str) -> Result<Self> {
-        serde_json::from_str(json)
-            .with_context(|| "Failed to deserialize DetectionPayload from JSON")
+        serde_json::from_str(json).with_context(|| "Failed to deserialize DetectionPayload from JSON")
     }
 }
 
@@ -158,11 +156,7 @@ pub fn flag_for_active_learning(confidence: f32, config: &ActiveLearningConfig) 
 /// Generate a file path for saving an uncertain sample
 ///
 /// The path is based on timestamp and species name for easy identification.
-pub fn generate_sample_path(
-    species: &str,
-    timestamp_ms: u64,
-    config: &ActiveLearningConfig,
-) -> PathBuf {
+pub fn generate_sample_path(species: &str, timestamp_ms: u64, config: &ActiveLearningConfig) -> PathBuf {
     // Sanitize species name for filesystem
     let safe_species: String = species
         .chars()
@@ -205,13 +199,9 @@ pub fn save_uncertain_sample(
     let path = generate_sample_path(species, timestamp_ms, config);
 
     // Save as raw f32 samples (simple format)
-    let bytes: Vec<u8> = audio
-        .iter()
-        .flat_map(|&sample| sample.to_le_bytes())
-        .collect();
+    let bytes: Vec<u8> = audio.iter().flat_map(|&sample| sample.to_le_bytes()).collect();
 
-    std::fs::write(&path, &bytes)
-        .with_context(|| format!("Failed to save uncertain sample to {:?}", path))?;
+    std::fs::write(&path, &bytes).with_context(|| format!("Failed to save uncertain sample to {:?}", path))?;
 
     Ok(path)
 }
@@ -337,23 +327,13 @@ mod tests {
 
     #[test]
     fn test_build_label_canonical_map() {
-        let species_list = vec![
-            "Tursiops_truncatus",
-            "Delphinus_delphis",
-            "Bottlenose_Dolphin",
-        ];
+        let species_list = vec!["Tursiops_truncatus", "Delphinus_delphis", "Bottlenose_Dolphin"];
 
         let map = build_label_canonical_map(&species_list);
 
         // Verify canonicalization
-        assert_eq!(
-            map.get("tursiops_truncatus"),
-            Some(&"tursiops truncatus".to_string())
-        );
-        assert_eq!(
-            map.get("bottlenose_dolphin"),
-            Some(&"bottlenose dolphin".to_string())
-        );
+        assert_eq!(map.get("tursiops_truncatus"), Some(&"tursiops truncatus".to_string()));
+        assert_eq!(map.get("bottlenose_dolphin"), Some(&"bottlenose dolphin".to_string()));
     }
 
     #[test]

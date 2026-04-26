@@ -17,7 +17,6 @@
 //! - Packages dictionaries, weights, and models into deployable artifact
 
 use crate::acoustic_similarity::{AcousticSimilarityEngine, DistanceMetric};
-use crate::dynamic_segmenter::{DynamicSegmenter, DynamicSegmenterConfig};
 use crate::species::FeatureWeights;
 use crate::zoo_vox_features::ZooVoxFeatureExtractor;
 use ndarray::{Array1, Array2};
@@ -294,15 +293,11 @@ pub struct RosettaPipeline {
     config: RosettaConfig,
 
     // Phase 1: Global identification
-    global_weights: FeatureWeights,
     global_engine: AcousticSimilarityEngine,
 
     // Phase 2: Species-specific
     species_bundles: HashMap<String, RosettaBundle>,
     species_engines: HashMap<String, AcousticSimilarityEngine>,
-
-    // Segmentation
-    segmenter: DynamicSegmenter,
 }
 
 /// Result from processing an audio stream
@@ -336,20 +331,11 @@ impl RosettaPipeline {
         let mut global_engine = AcousticSimilarityEngine::with_metric(FEATURE_DIM, DistanceMetric::Cosine);
         global_engine.set_feature_weights(&global_weights.to_weight_vector());
 
-        // Create dynamic segmenter
-        let segmenter_config = DynamicSegmenterConfig {
-            min_phrase_duration_ms: config.min_segment_ms as f32,
-            ..Default::default()
-        };
-        let segmenter = DynamicSegmenter::new(segmenter_config, config.sample_rate);
-
         Ok(Self {
             config,
-            global_weights,
             global_engine,
             species_bundles: HashMap::new(),
             species_engines: HashMap::new(),
-            segmenter,
         })
     }
 

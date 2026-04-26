@@ -5,7 +5,7 @@
 
 use crate::benchmark::dataset_loader::BenchmarkDataset;
 use crate::benchmark::metrics::{ClassificationMetrics, FeatureAblationResults, MetricCalculator};
-use crate::micro_dynamics_extractor::{FeatureDim, MicroDynamicsExtractor};
+use crate::micro_dynamics_extractor::{MicroDynamicsExtractor, RosettaFeatures};
 
 /// Extraction report
 #[derive(Debug, Clone, PartialEq)]
@@ -103,13 +103,9 @@ impl FeatureEvaluator {
         })
     }
 
-    /// Extract features with specific dimensionality
-    pub fn extract_features(
-        &self,
-        audio: &[f32],
-        dim: FeatureDim,
-    ) -> Result<crate::micro_dynamics_extractor::FeatureVector, String> {
-        self.extractor.extract_dynamic(audio, dim).map_err(|e| e.to_string())
+    /// Extract 112D RosettaFeatures
+    pub fn extract_features(&self, audio: &[f32]) -> Result<RosettaFeatures, String> {
+        self.extractor.extract(audio).map_err(|e| e.to_string())
     }
 }
 
@@ -250,24 +246,16 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_features_d30() {
+    fn test_extract_features_112d() {
         let extractor = MicroDynamicsExtractor::new(48000);
         let evaluator = FeatureEvaluator::new(extractor);
 
         let audio = vec![0.0; 4800]; // 100ms at 48kHz
-        let result = evaluator.extract_features(&audio, FeatureDim::D30);
+        let result = evaluator.extract_features(&audio);
 
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_extract_features_d39() {
-        let extractor = MicroDynamicsExtractor::new(48000);
-        let evaluator = FeatureEvaluator::new(extractor);
-
-        let audio = vec![0.0; 4800]; // 100ms at 48kHz
-        let result = evaluator.extract_features(&audio, FeatureDim::D39);
-
-        assert!(result.is_ok());
+        let features = result.unwrap();
+        // Verify we got 112D features
+        assert_eq!(features.to_array().len(), 112);
     }
 }
