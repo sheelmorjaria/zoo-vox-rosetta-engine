@@ -134,6 +134,7 @@ src/
 │   │   ├── micro_dynamics_extractor.rs  # 112D features
 │   │   ├── neural_boundary.rs      # NBD segmentation
 │   │   ├── semantic_reconstruction.rs  # Exemplar management
+│   │   ├── species_vocab_config.rs # Direction 1: Species vocabulary config
 │   │   └── ...
 │   ├── examples/                   # 50+ example programs
 │   ├── deployment/                 # Systemd service files
@@ -156,6 +157,7 @@ src/
 │   ├── config_client.py            # REQ client for Rust config
 │   ├── cognitive_layer.py          # Cognitive intelligence
 │   ├── phrase_audio_library.py     # Data management
+│   ├── context_classifier.py       # Direction 4: Semantic context classifier
 │   └── archive/                    # Archived execution-layer files
 │
 ├── semiotics/                       # Semiotic Analysis
@@ -168,7 +170,9 @@ src/
 ├── analysis/rosetta_stone/          # Universal Rosetta Stone Engine
 │   ├── universal_rosetta_stone.py  # Core acoustic analysis
 │   ├── universal_synthesizer.py    # Audio synthesis
-│   └── acoustic_algebra.py         # Continuous semantic generation
+│   ├── acoustic_algebra.py         # Continuous semantic generation
+│   ├── vocab_optimizer.py          # Direction 1: Adaptive vocabulary optimization
+│   └── online_clustering.py        # Direction 8: Incremental K-means
 │
 ├── data_import/                     # Database import
 ├── synthesis/                       # Synthesis modules
@@ -211,6 +215,59 @@ python -m src.query_interface.demo_query_interface
 python -m src.semiotics.demo_semiotic_engine
 ```
 
+### Usage Examples
+
+**Adaptive Vocabulary (Direction 1)**
+```bash
+# Optimize vocabulary size for a species using SVS
+python -m analysis.rosetta_stone.vocab_optimizer
+
+# Use species-specific vocabulary in ExemplarManager
+python -m analysis.rosetta_stone.exemplar_manager \
+  --input segments_manifest.json \
+  --species egyptian_fruit_bat \
+  --vocab-registry species_vocab_registry.json \
+  --output clusters.json
+```
+
+**Semantic Alignment (Direction 4)**
+```python
+from realtime.context_classifier import ContextClassifier
+from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+# Train a context classifier
+classifier = ContextClassifier(model_type="mlp", random_state=42)
+classifier.train(features_112d, context_labels)
+classifier.save("context_model.pkl")
+
+# Use in InteractionAgent with label mapping
+config = InteractionAgentConfig(
+    context_classifier_path="context_model.pkl",
+    context_label_mapping={
+        "context_0": "social",
+        "context_1": "alarm",
+        "context_2": "territorial",
+    },
+)
+agent = InteractionAgent(config=config)
+```
+
+**Online Clustering (Direction 8)**
+```python
+from analysis.rosetta_stone.online_clustering import OnlineKMeans
+
+# Create online clusterer with auto-spawn
+clusterer = OnlineKMeans(
+    initial_k=10,
+    max_k=100,
+    spawn_threshold=3.0,  # Spawn new cluster for distant samples
+)
+
+# Incremental updates
+clusterer.partial_fit(new_batch)
+clusterer.prune_stale_clusters(decay_window_ms=5000)
+```
+
 ### Running Tests
 
 ```bash
@@ -238,6 +295,30 @@ sudo systemctl start python-cognitive-agent.service
 ---
 
 ## Key Features
+
+### Foundation TDD Implementation (Directions 1+4+8) ✅
+
+**Direction 1: Adaptive Vocabulary**
+- `VocabOptimizer`: Automatic k optimization per species using Silhouette Validation Score (SVS) maximization
+- `SpeciesVocabRegistry`: Cross-language (Python-Rust) configuration storage with JSON IPC
+- Species-specific vocabulary granularity - each species has unique acoustic characteristics requiring different k values
+- **CLI Integration**: `--species` and `--vocab-registry` arguments for production pipeline
+
+**Direction 4: Semantic Alignment**
+- `ContextClassifier`: MLP-based behavioral context inference replacing brittle rule-based systems
+- Trains on 112D feature vectors with confidence scoring
+- Weak supervision from temporal co-occurrence patterns
+- Model persistence (pickle/joblib) for deployment
+- **Label Mapping**: Maps pseudo-labels (e.g., `context_0`) to canonical response contexts
+- **Confidence Propagation**: ML confidence scores used directly for response gating
+
+**Direction 8: Online/Incremental Clustering**
+- `OnlineKMeans`: Real-time vocabulary adaptation for closed-loop agent
+- Incremental centroid updates via `partial_fit()`
+- Automatic cluster spawning for novel patterns
+- Forgetting mechanism via decay and pruning
+- Concept drift detection
+- **Sample Buffering**: Handles single-sample batches and sparse data streams
 
 ### Cross-Species Analysis
 
@@ -314,9 +395,20 @@ The Zoo Vox Rosetta Engine enables:
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Rust (cargo test) | 1,652 | ✅ All passing |
-| Python (pytest) | 729 | ✅ All passing |
+| Rust (cargo test) | 1,670 | ✅ All passing |
+| Python (pytest) | 800+ | ✅ All passing |
+| Foundation TDD | 92 | ✅ All passing |
 | Integration | 50+ | ✅ Verified |
+
+### Foundation TDD Tests
+
+| Direction | Component | Tests | Description |
+|-----------|-----------|-------|-------------|
+| Direction 1 | VocabOptimizer | 22 | SVS computation, k optimization, edge cases |
+| Direction 1 | SpeciesVocabConfig (Rust) | 18 | Species vocabulary configuration |
+| Direction 4 | ContextClassifier | 23 | Binary/multi-class, persistence, singleton labels |
+| Direction 4 | InteractionAgent Integration | 7 | Live FeatureEvent classification, label mapping |
+| Direction 8 | OnlineKMeans | 22 | Incremental updates, spawning, pruning, drift detection |
 
 ### Running Tests
 
@@ -330,6 +422,12 @@ python -m pytest tests/ -v \
   --ignore=tests/archive_experimental \
   --ignore=tests/test_shared_memory_ipc.py \
   --ignore=tests/test_realtime_dependencies.py
+
+# Foundation TDD tests
+python -m pytest tests/test_vocab_optimizer.py \
+                 tests/test_context_classifier.py \
+                 tests/test_online_clustering.py \
+                 tests/test_interaction_agent.py -v
 ```
 
 ---

@@ -27,11 +27,14 @@ License: CC BY-ND 4.0 International
 import json
 import logging
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
+
+from analysis.rosetta_stone.vocab_optimizer import SpeciesVocabRegistry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -74,18 +77,95 @@ class ExemplarManager:
     3. Using granular synthesis to reconstruct from exemplars
     """
 
-    def __init__(self, vocabulary_size: int = 1020):
+    def __init__(
+        self,
+        vocabulary_size: int = 1020,
+        species: Optional[str] = None,
+        vocab_registry_path: Optional[str] = None,
+    ):
         """
         Initialize the ExemplarManager.
 
         Args:
             vocabulary_size: Number of clusters (k) for k-means. Default 1020.
+                Only used if species-specific k is not found in registry.
+            species: Species name (e.g., "egyptian_fruit_bat", "marmoset").
+                If provided and vocab_registry_path is set, will load species-specific k.
+            vocab_registry_path: Path to SpeciesVocabRegistry JSON file.
+                If provided with species, loads optimal k for that species.
         """
         self.vocabulary_size = vocabulary_size
+        self.species = species
+        self.vocab_registry_path = vocab_registry_path
         self.segments: List[SegmentInfo] = []
         self.clusters: Dict[int, ClusterInfo] = {}
         self.scaler: Optional[StandardScaler] = None
         self.kmeans: Optional[MiniBatchKMeans] = None
+        self._actual_k: Optional[int] = None  # The actual k used for clustering
+
+        # Load species-specific vocabulary if registry provided
+        if species and vocab_registry_path:
+            self._load_species_vocab()
+
+    def _load_species_vocab(self) -> None:
+        """Load species-specific vocabulary size from registry."""
+        try:
+            registry = SpeciesVocabRegistry.load(self.vocab_registry_path)
+
+            # Only override vocabulary_size if species is explicitly in registry
+            if registry.has_species(self.species):
+                species_k = registry.get_optimal_k(self.species)
+                self.vocabulary_size = species_k
+                logger.info(
+                    f"Loaded species-specific vocabulary: {self.species} -> k={species_k}"
+                )
+            else:
+                logger.warning(
+                    f"No vocabulary config found for species '{self.species}'. "
+                    f"Using provided k={self.vocabulary_size}"
+                )
+        except Exception as e:
+            logger.warning(
+                f"Failed to load vocabulary registry from {self.vocab_registry_path}: {e}. "
+                f"Using provided k={self.vocabulary_size}"
+            )
+
+    def get_optimal_k(self, species: Optional[str] = None) -> int:
+        """
+        Get the optimal vocabulary size for a species.
+
+        If a registry was loaded, returns species-specific k. Otherwise returns default.
+
+        Args:
+            species: Species name. If None, uses self.species.
+
+        Returns:
+            Optimal k value for the species.
+        """
+        if self.vocab_registry_path:
+            target_species = species or self.species
+            if target_species:
+                try:
+                    registry = SpeciesVocabRegistry.load(self.vocab_registry_path)
+                    species_k = registry.get_optimal_k(target_species)
+                    if species_k:
+                        return species_k
+                except Exception:
+                    pass
+
+        return self.vocabulary_size
+
+    def set_species(self, species: str, reload_registry: bool = True) -> None:
+        """
+        Set the species and reload vocabulary size from registry.
+
+        Args:
+            species: Species name
+            reload_registry: Whether to reload k from registry (default True)
+        """
+        self.species = species
+        if reload_registry and self.vocab_registry_path:
+            self._load_species_vocab()
 
     def load_manifest(self, manifest_path: str) -> int:
         """
@@ -158,13 +238,15 @@ class ExemplarManager:
         Cluster all segments using MiniBatchKMeans.
 
         Args:
-            k: Number of clusters. If None, uses vocabulary_size from constructor.
+            k: Number of clusters. If None, uses vocabulary_size from constructor
+                (which may be species-specific if registry was loaded).
             batch_size: Batch size for MiniBatchKMeans.
         """
         if not self.segments:
             raise ValueError("No segments loaded. Call load_manifest() first.")
 
         k = k or self.vocabulary_size
+        self._actual_k = k  # Track the actual k used
 
         # Extract feature matrix
         X = np.array([seg.features_112d for seg in self.segments], dtype=np.float32)
@@ -309,6 +391,18 @@ class ExemplarManager:
 
         logger.info(f"Saved {len(self.clusters)} cluster exemplars to {output_path}")
 
+    def get_actual_k(self) -> int:
+        """
+        Get the actual vocabulary size used for clustering.
+
+        Returns the k that was actually used in cluster_features(),
+        which may be species-specific if a registry was loaded.
+
+        Returns:
+            The actual k value used, or vocabulary_size if clustering not yet performed.
+        """
+        return self._actual_k if self._actual_k is not None else self.vocabulary_size
+
     def load_exemplars(self, input_path: str) -> None:
         """
         Load pre-computed cluster and exemplar information from JSON.
@@ -408,18 +502,41 @@ def main():
         help="Output synthesis-ready manifest for Rust",
     )
     parser.add_argument(
-        "--k", "-k", type=int, default=1020, help="Vocabulary size (number of clusters)"
+        "--k", "-k", type=int, default=1020, help="Vocabulary size (number of clusters). Only used if species not in registry."
+    )
+    parser.add_argument(
+        "--species",
+        type=str,
+        default=None,
+        help="Species name (e.g., 'egyptian_fruit_bat', 'marmoset'). Loads optimal k from registry if provided.",
+    )
+    parser.add_argument(
+        "--vocab-registry",
+        type=str,
+        default=None,
+        help="Path to SpeciesVocabRegistry JSON file with species-specific optimal k values.",
     )
 
     args = parser.parse_args()
 
     # Create manager and process
-    manager = ExemplarManager(vocabulary_size=args.k)
+    # If species and vocab_registry are provided, ExemplarManager will load species-specific k
+    manager = ExemplarManager(
+        vocabulary_size=args.k,
+        species=args.species,
+        vocab_registry_path=args.vocab_registry,
+    )
+
+    # Log which k is being used
+    if args.species and args.vocab_registry:
+        logger.info(f"Using species-specific vocabulary for {args.species}")
+    else:
+        logger.info(f"Using fixed vocabulary size k={args.k}")
 
     # Load segments
     manager.load_manifest(args.input)
 
-    # Cluster features
+    # Cluster features (uses species-specific k if loaded, otherwise args.k)
     manager.cluster_features()
 
     # Select best exemplars
@@ -432,6 +549,7 @@ def main():
     print("\nPipeline complete!")
     print(f"  Clusters: {args.output}")
     print(f"  Synthesis manifest: {args.synthesis_manifest}")
+    print(f"  Final vocabulary size (k): {manager.get_actual_k()}")
 
 
 if __name__ == "__main__":

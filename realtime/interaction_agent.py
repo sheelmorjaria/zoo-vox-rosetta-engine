@@ -87,6 +87,17 @@ class InteractionAgentConfig:
     # ZeroMQ endpoint for Rust config REQ/REP channel
     config_endpoint: Optional[str] = None
 
+    # Path to trained ContextClassifier model for semantic alignment
+    context_classifier_path: Optional[str] = None
+
+    # Canonical context ontology - the finite set of response contexts
+    # Any classifier label must map to one of these canonical contexts
+    canonical_contexts: Tuple[str, ...] = ("contact", "alarm", "territorial", "social")
+
+    # Label mapping: maps raw classifier labels to canonical contexts
+    # Example: {"context_0": "social", "context_1": "alarm", ...}
+    context_label_mapping: Optional[Dict[str, str]] = None
+
     def get_parsing_strategy(self) -> ParsingStrategy:
         """
         Get the appropriate parsing strategy based on domain_mode.
@@ -157,6 +168,27 @@ class InteractionAgent:
 
         # Initialize parsing strategy based on domain_mode (Sprint 1)
         self.parser = self.config.get_parsing_strategy()
+
+        # Initialize ContextClassifier if path provided
+        self.context_classifier = None
+        if self.config.context_classifier_path:
+            try:
+                from realtime.context_classifier import ContextClassifier
+                self.context_classifier = ContextClassifier.load(
+                    self.config.context_classifier_path
+                )
+                logger.info(
+                    f"Loaded ContextClassifier from {self.config.context_classifier_path}"
+                )
+
+                # Validate classifier labels against canonical ontology
+                self._validate_classifier_labels()
+            except Exception as e:
+                logger.warning(
+                    f"Failed to load ContextClassifier from "
+                    f"{self.config.context_classifier_path}: {e}. "
+                    f"Falling back to rule-based inference."
+                )
 
         # State management
         self.state = AgentState.IDLE
@@ -291,10 +323,7 @@ class InteractionAgent:
                 logger.info(f"Detected {parse_result.idiom_count} idiom(s) in sequence")
 
         # Simplified context inference from 112D features
-        context = self._infer_context(event.features_112d, event.emitter_id)
-
-        # Calculate confidence
-        confidence = self._calculate_confidence(event.features_112d, context)
+        context, confidence = self._infer_context(event.features_112d, event.emitter_id)
 
         # Build result with parsed tokens
         result = {
@@ -311,33 +340,117 @@ class InteractionAgent:
 
         return result
 
-    def _infer_context(self, features_112d: np.ndarray, emitter_id: Optional[int] = None) -> str:
+    def _validate_classifier_labels(self) -> None:
+        """
+        Validate that all classifier labels map to canonical response contexts.
+
+        Raises:
+            ValueError: If a classifier label cannot be mapped to a canonical context
+        """
+        if self.context_classifier is None:
+            return
+
+        canonical_contexts = set(self.config.canonical_contexts)
+        class_names = set(self.context_classifier.class_names)
+
+        # Check which labels need mapping
+        unmapped = class_names - canonical_contexts
+
+        if not unmapped:
+            logger.info("All classifier labels are in canonical ontology")
+            return
+
+        # Check if we have mappings for the unmapped labels
+        if self.config.context_label_mapping:
+            mapped_contexts = set(self.config.context_label_mapping.values())
+            still_unmapped = unmapped - mapped_contexts - canonical_contexts
+
+            if not still_unmapped:
+                logger.info(f"All labels mapped via context_label_mapping")
+                return
+
+        # Build default mapping for pseudo-labels (context_0 -> social, etc.)
+        # as a fallback warning
+        pseudo_labels = {name for name in unmapped if name.startswith("context_")}
+        if pseudo_labels:
+            logger.warning(
+                f"Classifier has {len(pseudo_labels)} pseudo-labels (e.g., 'context_0') "
+                f"that are not in canonical ontology: {canonical_contexts}. "
+                f"Use 'context_label_mapping' config to map these to canonical contexts. "
+                f"Unmapped labels will cause the agent to not respond."
+            )
+
+    def _map_to_canonical_context(self, raw_context: str) -> str:
+        """
+        Map a raw classifier label to a canonical response context.
+
+        Args:
+            raw_context: The raw context label from the classifier
+
+        Returns:
+            A canonical context string
+        """
+        # If already canonical, return as-is
+        if raw_context in self.config.canonical_contexts:
+            return raw_context
+
+        # Try to map using the provided mapping
+        if self.config.context_label_mapping:
+            mapped = self.config.context_label_mapping.get(raw_context)
+            if mapped and mapped in self.config.canonical_contexts:
+                logger.debug(f"Mapped '{raw_context}' -> '{mapped}'")
+                return mapped
+
+        # No mapping found - return the raw context but this will cause
+        # the agent to not respond (as intended - fail safe)
+        logger.warning(
+            f"No mapping for context '{raw_context}' to canonical ontology. "
+            f"Agent will not respond to this context."
+        )
+        return raw_context
+
+    def _infer_context(self, features_112d: np.ndarray, emitter_id: Optional[int] = None) -> Tuple[str, float]:
         """
         Infer behavioral context from 112D features and emitter identity.
 
-        This is a simplified version. The full implementation would
-        use the ProbabilisticContextMachine.
+        Uses the ContextClassifier if available, otherwise falls back to
+        simple rule-based inference.
 
         Args:
             features_112d: 112D feature vector
             emitter_id: Optional emitter identity from source separation
 
         Returns:
-            Context string
+            Tuple of (context string, confidence score)
         """
-        # Extract key features
+        # Use ContextClassifier if available
+        if self.context_classifier is not None:
+            try:
+                raw_context, confidence = self.context_classifier.predict(features_112d)
+                # Map to canonical context
+                context = self._map_to_canonical_context(raw_context)
+                logger.debug(f"ML inference: raw={raw_context}, mapped={context}, confidence={confidence:.2f}")
+                return context, confidence
+            except Exception as e:
+                logger.warning(f"ContextClassifier prediction failed: {e}. Falling back to rules.")
+
+        # Fallback to rule-based inference
         f0 = float(features_112d[0]) if features_112d[0] > 0 else 5000.0
         rms = float(features_112d[1]) if len(features_112d) > 1 else 0.5
 
         # Simple rule-based context inference
         if f0 > 8000 and rms > 0.6:
-            return "alarm"
+            context = "alarm"
         elif f0 > 6000:
-            return "territorial"
+            context = "territorial"
         elif f0 < 4000:
-            return "social"
+            context = "social"
         else:
-            return "contact"
+            context = "contact"
+
+        # Calculate confidence from variance heuristic for rule-based fallback
+        confidence = self._calculate_confidence(features_112d, context)
+        return context, confidence
 
     def _calculate_confidence(self, features_112d: np.ndarray, context: str) -> float:
         """Calculate confidence in context detection."""
@@ -366,9 +479,9 @@ class InteractionAgent:
         if result.get("confidence", 0.0) < 0.5:
             return False
 
-        # Check context - some contexts require response
+        # Check context - must be in canonical ontology and response-enabled
         context = result.get("context_state", "")
-        response_contexts = {"contact", "alarm", "territorial"}
+        response_contexts = set(self.config.canonical_contexts) - {"social"}  # social doesn't trigger response
 
         return context in response_contexts
 

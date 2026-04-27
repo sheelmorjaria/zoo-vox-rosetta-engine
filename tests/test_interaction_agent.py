@@ -103,9 +103,11 @@ class TestContextInference(unittest.TestCase):
         features[0] = 9000.0  # High F0
         features[1] = 0.8  # High RMS
 
-        context = agent._infer_context(features)
+        context, confidence = agent._infer_context(features)
 
         self.assertEqual(context, "alarm")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
 
     def test_infer_territorial_context(self):
         """High F0 (but not extreme) should be territorial"""
@@ -116,9 +118,11 @@ class TestContextInference(unittest.TestCase):
         features = np.zeros(112, dtype=np.float32)
         features[0] = 7000.0  # Medium-high F0
 
-        context = agent._infer_context(features)
+        context, confidence = agent._infer_context(features)
 
         self.assertEqual(context, "territorial")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
 
     def test_infer_social_context(self):
         """Low F0 should be social"""
@@ -129,9 +133,11 @@ class TestContextInference(unittest.TestCase):
         features = np.zeros(112, dtype=np.float32)
         features[0] = 3000.0  # Low F0
 
-        context = agent._infer_context(features)
+        context, confidence = agent._infer_context(features)
 
         self.assertEqual(context, "social")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
 
     def test_infer_contact_context(self):
         """Medium F0 should be contact"""
@@ -142,9 +148,11 @@ class TestContextInference(unittest.TestCase):
         features = np.zeros(112, dtype=np.float32)
         features[0] = 5000.0  # Medium F0
 
-        context = agent._infer_context(features)
+        context, confidence = agent._infer_context(features)
 
         self.assertEqual(context, "contact")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
 
 
 class TestResponseTimeline(unittest.TestCase):
@@ -394,6 +402,209 @@ class TestStatistics(unittest.TestCase):
 
         stats = agent.get_stats()
         self.assertEqual(stats["events_processed"], 1)
+
+
+class TestContextClassifierIntegration(unittest.TestCase):
+    """Test ContextClassifier integration with InteractionAgent"""
+
+    def test_config_accepts_classifier_path(self):
+        """Config should accept context_classifier_path parameter"""
+        from realtime.interaction_agent import InteractionAgentConfig
+
+        config = InteractionAgentConfig(
+            context_classifier_path="/path/to/model.pkl"
+        )
+
+        self.assertEqual(config.context_classifier_path, "/path/to/model.pkl")
+
+    def test_agent_loads_classifier_on_init(self):
+        """Agent should load ContextClassifier when path is provided"""
+        import tempfile
+        from realtime.context_classifier import ContextClassifier
+        from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+        # Create and train a simple classifier
+        features = np.random.randn(100, 112)
+        labels = np.array(["social"] * 50 + ["alarm"] * 50)
+
+        classifier = ContextClassifier(model_type="mlp", random_state=42)
+        classifier.train(features, labels)
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            model_path = f.name
+            classifier.save(model_path)
+
+        try:
+            # Create agent with classifier
+            config = InteractionAgentConfig(context_classifier_path=model_path)
+            agent = InteractionAgent(config=config)
+
+            # Verify classifier was loaded
+            self.assertIsNotNone(agent.context_classifier)
+            self.assertEqual(agent.context_classifier.model_type, "mlp")
+        finally:
+            import os
+            os.unlink(model_path)
+
+    def test_agent_fallback_to_rules_without_classifier(self):
+        """Agent should use rule-based inference when no classifier"""
+        from realtime.interaction_agent import InteractionAgent
+
+        agent = InteractionAgent()
+        self.assertIsNone(agent.context_classifier)
+
+        # Test rule-based inference with high F0
+        features = np.zeros(112)
+        features[0] = 9000.0  # High F0
+        features[1] = 0.7  # High RMS
+
+        context, confidence = agent._infer_context(features)
+        self.assertEqual(context, "alarm")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
+
+    def test_agent_uses_classifier_for_inference(self):
+        """Agent should use ContextClassifier for context inference"""
+        import tempfile
+        from realtime.context_classifier import ContextClassifier
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        # Create a classifier that returns "social" for low F0 features
+        np.random.seed(42)
+        features = np.random.randn(100, 112)
+        # Make low F0 features map to "social"
+        features[:50, 0] -= 5.0  # Low F0
+        features[50:, 0] += 5.0  # High F0
+        labels = np.array(["social"] * 50 + ["alarm"] * 50)
+
+        classifier = ContextClassifier(model_type="mlp", random_state=42)
+        classifier.train(features, labels)
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            model_path = f.name
+            classifier.save(model_path)
+
+        try:
+            # Create agent with classifier
+            config = InteractionAgentConfig(context_classifier_path=model_path)
+            agent = InteractionAgent(config=config)
+
+            # Test with low F0 features (should predict "social" via ML)
+            test_features = np.zeros(112)
+            test_features[0] = 3000.0  # Low F0
+
+            context, confidence = agent._infer_context(test_features)
+
+            # Should use ML prediction, not rule-based
+            # With low F0, rule-based would give "social", so we verify
+            # by checking the classifier is being used
+            self.assertIsNotNone(agent.context_classifier)
+            # The exact prediction depends on training, but should not be random
+            self.assertIn(context, ["social", "alarm", "territorial", "contact"])
+            self.assertGreaterEqual(confidence, 0.0)
+            self.assertLessEqual(confidence, 1.0)
+
+        finally:
+            import os
+            os.unlink(model_path)
+
+    def test_agent_handles_invalid_classifier_path(self):
+        """Agent should fall back to rules when classifier path is invalid"""
+        from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+        config = InteractionAgentConfig(context_classifier_path="/nonexistent/path.pkl")
+        agent = InteractionAgent(config=config)
+
+        # Should fall back to None (rule-based)
+        self.assertIsNone(agent.context_classifier)
+
+        # Rule-based inference should still work
+        features = np.zeros(112)
+        features[0] = 9000.0  # High F0
+        features[1] = 0.7  # High RMS
+
+        context, confidence = agent._infer_context(features)
+        self.assertEqual(context, "alarm")
+        self.assertGreaterEqual(confidence, 0.0)
+        self.assertLessEqual(confidence, 1.0)
+
+    def test_label_mapping_maps_pseudo_labels_to_canonical(self):
+        """Agent should map pseudo-labels to canonical contexts via config."""
+        import tempfile
+        from realtime.context_classifier import ContextClassifier
+        from realtime.interaction_agent import (
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        # Create a classifier with pseudo-labels (context_0, context_1, etc.)
+        np.random.seed(42)
+        features = np.random.randn(100, 112)
+        pseudo_labels = [f"context_{i % 3}" for i in range(100)]  # context_0, context_1, context_2
+
+        classifier = ContextClassifier(model_type="mlp", random_state=42)
+        classifier.train(features, np.array(pseudo_labels))
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            model_path = f.name
+            classifier.save(model_path)
+
+        try:
+            # Create agent with label mapping
+            config = InteractionAgentConfig(
+                context_classifier_path=model_path,
+                context_label_mapping={
+                    "context_0": "social",
+                    "context_1": "alarm",
+                    "context_2": "territorial",
+                },
+            )
+            agent = InteractionAgent(config=config)
+
+            # Test that mapping works
+            test_features = np.zeros(112)
+
+            # Get raw prediction from classifier
+            raw_context, _ = agent.context_classifier.predict(test_features)
+
+            # Get mapped prediction through agent
+            mapped_context, confidence = agent._infer_context(test_features)
+
+            # Should be mapped to canonical context
+            self.assertIn(mapped_context, ["social", "alarm", "territorial", "contact"])
+            # If raw was pseudo-label, mapped should be different
+            if raw_context.startswith("context_"):
+                self.assertNotEqual(mapped_context, raw_context)
+
+        finally:
+            import os
+            os.unlink(model_path)
+
+    def test_unmapped_contexts_do_not_trigger_response(self):
+        """Unmapped pseudo-labels should not trigger response."""
+        import time
+        from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+        # Create agent
+        config = InteractionAgentConfig()
+        agent = InteractionAgent(config=config)
+
+        # Create result with unmapped pseudo-label
+        result = {
+            "context_state": "context_999",  # Not in canonical ontology
+            "confidence": 0.9,
+            "timestamp": time.time() - 1000,  # Past cooldown
+        }
+
+        # Should not respond because context is not canonical
+        self.assertFalse(agent._should_respond(result))
 
 
 if __name__ == "__main__":

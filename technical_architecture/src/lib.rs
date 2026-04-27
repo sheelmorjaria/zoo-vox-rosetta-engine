@@ -705,6 +705,10 @@ pub use acoustic_profile::{
     AcousticProfileExport, AcousticProfileFactory, BatProfile, GeneralProfile, PositionWeights, RigidIdiomExport,
 };
 
+// Species Vocab Config (NEW - Direction 1: Adaptive Vocabulary)
+pub mod species_vocab_config;
+pub use species_vocab_config::{SpeciesVocabConfig, SpeciesVocabRegistry};
+
 // Zoo Vox Rosetta v2.0 - Phrase Data Preparation System
 // 30D/45D acoustic feature extraction, phrase segmentation, and library management
 pub mod zoo_vox_data_models;
