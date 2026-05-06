@@ -607,5 +607,204 @@ class TestContextClassifierIntegration(unittest.TestCase):
         self.assertFalse(agent._should_respond(result))
 
 
+class TestUncertaintyGating(unittest.TestCase):
+    """Test uncertainty-gated response decisions"""
+
+    def test_agent_rejects_high_uncertainty(self):
+        """Agent rejects event with uncertainty > threshold"""
+        import time
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        # Create agent with low uncertainty threshold
+        config = InteractionAgentConfig(uncertainty_threshold=0.6)
+        agent = InteractionAgent(config=config)
+        agent._last_response_time = 0.0  # Allow response
+
+        # Create event with high uncertainty
+        features = np.zeros(112, dtype=np.float32)
+        features[0] = 9000.0  # High F0 for alarm
+        features[1] = 0.8  # High RMS
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=features,
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.9,  # High uncertainty > threshold
+        )
+
+        # Process event
+        result = agent._process_features(event)
+
+        # Should NOT respond due to high uncertainty
+        self.assertFalse(agent._should_respond(result))
+
+    def test_agent_accepts_low_uncertainty(self):
+        """Agent accepts event with uncertainty < threshold"""
+        import time
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        config = InteractionAgentConfig(uncertainty_threshold=0.6)
+        agent = InteractionAgent(config=config)
+        agent._last_response_time = 0.0  # Allow response
+
+        # Create event with low uncertainty
+        features = np.zeros(112, dtype=np.float32)
+        features[0] = 9000.0  # High F0 for alarm
+        features[1] = 0.8  # High RMS
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=features,
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.3,  # Low uncertainty < threshold
+        )
+
+        result = agent._process_features(event)
+
+        # Should respond (low uncertainty, high confidence, alarm context)
+        self.assertTrue(agent._should_respond(result))
+
+    def test_agent_uncertainty_threshold_config(self):
+        """Configurable uncertainty threshold works"""
+        import time
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        # Agent with strict threshold (0.4)
+        config = InteractionAgentConfig(uncertainty_threshold=0.4)
+        agent = InteractionAgent(config=config)
+        agent._last_response_time = 0.0
+
+        features = np.zeros(112, dtype=np.float32)
+        features[0] = 9000.0
+        features[1] = 0.8
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=features,
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.5,  # Between thresholds
+        )
+
+        result = agent._process_features(event)
+
+        # Should NOT respond (0.5 > 0.4 threshold)
+        self.assertFalse(agent._should_respond(result))
+
+    def test_agent_uncertainty_with_confidence(self):
+        """Both uncertainty and confidence checked together"""
+        import time
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+            InteractionAgentConfig,
+        )
+
+        config = InteractionAgentConfig(uncertainty_threshold=0.6)
+        agent = InteractionAgent(config=config)
+        agent._last_response_time = 0.0
+
+        # Case 1: High confidence BUT high uncertainty -> reject
+        features = np.zeros(112, dtype=np.float32)
+        features[0] = 9000.0
+        features[1] = 0.8
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=features,
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.8,  # High uncertainty
+        )
+
+        result = agent._process_features(event)
+        self.assertFalse(agent._should_respond(result))
+
+        # Case 2: Low confidence AND low uncertainty -> reject
+        event2 = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=features * 0.01,  # Low variance -> low confidence
+            timestamp=1000.0,
+            sequence=2,
+            uncertainty=0.2,  # Low uncertainty
+        )
+
+        result2 = agent._process_features(event2)
+        # Should still reject due to low confidence
+        self.assertFalse(agent._should_respond(result2))
+
+    def test_agent_default_uncertainty_threshold(self):
+        """Default uncertainty threshold should be 0.6"""
+        from realtime.interaction_agent import InteractionAgentConfig
+
+        config = InteractionAgentConfig()
+        self.assertEqual(config.uncertainty_threshold, 0.6)
+
+    def test_process_features_propagates_uncertainty(self):
+        """Uncertainty should be propagated from event to result"""
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+        )
+
+        agent = InteractionAgent()
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.45,
+        )
+
+        result = agent._process_features(event)
+
+        self.assertIn("uncertainty", result)
+        self.assertEqual(result["uncertainty"], 0.45)
+
+    def test_process_features_uncertainty_none(self):
+        """Uncertainty defaults to None when not provided"""
+        from realtime.interaction_agent import (
+            FeatureEvent,
+            InteractionAgent,
+        )
+
+        agent = InteractionAgent()
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+            # No uncertainty field
+        )
+
+        result = agent._process_features(event)
+
+        self.assertIn("uncertainty", result)
+        self.assertIsNone(result["uncertainty"])
+
+
 if __name__ == "__main__":
     unittest.main()

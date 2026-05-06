@@ -33,6 +33,8 @@
 use ndarray::{Array1, Array2};
 use serde::{Deserialize, Serialize};
 
+use crate::uncertainty_estimator::UncertaintyEstimate;
+
 /// Detection strategy mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DetectionMode {
@@ -158,7 +160,7 @@ pub enum BoundaryType {
 }
 
 /// A detected phrase boundary
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PhraseBoundary {
     /// Time in milliseconds from start
     pub time_ms: f32,
@@ -166,6 +168,9 @@ pub struct PhraseBoundary {
     pub confidence: f32,
     /// Type of boundary
     pub boundary_type: BoundaryType,
+    /// Uncertainty estimate (optional - requires MC dropout)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uncertainty: Option<UncertaintyEstimate>,
 }
 
 /// Neural Phrase Boundary Detector
@@ -277,6 +282,7 @@ impl NeuralBoundaryDetector {
                         time_ms,
                         confidence: prob,
                         boundary_type,
+                        uncertainty: None,
                     });
 
                     self.last_boundary_sample = sample;
@@ -326,6 +332,7 @@ impl NeuralBoundaryDetector {
                     } else {
                         BoundaryType::Transitional
                     },
+                    uncertainty: None,
                 });
             }
         }
@@ -450,7 +457,7 @@ impl NeuralBoundaryDetector {
 
         for b in boundaries.iter() {
             if b.time_ms - last_time >= min_duration_ms {
-                result.push(*b);
+                result.push(b.clone());
                 last_time = b.time_ms;
             }
         }
@@ -615,11 +622,13 @@ mod tests {
                 time_ms: 250.0,
                 confidence: 0.8,
                 boundary_type: BoundaryType::Hard,
+                uncertainty: None,
             },
             PhraseBoundary {
                 time_ms: 750.0,
                 confidence: 0.9,
                 boundary_type: BoundaryType::Hard,
+                uncertainty: None,
             },
         ];
 

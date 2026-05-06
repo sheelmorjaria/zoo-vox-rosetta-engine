@@ -368,6 +368,12 @@ pub use active_learning::{
     flag_for_active_learning, generate_sample_path, save_uncertain_sample, ActiveLearningConfig, DetectionPayload,
 };
 
+// Uncertainty Estimation exports (NEW - Bayesian uncertainty for boundary detection)
+pub use uncertainty_estimator::{MCDropoutUncertaintyEstimator, UncertaintyEstimate};
+
+// Event-driven power management exports (NEW - Edge deployment power states)
+pub use edge_power::{EdgePowerConfig, EdgePowerState, EventDrivenPowerManager};
+
 // Zoo Vox Rosetta Engine v2.0 exports (NEW - Multi-modality species adaptation)
 pub use sequence::{Motif, NgramStats, SequenceAnalysis, SequenceModule};
 pub use species::{
@@ -583,6 +589,7 @@ mod multi_node_coordination;
 mod peer_controller;
 pub mod peer_controller_performance;
 mod power_manager;
+mod edge_power;
 mod ptp;
 mod safety;
 mod shadow_model_monitor;
@@ -674,6 +681,9 @@ mod parallel_extraction;
 // Corpus Analysis (NEW - Phrase X discovery for corpus analysis)
 mod corpus_analysis;
 mod neural_boundary;
+
+// Uncertainty Estimation (NEW - Bayesian uncertainty for boundary detection)
+mod uncertainty_estimator;
 
 // Streaming (NEW - Real-time audio ingestion with system clock timestamps)
 pub mod streaming;

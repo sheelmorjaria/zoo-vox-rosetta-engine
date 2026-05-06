@@ -208,5 +208,101 @@ class TestFeatureSubscriberStats(unittest.TestCase):
         self.assertIsNone(stats["last_timestamp"])
 
 
+class TestFeatureEventUncertainty(unittest.TestCase):
+    """Test uncertainty field on FeatureEvent from the module"""
+
+    def test_feature_event_optional_uncertainty(self):
+        """FeatureEvent accepts uncertainty field"""
+        from realtime.feature_subscriber import FeatureEvent
+        import numpy as np
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.3,
+        )
+
+        self.assertEqual(event.uncertainty, 0.3)
+
+    def test_feature_event_uncertainty_none_by_default(self):
+        """Uncertainty defaults to None"""
+        from realtime.feature_subscriber import FeatureEvent
+        import numpy as np
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+        )
+
+        self.assertIsNone(event.uncertainty)
+
+    def test_feature_event_uncertainty_propagation(self):
+        """Uncertainty propagates through deserialization"""
+        from realtime.feature_subscriber import FeatureEvent
+        import numpy as np
+
+        json_data = {
+            "event_type": "feature_extraction",
+            "cluster_id": 42,
+            "features_112d": [0.0] * 112,
+            "timestamp": 1000.0,
+            "sequence": 1,
+            "uncertainty": 0.7,
+        }
+
+        event = FeatureEvent.from_json(json_data)
+
+        self.assertEqual(event.uncertainty, 0.7)
+
+    def test_feature_event_serialization_with_uncertainty(self):
+        """JSON roundtrip preserves uncertainty"""
+        from realtime.feature_subscriber import FeatureEvent
+        import numpy as np
+
+        original = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=0.45,
+        )
+
+        # Serialize
+        json_dict = original.to_json_dict()
+        json_bytes = json.dumps(json_dict).encode("utf-8")
+
+        # Deserialize
+        decoded = FeatureEvent.from_bytes(json_bytes)
+
+        self.assertEqual(decoded.uncertainty, 0.45)
+        self.assertAlmostEqual(decoded.uncertainty, original.uncertainty, places=5)
+
+    def test_feature_event_serialization_without_uncertainty(self):
+        """Uncertainty is omitted from JSON when None"""
+        from realtime.feature_subscriber import FeatureEvent
+        import numpy as np
+
+        event = FeatureEvent(
+            event_type="feature_extraction",
+            cluster_id=42,
+            features_112d=np.random.randn(112).astype(np.float32),
+            timestamp=1000.0,
+            sequence=1,
+            uncertainty=None,
+        )
+
+        json_dict = event.to_json_dict()
+
+        # Uncertainty should not be in the dict when None
+        self.assertNotIn("uncertainty", json_dict)
+
+
 if __name__ == "__main__":
     unittest.main()

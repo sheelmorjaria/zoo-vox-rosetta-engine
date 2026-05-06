@@ -393,6 +393,11 @@ pub struct FeatureEvent {
     /// None when identity is unknown or not yet resolved
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub emitter_id: Option<i32>,
+
+    /// Confidence score from Student inference (0-1)
+    /// None when using original cluster_id (not BGMM-distilled)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f32>,
 }
 
 impl FeatureEvent {
@@ -422,12 +427,19 @@ impl FeatureEvent {
             timestamp,
             sequence,
             emitter_id: None,
+            confidence: None,
         })
     }
 
     /// Create a feature event with emitter identity
     pub fn with_emitter(mut self, emitter_id: i32) -> Self {
         self.emitter_id = Some(emitter_id);
+        self
+    }
+
+    /// Create a feature event with confidence score
+    pub fn with_confidence(mut self, confidence: f32) -> Self {
+        self.confidence = Some(confidence);
         self
     }
 
@@ -450,6 +462,7 @@ impl FeatureEvent {
             timestamp,
             sequence,
             emitter_id: None,
+            confidence: None,
         }
     }
 
@@ -616,6 +629,69 @@ impl FeatureEventPublisher {
         self.sequence += 1;
         let event = FeatureEvent::new(cluster_id, features_112d, self.sequence)?.with_emitter(emitter_id);
         self.publish(&event)
+    }
+
+    /// Publish features with Student (BGMM-distilled) cluster assignment
+    ///
+    /// This is the closed-loop integration: the Student overrides the raw cluster_id
+    /// with the BGMM-distilled cluster_id and applies OOD filtering.
+    ///
+    /// # Arguments
+    /// * `features_112d` - 112D feature vector
+    /// * `emitter_id` - Optional emitter identity
+    /// * `exemplar_manager` - The ExemplarManager with loaded centroids from BGMM Teacher
+    ///
+    /// # Returns
+    /// * `Result<Option<u64>>` - Some(sequence) if published, None if OOD-rejected
+    ///
+    /// # Behavior
+    /// - Finds nearest centroid using Student inference
+    /// - Rejects if distance exceeds OOD threshold (returns None)
+    /// - Publishes with corrected cluster_id and confidence score
+    pub fn publish_with_student(
+        &mut self,
+        features_112d: Vec<f32>,
+        emitter_id: Option<i32>,
+        exemplar_manager: &crate::semantic_reconstruction::ExemplarManager,
+    ) -> Result<Option<u64>> {
+        // Convert Vec to array for Student lookup
+        let features_array: [f32; 112] = features_112d
+            .as_slice()
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("Feature vector must have exactly 112 elements"))?;
+
+        // Student inference: find nearest centroid with OOD check
+        match exemplar_manager.find_nearest_centroid_with_ood_check(&features_array) {
+            Some((cluster_id, distance)) => {
+                // Accepted: within BGMM-defined acoustic space
+                self.sequence += 1;
+
+                // Calculate confidence from normalized distance (0-1)
+                // distance=0 → confidence=1.0, distance=threshold → confidence=0.0
+                let threshold = exemplar_manager.ood_threshold();
+                let confidence = if threshold > 0.0 {
+                    1.0 - (distance / threshold)
+                } else {
+                    1.0
+                }.max(0.0).min(1.0);
+
+                let mut event = FeatureEvent::new(cluster_id, features_112d, self.sequence)?
+                    .with_confidence(confidence);
+
+                if let Some(emitter) = emitter_id {
+                    event = event.with_emitter(emitter);
+                }
+
+                self.publish(&event)?;
+                Ok(Some(self.sequence))
+            }
+            None => {
+                // Rejected: OOD - feature doesn't belong to any BGMM cluster
+                // This is the Safety-Critical Perception Filter in action!
+                log::debug!("Student rejected OOD feature - dropped event");
+                Ok(None)
+            }
+        }
     }
 
     /// Check if publisher is ready

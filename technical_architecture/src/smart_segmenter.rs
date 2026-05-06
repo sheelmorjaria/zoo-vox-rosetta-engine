@@ -610,6 +610,7 @@ impl SmartSegmenter {
                     time_ms,
                     confidence: derivative.min(1.0),
                     boundary_type: BoundaryType::Hard,
+                    uncertainty: None,
                 });
             }
         }
@@ -628,7 +629,7 @@ impl SmartSegmenter {
 
         // Add all CPD boundaries
         for b in cpd {
-            merged.push(*b);
+            merged.push(b.clone());
         }
 
         // Add NBD boundaries that don't overlap with CPD
@@ -638,7 +639,7 @@ impl SmartSegmenter {
                 .any(|m| (m.time_ms - b.time_ms).abs() < merge_threshold_ms);
 
             if !is_duplicate {
-                merged.push(*b);
+                merged.push(b.clone());
             }
         }
 
@@ -817,11 +818,13 @@ mod tests {
                 time_ms: 100.0,
                 confidence: 0.8,
                 boundary_type: BoundaryType::Hard,
+                uncertainty: None,
             },
             PhraseBoundary {
                 time_ms: 200.0,
                 confidence: 0.7,
                 boundary_type: BoundaryType::Hard,
+                uncertainty: None,
             },
         ];
 
@@ -830,11 +833,13 @@ mod tests {
                 time_ms: 105.0,
                 confidence: 0.9,
                 boundary_type: BoundaryType::Soft,
+                uncertainty: None,
             },
             PhraseBoundary {
                 time_ms: 350.0,
                 confidence: 0.6,
                 boundary_type: BoundaryType::Soft,
+                uncertainty: None,
             },
         ];
 
@@ -860,6 +865,7 @@ mod tests {
                 time_ms: 100.0,
                 confidence: 0.8,
                 boundary_type: BoundaryType::Hard,
+                uncertainty: None,
             }],
             method: SegmentationMethod::CPD,
             analysis: PreliminaryAnalysis {

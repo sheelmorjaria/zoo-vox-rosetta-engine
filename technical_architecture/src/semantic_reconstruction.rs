@@ -125,10 +125,20 @@ pub struct ExemplarEntry {
 ///
 /// When multiple audio samples are registered for the same cluster,
 /// the one with the highest quality score is kept.
+///
+/// **Teacher-Student Distillation:**
+/// This manager also stores 112D centroids from the BGMM "teacher"
+/// for real-time vocabulary lookup in the Rust execution layer.
 #[derive(Debug, Clone, Default)]
 pub struct ExemplarManager {
     /// Map from cluster ID to exemplar entry
     exemplars: HashMap<u32, ExemplarEntry>,
+    /// 112D centroids from BGMM teacher-student distillation
+    /// Maps cluster_id → centroid vector for real-time assignment
+    centroids: HashMap<u32, [f32; 112]>,
+    /// Out-of-distribution detection threshold
+    /// If distance to nearest centroid exceeds this, feature is OOD
+    ood_threshold: f32,
 }
 
 impl ExemplarManager {
@@ -136,6 +146,17 @@ impl ExemplarManager {
     pub fn new() -> Self {
         Self {
             exemplars: HashMap::new(),
+            centroids: HashMap::new(),
+            ood_threshold: 50.0, // Default OOD threshold (L2 distance in 112D)
+        }
+    }
+
+    /// Create a new ExemplarManager with custom OOD threshold
+    pub fn with_ood_threshold(ood_threshold: f32) -> Self {
+        Self {
+            exemplars: HashMap::new(),
+            centroids: HashMap::new(),
+            ood_threshold,
         }
     }
 
@@ -189,6 +210,179 @@ impl ExemplarManager {
     /// Get all cluster IDs
     pub fn cluster_ids(&self) -> Vec<u32> {
         self.exemplars.keys().copied().collect()
+    }
+
+    // ========================================================================
+    // TEACHER-STUDENT DISTILLATION: CENTROID-BASED ASSIGNMENT
+    // ========================================================================
+
+    /// Register a 112D centroid for a cluster (from BGMM teacher)
+    pub fn register_centroid(&mut self, cluster_id: u32, centroid: [f32; 112]) {
+        self.centroids.insert(cluster_id, centroid);
+    }
+
+    /// Load centroids from a synthesis_manifest.json (exported by Python BGMM)
+    ///
+    /// This enables the "student" model in Rust: fast nearest-centroid lookup
+    /// using centroids discovered by the Bayesian GMM "teacher" in Python.
+    pub fn load_centroids_from_manifest(&mut self, manifest_path: &std::path::Path) -> anyhow::Result<usize> {
+        use std::io::BufReader;
+
+        let file = std::fs::File::open(manifest_path)?;
+        let reader = BufReader::new(file);
+        let manifest: serde_json::Value = serde_json::from_reader(reader)?;
+
+        // Parse vocabulary size
+        let vocabulary_size = manifest["vocabulary_size"]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Missing vocabulary_size in manifest"))? as usize;
+
+        // Parse clusters
+        if let Some(clusters) = manifest.get("clusters") {
+            if let Some(clusters_obj) = clusters.as_object() {
+                for (cluster_id_str, cluster_info) in clusters_obj {
+                    let cluster_id: u32 = cluster_id_str.parse()
+                        .map_err(|e| anyhow::anyhow!("Invalid cluster_id: {}", e))?;
+
+                    // Extract centroid_112d array
+                    if let Some(centroid_array) = cluster_info.get("centroid_112d") {
+                        if let Some(arr) = centroid_array.as_array() {
+                            if arr.len() == 112 {
+                                let mut centroid = [0.0f32; 112];
+                                for (i, val) in arr.iter().enumerate() {
+                                    if let Some(f) = val.as_f64() {
+                                        centroid[i] = f as f32;
+                                    }
+                                }
+                                self.register_centroid(cluster_id, centroid);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(self.centroids.len())
+    }
+
+    /// Find the nearest cluster centroid for a 112D feature vector
+    ///
+    /// Returns `Some(cluster_id)` if centroids are loaded and a match is found,
+    /// or `None` if no centroids are available.
+    ///
+    /// **Performance:** O(k × d) where k = vocabulary_size (~89), d = 112
+    /// For k < 100, linear scan is faster than kd-tree due to cache locality.
+    ///
+    /// **Real-time target:** < 0.05ms (50,000 nanoseconds)
+    pub fn find_nearest_centroid(&self, features: &[f32; 112]) -> Option<u32> {
+        if self.centroids.is_empty() {
+            return None;
+        }
+
+        let mut nearest_id: Option<u32> = None;
+        let mut nearest_distance_sq = f32::MAX;
+
+        for (&cluster_id, centroid) in &self.centroids {
+            // Calculate squared L2 distance (avoid sqrt for speed)
+            let mut dist_sq = 0.0f32;
+            for i in 0..112 {
+                let diff = features[i] - centroid[i];
+                dist_sq += diff * diff;
+            }
+
+            if dist_sq < nearest_distance_sq {
+                nearest_distance_sq = dist_sq;
+                nearest_id = Some(cluster_id);
+            }
+        }
+
+        nearest_id
+    }
+
+    /// Find the nearest cluster centroid with distance measurement
+    ///
+    /// Returns `(Some(cluster_id), distance)` or `(None, f32::MAX)`.
+    /// Use this for out-of-distribution detection.
+    pub fn find_nearest_centroid_with_distance(&self, features: &[f32; 112]) -> (Option<u32>, f32) {
+        if self.centroids.is_empty() {
+            return (None, f32::MAX);
+        }
+
+        let mut nearest_id: Option<u32> = None;
+        let mut nearest_distance_sq = f32::MAX;
+
+        for (&cluster_id, centroid) in &self.centroids {
+            let mut dist_sq = 0.0f32;
+            for i in 0..112 {
+                let diff = features[i] - centroid[i];
+                dist_sq += diff * diff;
+            }
+
+            if dist_sq < nearest_distance_sq {
+                nearest_distance_sq = dist_sq;
+                nearest_id = Some(cluster_id);
+            }
+        }
+
+        let distance = nearest_distance_sq.sqrt();
+        (nearest_id, distance)
+    }
+
+    /// Check if a feature vector is out-of-distribution
+    ///
+    /// Returns `true` if the feature is too far from all known centroids.
+    /// This prevents synthesis of acoustic gibberish for unseen vocalizations.
+    pub fn is_out_of_distribution(&self, features: &[f32; 112]) -> bool {
+        let (_, distance) = self.find_nearest_centroid_with_distance(features);
+        distance > self.ood_threshold
+    }
+
+    /// Find the nearest cluster centroid with OOD filtering applied
+    ///
+    /// Returns `Some((cluster_id, distance))` if a valid centroid is found within
+    /// the OOD threshold, or `None` if the feature is out-of-distribution.
+    ///
+    /// This is the primary method for real-time Student inference, as it
+    /// automatically rejects acoustic gibberish that doesn't match any
+    /// of the 45 BGMM-discovered clusters.
+    pub fn find_nearest_centroid_with_ood_check(&self, features: &[f32; 112]) -> Option<(u32, f32)> {
+        let (cluster_id, distance) = self.find_nearest_centroid_with_distance(features);
+
+        match cluster_id {
+            Some(id) if distance <= self.ood_threshold => Some((id, distance)),
+            Some(_) => {
+                // Distance exceeds OOD threshold - reject
+                log::warn!("Rejected OOD vocalization (distance: {:.2} > {:.2})",
+                          distance, self.ood_threshold);
+                None
+            }
+            None => None,
+        }
+    }
+
+    /// Get a centroid by cluster ID
+    ///
+    /// Returns `Some(&centroid)` if the cluster exists, `None` otherwise.
+    pub fn get_centroid_by_id(&self, cluster_id: u32) -> Option<&[f32; 112]> {
+        self.centroids.get(&cluster_id)
+    }
+
+    /// Set the OOD detection threshold
+    ///
+    /// Threshold is the L2 distance in 112D space. Features beyond this
+    /// distance from all centroids are considered out-of-distribution.
+    pub fn set_ood_threshold(&mut self, threshold: f32) {
+        self.ood_threshold = threshold;
+    }
+
+    /// Get the current OOD threshold
+    pub fn ood_threshold(&self) -> f32 {
+        self.ood_threshold
+    }
+
+    /// Get the number of loaded centroids
+    pub fn num_centroids(&self) -> usize {
+        self.centroids.len()
     }
 }
 

@@ -121,11 +121,13 @@ fn test_stage1_segment_into_phrases_with_boundaries() {
             time_ms: 250.0,
             confidence: 0.9,
             boundary_type: NbdBoundaryType::Hard,
+            uncertainty: None,
         },
         NbdPhraseBoundary {
             time_ms: 750.0,
             confidence: 0.8,
             boundary_type: NbdBoundaryType::Hard,
+            uncertainty: None,
         },
     ];
 

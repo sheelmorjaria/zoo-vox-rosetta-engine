@@ -40,10 +40,18 @@ class FeatureEvent:
     timestamp: float
     sequence: int
     emitter_id: Optional[int] = None
+    speaker_embedding: Optional[np.ndarray] = None
+    uncertainty: Optional[float] = None  # Total uncertainty (0-1) from NBD
+    cluster_probabilities: Optional[Dict[int, float]] = None  # Soft clustering for graded phrases
+    confidence: Optional[float] = None  # v1.2.0: Confidence from Rust Student (0-1)
 
     @classmethod
     def from_json(cls, data: dict) -> "FeatureEvent":
         """Deserialize from JSON dictionary"""
+        speaker_emb = data.get("speaker_embedding")
+        if speaker_emb is not None:
+            speaker_emb = np.array(speaker_emb, dtype=np.float32)
+
         return cls(
             event_type=data["event_type"],
             cluster_id=data["cluster_id"],
@@ -51,7 +59,42 @@ class FeatureEvent:
             timestamp=data["timestamp"],
             sequence=data["sequence"],
             emitter_id=data.get("emitter_id"),
+            speaker_embedding=speaker_emb,
+            uncertainty=data.get("uncertainty"),
+            cluster_probabilities=data.get("cluster_probabilities"),
+            confidence=data.get("confidence"),  # v1.2.0
         )
+
+    def is_graded(self, threshold: float = 0.3) -> bool:
+        """Check if this segment represents a graded phrase boundary.
+
+        A segment is considered graded if it has significant secondary cluster
+        probabilities, indicating it exists in the transition space between
+        two or more acoustic categories.
+
+        Args:
+            threshold: Minimum secondary probability to consider graded (default 0.3)
+
+        Returns:
+            True if this is a graded boundary segment
+        """
+        if self.cluster_probabilities is None:
+            return False
+
+        # Get sorted probabilities
+        sorted_probs = sorted(
+            self.cluster_probabilities.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # Check if there's a significant secondary probability
+        # Use >= so that threshold=0.3 with prob=0.3 is considered graded
+        if len(sorted_probs) > 1:
+            secondary_prob = sorted_probs[1][1]
+            return secondary_prob >= threshold
+
+        return False
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "FeatureEvent":
@@ -69,6 +112,14 @@ class FeatureEvent:
         }
         if self.emitter_id is not None:
             result["emitter_id"] = self.emitter_id
+        if self.speaker_embedding is not None:
+            result["speaker_embedding"] = self.speaker_embedding.tolist()
+        if self.uncertainty is not None:
+            result["uncertainty"] = self.uncertainty
+        if self.cluster_probabilities is not None:
+            result["cluster_probabilities"] = self.cluster_probabilities
+        if self.confidence is not None:
+            result["confidence"] = self.confidence
         return result
 
     def __repr__(self) -> str:
