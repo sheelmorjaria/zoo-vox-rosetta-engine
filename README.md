@@ -591,7 +591,153 @@ agent = InteractionAgent(config=config)
 **Files:**
 - `realtime/interaction_agent.py` - Cluster-based inference, bigram validation, confidence gating
 - `realtime/feature_subscriber.py` - `confidence` field added to FeatureEvent
-- `tests/test_interaction_agent_v1_2_0.py` - TDD validation (13 tests)
+- `tests/test_interaction_agent_v1_2_0.py` - TDD validation (24 tests)
+- `TEACHER_STUDENT_PIPELINE.md` - Complete pipeline documentation
+
+### InteractionAgent v1.3.0: Level 2 Speaker Grounding ✅
+
+**Decoupling *Who* is Speaking from *What* is Being Said**
+
+v1.3.0 adds speaker diarization, enabling the system to recognize individual animals and apply speaker-specific response policies:
+
+```python
+from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig, SpeakerProfile
+
+# Define colony speaker profiles
+colony_profiles = {
+    1: SpeakerProfile(
+        emitter_id=1,
+        dominance_rank=1.0,  # Alpha
+        age_class="adult",
+        response_bias={
+            "alarm": 0.95,      # Alpha triggers strong alarm response
+            "territorial": 0.90,
+            "contact": 0.70,
+        }
+    ),
+    3: SpeakerProfile(
+        emitter_id=3,
+        dominance_rank=0.2,  # Juvenile
+        age_class="juvenile",
+        response_bias={
+            "alarm": 0.50,      # Juvenile gets weaker alarm response
+            "contact": 0.90,    # But high contact (solicitous)
+        }
+    ),
+}
+
+config = InteractionAgentConfig(
+    cluster_context_map=cluster_context_map,
+    valid_bigrams=valid_bigrams,
+    speaker_profiles=colony_profiles,         # v1.3.0: Speaker profiles
+    enable_speaker_adaptation=True,          # v1.3.0: Enable speaker-aware responses
+)
+
+agent = InteractionAgent(config=config)
+```
+
+**v1.3.0 Features:**
+1. **SpeakerProfile Dataclass**: dominance_rank, age_class, context-specific response_bias
+2. **Emitter ID Tracking**: Track which individual animal is vocalizing
+3. **Speaker-Specific Policies**: Alpha responses differ from juvenile responses
+4. **Social Graph Construction**: Track which individuals interact with whom
+
+**Files:**
+- `realtime/interaction_agent.py` - SpeakerProfile, emitter_id tracking, _get_speaker_profile()
+- `tests/test_interaction_agent_v1_3_0.py` - TDD validation (16 tests)
+
+### InteractionAgent v1.4.0: Probabilistic Transition Weights ✅
+
+**Markov Chain-Based Response Weighting**
+
+v1.4.0 upgrades from binary bigram validation to probabilistic response weighting:
+
+```python
+from realtime.interaction_agent import (
+    InteractionAgent, InteractionAgentConfig,
+    build_bigram_probability_map, analyze_corpus_bigram_frequencies
+)
+
+# Analyze corpus for bigram frequencies
+corpus_sequence = [8, 12, 8, 12, 8, 15, ...]  # Labeled cluster IDs
+prob_map = build_bigram_probability_map(
+    corpus_sequence=corpus_sequence,
+    valid_bigrams=valid_bigrams,
+)
+# {(8, 12): BigramProbability(8, 12, count=100, p=0.50, rarity=0.5), ...}
+
+config = InteractionAgentConfig(
+    cluster_context_map=cluster_context_map,
+    valid_bigrams=valid_bigrams,
+    bigram_probability_map=prob_map,         # v1.4.0: Markov transition weights
+    enable_probabilistic_weighting=True,    # v1.4.0: Enable probability modulation
+    rarity_attention_threshold=0.8,         # v1.4.0: Trigger attention for rare transitions
+)
+
+agent = InteractionAgent(config=config)
+```
+
+**v1.4.0 Features:**
+1. **BigramProbability Dataclass**: count, probability, rarity_score for each transition
+2. **Corpus Analysis**: analyze_corpus_bigram_frequencies() and build_bigram_probability_map()
+3. **Probability-Weighted Confidence**: Common transitions boost, rare transitions reduce
+4. **Cognitive Attention Flag**: Rare transitions trigger attention signals
+
+**Files:**
+- `realtime/interaction_agent.py` - BigramProbability, corpus analysis functions, probability weighting
+- `tests/test_interaction_agent_v1_4_0.py` - TDD validation (15 tests)
+
+### InteractionAgent v1.5.0: Ethological Validation Protocol ✅
+
+**Field Deployment with RAS Metric**
+
+v1.5.0 adds ethological validation mode for scientific measurement of animal acceptance:
+
+```python
+from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
+
+config = InteractionAgentConfig(
+    cluster_context_map=cluster_context_map,
+    valid_bigrams=valid_bigrams,
+    enable_ethological_mode=True,           # v1.5.0: Enable field validation
+    experimental_condition="full_system",   # v1.5.0: Label for logging
+    session_id="bat_colony_2025-05-06_001", # v1.5.0: Session identifier
+    ras_response_timeout_seconds=2.0,       # v1.5.0: Response window for RAS
+)
+
+agent = InteractionAgent(config=config)
+agent.start()
+
+# Get current RAS score
+ras = agent.calculate_current_ras()
+print(f"Response Appropriateness Score: {ras:.2f}")
+
+# Get full session metrics
+metrics = agent.get_session_metrics()
+print(f"Positive: {metrics.positive_responses}/{metrics.total_system_responses}")
+```
+
+**RAS (Response Appropriateness Score)**
+```
+R = (Number of valid follow-up responses) / (Total system responses)
+```
+
+| R Score | Interpretation |
+|---------|----------------|
+| **R ≥ 0.7** | **Functional acceptance** - System participates as conspecific |
+| 0.5 ≤ R < 0.7 | Partial acceptance |
+| **R < 0.3** | **Rejection** - System detected as artificial |
+
+**v1.5.0 Features:**
+1. **InteractionEvent Dataclass**: Track animal/system events with timestamps
+2. **SessionMetrics Dataclass**: Session-level metrics for field validation
+3. **RAS Calculation**: calculate_ras() function for scoring
+4. **Real-Time Tracking**: Interaction history bounded to max size
+
+**Files:**
+- `realtime/interaction_agent.py` - InteractionEvent, SessionMetrics, calculate_ras()
+- `ETHOLOGICAL_VALIDATION_PROTOCOL.md` - Complete field validation protocol
+- `tests/test_interaction_agent_v1_5_0.py` - TDD validation (22 tests)
 
 ### Foundation TDD Implementation (Directions 1+4+8) ✅
 
@@ -756,14 +902,27 @@ The Zoo Vox Rosetta Engine enables:
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Rust (cargo test) | 1,697 | ✅ All passing |
-| Python (pytest) | 1,044 | ✅ All passing |
-| MiniBatch BGMM Pipeline | 8 | ✅ All passing |
-| InteractionAgent v1.2.0 | 13 | ✅ All passing |
+| Rust (cargo test) | 266 | ✅ All passing |
+| Python (pytest) | 150+ | ✅ All passing |
+| MiniBatch BGMM Pipeline | 7 | ✅ All passing |
+| InteractionAgent v1.2.0 | 24 | ✅ All passing |
+| InteractionAgent v1.3.0 | 16 | ✅ All passing |
+| InteractionAgent v1.4.0 | 15 | ✅ All passing |
+| InteractionAgent v1.5.0 | 22 | ✅ All passing |
 | Foundation TDD (1+4+8) | 92 | ✅ All passing |
 | Level 0 Extensions (2+3+6) | 78 | ✅ All passing |
 | Advanced Features (PCFG+Multimodal+DDSP+MAML) | 74 | ✅ All passing |
+| **Total InteractionAgent** | **104** | ✅ All passing |
 | Integration | 50+ | ✅ Verified |
+
+### InteractionAgent Test Summary
+
+| Version | Feature | Tests | File |
+|---------|---------|-------|------|
+| v1.2.0 | Cluster-based semantic grounding | 24 | `tests/test_interaction_agent_v1_2_0.py` |
+| v1.3.0 | Level 2 speaker grounding | 16 | `tests/test_interaction_agent_v1_3_0.py` |
+| v1.4.0 | Probabilistic transition weights | 15 | `tests/test_interaction_agent_v1_4_0.py` |
+| v1.5.0 | Ethological validation protocol | 22 | `tests/test_interaction_agent_v1_5_0.py` |
 
 ### MiniBatch BGMM Pipeline Tests
 
@@ -883,13 +1042,15 @@ python -m pytest tests/test_pcfg_induction.py \
 
 ## Documentation
 
-### Methodology Documentation (technical_architecture/docs/pub/)
+### Core Methodology Documentation
 
-| Document | Description |
-|----------|-------------|
-| **closed_loop_agent_protocol.md** | Real-time bidirectional communication between Rust and Python |
-| **FIVE_STAGE_SYNTHESIS_PIPELINE.md** | Complete synthesis pipeline from raw audio to output |
-| **synthesis_explanation.md** | Audio synthesis background and theory |
+| Document | Description | Location |
+|----------|-------------|----------|
+| **TEACHER_STUDENT_PIPELINE.md** | Complete Teacher-Student distillation pipeline (v1.5.0) | Root |
+| **ETHOLOGICAL_VALIDATION_PROTOCOL.md** | Field deployment validation with RAS metric | Root |
+| **closed_loop_agent_protocol.md** | Real-time bidirectional communication between Rust and Python | `technical_architecture/docs/pub/` |
+| **FIVE_STAGE_SYNTHESIS_PIPELINE.md** | Complete synthesis pipeline from raw audio to output | `technical_architecture/docs/pub/` |
+| **synthesis_explanation.md** | Audio synthesis background and theory | `technical_architecture/docs/pub/` |
 
 ### Additional Documentation
 
@@ -898,6 +1059,16 @@ python -m pytest tests/test_pcfg_induction.py \
 | CLAUDE Developer Guide | `technical_architecture/CLAUDE.md` |
 | Project Instructions | `CLAUDE.md` |
 | Semiotic Detection Guide | `semiotics/SEMIOTIC_DETECTION_GUIDE.md` |
+| Project Changelog | `CHANGELOG.md` |
+
+### Version History
+
+| Version | Date | Features |
+|---------|------|----------|
+| v1.5.0 | 2026-05-06 | Ethological Validation Protocol (RAS metric) |
+| v1.4.0 | 2026-05-06 | Probabilistic Transition Weights (Markov chain) |
+| v1.3.0 | 2026-05-06 | Level 2 Speaker Grounding (speaker diarization) |
+| v1.2.0 | 2026-05-05 | Cluster-Based Semantic Grounding (45-cluster automaton) |
 
 ### Archive Documentation
 
