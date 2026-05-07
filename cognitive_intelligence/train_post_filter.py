@@ -22,7 +22,6 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -31,13 +30,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
-from .ddsp_decoder import DDSPDecoder, DDSPDecoderConfig
-from .ddsp_synthesis import DDSPSynthesizer
-from .multiscale_spectral_loss import CombinedLoss, MultiScaleSpectralLoss
-from .jetson_export import JetsonDevice, get_tier_config
-
 # Import NeuralPostFilter from ddsp_agent
 from realtime.ddsp_agent import NeuralPostFilter
+
+from .ddsp_decoder import DDSPDecoder
+from .ddsp_synthesis import DDSPSynthesizer
+from .multiscale_spectral_loss import MultiScaleSpectralLoss
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +48,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PostFilterTrainingExample:
     """A single training example for post-filter training."""
+
     features_112d: np.ndarray  # Shape: (112,)
     ddsp_audio: np.ndarray  # Shape: (samples,) - DDSP generated audio
     target_audio: np.ndarray  # Shape: (samples,) - Real vocalization
@@ -115,7 +114,6 @@ class PostFilterDataset(Dataset):
             data = json.load(f)
 
         # Check for cached post-filter data
-        cache_key = data.get("post_filter_cache_key")
         cache_file = segments_json.replace(".json", "_post_filter_cache.npy")
 
         if not self.regenerate_ddsp and os.path.exists(cache_file):
@@ -148,12 +146,12 @@ class PostFilterDataset(Dataset):
             if len(target_audio) > self.target_samples:
                 # Crop to center
                 start = (len(target_audio) - self.target_samples) // 2
-                target_audio = target_audio[start:start + self.target_samples]
+                target_audio = target_audio[start : start + self.target_samples]
             elif len(target_audio) < self.target_samples:
                 # Pad with zeros
                 padded = np.zeros(self.target_samples, dtype=np.float32)
                 start = (self.target_samples - len(target_audio)) // 2
-                padded[start:start + len(target_audio)] = target_audio
+                padded[start : start + len(target_audio)] = target_audio
                 target_audio = padded
 
             # Normalize
@@ -164,7 +162,9 @@ class PostFilterDataset(Dataset):
                 ddsp_audio, harmonic_amps, noise_mags, f0 = self._generate_ddsp_audio(features)
             else:
                 # Use cached DDSP data if available
-                ddsp_audio = np.array(item.get("ddsp_audio", np.random.randn(self.target_samples) * 0.1))
+                ddsp_audio = np.array(
+                    item.get("ddsp_audio", np.random.randn(self.target_samples) * 0.1)
+                )
                 harmonic_amps = np.array(item.get("harmonic_amps", np.random.rand(60)))
                 noise_mags = np.array(item.get("noise_mags", np.random.rand(5)))
                 f0 = item.get("f0_hz", 6000.0)
@@ -221,10 +221,10 @@ class PostFilterDataset(Dataset):
 
             # Trim/pad to target length
             if len(ddsp_audio) > self.target_samples:
-                ddsp_audio = ddsp_audio[:self.target_samples]
+                ddsp_audio = ddsp_audio[: self.target_samples]
             elif len(ddsp_audio) < self.target_samples:
                 padded = np.zeros(self.target_samples, dtype=np.float32)
-                padded[:len(ddsp_audio)] = ddsp_audio
+                padded[: len(ddsp_audio)] = ddsp_audio
                 ddsp_audio = padded
 
             return ddsp_audio, harmonic_amps_np, noise_mags_np, float(f0)
@@ -232,7 +232,9 @@ class PostFilterDataset(Dataset):
     def __len__(self) -> int:
         return len(self.examples)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self, idx: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Get a training example.
 
@@ -276,7 +278,9 @@ class SyntheticPostFilterDataset(Dataset):
     def __len__(self) -> int:
         return self.num_samples
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self, idx: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # Generate random parameters
         f0 = 4000 + np.random.randn() * 2000
         harmonic_amps = F.softmax(torch.randn(60), dim=0)
@@ -309,7 +313,7 @@ class SyntheticPostFilterDataset(Dataset):
             kernel.view(1, 1, -1),
             padding=kernel_size // 2,
         ).squeeze()
-        target_audio += noise_filtered[:self.audio_length] * 0.1
+        target_audio += noise_filtered[: self.audio_length] * 0.1
 
         # Normalize
         ddsp_audio = ddsp_audio / (ddsp_audio.abs().max() + 1e-8) * 0.8
@@ -460,9 +464,9 @@ class PostFilterTrainer:
             time_loss = F.l1_loss(pred, target)
 
             return (
-                config.spectral_loss_weight * spectral +
-                config.perceptual_loss_weight * perceptual +
-                config.time_loss_weight * time_loss
+                config.spectral_loss_weight * spectral
+                + config.perceptual_loss_weight * perceptual
+                + config.time_loss_weight * time_loss
             )
 
         self.loss_fn = combined_loss
@@ -573,7 +577,9 @@ class PostFilterTrainer:
         total_loss = 0.0
         num_batches = 0
 
-        for batch_idx, (ddsp_audio, target_audio, harmonic_amps, noise_mags) in enumerate(train_loader):
+        for batch_idx, (ddsp_audio, target_audio, harmonic_amps, noise_mags) in enumerate(
+            train_loader
+        ):
             # Move to device
             ddsp_audio = ddsp_audio.to(self.device)
             target_audio = target_audio.to(self.device)
@@ -830,8 +836,7 @@ def export_post_filter_for_jetson(
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     print("\n=== Neural Post-Filter Training Pipeline ===\n")

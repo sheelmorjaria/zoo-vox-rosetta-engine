@@ -152,7 +152,10 @@ src/
 │   ├── multimodal_fusion.py        # Audio-visual fusion with cross-modal attention
 │   ├── ddsp_synthesis.py           # Differentiable DSP for gradient-optimized synthesis
 │   ├── ddsp_decoder.py             # 112D → DDSP parameters neural decoder
-│   ├── jetson_export.py            # ONNX/TensorRT export for Jetson deployment
+│   ├── ddsp_training.py            # DDSP training pipeline
+│   ├── multiscale_spectral_loss.py # Multi-resolution STFT loss
+│   ├── jetson_export.py            # ONNX/TensorRT export for Jetson deployment (v1.6.1: tiered export)
+│   ├── train_post_filter.py        # Neural post-filter training pipeline (v1.6.1)
 │   └── maml_adaptation.py          # Model-Agnostic Meta-Learning for cross-species transfer
 │
 ├── realtime/                        # Real-time Processing (Logic Layer)
@@ -445,41 +448,85 @@ f0 = torch.ones(1, 100) * 6000  # 100 frames at 6kHz
 audio, phase = synthesizer(f0, harmonic_amps, noise_mags)
 ```
 
-**Jetson Deployment (ONNX/TensorRT)**
+**Jetson Deployment (ONNX/TensorRT) - Tiered Export Pipeline**
 ```python
 from cognitive_intelligence.jetson_export import (
-    export_ddsp_decoder_to_onnx,
-    export_ddsp_synthesizer_to_onnx,
-    export_ddsp_pipeline,
+    export_ddsp_for_jetson_tier,
+    export_all_jets_tiers,
+    detect_jetson_device,
+    JetsonDevice,
 )
-from realtime.ddsp_agent import DDSPAgentConfig, RealtimeDDSPAgent
+from realtime.ddsp_agent import (
+    create_ddsp_agent,
+    get_config_for_device,
+)
 
-# Export to ONNX for Jetson deployment
-artifacts = export_ddsp_pipeline(
+# Auto-detect Jetson device
+device = detect_jetson_device()
+print(f"Detected: {device}")  # NANO, XAVIER, ORIN, or UNKNOWN
+
+# Export for specific tier (e.g., Orin Nano with post-filter)
+artifacts = export_ddsp_for_jetson_tier(
     decoder=decoder,
     synthesizer=synthesizer,
-    output_dir="exports/ddsp_jetson",
-    export_tensorrt=False,  # Set True on Jetson with TensorRT
+    device=JetsonDevice.ORIN,
+    base_export_dir="exports/jetson",
+    save_manifest=True,
 )
 
-# Create real-time agent for deployment
-config = DDSPAgentConfig(
-    device="cuda",  # Use CUDA on Jetson
-    sample_rate=48000,
-    target_latency_ms=50.0,
+# Export for all Jetson devices (Nano, Xavier NX, Orin Nano)
+all_artifacts = export_all_jets_tiers(
+    decoder=decoder,
+    synthesizer=synthesizer,
+    base_export_dir="exports/jetson",
 )
+
+# Create agent with auto-detected config
+agent = create_ddsp_agent(auto_detect=True)
+
+# Or create agent for specific device
+config = get_config_for_device(JetsonDevice.ORIN)  # Full features + post-filter
 agent = RealtimeDDSPAgent(config)
 
-# Synthesize from cluster ID with 112D control
-audio, latency = agent.synthesize_from_cluster(
-    cluster_id=0,
-    delta_112d=np.random.randn(112) * 0.1,  # Fine-grained control
+# Synthesize from 112D features
+audio, latency = agent.synthesize_from_features(
+    features_112d=np.random.randn(112).astype(np.float32),
     duration_ms=200.0,
 )
+```
 
-# Check performance
-stats = agent.get_statistics()
-print(f"Latency: {stats['avg_latency_ms']:.2f}ms (target: {stats['target_latency_ms']}ms)")
+**Neural Post-Filter Training**
+```python
+from cognitive_intelligence.train_post_filter import (
+    train_post_filter,
+    PostFilterTrainingConfig,
+    export_post_filter_for_jetson,
+)
+
+# Train post-filter with synthetic data
+model = train_post_filter(
+    use_synthetic_data=True,
+    synthetic_samples=1000,
+    num_epochs=50,
+    batch_size=16,
+    checkpoint_dir="checkpoints/post_filter",
+    device="cuda",
+)
+
+# Train with real cached segments
+model = train_post_filter(
+    segments_json="data/segments.json",
+    num_epochs=100,
+    batch_size=32,
+    checkpoint_dir="checkpoints/post_filter",
+)
+
+# Export for Jetson deployment
+export_post_filter_for_jetson(
+    model=model,
+    output_path="exports/jetson/orin/post_filter.onnx",
+    device="cuda",
+)
 ```
 
 **MAML Adaptation (Cross-Species Transfer)**
@@ -861,12 +908,19 @@ R = (Number of valid follow-up responses) / (Total system responses)
 - `MultiScaleSpectralLoss`: STFT loss at multiple resolutions for training
 - **Key Benefit**: End-to-end differentiable audio synthesis for gradient-based optimization
 
-**Jetson Deployment (Module 4)**
-- `ONNX Export`: DDSPDecoder and DDSPSynthesizer export with opset 18
-- `TensorRT Builder`: FP16 optimization for NVIDIA Jetson devices
-- `RealtimeDDSPAgent`: Real-time inference agent with ZMQ IPC
-- `Model Benchmarking`: Timing statistics (mean/std/min/max/median latency)
+**Jetson Deployment (Module 4) - Tiered Export Pipeline**
+- `Device Auto-Detection`: Automatic Jetson device detection (Nano, Xavier NX, Orin Nano)
+- `Tier-Specific Configs`: Optimized settings per device (FP16, harmonics, noise bands, post-filter)
+- `ONNX/TensorRT Export`: Unified export pipeline with deployment manifests
+- `RealtimeDDSPAgent`: Real-time inference agent with auto-detection
 - **Target**: <50ms round-trip latency for field deployment
+
+**Neural Post-Filter Training (v1.6.1)**
+- `NeuralPostFilter`: Lightweight CNN (~50K params) for audio refinement
+- `PostFilterTrainer`: Complete training pipeline with synthetic and real data
+- `Multi-Scale Spectral Loss`: STFT loss at multiple resolutions
+- `PerceptualLoss`: Wrapper for high-quality audio training
+- `Export Utilities`: ONNX export for Jetson deployment
 
 **MAML Adaptation (Cross-Species Transfer)**
 - `MAMLOptimizer`: Model-Agnostic Meta-Learning for rapid adaptation
@@ -952,9 +1006,11 @@ The Zoo Vox Rosetta Engine enables:
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Rust (cargo test) | 266 | ✅ All passing |
-| Python (pytest) | 200+ | ✅ All passing |
+| Python (pytest) | 250+ | ✅ All passing |
 | DDSP Synthesizer (Module 3) | 22 | ✅ All passing |
-| Jetson Deployment (Module 4) | 21 | ✅ All passing |
+| Jetson Deployment (Module 4) | 68 | ✅ All passing |
+| Tiered Export Pipeline | 28 | ✅ All passing |
+| Post-Filter Training | 19 | ✅ All passing |
 | MiniBatch BGMM Pipeline | 7 | ✅ All passing |
 | InteractionAgent v1.2.0 | 24 | ✅ All passing |
 | InteractionAgent v1.3.0 | 16 | ✅ All passing |
@@ -1095,6 +1151,12 @@ python -m pytest tests/test_ddsp_synthesizer.py -v
 
 # Jetson Deployment tests (Module 4)
 python -m pytest tests/test_jetson_deployment.py -v
+
+# Tiered Export Pipeline tests (v1.6.1)
+python -m pytest tests/test_tiered_export.py -v
+
+# Post-Filter Training tests (v1.6.1)
+python -m pytest tests/test_train_post_filter.py -v
 ```
 
 ---
@@ -1107,7 +1169,8 @@ python -m pytest tests/test_jetson_deployment.py -v
 |----------|-------------|----------|
 | **TEACHER_STUDENT_PIPELINE.md** | Complete Teacher-Student distillation pipeline (v1.5.0) | Root |
 | **ETHOLOGICAL_VALIDATION_PROTOCOL.md** | Field deployment validation with RAS metric | Root |
-| **DDSP_JETSON_DEPLOYMENT.md** | 112D DDSP Neural Decoder pipeline for Jetson deployment | Root |
+| **DDSP_JETSON_DEPLOYMENT.md** | 112D DDSP Neural Decoder pipeline for Jetson deployment (v1.6.1) | Root |
+| **POST_FILTER_TRAINING.md** | Neural post-filter training pipeline for audio refinement | Root |
 | **closed_loop_agent_protocol.md** | Real-time bidirectional communication between Rust and Python | `technical_architecture/docs/pub/` |
 | **FIVE_STAGE_SYNTHESIS_PIPELINE.md** | Complete synthesis pipeline from raw audio to output | `technical_architecture/docs/pub/` |
 | **synthesis_explanation.md** | Audio synthesis background and theory | `technical_architecture/docs/pub/` |
@@ -1125,6 +1188,7 @@ python -m pytest tests/test_jetson_deployment.py -v
 
 | Version | Date | Features |
 |---------|------|----------|
+| v1.6.1 | 2026-05-07 | Tiered Jetson Export Pipeline + Neural Post-Filter Training |
 | v1.6.0 | 2026-05-07 | DDSP Neural Decoder Pipeline + Jetson Deployment (Modules 3 & 4) |
 | v1.5.0 | 2026-05-06 | Ethological Validation Protocol (RAS metric) |
 | v1.4.0 | 2026-05-06 | Probabilistic Transition Weights (Markov chain) |

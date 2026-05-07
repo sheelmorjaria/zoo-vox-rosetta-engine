@@ -12,9 +12,7 @@ License: CC BY-ND 4.0 International
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pytest
@@ -32,8 +30,8 @@ except ImportError:
 if TORCH_AVAILABLE:
     from cognitive_intelligence.train_post_filter import (
         PostFilterDataset,
-        PostFilterTrainingConfig,
         PostFilterTrainer,
+        PostFilterTrainingConfig,
         SyntheticPostFilterDataset,
         export_post_filter_for_jetson,
         train_post_filter,
@@ -333,6 +331,7 @@ class TestFullTraining:
         # Verify it's a valid ONNX file
         try:
             import onnx
+
             onnx_model = onnx.load(output_path)
             onnx.checker.check_model(onnx_model)
         except ImportError:

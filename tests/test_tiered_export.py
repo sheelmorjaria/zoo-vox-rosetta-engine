@@ -11,10 +11,8 @@ License: CC BY-ND 4.0 International
 
 import json
 import sys
-import tempfile
 from pathlib import Path
-from typing import Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -36,11 +34,9 @@ if TORCH_AVAILABLE:
         JETSON_TIER_CONFIGS,
         JetsonDevice,
         JetsonTierConfig,
-        build_tensorrt_engine,
         detect_jetson_device,
-        export_ddsp_for_jetson_tier,
-        export_ddsp_pipeline,
         export_all_jets_tiers,
+        export_ddsp_for_jetson_tier,
         get_export_dir_for_device,
         get_tier_config,
     )
@@ -49,7 +45,6 @@ if TORCH_AVAILABLE:
         NeuralPostFilter,
         RealtimeDDSPAgent,
         create_ddsp_agent,
-        detect_jetson_device as agent_detect_jetson_device,
         get_config_for_device,
     )
 
@@ -69,24 +64,9 @@ class TestDeviceDetection:
             device = detect_jetson_device()
             assert device == JetsonDevice.UNKNOWN
 
+    @pytest.mark.skip(reason="Test incomplete - needs proper mocking implementation")
     def test_detect_orin_from_cpuinfo(self):
         """Detect Jetson Orin from /proc/cpuinfo."""
-        mock_cpuinfo = "Hardware\t: NVIDIA Tegra234 (tegra234 variant)"
-
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("builtins.open", MagicMock(return_value=iter(mock_cpuinfo.splitlines()))):
-                with patch("builtins.open", MagicMock(return_value=mock_cpuinfo)):
-                    # Need to patch both tegra_release and cpuinfo reads
-                    original_open = open
-
-                    def mock_open_func(path, *args, **kwargs):
-                        if "cpuinfo" in str(path):
-                            return MagicMock(__enter__=lambda s: MagicMock(read=MagicMock(return_value=mock_cpu_info)),
-                                           __exit__=Mock())
-                        return original_open(path, *args, **kwargs)
-
-                    # Simplest approach - patch the function directly
-                    pass
 
     def test_tier_configs_exist_for_all_devices(self):
         """All JetsonDevice enums should have corresponding tier configs."""

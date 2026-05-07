@@ -19,11 +19,10 @@ License: CC BY-ND 4.0 International
 
 import json
 import logging
-import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -60,6 +59,7 @@ except ImportError:
 
 class JetsonDevice(Enum):
     """Detected Jetson device types."""
+
     NANO = "nano"  # Jetson Nano (Maxwell, no FP16)
     XAVIER = "xavier"  # Jetson Xavier NX (Volta, FP16 support)
     ORIN = "orin"  # Jetson Orin Nano (Ampere, best TensorRT)
@@ -69,6 +69,7 @@ class JetsonDevice(Enum):
 @dataclass
 class JetsonTierConfig:
     """Configuration for a specific Jetson device tier."""
+
     device_type: JetsonDevice
     use_tensorrt: bool
     fp16: bool

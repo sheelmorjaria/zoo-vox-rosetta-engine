@@ -399,14 +399,17 @@ class DDSPPreprocessor:
         return {"loudness": loudness, "pitch": pitch}
 
 
-class DDSPSynthesizer:
+class NumpyDDSPSynthesizer:
     """
-    Main DDSP synthesizer combining harmonic and noise modeling.
+    Main DDSP synthesizer combining harmonic and noise modeling (NumPy-based).
 
     Supports:
     - Additive synthesis (harmonic oscillator bank)
     - Filter-warped synthesis (source-filter model)
     - Full DDSP synthesis (harmonics + filtered noise)
+
+    Note: This is the legacy NumPy-based implementation. For PyTorch-based
+    differentiable synthesis, use DDSPSynthesizer (imported from torch module).
     """
 
     def __init__(
@@ -636,7 +639,7 @@ class DDSPOptimizer:
         grad = error / (np.std(error) + 1e-8)
         return grad
 
-    def reconstruct(self, target: np.ndarray, synthesizer: DDSPSynthesizer) -> np.ndarray:
+    def reconstruct(self, target: np.ndarray, synthesizer: NumpyDDSPSynthesizer) -> np.ndarray:
         """
         Reconstruct audio using iterative optimization.
 

@@ -53,6 +53,8 @@ except ImportError:
 try:
     from cognitive_intelligence.jetson_export import (
         JetsonDevice,
+    )
+    from cognitive_intelligence.jetson_export import (
         detect_jetson_device as _export_detect_jetson_device,
     )
 
@@ -62,6 +64,7 @@ except ImportError:
     # Fallback definitions if jetson_export is not available
     class JetsonDevice(Enum):  # type: ignore
         """Detected Jetson device types."""
+
         NANO = "nano"
         XAVIER = "xavier"
         ORIN = "orin"
@@ -223,8 +226,9 @@ if TORCH_AVAILABLE:
                 nn.Linear(32, 16),
             )
 
-        def forward(self, audio: torch.Tensor, harmonic_amps: torch.Tensor,
-                    noise_mags: torch.Tensor) -> torch.Tensor:
+        def forward(
+            self, audio: torch.Tensor, harmonic_amps: torch.Tensor, noise_mags: torch.Tensor
+        ) -> torch.Tensor:
             """
             Refine DDSP audio with neural post-filter.
 
@@ -236,7 +240,6 @@ if TORCH_AVAILABLE:
             Returns:
                 Refined audio (B, T)
             """
-            batch_size = audio.shape[0]
             audio_length = audio.shape[-1]
 
             # Embed parameters

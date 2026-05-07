@@ -178,7 +178,7 @@ class TestDDSPSynthesizer(unittest.TestCase):
 
     def test_synthesize_from_features(self):
         """Should synthesize audio from DDSP features"""
-        from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
+        from cognitive_intelligence.ddsp_synthesis import NumpyDDSPSynthesizer as DDSPSynthesizer
 
         synthesizer = DDSPSynthesizer(
             sample_rate=48000,
@@ -196,7 +196,7 @@ class TestDDSPSynthesizer(unittest.TestCase):
 
     def test_additive_synthesis(self):
         """Should perform additive synthesis with harmonics"""
-        from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
+        from cognitive_intelligence.ddsp_synthesis import NumpyDDSPSynthesizer as DDSPSynthesizer
 
         synthesizer = DDSPSynthesizer(
             sample_rate=48000,
@@ -212,7 +212,7 @@ class TestDDSPSynthesizer(unittest.TestCase):
 
     def test_filter_warped_synthesis(self):
         """Should perform filter-warped (source-filter) synthesis"""
-        from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
+        from cognitive_intelligence.ddsp_synthesis import NumpyDDSPSynthesizer as DDSPSynthesizer
 
         synthesizer = DDSPSynthesizer(
             sample_rate=48000,
@@ -268,9 +268,9 @@ class TestDDSPOptimizer(unittest.TestCase):
 
     def test_reconstruct_audio(self):
         """Should reconstruct audio from parameters"""
-        from cognitive_intelligence.ddsp_synthesis import DDSPOptimizer, DDSPSynthesizer
+        from cognitive_intelligence.ddsp_synthesis import DDSPOptimizer, NumpyDDSPSynthesizer
 
-        synthesizer = DDSPSynthesizer(sample_rate=48000, n_harmonics=8)
+        synthesizer = NumpyDDSPSynthesizer(sample_rate=48000, n_harmonics=8)
         optimizer = DDSPOptimizer(learning_rate=0.01, n_iterations=5)
 
         # Target: simple sine wave
