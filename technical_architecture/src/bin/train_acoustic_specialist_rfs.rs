@@ -577,7 +577,7 @@ fn main() -> Result<()> {
 
     println!("\nDataset sizes by acoustic group:");
     let mut groups: Vec<_> = datasets.iter().collect();
-    groups.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
+    groups.sort_by_key(|b| std::cmp::Reverse(b.1.len()));
     for (group, dataset) in &groups {
         println!(
             "  {:<25} {:>6} samples, {:>4} classes",
