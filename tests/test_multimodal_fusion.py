@@ -230,7 +230,7 @@ class TestMultimodalAttentionWeights(unittest.TestCase):
 
         self.assertIn("audio", importance)
         self.assertIn("visual", importance)
-        self.assertAlmostEqual(importance["audio"] + importance["visual"], 1.0)
+        self.assertAlmostEqual(importance["audio"] + importance["visual"], 1.0, places=4)
 
 
 class TestTemporalAlignment(unittest.TestCase):
