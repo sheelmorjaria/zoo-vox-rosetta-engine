@@ -10,7 +10,7 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 
@@ -55,7 +55,9 @@ class TestSpeakerEmbeddingExtractor(unittest.TestCase):
 
         # Audio 2: High frequency tone + noise
         t2 = np.arange(48000) / 48000
-        audio2 = (np.sin(2 * np.pi * 2000 * t2) * 0.3 + np.random.randn(48000) * 0.05).astype(np.float32)
+        audio2 = (np.sin(2 * np.pi * 2000 * t2) * 0.3 + np.random.randn(48000) * 0.05).astype(
+            np.float32
+        )
 
         sr = 48000
 
@@ -150,8 +152,10 @@ class TestSpeakerDatabase(unittest.TestCase):
         theta = np.arccos(np.clip(np.dot(self.speaker1_emb, self.speaker2_emb), -1, 1))
         sin_theta = np.sin(theta)
         if sin_theta > 1e-6:
-            similar_emb = (np.sin((1 - 0.3) * theta) / sin_theta * self.speaker1_emb +
-                          np.sin(0.3 * theta) / sin_theta * self.speaker2_emb)
+            similar_emb = (
+                np.sin((1 - 0.3) * theta) / sin_theta * self.speaker1_emb
+                + np.sin(0.3 * theta) / sin_theta * self.speaker2_emb
+            )
         else:
             similar_emb = self.speaker1_emb.copy()
         similar_emb = similar_emb.astype(np.float32)
@@ -336,9 +340,7 @@ class TestSpeakerAdaptiveSynthesis(unittest.TestCase):
         speaker_emb /= np.linalg.norm(speaker_emb)
         self.db.enroll("test_speaker", speaker_emb)
 
-        self.synthesizer = SpeakerAdaptiveSynthesis(
-            base_model=self.base_model, speaker_db=self.db
-        )
+        self.synthesizer = SpeakerAdaptiveSynthesis(base_model=self.base_model, speaker_db=self.db)
 
     def test_synthesize_as_speaker(self):
         """Output matches target speaker characteristics."""
@@ -407,8 +409,8 @@ class TestSpeakerEmbeddingsIntegration(unittest.TestCase):
 
     def test_interaction_agent_tracks_speakers(self):
         """Agent tracks who is speaking."""
-        from realtime.interaction_agent import InteractionAgent
         from analysis.rosetta_stone.speaker_embeddings import SpeakerDatabase
+        from realtime.interaction_agent import InteractionAgent
 
         agent = InteractionAgent()
 
@@ -439,11 +441,12 @@ class TestSpeakerEmbeddingsIntegration(unittest.TestCase):
 
     def test_speaker_adaptive_synthesis_with_vocoder(self):
         """SpeakerAdaptiveSynthesis works with NeuralVocoder when tokenizer is provided."""
-        from analysis.rosetta_stone.speaker_embeddings import (
-            SpeakerAdaptiveSynthesis, SpeakerDatabase
-        )
-        from analysis.rosetta_stone.neural_vocoder import NeuralVocoder
         from analysis.rosetta_stone.neural_language_model import AcousticTokenizer
+        from analysis.rosetta_stone.neural_vocoder import NeuralVocoder
+        from analysis.rosetta_stone.speaker_embeddings import (
+            SpeakerAdaptiveSynthesis,
+            SpeakerDatabase,
+        )
 
         # Create database and enroll speaker
         db = SpeakerDatabase()
@@ -470,9 +473,9 @@ class TestSpeakerEmbeddingsIntegration(unittest.TestCase):
 
     def test_interaction_agent_speaker_tracking_integration(self):
         """InteractionAgent identifies speakers and triggers callbacks."""
-        from realtime.interaction_agent import InteractionAgent
         from analysis.rosetta_stone.speaker_embeddings import SpeakerDatabase, VerificationResult
         from realtime.feature_subscriber import FeatureEvent
+        from realtime.interaction_agent import InteractionAgent
 
         # Track speaker changes
         speaker_changes = []

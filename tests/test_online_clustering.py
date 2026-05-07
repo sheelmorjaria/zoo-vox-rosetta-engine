@@ -14,7 +14,6 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pytest
@@ -92,27 +91,25 @@ class TestIncrementalUpdates:
         initial_centroids = clusterer.centroids.copy()
 
         # Add more data to both clusters (maintaining stability)
-        more_data = np.vstack([
-            np.random.randn(30, 2) * 0.3 + [-5, -5],
-            np.random.randn(30, 2) * 0.3 + [5, 5],
-        ])
+        more_data = np.vstack(
+            [
+                np.random.randn(30, 2) * 0.3 + [-5, -5],
+                np.random.randn(30, 2) * 0.3 + [5, 5],
+            ]
+        )
         clusterer.partial_fit(more_data)
 
         # Both centroids should remain relatively stable
-        cluster0_shift = np.linalg.norm(
-            clusterer.centroids[0] - initial_centroids[0]
-        )
-        cluster1_shift = np.linalg.norm(
-            clusterer.centroids[1] - initial_centroids[1]
-        )
+        cluster0_shift = np.linalg.norm(clusterer.centroids[0] - initial_centroids[0])
+        cluster1_shift = np.linalg.norm(clusterer.centroids[1] - initial_centroids[1])
 
         # Shifts should be small (centroids are stable)
-        assert cluster0_shift < 1.0, \
-            f"Cluster 0 should be stable: shift={cluster0_shift:.2f}"
-        assert cluster1_shift < 1.0, \
-            f"Cluster 1 should be stable: shift={cluster1_shift:.2f}"
+        assert cluster0_shift < 1.0, f"Cluster 0 should be stable: shift={cluster0_shift:.2f}"
+        assert cluster1_shift < 1.0, f"Cluster 1 should be stable: shift={cluster1_shift:.2f}"
 
-        logger.info(f"✓ Cluster shifts: cluster0={cluster0_shift:.3f}, cluster1={cluster1_shift:.3f}")
+        logger.info(
+            f"✓ Cluster shifts: cluster0={cluster0_shift:.3f}, cluster1={cluster1_shift:.3f}"
+        )
 
     def test_incremental_matches_batch_approx(self):
         """Similar results to batch K-means."""
@@ -127,7 +124,7 @@ class TestIncrementalUpdates:
 
         # Batch K-means
         batch_kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-        batch_labels = batch_kmeans.fit_predict(data)
+        batch_kmeans.fit_predict(data)
         batch_centroids = batch_kmeans.cluster_centers_
 
         # Online K-means
@@ -145,8 +142,7 @@ class TestIncrementalUpdates:
             min_distances.append(min_dist)
 
         max_distance = max(min_distances)
-        assert max_distance < 2.0, \
-            f"Centroids too far apart: max distance {max_distance:.2f}"
+        assert max_distance < 2.0, f"Centroids too far apart: max distance {max_distance:.2f}"
 
         logger.info(f"✓ Max centroid distance: {max_distance:.2f}")
 
@@ -175,12 +171,12 @@ class TestIncrementalUpdates:
         # Counts should sum to number of samples
         total_count = sum(clusterer.cluster_counts)
 
-        assert total_count == len(data), \
-            f"Expected total count {len(data)}, got {total_count}"
+        assert total_count == len(data), f"Expected total count {len(data)}, got {total_count}"
 
         # All counts should be positive
-        assert all(c > 0 for c in clusterer.cluster_counts), \
+        assert all(c > 0 for c in clusterer.cluster_counts), (
             f"All clusters should have samples: {clusterer.cluster_counts}"
+        )
 
         logger.info(f"✓ Cluster counts: {clusterer.cluster_counts}")
 
@@ -199,12 +195,7 @@ class TestClusterSpawning:
         cluster0 = np.random.randn(50, 2) * 0.3 + [-5, -5]
         cluster1 = np.random.randn(50, 2) * 0.3 + [5, 5]
 
-        clusterer = OnlineKMeans(
-            initial_k=2,
-            max_k=5,
-            spawn_threshold=3.0,
-            random_state=42
-        )
+        clusterer = OnlineKMeans(initial_k=2, max_k=5, spawn_threshold=3.0, random_state=42)
         clusterer.partial_fit(np.vstack([cluster0, cluster1]))
 
         initial_k = len(clusterer.centroids)
@@ -220,8 +211,9 @@ class TestClusterSpawning:
         # Spawn the cluster
         clusterer.spawn_cluster(far_data)
 
-        assert len(clusterer.centroids) == initial_k + 1, \
+        assert len(clusterer.centroids) == initial_k + 1, (
             f"Expected {initial_k + 1} clusters, got {len(clusterer.centroids)}"
+        )
 
         logger.info(f"✓ Spawned new cluster: {initial_k} -> {len(clusterer.centroids)}")
 
@@ -238,8 +230,9 @@ class TestClusterSpawning:
             new_data = np.random.randn(10, 2) * 5  # Far from existing
             clusterer.spawn_cluster(new_data)
 
-        assert len(clusterer.centroids) <= 3, \
+        assert len(clusterer.centroids) <= 3, (
             f"Should not exceed max_k=3, got {len(clusterer.centroids)}"
+        )
 
         logger.info(f"✓ Respected max_k limit: {len(clusterer.centroids)} clusters")
 
@@ -262,19 +255,16 @@ class TestClusterSpawning:
         merged = clusterer.merge_nearby_clusters()
 
         if merged:
-            assert len(clusterer.centroids) < initial_k, \
+            assert len(clusterer.centroids) < initial_k, (
                 f"Should have merged clusters: {initial_k} -> {len(clusterer.centroids)}"
+            )
 
         logger.info(f"✓ Clusters: {initial_k} -> {len(clusterer.centroids)} (merged={merged})")
 
     def test_auto_spawn_on_partial_fit(self):
         """Automatically spawn during partial_fit if needed."""
         clusterer = OnlineKMeans(
-            initial_k=2,
-            max_k=5,
-            spawn_threshold=3.0,
-            auto_spawn=True,
-            random_state=42
+            initial_k=2, max_k=5, spawn_threshold=3.0, auto_spawn=True, random_state=42
         )
 
         # Initialize with 2 clusters
@@ -288,8 +278,9 @@ class TestClusterSpawning:
         clusterer.partial_fit(far_data)
 
         # Should have spawned a new cluster
-        assert len(clusterer.centroids) > initial_k, \
+        assert len(clusterer.centroids) > initial_k, (
             f"Should auto-spawn: {initial_k} -> {len(clusterer.centroids)}"
+        )
 
         logger.info(f"✓ Auto-spawned: {initial_k} -> {len(clusterer.centroids)}")
 
@@ -307,7 +298,7 @@ class TestForgettingMechanism:
         clusterer = OnlineKMeans(
             initial_k=3,
             decay_window_ms=1000,  # 1 second decay
-            random_state=42
+            random_state=42,
         )
 
         # Initialize clusters
@@ -330,9 +321,10 @@ class TestForgettingMechanism:
         # Prune stale clusters
         pruned = clusterer.prune_stale_clusters()
 
-        assert pruned > 0, f"Should have pruned at least 1 cluster"
-        assert len(clusterer.centroids) < initial_k, \
+        assert pruned > 0, "Should have pruned at least 1 cluster"
+        assert len(clusterer.centroids) < initial_k, (
             f"Should have pruned: {initial_k} -> {len(clusterer.centroids)}"
+        )
 
         logger.info(f"✓ Pruned {pruned} clusters: {initial_k} -> {len(clusterer.centroids)}")
 
@@ -349,10 +341,12 @@ class TestForgettingMechanism:
 
         # Feed only clusters 0 and 1 repeatedly
         for _ in range(10):
-            active_data = np.vstack([
-                np.random.randn(20, 2) * 0.3 + [-5, -5],  # Cluster 0 region
-                np.random.randn(20, 2) * 0.3 + [5, 5],    # Cluster 1 region
-            ])
+            active_data = np.vstack(
+                [
+                    np.random.randn(20, 2) * 0.3 + [-5, -5],  # Cluster 0 region
+                    np.random.randn(20, 2) * 0.3 + [5, 5],  # Cluster 1 region
+                ]
+            )
             clusterer.partial_fit(active_data)
 
         # Find which clusters correspond to which regions
@@ -361,8 +355,9 @@ class TestForgettingMechanism:
         max_count_idx = np.argmax(clusterer.cluster_counts)
 
         # The most active cluster should have significantly more samples
-        assert clusterer.cluster_counts[max_count_idx] > clusterer.cluster_counts[min_count_idx] * 1.5, \
-            f"Active cluster should have more samples: {clusterer.cluster_counts}"
+        assert (
+            clusterer.cluster_counts[max_count_idx] > clusterer.cluster_counts[min_count_idx] * 1.5
+        ), f"Active cluster should have more samples: {clusterer.cluster_counts}"
 
         logger.info(f"✓ Cluster counts: {clusterer.cluster_counts}")
 
@@ -370,7 +365,7 @@ class TestForgettingMechanism:
         """Test concept drift detection functionality."""
         clusterer = OnlineKMeans(
             drift_threshold=0.01,  # Very low threshold to detect any drift
-            random_state=42
+            random_state=42,
         )
 
         # Initialize cluster
@@ -389,8 +384,7 @@ class TestForgettingMechanism:
         drift_magnitude = clusterer.get_drift_magnitude(initial_centroids)
 
         # Should have some drift (even if small)
-        assert drift_magnitude > 0.0, \
-            f"Should have some drift: {drift_magnitude:.4f}"
+        assert drift_magnitude > 0.0, f"Should have some drift: {drift_magnitude:.4f}"
 
         # Test drift detection method
         drift_detected = clusterer.detect_concept_drift()
@@ -405,7 +399,7 @@ class TestForgettingMechanism:
         """Cluster counts decay when not updated."""
         clusterer = OnlineKMeans(
             decay_rate=0.1,  # 10% decay per update
-            random_state=42
+            random_state=42,
         )
 
         # Initialize
@@ -422,8 +416,9 @@ class TestForgettingMechanism:
         # Cluster 0 count should have decayed
         decayed_count = clusterer.cluster_counts[0]
 
-        assert decayed_count < initial_count, \
+        assert decayed_count < initial_count, (
             f"Count should decay: {initial_count} -> {decayed_count}"
+        )
 
         logger.info(f"✓ Count decayed: {initial_count} -> {decayed_count:.2f}")
 
@@ -444,8 +439,9 @@ class TestForgettingMechanism:
         pruned = clusterer.prune_empty_clusters(min_count=1.0)
 
         assert pruned > 0, "Should have pruned empty cluster"
-        assert len(clusterer.centroids) == initial_k - pruned, \
+        assert len(clusterer.centroids) == initial_k - pruned, (
             f"Should have pruned {pruned} cluster(s)"
+        )
 
         logger.info(f"✓ Pruned {pruned} empty clusters")
 
@@ -482,7 +478,9 @@ class TestOnlineKMeansIntegration:
         labels = clusterer.predict(test_features)
 
         assert len(labels) == 10
-        logger.info(f"✓ 112D features: {len(clusterer.centroids)} clusters, predictions={labels[:5]}")
+        logger.info(
+            f"✓ 112D features: {len(clusterer.centroids)} clusters, predictions={labels[:5]}"
+        )
 
     def test_save_load_roundtrip(self):
         """Model state preserved after save/load."""
@@ -505,19 +503,14 @@ class TestOnlineKMeansIntegration:
         # Predictions should match
         labels2 = clusterer2.predict(test_data)
 
-        assert np.array_equal(labels1, labels2), \
-            f"Predictions should match: {labels1} vs {labels2}"
+        assert np.array_equal(labels1, labels2), f"Predictions should match: {labels1} vs {labels2}"
 
         logger.info(f"✓ Roundtrip: {labels1} == {labels2}")
 
     def test_streaming_clustering_scenario(self):
         """Simulate real-time streaming clustering."""
         clusterer = OnlineKMeans(
-            initial_k=2,
-            max_k=5,
-            spawn_threshold=2.5,
-            auto_spawn=True,
-            random_state=42
+            initial_k=2, max_k=5, spawn_threshold=2.5, auto_spawn=True, random_state=42
         )
 
         # Simulate streaming data arriving in batches
@@ -535,22 +528,19 @@ class TestOnlineKMeansIntegration:
         # Process streams
         for i, batch in enumerate(batches):
             clusterer.partial_fit(batch)
-            logger.info(f"Stream {i+1}: {len(clusterer.centroids)} clusters")
+            logger.info(f"Stream {i + 1}: {len(clusterer.centroids)} clusters")
 
         # Should have detected 3 clusters
-        assert len(clusterer.centroids) >= 3, \
+        assert len(clusterer.centroids) >= 3, (
             f"Should have at least 3 clusters after streaming, got {len(clusterer.centroids)}"
+        )
 
         logger.info(f"✓ Streaming scenario: {len(clusterer.centroids)} clusters detected")
 
     def test_auto_spawn_no_double_counting(self):
         """Verify novel samples are NOT counted against old clusters."""
         clusterer = OnlineKMeans(
-            initial_k=2,
-            max_k=5,
-            spawn_threshold=3.0,
-            auto_spawn=True,
-            random_state=42
+            initial_k=2, max_k=5, spawn_threshold=3.0, auto_spawn=True, random_state=42
         )
 
         # Initialize with 2 well-separated clusters
@@ -567,8 +557,9 @@ class TestOnlineKMeansIntegration:
         clusterer.partial_fit(novel_data)
 
         # Should have spawned a new cluster
-        assert len(clusterer.centroids) == 3, \
+        assert len(clusterer.centroids) == 3, (
             f"Should have spawned cluster: {len(clusterer.centroids)}"
+        )
 
         # The first 2 clusters should NOT have counts for the novel data
         # (novel data only counts toward the new cluster)
@@ -577,18 +568,21 @@ class TestOnlineKMeansIntegration:
 
         # Total count should be initial + novel (no double counting)
         expected_total = initial_total + len(novel_data)
-        assert final_total == expected_total, \
+        assert final_total == expected_total, (
             f"Expected total count {expected_total}, got {final_total}"
+        )
 
-        logger.info(f"✓ No double counting: initial={initial_total}, "
-                    f"novel={len(novel_data)}, total={final_total}")
+        logger.info(
+            f"✓ No double counting: initial={initial_total}, "
+            f"novel={len(novel_data)}, total={final_total}"
+        )
 
     def test_single_sample_buffering(self):
         """Handles single-sample first batch by buffering until enough samples."""
         clusterer = OnlineKMeans(
             initial_k=3,
             min_samples_for_init=3,  # Require 3 samples before initialization
-            random_state=42
+            random_state=42,
         )
 
         # Send single samples - should buffer without initializing
@@ -610,8 +604,9 @@ class TestOnlineKMeansIntegration:
         assert len(clusterer._init_buffer) == 0, "Buffer should be cleared"
         assert len(clusterer.centroids) >= 1, "Should have at least 1 cluster"
 
-        logger.info(f"✓ Single-sample buffering: initialized after 3 samples, "
-                    f"k={len(clusterer.centroids)}")
+        logger.info(
+            f"✓ Single-sample buffering: initialized after 3 samples, k={len(clusterer.centroids)}"
+        )
 
 
 if __name__ == "__main__":

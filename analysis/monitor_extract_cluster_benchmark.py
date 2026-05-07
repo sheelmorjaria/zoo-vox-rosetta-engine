@@ -2,15 +2,18 @@
 """
 Monitor extraction → clustering → benchmark pipeline
 """
-import time
+
 import subprocess
-import sys
+import time
 from pathlib import Path
 
-EXTRACTION_LOG = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_no_cluster.log"
+EXTRACTION_LOG = (
+    "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_no_cluster.log"
+)
 EXTRACTION_RESULT = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_112d_no_cluster.json"
 BENCHMARK_SCRIPT = "/mnt/c/Users/sheel/Desktop/src/analysis/cluster_benchmark_suite.py"
 BENCHMARK_RESULT = "/mnt/c/Users/sheel/Desktop/src/analysis/results/cluster_benchmark_112d.json"
+
 
 def check_file_size(path: str, min_mb: float = 100) -> bool:
     """Check if file exists and meets minimum size."""
@@ -20,37 +23,44 @@ def check_file_size(path: str, min_mb: float = 100) -> bool:
     size_mb = p.stat().st_size / (1024 * 1024)
     return size_mb > min_mb
 
+
 def get_progress() -> str:
     """Get current extraction progress from log."""
     try:
-        with open(EXTRACTION_LOG, 'r') as f:
+        with open(EXTRACTION_LOG, "r") as f:
             content = f.read()
         # Find last progress line
-        lines = content.split('\n')
+        lines = content.split("\n")
         for line in reversed(lines[-20:]):
-            if 'Processing...' in line and '/91080]' in line:
+            if "Processing..." in line and "/91080]" in line:
                 return line.strip()
     except:
         pass
     return ""
 
+
 def is_extraction_complete() -> bool:
     """Check if extraction is complete."""
     return check_file_size(EXTRACTION_RESULT, min_mb=100)
+
 
 def is_benchmark_complete() -> bool:
     """Check if benchmark is complete."""
     return check_file_size(BENCHMARK_RESULT, min_mb=1)
 
+
 def run_benchmark():
     """Run clustering benchmark on extracted features."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Extraction Complete! Running Clustering Benchmark Suite...")
-    print("="*70)
+    print("=" * 70)
 
     # Run benchmark on extracted features (suite does clustering internally)
     result = subprocess.run(
-        ["python3", "-c", f"""
+        [
+            "python3",
+            "-c",
+            f"""
 import sys
 sys.path.insert(0, '.')
 
@@ -99,9 +109,10 @@ results = suite.run(features_112d, sequences, methods=['kmeans', 'umap_hdbscan',
 output_path = '{BENCHMARK_RESULT}'
 suite.export_results(results, output_path)
 print(f"\\nBenchmark complete! Results saved to {{output_path}}")
-"""],
+""",
+        ],
         capture_output=True,
-        text=True
+        text=True,
     )
 
     print(result.stdout)
@@ -109,6 +120,7 @@ print(f"\\nBenchmark complete! Results saved to {{output_path}}")
         print("STDERR:", result.stderr)
 
     return result.returncode == 0
+
 
 def main():
     """Main monitoring loop."""
@@ -127,9 +139,9 @@ def main():
                     print("Benchmark failed!")
                     break
 
-                print("\n" + "="*70)
+                print("\n" + "=" * 70)
                 print("Pipeline Complete!")
-                print("="*70)
+                print("=" * 70)
                 break
             else:
                 print("\n✓ Benchmark already complete!")
@@ -138,9 +150,10 @@ def main():
             # Show progress
             progress = get_progress()
             if progress:
-                print(f"\r{progress}", end='', flush=True)
+                print(f"\r{progress}", end="", flush=True)
 
         time.sleep(60)  # Check every minute
+
 
 if __name__ == "__main__":
     try:

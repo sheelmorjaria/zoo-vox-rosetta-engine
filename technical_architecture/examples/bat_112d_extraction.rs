@@ -21,8 +21,8 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
-use technical_architecture::{MicroDynamicsExtractor, RosettaFeatures};
 use technical_architecture::hdbscan::{DistanceMetric, HdbscanClustering};
+use technical_architecture::{MicroDynamicsExtractor, RosettaFeatures};
 
 // ============================================================================
 // Data Structures
@@ -63,21 +63,14 @@ struct ClusterStats {
 fn load_audio_file(path: &Path) -> Result<Vec<f32>> {
     use hound::WavReader;
 
-    let reader = WavReader::open(path)
-        .with_context(|| format!("Failed to open audio file: {:?}", path))?;
+    let reader = WavReader::open(path).with_context(|| format!("Failed to open audio file: {:?}", path))?;
 
     let spec = reader.spec();
-    let samples: Vec<f32> = reader
-        .into_samples::<f32>()
-        .map(|s| s.unwrap_or(0.0))
-        .collect();
+    let samples: Vec<f32> = reader.into_samples::<f32>().map(|s| s.unwrap_or(0.0)).collect();
 
     // Convert to mono if stereo
     if spec.channels == 2 {
-        let mono: Vec<f32> = samples
-            .chunks(2)
-            .map(|pair| (pair[0] + pair[1]) / 2.0)
-            .collect();
+        let mono: Vec<f32> = samples.chunks(2).map(|pair| (pair[0] + pair[1]) / 2.0).collect();
         Ok(mono)
     } else {
         Ok(samples)
@@ -114,21 +107,22 @@ fn main() -> Result<()> {
         .filter(|e| e.path().extension().map(|ext| ext == "wav").unwrap_or(false))
         .collect();
 
-    audio_files.sort_by_key(|e| e.path().file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string());
+    audio_files.sort_by_key(|e| e.path().file_name().unwrap_or_default().to_string_lossy().to_string());
 
     // Process subset for demo
     let max_files = std::env::var("MAX_FILES")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(usize::MAX);  // Process all files by default
+        .unwrap_or(usize::MAX); // Process all files by default
 
     let audio_files: Vec<_> = audio_files.into_iter().take(max_files).collect();
 
     let total_to_process = audio_files.len().min(max_files);
-    println!("  Found {} audio files (processing {})", audio_files.len(), total_to_process);
+    println!(
+        "  Found {} audio files (processing {})",
+        audio_files.len(),
+        total_to_process
+    );
     println!();
 
     // ========================================================================
@@ -145,7 +139,7 @@ fn main() -> Result<()> {
 
     let mut all_segments = Vec::new();
     let segment_ms = 100.0; // 100ms segments
-    let hop_ms = 50.0;      // 50ms hop
+    let hop_ms = 50.0; // 50ms hop
 
     for (i, entry) in audio_files.iter().enumerate() {
         let file_name = entry.file_name().to_string_lossy().to_string();
@@ -211,14 +205,10 @@ fn main() -> Result<()> {
     let mut stds = vec![0.0f32; n_dims];
 
     for dim in 0..n_dims {
-        let values: Vec<f32> = all_segments.iter()
-            .map(|s| s.features_112d[dim])
-            .collect();
+        let values: Vec<f32> = all_segments.iter().map(|s| s.features_112d[dim]).collect();
 
         let mean = values.iter().sum::<f32>() / n_segments.max(1) as f32;
-        let variance = values.iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f32>() / n_segments.max(1) as f32;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / n_segments.max(1) as f32;
         let std = variance.sqrt();
 
         means[dim] = mean;
@@ -278,9 +268,7 @@ fn main() -> Result<()> {
     }
 
     // Filter out noise (-1) for cluster count
-    let cluster_count = cluster_counts.iter()
-        .filter(|(&k, _)| k >= 0)
-        .count();
+    let cluster_count = cluster_counts.iter().filter(|(&k, _)| k >= 0).count();
     let noise_count = cluster_counts.get(&-1).copied().unwrap_or(0);
 
     println!("  ✅ Clustering complete");

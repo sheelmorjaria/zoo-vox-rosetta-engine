@@ -411,15 +411,14 @@ class TestContextClassifierIntegration(unittest.TestCase):
         """Config should accept context_classifier_path parameter"""
         from realtime.interaction_agent import InteractionAgentConfig
 
-        config = InteractionAgentConfig(
-            context_classifier_path="/path/to/model.pkl"
-        )
+        config = InteractionAgentConfig(context_classifier_path="/path/to/model.pkl")
 
         self.assertEqual(config.context_classifier_path, "/path/to/model.pkl")
 
     def test_agent_loads_classifier_on_init(self):
         """Agent should load ContextClassifier when path is provided"""
         import tempfile
+
         from realtime.context_classifier import ContextClassifier
         from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
 
@@ -445,6 +444,7 @@ class TestContextClassifierIntegration(unittest.TestCase):
             self.assertEqual(agent.context_classifier.model_type, "mlp")
         finally:
             import os
+
             os.unlink(model_path)
 
     def test_agent_fallback_to_rules_without_classifier(self):
@@ -467,9 +467,9 @@ class TestContextClassifierIntegration(unittest.TestCase):
     def test_agent_uses_classifier_for_inference(self):
         """Agent should use ContextClassifier for context inference"""
         import tempfile
+
         from realtime.context_classifier import ContextClassifier
         from realtime.interaction_agent import (
-            FeatureEvent,
             InteractionAgent,
             InteractionAgentConfig,
         )
@@ -512,6 +512,7 @@ class TestContextClassifierIntegration(unittest.TestCase):
 
         finally:
             import os
+
             os.unlink(model_path)
 
     def test_agent_handles_invalid_classifier_path(self):
@@ -537,6 +538,7 @@ class TestContextClassifierIntegration(unittest.TestCase):
     def test_label_mapping_maps_pseudo_labels_to_canonical(self):
         """Agent should map pseudo-labels to canonical contexts via config."""
         import tempfile
+
         from realtime.context_classifier import ContextClassifier
         from realtime.interaction_agent import (
             InteractionAgent,
@@ -585,11 +587,13 @@ class TestContextClassifierIntegration(unittest.TestCase):
 
         finally:
             import os
+
             os.unlink(model_path)
 
     def test_unmapped_contexts_do_not_trigger_response(self):
         """Unmapped pseudo-labels should not trigger response."""
         import time
+
         from realtime.interaction_agent import InteractionAgent, InteractionAgentConfig
 
         # Create agent
@@ -612,7 +616,6 @@ class TestUncertaintyGating(unittest.TestCase):
 
     def test_agent_rejects_high_uncertainty(self):
         """Agent rejects event with uncertainty > threshold"""
-        import time
         from realtime.interaction_agent import (
             FeatureEvent,
             InteractionAgent,
@@ -646,7 +649,6 @@ class TestUncertaintyGating(unittest.TestCase):
 
     def test_agent_accepts_low_uncertainty(self):
         """Agent accepts event with uncertainty < threshold"""
-        import time
         from realtime.interaction_agent import (
             FeatureEvent,
             InteractionAgent,
@@ -678,7 +680,6 @@ class TestUncertaintyGating(unittest.TestCase):
 
     def test_agent_uncertainty_threshold_config(self):
         """Configurable uncertainty threshold works"""
-        import time
         from realtime.interaction_agent import (
             FeatureEvent,
             InteractionAgent,
@@ -710,7 +711,6 @@ class TestUncertaintyGating(unittest.TestCase):
 
     def test_agent_uncertainty_with_confidence(self):
         """Both uncertainty and confidence checked together"""
-        import time
         from realtime.interaction_agent import (
             FeatureEvent,
             InteractionAgent,

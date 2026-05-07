@@ -13,6 +13,11 @@ This module implements:
 - Harmonic + noise modeling
 - Gradient-based parameter optimization
 
+Module 3 (v1.6.0): Added PyTorch-differentiable components:
+  - DifferentiableSineOscillator (phase-continuous)
+  - DifferentiableNoiseFilter (frequency-domain filtering)
+  - DDSPSynthesizer (full differentiable pipeline)
+
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
@@ -56,7 +61,7 @@ class SineOscillator:
             Audio samples
         """
         n_samples = int(self.sample_rate * duration)
-        t = np.arange(n_samples) / self.sample_rate
+        np.arange(n_samples) / self.sample_rate
 
         # Update phase for continuity
         phase_inc = 2 * np.pi * frequency / self.sample_rate
@@ -420,9 +425,7 @@ class DDSPSynthesizer:
         self.n_harmonics = n_harmonics
         self.oscillator = SineOscillator(sample_rate)
 
-    def synthesize(
-        self, loudness: np.ndarray, pitch: np.ndarray
-    ) -> np.ndarray:
+    def synthesize(self, loudness: np.ndarray, pitch: np.ndarray) -> np.ndarray:
         """
         Synthesize audio from DDSP features.
 
@@ -468,9 +471,7 @@ class DDSPSynthesizer:
 
                 amplitude = 10 ** (frame_loudness / 20) * 0.1
 
-                frame_audio = self._generate_harmonic_frame(
-                    frame_pitch, amplitude, end - start
-                )
+                frame_audio = self._generate_harmonic_frame(frame_pitch, amplitude, end - start)
 
                 window = np.hanning(end - start)
                 audio[start:end] += frame_audio * window
@@ -528,9 +529,7 @@ class DDSPSynthesizer:
 
         return audio
 
-    def filter_warped_synthesis(
-        self, source: np.ndarray, coefficients: np.ndarray
-    ) -> np.ndarray:
+    def filter_warped_synthesis(self, source: np.ndarray, coefficients: np.ndarray) -> np.ndarray:
         """
         Perform filter-warped (source-filter) synthesis.
 
@@ -607,9 +606,7 @@ class DDSPOptimizer:
 
         return params
 
-    def _synthesize_from_params(
-        self, params: Dict[str, np.ndarray], n_samples: int
-    ) -> np.ndarray:
+    def _synthesize_from_params(self, params: Dict[str, np.ndarray], n_samples: int) -> np.ndarray:
         """Synthesize audio from parameters (simplified)."""
         # Very simplified synthesis using amplitude parameters
         amplitudes = params.get("amplitudes", np.ones(16) / 16)
@@ -639,9 +636,7 @@ class DDSPOptimizer:
         grad = error / (np.std(error) + 1e-8)
         return grad
 
-    def reconstruct(
-        self, target: np.ndarray, synthesizer: DDSPSynthesizer
-    ) -> np.ndarray:
+    def reconstruct(self, target: np.ndarray, synthesizer: DDSPSynthesizer) -> np.ndarray:
         """
         Reconstruct audio using iterative optimization.
 
@@ -657,9 +652,7 @@ class DDSPOptimizer:
         features = preprocessor.compute_features(target)
 
         # Reconstruct using synthesizer
-        reconstructed = synthesizer.synthesize(
-            features["loudness"], features["pitch"]
-        )
+        reconstructed = synthesizer.synthesize(features["loudness"], features["pitch"])
 
         # Trim or pad to match target length
         if len(reconstructed) > len(target):
@@ -691,9 +684,7 @@ class HarmonicModel:
         self.n_harmonics = n_harmonics
         self.sample_rate = sample_rate
 
-    def extract_amplitudes(
-        self, audio: np.ndarray, fundamental_freq: float
-    ) -> np.ndarray:
+    def extract_amplitudes(self, audio: np.ndarray, fundamental_freq: float) -> np.ndarray:
         """
         Extract harmonic amplitudes.
 
@@ -721,9 +712,7 @@ class HarmonicModel:
 
         return amplitudes
 
-    def extract_phases(
-        self, audio: np.ndarray, fundamental_freq: float
-    ) -> np.ndarray:
+    def extract_phases(self, audio: np.ndarray, fundamental_freq: float) -> np.ndarray:
         """
         Extract harmonic phases.
 
@@ -772,9 +761,7 @@ class HarmonicModel:
 
         for h in range(min(self.n_harmonics, len(amplitudes))):
             harmonic_freq = fundamental_freq * (h + 1)
-            audio += amplitudes[h] * np.sin(
-                2 * np.pi * harmonic_freq * t + phases[h]
-            )
+            audio += amplitudes[h] * np.sin(2 * np.pi * harmonic_freq * t + phases[h])
 
         # Normalize
         if np.max(np.abs(audio)) > 0:
@@ -801,9 +788,7 @@ class NoiseModel:
         self.n_filters = n_filters
         self.sample_rate = sample_rate
 
-    def filter_noise(
-        self, noise: np.ndarray, filter_coefficients: np.ndarray
-    ) -> np.ndarray:
+    def filter_noise(self, noise: np.ndarray, filter_coefficients: np.ndarray) -> np.ndarray:
         """
         Filter noise with time-varying filter.
 
@@ -872,6 +857,379 @@ class NoiseModel:
             envelope.append(energy)
 
         return np.array(envelope, dtype=np.float32)
+
+
+# =============================================================================
+# PyTorch Differentiable Components (Module 3)
+# =============================================================================
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    logger.warning("PyTorch not available. Differentiable components disabled.")
+
+
+if TORCH_AVAILABLE:
+
+    class DifferentiableSineOscillator(nn.Module):
+        """
+        Phase-continuous sine oscillator for differentiable synthesis.
+
+        This oscillator maintains phase continuity across calls, which is
+        essential for smooth audio generation without clicks or pops.
+
+        The phase accumulator enables gradient flow through time, allowing
+        the entire synthesis pipeline to be trained end-to-end.
+
+        Example:
+            >>> osc = DifferentiableSineOscillator(sample_rate=48000)
+            >>> f0 = torch.tensor([[440.0, 450.0], [460.0, 470.0]])  # (B, T_frames)
+            >>> audio, phase = osc(f0)
+        """
+
+        def __init__(self, sample_rate: int = 48000):
+            """
+            Initialize differentiable sine oscillator.
+
+            Args:
+                sample_rate: Audio sample rate in Hz
+            """
+            super().__init__()
+            self.sample_rate = sample_rate
+            self.phase_accumulator: Optional[torch.Tensor] = None
+
+        def forward(
+            self,
+            f0: torch.Tensor,
+            phase_acc: Optional[torch.Tensor] = None,
+        ) -> Tuple[torch.Tensor, torch.Tensor]:
+            """
+            Generate sine wave from fundamental frequency trajectory.
+
+            Args:
+                f0: Fundamental frequency in Hz, shape (B, T_frames)
+                phase_acc: Initial phase accumulator, shape (B,)
+
+            Returns:
+                audio: Generated audio, shape (B, T_samples)
+                phase_acc: Final phase accumulator for next call, shape (B,)
+            """
+            batch_size, n_frames = f0.shape
+
+            # Initialize phase accumulator
+            if phase_acc is None:
+                phase_acc = torch.zeros(batch_size, device=f0.device)
+
+            # Assume hop size of 480 samples (10ms at 48kHz)
+            hop_size = 480
+            n_samples = n_frames * hop_size
+
+            # Create time axis for each frame
+            # This creates a smooth time vector per sample
+            t = torch.linspace(0, n_frames - 1, n_samples, device=f0.device)  # (T_samples,)
+            t = t.view(1, n_samples).expand(batch_size, -1)  # (B, T_samples)
+
+            # Upsample F0 to sample rate (linear interpolation)
+            # f0 is (B, T_frames), need (B, T_samples)
+            f0_upsampled = F.interpolate(
+                f0.unsqueeze(1),  # (B, 1, T_frames)
+                size=n_samples,
+                mode="linear",
+                align_corners=False,
+            ).squeeze(1)  # (B, T_samples)
+
+            # Integrate frequency to get phase
+            # phase(t) = 2*pi * integral(f0(t) dt)
+            # Using cumulative sum for discrete integration
+            phase_per_sample = 2 * math.pi * f0_upsampled / self.sample_rate
+            phase = phase_acc.view(-1, 1) + torch.cumsum(phase_per_sample, dim=1) * (
+                1.0 / self.sample_rate
+            )
+
+            # Reset to 0-2pi range to prevent overflow (but maintain continuity)
+            phase = phase.fmod(2 * math.pi)
+
+            # Generate sine
+            audio = torch.sin(phase)
+
+            # Update phase accumulator (save final phase for next call)
+            final_phase = phase[:, -1] + phase_per_sample[:, -1]
+
+            return audio, final_phase
+
+        def reset_phase(self):
+            """Reset phase accumulator to zero."""
+            self.phase_accumulator = None
+
+    class DifferentiableNoiseFilter(nn.Module):
+        """
+        Differentiable frequency-domain noise filter.
+
+        Applies frequency-weighted filtering to white noise using differentiable
+        frequency-domain operations. This enables gradient flow through the
+        noise shaping process.
+
+        The filter uses multi-band magnitude control, similar to the noise
+        component in DDSP (Differentiable Digital Signal Processing).
+
+        Example:
+            >>> filter = DifferentiableNoiseFilter(sample_rate=48000)
+            >>> white_noise = torch.randn(2, 48000)  # (B, T_samples)
+            >>> band_mags = torch.tensor([[0.5, 0.3, 0.2, 0.1, 0.0],
+            ...                                [0.4, 0.4, 0.1, 0.05, 0.05]])
+            >>> filtered = filter(white_noise, band_mags)
+        """
+
+        def __init__(
+            self,
+            sample_rate: int = 48000,
+            num_bands: int = 5,
+            fft_size: int = 2048,
+        ):
+            """
+            Initialize differentiable noise filter.
+
+            Args:
+                sample_rate: Audio sample rate in Hz
+                num_bands: Number of frequency bands
+                fft_size: FFT size for frequency-domain processing
+            """
+            super().__init__()
+            self.sample_rate = sample_rate
+            self.num_bands = num_bands
+            self.fft_size = fft_size
+
+            # Create frequency band edges (log-spaced)
+            # Bands cover the spectrum from 0 to Nyquist
+            nyquist = sample_rate / 2
+            band_edges = torch.linspace(0, nyquist, num_bands + 1)
+            self.register_buffer("band_edges", band_edges)
+
+        def forward(
+            self,
+            white_noise: torch.Tensor,
+            band_magnitudes: torch.Tensor,
+        ) -> torch.Tensor:
+            """
+            Filter white noise using band magnitude controls.
+
+            Args:
+                white_noise: Input white noise, shape (B, T_samples)
+                band_magnitudes: Magnitude for each frequency band, shape (B, num_bands)
+
+            Returns:
+                filtered_noise: Filtered noise, shape (B, T_samples)
+            """
+            batch_size, n_samples = white_noise.shape
+
+            # Pad to next power of 2 for FFT
+            n_fft = self.fft_size
+            padded_length = ((n_samples + n_fft - 1) // n_fft) * n_fft
+            padded = F.pad(white_noise, (0, padded_length - n_samples))
+
+            # Compute STFT
+            stft = torch.stft(
+                padded,
+                n_fft=n_fft,
+                hop_length=n_fft // 4,
+                win_length=n_fft,
+                window=torch.hann_window(n_fft, device=white_noise.device),
+                return_complex=True,
+            )  # (B, freq_bins, time_frames)
+
+            # Create frequency response from band magnitudes
+            freq_bins = stft.shape[1]
+            freqs = torch.linspace(0, self.sample_rate / 2, freq_bins, device=white_noise.device)
+
+            # Interpolate band magnitudes to frequency bins
+            # Each frequency bin gets weighted by the band it falls into
+            freq_response = torch.ones(batch_size, freq_bins, device=white_noise.device)
+
+            for b in range(self.num_bands):
+                # Create bandpass curve for this band
+                low = self.band_edges[b]
+                high = self.band_edges[b + 1]
+
+                # Smooth transition using tanh
+                band_width = high - low
+                (low + high) / 2
+
+                # Sigmoid-shaped bandpass
+                response = torch.sigmoid((freqs - low) / (band_width * 0.1)) * (
+                    1 - torch.sigmoid((freqs - high) / (band_width * 0.1))
+                )
+
+                # Add to frequency response
+                band_mag = band_magnitudes[:, b].view(-1, 1)
+                freq_response = freq_response + band_mag * response
+
+            # Apply frequency response
+            filtered_stft = stft * freq_response.view(batch_size, freq_bins, 1)
+
+            # Inverse STFT
+            filtered = torch.istft(
+                filtered_stft,
+                n_fft=n_fft,
+                hop_length=n_fft // 4,
+                win_length=n_fft,
+                window=torch.hann_window(n_fft, device=white_noise.device),
+                length=n_samples,
+            )
+
+            return filtered
+
+    class DDSPSynthesizer(nn.Module):
+        """
+        Complete DDSP synthesizer with differentiable components.
+
+        Combines additive harmonic synthesis with filtered noise to create
+        rich, expressive audio. The entire pipeline is differentiable, enabling
+        end-to-end training from features to audio.
+
+        Architecture:
+            112D Features → DDSPDecoder → [harmonic_amps, noise_mags]
+                                          ↓
+            DDSPSynthesizer ← f0_trajectory
+                    ↓
+            PCM Audio
+
+        The synthesizer maintains phase continuity and supports variable-length
+        output, making it suitable for real-time applications.
+
+        Example:
+            >>> synthesizer = DDSPSynthesizer(sample_rate=48000)
+            >>> f0 = torch.linspace(4000, 6000, 100).unsqueeze(0)  # Rising chirp
+            >>> harmonic_amps = torch.softmax(torch.randn(1, 100, 60), dim=-1)
+            >>> noise_mags = F.relu(torch.randn(1, 100, 5))
+            >>> audio = synthesizer(f0, harmonic_amps, noise_mags)
+        """
+
+        def __init__(
+            self,
+            sample_rate: int = 48000,
+            num_harmonics: int = 60,
+            num_noise_bands: int = 5,
+            hop_size: int = 480,
+        ):
+            """
+            Initialize DDSP synthesizer.
+
+            Args:
+                sample_rate: Audio sample rate in Hz
+                num_harmonics: Number of harmonic amplitude controls
+                num_noise_bands: Number of noise band magnitude controls
+                hop_size: Hop size for control rate processing
+            """
+            super().__init__()
+
+            self.sample_rate = sample_rate
+            self.num_harmonics = num_harmonics
+            self.num_noise_bands = num_noise_bands
+            self.hop_size = hop_size
+
+            # Sub-modules
+            self.oscillator = DifferentiableSineOscillator(sample_rate)
+            self.noise_filter = DifferentiableNoiseFilter(sample_rate, num_noise_bands)
+
+        def forward(
+            self,
+            f0: torch.Tensor,
+            harmonic_amps: torch.Tensor,
+            noise_mags: torch.Tensor,
+            phase_acc: Optional[torch.Tensor] = None,
+        ) -> torch.Tensor:
+            """
+            Generate audio from DDSP parameters.
+
+            Args:
+                f0: Fundamental frequency trajectory, shape (B, T_frames)
+                harmonic_amps: Harmonic amplitudes, shape (B, T_frames, num_harmonics)
+                noise_mags: Noise band magnitudes, shape (B, T_frames, num_noise_bands)
+                phase_acc: Initial phase accumulator, shape (B,)
+
+            Returns:
+                audio: Generated audio, shape (B, T_samples)
+                phase_acc: Updated phase accumulator for next call
+            """
+            batch_size, n_frames = f0.shape
+            n_samples = n_frames * self.hop_size
+
+            # ================================================================
+            # Harmonic Component (Additive Synthesis)
+            # ================================================================
+
+            # Generate carrier sine for fundamental frequency
+            carrier, phase_acc = self.oscillator(f0, phase_acc)  # (B, T_samples)
+
+            # Upsample harmonic amplitudes to sample rate
+            harmonic_amps_upsampled = F.interpolate(
+                harmonic_amps.transpose(1, 2),  # (B, num_harmonics, T_frames)
+                size=n_samples,
+                mode="linear",
+                align_corners=False,
+            ).transpose(1, 2)  # (B, num_harmonics, T_samples)
+
+            # Generate harmonics by frequency multiplication
+            harmonic_audio = torch.zeros(batch_size, n_samples, device=f0.device)
+
+            for h in range(self.num_harmonics):
+                # Frequency multiplier for this harmonic
+                freq_mult = h + 1  # 1st, 2nd, 3rd, ... harmonic
+
+                # Generate harmonic by modulating the carrier
+                # We use sin(freq_mult * phase) which is equivalent to sin(2*pi*freq_mult*f0*t)
+                harmonic_phase = freq_mult * torch.asin(torch.clamp(carrier, -1.0, 1.0))
+
+                # Apply amplitude envelope
+                # harmonic_amps_upsampled has shape (B, T_samples, num_harmonics)
+                # so we index with [:, :, h] to get (B, T_samples)
+                amp = harmonic_amps_upsampled[:, :, h]  # (B, T_samples)
+                harmonic_audio = harmonic_audio + amp * torch.sin(harmonic_phase)
+
+            # Normalize harmonic component
+            harmonic_audio = harmonic_audio / (harmonic_audio.abs().max() + 1e-8)
+
+            # ================================================================
+            # Noise Component (Filtered Noise)
+            # ================================================================
+
+            # Generate white noise
+            white_noise = torch.randn(batch_size, n_samples, device=f0.device) * 0.1
+
+            # Average noise magnitudes across time (per band)
+            noise_mags_avg = noise_mags.mean(dim=1)  # (B, num_noise_bands)
+
+            # Filter noise
+            filtered_noise = self.noise_filter(white_noise, noise_mags_avg)
+
+            # ================================================================
+            # Mix Components
+            # ================================================================
+
+            # Mix harmonic and noise components
+            # Use 0.8 / 0.2 mix by default (can be made learnable)
+            audio = 0.8 * harmonic_audio + 0.2 * filtered_noise
+
+            # Final normalization
+            audio = audio / (audio.abs().max() + 1e-8) * 0.95  # Slight headroom
+
+            return audio, phase_acc
+
+    class DDSPSynthesizerLight(DDSPSynthesizer):
+        """Lightweight variant with fewer harmonics for faster inference."""
+
+        def __init__(self, sample_rate: int = 48000):
+            super().__init__(
+                sample_rate=sample_rate,
+                num_harmonics=32,  # Fewer harmonics
+                num_noise_bands=3,  # Fewer noise bands
+                hop_size=480,
+            )
 
 
 if __name__ == "__main__":

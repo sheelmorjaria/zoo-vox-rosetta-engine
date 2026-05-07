@@ -151,11 +151,14 @@ src/
 │   ├── siamese_network.py          # Similarity learning
 │   ├── multimodal_fusion.py        # Audio-visual fusion with cross-modal attention
 │   ├── ddsp_synthesis.py           # Differentiable DSP for gradient-optimized synthesis
+│   ├── ddsp_decoder.py             # 112D → DDSP parameters neural decoder
+│   ├── jetson_export.py            # ONNX/TensorRT export for Jetson deployment
 │   └── maml_adaptation.py          # Model-Agnostic Meta-Learning for cross-species transfer
 │
 ├── realtime/                        # Real-time Processing (Logic Layer)
 │   ├── interaction_agent.py        # Closed-Loop agent
 │   ├── feature_subscriber.py       # ZeroMQ feature subscriber
+│   ├── ddsp_agent.py               # Real-time DDSP agent for Jetson deployment
 │   ├── parsing_strategy.py         # Strategy Pattern for parsing
 │   ├── config_client.py            # REQ client for Rust config
 │   ├── cognitive_layer.py          # Cognitive intelligence
@@ -416,27 +419,67 @@ predictions = classifier.predict(audio_features, visual_features)
 
 **DDSP Synthesis (Differentiable DSP)**
 ```python
+import torch
 from cognitive_intelligence.ddsp_synthesis import (
-    DDSPSynthesizer, DDSPOptimizer, HarmonicModel, SpectralLoss
+    DDSPSynthesizer, DifferentiableSineOscillator, DifferentiableNoiseFilter
+)
+from cognitive_intelligence.ddsp_decoder import DDSPDecoder
+
+# Create PyTorch-differentiable synthesizer
+synthesizer = DDSPSynthesizer(
+    sample_rate=48000,
+    num_harmonics=60,
+    num_noise_bands=5,
+    hop_size=480
 )
 
-# Create synthesizer
-synthesizer = DDSPSynthesizer(sample_rate=48000, n_harmonics=16)
+# Create DDSP decoder (112D → 65 parameters)
+decoder = DDSPDecoder(hidden_dim=256, num_harmonics=60, num_noise_bands=5)
 
-# Synthesize from pitch and loudness
-n_frames = 75  # 100ms at 64-hop
-loudness = np.random.randn(n_frames).astype(np.float32)
-pitch = 440.0 * np.ones(n_frames).astype(np.float32)
-audio = synthesizer.synthesize(loudness, pitch)
+# Synthesize from 112D features
+features_112d = torch.randn(1, 112)
+harmonic_amps, noise_mags = decoder(features_112d)
 
-# Gradient-based optimization to match target
-optimizer = DDSPOptimizer(learning_rate=0.01, n_iterations=50)
-target_audio = np.random.randn(4800).astype(np.float32)
-reconstructed = optimizer.reconstruct(target_audio, synthesizer)
+# Generate audio
+f0 = torch.ones(1, 100) * 6000  # 100 frames at 6kHz
+audio, phase = synthesizer(f0, harmonic_amps, noise_mags)
+```
 
-# Extract harmonic model
-harmonic_model = HarmonicModel(n_harmonics=16, sample_rate=48000)
-amplitudes = harmonic_model.extract_amplitudes(audio, fundamental_freq=440.0)
+**Jetson Deployment (ONNX/TensorRT)**
+```python
+from cognitive_intelligence.jetson_export import (
+    export_ddsp_decoder_to_onnx,
+    export_ddsp_synthesizer_to_onnx,
+    export_ddsp_pipeline,
+)
+from realtime.ddsp_agent import DDSPAgentConfig, RealtimeDDSPAgent
+
+# Export to ONNX for Jetson deployment
+artifacts = export_ddsp_pipeline(
+    decoder=decoder,
+    synthesizer=synthesizer,
+    output_dir="exports/ddsp_jetson",
+    export_tensorrt=False,  # Set True on Jetson with TensorRT
+)
+
+# Create real-time agent for deployment
+config = DDSPAgentConfig(
+    device="cuda",  # Use CUDA on Jetson
+    sample_rate=48000,
+    target_latency_ms=50.0,
+)
+agent = RealtimeDDSPAgent(config)
+
+# Synthesize from cluster ID with 112D control
+audio, latency = agent.synthesize_from_cluster(
+    cluster_id=0,
+    delta_112d=np.random.randn(112) * 0.1,  # Fine-grained control
+    duration_ms=200.0,
+)
+
+# Check performance
+stats = agent.get_statistics()
+print(f"Latency: {stats['avg_latency_ms']:.2f}ms (target: {stats['target_latency_ms']}ms)")
 ```
 
 **MAML Adaptation (Cross-Species Transfer)**
@@ -811,13 +854,19 @@ R = (Number of valid follow-up responses) / (Total system responses)
 - **Temporal Alignment**: Handle frame rate mismatches between audio and video modalities
 
 **DDSP Synthesis (Differentiable DSP)**
-- `SineOscillator`: Differentiable sine wave oscillator with FM synthesis support
-- `DifferentiableFilter`: Spectral shaping with differentiable coefficients
-- `SpectralLoss`: Multi-scale spectral loss for gradient-based optimization
-- `DDSPSynthesizer`: Main synthesizer with additive and filter-warped synthesis
-- `HarmonicModel`: Extract harmonic amplitudes and phases for additive synthesis
-- `NoiseModel`: Filter noise with time-varying filters for residual synthesis
-- **Key Benefit**: Gradient-optimized audio reconstruction via differentiable signal processing
+- `DDSPDecoder`: PyTorch MLP mapping 112D features → 65 DDSP parameters (60 harmonic + 5 noise)
+- `DifferentiableSineOscillator`: Phase-continuous sine oscillator with gradient tracking
+- `DifferentiableNoiseFilter`: FIR filter bank for noise shaping with differentiable coefficients
+- `DDSPSynthesizer`: Full additive + filtered noise synthesizer with phase continuity
+- `MultiScaleSpectralLoss`: STFT loss at multiple resolutions for training
+- **Key Benefit**: End-to-end differentiable audio synthesis for gradient-based optimization
+
+**Jetson Deployment (Module 4)**
+- `ONNX Export`: DDSPDecoder and DDSPSynthesizer export with opset 18
+- `TensorRT Builder`: FP16 optimization for NVIDIA Jetson devices
+- `RealtimeDDSPAgent`: Real-time inference agent with ZMQ IPC
+- `Model Benchmarking`: Timing statistics (mean/std/min/max/median latency)
+- **Target**: <50ms round-trip latency for field deployment
 
 **MAML Adaptation (Cross-Species Transfer)**
 - `MAMLOptimizer`: Model-Agnostic Meta-Learning for rapid adaptation
@@ -903,7 +952,9 @@ The Zoo Vox Rosetta Engine enables:
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Rust (cargo test) | 266 | ✅ All passing |
-| Python (pytest) | 150+ | ✅ All passing |
+| Python (pytest) | 200+ | ✅ All passing |
+| DDSP Synthesizer (Module 3) | 22 | ✅ All passing |
+| Jetson Deployment (Module 4) | 21 | ✅ All passing |
 | MiniBatch BGMM Pipeline | 7 | ✅ All passing |
 | InteractionAgent v1.2.0 | 24 | ✅ All passing |
 | InteractionAgent v1.3.0 | 16 | ✅ All passing |
@@ -989,14 +1040,16 @@ The Zoo Vox Rosetta Engine enables:
 | Multimodal Fusion | AudioVisualFusion | 5 | Cross-modal attention, fusion weights, temporal alignment |
 | Multimodal Fusion | MultimodalContextClassifier | 3 | Fused classification, backpropagation |
 | Multimodal Fusion | Fusion Integration | 4 | Real-time fusion, edge cases |
-| DDSP Synthesis | DifferentiableOscillator | 4 | Sine synthesis, FM modulation, gradient tracking |
-| DDSP Synthesis | DifferentiableFilter | 3 | Lowpass/highpass filters, coefficient gradients |
-| DDSP Synthesis | SpectralLoss | 3 | Magnitude, multi-scale, perceptual loss |
-| DDSP Synthesis | DDSPPreprocessor | 3 | Loudness/pitch extraction, DDSP features |
-| DDSP Synthesis | DDSPSynthesizer | 3 | Additive synthesis, filter-warped synthesis |
-| DDSP Synthesis | DDSPOptimizer | 3 | Gradient optimization, audio reconstruction |
-| DDSP Synthesis | HarmonicModel | 3 | Harmonic amplitude/phase extraction, synthesis |
-| DDSP Synthesis | NoiseModel | 2 | Noise filtering, envelope extraction |
+| DDSP Synthesis | DifferentiableSineOscillator | 5 | Initialization, F0, phase continuity, chirp, gradients |
+| DDSP Synthesis | DifferentiableNoiseFilter | 4 | Initialization, forward pass, gradients, HF emphasis |
+| DDSP Synthesis | DDSPSynthesizer | 7 | Full pipeline, chirp, phase continuity, gradients, light variant |
+| DDSP Synthesis | DDSP Integration | 3 | Full pipeline with decoder, batch processing, output length |
+| DDSP Synthesis | DDSP Edge Cases | 3 | Single frame, zero noise, zero harmonics, phase reset |
+| Jetson Deployment | ONNX Export | 4 | Decoder, synthesizer, dynamic axes, fixed batch |
+| Jetson Deployment | Model Benchmarking | 5 | Decoder/synthesizer benchmarks, consistency, size, latency |
+| Jetson Deployment | Pipeline Export | 3 | Full export, directory creation, artifact paths |
+| Jetson Deployment | Real-time Agent | 5 | Initialization, synthesis from features/cluster, delta, statistics |
+| Jetson Deployment | Edge Cases | 4 | Invalid path, invalid cluster, zero duration, small model |
 | MAML Adaptation | MAMLOptimizer | 3 | Meta-parameter initialization, inner/outer loop updates |
 | MAML Adaptation | FewShotClassifier | 3 | 5-way 5-shot, 1-shot, cross-species adaptation |
 | MAML Adaptation | TaskDistribution | 3 | Task sampling, cross-species tasks, batching |
@@ -1036,6 +1089,12 @@ python -m pytest tests/test_pcfg_induction.py \
                  tests/test_multimodal_fusion.py \
                  tests/test_ddsp_synthesis.py \
                  tests/test_maml_adaptation.py -v
+
+# DDSP Synthesizer tests (Module 3)
+python -m pytest tests/test_ddsp_synthesizer.py -v
+
+# Jetson Deployment tests (Module 4)
+python -m pytest tests/test_jetson_deployment.py -v
 ```
 
 ---
@@ -1048,6 +1107,7 @@ python -m pytest tests/test_pcfg_induction.py \
 |----------|-------------|----------|
 | **TEACHER_STUDENT_PIPELINE.md** | Complete Teacher-Student distillation pipeline (v1.5.0) | Root |
 | **ETHOLOGICAL_VALIDATION_PROTOCOL.md** | Field deployment validation with RAS metric | Root |
+| **DDSP_JETSON_DEPLOYMENT.md** | 112D DDSP Neural Decoder pipeline for Jetson deployment | Root |
 | **closed_loop_agent_protocol.md** | Real-time bidirectional communication between Rust and Python | `technical_architecture/docs/pub/` |
 | **FIVE_STAGE_SYNTHESIS_PIPELINE.md** | Complete synthesis pipeline from raw audio to output | `technical_architecture/docs/pub/` |
 | **synthesis_explanation.md** | Audio synthesis background and theory | `technical_architecture/docs/pub/` |
@@ -1065,6 +1125,7 @@ python -m pytest tests/test_pcfg_induction.py \
 
 | Version | Date | Features |
 |---------|------|----------|
+| v1.6.0 | 2026-05-07 | DDSP Neural Decoder Pipeline + Jetson Deployment (Modules 3 & 4) |
 | v1.5.0 | 2026-05-06 | Ethological Validation Protocol (RAS metric) |
 | v1.4.0 | 2026-05-06 | Probabilistic Transition Weights (Markov chain) |
 | v1.3.0 | 2026-05-06 | Level 2 Speaker Grounding (speaker diarization) |

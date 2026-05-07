@@ -14,7 +14,7 @@ License: CC BY-ND 4.0 International
 import logging
 import os
 import pickle
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -66,7 +66,7 @@ class QuantizedContextClassifier:
         Returns:
             Tuple of (context_label, confidence)
         """
-        if hasattr(self.model, 'predict'):
+        if hasattr(self.model, "predict"):
             return self.model.predict(features)
         else:
             raise ValueError("Model does not have predict method")
@@ -83,7 +83,7 @@ class QuantizedContextClassifier:
             import torch.onnx
 
             # Check if model is PyTorch
-            if hasattr(self.model, 'state_dict'):
+            if hasattr(self.model, "state_dict"):
                 dummy_input = torch.randn(1, 112, dtype=torch.float32)
                 torch.onnx.export(
                     self.model,
@@ -161,9 +161,7 @@ class FeaturePruner:
             species_acoustic_profile: AcousticProfile with feature_importance
         """
         self.profile = species_acoustic_profile
-        self.important_indices = self._select_important_features(
-            species_acoustic_profile
-        )
+        self.important_indices = self._select_important_features(species_acoustic_profile)
         logger.info(f"FeaturePruner initialized with {len(self.important_indices)} features")
 
     def _select_important_features(self, profile: any) -> np.ndarray:
@@ -176,7 +174,7 @@ class FeaturePruner:
         Returns:
             Array of important feature indices
         """
-        if not hasattr(profile, 'feature_importance'):
+        if not hasattr(profile, "feature_importance"):
             # Default to first 32 features
             logger.warning("Profile has no feature_importance, using first 32")
             return np.arange(32, dtype=int)
@@ -261,4 +259,4 @@ if __name__ == "__main__":
 
     print(f"Original: {len(features)}D")
     print(f"Pruned: {len(pruned)}D")
-    print(f"Reduction: {(1 - len(pruned)/len(features)) * 100:.1f}%")
+    print(f"Reduction: {(1 - len(pruned) / len(features)) * 100:.1f}%")

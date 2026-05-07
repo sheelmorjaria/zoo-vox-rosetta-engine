@@ -10,11 +10,9 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import json
 import os
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
 
 import numpy as np
 
@@ -122,7 +120,6 @@ class TestTransformerLMCore(unittest.TestCase):
     def test_attention_softmax(self):
         """Attention weights sum to 1."""
         # Create a simple attention matrix
-        batch_size = 2
         seq_len = 5
         n_heads = 4
 
@@ -222,8 +219,7 @@ class TestTransformerTraining(unittest.TestCase):
         # Check that parameters have changed (training does something)
         final_emb = self.model.token_embeddings[2]
         self.assertFalse(
-            np.allclose(initial_emb, final_emb, rtol=1e-3),
-            "Embeddings should change with training"
+            np.allclose(initial_emb, final_emb, rtol=1e-3), "Embeddings should change with training"
         )
 
     def test_learning_rate_schedule(self):
@@ -330,9 +326,7 @@ class TestTransformerGeneration(unittest.TestCase):
         prompt = [1, 2]
 
         # Generate with very low top_k
-        generated = self.model.generate(
-            prompt=prompt, max_length=5, temperature=1.0, top_k=2
-        )
+        generated = self.model.generate(prompt=prompt, max_length=5, temperature=1.0, top_k=2)
 
         # Should still generate valid tokens
         self.assertEqual(len(generated), 7)
@@ -375,12 +369,8 @@ class TestConditionalGeneration(unittest.TestCase):
 
     def test_condition_temperature_interplay(self):
         """Temperature + context interaction works."""
-        seq_low = self.generator.generate_for_context(
-            "alarm", max_length=5, temperature=0.1
-        )
-        seq_high = self.generator.generate_for_context(
-            "alarm", max_length=5, temperature=1.5
-        )
+        seq_low = self.generator.generate_for_context("alarm", max_length=5, temperature=0.1)
+        seq_high = self.generator.generate_for_context("alarm", max_length=5, temperature=1.5)
 
         # Both should be valid
         self.assertIsInstance(seq_low, list)
@@ -388,9 +378,7 @@ class TestConditionalGeneration(unittest.TestCase):
 
     def test_batch_generation(self):
         """Generate multiple sequences efficiently."""
-        sequences = self.generator.generate_batch(
-            context="social", n_sequences=3, max_length=5
-        )
+        sequences = self.generator.generate_batch(context="social", n_sequences=3, max_length=5)
 
         self.assertEqual(len(sequences), 3)
         for seq in sequences:
@@ -422,9 +410,7 @@ class TestVocabularyIntegration(unittest.TestCase):
 
         # Create tokenizer using species-specific vocab size
         self.tokenizer = AcousticTokenizer(vocab_size=50)
-        self.model = TransformerLM(
-            vocab_size=50, d_model=32, n_heads=2, n_layers=2, max_seq_len=64
-        )
+        self.model = TransformerLM(vocab_size=50, d_model=32, n_heads=2, n_layers=2, max_seq_len=64)
 
     def test_species_specific_vocab(self):
         """Uses species-specific k from VocabOptimizer."""
@@ -452,15 +438,12 @@ class TestVocabularyIntegration(unittest.TestCase):
 
         from analysis.rosetta_stone.neural_language_model import TransformerLM
 
-        model = TransformerLM(
-            vocab_size=k, d_model=32, n_heads=2, n_layers=1, max_seq_len=64
-        )
+        model = TransformerLM(vocab_size=k, d_model=32, n_heads=2, n_layers=1, max_seq_len=64)
 
         self.assertEqual(model.vocab_size, 50)
 
     def test_model_persistence(self):
         """Model can be saved and loaded."""
-        import tempfile
 
         sequences = [[1, 2, 3]]
         for _ in range(5):

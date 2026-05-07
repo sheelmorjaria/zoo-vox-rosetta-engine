@@ -8,20 +8,21 @@ TDD approach:
 - Refactor: Clean up and integrate
 """
 
-import json
-import time
-import pytest
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 import sys
+import time
+from pathlib import Path
+from typing import Dict, Tuple
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
+    from scipy.spatial.distance import cdist
     from sklearn.decomposition import PCA
     from sklearn.mixture import BayesianGaussianMixture
-    from sklearn.metrics import pairwise_distances
-    from scipy.spatial.distance import cdist
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -51,11 +52,7 @@ class TestMiniBatchBGMMTeacher:
         features_112d = np.array(features).astype(np.float32)
 
         # Create teacher with small sample size for test
-        teacher = MiniBatchBGMMTeacher(
-            pca_components=30,
-            max_clusters=20,
-            sample_size=1000
-        )
+        teacher = MiniBatchBGMMTeacher(pca_components=30, max_clusters=20, sample_size=1000)
 
         centroids_112d, vocabulary_size = teacher.fit(features_112d)
 
@@ -86,11 +83,7 @@ class TestMiniBatchBGMMTeacher:
         features_112d = np.array(features).astype(np.float32)
 
         # Train teacher on subset
-        teacher = MiniBatchBGMMTeacher(
-            pca_components=30,
-            max_clusters=20,
-            sample_size=1000
-        )
+        teacher = MiniBatchBGMMTeacher(pca_components=30, max_clusters=20, sample_size=1000)
         centroids_112d, _ = teacher.fit(features_112d)
 
         # Test on 1000 samples
@@ -121,24 +114,20 @@ class TestMiniBatchBGMMTeacher:
                 features.append(center + np.random.randn(112) * 0.5)
         features_112d = np.array(features).astype(np.float32)
 
-        teacher = MiniBatchBGMMTeacher(
-            pca_components=30,
-            max_clusters=10,
-            sample_size=500
-        )
+        teacher = MiniBatchBGMMTeacher(pca_components=30, max_clusters=10, sample_size=500)
 
         centroids_112d, vocabulary_size = teacher.fit(features_112d)
 
         # Verify export format
         export_data = teacher.export_for_rust()
 
-        assert 'vocabulary_size' in export_data
-        assert 'clusters' in export_data
-        assert export_data['vocabulary_size'] == vocabulary_size
+        assert "vocabulary_size" in export_data
+        assert "clusters" in export_data
+        assert export_data["vocabulary_size"] == vocabulary_size
 
         # Verify each cluster has 112D centroid
-        for cluster_id, cluster_data in export_data['clusters'].items():
-            centroid = cluster_data['centroid_112d']
+        for cluster_id, cluster_data in export_data["clusters"].items():
+            centroid = cluster_data["centroid_112d"]
             assert len(centroid) == 112, f"Cluster {cluster_id} has {len(centroid)}D centroid"
 
         print(f"  ✅ Export format valid for {vocabulary_size} clusters")
@@ -166,11 +155,7 @@ class TestMiniBatchBGMMTeacher:
 
         # Teacher should only train on sample_size
         sample_size = 10000
-        teacher = MiniBatchBGMMTeacher(
-            pca_components=30,
-            max_clusters=30,
-            sample_size=sample_size
-        )
+        teacher = MiniBatchBGMMTeacher(pca_components=30, max_clusters=30, sample_size=sample_size)
 
         start = time.time()
         centroids_112d, vocabulary_size = teacher.fit(features_112d)
@@ -212,17 +197,14 @@ class TestMiniBatchBGMMTeacher:
                 features.append(center + np.random.randn(112) * 0.3)
         features_112d = np.array(features).astype(np.float32)
 
-        teacher = MiniBatchBGMMTeacher(
-            pca_components=30,
-            max_clusters=10,
-            sample_size=1000
-        )
+        teacher = MiniBatchBGMMTeacher(pca_components=30, max_clusters=10, sample_size=1000)
 
         centroids_112d, vocabulary_size = teacher.fit(features_112d)
 
         # Verify PCA explained variance is high
-        assert teacher.pca.explained_variance_ratio_.sum() > 0.90, \
+        assert teacher.pca.explained_variance_ratio_.sum() > 0.90, (
             f"PCA only preserved {teacher.pca.explained_variance_ratio_.sum():.1%} variance"
+        )
 
         # Centroids should be in reasonable range
         assert np.all(np.isfinite(centroids_112d)), "Centroids contain non-finite values"
@@ -246,7 +228,9 @@ class TestStudentPredict:
         label = student_predict(test_feature, centroids)
 
         # Single feature should return scalar
-        assert np.isscalar(label) or isinstance(label, (int, np.integer)), f"Expected scalar, got {type(label)}"
+        assert np.isscalar(label) or isinstance(label, (int, np.integer)), (
+            f"Expected scalar, got {type(label)}"
+        )
         assert label == 2, f"Expected cluster 2, got {label}"
 
     def test_student_predict_batch(self):
@@ -270,7 +254,7 @@ class TestStudentPredict:
 
         # Time prediction
         start = time.time()
-        labels = student_predict(features, centroids)
+        student_predict(features, centroids)
         elapsed = time.time() - start
 
         avg_time_ms = (elapsed / len(features)) * 1000
@@ -284,6 +268,7 @@ class TestStudentPredict:
 # ============================================================================
 # Implementation Functions (Green Phase)
 # ============================================================================
+
 
 def student_predict(features: np.ndarray, centroids: np.ndarray) -> np.ndarray:
     """Student prediction: nearest centroid lookup in 112D space.
@@ -300,7 +285,7 @@ def student_predict(features: np.ndarray, centroids: np.ndarray) -> np.ndarray:
 
     # Vectorized Euclidean distance calculation
     # Using scipy.spatial.distance.cdist for efficiency
-    distances = cdist(features_2d, centroids, metric='euclidean')
+    distances = cdist(features_2d, centroids, metric="euclidean")
     labels = np.argmin(distances, axis=1)
 
     # Return scalar if input was scalar
@@ -325,7 +310,7 @@ class MiniBatchBGMMTeacher:
         max_clusters: int = 150,
         sample_size: int = 100000,
         weight_threshold: float = 0.01,
-        random_state: int = 42
+        random_state: int = 42,
     ):
         self.pca_components = pca_components
         self.max_clusters = max_clusters
@@ -375,10 +360,10 @@ class MiniBatchBGMMTeacher:
         print(f"  Teacher: Fitting BGMM (max_components={self.max_clusters})...")
         self.bgmm = BayesianGaussianMixture(
             n_components=self.max_clusters,
-            covariance_type='diag',
+            covariance_type="diag",
             max_iter=300,
             weight_concentration_prior=0.01,
-            random_state=self.random_state
+            random_state=self.random_state,
         )
         self.bgmm.fit(reduced)
 
@@ -386,7 +371,10 @@ class MiniBatchBGMMTeacher:
         active_mask = self.bgmm.weights_ > self.weight_threshold
         self.vocabulary_size = int(active_mask.sum())
 
-        print(f"  Teacher: Discovered {self.vocabulary_size} clusters (pruned from {self.max_clusters})")
+        print(  # noqa: E501
+            f"  Teacher: Discovered {self.vocabulary_size} clusters "
+            f"(pruned from {self.max_clusters})"
+        )
 
         # Step 5: Project centroids back to 112D (crucial for Rust integration!)
         centroids_reduced = self.bgmm.means_[active_mask]
@@ -420,24 +408,24 @@ class MiniBatchBGMMTeacher:
         clusters_info = {}
         for i, centroid in enumerate(self.centroids_112d):
             clusters_info[str(i)] = {
-                'cluster_id': int(i),
-                'centroid_112d': centroid.tolist(),
-                'exemplar_audio': f"cluster_{i}_exemplar.wav",
-                'exemplar_features_112d': centroid.tolist(),
-                'num_segments': 0,  # Would be filled in during full corpus assignment
-                'mean_distance_to_centroid': 0.0
+                "cluster_id": int(i),
+                "centroid_112d": centroid.tolist(),
+                "exemplar_audio": f"cluster_{i}_exemplar.wav",
+                "exemplar_features_112d": centroid.tolist(),
+                "num_segments": 0,  # Would be filled in during full corpus assignment
+                "mean_distance_to_centroid": 0.0,
             }
 
         return {
-            'vocabulary_size': self.vocabulary_size,
-            'num_clusters': self.vocabulary_size,
-            'clusters': clusters_info,
-            'metadata': {
-                'extraction_method': 'minibatch_pca_bgmm_teacher_student',
-                'n_components': self.pca_components,
-                'max_clusters': self.max_clusters,
-                'sample_size': self.sample_size,
-                'weight_threshold': self.weight_threshold,
-                'explained_variance': float(self.pca.explained_variance_ratio_.sum())
-            }
+            "vocabulary_size": self.vocabulary_size,
+            "num_clusters": self.vocabulary_size,
+            "clusters": clusters_info,
+            "metadata": {
+                "extraction_method": "minibatch_pca_bgmm_teacher_student",
+                "n_components": self.pca_components,
+                "max_clusters": self.max_clusters,
+                "sample_size": self.sample_size,
+                "weight_threshold": self.weight_threshold,
+                "explained_variance": float(self.pca.explained_variance_ratio_.sum()),
+            },
         }

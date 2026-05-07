@@ -235,13 +235,15 @@ impl ExemplarManager {
         // Parse vocabulary size
         let vocabulary_size = manifest["vocabulary_size"]
             .as_u64()
-            .ok_or_else(|| anyhow::anyhow!("Missing vocabulary_size in manifest"))? as usize;
+            .ok_or_else(|| anyhow::anyhow!("Missing vocabulary_size in manifest"))?
+            as usize;
 
         // Parse clusters
         if let Some(clusters) = manifest.get("clusters") {
             if let Some(clusters_obj) = clusters.as_object() {
                 for (cluster_id_str, cluster_info) in clusters_obj {
-                    let cluster_id: u32 = cluster_id_str.parse()
+                    let cluster_id: u32 = cluster_id_str
+                        .parse()
                         .map_err(|e| anyhow::anyhow!("Invalid cluster_id: {}", e))?;
 
                     // Extract centroid_112d array
@@ -352,8 +354,11 @@ impl ExemplarManager {
             Some(id) if distance <= self.ood_threshold => Some((id, distance)),
             Some(_) => {
                 // Distance exceeds OOD threshold - reject
-                log::warn!("Rejected OOD vocalization (distance: {:.2} > {:.2})",
-                          distance, self.ood_threshold);
+                log::warn!(
+                    "Rejected OOD vocalization (distance: {:.2} > {:.2})",
+                    distance,
+                    self.ood_threshold
+                );
                 None
             }
             None => None,

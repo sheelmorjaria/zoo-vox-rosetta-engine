@@ -226,6 +226,7 @@ class TestWeakSupervision:
     @dataclass
     class TemporalSegment:
         """Test fixture for temporal segments."""
+
         features: np.ndarray
         timestamp: float
         true_context: str
@@ -249,11 +250,13 @@ class TestWeakSupervision:
                 features = np.random.randn(112) * 0.3
                 features[0] += 3.0  # High F0
 
-            segments.append(self.TemporalSegment(
-                features=features,
-                timestamp=current_time,
-                true_context=current_context,
-            ))
+            segments.append(
+                self.TemporalSegment(
+                    features=features,
+                    timestamp=current_time,
+                    true_context=current_context,
+                )
+            )
 
             current_time += np.random.uniform(0.05, 0.2)  # 50-200ms between segments
 
@@ -277,13 +280,12 @@ class TestWeakSupervision:
         groups.append(current_group)
 
         # Each group should have consistent true_context
-        consistent_count = sum(
-            1 for g in groups if len(set(s.true_context for s in g)) == 1
-        )
+        consistent_count = sum(1 for g in groups if len(set(s.true_context for s in g)) == 1)
 
         # Most groups should be consistent
-        assert consistent_count > len(groups) * 0.8, \
+        assert consistent_count > len(groups) * 0.8, (
             f"Expected >80% consistent groups, got {consistent_count}/{len(groups)}"
+        )
 
         logger.info(f"✓ Temporal grouping: {consistent_count}/{len(groups)} consistent")
 
@@ -294,7 +296,7 @@ class TestWeakSupervision:
         # Find context switches
         switches = []
         for i in range(1, len(segments)):
-            if segments[i].true_context != segments[i-1].true_context:
+            if segments[i].true_context != segments[i - 1].true_context:
                 switches.append(i)
 
         # Should have ~4-5 switches for 50 segments with 10-segment contexts
@@ -311,19 +313,19 @@ class TestWeakSupervision:
         # Create 20 segments, each in its own temporal group
         # (simulating sparse or fragmented recordings)
         for i in range(20):
-            segments.append({
-                "features": np.random.randn(112) * 0.5,
-                "timestamp": current_time,
-            })
+            segments.append(
+                {
+                    "features": np.random.randn(112) * 0.5,
+                    "timestamp": current_time,
+                }
+            )
             # Large gap ensures each segment gets its own label
             # Use 1 second gaps, with a 10ms window
             current_time += 1.0  # 1 second = 1000ms >> 10ms window
 
         # Create dataset with very small window (10ms) to ensure singletons
         # Each segment will be >10ms apart, so each gets its own label
-        dataset = ContextDataset.from_temporal_cooccurrence(
-            segments, window_ms=10.0
-        )
+        dataset = ContextDataset.from_temporal_cooccurrence(segments, window_ms=10.0)
 
         # Verify we have many singleton classes
         unique_labels, counts = np.unique(dataset.labels, return_counts=True)
@@ -340,23 +342,25 @@ class TestWeakSupervision:
         assert len(train_feat) + len(test_feat) == len(dataset.features)
         assert len(train_labels) + len(test_labels) == len(dataset.labels)
 
-        logger.info(f"✓ Singleton fallback split: {n_singletons} singletons, "
-                    f"train={len(train_feat)}, test={len(test_feat)}")
+        logger.info(
+            f"✓ Singleton fallback split: {n_singletons} singletons, "
+            f"train={len(train_feat)}, test={len(test_feat)}"
+        )
 
     def test_training_with_singleton_classes(self):
         """Training handles singleton pseudo-labels gracefully."""
         # Create a small dataset with singleton classes
         segments = []
         for i in range(10):
-            segments.append({
-                "features": np.random.randn(112) * 0.5,
-                "timestamp": float(i),  # Each segment is far apart
-            })
+            segments.append(
+                {
+                    "features": np.random.randn(112) * 0.5,
+                    "timestamp": float(i),  # Each segment is far apart
+                }
+            )
 
         # Create dataset with tiny window to ensure singletons
-        dataset = ContextDataset.from_temporal_cooccurrence(
-            segments, window_ms=10.0
-        )
+        dataset = ContextDataset.from_temporal_cooccurrence(segments, window_ms=10.0)
 
         # Verify we have singleton classes
         unique_labels, counts = np.unique(dataset.labels, return_counts=True)
@@ -373,8 +377,10 @@ class TestWeakSupervision:
         assert context in unique_labels
         assert 0.0 <= confidence <= 1.0
 
-        logger.info(f"✓ Training with singleton classes: {len(unique_labels)} classes, "
-                    f"min_count={np.min(counts)}")
+        logger.info(
+            f"✓ Training with singleton classes: {len(unique_labels)} classes, "
+            f"min_count={np.min(counts)}"
+        )
 
 
 # =============================================================================
@@ -466,13 +472,14 @@ class TestContextClassifierIntegration:
 
         # ML predictions
         ml_predictions = classifier.predict_batch(test_features)
-        # Convert string predictions to integers (class names are string representations of integers)
+        # Convert string predictions to integers  # noqa: E501
+        # (class names are string representations of integers)
         ml_pred_ints = np.array([int(p) for p in ml_predictions])
         ml_accuracy = np.mean(ml_pred_ints == test_labels)
 
         # Simple rule baseline (F0 threshold)
         rule_predictions = np.where(test_features[:, 0] > 0, 1, 0)  # Binary for simplicity
-        rule_accuracy = np.mean(rule_predictions == (test_labels > 1))  # Compare alarm(3)+territorial(2) vs others
+        np.mean(rule_predictions == (test_labels > 1))  # Compare alarm(3)+territorial(2) vs others
 
         # ML should significantly outperform simple rules
         logger.info(f"ML accuracy: {ml_accuracy:.2%}, Rule baseline: ~50%")
@@ -488,17 +495,19 @@ class TestContextClassifierIntegration:
 
         # Add structured patterns for contexts
         # Context 0: harmonic (higher HNR, lower FM)
-        features[:n_samples//3, 6] += 2.0  # HNR
-        features[:n_samples//3, 20] -= 1.5  # FM rate
+        features[: n_samples // 3, 6] += 2.0  # HNR
+        features[: n_samples // 3, 20] -= 1.5  # FM rate
 
         # Context 1: noisy (lower HNR, higher FM)
-        features[n_samples//3:2*n_samples//3, 6] -= 2.0
-        features[n_samples//3:2*n_samples//3, 20] += 2.0
+        features[n_samples // 3 : 2 * n_samples // 3, 6] -= 2.0
+        features[n_samples // 3 : 2 * n_samples // 3, 20] += 2.0
 
         # Context 2: mixed
         # Keep near-zero modifications
 
-        labels = np.array([0] * (n_samples//3) + [1] * (n_samples//3) + [2] * (n_samples//3 + n_samples % 3))
+        labels = np.array(
+            [0] * (n_samples // 3) + [1] * (n_samples // 3) + [2] * (n_samples // 3 + n_samples % 3)
+        )
 
         classifier = ContextClassifier(model_type="mlp", random_state=42, hidden_layers=(64, 32))
         classifier.train(features, labels)

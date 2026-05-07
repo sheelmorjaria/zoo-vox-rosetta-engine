@@ -18,10 +18,8 @@ License: CC BY-ND 4.0 International
 """
 
 import logging
-import os
 import pickle
-import time
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 
@@ -75,9 +73,7 @@ class NeuralVocoder:
         # Feature to audio mapping (simplified)
         # In production, this would be a trained neural network
         np.random.seed(42)
-        self.feature_weights = np.random.randn(112, self.frame_size).astype(
-            np.float32
-        ) * 0.01
+        self.feature_weights = np.random.randn(112, self.frame_size).astype(np.float32) * 0.01
 
     def train(
         self,
@@ -118,9 +114,7 @@ class NeuralVocoder:
 
         return losses
 
-    def _train_step(
-        self, features: np.ndarray, audio: np.ndarray, learning_rate: float
-    ) -> float:
+    def _train_step(self, features: np.ndarray, audio: np.ndarray, learning_rate: float) -> float:
         """Single training step."""
         # Simplified: nudge weights toward better reconstruction
         # In production, this would use backpropagation
@@ -202,9 +196,7 @@ class NeuralVocoder:
 
         return audio.astype(np.float32)
 
-    def synthesize_batch(
-        self, features_list: List[np.ndarray]
-    ) -> List[np.ndarray]:
+    def synthesize_batch(self, features_list: List[np.ndarray]) -> List[np.ndarray]:
         """
         Synthesize multiple feature sequences efficiently.
 
@@ -256,9 +248,7 @@ class NeuralVocoder:
             frame_size_ms=data["frame_size_ms"],
             hop_size_ms=data["hop_size_ms"],
         )
-        vocoder.feature_weights = np.array(
-            data["feature_weights"], dtype=np.float32
-        )
+        vocoder.feature_weights = np.array(data["feature_weights"], dtype=np.float32)
 
         logger.info(f"Vocoder loaded from {path}")
         return vocoder
@@ -328,9 +318,7 @@ class FeatureInterpolator:
         return result.astype(np.float32)
 
     @staticmethod
-    def interpolate_sequence(
-        features: np.ndarray, n_interp: int = 2
-    ) -> np.ndarray:
+    def interpolate_sequence(features: np.ndarray, n_interp: int = 2) -> np.ndarray:
         """
         Interpolate between consecutive feature frames.
 
@@ -364,9 +352,7 @@ class ProsodicModifier:
     """Modify prosody of synthesized audio via feature manipulation."""
 
     @staticmethod
-    def adjust_pitch(
-        features: np.ndarray, shift_semitones: float
-    ) -> np.ndarray:
+    def adjust_pitch(features: np.ndarray, shift_semitones: float) -> np.ndarray:
         """
         Pitch shift by modifying F0-related features.
 
@@ -399,9 +385,7 @@ class ProsodicModifier:
         return result.astype(np.float32)
 
     @staticmethod
-    def adjust_duration(
-        features: np.ndarray, speed_factor: float
-    ) -> np.ndarray:
+    def adjust_duration(features: np.ndarray, speed_factor: float) -> np.ndarray:
         """
         Time stretch by resampling feature sequence.
 
@@ -431,10 +415,7 @@ class ProsodicModifier:
 
             if src_idx < len(features) - 1:
                 # Linear interpolation between frames
-                result[i] = (
-                    (1 - src_frac) * features[src_idx]
-                    + src_frac * features[src_idx + 1]
-                )
+                result[i] = (1 - src_frac) * features[src_idx] + src_frac * features[src_idx + 1]
             elif src_idx < len(features):
                 result[i] = features[src_idx]
 
@@ -467,9 +448,7 @@ class ProsodicModifier:
         return result.astype(np.float32)
 
 
-def create_vocoder(
-    model_type: str = "simple", sample_rate: int = 48000
-) -> NeuralVocoder:
+def create_vocoder(model_type: str = "simple", sample_rate: int = 48000) -> NeuralVocoder:
     """
     Create a neural vocoder instance.
 

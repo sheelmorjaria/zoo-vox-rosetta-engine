@@ -135,10 +135,7 @@ class TestPCFGInduction(unittest.TestCase):
         grammar = inducer.induce(sequences)
 
         # Check that "ab" pattern is captured
-        has_ab_rule = any(
-            "a" in rule.rhs and "b" in rule.rhs
-            for rule in grammar.rules
-        )
+        has_ab_rule = any("a" in rule.rhs and "b" in rule.rhs for rule in grammar.rules)
 
         self.assertTrue(has_ab_rule)
 
@@ -168,7 +165,7 @@ class TestGrammarParser(unittest.TestCase):
 
     def test_parse_sequence(self):
         """Should parse sequence using grammar"""
-        from semiotics.pcfg_induction import PCFG, GrammarRule, GrammarParser
+        from semiotics.pcfg_induction import PCFG, GrammarParser, GrammarRule
 
         grammar = PCFG(start_symbol="S")
         grammar.add_rule(GrammarRule(lhs="S", rhs=["A", "B"], prob=0.6))
@@ -184,7 +181,7 @@ class TestGrammarParser(unittest.TestCase):
 
     def test_parse_probability(self):
         """Should compute parse probability"""
-        from semiotics.pcfg_induction import PCFG, GrammarRule, GrammarParser
+        from semiotics.pcfg_induction import PCFG, GrammarParser, GrammarRule
 
         grammar = PCFG(start_symbol="S")
         grammar.add_rule(GrammarRule(lhs="S", rhs=["A", "B"], prob=0.6))
@@ -199,7 +196,7 @@ class TestGrammarParser(unittest.TestCase):
 
     def test_most_likely_parse(self):
         """Should find most likely parse"""
-        from semiotics.pcfg_induction import PCFG, GrammarRule, GrammarParser
+        from semiotics.pcfg_induction import PCFG, GrammarParser, GrammarRule
 
         grammar = PCFG(start_symbol="S")
         grammar.add_rule(GrammarRule(lhs="S", rhs=["A"], prob=0.3))

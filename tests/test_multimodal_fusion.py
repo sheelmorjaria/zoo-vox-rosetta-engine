@@ -63,9 +63,7 @@ class TestAudioVisualFusion(unittest.TestCase):
         """Should apply cross-modal attention between audio and visual"""
         from cognitive_intelligence.multimodal_fusion import AudioVisualFusion
 
-        fusion = AudioVisualFusion(
-            audio_dim=112, visual_dim=512, fusion_dim=256
-        )
+        fusion = AudioVisualFusion(audio_dim=112, visual_dim=512, fusion_dim=256)
 
         audio_features = np.random.randn(10, 112).astype(np.float32)
         visual_features = np.random.randn(10, 512).astype(np.float32)
@@ -79,9 +77,7 @@ class TestAudioVisualFusion(unittest.TestCase):
         """Should perform late fusion (concatenation + projection)"""
         from cognitive_intelligence.multimodal_fusion import AudioVisualFusion
 
-        fusion = AudioVisualFusion(
-            audio_dim=112, visual_dim=512, fusion_dim=256
-        )
+        fusion = AudioVisualFusion(audio_dim=112, visual_dim=512, fusion_dim=256)
 
         audio_features = np.random.randn(100, 112).astype(np.float32)
         visual_features = np.random.randn(100, 512).astype(np.float32)
@@ -95,9 +91,7 @@ class TestAudioVisualFusion(unittest.TestCase):
         """Should perform early fusion (feature-level combination)"""
         from cognitive_intelligence.multimodal_fusion import AudioVisualFusion
 
-        fusion = AudioVisualFusion(
-            audio_dim=112, visual_dim=512, fusion_dim=256
-        )
+        fusion = AudioVisualFusion(audio_dim=112, visual_dim=512, fusion_dim=256)
 
         audio_features = np.random.randn(50, 112).astype(np.float32)
         visual_features = np.random.randn(50, 512).astype(np.float32)
@@ -115,9 +109,7 @@ class TestMultimodalContextClassifier(unittest.TestCase):
         """Should classify using both audio and visual input"""
         from cognitive_intelligence.multimodal_fusion import MultimodalContextClassifier
 
-        classifier = MultimodalContextClassifier(
-            audio_dim=112, visual_dim=512, num_classes=4
-        )
+        classifier = MultimodalContextClassifier(audio_dim=112, visual_dim=512, num_classes=4)
 
         audio_features = np.random.randn(20, 112).astype(np.float32)
         visual_features = np.random.randn(20, 512).astype(np.float32)
@@ -130,9 +122,7 @@ class TestMultimodalContextClassifier(unittest.TestCase):
         """Should handle audio-only input"""
         from cognitive_intelligence.multimodal_fusion import MultimodalContextClassifier
 
-        classifier = MultimodalContextClassifier(
-            audio_dim=112, visual_dim=512, num_classes=4
-        )
+        classifier = MultimodalContextClassifier(audio_dim=112, visual_dim=512, num_classes=4)
 
         audio_features = np.random.randn(20, 112).astype(np.float32)
 
@@ -144,9 +134,7 @@ class TestMultimodalContextClassifier(unittest.TestCase):
         """Should handle visual-only input"""
         from cognitive_intelligence.multimodal_fusion import MultimodalContextClassifier
 
-        classifier = MultimodalContextClassifier(
-            audio_dim=112, visual_dim=512, num_classes=4
-        )
+        classifier = MultimodalContextClassifier(audio_dim=112, visual_dim=512, num_classes=4)
 
         visual_features = np.random.randn(20, 512).astype(np.float32)
 
@@ -165,12 +153,8 @@ class TestVisualVocalizationCorrelation(unittest.TestCase):
         correlation = VisualVocalizationCorrelation(audio_dim=112, visual_dim=512)
 
         # Paired training data
-        audio_features = [
-            np.random.randn(112).astype(np.float32) for _ in range(10)
-        ]
-        visual_features = [
-            np.random.randn(512).astype(np.float32) for _ in range(10)
-        ]
+        audio_features = [np.random.randn(112).astype(np.float32) for _ in range(10)]
+        visual_features = [np.random.randn(512).astype(np.float32) for _ in range(10)]
 
         correlation.learn_correlation(audio_features, visual_features)
 
@@ -201,9 +185,7 @@ class TestVisualVocalizationCorrelation(unittest.TestCase):
         correlation = VisualVocalizationCorrelation(audio_dim=112, visual_dim=512)
 
         # Build visual index
-        visual_features = [
-            np.random.randn(512).astype(np.float32) for _ in range(20)
-        ]
+        visual_features = [np.random.randn(512).astype(np.float32) for _ in range(20)]
         contexts = ["feeding", "alarm", "contact", "feeding", "alarm"] * 4
 
         correlation.build_visual_index(visual_features, contexts)
@@ -222,9 +204,7 @@ class TestMultimodalAttentionWeights(unittest.TestCase):
         """Should output audio attention weights"""
         from cognitive_intelligence.multimodal_fusion import AudioVisualFusion
 
-        fusion = AudioVisualFusion(
-            audio_dim=112, visual_dim=512, fusion_dim=256
-        )
+        fusion = AudioVisualFusion(audio_dim=112, visual_dim=512, fusion_dim=256)
 
         audio_features = np.random.randn(10, 112).astype(np.float32)
         visual_features = np.random.randn(10, 512).astype(np.float32)
@@ -241,16 +221,12 @@ class TestMultimodalAttentionWeights(unittest.TestCase):
         """Should compute relative importance of each modality"""
         from cognitive_intelligence.multimodal_fusion import AudioVisualFusion
 
-        fusion = AudioVisualFusion(
-            audio_dim=112, visual_dim=512, fusion_dim=256
-        )
+        fusion = AudioVisualFusion(audio_dim=112, visual_dim=512, fusion_dim=256)
 
         audio_features = np.random.randn(10, 112).astype(np.float32)
         visual_features = np.random.randn(10, 512).astype(np.float32)
 
-        importance = fusion.compute_modality_importance(
-            audio_features, visual_features
-        )
+        importance = fusion.compute_modality_importance(audio_features, visual_features)
 
         self.assertIn("audio", importance)
         self.assertIn("visual", importance)

@@ -8,20 +8,16 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 License: CC BY-ND 4.0 International
 """
 
-import unittest
-import numpy as np
-from typing import Dict
 import sys
+import unittest
 from pathlib import Path
+
+import numpy as np
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from analysis.cluster_benchmark_suite import (
-    ClusterBenchmarkSuite,
-    ClusterResult,
-    BenchmarkMetrics
-)
+from analysis.cluster_benchmark_suite import BenchmarkMetrics, ClusterBenchmarkSuite, ClusterResult
 
 
 class TestClusterBenchmarkSuite(unittest.TestCase):
@@ -53,15 +49,11 @@ class TestClusterBenchmarkSuite(unittest.TestCase):
     def test_benchmark_suite_runs_all_methods(self):
         """Should run all specified methods and return results."""
         try:
-            from sklearn.cluster import MiniBatchKMeans
+            import sklearn.cluster  # noqa: F401
         except ImportError:
             self.skipTest("sklearn not available")
 
-        results = self.suite.run(
-            self.features,
-            self.sequences,
-            methods=["kmeans"]
-        )
+        results = self.suite.run(self.features, self.sequences, methods=["kmeans"])
 
         self.assertIn("kmeans", results)
         self.assertIsInstance(results["kmeans"], BenchmarkMetrics)
@@ -69,7 +61,7 @@ class TestClusterBenchmarkSuite(unittest.TestCase):
     def test_benchmark_result_contains_all_metrics(self):
         """Results should contain all required metrics."""
         try:
-            from sklearn.cluster import MiniBatchKMeans
+            import sklearn.cluster  # noqa: F401
         except ImportError:
             self.skipTest("sklearn not available")
 
@@ -97,16 +89,11 @@ class TestClusterBenchmarkSuite(unittest.TestCase):
     def test_benchmark_compares_multiple_methods(self):
         """Should compare multiple methods and print comparison table."""
         try:
-            from sklearn.cluster import MiniBatchKMeans
-            from sklearn.mixture import BayesianGaussianMixture
+            from sklearn.mixture import BayesianGaussianMixture  # noqa: F401
         except ImportError:
             self.skipTest("sklearn not available")
 
-        results = self.suite.run(
-            self.features,
-            self.sequences,
-            methods=["kmeans", "bgmm"]
-        )
+        results = self.suite.run(self.features, self.sequences, methods=["kmeans", "bgmm"])
 
         self.assertEqual(len(results), 2)
         self.assertIn("kmeans", results)
@@ -122,9 +109,7 @@ class TestClusterBenchmarkSuite(unittest.TestCase):
     def test_neighborhood_consistency(self):
         """Should calculate neighborhood consistency."""
         labels = np.array([0] * 300 + [1] * 300 + [2] * 400)
-        consistency = self.suite._calculate_neighborhood_consistency(
-            self.features, labels
-        )
+        consistency = self.suite._calculate_neighborhood_consistency(self.features, labels)
 
         self.assertGreater(consistency, 0.5)  # Should be fairly consistent
         self.assertLessEqual(consistency, 1.0)
@@ -134,9 +119,7 @@ class TestClusterBenchmarkSuite(unittest.TestCase):
         # Create soft labels
         soft_labels = np.random.dirichlet([1, 1, 1], size=self.n_samples)
 
-        kl_div = self.suite._calculate_neighbor_kl_divergence(
-            self.features, soft_labels
-        )
+        kl_div = self.suite._calculate_neighbor_kl_divergence(self.features, soft_labels)
 
         self.assertGreaterEqual(kl_div, 0.0)
 
@@ -149,18 +132,21 @@ class TestBenchmarkWithRealData(unittest.TestCase):
         """Run full benchmark on 112D bat features."""
         import json
 
-        feature_path = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_112d_no_cluster.json"
+        feature_path = (  # noqa: E501
+            "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/"
+            "extraction_112d/extraction_112d_no_cluster.json"
+        )
 
         if not Path(feature_path).exists():
             self.skipTest("Feature file not found")
 
         # Load features
-        with open(feature_path, 'r') as f:
+        with open(feature_path, "r") as f:
             data = json.load(f)
 
         # Sample
         n_samples = 10000
-        features_list = [seg['features_112d'] for seg in data['segments'][:n_samples]]
+        features_list = [seg["features_112d"] for seg in data["segments"][:n_samples]]
         features_112d = np.array(features_list, dtype=np.float32)
 
         # Dummy sequences
@@ -205,12 +191,14 @@ class TestSoftClusteringMetrics(unittest.TestCase):
         suite = ClusterBenchmarkSuite(graded_threshold=0.3)
 
         # Create soft probabilities with graded boundary
-        soft_labels = np.array([
-            [0.9, 0.1, 0.0],  # Clear cluster 0
-            [0.6, 0.4, 0.0],  # Graded boundary
-            [0.1, 0.9, 0.0],  # Clear cluster 1
-            [0.4, 0.4, 0.2],  # Highly graded
-        ])
+        soft_labels = np.array(
+            [
+                [0.9, 0.1, 0.0],  # Clear cluster 0
+                [0.6, 0.4, 0.0],  # Graded boundary
+                [0.1, 0.9, 0.0],  # Clear cluster 1
+                [0.4, 0.4, 0.2],  # Highly graded
+            ]
+        )
 
         # Detect graded segments
         graded = []
@@ -228,20 +216,22 @@ class TestClusterResult(unittest.TestCase):
     def test_cluster_result_creation(self):
         """Should create cluster result with all fields."""
         labels = np.array([0, 1, 0, 1, 2])
-        soft_labels = np.array([
-            [0.9, 0.1, 0.0],
-            [0.1, 0.9, 0.0],
-            [0.8, 0.2, 0.0],
-            [0.0, 0.95, 0.05],
-            [0.0, 0.1, 0.9],
-        ])
+        soft_labels = np.array(
+            [
+                [0.9, 0.1, 0.0],
+                [0.1, 0.9, 0.0],
+                [0.8, 0.2, 0.0],
+                [0.0, 0.95, 0.05],
+                [0.0, 0.1, 0.9],
+            ]
+        )
 
         result = ClusterResult(
             method_name="test",
             labels=labels,
             soft_labels=soft_labels,
             fit_time=10.5,
-            peak_ram_mb=256.0
+            peak_ram_mb=256.0,
         )
 
         self.assertEqual(result.method_name, "test")
@@ -265,7 +255,7 @@ class TestBenchmarkMetrics(unittest.TestCase):
             vocabulary_utilization=0.8,
             neighborhood_consistency=0.85,
             avg_neighbor_kl_divergence=0.3,
-            noise_classification_rate=0.05
+            noise_classification_rate=0.05,
         )
 
         self.assertEqual(metrics.method_name, "test")

@@ -82,11 +82,7 @@ class FeatureEvent:
             return False
 
         # Get sorted probabilities
-        sorted_probs = sorted(
-            self.cluster_probabilities.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_probs = sorted(self.cluster_probabilities.items(), key=lambda x: x[1], reverse=True)
 
         # Check if there's a significant secondary probability
         # Use >= so that threshold=0.3 with prob=0.3 is considered graded

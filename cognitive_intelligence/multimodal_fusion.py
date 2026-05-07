@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class VisualFeatures:
     """Container for visual features."""
+
     features: np.ndarray
     temporal_idx: int
     motion_score: float
@@ -65,9 +66,7 @@ class VisualFeatureExtractor:
 
         # Simulated CNN projection (in production, use pretrained model)
         scale = 1.0 / math.sqrt(frame_height * frame_width * 3)
-        self.cnn_projection = np.random.randn(
-            frame_height * frame_width * 3, feature_dim
-        ) * scale
+        self.cnn_projection = np.random.randn(frame_height * frame_width * 3, feature_dim) * scale
 
         # Temporal aggregation weights
         self.temporal_weights = np.ones(temporal_window) / temporal_window
@@ -129,9 +128,7 @@ class VisualFeatureExtractor:
         # Clamp to [0, 1]
         return float(np.clip(motion, 0.0, 1.0))
 
-    def extract_with_motion(
-        self, frames: List[np.ndarray]
-    ) -> List[VisualFeatures]:
+    def extract_with_motion(self, frames: List[np.ndarray]) -> List[VisualFeatures]:
         """
         Extract features with motion scores.
 
@@ -215,9 +212,7 @@ class AudioVisualFusion:
             f"fusion_dim={fusion_dim}"
         )
 
-    def early_fusion(
-        self, audio_features: np.ndarray, visual_features: np.ndarray
-    ) -> np.ndarray:
+    def early_fusion(self, audio_features: np.ndarray, visual_features: np.ndarray) -> np.ndarray:
         """
         Perform early fusion (feature-level combination).
 
@@ -240,9 +235,7 @@ class AudioVisualFusion:
 
         return fused
 
-    def late_fusion(
-        self, audio_features: np.ndarray, visual_features: np.ndarray
-    ) -> np.ndarray:
+    def late_fusion(self, audio_features: np.ndarray, visual_features: np.ndarray) -> np.ndarray:
         """
         Perform late fusion (decision-level combination).
 
@@ -294,15 +287,11 @@ class AudioVisualFusion:
 
         # Reshape for multi-head
         head_dim = self.fusion_dim // self.num_heads
-        audio_queries = audio_queries.reshape(
-            seq_len, self.num_heads, head_dim
-        ).transpose(1, 0, 2)  # (num_heads, seq_len, head_dim)
-        visual_keys = visual_keys.reshape(
-            seq_len, self.num_heads, head_dim
-        ).transpose(1, 0, 2)
-        visual_values = visual_values.reshape(
-            seq_len, self.num_heads, head_dim
-        ).transpose(1, 0, 2)
+        audio_queries = audio_queries.reshape(seq_len, self.num_heads, head_dim).transpose(
+            1, 0, 2
+        )  # (num_heads, seq_len, head_dim)
+        visual_keys = visual_keys.reshape(seq_len, self.num_heads, head_dim).transpose(1, 0, 2)
+        visual_values = visual_values.reshape(seq_len, self.num_heads, head_dim).transpose(1, 0, 2)
 
         # Compute attention
         attn_scores = (
@@ -334,7 +323,7 @@ class AudioVisualFusion:
         Returns:
             Tuple of (fused, audio_attention, visual_attention)
         """
-        seq_len = audio_features.shape[0]
+        audio_features.shape[0]
 
         # Project
         audio_proj = audio_features @ self.audio_proj
@@ -602,9 +591,7 @@ class VisualVocalizationCorrelation:
         audio_pred = visual_features @ self.visual_to_audio
         return audio_pred
 
-    def build_visual_index(
-        self, visual_features: List[np.ndarray], contexts: List[str]
-    ) -> None:
+    def build_visual_index(self, visual_features: List[np.ndarray], contexts: List[str]) -> None:
         """
         Build index for visual context retrieval.
 
@@ -618,9 +605,7 @@ class VisualVocalizationCorrelation:
         self.visual_index = visual_features
         self.context_labels = contexts
 
-    def retrieve_similar(
-        self, query_audio: np.ndarray, top_k: int = 5
-    ) -> List[Tuple[str, float]]:
+    def retrieve_similar(self, query_audio: np.ndarray, top_k: int = 5) -> List[Tuple[str, float]]:
         """
         Retrieve similar visual contexts from audio query.
 
@@ -670,9 +655,7 @@ class TemporalAlignment:
         self.audio_rate = audio_rate
         self.samples_per_frame = audio_rate / fps
 
-    def audio_to_frame_indices(
-        self, audio_timestamps: np.ndarray
-    ) -> np.ndarray:
+    def audio_to_frame_indices(self, audio_timestamps: np.ndarray) -> np.ndarray:
         """
         Convert audio timestamps to frame indices.
 
@@ -786,8 +769,6 @@ if __name__ == "__main__":
     print(f"Fused features shape: {fused.shape}")
 
     # Test multimodal classifier
-    classifier = MultimodalContextClassifier(
-        audio_dim=112, visual_dim=512, num_classes=4
-    )
+    classifier = MultimodalContextClassifier(audio_dim=112, visual_dim=512, num_classes=4)
     logits = classifier.classify(audio_feat, visual_feat)
     print(f"Classification logits shape: {logits.shape}")

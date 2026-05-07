@@ -20,13 +20,12 @@ License: CC BY-ND 4.0 International
 
 import json
 import logging
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -128,7 +127,6 @@ class SpeakerEmbeddingExtractor:
         Returns:
             L2-normalized embedding vector of shape (embedding_dim,)
         """
-        import time
 
         # In production: mel spectrogram → CNN → embedding
         # For now: extract simple features and project
@@ -301,9 +299,7 @@ class SpeakerDatabase:
             is_match=is_match, confidence=max(0.0, similarity), distance=distance
         )
 
-    def identify(
-        self, embedding: np.ndarray, top_k: int = 5
-    ) -> List[Tuple[str, float]]:
+    def identify(self, embedding: np.ndarray, top_k: int = 5) -> List[Tuple[str, float]]:
         """
         Find most similar speakers in database.
 
@@ -368,13 +364,11 @@ class SpeakerDatabase:
             # Auto-detect number of clusters using distance threshold
             # Typical threshold: 0.5 distance (0.5 similarity)
             clustering = AgglomerativeClustering(
-                n_clusters=None, distance_threshold=0.5, linkage="average",
-                metric="precomputed"
+                n_clusters=None, distance_threshold=0.5, linkage="average", metric="precomputed"
             )
         else:
             clustering = AgglomerativeClustering(
-                n_clusters=n_clusters, linkage="average",
-                metric="precomputed"
+                n_clusters=n_clusters, linkage="average", metric="precomputed"
             )
 
         labels = clustering.fit_predict(distances)
@@ -421,9 +415,7 @@ class SpeakerDatabase:
         return {
             "num_speakers": len(self.speakers),
             "similarity_threshold": self.similarity_threshold,
-            "total_enrollments": sum(
-                p.enrollment_count for p in self.speakers.values()
-            ),
+            "total_enrollments": sum(p.enrollment_count for p in self.speakers.values()),
         }
 
 
@@ -495,9 +487,9 @@ class SpeakerAdaptiveSynthesis:
                     return None
 
 
-def create_speaker_pipeline(embedding_dim: int = 256) -> Tuple[
-    SpeakerEmbeddingExtractor, SpeakerDatabase
-]:
+def create_speaker_pipeline(
+    embedding_dim: int = 256,
+) -> Tuple[SpeakerEmbeddingExtractor, SpeakerDatabase]:
     """
     Create a complete speaker identification pipeline.
 

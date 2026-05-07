@@ -538,14 +538,18 @@ fn test_exemplar_manager_ood_detection() {
     // In-distribution: feature close to centroid
     // Distance from origin: sqrt(112 * 1.0^2) = sqrt(112) ≈ 10.58
     let close_feature = [1.0f32; 112];
-    assert!(!manager.is_out_of_distribution(&close_feature),
-            "Close feature should be in-distribution (distance ≈ 10.6 < threshold 15.0)");
+    assert!(
+        !manager.is_out_of_distribution(&close_feature),
+        "Close feature should be in-distribution (distance ≈ 10.6 < threshold 15.0)"
+    );
 
     // Out-of-distribution: feature far from centroid
     let mut far_feature = [0.0f32; 112];
     far_feature[0] = 100.0; // Distance ≈ 100 > threshold 15.0
-    assert!(manager.is_out_of_distribution(&far_feature),
-            "Far feature should be out-of-distribution");
+    assert!(
+        manager.is_out_of_distribution(&far_feature),
+        "Far feature should be out-of-distribution"
+    );
 }
 
 #[test]
@@ -579,9 +583,11 @@ fn test_exemplar_manager_centroid_assignment_speed() {
     let _result = manager.find_nearest_centroid(&test_feature);
     let elapsed = start.elapsed();
 
-    assert!(elapsed.as_nanos() < 50_000,
-            "Assignment took {:?}ns, expected < 50,000ns (0.05ms)",
-            elapsed.as_nanos());
+    assert!(
+        elapsed.as_nanos() < 50_000,
+        "Assignment took {:?}ns, expected < 50,000ns (0.05ms)",
+        elapsed.as_nanos()
+    );
 }
 
 #[test]
@@ -593,14 +599,19 @@ fn test_exemplar_manager_load_centroids_from_manifest() {
 
     // Create a temporary manifest file with exactly 112 values per centroid
     let mut centroid_0 = Vec::new();
-    for _ in 0..112 { centroid_0.push("0.0"); }
+    for _ in 0..112 {
+        centroid_0.push("0.0");
+    }
     let centroid_0_str = centroid_0.join(", ");
 
     let mut centroid_1 = Vec::new();
-    for _ in 0..112 { centroid_1.push("10.0"); }
+    for _ in 0..112 {
+        centroid_1.push("10.0");
+    }
     let centroid_1_str = centroid_1.join(", ");
 
-    let manifest_json = format!(r#"{{"vocabulary_size": 2,
+    let manifest_json = format!(
+        r#"{{"vocabulary_size": 2,
         "num_clusters": 2,
         "clusters": {{
             "0": {{
@@ -624,7 +635,9 @@ fn test_exemplar_manager_load_centroids_from_manifest() {
             "extraction_method": "pca_bgmm_teacher_student",
             "n_components": 30
         }}
-    }}"#, centroid_0_str, centroid_1_str);
+    }}"#,
+        centroid_0_str, centroid_1_str
+    );
 
     let mut temp_file = NamedTempFile::new().unwrap();
     write!(temp_file, "{}", manifest_json).unwrap();

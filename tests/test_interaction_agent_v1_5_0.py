@@ -17,11 +17,13 @@ Red Phase: Failing tests that define the requirements for:
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
-import pytest
-import numpy as np
+import sys
 import time
 from pathlib import Path
-import sys
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.interaction_agent import (
@@ -32,22 +34,32 @@ from realtime.interaction_agent import (
     calculate_ras,
 )
 
-
 # =============================================================================
 # FIXTURES: Test Data
 # =============================================================================
+
 
 @pytest.fixture
 def valid_bigrams():
     """The 50 valid bigrams from LRN-6 analysis (simplified subset)."""
     return {
-        (8, 12), (8, 15), (8, 18), (8, 25),  # Cluster 8 openers
-        (12, 8), (12, 20), (12, 25),
-        (15, 8), (15, 12), (15, 22),
-        (18, 8), (18, 15), (18, 30),
+        (8, 12),
+        (8, 15),
+        (8, 18),
+        (8, 25),  # Cluster 8 openers
+        (12, 8),
+        (12, 20),
+        (12, 25),
+        (15, 8),
+        (15, 12),
+        (15, 22),
+        (18, 8),
+        (18, 15),
+        (18, 30),
         (20, 8),
         (22, 8),
-        (25, 8), (25, 12),
+        (25, 8),
+        (25, 12),
     }
 
 
@@ -69,6 +81,7 @@ def cluster_context_map():
 # =============================================================================
 # TEST SUITE 1: InteractionEvent Dataclass
 # =============================================================================
+
 
 class TestInteractionEvent:
     """Test InteractionEvent dataclass structure."""
@@ -108,6 +121,7 @@ class TestInteractionEvent:
 # =============================================================================
 # TEST SUITE 2: SessionMetrics Dataclass
 # =============================================================================
+
 
 class TestSessionMetrics:
     """Test SessionMetrics dataclass structure."""
@@ -153,6 +167,7 @@ class TestSessionMetrics:
 # =============================================================================
 # TEST SUITE 3: RAS Calculation
 # =============================================================================
+
 
 class TestRASCalculation:
     """Test Response Appropriateness Score calculation."""
@@ -205,7 +220,9 @@ class TestRASCalculation:
         events = [
             InteractionEvent(timestamp=0.0, source="animal", cluster_id=8),
             InteractionEvent(timestamp=1.0, source="system", cluster_id=12, response_to=8),
-            InteractionEvent(timestamp=2.0, source="animal", cluster_id=99, response_to=12),  # Invalid
+            InteractionEvent(
+                timestamp=2.0, source="animal", cluster_id=99, response_to=12
+            ),  # Invalid
         ]
 
         valid_bigrams = {(8, 12), (12, 8)}  # (12, 99) is not valid
@@ -235,6 +252,7 @@ class TestRASCalculation:
 # TEST SUITE 4: Agent Ethological Mode
 # =============================================================================
 
+
 class TestAgentEthologicalMode:
     """Test agent behavior in ethological validation mode."""
 
@@ -250,8 +268,6 @@ class TestAgentEthologicalMode:
 
         agent = InteractionAgent(config=config)
         agent._last_response_time = 0
-
-        from realtime.feature_subscriber import FeatureEvent
 
         # Start agent to initialize session
         agent.start()
@@ -350,6 +366,7 @@ class TestAgentEthologicalMode:
 # TEST SUITE 5: RAS Integration
 # =============================================================================
 
+
 class TestRASIntegration:
     """Integration tests for RAS tracking."""
 
@@ -425,7 +442,7 @@ class TestRASIntegration:
         stats = agent.get_stats()
 
         assert "ethological_validation" in stats
-        assert stats["ethological_validation"]["enabled"] == True
+        assert stats["ethological_validation"]["enabled"]
         assert stats["ethological_validation"]["session_id"] is not None
         assert "ras_score" in stats["ethological_validation"]
 
@@ -491,6 +508,7 @@ class TestRASIntegration:
 # =============================================================================
 # TEST SUITE 6: Experimental Conditions
 # =============================================================================
+
 
 class TestExperimentalConditions:
     """Test different experimental condition configurations."""

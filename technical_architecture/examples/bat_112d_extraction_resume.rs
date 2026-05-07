@@ -47,8 +47,7 @@ fn load_checkpoint(checkpoint_path: &Path) -> Result<Option<CheckpointData>> {
         return Ok(None);
     }
 
-    let file = File::open(checkpoint_path)
-        .context("Failed to open checkpoint file")?;
+    let file = File::open(checkpoint_path).context("Failed to open checkpoint file")?;
     let reader = BufReader::new(file);
 
     // Try to load as JSON first
@@ -81,21 +80,14 @@ fn append_segment(output_file: &mut File, segment: &ExtractedSegment) -> Result<
 fn load_audio_file(path: &Path) -> Result<Vec<f32>> {
     use hound::WavReader;
 
-    let reader = WavReader::open(path)
-        .with_context(|| format!("Failed to open audio file: {:?}", path))?;
+    let reader = WavReader::open(path).with_context(|| format!("Failed to open audio file: {:?}", path))?;
 
     let spec = reader.spec();
-    let samples: Vec<f32> = reader
-        .into_samples::<f32>()
-        .map(|s| s.unwrap_or(0.0))
-        .collect();
+    let samples: Vec<f32> = reader.into_samples::<f32>().map(|s| s.unwrap_or(0.0)).collect();
 
     // Convert to mono if stereo
     if spec.channels == 2 {
-        let mono: Vec<f32> = samples
-            .chunks(2)
-            .map(|pair| (pair[0] + pair[1]) / 2.0)
-            .collect();
+        let mono: Vec<f32> = samples.chunks(2).map(|pair| (pair[0] + pair[1]) / 2.0).collect();
         Ok(mono)
     } else {
         Ok(samples)
@@ -162,10 +154,7 @@ fn main() -> Result<()> {
         .filter(|e| e.path().extension().map(|ext| ext == "wav").unwrap_or(false))
         .collect();
 
-    audio_files.sort_by_key(|e| e.path().file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string());
+    audio_files.sort_by_key(|e| e.path().file_name().unwrap_or_default().to_string_lossy().to_string());
 
     // Process subset for demo
     let max_files = std::env::var("MAX_FILES")
@@ -182,7 +171,10 @@ fn main() -> Result<()> {
     println!("  Total files: {}", total_files);
     println!("  Already processed: {}", already_processed);
     println!("  Remaining: {}", remaining);
-    println!("  Progress: {:.1}%", (already_processed as f32 / total_files as f32) * 100.0);
+    println!(
+        "  Progress: {:.1}%",
+        (already_processed as f32 / total_files as f32) * 100.0
+    );
     println!();
 
     if remaining == 0 {
@@ -204,7 +196,7 @@ fn main() -> Result<()> {
     let extractor = MicroDynamicsExtractor::new(sample_rate);
 
     let segment_ms = 100.0; // 100ms segments
-    let hop_ms = 50.0;      // 50ms hop
+    let hop_ms = 50.0; // 50ms hop
 
     // Open segments file for appending
     let segments_file_exists = segments_path.exists();
@@ -295,8 +287,16 @@ fn main() -> Result<()> {
     let elapsed = start_time.elapsed();
 
     println!();
-    println!("  ✅ Extracted {} new segments (total: {})", new_segment_count.lock().unwrap(), total_segments);
-    println!("  ⏱️  Time: {:.1}s ({:.1} files/sec)", elapsed.as_secs_f32(), remaining as f32 / elapsed.as_secs_f32());
+    println!(
+        "  ✅ Extracted {} new segments (total: {})",
+        new_segment_count.lock().unwrap(),
+        total_segments
+    );
+    println!(
+        "  ⏱️  Time: {:.1}s ({:.1} files/sec)",
+        elapsed.as_secs_f32(),
+        remaining as f32 / elapsed.as_secs_f32()
+    );
     println!();
 
     // ========================================================================
@@ -342,14 +342,10 @@ fn finalize_extraction(output_dir: &Path, total_files: usize, total_segments: us
     let mut stds = vec![0.0f32; n_dims];
 
     for dim in 0..n_dims {
-        let values: Vec<f32> = all_segments.iter()
-            .map(|s| s.features_112d[dim])
-            .collect();
+        let values: Vec<f32> = all_segments.iter().map(|s| s.features_112d[dim]).collect();
 
         let mean = values.iter().sum::<f32>() / n_segments.max(1) as f32;
-        let variance = values.iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f32>() / n_segments.max(1) as f32;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / n_segments.max(1) as f32;
         let std = variance.sqrt();
 
         means[dim] = mean;

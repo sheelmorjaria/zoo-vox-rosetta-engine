@@ -673,10 +673,12 @@ impl FeatureEventPublisher {
                     1.0 - (distance / threshold)
                 } else {
                     1.0
-                }.max(0.0).min(1.0);
+                }
+                .max(0.0)
+                .min(1.0);
 
-                let mut event = FeatureEvent::new(cluster_id, features_112d, self.sequence)?
-                    .with_confidence(confidence);
+                let mut event =
+                    FeatureEvent::new(cluster_id, features_112d, self.sequence)?.with_confidence(confidence);
 
                 if let Some(emitter) = emitter_id {
                     event = event.with_emitter(emitter);
@@ -990,7 +992,11 @@ pub struct SynthesisAction {
     /// Timeline of events to synthesize
     pub timeline: Vec<TimelineEvent>,
 
-    /// Optional micro-dynamics deltas
+    /// Module 1: 112D feature modifications (from RosettaFeatures)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delta_112d: Option<Vec<f32>>,
+
+    /// Optional micro-dynamics deltas (DEPRECATED - use delta_112d)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deltas: Option<MicroDynamicsDelta>,
 
@@ -1006,12 +1012,22 @@ impl SynthesisAction {
         Self {
             action_type: "synthesize_timeline".to_string(),
             timeline,
+            delta_112d: None,
             deltas: None,
             priority: ActionPriority::Normal,
         }
     }
 
-    /// Create an action with deltas
+    /// Create an action with 112D delta (Module 1)
+    pub fn with_delta_112d(mut self, delta_112d: Vec<f32>) -> Self {
+        if delta_112d.len() != 112 {
+            panic!("delta_112d must have exactly 112 elements, got {}", delta_112d.len());
+        }
+        self.delta_112d = Some(delta_112d);
+        self
+    }
+
+    /// Create an action with deltas (DEPRECATED)
     pub fn with_deltas(mut self, deltas: MicroDynamicsDelta) -> Self {
         self.deltas = Some(deltas);
         self
@@ -1042,6 +1058,66 @@ impl SynthesisAction {
     #[cfg(test)]
     pub fn test_action() -> Self {
         Self::single_event(42, 150.0)
+    }
+}
+
+// ============================================================================
+// Audio Buffer Event (Module 1)
+// ============================================================================
+
+/// PCM audio buffer event from Python DDSP synthesizer (Module 1).
+///
+/// Carries actual audio samples from Python to Rust for direct output
+/// to DAC, bypassing grain-based synthesis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AudioBufferEvent {
+    /// PCM audio samples (float32, -1.0 to 1.0)
+    pub audio_data: Vec<f32>,
+
+    /// Sample rate in Hz
+    pub sample_rate: usize,
+
+    /// Duration in milliseconds
+    pub duration_ms: f32,
+
+    /// Unix timestamp
+    pub timestamp: f64,
+
+    /// Sequence number for ordering
+    pub sequence: u64,
+}
+
+#[allow(dead_code)]
+impl AudioBufferEvent {
+    /// Create a new audio buffer event
+    pub fn new(audio_data: Vec<f32>, sample_rate: usize) -> Self {
+        let duration_ms = (audio_data.len() as f32 / sample_rate as f32) * 1000.0;
+        Self {
+            audio_data,
+            sample_rate,
+            duration_ms,
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs_f64(),
+            sequence: 0,
+        }
+    }
+
+    /// Create with sequence number
+    pub fn with_sequence(mut self, sequence: u64) -> Self {
+        self.sequence = sequence;
+        self
+    }
+
+    /// Deserialize from JSON bytes
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes).map_err(|e| anyhow::anyhow!("Failed to deserialize audio buffer event: {}", e))
+    }
+
+    /// Serialize to JSON bytes
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+        serde_json::to_vec(self).map_err(|e| anyhow::anyhow!("Failed to serialize audio buffer event: {}", e))
     }
 }
 

@@ -11,17 +11,15 @@ License: CC BY-ND 4.0 International
 """
 
 import logging
+
+# Add parent directory to path for imports
+import sys
 import tempfile
 from pathlib import Path
 
 import numpy as np
 import pytest
-from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
-
-# Add parent directory to path for imports
-import sys
-from typing import Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -194,9 +192,7 @@ class TestKOptimization:
 
         # Use step_size=1 to test all k values
         optimizer = VocabOptimizer(k_range=(2, 6), step_size=1, random_state=42)
-        optimal_k, svs_history = optimizer.optimize_k_with_history(
-            features, species="test"
-        )
+        optimal_k, svs_history = optimizer.optimize_k_with_history(features, species="test")
 
         # Should have history for k=2,3,4,5
         assert len(svs_history) == 4, f"Expected 4 entries, got {len(svs_history)}"
@@ -219,9 +215,7 @@ class TestSpeciesVocabConfig:
 
     def test_create_vocab_config(self):
         """Create a vocabulary configuration."""
-        config = SpeciesVocabConfig(
-            species="egyptian_fruit_bat", optimal_k=1020, svs_score=0.45
-        )
+        config = SpeciesVocabConfig(species="egyptian_fruit_bat", optimal_k=1020, svs_score=0.45)
 
         assert config.species == "egyptian_fruit_bat"
         assert config.optimal_k == 1020
@@ -231,9 +225,7 @@ class TestSpeciesVocabConfig:
 
     def test_vocab_config_to_dict(self):
         """Convert configuration to dictionary."""
-        config = SpeciesVocabConfig(
-            species="marmoset", optimal_k=450, svs_score=0.52
-        )
+        config = SpeciesVocabConfig(species="marmoset", optimal_k=450, svs_score=0.52)
 
         as_dict = config.to_dict()
 
@@ -262,9 +254,7 @@ class TestSpeciesVocabConfig:
 
     def test_vocab_config_roundtrip_json(self):
         """Save and load configuration from JSON."""
-        config = SpeciesVocabConfig(
-            species="test_species", optimal_k=333, svs_score=0.42
-        )
+        config = SpeciesVocabConfig(species="test_species", optimal_k=333, svs_score=0.42)
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             config.save(f.name)
@@ -274,7 +264,7 @@ class TestSpeciesVocabConfig:
         assert loaded.species == config.species
         assert loaded.optimal_k == config.optimal_k
         assert loaded.svs_score == config.svs_score
-        logger.info(f"✓ JSON roundtrip successful")
+        logger.info("✓ JSON roundtrip successful")
 
     def test_vocab_config_equality(self):
         """Test configuration equality."""
@@ -284,7 +274,7 @@ class TestSpeciesVocabConfig:
 
         assert config1 == config2, "Equal configs should be equal"
         assert config1 != config3, "Different configs should not be equal"
-        logger.info(f"✓ Equality check works")
+        logger.info("✓ Equality check works")
 
 
 # =============================================================================
@@ -340,9 +330,7 @@ class TestVocabOptimizerIntegration:
         features = create_well_separated_clusters(n_samples=300)
 
         # Large range with step to speed up
-        optimizer = VocabOptimizer(
-            k_range=(100, 500), step_size=50, random_state=42
-        )
+        optimizer = VocabOptimizer(k_range=(100, 500), step_size=50, random_state=42)
         optimal_k = optimizer.optimize_k(features, species="test_large_range")
 
         # Should pick a k in the stepped range
@@ -374,9 +362,7 @@ class TestVocabOptimizerIntegration:
         features = np.random.randn(1, 2)
 
         optimizer = VocabOptimizer(k_range=(2, 100), random_state=42)
-        optimal_k, svs_history = optimizer.optimize_k_with_history(
-            features, species="test_single"
-        )
+        optimal_k, svs_history = optimizer.optimize_k_with_history(features, species="test_single")
 
         # Should return k=1 as fallback
         assert optimal_k == 1
@@ -389,9 +375,7 @@ class TestVocabOptimizerIntegration:
         features = np.random.randn(2, 2)
 
         optimizer = VocabOptimizer(k_range=(5, 100), random_state=42)
-        optimal_k, svs_history = optimizer.optimize_k_with_history(
-            features, species="test_two"
-        )
+        optimal_k, svs_history = optimizer.optimize_k_with_history(features, species="test_two")
 
         # With n_samples=2, the only valid k is 1 (since k < n_samples)
         assert optimal_k == 1
@@ -436,6 +420,7 @@ class TestExemplarManagerIntegration:
     def test_exemplar_manager_loads_species_vocab(self):
         """ExemplarManager loads species-specific k from registry."""
         import tempfile
+
         from analysis.rosetta_stone.exemplar_manager import ExemplarManager
 
         # Create a vocabulary registry with species-specific configs
@@ -488,18 +473,21 @@ class TestExemplarManagerIntegration:
     def test_exemplar_manager_clustering_uses_actual_k(self):
         """ExemplarManager clustering uses species-specific k."""
         import tempfile
+
         from analysis.rosetta_stone.exemplar_manager import ExemplarManager
 
         # Create test segments
         np.random.seed(42)
         segments = []
         for i in range(50):
-            segments.append({
-                "file_path": f"seg_{i:03d}.wav",
-                "features_112d": np.random.randn(112).tolist(),
-                "duration_ms": 100.0,
-                "mean_f0_hz": 8000.0,
-            })
+            segments.append(
+                {
+                    "file_path": f"seg_{i:03d}.wav",
+                    "features_112d": np.random.randn(112).tolist(),
+                    "duration_ms": 100.0,
+                    "mean_f0_hz": 8000.0,
+                }
+            )
 
         # Create and save a vocab config
         registry = SpeciesVocabRegistry()
@@ -529,8 +517,10 @@ class TestExemplarManagerIntegration:
             assert actual_k == 5, f"Expected k=5, got {actual_k}"
             assert len(manager.clusters) <= 5, f"Expected ≤5 clusters, got {len(manager.clusters)}"
 
-            logger.info(f"✓ Clustering used species-specific k={actual_k}, "
-                        f"found {len(manager.clusters)} clusters")
+            logger.info(
+                f"✓ Clustering used species-specific k={actual_k}, "
+                f"found {len(manager.clusters)} clusters"
+            )
 
         finally:
             Path(registry_path).unlink(missing_ok=True)
@@ -541,19 +531,20 @@ class TestExemplarManagerCLI:
 
     def test_cli_accepts_species_and_registry_args(self):
         """CLI should accept --species and --vocab-registry arguments."""
-        from analysis.rosetta_stone.exemplar_manager import main
         import argparse
         import sys
-        from io import StringIO
 
         # Mock sys.argv to simulate CLI arguments
         original_argv = sys.argv
         try:
             sys.argv = [
                 "exemplar_manager.py",
-                "--input", "/tmp/test_input.json",
-                "--species", "test_species",
-                "--vocab-registry", "/tmp/test_registry.json",
+                "--input",
+                "/tmp/test_input.json",
+                "--species",
+                "test_species",
+                "--vocab-registry",
+                "/tmp/test_registry.json",
             ]
 
             # Parse args to verify they're accepted
@@ -576,6 +567,7 @@ class TestExemplarManagerCLI:
         """Full CLI path should load species-specific k from registry."""
         import json
         import tempfile
+
         from analysis.rosetta_stone.exemplar_manager import ExemplarManager
         from analysis.rosetta_stone.vocab_optimizer import (
             SpeciesVocabConfig,
@@ -640,6 +632,7 @@ class TestExemplarManagerCLI:
         """CLI should use default k when species not provided."""
         import json
         import tempfile
+
         from analysis.rosetta_stone.exemplar_manager import ExemplarManager
 
         # Create test segments manifest

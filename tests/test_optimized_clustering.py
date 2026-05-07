@@ -9,19 +9,20 @@ TDD approach:
 """
 
 import json
-import time
-import pytest
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 import sys
+import time
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from sklearn.decomposition import PCA
     from sklearn.mixture import BayesianGaussianMixture
-    from sklearn.cluster import MiniBatchKMeans
-    from sklearn.metrics.pairwise import euclidean_distances
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -56,10 +57,12 @@ class TestPCABGMMPipeline:
         base_latent = np.random.randn(n_samples, n_latent)
         # Project to 112D with random loadings (creates correlation)
         loading_matrix = np.random.randn(n_latent, 112) * 0.5
-        features_112d = (base_latent @ loading_matrix + np.random.randn(n_samples, 112) * 0.1).astype(np.float32)
+        features_112d = (
+            base_latent @ loading_matrix + np.random.randn(n_samples, 112) * 0.1
+        ).astype(np.float32)
 
         pca = PCA(n_components=30, random_state=42)
-        features_30d = pca.fit_transform(features_112d)
+        pca.fit_transform(features_112d)
 
         explained_variance = pca.explained_variance_ratio_.sum()
         assert explained_variance >= 0.90, f"PCA preserved only {explained_variance:.1%} variance"
@@ -107,8 +110,9 @@ class TestPCABGMMPipeline:
         # Fit without PCA (more components to allow discovery)
         pca_direct = PCA(n_components=50, random_state=42)  # Still use PCA but more components
         features_50d = pca_direct.fit_transform(features_112d)
-        bgmm_direct = BayesianGaussianMixture(n_components=20, covariance_type='diag',
-                                              random_state=42, max_iter=100)
+        bgmm_direct = BayesianGaussianMixture(
+            n_components=20, covariance_type="diag", random_state=42, max_iter=100
+        )
         bgmm_direct.fit(features_50d)
         labels_direct = bgmm_direct.predict(features_50d)
         n_clusters_direct = len(np.unique(labels_direct))
@@ -164,7 +168,9 @@ class TestVocabularyDistillation:
 
         # Verify dimensions
         for cluster_id, centroid in centroids.items():
-            assert centroid.shape == (112,), f"Centroid {cluster_id} has wrong shape: {centroid.shape}"
+            assert centroid.shape == (112,), (
+                f"Centroid {cluster_id} has wrong shape: {centroid.shape}"
+            )
         print(f"  ✅ All {len(centroids)} centroids have 112D shape")
 
     def test_real_time_assignment_speed(self):
@@ -214,10 +220,11 @@ class TestSynthesisManifest:
             data = json.load(f)
 
         # Verify centroids are in 112D space
-        for cluster_id, centroid_data in data['centroids'].items():
-            centroid_vector = centroid_data['centroid']
-            assert len(centroid_vector) == 112, \
+        for cluster_id, centroid_data in data["centroids"].items():
+            centroid_vector = centroid_data["centroid"]
+            assert len(centroid_vector) == 112, (
                 f"Centroid {cluster_id} has dimension {len(centroid_vector)}, expected 112"
+            )
         print(f"  ✅ All {len(data['centroids'])} centroids are 112D")
 
     def test_export_synthesis_manifest(self, tmp_path):
@@ -238,10 +245,10 @@ class TestSynthesisManifest:
         with open(manifest_path) as f:
             data = json.load(f)
 
-        assert 'centroids' in data, "Manifest missing 'centroids'"
-        assert 'vocabulary_size' in data, "Manifest missing 'vocabulary_size'"
-        assert 'feature_dimension' in data, "Manifest missing 'feature_dimension'"
-        assert data['feature_dimension'] == 112
+        assert "centroids" in data, "Manifest missing 'centroids'"
+        assert "vocabulary_size" in data, "Manifest missing 'vocabulary_size'"
+        assert "feature_dimension" in data, "Manifest missing 'feature_dimension'"
+        assert data["feature_dimension"] == 112
         print(f"  ✅ Manifest exported: {len(data['centroids'])} centroids")
 
     def test_manifest_centroid_format(self, tmp_path):
@@ -259,21 +266,20 @@ class TestSynthesisManifest:
             data = json.load(f)
 
         # Check centroid format
-        for cluster_id, centroid_data in data['centroids'].items():
-            assert 'centroid' in centroid_data
-            assert len(centroid_data['centroid']) == 112
-            assert all(isinstance(x, float) for x in centroid_data['centroid'])
-        print(f"  ✅ Manifest format valid")
+        for cluster_id, centroid_data in data["centroids"].items():
+            assert "centroid" in centroid_data
+            assert len(centroid_data["centroid"]) == 112
+            assert all(isinstance(x, float) for x in centroid_data["centroid"])
+        print("  ✅ Manifest format valid")
 
 
 # ============================================================================
 # Implementation Functions (Green Phase)
 # ============================================================================
 
+
 def fit_pca_bgmm(
-    features: np.ndarray,
-    n_components: int = 30,
-    n_bgmm_components: int = 100
+    features: np.ndarray, n_components: int = 30, n_bgmm_components: int = 100
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Fit PCA + Bayesian GMM Model with diag covariance (fast)."""
     pca = PCA(n_components=n_components, random_state=42)
@@ -281,10 +287,10 @@ def fit_pca_bgmm(
 
     bgmm = BayesianGaussianMixture(
         n_components=n_bgmm_components,
-        covariance_type='diag',  # Fast and effective
+        covariance_type="diag",  # Fast and effective
         max_iter=300,
         weight_concentration_prior=0.01,
-        random_state=42
+        random_state=42,
     )
     bgmm.fit(features_reduced)
 
@@ -294,10 +300,7 @@ def fit_pca_bgmm(
     return hard_labels, soft_labels
 
 
-def extract_centroids(
-    features: np.ndarray,
-    labels: np.ndarray
-) -> Dict[int, np.ndarray]:
+def extract_centroids(features: np.ndarray, labels: np.ndarray) -> Dict[int, np.ndarray]:
     """Extract mean 112D centroid for each cluster."""
     centroids = {}
     unique_labels = np.unique(labels)
@@ -311,10 +314,7 @@ def extract_centroids(
     return centroids
 
 
-def assign_to_nearest_centroid(
-    feature: np.ndarray,
-    centroids: Dict[int, np.ndarray]
-) -> int:
+def assign_to_nearest_centroid(feature: np.ndarray, centroids: Dict[int, np.ndarray]) -> int:
     """Assign feature to nearest cluster centroid."""
     if not centroids:
         raise ValueError("No centroids available")
@@ -334,31 +334,32 @@ def export_synthesis_manifest(
     centroids: Dict[int, np.ndarray],
     labels: np.ndarray,
     soft_labels: Optional[np.ndarray],
-    output_path: Path
+    output_path: Path,
 ) -> None:
     """Export centroids to synthesis_manifest.json for Rust."""
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
     # Prepare data for JSON serialization
     centroids_data = {}
     for cluster_id, centroid in centroids.items():
         centroids_data[str(cluster_id)] = {
-            'centroid': centroid.tolist(),
-            'cluster_size': int((labels == cluster_id).sum())
+            "centroid": centroid.tolist(),
+            "cluster_size": int((labels == cluster_id).sum()),
         }
 
     manifest = {
-        'vocabulary_size': len(centroids),
-        'feature_dimension': 112,
-        'total_samples': len(labels),
-        'centroids': centroids_data,
-        'metadata': {
-            'extraction_method': 'pca_bgmm',
-            'n_components': 30,
-            'has_soft_labels': soft_labels is not None
-        }
+        "vocabulary_size": len(centroids),
+        "feature_dimension": 112,
+        "total_samples": len(labels),
+        "centroids": centroids_data,
+        "metadata": {
+            "extraction_method": "pca_bgmm",
+            "n_components": 30,
+            "has_soft_labels": soft_labels is not None,
+        },
     }
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(manifest, f, indent=2)

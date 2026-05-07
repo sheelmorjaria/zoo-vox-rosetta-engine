@@ -12,7 +12,7 @@ License: CC BY-ND 4.0 International
 import os
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 
@@ -106,13 +106,12 @@ class TestQuantizedContextClassifier(unittest.TestCase):
         try:
             # This will fail to load, but verifies the interface
             with self.assertRaises(Exception):
-                classifier = QuantizedContextClassifier(model_path)
+                QuantizedContextClassifier(model_path)
         finally:
             os.unlink(model_path)
 
     def test_quantized_classifier_has_model(self):
         """QuantizedContextClassifier has model attribute"""
-        from realtime.model_quantization import QuantizedContextClassifier
 
         # Create with a mock model
         with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
@@ -126,7 +125,6 @@ class TestQuantizedContextClassifier(unittest.TestCase):
 
     def test_quantized_classifier_export_onnx(self):
         """QuantizedContextClassifier can export to ONNX"""
-        from realtime.model_quantization import QuantizedContextClassifier
 
         with tempfile.NamedTemporaryFile(suffix=".onnx", delete=False) as f:
             onnx_path = f.name
@@ -201,8 +199,7 @@ class TestFeaturePruner(unittest.TestCase):
         for i, val in enumerate(pruned):
             original_idx = pruner.important_indices[i]
             self.assertAlmostEqual(
-                expanded[original_idx], val, places=5,
-                msg=f"Dimension {i} should be preserved"
+                expanded[original_idx], val, places=5, msg=f"Dimension {i} should be preserved"
             )
 
 

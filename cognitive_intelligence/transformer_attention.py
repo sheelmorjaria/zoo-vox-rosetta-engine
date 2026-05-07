@@ -279,8 +279,7 @@ class VocalizationTransformer:
 
         # Transformer encoder layers
         self.layers = [
-            TransformerEncoder(embed_dim, num_heads, ff_dim, dropout)
-            for _ in range(num_layers)
+            TransformerEncoder(embed_dim, num_heads, ff_dim, dropout) for _ in range(num_layers)
         ]
 
         # Output projection for classification

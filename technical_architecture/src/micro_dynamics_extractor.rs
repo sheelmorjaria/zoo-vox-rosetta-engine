@@ -2836,6 +2836,25 @@ mod tests {
             .collect()
     }
 
+    /// Create a linear FM chirp (rising pitch) for testing f0_contour_slope
+    fn create_chirp(start_freq_hz: f32, end_freq_hz: f32, duration_ms: f32, sample_rate: u32) -> Vec<f32> {
+        let num_samples = (duration_ms / 1000.0 * sample_rate as f32) as usize;
+        let duration_sec = duration_ms / 1000.0;
+
+        (0..num_samples)
+            .map(|i| {
+                let t = i as f32 / sample_rate as f32;
+                // Linear frequency sweep
+                let instantaneous_freq = start_freq_hz + (end_freq_hz - start_freq_hz) * t / duration_sec;
+                // Phase is integral of frequency
+                let phase = 2.0
+                    * std::f32::consts::PI
+                    * (start_freq_hz * t + (end_freq_hz - start_freq_hz) * t * t / (2.0 * duration_sec));
+                phase.sin()
+            })
+            .collect()
+    }
+
     #[test]
     fn test_extract_112d_basic() {
         let extractor = MicroDynamicsExtractor::new(48000);
@@ -2845,5 +2864,219 @@ mod tests {
         let features = result.unwrap();
         let vec = features.to_vec();
         assert_eq!(vec.len(), 112);
+    }
+
+    // =============================================================================
+    // Module 0: NBD→112D Variable-Length Segment Compliance Tests
+    // =============================================================================
+
+    #[test]
+    fn test_duration_ms_short_segment_30ms() {
+        /// A 30ms staccato opener MUST report duration_ms = 30.0, not 100.0.
+        /// This is critical for NBD→112D pipeline correctness.
+        let audio = create_test_tone(10000.0, 30.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        // CRITICAL: duration_ms must reflect actual input length
+        assert!(
+            (features.duration_ms - 30.0).abs() < 1.0,
+            "duration_ms {} should be ~30.0 for 30ms input",
+            features.duration_ms
+        );
+    }
+
+    #[test]
+    fn test_duration_ms_long_segment_500ms() {
+        /// A 500ms graded closer MUST report duration_ms = 500.0.
+        let audio = create_test_tone(8000.0, 500.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        assert!(
+            (features.duration_ms - 500.0).abs() < 5.0,
+            "duration_ms {} should be ~500.0 for 500ms input",
+            features.duration_ms
+        );
+    }
+
+    #[test]
+    fn test_duration_ms_variable_lengths() {
+        /// Test various realistic bat call durations.
+        let extractor = MicroDynamicsExtractor::new(48000);
+
+        for duration_ms in [15.0, 30.0, 50.0, 100.0, 200.0, 400.0, 800.0] {
+            let audio = create_test_tone(12000.0, duration_ms, 48000);
+            let features = extractor.extract(&audio).unwrap();
+
+            let tolerance = duration_ms.max(10.0) * 0.05; // 5% tolerance
+            assert!(
+                (features.duration_ms - duration_ms).abs() < tolerance,
+                "duration_ms {} should be ~{} for {}ms input",
+                features.duration_ms,
+                duration_ms,
+                duration_ms
+            );
+        }
+    }
+
+    #[test]
+    fn test_f0_contour_slope_rising_chirp() {
+        /// A chirp rising from 4kHz to 8kHz over 200ms should have:
+        /// - f0_mean_derivative > 0 (positive slope)
+        /// - f0_range_hz > 3500 (captures the full sweep)
+        let audio = create_chirp(4000.0, 8000.0, 200.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        // f0_mean_derivative (Index 55 in to_array) should be positive
+        assert!(
+            features.f0_mean_derivative > 0.0,
+            "f0_mean_derivative {} should be positive for rising chirp",
+            features.f0_mean_derivative
+        );
+
+        // f0_range_hz (Index 2) should capture the full sweep
+        assert!(
+            features.f0_range_hz > 3500.0,
+            "f0_range_hz {} should be > 3500 for 4kHz-8kHz chirp",
+            features.f0_range_hz
+        );
+    }
+
+    #[test]
+    fn test_f0_contour_slope_falling_chirp() {
+        /// A chirp falling from 12kHz to 6kHz should have negative slope.
+        let audio = create_chirp(12000.0, 6000.0, 150.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        assert!(
+            features.f0_mean_derivative < 0.0,
+            "f0_mean_derivative {} should be negative for falling chirp",
+            features.f0_mean_derivative
+        );
+    }
+
+    #[test]
+    fn test_f0_contour_slope_flat_tone() {
+        /// A pure tone with constant frequency should have f0_mean_derivative ≈ 0.
+        let audio = create_test_tone(10000.0, 200.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        // Allow small variance due to jitter, but should be near zero
+        assert!(
+            features.f0_mean_derivative.abs() < 500.0,
+            "f0_mean_derivative {} should be near zero for flat tone",
+            features.f0_mean_derivative
+        );
+    }
+
+    #[test]
+    fn test_zero_padding_short_segment_5ms() {
+        /// A 5ms segment (240 samples @ 48kHz) is shorter than FFT size (1024).
+        /// Must handle via zero-padding without crashing.
+        let audio = create_test_tone(15000.0, 5.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let result = extractor.extract(&audio);
+
+        // Should succeed with zero-padding, not crash
+        assert!(result.is_ok(), "Short segment should be handled via zero-padding");
+
+        let features = result.unwrap();
+        assert_eq!(features.duration_ms, 5.0, "duration_ms should be exact for 5ms input");
+    }
+
+    #[test]
+    fn test_zero_padding_sub_frame_segments() {
+        /// Test various sub-frame durations.
+        let extractor = MicroDynamicsExtractor::new(48000);
+
+        for duration_ms in [3.0, 5.0, 10.0, 15.0, 20.0] {
+            let audio = create_test_tone(12000.0, duration_ms, 48000);
+            let result = extractor.extract(&audio);
+
+            assert!(result.is_ok(), "Sub-frame segment {}ms should succeed", duration_ms);
+
+            let features = result.unwrap();
+            assert!(
+                (features.duration_ms - duration_ms).abs() < 1.0,
+                "duration_ms should be accurate for {}ms input",
+                duration_ms
+            );
+        }
+    }
+
+    #[test]
+    fn test_empty_audio_rejected() {
+        /// Empty audio should return an error, not crash.
+        let audio: Vec<f32> = vec![];
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let result = extractor.extract(&audio);
+
+        assert!(result.is_err(), "Empty audio should return an error");
+    }
+
+    #[test]
+    fn test_minimal_segment_accepted() {
+        /// A minimal segment (just enough for one FFT frame) should work.
+        /// At 48kHz with 1024 FFT size, this is ~21ms.
+        let audio = create_test_tone(10000.0, 21.33, 48000); // 1024 samples
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let result = extractor.extract(&audio);
+
+        assert!(result.is_ok(), "Minimal segment (one FFT frame) should succeed");
+        let features = result.unwrap();
+        assert!((features.duration_ms - 21.33).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_very_long_segment_5_seconds() {
+        /// Test a very long segment (5 seconds) to ensure no overflow.
+        let audio = create_test_tone(8000.0, 5000.0, 48000);
+        let extractor = MicroDynamicsExtractor::new(48000);
+        let features = extractor.extract(&audio).unwrap();
+
+        assert!(
+            (features.duration_ms - 5000.0).abs() < 50.0,
+            "duration_ms should be accurate for 5 second input"
+        );
+    }
+
+    #[test]
+    fn test_nbd_segment_simulation() {
+        /// Simulate NBD → 112D pipeline with realistic segment boundaries.
+        /// NBD might return segments of varying lengths; each must extract correctly.
+        let extractor = MicroDynamicsExtractor::new(48000);
+
+        // Simulate three NBD segments: 30ms opener, 180ms territorial, 45ms social
+        let segment1 = create_test_tone(10000.0, 30.0, 48000); // Staccato opener
+        let segment2 = create_test_tone(8000.0, 180.0, 48000); // Graded territorial
+        let segment3 = create_test_tone(12000.0, 45.0, 48000); // Social call
+
+        // Extract features from each segment
+        let features1 = extractor.extract(&segment1).unwrap();
+        let features2 = extractor.extract(&segment2).unwrap();
+        let features3 = extractor.extract(&segment3).unwrap();
+
+        // Verify durations match the NBD segment lengths
+        assert!(
+            (features1.duration_ms - 30.0).abs() < 1.0,
+            "Segment 1 (opener) duration"
+        );
+        assert!(
+            (features2.duration_ms - 180.0).abs() < 5.0,
+            "Segment 2 (territorial) duration"
+        );
+        assert!(
+            (features3.duration_ms - 45.0).abs() < 1.0,
+            "Segment 3 (social) duration"
+        );
+
+        // All segments should produce valid 112D vectors
+        assert_eq!(features1.to_vec().len(), 112);
+        assert_eq!(features2.to_vec().len(), 112);
+        assert_eq!(features3.to_vec().len(), 112);
     }
 }

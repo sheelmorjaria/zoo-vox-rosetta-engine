@@ -10,7 +10,9 @@ License: CC BY-ND 4.0 International
 """
 
 import unittest
+
 import numpy as np
+
 from realtime.feature_subscriber import FeatureEvent
 
 
@@ -25,7 +27,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.6, 89: 0.4}
+            cluster_probabilities={42: 0.6, 89: 0.4},
         )
 
         self.assertIsNotNone(event.cluster_probabilities)
@@ -40,7 +42,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.95}
+            cluster_probabilities={42: 0.95},
         )
 
         self.assertFalse(event.is_graded())
@@ -53,7 +55,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.6, 89: 0.4}
+            cluster_probabilities={42: 0.6, 89: 0.4},
         )
 
         self.assertTrue(event.is_graded())
@@ -66,7 +68,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.7, 89: 0.3}
+            cluster_probabilities={42: 0.7, 89: 0.3},
         )
 
         # Default threshold 0.3
@@ -81,7 +83,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             cluster_id=42,
             features_112d=np.zeros(112),
             timestamp=0.0,
-            sequence=1
+            sequence=1,
         )
 
         self.assertFalse(event.is_graded())
@@ -94,7 +96,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.6, 89: 0.4}
+            cluster_probabilities={42: 0.6, 89: 0.4},
         )
 
         json_dict = event.to_json_dict()
@@ -109,7 +111,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             "features_112d": [0.0] * 112,
             "timestamp": 0.0,
             "sequence": 1,
-            "cluster_probabilities": {42: 0.6, 89: 0.4}
+            "cluster_probabilities": {42: 0.6, 89: 0.4},
         }
 
         event = FeatureEvent.from_json(json_data)
@@ -125,7 +127,7 @@ class TestFeatureEventGradedClustering(unittest.TestCase):
             features_112d=np.random.randn(112).astype(np.float32),
             timestamp=123.456,
             sequence=42,
-            cluster_probabilities={42: 0.6, 89: 0.3, 15: 0.1}
+            cluster_probabilities={42: 0.6, 89: 0.3, 15: 0.1},
         )
 
         # Serialize
@@ -154,12 +156,7 @@ class TestGradedClusteringPipeline(unittest.TestCase):
         features = np.random.randn(100, 112).astype(np.float32)
 
         # Fit UMAP
-        reducer = umap.UMAP(
-            n_components=10,
-            n_neighbors=15,
-            min_dist=0.0,
-            random_state=42
-        )
+        reducer = umap.UMAP(n_components=10, n_neighbors=15, min_dist=0.0, random_state=42)
         embedding = reducer.fit_transform(features)
 
         self.assertEqual(embedding.shape, (100, 10))
@@ -168,8 +165,8 @@ class TestGradedClusteringPipeline(unittest.TestCase):
     def test_hdbscan_on_umap_embedding(self):
         """HDBSCAN should cluster UMAP embedding efficiently"""
         try:
-            import umap
             import hdbscan
+            import umap
         except ImportError:
             self.skipTest("umap-learn or hdbscan not installed")
 
@@ -182,11 +179,7 @@ class TestGradedClusteringPipeline(unittest.TestCase):
         embedding = reducer.fit_transform(features)
 
         # HDBSCAN clustering
-        clusterer = hdbscan.HDBSCAN(
-            min_cluster_size=5,
-            min_samples=3,
-            prediction_data=True
-        )
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=5, min_samples=3, prediction_data=True)
         labels = clusterer.fit_predict(embedding)
 
         # Should produce labels (noise = -1)
@@ -196,8 +189,8 @@ class TestGradedClusteringPipeline(unittest.TestCase):
     def test_soft_clustering_probabilities(self):
         """HDBSCAN should produce soft clustering probabilities"""
         try:
-            import umap
             import hdbscan
+            import umap
         except ImportError:
             self.skipTest("umap-learn or hdbscan not installed")
 
@@ -209,10 +202,7 @@ class TestGradedClusteringPipeline(unittest.TestCase):
         reducer = umap.UMAP(n_components=5, random_state=42)
         embedding = reducer.fit_transform(features)
 
-        clusterer = hdbscan.HDBSCAN(
-            min_cluster_size=5,
-            prediction_data=True
-        )
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=5, prediction_data=True)
         clusterer.fit(embedding)
 
         # Get soft probabilities
@@ -224,17 +214,19 @@ class TestGradedClusteringPipeline(unittest.TestCase):
     def test_graded_boundary_detection(self):
         """Should detect graded boundary segments"""
         try:
-            import hdbscan
+            import hdbscan  # noqa: F401
         except ImportError:
             self.skipTest("hdbscan not installed")
 
         # Simulate soft clustering with graded boundary
-        soft_probs = np.array([
-            [0.9, 0.1, 0.0],  # Clear cluster 0
-            [0.7, 0.3, 0.0],  # Graded boundary
-            [0.1, 0.9, 0.0],  # Clear cluster 1
-            [0.4, 0.4, 0.2],  # Highly graded
-        ])
+        soft_probs = np.array(
+            [
+                [0.9, 0.1, 0.0],  # Clear cluster 0
+                [0.7, 0.3, 0.0],  # Graded boundary
+                [0.1, 0.9, 0.0],  # Clear cluster 1
+                [0.4, 0.4, 0.2],  # Highly graded
+            ]
+        )
 
         # Detect graded (threshold = 0.3)
         graded = []
@@ -251,7 +243,6 @@ class TestGradedContextIntegration(unittest.TestCase):
 
     def test_graded_event_creates_blended_context(self):
         """Graded event should blend context probabilities"""
-        from realtime.context_classifier import ContextState
 
         # This would be implemented in the InteractionAgent
         # For now, test the concept
@@ -273,7 +264,7 @@ class TestGradedContextIntegration(unittest.TestCase):
             features_112d=np.zeros(112),
             timestamp=0.0,
             sequence=1,
-            cluster_probabilities={42: 0.7, 89: 0.3}
+            cluster_probabilities={42: 0.7, 89: 0.3},
         )
 
         # Strict threshold

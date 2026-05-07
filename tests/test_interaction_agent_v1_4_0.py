@@ -14,24 +14,26 @@ Red Phase: Failing tests that define the requirements for:
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
-import pytest
-import numpy as np
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.interaction_agent import (
+    BigramProbability,
     InteractionAgent,
     InteractionAgentConfig,
-    BigramProbability,
     analyze_corpus_bigram_frequencies,
     build_bigram_probability_map,
 )
 
-
 # =============================================================================
 # FIXTURES: Synthetic Corpus Data
 # =============================================================================
+
 
 @pytest.fixture
 def synthetic_corpus_sequence():
@@ -44,15 +46,28 @@ def synthetic_corpus_sequence():
     """
     # Common transitions (repeated)
     common = [
-        8, 12, 8, 12, 8, 12,  # 8→12 very common
-        8, 15, 8, 15,         # 8→15 common
-        12, 8, 12, 8,         # 12→8 common
-        8, 18,                # 8→18 less common
+        8,
+        12,
+        8,
+        12,
+        8,
+        12,  # 8→12 very common
+        8,
+        15,
+        8,
+        15,  # 8→15 common
+        12,
+        8,
+        12,
+        8,  # 12→8 common
+        8,
+        18,  # 8→18 less common
     ]
 
     # Rare transitions (only once)
     rare = [
-        8, 25,  # 8→25 rare (contact → alarm, unusual)
+        8,
+        25,  # 8→25 rare (contact → alarm, unusual)
     ]
 
     return common + rare
@@ -62,13 +77,23 @@ def synthetic_corpus_sequence():
 def valid_bigrams():
     """The 50 valid bigrams from LRN-6 analysis (simplified subset)."""
     return {
-        (8, 12), (8, 15), (8, 18), (8, 25),  # Cluster 8 openers
-        (12, 8), (12, 20), (12, 25),
-        (15, 8), (15, 12), (15, 22),
-        (18, 8), (18, 15), (18, 30),
+        (8, 12),
+        (8, 15),
+        (8, 18),
+        (8, 25),  # Cluster 8 openers
+        (12, 8),
+        (12, 20),
+        (12, 25),
+        (15, 8),
+        (15, 12),
+        (15, 22),
+        (18, 8),
+        (18, 15),
+        (18, 30),
         (20, 8),
         (22, 8),
-        (25, 8), (25, 12),
+        (25, 8),
+        (25, 12),
     }
 
 
@@ -90,6 +115,7 @@ def cluster_context_map():
 # =============================================================================
 # TEST SUITE 1: BigramProbability Dataclass
 # =============================================================================
+
 
 class TestBigramProbability:
     """Test BigramProbability dataclass structure."""
@@ -141,6 +167,7 @@ class TestBigramProbability:
 # TEST SUITE 2: Corpus Bigram Frequency Analysis
 # =============================================================================
 
+
 class TestBigramFrequencyAnalysis:
     """Test bigram frequency counting from corpus sequences."""
 
@@ -158,10 +185,12 @@ class TestBigramFrequencyAnalysis:
         total_count = sum(bigram_counts.values())
         assert total_count == len(synthetic_corpus_sequence) - 1
 
-    def test_analyze_corpus_filters_to_valid_bigrams(self, synthetic_corpus_sequence, valid_bigrams):
+    def test_analyze_corpus_filters_to_valid_bigrams(
+        self, synthetic_corpus_sequence, valid_bigrams
+    ):
         """build_bigram_probability_map should only include valid bigrams."""
         # First get raw counts
-        raw_counts = analyze_corpus_bigram_frequencies(synthetic_corpus_sequence)
+        analyze_corpus_bigram_frequencies(synthetic_corpus_sequence)
 
         # Build probability map with valid bigrams filter
         prob_map = build_bigram_probability_map(
@@ -170,10 +199,12 @@ class TestBigramFrequencyAnalysis:
         )
 
         # Should only contain valid bigrams
-        for (opener, response) in prob_map.keys():
+        for opener, response in prob_map.keys():
             assert (opener, response) in valid_bigrams
 
-    def test_build_bigram_probability_map_calculates_probabilities(self, synthetic_corpus_sequence, valid_bigrams):
+    def test_build_bigram_probability_map_calculates_probabilities(
+        self, synthetic_corpus_sequence, valid_bigrams
+    ):
         """Probabilities should sum to 1.0 for each opener."""
         prob_map = build_bigram_probability_map(
             corpus_sequence=synthetic_corpus_sequence,
@@ -184,9 +215,7 @@ class TestBigramFrequencyAnalysis:
         openers = set([opener for opener, _ in prob_map.keys()])
 
         for opener in openers:
-            opener_bigrams = {
-                (o, r): bp for (o, r), bp in prob_map.items() if o == opener
-            }
+            opener_bigrams = {(o, r): bp for (o, r), bp in prob_map.items() if o == opener}
 
             # Sum probabilities for this opener
             total_prob = sum(bp.probability for bp in opener_bigrams.values())
@@ -212,6 +241,7 @@ class TestBigramFrequencyAnalysis:
 # =============================================================================
 # TEST SUITE 3: Probability-Weighted Responses
 # =============================================================================
+
 
 class TestProbabilityWeightedResponses:
     """Test that response amplitude/confidence is weighted by bigram probability."""
@@ -376,6 +406,7 @@ class TestProbabilityWeightedResponses:
 # TEST SUITE 4: Rarity-Based Cognitive Attention
 # =============================================================================
 
+
 class TestRarityBasedCognitiveAttention:
     """Test that rare transitions trigger cognitive attention signals."""
 
@@ -412,7 +443,7 @@ class TestRarityBasedCognitiveAttention:
         result = agent._process_features(event)
 
         # Should trigger cognitive attention
-        assert result.get("cognitive_attention", False) == True
+        assert result.get("cognitive_attention", False)
         assert result["bigram_rarity_score"] == 0.95
 
     def test_low_rarity_no_attention_flag(self, valid_bigrams, cluster_context_map):
@@ -448,17 +479,20 @@ class TestRarityBasedCognitiveAttention:
         result = agent._process_features(event)
 
         # Should NOT trigger cognitive attention
-        assert result.get("cognitive_attention", False) == False
+        assert not result.get("cognitive_attention", False)
 
 
 # =============================================================================
 # TEST SUITE 5: Integration - Full Markov Chain Pipeline
 # =============================================================================
 
+
 class TestMarkovChainIntegration:
     """Integration tests for full probabilistic pipeline."""
 
-    def test_full_markov_chain_pipeline(self, synthetic_corpus_sequence, valid_bigrams, cluster_context_map):
+    def test_full_markov_chain_pipeline(
+        self, synthetic_corpus_sequence, valid_bigrams, cluster_context_map
+    ):
         """Complete pipeline: corpus → probabilities → weighted responses."""
         # Step 1: Build probability map from corpus
         prob_map = build_bigram_probability_map(
@@ -501,7 +535,7 @@ class TestMarkovChainIntegration:
         assert result_common["bigram_probability"] > 0.3
         # With prob=~0.5 and formula 0.5+prob=1.0, rarity=1-prob=0.5, so check <= 0.5
         assert result_common["bigram_rarity_score"] <= 0.5
-        assert result_common.get("cognitive_attention", False) == False
+        assert not result_common.get("cognitive_attention", False)
 
         # Step 4: Process rare transition
         event_rare = FeatureEvent(
@@ -520,7 +554,7 @@ class TestMarkovChainIntegration:
         # Rare transition: low probability, high rarity
         assert result_rare["bigram_probability"] < 0.2  # 1/8 = 0.125
         assert result_rare["bigram_rarity_score"] > 0.7
-        assert result_rare.get("cognitive_attention", False) == True
+        assert result_rare.get("cognitive_attention", False)
 
     def test_disabled_weighting_uses_binary_validation(self, valid_bigrams, cluster_context_map):
         """When enable_probabilistic_weighting=False, fall back to binary."""
@@ -556,7 +590,7 @@ class TestMarkovChainIntegration:
         # Should not include probability fields
         assert "bigram_probability" not in result or result["bigram_probability"] == 1.0
         # But bigram_valid should still work
-        assert result["bigram_valid"] == True
+        assert result["bigram_valid"]
 
 
 if __name__ == "__main__":

@@ -579,6 +579,7 @@ pub use hierarchical_ensemble_router::{
 mod acoustic_simulator;
 mod auto_calibration;
 mod data_synchronizer;
+mod edge_power;
 mod environmental_monitor;
 mod iacuc_compliance;
 pub mod island_hopping; // Make public for integration tests
@@ -589,7 +590,6 @@ mod multi_node_coordination;
 mod peer_controller;
 pub mod peer_controller_performance;
 mod power_manager;
-mod edge_power;
 mod ptp;
 mod safety;
 mod shadow_model_monitor;

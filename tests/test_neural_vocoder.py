@@ -12,7 +12,6 @@ License: CC BY-ND 4.0 International
 import os
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
 
 import numpy as np
 
@@ -59,9 +58,7 @@ class TestNeuralVocoderCore(unittest.TestCase):
 
     def test_vocoder_batch(self):
         """Batch synthesis is faster than serial."""
-        features_list = [
-            np.random.randn(3, 112).astype(np.float32) for _ in range(5)
-        ]
+        features_list = [np.random.randn(3, 112).astype(np.float32) for _ in range(5)]
 
         # Batch synthesis should complete without error
         results = self.vocoder.synthesize_batch(features_list)
@@ -90,9 +87,7 @@ class TestAudioQuality(unittest.TestCase):
         self.assertFalse(np.any(np.isnan(audio)), "Audio should not contain NaN")
 
         # No clipping (values in [-1, 1] range for valid audio)
-        self.assertFalse(
-            np.any(np.abs(audio) > 1.0), "Audio should not clip beyond [-1, 1]"
-        )
+        self.assertFalse(np.any(np.abs(audio) > 1.0), "Audio should not clip beyond [-1, 1]")
 
     def test_output_has_energy(self):
         """Output has non-zero energy."""
@@ -101,7 +96,7 @@ class TestAudioQuality(unittest.TestCase):
         audio = self.vocoder.synthesize(features)
 
         # Check RMS energy
-        rms = np.sqrt(np.mean(audio ** 2))
+        rms = np.sqrt(np.mean(audio**2))
         self.assertGreater(rms, 1e-6, "Audio should have non-zero energy")
 
     def test_reconstruction_fidelity(self):
@@ -156,14 +151,14 @@ class TestFeatureInterpolator(unittest.TestCase):
 
     def test_interpolation_smoothness(self):
         """Interpolated synthesis is smooth."""
-        from analysis.rosetta_stone.neural_vocoder import FeatureInterpolator, NeuralVocoder
+        from analysis.rosetta_stone.neural_vocoder import FeatureInterpolator
 
         f1 = np.random.randn(112).astype(np.float32)
         f2 = np.random.randn(112).astype(np.float32)
 
         # Interpolate at multiple points
         interp_0 = FeatureInterpolator.linear(f1, f2, 0.0)
-        interp_50 = FeatureInterpolator.linear(f1, f2, 0.5)
+        FeatureInterpolator.linear(f1, f2, 0.5)
         interp_100 = FeatureInterpolator.linear(f1, f2, 1.0)
 
         # Should be monotonic progression
@@ -292,8 +287,8 @@ class TestVocoderIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from analysis.rosetta_stone.neural_vocoder import NeuralVocoder
         from analysis.rosetta_stone.neural_language_model import AcousticTokenizer
+        from analysis.rosetta_stone.neural_vocoder import NeuralVocoder
 
         self.vocoder = NeuralVocoder(model_type="simple", sample_rate=48000)
         self.tokenizer = AcousticTokenizer(vocab_size=50)
@@ -332,7 +327,7 @@ class TestVocoderIntegration(unittest.TestCase):
         features = np.random.randn(10, 112).astype(np.float32)
 
         start = time.time()
-        audio = self.vocoder.synthesize(features)
+        self.vocoder.synthesize(features)
         elapsed = time.time() - start
 
         # For simple vocoder, should be very fast

@@ -9,22 +9,24 @@ Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
 import json
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Tuple
 import time
+from typing import Dict, List, Tuple
+
+import numpy as np
 
 # Try to import hdbscan
 try:
     import hdbscan
+
     HDBSCAN_AVAILABLE = True
 except ImportError:
     HDBSCAN_AVAILABLE = False
     print("Warning: hdbscan not available, will use sklearn")
 
 try:
-    from sklearn.cluster import MiniBatchKMeans, AgglomerativeClustering
+    from sklearn.cluster import AgglomerativeClustering, MiniBatchKMeans
     from sklearn.metrics import pairwise_distances_argmin_min
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -32,18 +34,18 @@ except ImportError:
 
 
 def load_features(
-    path: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_112d_no_cluster.json"
+    path: str = "/mnt/c/Users/sheel/Desktop/data/egyptian_fruit_bats/extraction_112d/extraction_112d_no_cluster.json",
 ) -> Tuple[np.ndarray, List[Dict]]:
     """Load 112D features from JSON."""
     print(f"Loading features from {path}...")
 
     start_time = time.time()
 
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
 
-    n_segments = data['total_segments']
-    n_dims = data['feature_dimension']
+    n_segments = data["total_segments"]
+    n_dims = data["feature_dimension"]
 
     print(f"  Segments: {n_segments:,}")
     print(f"  Dimensions: {n_dims}")
@@ -52,16 +54,18 @@ def load_features(
     features_list = []
     metadata = []
 
-    for i, seg in enumerate(data['segments']):
-        features_list.append(seg['features_112d'])
-        metadata.append({
-            'file_name': seg['file_name'],
-            'start_sample': seg['start_sample'],
-            'segment_index': seg['segment_index']
-        })
+    for i, seg in enumerate(data["segments"]):
+        features_list.append(seg["features_112d"])
+        metadata.append(
+            {
+                "file_name": seg["file_name"],
+                "start_sample": seg["start_sample"],
+                "segment_index": seg["segment_index"],
+            }
+        )
 
         if (i + 1) % 100000 == 0:
-            print(f"  Loaded {i+1:,}/{n_segments:,} segments...")
+            print(f"  Loaded {i + 1:,}/{n_segments:,} segments...")
 
     features = np.array(features_list, dtype=np.float32)
 
@@ -76,12 +80,12 @@ def cluster_approx_hdbscan(
     features: np.ndarray,
     min_cluster_size: int = 100,
     min_samples: int = 10,
-    sample_size: int = 100000
+    sample_size: int = 100000,
 ) -> np.ndarray:
     """Cluster using approximate HDBSCAN on a sample, then predict labels."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Approximate HDBSCAN Clustering")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     n_samples = len(features)
 
@@ -103,9 +107,9 @@ def cluster_approx_hdbscan(
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
-        metric='euclidean',
-        cluster_selection_method='eom',
-        prediction_data=True
+        metric="euclidean",
+        cluster_selection_method="eom",
+        prediction_data=True,
     )
 
     clusterer.fit(sample_features)
@@ -134,7 +138,7 @@ def cluster_approx_hdbscan(
         from sklearn.neighbors import NearestNeighbors
 
         print("  Building nearest neighbor index...")
-        nn = NearestNeighbors(n_neighbors=1, algorithm='ball_tree')
+        nn = NearestNeighbors(n_neighbors=1, algorithm="ball_tree")
         nn.fit(sample_features)
 
         # Get remaining indices
@@ -166,20 +170,18 @@ def cluster_approx_hdbscan(
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     n_noise = list(labels).count(-1)
     print(f"  Final clusters: {n_clusters}")
-    print(f"  Final noise: {n_noise} ({n_noise/n_samples*100:.1f}%)")
+    print(f"  Final noise: {n_noise} ({n_noise / n_samples * 100:.1f}%)")
 
     return labels
 
 
 def cluster_minibatch_kmeans(
-    features: np.ndarray,
-    n_clusters: int = 100,
-    batch_size: int = 10000
+    features: np.ndarray, n_clusters: int = 100, batch_size: int = 10000
 ) -> np.ndarray:
     """Cluster using MiniBatch K-Means for very large datasets."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("MiniBatch K-Means Clustering")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     n_samples = len(features)
     print(f"Clustering {n_samples:,} points into {n_clusters} clusters...")
@@ -193,7 +195,7 @@ def cluster_minibatch_kmeans(
         max_iter=100,
         n_init=3,
         verbose=1,
-        random_state=42
+        random_state=42,
     )
 
     # Fit in batches manually for progress tracking
@@ -221,10 +223,7 @@ def cluster_minibatch_kmeans(
 
 
 def export_clustered_results(
-    features: np.ndarray,
-    labels: np.ndarray,
-    metadata: List[Dict],
-    output_path: str
+    features: np.ndarray, labels: np.ndarray, metadata: List[Dict], output_path: str
 ) -> None:
     """Export clustered results to JSON."""
     print(f"\nExporting results to {output_path}...")
@@ -232,11 +231,11 @@ def export_clustered_results(
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
 
     output_data = {
-        'total_segments': len(labels),
-        'feature_dimension': features.shape[1],
-        'cluster_count': n_clusters,
-        'noise_count': int(list(labels).count(-1)),
-        'segments': []
+        "total_segments": len(labels),
+        "feature_dimension": features.shape[1],
+        "cluster_count": n_clusters,
+        "noise_count": int(list(labels).count(-1)),
+        "segments": [],
     }
 
     # Export in chunks
@@ -245,20 +244,22 @@ def export_clustered_results(
         chunk_end = min(i + chunk_size, len(labels))
 
         for j in range(i, chunk_end):
-            output_data['segments'].append({
-                'file_name': metadata[j]['file_name'],
-                'start_sample': metadata[j]['start_sample'],
-                'segment_index': metadata[j]['segment_index'],
-                'features_112d': features[j].tolist(),
-                'cluster_id': int(labels[j])
-            })
+            output_data["segments"].append(
+                {
+                    "file_name": metadata[j]["file_name"],
+                    "start_sample": metadata[j]["start_sample"],
+                    "segment_index": metadata[j]["segment_index"],
+                    "features_112d": features[j].tolist(),
+                    "cluster_id": int(labels[j]),
+                }
+            )
 
         print(f"  Exported {chunk_end:,}/{len(labels):,} segments...")
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(output_data, f)
 
-    print(f"Results exported successfully!")
+    print("Results exported successfully!")
 
 
 def main():
@@ -276,19 +277,12 @@ def main():
     if n_samples > 1000000 and HDBSCAN_AVAILABLE:
         # Use approximate HDBSCAN for very large datasets
         labels = cluster_approx_hdbscan(
-            features,
-            min_cluster_size=500,
-            min_samples=50,
-            sample_size=100000
+            features, min_cluster_size=500, min_samples=50, sample_size=100000
         )
     elif SKLEARN_AVAILABLE:
         # Use MiniBatch K-Means
         n_clusters = min(200, n_samples // 1000)
-        labels = cluster_minibatch_kmeans(
-            features,
-            n_clusters=n_clusters,
-            batch_size=10000
-        )
+        labels = cluster_minibatch_kmeans(features, n_clusters=n_clusters, batch_size=10000)
     else:
         print("Error: No clustering library available")
         return
@@ -301,14 +295,14 @@ def main():
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     n_noise = list(labels).count(-1)
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Clustering Summary")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  Total segments: {n_samples:,}")
     print(f"  Clusters found: {n_clusters}")
-    print(f"  Noise points: {n_noise:,} ({n_noise/n_samples*100:.1f}%)")
+    print(f"  Noise points: {n_noise:,} ({n_noise / n_samples * 100:.1f}%)")
     print(f"\nOutput: {output_path}")
-    print(f"\nNext: Run PCFG analysis with clustered results")
+    print("\nNext: Run PCFG analysis with clustered results")
 
 
 if __name__ == "__main__":

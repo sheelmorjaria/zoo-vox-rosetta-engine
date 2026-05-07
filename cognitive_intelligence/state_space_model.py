@@ -99,10 +99,7 @@ class SelectiveSSM:
         # Output projection
         self.out_proj = np.random.randn(d_inner, d_model) * scale
 
-        logger.debug(
-            f"SelectiveSSM: d_model={d_model}, d_state={d_state}, "
-            f"d_inner={d_inner}"
-        )
+        logger.debug(f"SelectiveSSM: d_model={d_model}, d_state={d_state}, d_inner={d_inner}")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
@@ -321,17 +318,14 @@ class MambaBoundaryDetector:
         self.input_proj = np.random.randn(input_dim, d_model) * scale
 
         # Mamba layers
-        self.layers = [
-            MambaBlock(d_model, d_state, d_conv=4, expand=2) for _ in range(n_layers)
-        ]
+        self.layers = [MambaBlock(d_model, d_state, d_conv=4, expand=2) for _ in range(n_layers)]
 
         # Output projection for classification
         self.output_proj = np.random.randn(d_model, n_classes) * scale
         self.output_bias = np.zeros(n_classes)
 
         logger.info(
-            f"MambaBoundaryDetector: input_dim={input_dim}, d_model={d_model}, "
-            f"layers={n_layers}"
+            f"MambaBoundaryDetector: input_dim={input_dim}, d_model={d_model}, layers={n_layers}"
         )
 
     def detect_boundaries(self, x: np.ndarray) -> np.ndarray:
@@ -362,9 +356,7 @@ class MambaBoundaryDetector:
 
         return boundary_probs
 
-    def detect_with_confidence(
-        self, x: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def detect_with_confidence(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Detect boundaries with confidence scores.
 
@@ -381,9 +373,7 @@ class MambaBoundaryDetector:
 
         return boundary_probs, confidence
 
-    def find_boundary_indices(
-        self, x: np.ndarray, threshold: float = 0.5
-    ) -> list:
+    def find_boundary_indices(self, x: np.ndarray, threshold: float = 0.5) -> list:
         """
         Find boundary indices above threshold.
 
@@ -439,9 +429,7 @@ class MambaEncoder:
         self.input_proj = np.random.randn(input_dim, d_model) * scale
 
         # Mamba layers
-        self.layers = [
-            MambaBlock(d_model, d_state, d_conv=4, expand=2) for _ in range(n_layers)
-        ]
+        self.layers = [MambaBlock(d_model, d_state, d_conv=4, expand=2) for _ in range(n_layers)]
 
         # Output norm
         self.norm = LayerNorm(d_model)

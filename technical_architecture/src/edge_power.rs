@@ -17,11 +17,12 @@ use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
 /// Event-driven power state for edge deployment
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum EdgePowerState {
     /// Active mode: Full processing, vocalization detected
     Active,
     /// Monitoring mode: Reduced power, listening for activity
+    #[default]
     Monitoring,
     /// Sleep mode: Minimal power, silence detected
     Sleep,
@@ -41,9 +42,9 @@ impl EdgePowerState {
     /// Get latency budget for this state
     pub fn latency_budget_ms(&self) -> f32 {
         match self {
-            Self::Active => 10.0,   // Full speed
+            Self::Active => 10.0,     // Full speed
             Self::Monitoring => 50.0, // Slower
-            Self::Sleep => 100.0,    // Wake-up + processing
+            Self::Sleep => 100.0,     // Wake-up + processing
         }
     }
 
@@ -54,12 +55,6 @@ impl EdgePowerState {
             Self::Monitoring => 40.0,
             Self::Sleep => 5.0,
         }
-    }
-}
-
-impl Default for EdgePowerState {
-    fn default() -> Self {
-        Self::Monitoring // Start in monitoring mode
     }
 }
 
@@ -79,9 +74,9 @@ pub struct EdgePowerConfig {
 impl Default for EdgePowerConfig {
     fn default() -> Self {
         Self {
-            silence_threshold_ms: 5000,     // 5 seconds of silence -> sleep
-            wake_debounce_ms: 500,          // 500ms debounce for wake
-            max_monitoring_time_ms: 60000,  // Max 1 minute in monitoring
+            silence_threshold_ms: 5000,    // 5 seconds of silence -> sleep
+            wake_debounce_ms: 500,         // 500ms debounce for wake
+            max_monitoring_time_ms: 60000, // Max 1 minute in monitoring
         }
     }
 }
@@ -211,10 +206,7 @@ impl EventDrivenPowerManager {
             self.state_entry_time = Instant::now();
             Ok(())
         } else {
-            Err(format!(
-                "Invalid state transition: {:?} -> {:?}",
-                self.state, new_state
-            ))
+            Err(format!("Invalid state transition: {:?} -> {:?}", self.state, new_state))
         }
     }
 

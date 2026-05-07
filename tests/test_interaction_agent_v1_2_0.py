@@ -13,23 +13,24 @@ Red Phase: Failing tests that define the requirements for:
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
-import json
-import pytest
-import numpy as np
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from realtime.feature_subscriber import FeatureEvent
 from realtime.interaction_agent import (
     InteractionAgent,
     InteractionAgentConfig,
 )
-from realtime.feature_subscriber import FeatureEvent
-
 
 # =============================================================================
 # FIXTURES: 45-Cluster BGMM Vocabulary
 # =============================================================================
+
 
 @pytest.fixture
 def bgmm_centroids_45():
@@ -61,6 +62,7 @@ def bgmm_centroids_45():
 def cluster_context_map(bgmm_centroids_45):
     """Pre-computed context map for all 45 clusters."""
     from realtime.interaction_agent import build_cluster_context_map
+
     return build_cluster_context_map(bgmm_centroids_45)
 
 
@@ -70,10 +72,18 @@ def valid_bat_bigrams():
     # Simplified set for testing - represents the 50 valid transitions
     # Format: (opener_cluster, response_cluster)
     return {
-        (8, 12), (8, 15), (8, 18),  # Cluster 8 opens, can respond with 12, 15, 18
-        (12, 8), (12, 20), (12, 25),
-        (15, 8), (15, 12), (15, 22),
-        (18, 8), (18, 15), (18, 30),
+        (8, 12),
+        (8, 15),
+        (8, 18),  # Cluster 8 opens, can respond with 12, 15, 18
+        (12, 8),
+        (12, 20),
+        (12, 25),
+        (15, 8),
+        (15, 12),
+        (15, 22),
+        (18, 8),
+        (18, 15),
+        (18, 30),
         # ... (truncated for brevity, actual set has 50 entries)
     }
 
@@ -81,6 +91,7 @@ def valid_bat_bigrams():
 # =============================================================================
 # TEST SUITE 1: Cluster-to-Context Mapping
 # =============================================================================
+
 
 class TestClusterContextMapping:
     """Test cluster-archetype-based context inference."""
@@ -154,7 +165,7 @@ class TestClusterContextMapping:
         # Create event with known F0/RMS
         features = np.zeros(112, dtype=np.float32)
         features[0] = 9000  # High F0 → alarm
-        features[1] = 0.7   # High RMS
+        features[1] = 0.7  # High RMS
 
         event = FeatureEvent(
             event_type="feature_extraction",
@@ -173,6 +184,7 @@ class TestClusterContextMapping:
 # =============================================================================
 # TEST SUITE 2: Confidence-Based Response Suppression
 # =============================================================================
+
 
 class TestConfidenceBasedSuppression:
     """Test confidence score from Rust Student model."""
@@ -198,7 +210,7 @@ class TestConfidenceBasedSuppression:
         )
 
         result = agent._process_features(event)
-        should_respond = agent._should_respond(result)
+        agent._should_respond(result)
 
         # High confidence should trigger response (subject to other checks)
         # Note: contact context doesn't trigger response by default
@@ -218,7 +230,7 @@ class TestConfidenceBasedSuppression:
         # Create event on edge of cluster (low confidence from Rust Student)
         features = np.zeros(112, dtype=np.float32)
         features[0] = 9000  # Alarm F0
-        features[1] = 0.7   # Alarm RMS
+        features[1] = 0.7  # Alarm RMS
 
         event = FeatureEvent(
             event_type="feature_extraction",
@@ -233,7 +245,7 @@ class TestConfidenceBasedSuppression:
         should_respond = agent._should_respond(result)
 
         # Low confidence should suppress response
-        assert should_respond == False, "Low confidence event should not trigger response"
+        assert not should_respond, "Low confidence event should not trigger response"
 
     def test_agent_tracks_last_cluster_id(self, cluster_context_map):
         """Agent should track last cluster_id for syntax validation."""
@@ -265,6 +277,7 @@ class TestConfidenceBasedSuppression:
 # TEST SUITE 3: Syntax-Driven Response (Bigram Grammar)
 # =============================================================================
 
+
 class TestBigramSyntaxValidation:
     """Test bat syntax validation using valid bigram set."""
 
@@ -293,12 +306,12 @@ class TestBigramSyntaxValidation:
         )
 
         result = agent._process_features(event)
-        should_respond = agent._should_respond(result)
+        agent._should_respond(result)
 
         # Valid bigram - syntax check should pass
         # (actual response depends on context too)
         assert "bigram_valid" in result
-        assert result["bigram_valid"] == True
+        assert result["bigram_valid"]
 
     def test_invalid_bigram_blocks_response(self, cluster_context_map, valid_bat_bigrams):
         """Invalid bigram (8, 999) should block response."""
@@ -328,8 +341,8 @@ class TestBigramSyntaxValidation:
         should_respond = agent._should_respond(result)
 
         # Invalid bigram - should block response
-        assert result["bigram_valid"] == False
-        assert should_respond == False, "Invalid bigram should block response"
+        assert not result["bigram_valid"]
+        assert not should_respond, "Invalid bigram should block response"
 
     def test_first_event_always_valid_bigram(self, cluster_context_map, valid_bat_bigrams):
         """First event (no previous cluster) should pass bigram check."""
@@ -355,7 +368,7 @@ class TestBigramSyntaxValidation:
         result = agent._process_features(event)
 
         # First event should pass bigram check
-        assert result["bigram_valid"] == True
+        assert result["bigram_valid"]
 
     def test_agent_without_bigrams_skips_check(self, cluster_context_map):
         """Without valid_bigrams config, agent should skip syntax check."""
@@ -381,12 +394,13 @@ class TestBigramSyntaxValidation:
 
         # Should not have bigram_valid field (check skipped)
         # Or should default to True
-        assert result.get("bigram_valid", True) == True
+        assert result.get("bigram_valid", True)
 
 
 # =============================================================================
 # TEST SUITE 4: Integration - Full Pipeline
 # =============================================================================
+
 
 class TestClusterBasedSemanticGrounding:
     """Integration tests for full cluster-based pipeline."""
@@ -417,13 +431,13 @@ class TestClusterBasedSemanticGrounding:
         )
 
         result = agent._process_features(event)
-        should_respond = agent._should_respond(result)
+        agent._should_respond(result)
 
         # Verify all checks pass
         assert result["context_state"] in ["contact", "social", "alarm", "territorial"]
         assert result["cluster_id"] == 12
         assert result["confidence"] == 0.85
-        assert result["bigram_valid"] == True
+        assert result["bigram_valid"]
 
         # Response decision depends on context
         # (contact doesn't auto-trigger, but the check passed)

@@ -27,7 +27,6 @@ License: CC BY-ND 4.0 International
 import json
 import logging
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -116,9 +115,7 @@ class ExemplarManager:
             if registry.has_species(self.species):
                 species_k = registry.get_optimal_k(self.species)
                 self.vocabulary_size = species_k
-                logger.info(
-                    f"Loaded species-specific vocabulary: {self.species} -> k={species_k}"
-                )
+                logger.info(f"Loaded species-specific vocabulary: {self.species} -> k={species_k}")
             else:
                 logger.warning(
                     f"No vocabulary config found for species '{self.species}'. "
@@ -502,7 +499,11 @@ def main():
         help="Output synthesis-ready manifest for Rust",
     )
     parser.add_argument(
-        "--k", "-k", type=int, default=1020, help="Vocabulary size (number of clusters). Only used if species not in registry."
+        "--k",
+        "-k",
+        type=int,
+        default=1020,
+        help="Vocabulary size (number of clusters). Only used if species not in registry.",
     )
     parser.add_argument(
         "--species",

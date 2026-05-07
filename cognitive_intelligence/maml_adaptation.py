@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MetaParameters:
     """Container for meta-learned parameters."""
+
     weights: List[np.ndarray]  # List of weight matrices
     biases: Optional[List[np.ndarray]] = None  # List of bias vectors
 
@@ -80,9 +81,7 @@ class MAMLOptimizer:
             biases=[self.b1, self.b2],
         )
 
-    def inner_loop_update(
-        self, support_x: np.ndarray, support_y: np.ndarray
-    ) -> MetaParameters:
+    def inner_loop_update(self, support_x: np.ndarray, support_y: np.ndarray) -> MetaParameters:
         """
         Perform inner loop update for a specific task.
 
@@ -532,9 +531,7 @@ class MetaLearner:
         # Store species data
         self.species_data: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
 
-    def add_species_data(
-        self, species: str, features: np.ndarray, labels: np.ndarray
-    ) -> None:
+    def add_species_data(self, species: str, features: np.ndarray, labels: np.ndarray) -> None:
         """
         Add training data for a species.
 
@@ -549,9 +546,7 @@ class MetaLearner:
             self.species_list.append(species)
             self.num_species = len(self.species_list)
 
-    def meta_train(
-        self, n_epochs: int = 10, n_tasks_per_epoch: int = 8
-    ) -> List[float]:
+    def meta_train(self, n_epochs: int = 10, n_tasks_per_epoch: int = 8) -> List[float]:
         """
         Perform meta-training across species.
 
@@ -578,9 +573,7 @@ class MetaLearner:
                         base_features, base_labels = self.species_data[species]
 
                         # Encode with species conditioning
-                        encoded_features = self.species_encoder.encode(
-                            base_features, species_id
-                        )
+                        encoded_features = self.species_encoder.encode(base_features, species_id)
 
                         # Sample task from species data
                         n_samples = min(20, len(encoded_features))
@@ -590,12 +583,14 @@ class MetaLearner:
                         support_idx = indices[:split]
                         query_idx = indices[split:]
 
-                        epoch_tasks.append((
-                            encoded_features[support_idx],
-                            base_labels[support_idx],
-                            encoded_features[query_idx],
-                            base_labels[query_idx],
-                        ))
+                        epoch_tasks.append(
+                            (
+                                encoded_features[support_idx],
+                                base_labels[support_idx],
+                                encoded_features[query_idx],
+                                base_labels[query_idx],
+                            )
+                        )
 
             if epoch_tasks:
                 meta_loss = self.maml.meta_update(epoch_tasks)
@@ -606,9 +601,7 @@ class MetaLearner:
 
         return losses
 
-    def meta_update_task(
-        self, features: np.ndarray, labels: np.ndarray
-    ) -> float:
+    def meta_update_task(self, features: np.ndarray, labels: np.ndarray) -> float:
         """
         Single task meta-update.
 
@@ -645,9 +638,7 @@ class MetaLearner:
         encoded_features = self.species_encoder.encode(support_x, species_id=0)
         self.current_adapted_params = self.maml.inner_loop_update(encoded_features, support_y)
 
-    def adapt_to_species(
-        self, species: str, features: np.ndarray, labels: np.ndarray
-    ) -> None:
+    def adapt_to_species(self, species: str, features: np.ndarray, labels: np.ndarray) -> None:
         """
         Adapt to a new species.
 
@@ -665,10 +656,9 @@ class MetaLearner:
             if self.num_species > self.species_encoder.species_embeddings.shape[0]:
                 # Add new embedding
                 new_embedding = np.random.randn(1, self.species_encoder.latent_dim) * 0.1
-                self.species_encoder.species_embeddings = np.vstack([
-                    self.species_encoder.species_embeddings,
-                    new_embedding
-                ])
+                self.species_encoder.species_embeddings = np.vstack(
+                    [self.species_encoder.species_embeddings, new_embedding]
+                )
 
         species_id = self.species_list.index(species)
 
@@ -678,9 +668,7 @@ class MetaLearner:
         # Adapt (pass encoded features directly to MAML)
         self.current_adapted_params = self.maml.inner_loop_update(encoded_features, labels)
 
-    def predict(
-        self, query_x: np.ndarray, species: Optional[str] = None
-    ) -> np.ndarray:
+    def predict(self, query_x: np.ndarray, species: Optional[str] = None) -> np.ndarray:
         """
         Predict on query set.
 

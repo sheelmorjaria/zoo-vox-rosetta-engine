@@ -18,12 +18,14 @@ import json
 import time
 import tracemalloc
 from pathlib import Path
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple
+
 import numpy as np
 
 try:
-    import umap
     import hdbscan
+    import umap
+
     UMAP_HDBSCAN_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: UMAP/HDBSCAN not available: {e}")
@@ -35,15 +37,15 @@ def load_features(feature_path: str, max_samples: int = None) -> np.ndarray:
     """Load 112D features from extraction output."""
     print(f"Loading features from {feature_path}...")
 
-    with open(feature_path, 'r') as f:
+    with open(feature_path, "r") as f:
         data = json.load(f)
 
-    n_samples = min(max_samples, len(data['segments'])) if max_samples else len(data['segments'])
+    n_samples = min(max_samples, len(data["segments"])) if max_samples else len(data["segments"])
     print(f"  Loading {n_samples:,} of {len(data['segments']):,} total segments...")
 
     features_list = []
-    for i, seg in enumerate(data['segments'][:n_samples]):
-        features_list.append(seg['features_112d'])
+    for i, seg in enumerate(data["segments"][:n_samples]):
+        features_list.append(seg["features_112d"])
 
     return np.array(features_list, dtype=np.float32)
 
@@ -53,7 +55,7 @@ def run_umap_hdbscan(
     n_components: int = 10,
     n_neighbors: int = 30,
     min_cluster_size: int = 50,
-    min_samples: int = 10
+    min_samples: int = 10,
 ) -> Tuple[np.ndarray, np.ndarray, Dict]:
     """
     Run UMAP + HDBSCAN clustering pipeline.
@@ -72,15 +74,15 @@ def run_umap_hdbscan(
     """
     n_samples = len(features_112d)
     metadata = {
-        'n_samples': n_samples,
-        'n_components': n_components,
-        'n_neighbors': n_neighbors,
-        'min_cluster_size': min_cluster_size
+        "n_samples": n_samples,
+        "n_components": n_components,
+        "n_neighbors": n_neighbors,
+        "min_cluster_size": min_cluster_size,
     }
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("UMAP + HDBSCAN Pipeline")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"Dataset: {n_samples:,} samples × 112D")
     print()
 
@@ -91,10 +93,10 @@ def run_umap_hdbscan(
     print("Step 1: UMAP Dimensionality Reduction")
     print("-" * 70)
     print(f"  Reducing 112D → {n_components}D...")
-    print(f"  Parameters:")
+    print("  Parameters:")
     print(f"    n_neighbors = {n_neighbors} (local vs global balance)")
-    print(f"    min_dist = 0.0 (tight clusters for HDBSCAN)")
-    print(f"    metric = cosine (better for high-dim audio)")
+    print("    min_dist = 0.0 (tight clusters for HDBSCAN)")
+    print("    metric = cosine (better for high-dim audio)")
 
     tracemalloc.start()
     start_time = time.time()
@@ -103,11 +105,11 @@ def run_umap_hdbscan(
         n_components=n_components,
         n_neighbors=n_neighbors,
         min_dist=0.0,
-        metric='cosine',
+        metric="cosine",
         random_state=42,
         # Safety parameters for WSL
         low_memory=True,
-        n_jobs=1  # Disable parallelism for WSL compatibility
+        n_jobs=1,  # Disable parallelism for WSL compatibility
     )
 
     try:
@@ -133,7 +135,7 @@ def run_umap_hdbscan(
     print("Step 2: HDBSCAN Clustering")
     print("-" * 70)
     print(f"  Clustering {n_components}D embedding...")
-    print(f"  Parameters:")
+    print("  Parameters:")
     print(f"    min_cluster_size = {min_cluster_size}")
     print(f"    min_samples = {min_samples}")
 
@@ -143,9 +145,9 @@ def run_umap_hdbscan(
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
-        metric='euclidean',  # Safe in low dimensions
+        metric="euclidean",  # Safe in low dimensions
         prediction_data=True,
-        cluster_selection_method='eom'
+        cluster_selection_method="eom",
     )
 
     try:
@@ -181,20 +183,22 @@ def run_umap_hdbscan(
     print(f"  Total time: {umap_time + hdbscan_time:.1f}s")
     print(f"  Peak RAM: {max(umap_ram, hdbscan_ram) / 10**6:.1f} MB")
     print(f"  Clusters found: {n_clusters}")
-    print(f"  Noise points: {noise_count:,} ({noise_rate*100:.1f}%)")
+    print(f"  Noise points: {noise_count:,} ({noise_rate * 100:.1f}%)")
     print(f"  Soft labels shape: {soft_labels.shape}")
     print()
 
-    metadata.update({
-        'umap_time_seconds': umap_time,
-        'hdbscan_time_seconds': hdbscan_time,
-        'total_time_seconds': umap_time + hdbscan_time,
-        'peak_ram_mb': max(umap_ram, hdbscan_ram) / 10**6,
-        'n_clusters': n_clusters,
-        'noise_count': noise_count,
-        'noise_rate': noise_rate,
-        'soft_labels_shape': list(soft_labels.shape)
-    })
+    metadata.update(
+        {
+            "umap_time_seconds": umap_time,
+            "hdbscan_time_seconds": hdbscan_time,
+            "total_time_seconds": umap_time + hdbscan_time,
+            "peak_ram_mb": max(umap_ram, hdbscan_ram) / 10**6,
+            "n_clusters": n_clusters,
+            "noise_count": noise_count,
+            "noise_rate": noise_rate,
+            "soft_labels_shape": list(soft_labels.shape),
+        }
+    )
 
     return labels, soft_labels, metadata
 
@@ -214,11 +218,7 @@ def main():
 
     # Run UMAP + HDBSCAN
     labels, soft_labels, metadata = run_umap_hdbscan(
-        features_112d,
-        n_components=10,
-        n_neighbors=30,
-        min_cluster_size=50,
-        min_samples=10
+        features_112d, n_components=10, n_neighbors=30, min_cluster_size=50, min_samples=10
     )
 
     # Export results
@@ -226,12 +226,12 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     output_data = {
-        'metadata': metadata,
-        'labels': labels.tolist(),
-        'soft_labels': soft_labels.tolist()
+        "metadata": metadata,
+        "labels": labels.tolist(),
+        "soft_labels": soft_labels.tolist(),
     }
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(output_data, f, indent=2)
 
     print(f"Results exported to: {output_path}")

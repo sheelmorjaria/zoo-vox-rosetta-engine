@@ -150,7 +150,9 @@ class OnlineKMeans:
             # This ensures centroids, cluster_counts, and last_seen always have matching lengths
             self.centroids = self.model.cluster_centers_.copy()
             self.cluster_counts = np.zeros(initial_k)  # Use initial_k, not self.initial_k
-            self.last_seen = np.full(initial_k, time.time() * 1000)  # Use initial_k, not self.initial_k
+            self.last_seen = np.full(
+                initial_k, time.time() * 1000
+            )  # Use initial_k, not self.initial_k
 
             # Count initial assignments
             labels = self.model.predict(buffered_features)
@@ -165,7 +167,7 @@ class OnlineKMeans:
         else:
             # Apply decay to existing counts
             if self.decay_rate > 0:
-                self.cluster_counts *= (1.0 - self.decay_rate)
+                self.cluster_counts *= 1.0 - self.decay_rate
 
             current_time = time.time() * 1000
 
@@ -214,9 +216,7 @@ class OnlineKMeans:
 
         return self.model.predict(features)
 
-    def should_spawn_cluster(
-        self, features: np.ndarray, threshold: Optional[float] = None
-    ) -> bool:
+    def should_spawn_cluster(self, features: np.ndarray, threshold: Optional[float] = None) -> bool:
         """
         Check if new cluster should be spawned based on distance.
 
@@ -236,9 +236,7 @@ class OnlineKMeans:
         threshold = threshold or self.spawn_threshold
 
         # Find minimum distance to any centroid
-        min_distances = np.min(
-            euclidean_distances(features, self.centroids), axis=1
-        )
+        min_distances = np.min(euclidean_distances(features, self.centroids), axis=1)
 
         # Spawn if any point is beyond threshold
         return np.any(min_distances > threshold)
@@ -436,7 +434,9 @@ class OnlineKMeans:
             return 0.0
 
         # Compute distances and find best matching pairs
-        distances = euclidean_distances(reference_centroids[:max_clusters], self.centroids[:max_clusters])
+        distances = euclidean_distances(
+            reference_centroids[:max_clusters], self.centroids[:max_clusters]
+        )
 
         # Mean of minimum distances for each reference centroid
         drift_per_cluster = np.min(distances, axis=1)
@@ -512,7 +512,9 @@ class OnlineKMeans:
             drift_threshold=state["drift_threshold"],
             auto_spawn=state["auto_spawn"],
             random_state=state["random_state"],
-            min_samples_for_init=state.get("min_samples_for_init", 2),  # Default to 2 for backward compatibility
+            min_samples_for_init=state.get(
+                "min_samples_for_init", 2
+            ),  # Default to 2 for backward compatibility
         )
 
         # Restore state
@@ -550,9 +552,7 @@ class OnlineKMeans:
         # Sync our tracking
         self.centroids = self.model.cluster_centers_
 
-    def _split_known_novel(
-        self, features: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _split_known_novel(self, features: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Split features into known (close to centroids) and novel (distant).
 
@@ -562,9 +562,7 @@ class OnlineKMeans:
         Returns:
             Tuple of (known_features, novel_features)
         """
-        min_distances = np.min(
-            euclidean_distances(features, self.centroids), axis=1
-        )
+        min_distances = np.min(euclidean_distances(features, self.centroids), axis=1)
         distant_mask = min_distances > self.spawn_threshold
 
         novel_features = features[distant_mask]
@@ -576,9 +574,7 @@ class OnlineKMeans:
         """Automatically spawn cluster if distant data detected."""
         if self.should_spawn_cluster(features):
             # Find points beyond threshold
-            min_distances = np.min(
-                euclidean_distances(features, self.centroids), axis=1
-            )
+            min_distances = np.min(euclidean_distances(features, self.centroids), axis=1)
             distant_mask = min_distances > self.spawn_threshold
 
             if np.any(distant_mask):
@@ -618,21 +614,11 @@ def main():
     """Demo CLI for OnlineKMeans."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Online K-means clustering for streaming data"
-    )
-    parser.add_argument(
-        "--features", "-f", required=True, help="Path to features .npy file"
-    )
-    parser.add_argument(
-        "--initial-k", type=int, default=100, help="Initial number of clusters"
-    )
-    parser.add_argument(
-        "--max-k", type=int, default=2000, help="Maximum number of clusters"
-    )
-    parser.add_argument(
-        "--output", "-o", help="Save model to this path"
-    )
+    parser = argparse.ArgumentParser(description="Online K-means clustering for streaming data")
+    parser.add_argument("--features", "-f", required=True, help="Path to features .npy file")
+    parser.add_argument("--initial-k", type=int, default=100, help="Initial number of clusters")
+    parser.add_argument("--max-k", type=int, default=2000, help="Maximum number of clusters")
+    parser.add_argument("--output", "-o", help="Save model to this path")
 
     args = parser.parse_args()
 
@@ -650,7 +636,7 @@ def main():
     logger.info("Fitting clusterer...")
     clusterer.partial_fit(features)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Clusters: {len(clusterer.centroids)}")
     print(f"  Feature dim: {clusterer.feature_dim}")
     print(f"  Total samples: {int(np.sum(clusterer.cluster_counts))}")

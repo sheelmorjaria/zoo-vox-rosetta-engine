@@ -107,12 +107,7 @@ impl SpeciesVocabConfig {
     }
 
     /// Create a config with a specific timestamp (useful for testing)
-    pub fn with_timestamp(
-        species: impl Into<String>,
-        optimal_k: usize,
-        svs_score: f64,
-        timestamp: i64,
-    ) -> Self {
+    pub fn with_timestamp(species: impl Into<String>, optimal_k: usize, svs_score: f64, timestamp: i64) -> Self {
         Self {
             species: species.into(),
             optimal_k,
@@ -194,9 +189,7 @@ impl SpeciesVocabRegistry {
     /// # Returns
     /// Optimal k value
     pub fn get_optimal_k(&self, species: &str, default: usize) -> usize {
-        self.get(species)
-            .map(|config| config.optimal_k)
-            .unwrap_or(default)
+        self.get(species).map(|config| config.optimal_k).unwrap_or(default)
     }
 
     /// Check if registry has configuration for a species
@@ -282,11 +275,7 @@ impl SpeciesVocabRegistry {
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
         let registry = Self::import_from_json(&contents)?;
-        log::info!(
-            "Loaded registry with {} species from {:?}",
-            registry.len(),
-            path_ref
-        );
+        log::info!("Loaded registry with {} species from {:?}", registry.len(), path_ref);
         Ok(registry)
     }
 
@@ -298,9 +287,7 @@ impl SpeciesVocabRegistry {
     /// * `other` - Registry to merge from
     pub fn merge(&mut self, other: SpeciesVocabRegistry) {
         for (species, config) in other.configs {
-            if !self.configs.contains_key(&species) {
-                self.configs.insert(species, config);
-            }
+            self.configs.entry(species).or_insert(config);
         }
     }
 

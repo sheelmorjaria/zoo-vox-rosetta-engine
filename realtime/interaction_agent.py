@@ -23,9 +23,12 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from realtime.speaker_embeddings import SpeakerDatabase
 
 __all__ = [
     "AgentState",
@@ -97,6 +100,7 @@ class SpeakerProfile:
         response_bias: Context-specific response multipliers
                        (e.g., {"alarm": 0.95, "contact": 0.70})
     """
+
     emitter_id: int
     dominance_rank: Optional[float] = None
     age_class: Optional[str] = None
@@ -134,6 +138,7 @@ class BigramProbability:
         probability: P(response | opener) - conditional probability
         rarity_score: 0-1 score where higher = more rare (1 - probability)
     """
+
     opener: int
     response: int
     count: int
@@ -178,6 +183,7 @@ class InteractionEvent:
         response_to: The cluster_id this event responds to (if applicable)
         time_since_previous: Time in seconds since previous event
     """
+
     timestamp: float
     source: str  # "animal" or "system"
     cluster_id: int
@@ -206,6 +212,7 @@ class SessionMetrics:
         start_time: Session start timestamp
         end_time: Session end timestamp (None if ongoing)
     """
+
     session_id: str
     duration_seconds: float
     condition: str
@@ -367,6 +374,7 @@ class InteractionAgentConfig:
 # v1.2.0: Cluster-Based Semantic Grounding Functions
 # =============================================================================
 
+
 def build_cluster_context_map(centroids_112d: List[np.ndarray]) -> Dict[int, str]:
     """
     Build a context map for all BGMM-discovered clusters.
@@ -432,7 +440,9 @@ def analyze_corpus_bigram_frequencies(
 
         bigram_counts[bigram] = bigram_counts.get(bigram, 0) + 1
 
-    logger.info(f"Analyzed {len(corpus_sequence)} segments, found {len(bigram_counts)} unique bigrams")
+    logger.info(
+        f"Analyzed {len(corpus_sequence)} segments, found {len(bigram_counts)} unique bigrams"
+    )
     return bigram_counts
 
 
@@ -488,7 +498,9 @@ def build_bigram_probability_map(
     return prob_map
 
 
-def calculate_ras(interaction_sequence: List[InteractionEvent], valid_bigrams: Optional[set] = None) -> float:
+def calculate_ras(
+    interaction_sequence: List[InteractionEvent], valid_bigrams: Optional[set] = None
+) -> float:
     """
     Calculate the Response Appropriateness Score (RAS) for an interaction sequence.
 
@@ -520,9 +532,10 @@ def calculate_ras(interaction_sequence: List[InteractionEvent], valid_bigrams: O
             # Check if animal responded with valid bigram
             if i + 1 < len(interaction_sequence):
                 next_interaction = interaction_sequence[i + 1]
-                if (next_interaction.source == "animal" and
-                        (not valid_bigrams or
-                         (interaction.cluster_id, next_interaction.cluster_id) in valid_bigrams)):
+                if next_interaction.source == "animal" and (
+                    not valid_bigrams
+                    or (interaction.cluster_id, next_interaction.cluster_id) in valid_bigrams
+                ):
                     positive_responses += 1
 
     return positive_responses / max(total_system_responses, 1)
@@ -592,12 +605,11 @@ class InteractionAgent:
         if self.config.context_classifier_path:
             try:
                 from realtime.context_classifier import ContextClassifier
+
                 self.context_classifier = ContextClassifier.load(
                     self.config.context_classifier_path
                 )
-                logger.info(
-                    f"Loaded ContextClassifier from {self.config.context_classifier_path}"
-                )
+                logger.info(f"Loaded ContextClassifier from {self.config.context_classifier_path}")
 
                 # Validate classifier labels against canonical ontology
                 self._validate_classifier_labels()
@@ -652,6 +664,7 @@ class InteractionAgent:
         # Generate session_id if not provided
         if self.config.enable_ethological_mode and self.config.session_id is None:
             import uuid
+
             self.config.session_id = f"session_{uuid.uuid4().hex[:8]}"
 
         logger.info("InteractionAgent initialized")
@@ -688,7 +701,7 @@ class InteractionAgent:
                 condition=self.config.experimental_condition,
                 start_time=self._session_start_time,
             )
-            logger.info(f"Ethological validation mode enabled")
+            logger.info("Ethological validation mode enabled")
             logger.info(f"  Session ID: {self._session_metrics.session_id}")
             logger.info(f"  Condition: {self._session_metrics.condition}")
 
@@ -768,7 +781,10 @@ class InteractionAgent:
                     logger.error(f"Error in speaker change callback: {e}")
 
             if self.config.verbose_logging and speaker_id is not None:
-                logger.debug(f"Speaker changed: {old_speaker} -> {speaker_id} (confidence: {self._speaker_confidence:.2f})")
+                logger.debug(  # noqa: E501
+                    f"Speaker changed: {old_speaker} -> {speaker_id} "
+                    f"(confidence: {self._speaker_confidence:.2f})"
+                )
 
         # v1.2.0: Track last cluster_id for bigram validation
         self._last_cluster_id = event.cluster_id
@@ -809,9 +825,7 @@ class InteractionAgent:
         # Simplified context inference from 112D features
         # v1.2.0: Now passes cluster_id for cluster-based context inference
         context, inferred_confidence = self._infer_context(
-            event.features_112d,
-            event.emitter_id,
-            cluster_id=event.cluster_id
+            event.features_112d, event.emitter_id, cluster_id=event.cluster_id
         )
 
         # v1.2.0: Use Rust Student confidence if available, otherwise use inferred
@@ -889,7 +903,10 @@ class InteractionAgent:
                 if matches:
                     speaker_id, speaker_confidence = matches[0]
                     if self.config.verbose_logging:
-                        logger.debug(f"Identified speaker: {speaker_id} (confidence: {speaker_confidence:.2f})")
+                        logger.debug(  # noqa: E501
+                            f"Identified speaker: {speaker_id} "
+                            f"(confidence: {speaker_confidence:.2f})"
+                        )
             except Exception as e:
                 logger.warning(f"Speaker identification failed: {e}")
 
@@ -905,8 +922,8 @@ class InteractionAgent:
             "emitter_id": event.emitter_id,
             "parse_result": parse_result,  # Sprint 1: Include parsed tokens
             "strategy_used": self.parser.name,  # Sprint 1: Track which strategy was used
-            "speaker_id": speaker_id,  # Direction 3: Identified speaker
-            "speaker_confidence": speaker_confidence,  # Direction 3: Speaker identification confidence
+            "speaker_id": speaker_id,  # Direction 3: Identified speaker  # noqa: E501
+            "speaker_confidence": speaker_confidence,  # Direction 3: Speaker confidence  # noqa: E501
             "uncertainty": event.uncertainty,  # Module 1: Uncertainty from NBD
             "bigram_valid": bigram_valid,  # v1.2.0: Syntax validation
             # v1.3.0: Level 2 speaker grounding
@@ -947,7 +964,7 @@ class InteractionAgent:
             still_unmapped = unmapped - mapped_contexts - canonical_contexts
 
             if not still_unmapped:
-                logger.info(f"All labels mapped via context_label_mapping")
+                logger.info("All labels mapped via context_label_mapping")
                 return
 
         # Build default mapping for pseudo-labels (context_0 -> social, etc.)
@@ -990,7 +1007,12 @@ class InteractionAgent:
         )
         return raw_context
 
-    def _infer_context(self, features_112d: np.ndarray, emitter_id: Optional[int] = None, cluster_id: Optional[int] = None) -> Tuple[str, float]:
+    def _infer_context(
+        self,
+        features_112d: np.ndarray,
+        emitter_id: Optional[int] = None,
+        cluster_id: Optional[int] = None,
+    ) -> Tuple[str, float]:
         """
         Infer behavioral context from 112D features and emitter identity.
 
@@ -1023,7 +1045,10 @@ class InteractionAgent:
                 raw_context, confidence = self.context_classifier.predict(features_112d)
                 # Map to canonical context
                 context = self._map_to_canonical_context(raw_context)
-                logger.debug(f"ML inference: raw={raw_context}, mapped={context}, confidence={confidence:.2f}")
+                logger.debug(  # noqa: E501
+                    f"ML inference: raw={raw_context}, mapped={context}, "
+                    f"confidence={confidence:.2f}"
+                )
                 return context, confidence
             except Exception as e:
                 logger.warning(f"ContextClassifier prediction failed: {e}. Falling back to rules.")
@@ -1131,18 +1156,19 @@ class InteractionAgent:
             base_confidence = result.get("confidence", 0.0)
             speaker_bias = result.get("speaker_bias_multiplier", 1.0)
             bigram_prob = result.get("bigram_probability", 1.0)
-            logger.debug(
+            logger.debug(  # noqa: E501
                 f"Effective confidence {effective_confidence:.2f} "
-                f"(base={base_confidence:.2f} × speaker={speaker_bias:.2f} × bigram={bigram_prob:.2f}) "
-                f"< threshold {self.config.confidence_threshold:.2f}"
+                f"(base={base_confidence:.2f} × speaker={speaker_bias:.2f} "
+                f"× bigram={bigram_prob:.2f}) < threshold {self.config.confidence_threshold:.2f}"
             )
             return False
 
         # v1.3.0: Check speaker bias threshold
         speaker_bias_multiplier = result.get("speaker_bias_multiplier", 1.0)
         if speaker_bias_multiplier < self.config.speaker_bias_threshold:
-            logger.debug(
-                f"Speaker bias {speaker_bias_multiplier:.2f} < threshold {self.config.speaker_bias_threshold:.2f}"
+            logger.debug(  # noqa: E501
+                f"Speaker bias {speaker_bias_multiplier:.2f} < "
+                f"threshold {self.config.speaker_bias_threshold:.2f}"
             )
             return False
 
@@ -1159,7 +1185,9 @@ class InteractionAgent:
 
         # Check context - must be in canonical ontology and response-enabled
         context = result.get("context_state", "")
-        response_contexts = set(self.config.canonical_contexts) - {"social"}  # social doesn't trigger response
+        response_contexts = set(self.config.canonical_contexts) - {
+            "social"
+        }  # social doesn't trigger response
 
         return context in response_contexts
 
@@ -1286,8 +1314,7 @@ class InteractionAgent:
             self._session_metrics.total_animal_vocalizations += 1
 
             # Check if this is a valid follow-up to system response
-            if (interaction.response_to is not None and
-                    self.config.valid_bigrams is not None):
+            if interaction.response_to is not None and self.config.valid_bigrams is not None:
                 bigram = (interaction.response_to, event.cluster_id)
                 if bigram in self.config.valid_bigrams:
                     self._session_metrics.positive_responses += 1
@@ -1301,7 +1328,9 @@ class InteractionAgent:
             )
 
             # Update duration
-            self._session_metrics.duration_seconds = current_time - (self._session_start_time or current_time)
+            self._session_metrics.duration_seconds = current_time - (
+                self._session_start_time or current_time
+            )
 
     def _track_system_response(self, cluster_id: int) -> None:
         """
@@ -1408,7 +1437,9 @@ class InteractionAgent:
             "speaker_tracking": {
                 "last_emitter_id": self._last_emitter_id,
                 "speaker_adaptation_enabled": self.config.enable_speaker_adaptation,
-                "speaker_profiles_count": len(self.config.speaker_profiles) if self.config.speaker_profiles else 0,
+                "speaker_profiles_count": len(self.config.speaker_profiles)
+                if self.config.speaker_profiles
+                else 0,
             },
             # v1.5.0: Ethological validation statistics
             "ethological_validation": {
@@ -1416,10 +1447,18 @@ class InteractionAgent:
                 "session_id": self._session_metrics.session_id if self._session_metrics else None,
                 "condition": self._session_metrics.condition if self._session_metrics else None,
                 "ras_score": self._session_metrics.ras_score if self._session_metrics else 0.0,
-                "total_animal_vocalizations": self._session_metrics.total_animal_vocalizations if self._session_metrics else 0,
-                "total_system_responses": self._session_metrics.total_system_responses if self._session_metrics else 0,
-                "positive_responses": self._session_metrics.positive_responses if self._session_metrics else 0,
-                "negative_responses": self._session_metrics.negative_responses if self._session_metrics else 0,
+                "total_animal_vocalizations": self._session_metrics.total_animal_vocalizations
+                if self._session_metrics
+                else 0,
+                "total_system_responses": self._session_metrics.total_system_responses
+                if self._session_metrics
+                else 0,
+                "positive_responses": self._session_metrics.positive_responses
+                if self._session_metrics
+                else 0,
+                "negative_responses": self._session_metrics.negative_responses
+                if self._session_metrics
+                else 0,
                 "interaction_history_size": len(self._interaction_history),
             },
         }

@@ -21,9 +21,7 @@ import logging
 import math
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple
-
-import numpy as np
+from typing import Dict, List, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -261,9 +259,7 @@ class PCFGInducer:
         pattern_to_nt: Dict[Tuple, str] = {}
 
         # Sort patterns by frequency
-        sorted_patterns = sorted(
-            rule_counter.items(), key=lambda x: x[1], reverse=True
-        )
+        sorted_patterns = sorted(rule_counter.items(), key=lambda x: x[1], reverse=True)
 
         for pattern, count in sorted_patterns:
             if count < self.min_frequency:
@@ -279,30 +275,20 @@ class PCFGInducer:
             pattern_to_nt[pattern] = nt
 
             # Add rule expanding the non-terminal
-            total_pattern_count = sum(
-                c for p, c in rule_counter.items() if p[0] == pattern[0]
-            )
+            total_pattern_count = sum(c for p, c in rule_counter.items() if p[0] == pattern[0])
 
             if total_pattern_count > 0:
                 prob = count / total_pattern_count
-                grammar.add_rule(
-                    GrammarRule(lhs="S", rhs=[nt], prob=prob, is_terminal=False)
-                )
+                grammar.add_rule(GrammarRule(lhs="S", rhs=[nt], prob=prob, is_terminal=False))
 
                 # Add terminal rule for the pattern
-                grammar.add_rule(
-                    GrammarRule(
-                        lhs=nt, rhs=list(pattern), prob=1.0, is_terminal=True
-                    )
-                )
+                grammar.add_rule(GrammarRule(lhs=nt, rhs=list(pattern), prob=1.0, is_terminal=True))
 
         # Add direct vocabulary rules
         for symbol in vocabulary:
             count = sum(1 for seq in sequences if symbol in seq)
             if count >= self.min_frequency:
-                grammar.add_rule(
-                    GrammarRule(lhs="S", rhs=[symbol], prob=0.1, is_terminal=True)
-                )
+                grammar.add_rule(GrammarRule(lhs="S", rhs=[symbol], prob=0.1, is_terminal=True))
 
         grammar.normalize()
         return grammar
@@ -353,9 +339,7 @@ class GrammarParser:
         trees = self._parse_recursive(sequence, self.grammar.start_symbol, 0)
         return trees
 
-    def _parse_recursive(
-        self, sequence: List, symbol: str, pos: int
-    ) -> List[Dict]:
+    def _parse_recursive(self, sequence: List, symbol: str, pos: int) -> List[Dict]:
         """
         Recursively parse sequence starting from position.
 
@@ -373,24 +357,21 @@ class GrammarParser:
         for rule in self.grammar.get_rules_for_lhs(symbol):
             if rule.is_terminal:
                 # Check if RHS matches sequence starting at pos
-                if len(rule.rhs) <= remaining and list(rule.rhs) == sequence[
-                    pos : pos + len(rule.rhs)
-                ]:
+                if (
+                    len(rule.rhs) <= remaining
+                    and list(rule.rhs) == sequence[pos : pos + len(rule.rhs)]
+                ):
                     # Create terminal node
                     trees.append(
                         {
                             "symbol": symbol,
-                            "children": [
-                                {"symbol": s, "children": []} for s in rule.rhs
-                            ],
+                            "children": [{"symbol": s, "children": []} for s in rule.rhs],
                             "rule": rule,
                         }
                     )
             else:
                 # Try to expand non-terminals
-                expanded_trees = self._expand_non_terminal(
-                    sequence, rule, pos, {symbol}
-                )
+                expanded_trees = self._expand_non_terminal(sequence, rule, pos, {symbol})
                 trees.extend(expanded_trees)
 
         return trees
@@ -408,9 +389,7 @@ class GrammarParser:
 
         if len(rule.rhs) == 1:
             # Single RHS symbol
-            return [
-                {"symbol": rule.lhs, "children": [t], "rule": rule} for t in first_trees
-            ]
+            return [{"symbol": rule.lhs, "children": [t], "rule": rule} for t in first_trees]
 
         # Multiple RHS symbols - need to expand all
         result = []
@@ -422,9 +401,7 @@ class GrammarParser:
                 continue
 
             # Recursively expand remaining symbols
-            remaining = self._expand_remaining(
-                sequence, rule.rhs[1:], next_pos, visited
-            )
+            remaining = self._expand_remaining(sequence, rule.rhs[1:], next_pos, visited)
 
             for rem_tree in remaining:
                 result.append(
@@ -453,14 +430,10 @@ class GrammarParser:
             if next_pos >= len(sequence):
                 continue
 
-            remaining = self._expand_remaining(
-                sequence, symbols[1:], next_pos, visited
-            )
+            remaining = self._expand_remaining(sequence, symbols[1:], next_pos, visited)
 
             for rem_tree in remaining:
-                result.append(
-                    {"symbol": symbols[0], "children": [first_tree, rem_tree]}
-                )
+                result.append({"symbol": symbols[0], "children": [first_tree, rem_tree]})
 
         return result
 
@@ -614,9 +587,7 @@ class VocalizationGrammar:
         inducer = PCFGInducer(max_rule_length=3, min_frequency=1)
         self.grammar = inducer.induce(sequences)
 
-    def predict_next(
-        self, prefix: List[int], top_k: int = 5
-    ) -> List[Tuple[int, float]]:
+    def predict_next(self, prefix: List[int], top_k: int = 5) -> List[Tuple[int, float]]:
         """
         Predict the next segment in a sequence.
 
@@ -647,9 +618,7 @@ class VocalizationGrammar:
         # Convert to probabilities and sort
         total = sum(follower_counts.values())
         if total > 0:
-            predictions = [
-                (sym, count / total) for sym, count in follower_counts.items()
-            ]
+            predictions = [(sym, count / total) for sym, count in follower_counts.items()]
             predictions.sort(key=lambda x: x[1], reverse=True)
             return predictions[:top_k]
 
@@ -675,7 +644,7 @@ class VocalizationGrammar:
         # Check each position for whether continuation is "predictable"
         for i in range(1, n):
             prefix = sequence[:i]
-            suffix = sequence[i:]
+            sequence[i:]  # suffix unused
 
             # Get predictions for what should follow the prefix
             predictions = self.predict_next(prefix, top_k=10)
@@ -694,9 +663,7 @@ class VocalizationGrammar:
                     boundaries.append(i - 1)
                 else:
                     # Check probability drop
-                    next_prob = next(
-                        (p[1] for p in predictions if p[0] == next_symbol), 0.0
-                    )
+                    next_prob = next((p[1] for p in predictions if p[0] == next_symbol), 0.0)
                     # If probability is very low, it might be a boundary
                     if next_prob < 0.3:  # Threshold for low probability
                         boundaries.append(i - 1)
@@ -735,12 +702,8 @@ if __name__ == "__main__":
     grammar = PCFG(start_symbol="S")
     grammar.add_rule(GrammarRule(lhs="S", rhs=["NP", "VP"], prob=0.8))
     grammar.add_rule(GrammarRule(lhs="S", rhs=["VP"], prob=0.2))
-    grammar.add_rule(
-        GrammarRule(lhs="NP", rhs=["Det", "N"], prob=1.0, is_terminal=True)
-    )
-    grammar.add_rule(
-        GrammarRule(lhs="VP", rhs=["V", "NP"], prob=1.0, is_terminal=True)
-    )
+    grammar.add_rule(GrammarRule(lhs="NP", rhs=["Det", "N"], prob=1.0, is_terminal=True))
+    grammar.add_rule(GrammarRule(lhs="VP", rhs=["V", "NP"], prob=1.0, is_terminal=True))
 
     print(f"Grammar: {len(grammar.rules)} rules")
     print(f"Non-terminals: {grammar.count_non_terminals()}")

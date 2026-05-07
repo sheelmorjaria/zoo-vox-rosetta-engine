@@ -186,11 +186,7 @@ impl MCDropoutUncertaintyEstimator {
         let mean = predictions.iter().sum::<f32>() / predictions.len() as f32;
 
         // Compute variance (epistemic uncertainty)
-        let variance = predictions
-            .iter()
-            .map(|&p| (p - mean).powi(2))
-            .sum::<f32>()
-            / (predictions.len() - 1) as f32;
+        let variance = predictions.iter().map(|&p| (p - mean).powi(2)).sum::<f32>() / (predictions.len() - 1) as f32;
 
         let epistemic = variance.max(self.min_variance);
 
@@ -220,19 +216,13 @@ impl MCDropoutUncertaintyEstimator {
 
         // Compute epistemic (variance across predictions)
         let mean = predictions.iter().sum::<f32>() / predictions.len() as f32;
-        let epistemic = predictions
-            .iter()
-            .map(|&p| (p - mean).powi(2))
-            .sum::<f32>()
-            / (predictions.len() - 1).max(1) as f32;
+        let epistemic =
+            predictions.iter().map(|&p| (p - mean).powi(2)).sum::<f32>() / (predictions.len() - 1).max(1) as f32;
 
         // Compute aleatoric (mean of predictive variances)
         let aleatoric = predictive_variances.iter().sum::<f32>() / predictive_variances.len() as f32;
 
-        UncertaintyEstimate::new(
-            epistemic.max(self.min_variance),
-            aleatoric.max(self.min_variance),
-        )
+        UncertaintyEstimate::new(epistemic.max(self.min_variance), aleatoric.max(self.min_variance))
     }
 
     /// Get the number of MC samples

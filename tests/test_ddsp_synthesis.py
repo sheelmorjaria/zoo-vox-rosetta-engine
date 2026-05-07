@@ -40,9 +40,7 @@ class TestDifferentiableOscillator(unittest.TestCase):
         mod_index = 50.0
         duration = 0.1
 
-        audio = oscillator.synthesize_fm(
-            carrier_freq, modulator_freq, mod_index, duration
-        )
+        audio = oscillator.synthesize_fm(carrier_freq, modulator_freq, mod_index, duration)
 
         self.assertEqual(len(audio), 4800)
 
@@ -53,7 +51,7 @@ class TestDifferentiableOscillator(unittest.TestCase):
         oscillator = SineOscillator(sample_rate=48000)
 
         # Check if parameters are gradient-tracked
-        self.assertTrue(hasattr(oscillator, 'phase'))
+        self.assertTrue(hasattr(oscillator, "phase"))
 
 
 class TestDifferentiableFilter(unittest.TestCase):
@@ -270,7 +268,7 @@ class TestDDSPOptimizer(unittest.TestCase):
 
     def test_reconstruct_audio(self):
         """Should reconstruct audio from parameters"""
-        from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer, DDSPOptimizer
+        from cognitive_intelligence.ddsp_synthesis import DDSPOptimizer, DDSPSynthesizer
 
         synthesizer = DDSPSynthesizer(sample_rate=48000, n_harmonics=8)
         optimizer = DDSPOptimizer(learning_rate=0.01, n_iterations=5)

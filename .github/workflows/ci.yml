@@ -54,8 +54,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install maturin[patchelf]
+        pip install maturin[patchelf] ruff flake8
         pip install -e ".[vision]"
+        # Install PyTorch for DDSP/Jetson tests (Module 3 & 4)
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
     - name: Build Rust technical architecture (Python bindings)
       run: |
@@ -161,15 +163,15 @@ jobs:
 
     - name: Check formatting with ruff
       run: |
-        ruff format --check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
+        ruff format --check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*" --exclude "analysis/*"
 
     - name: Lint with ruff
       run: |
-        ruff check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*"
+        ruff check . --exclude "presentation_video.py" --exclude "pub.py" --exclude "technical_architecture/scripts/*" --exclude "tests/archive_experimental/*" --exclude "tests/archive/*" --exclude "archive/*" --exclude "realtime/archive/*" --exclude "analysis/*"
 
     - name: Lint with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude="presentation_video.py,pub.py,technical_architecture/scripts/*,tests/archive_experimental/*,tests/archive/*,archive/*,realtime/archive/*"
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude="presentation_video.py,pub.py,technical_architecture/scripts/*,tests/archive_experimental/*,tests/archive/*,archive/*,realtime/archive/*,analysis/*"
 
   integration-test:
     name: Integration Tests
@@ -196,6 +198,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install maturin[patchelf]
         pip install -e ".[vision]"  # Includes numpy, pandas, pytest, opencv, mediapipe
+        # Install PyTorch for DDSP/Jetson tests (Module 3 & 4)
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
     - name: Build Rust library (maturin)
       run: |

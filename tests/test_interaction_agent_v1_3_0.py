@@ -14,10 +14,12 @@ Red Phase: Failing tests that define the requirements for:
 Author: Sheel Morjaria (sheelmorjaria@gmail.com)
 """
 
-import pytest
-import numpy as np
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from realtime.interaction_agent import (
@@ -26,10 +28,10 @@ from realtime.interaction_agent import (
     SpeakerProfile,
 )
 
-
 # =============================================================================
 # FIXTURES: Speaker Profiles for Colony Hierarchy
 # =============================================================================
+
 
 @pytest.fixture
 def colony_speaker_profiles():
@@ -48,11 +50,11 @@ def colony_speaker_profiles():
             dominance_rank=1.0,
             age_class="adult",
             response_bias={
-                "alarm": 0.95,      # Alpha triggers strong alarm response
+                "alarm": 0.95,  # Alpha triggers strong alarm response
                 "territorial": 0.90,
                 "contact": 0.70,
                 "social": 0.50,
-            }
+            },
         ),
         2: SpeakerProfile(
             emitter_id=2,
@@ -63,18 +65,18 @@ def colony_speaker_profiles():
                 "territorial": 0.75,
                 "contact": 0.65,
                 "social": 0.55,
-            }
+            },
         ),
         3: SpeakerProfile(
             emitter_id=3,
             dominance_rank=0.2,
             age_class="juvenile",
             response_bias={
-                "alarm": 0.50,      # Juvenile gets weaker responses
+                "alarm": 0.50,  # Juvenile gets weaker responses
                 "territorial": 0.40,
-                "contact": 0.90,    # But high contact response (solicitous)
+                "contact": 0.90,  # But high contact response (solicitous)
                 "social": 0.85,
-            }
+            },
         ),
     }
 
@@ -94,6 +96,7 @@ def cluster_context_map():
 # TEST SUITE 1: SpeakerProfile Dataclass
 # =============================================================================
 
+
 class TestSpeakerProfile:
     """Test SpeakerProfile dataclass structure."""
 
@@ -103,7 +106,7 @@ class TestSpeakerProfile:
             emitter_id=1,
             dominance_rank=0.9,
             age_class="adult",
-            response_bias={"alarm": 0.8, "contact": 0.7}
+            response_bias={"alarm": 0.8, "contact": 0.7},
         )
 
         assert profile.emitter_id == 1
@@ -122,10 +125,7 @@ class TestSpeakerProfile:
 
     def test_speaker_profile_response_bias_lookup(self):
         """response_bias should provide context-specific multipliers."""
-        profile = SpeakerProfile(
-            emitter_id=1,
-            response_bias={"alarm": 0.95, "contact": 0.70}
-        )
+        profile = SpeakerProfile(emitter_id=1, response_bias={"alarm": 0.95, "contact": 0.70})
 
         assert profile.get_response_bias("alarm") == 0.95
         assert profile.get_response_bias("contact") == 0.70
@@ -136,6 +136,7 @@ class TestSpeakerProfile:
 # =============================================================================
 # TEST SUITE 2: Emitter ID Tracking
 # =============================================================================
+
 
 class TestEmitterIDTracking:
     """Test that agent tracks emitter_id alongside cluster_id."""
@@ -155,6 +156,7 @@ class TestEmitterIDTracking:
 
         # Process first event with emitter_id=1
         from realtime.feature_subscriber import FeatureEvent
+
         event = FeatureEvent(
             event_type="feature_extraction",
             cluster_id=8,
@@ -244,6 +246,7 @@ class TestEmitterIDTracking:
 # TEST SUITE 3: Speaker Profile Lookup
 # =============================================================================
 
+
 class TestSpeakerProfileLookup:
     """Test speaker profile retrieval and fallback."""
 
@@ -294,6 +297,7 @@ class TestSpeakerProfileLookup:
 # TEST SUITE 4: Speaker-Specific Response Policies
 # =============================================================================
 
+
 class TestSpeakerSpecificResponsePolicies:
     """Test that response behavior varies by speaker profile."""
 
@@ -326,7 +330,7 @@ class TestSpeakerSpecificResponsePolicies:
         should_respond = agent._should_respond(result)
 
         # Alpha's high alarm bias should trigger response
-        assert should_respond == True
+        assert should_respond
         # Check that speaker info is in result
         assert result["speaker_profile"] is not None
         assert result["speaker_profile"].emitter_id == 1
@@ -360,7 +364,7 @@ class TestSpeakerSpecificResponsePolicies:
         should_respond = agent._should_respond(result)
 
         # Juvenile's high contact bias should trigger response
-        assert should_respond == True
+        assert should_respond
         assert result["speaker_profile"].emitter_id == 3
         assert result["speaker_profile"].age_class == "juvenile"
 
@@ -422,7 +426,7 @@ class TestSpeakerSpecificResponsePolicies:
         )
 
         result = agent._process_features(event)
-        should_respond = agent._should_respond(result)
+        agent._should_respond(result)
 
         # Should respond normally (no profile bias)
         assert result["speaker_profile"] is None
@@ -463,6 +467,7 @@ class TestSpeakerSpecificResponsePolicies:
 # =============================================================================
 # TEST SUITE 5: Integration - Full Level 2 Pipeline
 # =============================================================================
+
 
 class TestLevel2SemanticGrounding:
     """Integration tests for Level 2 (Who + What) semantic grounding."""

@@ -19,7 +19,7 @@ License: CC BY-ND 4.0 International
 import json
 import logging
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -214,8 +214,7 @@ class VocabOptimizer:
         # Handle edge case: too few samples for clustering (need at least 2)
         if n_samples < 2:
             logger.warning(
-                f"Insufficient samples (n={n_samples}) for clustering. "
-                f"Returning k=1 as fallback."
+                f"Insufficient samples (n={n_samples}) for clustering. Returning k=1 as fallback."
             )
             return 1, {1: 0.0}
 
@@ -224,9 +223,7 @@ class VocabOptimizer:
             # Use n_samples - 1 as the only viable k (k must be < n_samples)
             viable_k = n_samples - 1
             svs = self.compute_svs(features, viable_k)
-            logger.info(
-                f"Small dataset (n={n_samples}): using k={viable_k}, SVS={svs:.4f}"
-            )
+            logger.info(f"Small dataset (n={n_samples}): using k={viable_k}, SVS={svs:.4f}")
             return viable_k, {viable_k: svs}
 
         # Adjust max_k if it exceeds number of samples
@@ -268,15 +265,11 @@ class VocabOptimizer:
 
             logger.debug(f"  k={k}: SVS={svs:.4f}")
 
-        logger.info(
-            f"Optimal k for {species}: k={best_k} (SVS={best_svs:.4f})"
-        )
+        logger.info(f"Optimal k for {species}: k={best_k} (SVS={best_svs:.4f})")
 
         return best_k, svs_history
 
-    def optimize_and_create_config(
-        self, features: np.ndarray, species: str
-    ) -> SpeciesVocabConfig:
+    def optimize_and_create_config(self, features: np.ndarray, species: str) -> SpeciesVocabConfig:
         """
         Optimize k and create a SpeciesVocabConfig.
 
@@ -290,13 +283,9 @@ class VocabOptimizer:
         optimal_k, svs_history = self.optimize_k_with_history(features, species)
         svs_score = svs_history[optimal_k]
 
-        config = SpeciesVocabConfig(
-            species=species, optimal_k=optimal_k, svs_score=svs_score
-        )
+        config = SpeciesVocabConfig(species=species, optimal_k=optimal_k, svs_score=svs_score)
 
-        logger.info(
-            f"Created config for {species}: k={optimal_k}, SVS={svs_score:.4f}"
-        )
+        logger.info(f"Created config for {species}: k={optimal_k}, SVS={svs_score:.4f}")
 
         return config
 
@@ -359,10 +348,7 @@ class SpeciesVocabRegistry:
 
     def save(self, path: str) -> None:
         """Save registry to JSON file."""
-        data = {
-            species: config.to_dict()
-            for species, config in self.configs.items()
-        }
+        data = {species: config.to_dict() for species, config in self.configs.items()}
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
         logger.info(f"Saved registry with {len(self.configs)} species to {path}")
@@ -421,24 +407,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Optimize vocabulary size using Silhouette Validation Score"
     )
-    parser.add_argument(
-        "--features", "-f", required=True, help="Path to features .npy file"
-    )
-    parser.add_argument(
-        "--species", "-s", required=True, help="Species name"
-    )
-    parser.add_argument(
-        "--k-min", type=int, default=100, help="Minimum k to test"
-    )
-    parser.add_argument(
-        "--k-max", type=int, default=2000, help="Maximum k to test"
-    )
-    parser.add_argument(
-        "--step", type=int, default=50, help="Step size for k search"
-    )
-    parser.add_argument(
-        "--output", "-o", help="Save config to this path"
-    )
+    parser.add_argument("--features", "-f", required=True, help="Path to features .npy file")
+    parser.add_argument("--species", "-s", required=True, help="Species name")
+    parser.add_argument("--k-min", type=int, default=100, help="Minimum k to test")
+    parser.add_argument("--k-max", type=int, default=2000, help="Maximum k to test")
+    parser.add_argument("--step", type=int, default=50, help="Step size for k search")
+    parser.add_argument("--output", "-o", help="Save config to this path")
 
     args = parser.parse_args()
 

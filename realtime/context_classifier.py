@@ -29,7 +29,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import joblib
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 
@@ -109,7 +109,7 @@ class ContextClassifier:
 
         # Store class names for later prediction
         unique_labels = np.unique(labels)
-        self.class_names = [str(l) for l in unique_labels]
+        self.class_names = [str(label) for label in unique_labels]
 
         y_encoded = self.label_encoder.fit_transform(labels)
 
@@ -120,10 +120,7 @@ class ContextClassifier:
         # Early stopping with validation split requires:
         # - At least 10 samples total (for validation_fraction=0.2)
         # - Each class must have at least 2 samples (for stratified split)
-        use_early_stopping = (
-            self.n_samples >= 10 and
-            min_class_count >= 2
-        )
+        use_early_stopping = self.n_samples >= 10 and min_class_count >= 2
 
         if not use_early_stopping:
             if self.n_samples < 10:
@@ -163,8 +160,7 @@ class ContextClassifier:
         # Log training results
         train_accuracy = self.model.score(features, y_encoded)
         logger.info(
-            f"Training complete: {len(self.class_names)} classes, "
-            f"accuracy={train_accuracy:.2%}"
+            f"Training complete: {len(self.class_names)} classes, accuracy={train_accuracy:.2%}"
         )
 
     def predict(self, features_112d: np.ndarray) -> Tuple[str, float]:
@@ -224,9 +220,7 @@ class ContextClassifier:
         indices = self.model.predict(features)
         return [self.class_names[int(i)] for i in indices]
 
-    def predict_with_confidence_batch(
-        self, features: np.ndarray
-    ) -> List[Tuple[str, float]]:
+    def predict_with_confidence_batch(self, features: np.ndarray) -> List[Tuple[str, float]]:
         """
         Predict contexts and confidences for multiple feature vectors.
 
@@ -351,9 +345,7 @@ class ContextClassifier:
             "data_hash": self.data_hash,
         }
 
-    def _compute_hash(
-        self, features: np.ndarray, labels: np.ndarray
-    ) -> str:
+    def _compute_hash(self, features: np.ndarray, labels: np.ndarray) -> str:
         """Compute hash of training data for tracking."""
         data_bytes = features.tobytes() + np.array(labels).tobytes()
         return hashlib.md5(data_bytes).hexdigest()[:8]
@@ -436,7 +428,6 @@ class ContextDataset:
         Returns:
             ContextDataset with manual labels
         """
-        import json
 
         with open(manifest_path, "r") as f:
             data = json.load(f)
@@ -457,9 +448,7 @@ class ContextDataset:
         self.features = features
         self.labels = labels
 
-    def train_test_split(
-        self, test_size: float = 0.2, random_state: Optional[int] = None
-    ) -> Tuple:
+    def train_test_split(self, test_size: float = 0.2, random_state: Optional[int] = None) -> Tuple:
         """
         Split dataset into train and test sets.
 
@@ -538,15 +527,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Train a context classifier for behavioral inference"
     )
-    parser.add_argument(
-        "--features", "-f", required=True, help="Path to features .npy file"
-    )
-    parser.add_argument(
-        "--labels", "-l", required=True, help="Path to labels .npy file"
-    )
-    parser.add_argument(
-        "--output", "-o", help="Save trained model to this path"
-    )
+    parser.add_argument("--features", "-f", required=True, help="Path to features .npy file")
+    parser.add_argument("--labels", "-l", required=True, help="Path to labels .npy file")
+    parser.add_argument("--output", "-o", help="Save trained model to this path")
 
     args = parser.parse_args()
 

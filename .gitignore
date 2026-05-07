@@ -294,6 +294,12 @@ analysis/*.csv
 analysis/*.json
 analysis/*.pkl
 
+# ONNX/TensorRT exports (Jetson deployment)
+exports/
+*.onnx
+*.trt
+*.engine
+
 # Large model files and gallery data
 *.bincode
 specialist_rf_models/

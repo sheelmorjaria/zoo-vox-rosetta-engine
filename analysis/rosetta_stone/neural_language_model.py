@@ -19,7 +19,6 @@ License: CC BY-ND 4.0 International
 
 import json
 import logging
-import os
 import pickle
 from typing import Dict, List, Optional, Tuple
 
@@ -140,9 +139,7 @@ class AcousticTokenizer:
         with open(path, "r") as f:
             data = json.load(f)
 
-        tokenizer = cls(
-            vocab_size=data["vocab_size"], random_state=data["random_state"]
-        )
+        tokenizer = cls(vocab_size=data["vocab_size"], random_state=data["random_state"])
         tokenizer.centroids = np.array(data["centroids"], dtype=np.float32)
         logger.info(f"Tokenizer loaded from {path}")
         return tokenizer
@@ -190,15 +187,11 @@ class TransformerLM:
 
         # Initialize embeddings
         np.random.seed(random_state)
-        self.token_embeddings = np.random.randn(vocab_size, d_model).astype(
-            np.float32
-        ) * 0.1
+        self.token_embeddings = np.random.randn(vocab_size, d_model).astype(np.float32) * 0.1
         self.token_embeddings /= np.sqrt(d_model)
 
         # Positional embeddings
-        self.pos_embeddings = np.random.randn(max_seq_len, d_model).astype(
-            np.float32
-        ) * 0.01
+        self.pos_embeddings = np.random.randn(max_seq_len, d_model).astype(np.float32) * 0.01
 
         # Transformer weights (simplified)
         self.layers = []
@@ -323,13 +316,15 @@ class TransformerLM:
                 self.token_embeddings[target_token] += (
                     self.token_embeddings[context_token] * learning_rate * 0.1
                 )
-                self.token_embeddings[target_token] /= np.linalg.norm(
-                    self.token_embeddings[target_token]
-                ) + 1e-8
+                self.token_embeddings[target_token] /= (
+                    np.linalg.norm(self.token_embeddings[target_token]) + 1e-8
+                )
 
         return self.compute_loss(sequences)
 
-    def train(self, sequences: List[List[int]], epochs: int = 10, learning_rate: float = 0.001) -> List[float]:
+    def train(
+        self, sequences: List[List[int]], epochs: int = 10, learning_rate: float = 0.001
+    ) -> List[float]:
         """
         Train the model on sequences.
 
@@ -491,9 +486,7 @@ class ConditionalGenerator:
         self.context_models[context_type] = model
         logger.info(f"Added context model: {context_type}")
 
-    def train_context(
-        self, context_type: str, sequences: List[List[int]], **model_kwargs
-    ) -> None:
+    def train_context(self, context_type: str, sequences: List[List[int]], **model_kwargs) -> None:
         """
         Train a model for a specific context.
 
@@ -502,9 +495,7 @@ class ConditionalGenerator:
             sequences: Training sequences for this context
             **model_kwargs: Arguments for model creation
         """
-        model = TransformerLM(
-            vocab_size=self.base_model.vocab_size, **model_kwargs
-        )
+        model = TransformerLM(vocab_size=self.base_model.vocab_size, **model_kwargs)
         model.train(sequences, epochs=10)
         self.add_context_model(context_type, model)
 
@@ -534,9 +525,7 @@ class ConditionalGenerator:
             model = self.base_model
 
         # Use seed token to start generation (empty prompt causes issues)
-        return model.generate(
-            prompt=[1], max_length=max_length, temperature=temperature, **kwargs
-        )
+        return model.generate(prompt=[1], max_length=max_length, temperature=temperature, **kwargs)
 
     def generate_batch(
         self,
@@ -571,9 +560,9 @@ def _softmax(x: np.ndarray) -> np.ndarray:
     return exp_x / (np.sum(exp_x) + 1e-10)
 
 
-def create_pipeline(vocab_size: int = 1020, d_model: int = 256) -> Tuple[
-    AcousticTokenizer, TransformerLM
-]:
+def create_pipeline(
+    vocab_size: int = 1020, d_model: int = 256
+) -> Tuple[AcousticTokenizer, TransformerLM]:
     """
     Create a complete language modeling pipeline.
 
@@ -593,9 +582,7 @@ def main():
     """Command-line interface for neural language model."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Neural Language Model for Direction 2"
-    )
+    parser = argparse.ArgumentParser(description="Neural Language Model for Direction 2")
     parser.add_argument("--vocab-size", type=int, default=1020, help="Vocabulary size")
     parser.add_argument("--d-model", type=int, default=256, help="Model dimension")
     parser.add_argument("--train", type=str, help="Training data file")
@@ -613,9 +600,7 @@ def main():
         sequences = data["sequences"]
 
         # Create and train model
-        model = TransformerLM(
-            vocab_size=args.vocab_size, d_model=args.d_model
-        )
+        model = TransformerLM(vocab_size=args.vocab_size, d_model=args.d_model)
         model.train(sequences, epochs=20)
         model.save(args.output)
         print(f"Model saved to {args.output}")

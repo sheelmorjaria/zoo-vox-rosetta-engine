@@ -213,8 +213,9 @@ class TestFeatureEventUncertainty(unittest.TestCase):
 
     def test_feature_event_optional_uncertainty(self):
         """FeatureEvent accepts uncertainty field"""
-        from realtime.feature_subscriber import FeatureEvent
         import numpy as np
+
+        from realtime.feature_subscriber import FeatureEvent
 
         event = FeatureEvent(
             event_type="feature_extraction",
@@ -229,8 +230,9 @@ class TestFeatureEventUncertainty(unittest.TestCase):
 
     def test_feature_event_uncertainty_none_by_default(self):
         """Uncertainty defaults to None"""
-        from realtime.feature_subscriber import FeatureEvent
         import numpy as np
+
+        from realtime.feature_subscriber import FeatureEvent
 
         event = FeatureEvent(
             event_type="feature_extraction",
@@ -244,8 +246,8 @@ class TestFeatureEventUncertainty(unittest.TestCase):
 
     def test_feature_event_uncertainty_propagation(self):
         """Uncertainty propagates through deserialization"""
+
         from realtime.feature_subscriber import FeatureEvent
-        import numpy as np
 
         json_data = {
             "event_type": "feature_extraction",
@@ -262,8 +264,9 @@ class TestFeatureEventUncertainty(unittest.TestCase):
 
     def test_feature_event_serialization_with_uncertainty(self):
         """JSON roundtrip preserves uncertainty"""
-        from realtime.feature_subscriber import FeatureEvent
         import numpy as np
+
+        from realtime.feature_subscriber import FeatureEvent
 
         original = FeatureEvent(
             event_type="feature_extraction",
@@ -286,8 +289,9 @@ class TestFeatureEventUncertainty(unittest.TestCase):
 
     def test_feature_event_serialization_without_uncertainty(self):
         """Uncertainty is omitted from JSON when None"""
-        from realtime.feature_subscriber import FeatureEvent
         import numpy as np
+
+        from realtime.feature_subscriber import FeatureEvent
 
         event = FeatureEvent(
             event_type="feature_extraction",
