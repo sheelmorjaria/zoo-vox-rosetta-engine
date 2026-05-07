@@ -10,6 +10,7 @@ This agent:
 - Runs DDSP decoder to generate control parameters
 - Runs DDSP synthesizer to generate PCM audio
 - Publishes AudioBufferEvent via ZMQ for playback by Rust layer
+- Auto-detects Jetson device type and uses appropriate configuration
 
 Target latency: <50ms round-trip (features → audio)
 
@@ -22,6 +23,8 @@ import logging
 import os
 import time
 from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -46,6 +49,89 @@ except ImportError:
     ZMQ_AVAILABLE = False
     logger.warning("ZMQ not available. IPC disabled.")
 
+# Import Jetson device types from jetson_export module
+try:
+    from cognitive_intelligence.jetson_export import (
+        JetsonDevice,
+        detect_jetson_device as _export_detect_jetson_device,
+    )
+
+    # Use the imported function
+    detect_jetson_device = _export_detect_jetson_device
+except ImportError:
+    # Fallback definitions if jetson_export is not available
+    class JetsonDevice(Enum):  # type: ignore
+        """Detected Jetson device types."""
+        NANO = "nano"
+        XAVIER = "xavier"
+        ORIN = "orin"
+        UNKNOWN = "unknown"
+
+    def detect_jetson_device() -> JetsonDevice:  # type: ignore
+        """Fallback device detection."""
+        tegra_release = Path("/etc/nv_tegra_release")
+        if not tegra_release.exists():
+            return JetsonDevice.UNKNOWN
+        return JetsonDevice.UNKNOWN
+
+
+def get_config_for_device(device: Optional[JetsonDevice] = None) -> "DDSPAgentConfig":
+    """
+    Get the appropriate DDSPAgentConfig for a specific device.
+
+    Args:
+        device: Device type (auto-detect if None)
+
+    Returns:
+        DDSPAgentConfig configured for the device
+    """
+    if device is None:
+        device = detect_jetson_device()
+
+    base_dir = "exports/ddsp_jetson"
+
+    configs = {
+        JetsonDevice.NANO: DDSPAgentConfig(
+            decoder_path=f"{base_dir}/nano_fp32/ddsp_decoder.onnx",
+            synthesizer_path=f"{base_dir}/nano_fp32/ddsp_synthesizer.onnx",
+            use_tensorrt=False,
+            fp16=False,
+            num_harmonics=40,
+            num_noise_bands=3,
+            target_latency_ms=30.0,
+        ),
+        JetsonDevice.XAVIER: DDSPAgentConfig(
+            decoder_path=f"{base_dir}/xavier_fp16/ddsp_decoder.trt",
+            synthesizer_path=f"{base_dir}/xavier_fp16/ddsp_synthesizer.trt",
+            use_tensorrt=True,
+            fp16=True,
+            num_harmonics=60,
+            num_noise_bands=5,
+            target_latency_ms=12.0,
+        ),
+        JetsonDevice.ORIN: DDSPAgentConfig(
+            decoder_path=f"{base_dir}/orin_fp16_postfilter/ddsp_decoder.trt",
+            synthesizer_path=f"{base_dir}/orin_fp16_postfilter/ddsp_synthesizer.trt",
+            use_tensorrt=True,
+            fp16=True,
+            num_harmonics=60,
+            num_noise_bands=5,
+            enable_post_filter=True,
+            target_latency_ms=15.0,
+        ),
+        JetsonDevice.UNKNOWN: DDSPAgentConfig(
+            decoder_path=f"{base_dir}/universal_fp32/ddsp_decoder.onnx",
+            synthesizer_path=f"{base_dir}/universal_fp32/ddsp_synthesizer.onnx",
+            use_tensorrt=False,
+            fp16=False,
+            num_harmonics=40,
+            num_noise_bands=3,
+            target_latency_ms=50.0,
+        ),
+    }
+
+    return configs.get(device, configs[JetsonDevice.UNKNOWN])
+
 
 # =============================================================================
 # Configuration
@@ -59,6 +145,7 @@ class DDSPAgentConfig:
     # Model paths
     decoder_path: str = "exports/ddsp_jetson/ddsp_decoder.onnx"
     synthesizer_path: str = "exports/ddsp_jetson/ddsp_synthesizer.onnx"
+    post_filter_path: str = ""  # Optional neural post-filter (Orin tier)
     synthesis_manifest_path: str = "technical_architecture/data/synthesis_manifest.json"
 
     # Inference settings
@@ -76,6 +163,9 @@ class DDSPAgentConfig:
     num_noise_bands: int = 5
     hop_size: int = 480
 
+    # Post-filter (Orin tier only)
+    enable_post_filter: bool = False
+
     # ZMQ settings
     feature_sub_port: int = 5556
     audio_pub_port: int = 5557
@@ -87,6 +177,86 @@ class DDSPAgentConfig:
     # Performance monitoring
     enable_profiling: bool = True
     log_every_n_frames: int = 100
+
+
+# =============================================================================
+# Neural Post-Filter (Orin tier only)
+# =============================================================================
+
+if TORCH_AVAILABLE:
+
+    class NeuralPostFilter(nn.Module):
+        """
+        Lightweight neural post-filter for DDSP audio refinement.
+
+        This small network takes DDSP-generated audio and the DDSP parameters,
+        then outputs refined audio with improved quality. Designed for Orin
+        devices where we have GPU headroom for additional processing.
+
+        Architecture: 1D convolutions with skip connections
+        """
+
+        def __init__(self, num_harmonics: int = 60, num_noise_bands: int = 5):
+            super().__init__()
+            self.num_harmonics = num_harmonics
+            self.num_noise_bands = num_noise_bands
+
+            # Input channels: audio (1) + param embedding (16)
+            in_channels = 1 + 16
+
+            # Light convolutional network
+            self.net = nn.Sequential(
+                nn.Conv1d(in_channels, 32, kernel_size=7, padding=3),
+                nn.ReLU(),
+                nn.Conv1d(32, 32, kernel_size=7, padding=3),
+                nn.ReLU(),
+                nn.Conv1d(32, 16, kernel_size=7, padding=3),
+                nn.ReLU(),
+                nn.Conv1d(16, 1, kernel_size=7, padding=3),
+                nn.Tanh(),
+            )
+
+            # Parameter embedding network
+            self.param_embed = nn.Sequential(
+                nn.Linear(num_harmonics + num_noise_bands, 32),
+                nn.ReLU(),
+                nn.Linear(32, 16),
+            )
+
+        def forward(self, audio: torch.Tensor, harmonic_amps: torch.Tensor,
+                    noise_mags: torch.Tensor) -> torch.Tensor:
+            """
+            Refine DDSP audio with neural post-filter.
+
+            Args:
+                audio: DDSP-generated audio (B, T)
+                harmonic_amps: Harmonic amplitudes (B, 60)
+                noise_mags: Noise magnitudes (B, 5)
+
+            Returns:
+                Refined audio (B, T)
+            """
+            batch_size = audio.shape[0]
+            audio_length = audio.shape[-1]
+
+            # Embed parameters
+            params = torch.cat([harmonic_amps, noise_mags], dim=-1)
+            param_emb = self.param_embed(params)  # (B, 16)
+
+            # Expand param embedding to match audio length
+            param_emb_expanded = param_emb.unsqueeze(-1).expand(-1, -1, audio_length)  # (B, 16, T)
+
+            # Stack audio with param embedding
+            audio_input = audio.unsqueeze(1)  # (B, 1, T)
+            combined = torch.cat([audio_input, param_emb_expanded], dim=1)  # (B, 17, T)
+
+            # Run through network
+            refinement = self.net(combined)  # (B, 1, T)
+
+            # Add refinement to original audio (residual connection)
+            refined = audio + refinement.squeeze(1)  # (B, T)
+
+            return refined
 
 
 # =============================================================================
@@ -122,6 +292,11 @@ if TORCH_AVAILABLE:
             self.decoder = self._load_decoder()
             self.synthesizer = self._load_synthesizer()
 
+            # Load post-filter if enabled (Orin tier)
+            self.post_filter = None
+            if config.enable_post_filter:
+                self.post_filter = self._load_post_filter()
+
             # Load cluster centroids
             self.centroids = self._load_centroids()
 
@@ -136,6 +311,8 @@ if TORCH_AVAILABLE:
 
             logger.info(f"RealtimeDDSPAgent initialized on {self.device}")
             logger.info(f"Target latency: {config.target_latency_ms}ms")
+            if self.post_filter is not None:
+                logger.info("Neural post-filter enabled (Orin tier)")
 
         def _load_decoder(self) -> nn.Module:
             """Load DDSP decoder model."""
@@ -173,6 +350,30 @@ if TORCH_AVAILABLE:
 
             logger.info("DDSP Synthesizer loaded (PyTorch)")
             return synthesizer
+
+        def _load_post_filter(self) -> Optional[nn.Module]:
+            """Load neural post-filter model (Orin tier only)."""
+            post_filter_path = self.config.post_filter_path
+
+            # Try to load from specified path
+            if post_filter_path and os.path.exists(post_filter_path):
+                try:
+                    post_filter = torch.load(post_filter_path, map_location=self.device)
+                    post_filter.eval()
+                    logger.info(f"Neural post-filter loaded: {post_filter_path}")
+                    return post_filter
+                except Exception as e:
+                    logger.warning(f"Failed to load post-filter: {e}")
+
+            # Create new post-filter if none exists
+            logger.info("Creating new neural post-filter")
+            post_filter = NeuralPostFilter(
+                num_harmonics=self.config.num_harmonics,
+                num_noise_bands=self.config.num_noise_bands,
+            ).to(self.device)
+            post_filter.eval()
+
+            return post_filter
 
         def _load_centroids(self) -> np.ndarray:
             """Load cluster centroids for synthesis."""
@@ -275,6 +476,15 @@ if TORCH_AVAILABLE:
 
                 # Run synthesizer
                 audio, _ = self.synthesizer(f0, harmonic_amps, noise_mags)
+
+                # Apply neural post-filter if available (Orin tier)
+                if self.post_filter is not None:
+                    # Get mean parameters for the sequence
+                    mean_harmonic = harmonic_amps.mean(dim=1)  # (B, 60)
+                    mean_noise = noise_mags.mean(dim=1)  # (B, 5)
+
+                    # Apply post-filter
+                    audio = self.post_filter(audio.squeeze(1), mean_harmonic, mean_noise)
 
             # Convert to numpy
             audio_np = audio.squeeze(0).cpu().numpy()
@@ -460,29 +670,46 @@ if TORCH_AVAILABLE:
 
 
 def create_ddsp_agent(
-    decoder_path: str = "exports/ddsp_jetson/ddsp_decoder.onnx",
-    synthesizer_path: str = "exports/ddsp_jetson/ddsp_synthesizer.onnx",
-    use_tensorrt: bool = False,
-    device: str = "cuda",
+    decoder_path: Optional[str] = None,
+    synthesizer_path: Optional[str] = None,
+    use_tensorrt: Optional[bool] = None,
+    device: Optional[str] = None,
+    auto_detect: bool = True,
 ) -> RealtimeDDSPAgent:
     """
-    Create a real-time DDSP agent with default settings.
+    Create a real-time DDSP agent with auto-detected or manual settings.
 
     Args:
-        decoder_path: Path to decoder model
-        synthesizer_path: Path to synthesizer model
-        use_tensorrt: Use TensorRT for inference
-        device: Device to run on (cuda or cpu)
+        decoder_path: Path to decoder model (auto-detect if None)
+        synthesizer_path: Path to synthesizer model (auto-detect if None)
+        use_tensorrt: Use TensorRT for inference (auto-detect if None)
+        device: Device to run on (cuda or cpu, auto-detect if None)
+        auto_detect: Auto-detect Jetson device and use appropriate config
 
     Returns:
         Configured RealtimeDDSPAgent
     """
-    config = DDSPAgentConfig(
-        decoder_path=decoder_path,
-        synthesizer_path=synthesizer_path,
-        use_tensorrt=use_tensorrt,
-        device=device,
-    )
+    if auto_detect:
+        # Auto-detect Jetson device and use appropriate config
+        config = get_config_for_device()
+
+        # Override with manual settings if provided
+        if decoder_path is not None:
+            config.decoder_path = decoder_path
+        if synthesizer_path is not None:
+            config.synthesizer_path = synthesizer_path
+        if use_tensorrt is not None:
+            config.use_tensorrt = use_tensorrt
+        if device is not None:
+            config.device = device
+    else:
+        # Use manual configuration
+        config = DDSPAgentConfig(
+            decoder_path=decoder_path or "exports/ddsp_jetson/ddsp_decoder.onnx",
+            synthesizer_path=synthesizer_path or "exports/ddsp_jetson/ddsp_synthesizer.onnx",
+            use_tensorrt=use_tensorrt or False,
+            device=device or "cuda",
+        )
 
     return RealtimeDDSPAgent(config)
 
