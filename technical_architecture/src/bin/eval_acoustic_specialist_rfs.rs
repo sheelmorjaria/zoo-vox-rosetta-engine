@@ -607,7 +607,7 @@ fn main() -> Result<()> {
     println!();
     println!("--- Per-Dataset Breakdown ---");
     let mut datasets: Vec<_> = dataset_metrics.iter().collect();
-    datasets.sort_by(|a, b| b.1.samples.cmp(&a.1.samples));
+    datasets.sort_by_key(|b| std::cmp::Reverse(b.1.samples));
 
     println!("{:<25} {:>6} {:>8} {:>10}", "Dataset", "n", "Top-1", "Top-5");
     println!("{}", "-".repeat(52));
