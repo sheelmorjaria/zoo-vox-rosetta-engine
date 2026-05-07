@@ -2872,8 +2872,8 @@ mod tests {
 
     #[test]
     fn test_duration_ms_short_segment_30ms() {
-        /// A 30ms staccato opener MUST report duration_ms = 30.0, not 100.0.
-        /// This is critical for NBD→112D pipeline correctness.
+        // A 30ms staccato opener MUST report duration_ms = 30.0, not 100.0.
+        // This is critical for NBD→112D pipeline correctness.
         let audio = create_test_tone(10000.0, 30.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -2888,7 +2888,7 @@ mod tests {
 
     #[test]
     fn test_duration_ms_long_segment_500ms() {
-        /// A 500ms graded closer MUST report duration_ms = 500.0.
+        // A 500ms graded closer MUST report duration_ms = 500.0.
         let audio = create_test_tone(8000.0, 500.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -2902,7 +2902,7 @@ mod tests {
 
     #[test]
     fn test_duration_ms_variable_lengths() {
-        /// Test various realistic bat call durations.
+        // Test various realistic bat call durations.
         let extractor = MicroDynamicsExtractor::new(48000);
 
         for duration_ms in [15.0, 30.0, 50.0, 100.0, 200.0, 400.0, 800.0] {
@@ -2922,9 +2922,9 @@ mod tests {
 
     #[test]
     fn test_f0_contour_slope_rising_chirp() {
-        /// A chirp rising from 4kHz to 8kHz over 200ms should have:
-        /// - f0_mean_derivative > 0 (positive slope)
-        /// - f0_range_hz > 3500 (captures the full sweep)
+        // A chirp rising from 4kHz to 8kHz over 200ms should have:
+        // - f0_mean_derivative > 0 (positive slope)
+        // - f0_range_hz > 3500 (captures the full sweep)
         let audio = create_chirp(4000.0, 8000.0, 200.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -2946,7 +2946,7 @@ mod tests {
 
     #[test]
     fn test_f0_contour_slope_falling_chirp() {
-        /// A chirp falling from 12kHz to 6kHz should have negative slope.
+        // A chirp falling from 12kHz to 6kHz should have negative slope.
         let audio = create_chirp(12000.0, 6000.0, 150.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -2960,7 +2960,7 @@ mod tests {
 
     #[test]
     fn test_f0_contour_slope_flat_tone() {
-        /// A pure tone with constant frequency should have f0_mean_derivative ≈ 0.
+        // A pure tone with constant frequency should have f0_mean_derivative ≈ 0.
         let audio = create_test_tone(10000.0, 200.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -2975,8 +2975,8 @@ mod tests {
 
     #[test]
     fn test_zero_padding_short_segment_5ms() {
-        /// A 5ms segment (240 samples @ 48kHz) is shorter than FFT size (1024).
-        /// Must handle via zero-padding without crashing.
+        // A 5ms segment (240 samples @ 48kHz) is shorter than FFT size (1024).
+        // Must handle via zero-padding without crashing.
         let audio = create_test_tone(15000.0, 5.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let result = extractor.extract(&audio);
@@ -2990,7 +2990,7 @@ mod tests {
 
     #[test]
     fn test_zero_padding_sub_frame_segments() {
-        /// Test various sub-frame durations.
+        // Test various sub-frame durations.
         let extractor = MicroDynamicsExtractor::new(48000);
 
         for duration_ms in [3.0, 5.0, 10.0, 15.0, 20.0] {
@@ -3010,7 +3010,7 @@ mod tests {
 
     #[test]
     fn test_empty_audio_rejected() {
-        /// Empty audio should return an error, not crash.
+        // Empty audio should return an error, not crash.
         let audio: Vec<f32> = vec![];
         let extractor = MicroDynamicsExtractor::new(48000);
         let result = extractor.extract(&audio);
@@ -3020,8 +3020,8 @@ mod tests {
 
     #[test]
     fn test_minimal_segment_accepted() {
-        /// A minimal segment (just enough for one FFT frame) should work.
-        /// At 48kHz with 1024 FFT size, this is ~21ms.
+        // A minimal segment (just enough for one FFT frame) should work.
+        // At 48kHz with 1024 FFT size, this is ~21ms.
         let audio = create_test_tone(10000.0, 21.33, 48000); // 1024 samples
         let extractor = MicroDynamicsExtractor::new(48000);
         let result = extractor.extract(&audio);
@@ -3033,7 +3033,7 @@ mod tests {
 
     #[test]
     fn test_very_long_segment_5_seconds() {
-        /// Test a very long segment (5 seconds) to ensure no overflow.
+        // Test a very long segment (5 seconds) to ensure no overflow.
         let audio = create_test_tone(8000.0, 5000.0, 48000);
         let extractor = MicroDynamicsExtractor::new(48000);
         let features = extractor.extract(&audio).unwrap();
@@ -3046,8 +3046,8 @@ mod tests {
 
     #[test]
     fn test_nbd_segment_simulation() {
-        /// Simulate NBD → 112D pipeline with realistic segment boundaries.
-        /// NBD might return segments of varying lengths; each must extract correctly.
+        // Simulate NBD → 112D pipeline with realistic segment boundaries.
+        // NBD might return segments of varying lengths; each must extract correctly.
         let extractor = MicroDynamicsExtractor::new(48000);
 
         // Simulate three NBD segments: 30ms opener, 180ms territorial, 45ms social

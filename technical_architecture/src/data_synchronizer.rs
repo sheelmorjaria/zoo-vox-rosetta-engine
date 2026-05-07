@@ -448,6 +448,7 @@ mod tests {
         }
     }
 
+    #[allow(dead_code)]
     fn create_test_path(test_name: &str) -> String {
         format!("/tmp/test_blackbox_{}", test_name)
     }
