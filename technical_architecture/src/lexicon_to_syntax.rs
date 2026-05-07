@@ -1115,7 +1115,7 @@ impl LexiconToSyntaxPipeline {
         }
 
         // Sort by cluster size (largest first)
-        vocabulary.sort_by(|a, b| b.size.cmp(&a.size));
+        vocabulary.sort_by_key(|b| std::cmp::Reverse(b.size));
 
         // Compute statistics
         let stats = self.compute_vocabulary_stats(&vocabulary, noise_count, phrase_features.len());

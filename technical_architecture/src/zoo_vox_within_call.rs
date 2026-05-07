@@ -457,7 +457,7 @@ impl WithinCallAnalyzer {
         }
 
         // Sort by occurrence count descending
-        phrase_types.sort_by(|a, b| b.occurrence_count.cmp(&a.occurrence_count));
+        phrase_types.sort_by_key(|b| std::cmp::Reverse(b.occurrence_count));
 
         phrase_types
     }

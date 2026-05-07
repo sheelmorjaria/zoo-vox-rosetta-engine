@@ -163,7 +163,7 @@ impl SequenceModule {
             .collect();
 
         // Sort by occurrences (descending)
-        motifs.sort_by(|a, b| b.occurrences.cmp(&a.occurrences));
+        motifs.sort_by_key(|b| std::cmp::Reverse(b.occurrences));
 
         motifs
     }

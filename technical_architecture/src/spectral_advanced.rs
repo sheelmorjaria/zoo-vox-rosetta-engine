@@ -313,12 +313,16 @@ fn generate_sine_wave(freq_hz: f32, sample_rate: u32, duration_sec: f32) -> Vec<
         .collect()
 }
 
-/// Helper: Generate white noise
+/// Helper: Generate white noise with fixed seed for deterministic tests
 #[cfg(test)]
 fn generate_white_noise(sample_rate: u32, duration_sec: f32) -> Vec<f32> {
-    use std::time::{SystemTime, UNIX_EPOCH};
+    generate_white_noise_seeded(sample_rate, duration_sec, 42)
+}
+
+/// Helper: Generate white noise with specified seed
+#[cfg(test)]
+fn generate_white_noise_seeded(sample_rate: u32, duration_sec: f32, seed: u32) -> Vec<f32> {
     let num_samples = (duration_sec * sample_rate as f32) as usize;
-    let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
     let mut rng: u32 = seed;
 
     (0..num_samples)

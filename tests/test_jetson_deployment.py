@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Check for PyTorch availability
 torch = pytest.importorskip("torch")
 np = pytest.importorskip("numpy")
+onnx = pytest.importorskip("onnx")  # ONNX required for export tests
 
 from cognitive_intelligence.ddsp_decoder import DDSPDecoder
 from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer

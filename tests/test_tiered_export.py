@@ -27,6 +27,14 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
 
+# Check for ONNX
+try:
+    import importlib.util
+
+    ONNX_AVAILABLE = importlib.util.find_spec("onnx") is not None
+except (ImportError, AttributeError):
+    ONNX_AVAILABLE = False
+
 if TORCH_AVAILABLE:
     from cognitive_intelligence.ddsp_decoder import DDSPDecoder
     from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
@@ -189,7 +197,10 @@ class TestTierConfigurations:
 # =============================================================================
 
 
-@pytest.mark.skipif(not TORCH_AVAILABLE, reason="PyTorch not available")
+@pytest.mark.skipif(
+    not TORCH_AVAILABLE or not ONNX_AVAILABLE,
+    reason="PyTorch or ONNX not available",
+)
 class TestExportPipeline:
     """Test the export pipeline for different tiers."""
 

@@ -517,7 +517,7 @@ impl PhraseAudioLibrary {
         for (key, segments) in &self.phrase_segments {
             phrase_counts.push((key.clone(), segments.len()));
         }
-        phrase_counts.sort_by(|a, b| b.1.cmp(&a.1));
+        phrase_counts.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         LibraryStatistics {
             species: self.species.clone(),
@@ -2210,7 +2210,7 @@ impl ParallelExtractionPipeline {
         // Step 2: Rank phrases by frequency (1 = most common)
         let mut ranked_phrases: Vec<(String, usize)> =
             phrase_frequencies.iter().map(|(k, v)| (k.clone(), *v)).collect();
-        ranked_phrases.sort_by(|a, b| b.1.cmp(&a.1)); // Descending by frequency
+        ranked_phrases.sort_by_key(|b| std::cmp::Reverse(b.1)); // Descending by frequency
         let ranked_phrase_ids: Vec<String> = ranked_phrases.iter().map(|(k, _)| k.clone()).collect();
 
         // Step 3: Calculate Zipf slope using log-log linear regression
@@ -2799,7 +2799,7 @@ pub fn analyze_social_network(annotations: &[EmitterAnnotation]) -> SocialNetwor
         })
         .collect();
 
-    top_pairs_vec.sort_by(|a, b| b.count.cmp(&a.count));
+    top_pairs_vec.sort_by_key(|b| std::cmp::Reverse(b.count));
     let top_interactions = top_pairs_vec.into_iter().take(20).collect();
 
     SocialNetworkAnalysis {

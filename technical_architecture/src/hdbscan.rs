@@ -562,7 +562,7 @@ impl HdbscanClustering {
         println!("     ├─ Sparse k-NN graph built: {} edges", all_edges.len());
 
         // Step 3: Sort edges by weight (for Kruskal's algorithm)
-        all_edges.sort_by(|a, b| a.weight.cmp(&b.weight));
+        all_edges.sort_by_key(|a| a.weight);
 
         // Step 4: Kruskal's algorithm with Union-Find
         let mut uf = UnionFind::new(n);
@@ -624,7 +624,7 @@ impl HdbscanClustering {
         }
 
         // Sort and run Kruskal's
-        all_edges.sort_by(|a, b| a.weight.cmp(&b.weight));
+        all_edges.sort_by_key(|a| a.weight);
 
         let mut uf = UnionFind::new(n);
         let mut mst_edges = Vec::with_capacity(n - 1);
