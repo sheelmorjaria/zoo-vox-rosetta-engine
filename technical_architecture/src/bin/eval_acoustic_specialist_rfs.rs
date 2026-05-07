@@ -548,6 +548,7 @@ fn main() -> Result<()> {
             // Top-5 check
             let probs = rf_model.predict_proba(&features_arr);
             let mut indexed_probs: Vec<(usize, f32)> = probs.iter().cloned().enumerate().collect();
+            #[allow(clippy::unnecessary_sort_by)]
             indexed_probs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
             for (idx, _) in indexed_probs.iter().take(5) {

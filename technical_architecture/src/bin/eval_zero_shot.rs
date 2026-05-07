@@ -219,7 +219,7 @@ fn main() -> Result<()> {
                 (s.clone(), c, t)
             })
             .collect();
-        species_acc.sort_by(|a, b| b.2.cmp(&a.2));
+        species_acc.sort_by_key(|b| std::cmp::Reverse(b.2));
 
         println!("\n[PER-SPECIES ACCURACY (Top 10)]");
         for (species, c, t) in species_acc.iter().take(10) {

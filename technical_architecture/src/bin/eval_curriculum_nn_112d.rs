@@ -617,7 +617,7 @@ fn main() -> Result<()> {
     // Top confusions
     println!("\n  TOP CONFUSIONS (Actual -> Predicted):");
     let mut confusions: Vec<_> = results_standard.confusion.iter().collect();
-    confusions.sort_by(|a, b| b.1.cmp(a.1));
+    confusions.sort_by_key(|b| std::cmp::Reverse(b.1));
     for ((actual, predicted), count) in confusions.iter().take(10) {
         println!("    {} -> {}: {} times", actual, predicted, count);
     }

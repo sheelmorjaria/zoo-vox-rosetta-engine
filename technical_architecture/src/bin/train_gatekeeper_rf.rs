@@ -325,7 +325,7 @@ impl SimpleRF {
 
             // Get all values for this feature
             let mut values: Vec<f32> = sample_indices.iter().map(|&i| features[i][feat_idx]).collect();
-            values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less));
 
             // Try midpoints as thresholds
             for i in 0..values.len().saturating_sub(1) {

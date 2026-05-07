@@ -1295,7 +1295,7 @@ mod tests {
         assert_eq!(report.n_recordings, 3);
         assert_eq!(report.individual_reports.len(), 3);
         // Aggregate stats should be computed
-        assert!(report.aggregate_stats.total_segments >= 0);
+        assert!(report.aggregate_stats.total_segments > 0);
     }
 
     #[test]

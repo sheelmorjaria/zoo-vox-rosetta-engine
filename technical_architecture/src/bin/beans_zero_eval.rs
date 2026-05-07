@@ -904,6 +904,7 @@ impl FeatureExtractor {
             .map(|i| (i, spectrum[i]))
             .collect();
 
+        #[allow(clippy::unnecessary_sort_by)]
         peaks.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         if peaks.is_empty() {

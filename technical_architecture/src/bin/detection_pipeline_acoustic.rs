@@ -323,7 +323,7 @@ fn main() -> Result<()> {
     // Acoustic group distribution
     println!("\nAcoustic Group Distribution:");
     let mut groups: Vec<_> = stats.acoustic_group_distribution.iter().collect();
-    groups.sort_by(|a, b| b.1.cmp(a.1));
+    groups.sort_by_key(|b| std::cmp::Reverse(b.1));
     for (group, count) in &groups {
         println!("  {:<25} {:>6} detections", group, count);
     }

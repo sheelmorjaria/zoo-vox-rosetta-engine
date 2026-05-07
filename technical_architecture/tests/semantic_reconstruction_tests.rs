@@ -598,16 +598,10 @@ fn test_exemplar_manager_load_centroids_from_manifest() {
     let mut manager = ExemplarManager::new();
 
     // Create a temporary manifest file with exactly 112 values per centroid
-    let mut centroid_0 = Vec::new();
-    for _ in 0..112 {
-        centroid_0.push("0.0");
-    }
+    let centroid_0: Vec<&str> = vec!["0.0"; 112];
     let centroid_0_str = centroid_0.join(", ");
 
-    let mut centroid_1 = Vec::new();
-    for _ in 0..112 {
-        centroid_1.push("10.0");
-    }
+    let centroid_1: Vec<&str> = vec!["10.0"; 112];
     let centroid_1_str = centroid_1.join(", ");
 
     let manifest_json = format!(

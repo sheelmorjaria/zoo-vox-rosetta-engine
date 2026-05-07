@@ -790,7 +790,7 @@ fn main() -> Result<()> {
 
         // Get NN Top-5
         let mut indexed_probs: Vec<(usize, f32)> = probs_vec.iter().cloned().enumerate().collect();
-        indexed_probs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        indexed_probs.sort_by(|a, b| b.1.partial_cmp(indexed_probs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));a.1).unwrap_or(std::cmp::Ordering::Less));
         let nn_top5: Vec<(String, f64)> = indexed_probs
             .iter()
             .take(5)
@@ -852,7 +852,7 @@ fn main() -> Result<()> {
                     })
                     .collect();
 
-                ensemble_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                ensemble_scores.sort_by(|a, b| b.1.partial_cmp(ensemble_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));a.1).unwrap_or(std::cmp::Ordering::Less));
                 ensemble_pred = ensemble_scores[0].0.clone();
             } else {
                 // RF's prediction NOT in NN's Top-5 - fall back to RF-only
@@ -931,7 +931,7 @@ fn main() -> Result<()> {
     println!();
     println!("--- Per-Dataset Breakdown ---");
     let mut datasets: Vec<_> = dataset_metrics.iter().collect();
-    datasets.sort_by(|a, b| b.1.samples.cmp(&a.1.samples));
+    datasets.sort_by_key(|b| std::cmp::Reverse(b.1.samples));
 
     println!(
         "{:<25} {:>6} {:>8} {:>8} {:>10} {:>10}",

@@ -658,7 +658,7 @@ fn main() -> Result<()> {
 
     println!("\n--- Per-Dataset Breakdown ---");
     let mut datasets: Vec<_> = results.dataset_breakdown.iter().collect();
-    datasets.sort_by(|a, b| b.1.total.cmp(&a.1.total));
+    datasets.sort_by_key(|b| std::cmp::Reverse(b.1.total));
     for (dataset, metrics) in datasets.iter().take(10) {
         println!(
             "{:<30} n={:>5}  Physics={:>5.1}%  Full={:>5.1}%  Ensemble={:>5.1}%",
