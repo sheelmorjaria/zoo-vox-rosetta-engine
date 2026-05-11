@@ -371,6 +371,9 @@ pub use active_learning::{
 // Uncertainty Estimation exports (NEW - Bayesian uncertainty for boundary detection)
 pub use uncertainty_estimator::{MCDropoutUncertaintyEstimator, UncertaintyEstimate};
 
+// Predictive Neural Boundary Detector exports (NEW - CPC-based self-supervised boundary detection)
+pub use predictive_nbd::{BoundaryEvent, NBDConfig, NBDStatistics, PredictiveBoundaryType, PredictiveNBD};
+
 // Event-driven power management exports (NEW - Edge deployment power states)
 pub use edge_power::{EdgePowerConfig, EdgePowerState, EventDrivenPowerManager};
 
@@ -595,11 +598,27 @@ mod safety;
 mod shadow_model_monitor;
 mod source_separation;
 pub mod synthesis; // Make public for integration tests
+pub mod spatial_audio; // Level 2.5: Spatial audio rendering
+pub mod spatial_social_inference; // Level 3: Spatial-social inference for multi-agent interaction
+pub mod ethological_validation; // Level 3: Ethological validation with MFAS scoring
 mod thermal;
 mod time_series_archive;
 mod visual_recording;
 mod web_dashboard;
 mod wildlife_sentry;
+
+// Risk A Mitigation: ONNX encoders for dual-stream architecture
+mod affect_encoder;   // Stream 1: β-VAE encoder (54D → 16D)
+mod syntactic_encoder; // Stream 2: VQ-VAE encoder (44D → token)
+	// Module 4: Affect modulation mapping for DDSP synthesis
+	pub mod affect_modulation; // 16D affect -> DDSP parameters
+
+// Continuous Manifold Mining (Stage 3 replacement: UMAP+VAE)
+pub mod manifold_encoder; // 112D → 30D → 16D continuous latent manifold
+
+// BioMAE: Learned acoustic embeddings replacing hand-crafted 112D features
+pub mod biomae_extractor; // ONNX/TensorRT inference for 112D learned embeddings
+
 
 // Taxonomic-aware routing for hybrid expert architecture
 pub mod taxonomic_router;
@@ -684,6 +703,16 @@ mod neural_boundary;
 
 // Uncertainty Estimation (NEW - Bayesian uncertainty for boundary detection)
 mod uncertainty_estimator;
+
+// Predictive Neural Boundary Detector (NEW - CPC-based self-supervised boundary detection)
+mod predictive_nbd;
+
+// E2E Shadow Mode Testing (NEW - End-to-end validation suite)
+mod sync_pulse_injector;
+mod sync_pulse_detector;
+mod digital_loopback_mixer;
+mod soak_test_telemetry;
+mod shadow_mode_audio_pipeline;
 
 // Streaming (NEW - Real-time audio ingestion with system clock timestamps)
 pub mod streaming;

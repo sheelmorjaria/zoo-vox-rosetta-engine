@@ -3421,6 +3421,267 @@ impl CacheStats {
     }
 }
 
+// =============================================================================
+// Module 4: Dual-Stream Affect Modulation (v2.0)
+// =============================================================================
+
+/// Affect modulation parameters mapping 16D latent affect to acoustic parameters.
+///
+/// This enables the dual-stream cognitive agent to control synthesis
+/// through continuous affect vectors from the β-VAE (Stream 1).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct AffectModulation {
+    /// Dimension 0: Arousal (0-1) → HNR scaling
+    /// Higher arousal = lower HNR (more noise/chaos)
+    pub arousal_hnr_scaling: f32,
+
+    /// Dimension 1: Valence (-1 to 1) → Jitter/Shimmer
+    /// Negative valence = more jitter (rougher sound)
+    pub valence_jitter_factor: f32,
+
+    /// Dimension 2: Pitch variation → Vibrato depth
+    /// Controls vibrato depth in Hz (0-50 Hz)
+    pub pitch_vibrato_depth: f32,
+
+    /// Dimension 3: Tension → Spectral tilt
+    /// Higher tension = more high-frequency rolloff
+    pub tension_spectral_tilt: f32,
+
+    /// Dimension 4: Energy → Overall amplitude
+    /// Scales the output amplitude (0.5 to 1.5)
+    pub energy_amplitude_scaling: f32,
+
+    /// Dimensions 5-15: Reserved for future affect mappings
+    pub reserved: [f32; 11],
+}
+
+impl Default for AffectModulation {
+    fn default() -> Self {
+        Self {
+            arousal_hnr_scaling: 1.0,
+            valence_jitter_factor: 1.0,
+            pitch_vibrato_depth: 25.0,
+            tension_spectral_tilt: -6.0,
+            energy_amplitude_scaling: 1.0,
+            reserved: [0.0; 11],
+        }
+    }
+}
+
+impl AffectModulation {
+    /// Map 16D affect vector to acoustic modulation parameters.
+    ///
+    /// This implements the biological mapping from affective state to
+    /// acoustic parameters, enabling the system to generate emotionally
+    /// appropriate vocalizations.
+    ///
+    /// # Affect Dimension Mappings
+    ///
+    /// - **Dim 0 (Arousal 0-1)**: Controls HNR scaling
+    ///   - High arousal (>0.8) → Lower HNR (more chaos/noise)
+    ///   - Low arousal (<0.3) → Higher HNR (cleaner tone)
+    ///
+    /// - **Dim 1 (Valence -1 to 1)**: Controls Jitter/Shimmer
+    ///   - Negative valence → More jitter (harsh/aggressive)
+    ///   - Positive valence → Less jitter (smooth/calming)
+    ///
+    /// - **Dim 2 (Pitch variation)**: Controls vibrato depth
+    ///   - Maps to 0-50 Hz vibrato depth
+    ///
+    /// - **Dim 3 (Tension)**: Controls spectral tilt
+    ///   - High tension → More high-frequency rolloff
+    ///
+    /// - **Dim 4 (Energy)**: Controls amplitude scaling
+    ///   - Maps to 0.5-1.5x amplitude multiplier
+    ///
+    /// # Arguments
+    ///
+    /// * `affect_vector` - 16D affect vector from β-VAE (must be exactly 16 elements)
+    ///
+    /// # Returns
+    ///
+    /// Affect modulation parameters for synthesis
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let affect = [0.9, -0.5, 0.5, 0.3, 0.8, /* ... */]; // 16 elements
+    /// let modulation = AffectModulation::from_affect_vector(&affect);
+    /// ```
+    pub fn from_affect_vector(affect_vector: &[f32; 16]) -> Self {
+        // Clamp affect values to expected ranges
+        let arousal = affect_vector[0].clamp(0.0, 1.0);
+        let valence = affect_vector[1].clamp(-1.0, 1.0);
+        let pitch_var = affect_vector[2].clamp(0.0, 1.0);
+        let tension = affect_vector[3].clamp(0.0, 1.0);
+        let energy = affect_vector[4].clamp(0.0, 1.0);
+
+        // Arousal (0-1) → HNR scaling
+        // High arousal = lower HNR (more noise), low arousal = higher HNR (cleaner)
+        let arousal_hnr_scaling = 1.0 - (arousal * 0.5);
+
+        // Valence (-1 to 1) → Jitter factor
+        // Negative valence = more jitter (harsh), positive = less jitter (smooth)
+        let valence_jitter_factor = 1.0 + (-valence * 0.3);
+
+        // Pitch variation → Vibrato depth (0-50 Hz)
+        let pitch_vibrato_depth = pitch_var * 50.0;
+
+        // Tension → Spectral tilt (-12 to 0 dB/octave)
+        let tension_spectral_tilt = -12.0 + (tension * 12.0);
+
+        // Energy → Amplitude scaling (0.5 to 1.5)
+        let energy_amplitude_scaling = 0.5 + energy;
+
+        Self {
+            arousal_hnr_scaling,
+            valence_jitter_factor,
+            pitch_vibrato_depth,
+            tension_spectral_tilt,
+            energy_amplitude_scaling,
+            reserved: [
+                affect_vector[5], affect_vector[6], affect_vector[7],
+                affect_vector[8], affect_vector[9], affect_vector[10],
+                affect_vector[11], affect_vector[12], affect_vector[13],
+                affect_vector[14], affect_vector[15],
+            ],
+        }
+    }
+
+    /// Apply affect modulation to base DDSP parameters.
+    ///
+    /// Takes the base synthesis parameters from the DDSP decoder and
+    /// modulates them according to the affect mapping.
+    ///
+    /// # Arguments
+    ///
+    /// * `base_params` - Base synthesis parameters (without affect modulation)
+    /// * `affect_vector` - 16D affect vector for modulation
+    ///
+    /// # Returns
+    ///
+    /// Modulated synthesis parameters
+    pub fn apply_to_base_params(
+        base_params: &DynamicMicroharmonicParams,
+        affect_vector: &[f32; 16],
+    ) -> DynamicMicroharmonicParams {
+        let modulation = Self::from_affect_vector(affect_vector);
+
+        let mut params = base_params.clone();
+
+        // Apply HNR scaling (affect-driven noise modulation)
+        params.hnr_db = (params.hnr_db * modulation.arousal_hnr_scaling).clamp(0.0, 40.0);
+
+        // Apply jitter factor (valence-driven roughness)
+        params.jitter_amount = (params.jitter_amount * modulation.valence_jitter_factor)
+            .clamp(0.0, 0.1);
+
+        // Apply shimmer (coupled with jitter)
+        params.shimmer_amount = (params.shimmer_amount * modulation.valence_jitter_factor)
+            .clamp(0.0, 0.1);
+
+        // Apply vibrato depth (pitch variation)
+        params.vibrato_depth_cents = modulation.pitch_vibrato_depth;
+
+        // Apply spectral tilt (tension-driven brightness)
+        params.spectral_tilt = modulation.tension_spectral_tilt;
+
+        params
+    }
+
+    /// Apply affect modulation to harmonic amplitudes.
+    ///
+    /// This is called during synthesis to modulate the harmonic content
+    /// based on the affect vector (for FiLM-like control at the synthesis level).
+    ///
+    /// # Arguments
+    ///
+    /// * `harmonic_amps` - Base harmonic amplitudes (60 elements)
+    /// * `affect_vector` - 16D affect vector
+    ///
+    /// # Returns
+    ///
+    /// Modulated harmonic amplitudes
+    pub fn apply_to_harmonics(
+        harmonic_amps: &[f32; 60],
+        affect_vector: &[f32; 16],
+    ) -> [f32; 60] {
+        let modulation = Self::from_affect_vector(affect_vector);
+
+        let mut result = [0.0; 60];
+
+        for (i, &amp) in harmonic_amps.iter().enumerate() {
+            // Apply energy-based amplitude scaling
+            result[i] = amp * modulation.energy_amplitude_scaling;
+
+            // Apply arousal-based spectral shaping
+            // High arousal boosts higher harmonics (more excitation)
+            if modulation.arousal_hnr_scaling < 0.8 {
+                // High arousal: boost higher harmonics
+                let harmonic_boost = (i as f32 / 60.0) * (1.0 - modulation.arousal_hnr_scaling);
+                result[i] *= 1.0 + harmonic_boost * 0.5;
+            }
+        }
+
+        result
+    }
+}
+
+/// Dual-stream synthesizer with affect modulation support.
+///
+/// This synthesizer extends the base granular synthesizer with
+/// dual-stream capabilities, accepting both discrete syntactic
+/// tokens (Stream 2) and continuous affect vectors (Stream 1).
+#[derive(Debug)]
+pub struct DualStreamSynthesizer {
+    /// Base granular synthesizer
+    base_synthesizer: MultiBufferGranularSequencer,
+    /// Sample rate
+    sample_rate: usize,
+}
+
+impl DualStreamSynthesizer {
+    /// Create a new dual-stream synthesizer.
+    pub fn new(sample_rate: usize) -> Self {
+        Self {
+            base_synthesizer: MultiBufferGranularSequencer::new(sample_rate),
+            sample_rate,
+        }
+    }
+
+    /// Synthesize with dual-stream control.
+    ///
+    /// # Arguments
+    ///
+    /// * `timeline` - Synthesis timeline with syntactic tokens
+    /// * `affect_vector` - 16D affect vector for modulation
+    ///
+    /// # Returns
+    ///
+    /// Synthesized audio with affective modulation applied
+    pub fn synthesize_dual_stream(
+        &self,
+        timeline: &ModalityTimeline,
+        affect_vector: &[f32; 16],
+    ) -> Result<Vec<f32>> {
+        // First, get base synthesis from timeline
+        let mut audio = self.base_synthesizer.synthesize_timeline(timeline)?;
+
+        // Apply amplitude scaling based on affect energy
+        let modulation = AffectModulation::from_affect_vector(affect_vector);
+        for sample in &mut audio {
+            *sample *= modulation.energy_amplitude_scaling;
+        }
+
+        Ok(audio)
+    }
+
+    /// Get the sample rate.
+    pub fn sample_rate(&self) -> usize {
+        self.sample_rate
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4868,5 +5129,130 @@ mod corvid_roughness_tests {
 
         assert!((first_sample - 0.1).abs() < 0.01);
         assert!((middle_sample - 0.2).abs() < 0.01);
+    }
+
+    // ========================================================================
+    // Module 4: Affect Modulation Tests
+    // ========================================================================
+
+    #[test]
+    fn test_affect_modulation_default() {
+        let modulation = AffectModulation::default();
+
+        assert_eq!(modulation.arousal_hnr_scaling, 1.0);
+        assert_eq!(modulation.valence_jitter_factor, 1.0);
+        assert_eq!(modulation.pitch_vibrato_depth, 25.0);
+        assert_eq!(modulation.tension_spectral_tilt, -6.0);
+        assert_eq!(modulation.energy_amplitude_scaling, 1.0);
+    }
+
+    #[test]
+    fn test_affect_modulation_from_vector() {
+        // High arousal (0.9), negative valence (-0.5), medium pitch var (0.5)
+        let affect = [0.9_f32, -0.5, 0.5, 0.3, 0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let modulation = AffectModulation::from_affect_vector(&affect);
+
+        // High arousal should reduce HNR scaling (more noise)
+        assert!(modulation.arousal_hnr_scaling < 1.0);
+        assert!((modulation.arousal_hnr_scaling - 0.55).abs() < 0.01);
+
+        // Negative valence should increase jitter (harsher sound)
+        assert!(modulation.valence_jitter_factor > 1.0);
+        assert!((modulation.valence_jitter_factor - 1.15).abs() < 0.01);
+
+        // Pitch variation 0.5 should give vibrato depth ~25 Hz
+        assert!((modulation.pitch_vibrato_depth - 25.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_affect_modulation_low_arousal() {
+        // Low arousal (0.2) should increase HNR scaling (cleaner tone)
+        let affect = [0.2_f32, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let modulation = AffectModulation::from_affect_vector(&affect);
+
+        // Low arousal = higher HNR (cleaner)
+        // Formula: 1.0 - (0.2 * 0.5) = 0.9
+        assert!(modulation.arousal_hnr_scaling >= 0.9);
+        assert!(modulation.arousal_hnr_scaling <= 1.0);
+    }
+
+    #[test]
+    fn test_affect_modulation_positive_valence() {
+        // Positive valence (0.8) should decrease jitter (smoother sound)
+        let affect = [0.5_f32, 0.8, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let modulation = AffectModulation::from_affect_vector(&affect);
+
+        // Positive valence = less jitter
+        assert!(modulation.valence_jitter_factor < 1.0);
+        assert!(modulation.valence_jitter_factor >= 0.7);
+    }
+
+    #[test]
+    fn test_affect_modulation_apply_to_base_params() {
+        let base_params = DynamicMicroharmonicParams {
+            hnr_db: 20.0,
+            jitter_amount: 0.025,
+            shimmer_amount: 0.01,
+            vibrato_depth_cents: 25.0,
+            spectral_tilt: -6.0,
+            ..Default::default()
+        };
+
+        // High arousal, negative valence
+        let affect = [0.9_f32, -0.5, 0.5, 0.3, 0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+
+        let modulated = AffectModulation::apply_to_base_params(&base_params, &affect);
+
+        // HNR should be reduced (more noise)
+        assert!(modulated.hnr_db < base_params.hnr_db);
+
+        // Jitter should be increased
+        assert!(modulated.jitter_amount > base_params.jitter_amount);
+    }
+
+    #[test]
+    fn test_affect_modulation_apply_to_harmonics() {
+        let base_harmonics: [f32; 60] = [0.016666668; 60]; // Equal energy
+        let affect = [0.5_f32, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+
+        let modulated = AffectModulation::apply_to_harmonics(&base_harmonics, &affect);
+
+        // Energy 0.8 should scale amplitude by 0.5 + 0.8 = 1.3
+        assert!((modulated[0] - (0.016666668 * 1.3)).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_affect_modulation_high_arousal_spectral_boost() {
+        let base_harmonics: [f32; 60] = [0.016666668; 60];
+
+        // High arousal (0.9) should boost higher harmonics
+        let affect = [0.9_f32, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let modulated = AffectModulation::apply_to_harmonics(&base_harmonics, &affect);
+
+        // Lower harmonics should be relatively less boosted than higher ones
+        let low_harmonic = modulated[0];
+        let high_harmonic = modulated[59];
+
+        assert!(high_harmonic > low_harmonic);
+    }
+
+    #[test]
+    fn test_affect_modulation_clamping() {
+        // Test clamping of affect values
+        let extreme_affect = [2.0, -2.0, 1.5, 2.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let modulation = AffectModulation::from_affect_vector(&extreme_affect);
+
+        // Values should be clamped to valid ranges
+        assert!(modulation.arousal_hnr_scaling >= 0.5);
+        assert!(modulation.arousal_hnr_scaling <= 1.0);
+        assert!(modulation.valence_jitter_factor >= 0.7);
+        assert!(modulation.valence_jitter_factor <= 1.3);
+    }
+
+    #[test]
+    fn test_dual_stream_synthesizer_creation() {
+        let synthesizer = DualStreamSynthesizer::new(44100);
+
+        assert_eq!(synthesizer.sample_rate(), 44100);
     }
 }

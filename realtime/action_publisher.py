@@ -155,11 +155,24 @@ class SynthesisAction:
     deltas: Optional[MicroDynamicsDelta] = None  # DEPRECATED: Use delta_112d
     priority: str = "normal"
 
+    # Level 2.5: Spatial rendering metadata
+    spatial_mode: str = "broadcast"  # "broadcast" or "unicast"
+    target_spatial_id: Optional[str] = None  # For unicast routing
+    emitter_position: Optional[np.ndarray] = None  # [x, y, z]
+    target_position: Optional[np.ndarray] = None  # [x, y, z]
+
     def to_json(self) -> str:
         data = {
             "action_type": self.action_type,
             "timeline": [e.to_dict() for e in self.timeline],
             "priority": self.priority,
+            # Level 2.5 spatial metadata
+            "spatial_metadata": {
+                "mode": self.spatial_mode,
+                "target_spatial_id": self.target_spatial_id,
+                "emitter_position": self.emitter_position.tolist() if self.emitter_position is not None else None,
+                "target_position": self.target_position.tolist() if self.target_position is not None else None,
+            } if self.spatial_mode == "unicast" or self.target_spatial_id is not None else None,
         }
         # Add delta_112d if present (convert to list for JSON serialization)
         if self.delta_112d is not None:
@@ -186,13 +199,213 @@ class SynthesisAction:
                 raise ValueError(
                     f"delta_112d must have exactly 112 elements, got {len(delta_112d)}"
                 )
+
+        # Parse spatial metadata
+        spatial_mode = "broadcast"
+        target_spatial_id = None
+        emitter_position = None
+        target_position = None
+
+        if "spatial_metadata" in data and data["spatial_metadata"] is not None:
+            sm = data["spatial_metadata"]
+            spatial_mode = sm.get("mode", "broadcast")
+            target_spatial_id = sm.get("target_spatial_id")
+            if sm.get("emitter_position") is not None:
+                emitter_position = np.array(sm["emitter_position"], dtype=np.float32)
+            if sm.get("target_position") is not None:
+                target_position = np.array(sm["target_position"], dtype=np.float32)
+
         return cls(
             action_type=data["action_type"],
             timeline=[TimelineEvent.from_dict(e) for e in data["timeline"]],
             delta_112d=delta_112d,
             deltas=MicroDynamicsDelta.from_dict(data["deltas"]) if data.get("deltas") else None,
             priority=data.get("priority", "normal"),
+            spatial_mode=spatial_mode,
+            target_spatial_id=target_spatial_id,
+            emitter_position=emitter_position,
+            target_position=target_position,
         )
+
+
+# =============================================================================
+# Dual-Stream Architecture (Module 3)
+# =============================================================================
+
+
+@dataclass
+class DualStreamState:
+    """
+    Dual-stream state received from Rust (or Python-side encoders).
+
+    Combines:
+    - Stream 1: Continuous affect vector (16D from β-VAE)
+    - Stream 2: Discrete syntactic token (from VQ-VAE)
+    - Fallback: Raw 112D features for backward compatibility
+
+    This structure enables the dual-stream cognitive agent to process
+    both graded affect and discrete syntax simultaneously.
+    """
+
+    syntactic_token: int  # Discrete token from Stream 2 (VQ-VAE)
+    affect_vector: np.ndarray  # 16D continuous vector from Stream 1 (β-VAE)
+    raw_features: Optional[np.ndarray] = None  # 112D for fallback
+    confidence: float = 0.5  # Combined confidence score
+    sequence: int = 0  # Sequence number for temporal ordering
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "syntactic_token": self.syntactic_token,
+            "affect_vector": self.affect_vector.tolist(),
+            "raw_features": self.raw_features.tolist() if self.raw_features is not None else None,
+            "confidence": self.confidence,
+            "sequence": self.sequence,
+        }
+
+    def to_json(self) -> str:
+        """Serialize to JSON."""
+        return json.dumps(self.to_dict())
+
+    def to_bytes(self) -> bytes:
+        """Convert to bytes for transmission."""
+        return self.to_json().encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DualStreamState":
+        """Create from dictionary."""
+        affect = np.array(data["affect_vector"], dtype=np.float32)
+        if len(affect) != 16:
+            raise ValueError(
+                f"affect_vector must have exactly 16 elements, got {len(affect)}"
+            )
+
+        raw = None
+        if data.get("raw_features") is not None:
+            raw = np.array(data["raw_features"], dtype=np.float32)
+            if len(raw) != 112:
+                raise ValueError(
+                    f"raw_features must have exactly 112 elements, got {len(raw)}"
+                )
+
+        return cls(
+            syntactic_token=int(data["syntactic_token"]),
+            affect_vector=affect,
+            raw_features=raw,
+            confidence=float(data.get("confidence", 0.5)),
+            sequence=int(data.get("sequence", 0)),
+        )
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "DualStreamState":
+        """Deserialize from JSON."""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+
+
+@dataclass
+class DualStreamAction:
+    """
+    Dual-stream synthesis action for response generation.
+
+    Combines discrete syntactic response with continuous affect modulation.
+    This is the output of the dual-stream cognitive agent.
+
+    The synthesis engine uses:
+    - syntactic_token: To select the base call type (via VQ-VAE decoder)
+    - affect_vector: To modulate the synthesized audio (via FiLM layers)
+    - temporal_offset_ms: To control response timing
+
+    Level 2.5 additions:
+    - call_directionality: BROADCAST or UNICAST for spatial routing
+    - target_spatial_id: For unicast routing to specific agent
+    - broadcast_flag: For spatial rendering
+    - emitter_position: [x, y, z] position of vocalizing agent
+    - target_position: [x, y, z] position of target agent
+    """
+
+    syntactic_token: int  # Discrete token from Stream 2 (response type)
+    affect_vector: np.ndarray  # 16D continuous vector from Stream 1 (affective modulation)
+    temporal_offset_ms: float = 150.0  # Response delay
+    priority: str = "normal"
+    sequence: int = 0  # Sequence number for temporal ordering
+
+    # Level 2.5: Spatial rendering metadata
+    call_directionality: str = "broadcast"  # "broadcast" or "unicast"
+    target_spatial_id: Optional[str] = None  # For unicast routing
+    broadcast_flag: bool = True  # For spatial rendering
+    emitter_position: Optional[np.ndarray] = None  # [x, y, z]
+    target_position: Optional[np.ndarray] = None  # [x, y, z]
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        data = {
+            "syntactic_token": self.syntactic_token,
+            "affect_vector": self.affect_vector.tolist(),
+            "temporal_offset_ms": self.temporal_offset_ms,
+            "priority": self.priority,
+            "sequence": self.sequence,
+            "call_directionality": self.call_directionality,
+            "target_spatial_id": self.target_spatial_id,
+            "broadcast_flag": self.broadcast_flag,
+        }
+        if self.emitter_position is not None:
+            data["emitter_position"] = self.emitter_position.tolist()
+        if self.target_position is not None:
+            data["target_position"] = self.target_position.tolist()
+        return data
+
+    def to_json(self) -> str:
+        """Serialize to JSON."""
+        return json.dumps(self.to_dict())
+
+    def to_bytes(self) -> bytes:
+        """Convert to bytes for transmission."""
+        return self.to_json().encode("utf-8")
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DualStreamAction":
+        """Create from dictionary."""
+        affect = np.array(data["affect_vector"], dtype=np.float32)
+        if len(affect) != 16:
+            raise ValueError(
+                f"affect_vector must have exactly 16 elements, got {len(affect)}"
+            )
+
+        emitter_pos = None
+        if data.get("emitter_position") is not None:
+            emitter_pos = np.array(data["emitter_position"], dtype=np.float32)
+
+        target_pos = None
+        if data.get("target_position") is not None:
+            target_pos = np.array(data["target_position"], dtype=np.float32)
+
+        return cls(
+            syntactic_token=int(data["syntactic_token"]),
+            affect_vector=affect,
+            temporal_offset_ms=float(data.get("temporal_offset_ms", 150.0)),
+            priority=data.get("priority", "normal"),
+            sequence=int(data.get("sequence", 0)),
+            call_directionality=data.get("call_directionality", "broadcast"),
+            target_spatial_id=data.get("target_spatial_id"),
+            broadcast_flag=data.get("broadcast_flag", True),
+            emitter_position=emitter_pos,
+            target_position=target_pos,
+        )
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "DualStreamAction":
+        """Deserialize from JSON."""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+
+    def is_broadcast(self) -> bool:
+        """Check if this is a broadcast action."""
+        return self.call_directionality == "broadcast" or self.broadcast_flag
+
+    def is_unicast(self) -> bool:
+        """Check if this is a unicast action."""
+        return self.call_directionality == "unicast" and self.target_spatial_id is not None
 
 
 @dataclass
@@ -358,6 +571,39 @@ class ActionPublisher:
 
         except Exception as e:
             logger.error(f"Failed to send audio buffer: {e}")
+            return False
+
+    def publish_dual_stream_action(self, action: DualStreamAction) -> bool:
+        """
+        Publish a dual-stream synthesis action to Rust (Module 3).
+
+        Args:
+            action: The dual-stream action to publish
+
+        Returns:
+            True if sent successfully
+        """
+        if not self._socket:
+            logger.error("Not connected to Rust Action Subscriber")
+            return False
+
+        try:
+            import zmq
+
+            # Send with a topic prefix for dual-stream actions
+            message = b"dual_stream:" + action.to_bytes()
+            self._socket.send(message, zmq.DONTWAIT)
+            self._actions_sent += 1
+
+            logger.debug(  # noqa: E501
+                f"Sent dual-stream action: token={action.syntactic_token}, "
+                f"offset={action.temporal_offset_ms}ms, "
+                f"priority={action.priority}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to send dual-stream action: {e}")
             return False
 
     def get_stats(self) -> Dict[str, Any]:

@@ -38,6 +38,8 @@ __all__ = [
     "SessionMetrics",
     "InteractionAgentConfig",
     "InteractionAgent",
+    "DualStreamInteractionAgent",
+    "DualStreamAgentConfig",
     "build_cluster_context_map",
     "analyze_corpus_bigram_frequencies",
     "build_bigram_probability_map",
@@ -48,6 +50,8 @@ __all__ = [
 from realtime.action_publisher import (
     ActionPublisher,
     ActionPublisherConfig,
+    DualStreamAction,
+    DualStreamState,
     MicroDynamicsDelta,
     TimelineEvent,
 )
@@ -1503,6 +1507,353 @@ def create_test_agent(
         verbose_logging=True,
     )
     return InteractionAgent(config=config)
+
+
+# =============================================================================
+# Module 3: Dual-Stream Architecture (v2.0)
+# =============================================================================
+
+
+@dataclass
+class DualStreamAgentConfig:
+    """
+    Configuration for Dual-Stream Interaction Agent (v2.0).
+
+    The dual-stream architecture separates:
+    - Stream 1 (Ventral/"How"): Continuous affect/prosodic processing
+    - Stream 2 (Dorsal/"What-When"): Discrete syntactic processing
+    """
+
+    # ZMQ endpoints
+    feature_endpoint: str = FEATURES_ENDPOINT
+    action_endpoint: str = ACTIONS_ENDPOINT
+
+    # Response timing
+    response_cooldown_ms: float = 100.0
+    default_temporal_offset_ms: float = 150.0
+
+    # Model paths (for trained VAE, VQ-VAE, syntax graph)
+    affective_vae_path: Optional[str] = None
+    syntactic_vqvae_path: Optional[str] = None
+    syntax_graph_path: Optional[str] = None
+
+    # Affective response thresholds (biologically-inspired)
+    high_arousal_threshold: float = 0.8  # De-escalate above this
+    low_arousal_threshold: float = 0.3   # Escalate below this
+    arousal_deescalation_factor: float = 0.75
+    arousal_escalation_factor: float = 1.2
+
+    # Confidence threshold for dual-stream responses
+    confidence_threshold: float = 0.5
+
+    # Top-k valid next tokens from syntax graph
+    top_k_valid_tokens: int = 5
+
+    # Enable verbose logging
+    verbose_logging: bool = False
+
+
+class DualStreamInteractionAgent:
+    """
+    Dual-Stream Interaction Agent (v2.0).
+
+    This agent processes dual-stream state from Rust, combining:
+    - Stream 1: 16D continuous affect vector (β-VAE encoded)
+    - Stream 2: Discrete syntactic token (VQ-VAE encoded)
+
+    The agent generates biologically-motivated responses by:
+    1. Validating syntactic token against SyntaxGraph (Laplace-smoothed)
+    2. Computing target affect based on incoming affect (de-escalate high arousal)
+    3. Selecting valid next token from top-k probabilistic transitions
+
+    Usage:
+        config = DualStreamAgentConfig(
+            affective_vae_path="models/affective_vae.pt",
+            syntactic_vqvae_path="models/syntactic_vqvae.pt",
+            syntax_graph_path="models/syntax_graph.json",
+        )
+        agent = DualStreamInteractionAgent(config)
+        agent.start()
+
+        # Process dual-stream state
+        state = DualStreamState(
+            syntactic_token=5,
+            affect_vector=np.random.randn(16).astype(np.float32),
+            raw_features=np.random.randn(112).astype(np.float32),
+            confidence=0.85,
+            sequence=0,
+        )
+        action = agent.handle_dual_stream_state(state)
+
+        agent.stop()
+    """
+
+    def __init__(self, config: Optional[DualStreamAgentConfig] = None):
+        """
+        Initialize the Dual-Stream Interaction Agent.
+
+        Args:
+            config: Agent configuration
+        """
+        self.config = config or DualStreamAgentConfig()
+
+        # Initialize ZMQ components
+        self.action_publisher = ActionPublisher(
+            config=ActionPublisherConfig(
+                action_endpoint=self.config.action_endpoint,
+            ),
+        )
+
+        # Load models if paths provided
+        self.affective_vae = None
+        self.syntactic_vqvae = None
+        self.syntax_graph = None
+
+        if self.config.affective_vae_path:
+            try:
+                from cognitive_intelligence.affective_vae import (
+                    AffectVAECheckpoint,
+                    create_affective_vae,
+                )
+
+                self.affective_vae = AffectVAECheckpoint.load_model_only(
+                    Path(self.config.affective_vae_path)
+                )
+                logger.info(f"Loaded Affective VAE from {self.config.affective_vae_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load Affective VAE: {e}")
+
+        if self.config.syntactic_vqvae_path:
+            try:
+                from cognitive_intelligence.syntactic_vqvae import VQVAECheckpoint
+
+                self.syntactic_vqvae = VQVAECheckpoint.load_model_only(
+                    Path(self.config.syntactic_vqvae_path)
+                )
+                logger.info(f"Loaded Syntactic VQ-VAE from {self.config.syntactic_vqvae_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load Syntactic VQ-VAE: {e}")
+
+        if self.config.syntax_graph_path:
+            try:
+                from cognitive_intelligence.syntax_graph import SyntaxGraph
+
+                self.syntax_graph = SyntaxGraph.load_json(Path(self.config.syntax_graph_path))
+                logger.info(f"Loaded Syntax Graph from {self.config.syntax_graph_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load Syntax Graph: {e}")
+
+        # State management
+        self._running = False
+        self._last_response_time: float = 0.0
+        self._sequence_counter: int = 0
+
+        # Statistics
+        self._states_processed = 0
+        self._responses_sent = 0
+        self._start_time: Optional[float] = None
+
+        logger.info("DualStreamInteractionAgent initialized")
+
+    def start(self) -> None:
+        """Start the dual-stream interaction agent."""
+        if self._running:
+            logger.warning("DualStreamAgent already running")
+            return
+
+        logger.info("Starting Dual-Stream Interaction Agent...")
+
+        # Connect action publisher
+        self.action_publisher.connect()
+
+        self._running = True
+        self._start_time = time.time()
+
+        logger.info("✓ Dual-Stream Interaction Agent started")
+
+    def stop(self) -> None:
+        """Stop the dual-stream interaction agent."""
+        if not self._running:
+            return
+
+        logger.info("Stopping Dual-Stream Interaction Agent...")
+
+        self._running = False
+        self.action_publisher.disconnect()
+
+        logger.info("✓ Dual-Stream Interaction Agent stopped")
+
+    def handle_dual_stream_state(self, state: DualStreamState) -> Optional[DualStreamAction]:
+        """
+        Process a dual-stream state and generate a response action.
+
+        This is the main entry point for dual-stream processing. The agent:
+        1. Validates syntactic token against SyntaxGraph
+        2. Computes target affect based on incoming affect
+        3. Selects response token from valid transitions
+        4. Generates DualStreamAction with appropriate timing
+
+        Args:
+            state: DualStreamState from Rust (syntactic_token + affect_vector)
+
+        Returns:
+            DualStreamAction if response should be sent, None otherwise
+        """
+        self._states_processed += 1
+
+        # Check confidence threshold
+        if state.confidence < self.config.confidence_threshold:
+            if self.config.verbose_logging:
+                logger.debug(
+                    f"Confidence {state.confidence:.2f} < threshold "
+                    f"{self.config.confidence_threshold:.2f}, skipping response"
+                )
+            return None
+
+        # Check rate limiting
+        current_time = time.time()
+        time_since_last = (current_time - self._last_response_time) * 1000
+
+        if time_since_last < self.config.response_cooldown_ms:
+            if self.config.verbose_logging:
+                logger.debug(f"Rate limit: {time_since_last:.0f}ms < {self.config.response_cooldown_ms}ms")
+            return None
+
+        # Stream 2: Validate and select syntactic response token
+        response_token = self._select_syntactic_response(state.syntactic_token)
+
+        if response_token is None:
+            if self.config.verbose_logging:
+                logger.debug(f"No valid syntactic response for token {state.syntactic_token}")
+            return None
+
+        # Stream 1: Compute target affect (biologically-motivated)
+        target_affect = self._compute_affective_response(state.affect_vector)
+
+        # Create dual-stream action
+        action = DualStreamAction(
+            syntactic_token=response_token,
+            affect_vector=target_affect.astype(np.float32),
+            temporal_offset_ms=self.config.default_temporal_offset_ms,
+            priority="normal",
+            sequence=self._sequence_counter,
+        )
+
+        self._sequence_counter += 1
+        self._last_response_time = current_time
+
+        if self.config.verbose_logging:
+            logger.info(
+                f"Generated dual-stream action: token {state.syntactic_token} → {response_token}, "
+                f"arousal {state.affect_vector[0]:.2f} → {target_affect[0]:.2f}"
+            )
+
+        return action
+
+    def _select_syntactic_response(self, current_token: int) -> Optional[int]:
+        """
+        Select the syntactic response token using the syntax graph.
+
+        Args:
+            current_token: Current syntactic token ID
+
+        Returns:
+            Response token ID, or None if no valid response
+        """
+        if self.syntax_graph is None:
+            # No syntax graph - echo the token (fallback)
+            return current_token
+
+        # Get top-k valid next tokens
+        valid_tokens = self.syntax_graph.get_valid_next_tokens(
+            current_token, top_k=self.config.top_k_valid_tokens
+        )
+
+        if not valid_tokens:
+            return None
+
+        # Select the highest probability token
+        return valid_tokens[0][0]
+
+    def _compute_affective_response(self, incoming_affect: np.ndarray) -> np.ndarray:
+        """
+        Compute target affect based on incoming affect (biologically-motivated).
+
+        Affective Response Policy:
+        - High arousal (>0.8): De-escalate to prevent panic cascade
+        - Low arousal (<0.3): Escalate for engagement
+        - Medium arousal (0.3-0.8): Match for social bonding
+
+        Args:
+            incoming_affect: 16D affect vector (Dim 0 = Arousal)
+
+        Returns:
+            Target affect vector (16D)
+        """
+        # Apply configured scaling factors
+        arousal = incoming_affect[0]
+
+        if arousal > self.config.high_arousal_threshold:
+            # De-escalate to prevent panic cascade
+            target = incoming_affect * self.config.arousal_deescalation_factor
+        elif arousal < self.config.low_arousal_threshold:
+            # Escalate for engagement
+            target = incoming_affect * self.config.arousal_escalation_factor
+        else:
+            # Match for social bonding
+            target = incoming_affect.copy()
+
+        return target
+
+    def publish_dual_stream_action(self, action: DualStreamAction) -> bool:
+        """
+        Publish a dual-stream synthesis action to Rust.
+
+        Args:
+            action: The dual-stream action to publish
+
+        Returns:
+            True if sent successfully
+        """
+        if not self._running:
+            logger.error("Agent not running")
+            return False
+
+        # Use the new dual-stream action publishing method
+        success = self.action_publisher.publish_dual_stream_action(action)
+
+        if success:
+            self._responses_sent += 1
+
+            if self.config.verbose_logging:
+                logger.info(
+                    f"Published dual-stream action: token={action.syntactic_token}, "
+                    f"offset={action.temporal_offset_ms}ms"
+                )
+
+        return success
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get agent statistics."""
+        uptime = time.time() - self._start_time if self._start_time else 0.0
+
+        return {
+            "running": self._running,
+            "uptime_seconds": uptime,
+            "states_processed": self._states_processed,
+            "responses_sent": self._responses_sent,
+            "states_per_second": self._states_processed / max(uptime, 1.0),
+            "responses_per_second": self._responses_sent / max(uptime, 1.0),
+            "models_loaded": {
+                "affective_vae": self.affective_vae is not None,
+                "syntactic_vqvae": self.syntactic_vqvae is not None,
+                "syntax_graph": self.syntax_graph is not None,
+            },
+        }
+
+    def is_running(self) -> bool:
+        """Check if agent is running."""
+        return self._running
 
 
 if __name__ == "__main__":

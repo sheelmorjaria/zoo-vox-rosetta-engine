@@ -5965,6 +5965,7 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "tract-core",
  "tract-onnx",
  "uuid",
  "walkdir",

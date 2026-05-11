@@ -58,9 +58,13 @@ If Python crashes, Rust immediately mutes audio and continues in **Passthrough M
 
 ## Core Methodologies
 
-### 1. 112D Rosetta Feature Extraction
+### 1. Feature Extraction: Hand-Crafted & Learned
 
-The system extracts a comprehensive 112-dimensional feature vector from each audio segment:
+The system supports **two complementary approaches** for 112D feature extraction:
+
+#### Option A: Hand-Crafted Rosetta Features (Traditional)
+
+Algorithmic extraction of comprehensive acoustic features:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -86,6 +90,17 @@ The system extracts a comprehensive 112-dimensional feature vector from each aud
 │  └── Micro-dynamics (jitter, shimmer)                       │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+#### Option B: BioMAE Learned Embeddings (Modern)
+
+**Self-supervised Masked Autoencoders** learn 112D representations directly from unlabeled spectrograms:
+
+- **Architecture**: 4-layer encoder with 75% masking ratio (Audio MAE)
+- **Ultrasonic Preservation**: Log-linear spectrogram (no Mel-warping)
+- **Latency**: <5ms via ONNX/TensorRT on Jetson Orin
+- **Adaptability**: Fine-tune to new species without manual feature engineering
+
+**Documentation:** See [BIOMAE_LEARNED_EMBEDDINGS.md](BIOMAE_LEARNED_EMBEDDINGS.md)
 
 ### 2. 5-Stage Synthesis Pipeline
 
@@ -131,7 +146,8 @@ src/
 │   │   ├── peer_controller.rs      # ZeroMQ peer supervision
 │   │   ├── master_controller.rs   # Intent-Reality mediator
 │   │   ├── rosetta_pipeline.rs     # 4-stage pipeline
-│   │   ├── micro_dynamics_extractor.rs  # 112D features
+│   │   ├── micro_dynamics_extractor.rs  # 112D features (hand-crafted)
+│   │   ├── biomae_extractor.rs        # 112D features (BioMAE via ONNX)
 │   │   ├── neural_boundary.rs      # NBD segmentation
 │   │   ├── semantic_reconstruction.rs  # Exemplar management
 │   │   ├── species_vocab_config.rs # Direction 1: Species vocabulary config
@@ -144,6 +160,13 @@ src/
 │           ├── FIVE_STAGE_SYNTHESIS_PIPELINE.md
 │           ├── pam_pipeline_guide.md
 │           └── synthesis_explanation.md
+│
+├── feature_extraction/             # BioMAE: Learned acoustic embeddings
+│   ├── bio_spectrogram.py          # Log-linear spectrogram (ultrasonic-safe)
+│   ├── patch_embed.py              # ViT-style patch embedding
+│   ├── biomae.py                   # Masked autoencoder (encoder + decoder)
+│   ├── biomae_trainer.py           # Self-supervised training loop
+│   └── biomae_export.py            # ONNX export for TensorRT
 │
 ├── cognitive_intelligence/          # Python Logic Layer
 │   ├── data_fusion.py              # Multi-modal data fusion
@@ -192,6 +215,14 @@ src/
 │
 ├── data_import/                     # Database import
 ├── synthesis/                       # Synthesis modules
+├── e2e_testing/                     # End-to-End Shadow Mode Test Suite
+│   ├── config.py                    # Test configuration
+│   ├── runner.py                    # Main test orchestration CLI
+│   ├── rtl_profiler.py              # RTL measurement engine
+│   ├── acoustic_mirror_tester.py    # Feedback loop detection
+│   ├── syntactic_coherence_tester.py # Gibberish detection, NBD validation
+│   ├── soak_test_runner.py          # 24-hour test orchestration
+│   └── tests/                       # E2E test suite (41 tests)
 ├── tests/                           # Test suites (500+ tests)
 │
 ├── data_models.py                   # Unified data structures
@@ -1005,8 +1036,9 @@ The Zoo Vox Rosetta Engine enables:
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Rust (cargo test) | 266 | ✅ All passing |
-| Python (pytest) | 250+ | ✅ All passing |
+| Rust (cargo test) | 1809 | ✅ All passing |
+| Python (pytest) | 300+ | ✅ All passing |
+| E2E Shadow Mode Test Suite | 41 | ✅ All passing |
 | DDSP Synthesizer (Module 3) | 22 | ✅ All passing |
 | Jetson Deployment (Module 4) | 68 | ✅ All passing |
 | Tiered Export Pipeline | 28 | ✅ All passing |
@@ -1021,6 +1053,43 @@ The Zoo Vox Rosetta Engine enables:
 | Advanced Features (PCFG+Multimodal+DDSP+MAML) | 74 | ✅ All passing |
 | **Total InteractionAgent** | **104** | ✅ All passing |
 | Integration | 50+ | ✅ Verified |
+| NBD Benchmark (Green Phase) | 16 | ✅ All passing |
+| Ethological Validation | 54 | ✅ All passing |
+
+### E2E Shadow Mode Test Suite
+
+| Component | Tests | Description |
+|-----------|-------|-------------|
+| RTL Profiler | 9 | Sync pulse injection/detection, P50/P95/P99 metrics, NBD confidence tracking |
+| Acoustic Mirror | 8 | Feedback loop detection, interaction rate limiting, IPM calculation |
+| Syntactic Coherence | 11 | Gibberish ratio, segment duration validation, merge rate detection |
+| Soak Test | 10 | 24-hour memory leak detection, thermal throttling, RTL drift |
+| **Total E2E Tests** | **41** | ✅ All passing |
+
+**E2E Test Coverage:**
+- **Round-Trip Latency (RTL) Profiler**: Measures end-to-end latency through Rust→Python→Rust pipeline using 80kHz ultrasonic sync pulses
+- **Acoustic Mirror Test**: Validates feedback loop resistance via digital loopback mixer
+- **Syntactic Coherence Test**: Validates Predictive NBD maintains sub-50ms boundary detection under chaos conditions (gibberish ratio <5%, merge rate <20%)
+- **24-Hour Soak Test**: Memory/thermal stability, ZMQ disconnect detection, RTL drift monitoring
+
+### NBD Benchmark Tests (Green Phase)
+
+| Component | Tests | Description |
+|-----------|-------|-------------|
+| Avian Trill Detection | 2 | Sub-50ms boundary recall (100% achieved) |
+| Drifting Noise Robustness | 2 | False positive rate (0.0 FP/min achieved) |
+| Multi-scale Classification | 2 | Duration-gated confidence |
+| Latency Benchmark | 2 | P99 ≤12ms target |
+| Hardware Stability | 2 | Rust edge tests |
+| Integration Components | 6 | Model initialization, audio synthesis |
+| Integration Scenarios | 2 | Full benchmark pipeline |
+
+### Ethological Validation Tests
+
+| Component | Tests | Description |
+|-----------|-------|-------------|
+| Acoustic Convergence | 26 | DTW-based ethological validation |
+| Prosodic DTW | 28 | Temporal alignment analysis |
 
 ### InteractionAgent Test Summary
 
@@ -1157,6 +1226,21 @@ python -m pytest tests/test_tiered_export.py -v
 
 # Post-Filter Training tests (v1.6.1)
 python -m pytest tests/test_train_post_filter.py -v
+
+# NBD Benchmark tests (Green Phase)
+python -m pytest tests/test_nbd_comparison_benchmark.py -v
+
+# Ethological Validation tests
+python -m pytest tests/test_acoustic_convergence.py -v
+python -m pytest tests/test_prosodic_dtw.py -v
+
+# E2E Shadow Mode Test Suite
+python -m e2e_testing --all              # Run all E2E tests (except soak)
+python -m e2e_testing --rtl              # Run RTL profiler test only
+python -m e2e_testing --mirror           # Run acoustic mirror test only
+python -m e2e_testing --chaos            # Run syntactic coherence test only
+python -m e2e_testing --soak             # Run 24-hour soak test
+python -m pytest e2e_testing/tests/ -v   # Run E2E tests directly
 ```
 
 ---
@@ -1167,8 +1251,12 @@ python -m pytest tests/test_train_post_filter.py -v
 
 | Document | Description | Location |
 |----------|-------------|----------|
+| **BIOMAE_LEARNED_EMBEDDINGS.md** | Self-supervised Masked Autoencoders for bioacoustic features | Root |
+| **SELF_SUPERVISED_PREDICTIVE_BOUNDARY_DETECTION.md** | Predictive NBD with CPC - Green Phase implementation | Root |
 | **TEACHER_STUDENT_PIPELINE.md** | Complete Teacher-Student distillation pipeline (v1.5.0) | Root |
 | **ETHOLOGICAL_VALIDATION_PROTOCOL.md** | Field deployment validation with RAS metric | Root |
+| `tests/test_acoustic_convergence.py` | DTW-based ethological validation (26 tests) | Tests |
+| `tests/test_prosodic_dtw.py` | Prosodic temporal alignment analysis (28 tests) | Tests |
 | **DDSP_JETSON_DEPLOYMENT.md** | 112D DDSP Neural Decoder pipeline for Jetson deployment (v1.6.1) | Root |
 | **POST_FILTER_TRAINING.md** | Neural post-filter training pipeline for audio refinement | Root |
 | **closed_loop_agent_protocol.md** | Real-time bidirectional communication between Rust and Python | `technical_architecture/docs/pub/` |
@@ -1188,6 +1276,8 @@ python -m pytest tests/test_train_post_filter.py -v
 
 | Version | Date | Features |
 |---------|------|----------|
+| v1.8.0 | 2026-05-11 | **Predictive NBD Green Phase** - Dual-EMA baseline, derivative trigger, duration-gated confidence, 100% avian trill recall, 0.0 FP/min noise |
+| v1.7.0 | 2026-05-10 | **BioMAE: Self-Supervised Learned Acoustic Embeddings** - Masked Autoencoders with 75% masking, ONNX/TensorRT deployment, <5ms latency |
 | v1.6.1 | 2026-05-07 | Tiered Jetson Export Pipeline + Neural Post-Filter Training |
 | v1.6.0 | 2026-05-07 | DDSP Neural Decoder Pipeline + Jetson Deployment (Modules 3 & 4) |
 | v1.5.0 | 2026-05-06 | Ethological Validation Protocol (RAS metric) |

@@ -21,6 +21,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use technical_architecture::hdbscan::{DistanceMetric, HdbscanClustering};
 use technical_architecture::{MicroDynamicsExtractor, RosettaFeatures};
 
@@ -32,21 +33,18 @@ use technical_architecture::{MicroDynamicsExtractor, RosettaFeatures};
 struct ExtractedSegment {
     file_name: String,
     start_sample: usize,
-    end_sample: usize,
-    duration_ms: f64,
+    segment_index: usize,
     features_112d: Vec<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     cluster_id: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct ExtractionResults {
-    total_files: usize,
-    total_segments: usize,
-    feature_dimension: usize,
-    cluster_count: usize,
-    noise_count: usize,
+    metadata: serde_json::Value,
+    vocabulary_size: usize,
+    num_segments: usize,
     segments: Vec<ExtractedSegment>,
-    cluster_stats: HashMap<i32, ClusterStats>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -140,6 +138,7 @@ fn main() -> Result<()> {
     let mut all_segments = Vec::new();
     let segment_ms = 100.0; // 100ms segments
     let hop_ms = 50.0; // 50ms hop
+    let mut global_segment_index = 0usize;
 
     for (i, entry) in audio_files.iter().enumerate() {
         let file_name = entry.file_name().to_string_lossy().to_string();
@@ -157,7 +156,6 @@ fn main() -> Result<()> {
                     }
 
                     let start_sample = start * hop_samples;
-                    let end_sample = start_sample + chunk.len();
 
                     match extractor.extract(chunk) {
                         Ok(features) => {
@@ -166,11 +164,11 @@ fn main() -> Result<()> {
                             all_segments.push(ExtractedSegment {
                                 file_name: file_name.clone(),
                                 start_sample,
-                                end_sample,
-                                duration_ms: segment_ms as f64,
+                                segment_index: global_segment_index,
                                 features_112d: features_vec,
                                 cluster_id: None,
                             });
+                            global_segment_index += 1;
                         }
                         Err(e) => {
                             eprintln!("    Warning: Failed to extract features: {}", e);
@@ -285,19 +283,19 @@ fn main() -> Result<()> {
     println!("└─────────────────────────────────────────────────────────────────────────┘");
     println!();
 
+    // Vocabulary size matches the 45 clusters used in the project
+    let vocabulary_size = 45;
+
     let results = ExtractionResults {
-        total_files: audio_files.len(),
-        total_segments: all_segments.len(),
-        feature_dimension: n_dims,
-        cluster_count,
-        noise_count,
+        metadata: json!({}),
+        vocabulary_size,
+        num_segments: all_segments.len(),
         segments: all_segments,
-        cluster_stats: HashMap::new(),
     };
 
-    let output_path = output_dir.join("extraction_112d_results.json");
-    let json = serde_json::to_string_pretty(&results)?;
-    fs::write(&output_path, json)?;
+    let output_path = output_dir.join("extraction_112d_labeled.json");
+    let json_output = serde_json::to_string_pretty(&results)?;
+    fs::write(&output_path, json_output)?;
 
     println!("  ✅ Results exported to: {:?}", output_path);
     println!();

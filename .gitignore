@@ -307,3 +307,14 @@ specialist_rf_models/
 siamese_weights.json
 physics_rf_model.json
 reference_gallery.json
+
+# E2E Shadow Mode Test Suite artifacts
+e2e_testing/results/
+e2e_testing/chaos_corpus/
+e2e_testing/*.log
+e2e_testing/telemetry/
+e2e_testing/soak_test_output/
+/tmp/e2e_chaos_corpus/
+/tmp/e2e_soak_test/
+e2e_testing/test_output/
+e2e_testing/test_artifacts/

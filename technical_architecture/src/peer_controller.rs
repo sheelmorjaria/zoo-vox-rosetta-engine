@@ -20,6 +20,9 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
+// Level 2.5: Spatial audio rendering
+use crate::spatial_audio::{SpatialMetadata, SpatialMode};
+
 // ============================================================================
 // Operation Modes
 // ============================================================================
@@ -1003,6 +1006,10 @@ pub struct SynthesisAction {
     /// Action priority
     #[serde(default)]
     pub priority: ActionPriority,
+
+    /// Level 2.5: Spatial rendering metadata (broadcast vs unicast)
+    #[serde(default)]
+    pub spatial_metadata: Option<SpatialMetadata>,
 }
 
 #[allow(dead_code)]
@@ -1015,6 +1022,7 @@ impl SynthesisAction {
             delta_112d: None,
             deltas: None,
             priority: ActionPriority::Normal,
+            spatial_metadata: None,
         }
     }
 
@@ -1039,6 +1047,12 @@ impl SynthesisAction {
         self
     }
 
+    /// Create an action with spatial metadata (Level 2.5)
+    pub fn with_spatial_metadata(mut self, metadata: SpatialMetadata) -> Self {
+        self.spatial_metadata = Some(metadata);
+        self
+    }
+
     /// Create a single-event action
     pub fn single_event(cluster_id: u32, duration_ms: f64) -> Self {
         Self::new(vec![TimelineEvent::new(cluster_id, 0.0, duration_ms)])
@@ -1058,6 +1072,14 @@ impl SynthesisAction {
     #[cfg(test)]
     pub fn test_action() -> Self {
         Self::single_event(42, 150.0)
+    }
+
+    /// Check if this is a broadcast action
+    pub fn is_broadcast(&self) -> bool {
+        match &self.spatial_metadata {
+            Some(meta) => meta.mode == SpatialMode::Broadcast,
+            None => true, // Default to broadcast for backward compatibility
+        }
     }
 }
 

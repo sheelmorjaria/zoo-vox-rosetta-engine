@@ -1,0 +1,119 @@
+{
+  "version": "2.0.0",
+  "architecture": "dual_stream",
+  "description": "Dual-Stream Acoustic-Syntactic Architecture for animal vocalization synthesis",
+  "created": "2026-05-09",
+  "streams": {
+    "stream_1": {
+      "name": "Affective/Prosodic Stream",
+      "type": "continuous",
+      "description": "Ventral/How pathway - continuous affect processing via β-VAE",
+      "input_dim": 54,
+      "latent_dim": 16,
+      "model_type": "BetaVAE",
+      "beta": 2.0,
+      "feature_indices": "AffectiveFeatureExtractor.SYNTACTIC_INDICES",
+      "onnx_path": "onnx/affective_encoder.onnx"
+    },
+    "stream_2": {
+      "name": "Syntactic/Semantic Stream",
+      "type": "discrete",
+      "description": "Dorsal/What-When pathway - discrete syntactic processing via VQ-VAE",
+      "input_dim": 44,
+      "codebook_size": 64,
+      "codebook_dim": 32,
+      "model_type": "SyntacticVQVAE",
+      "ema_decay": 0.99,
+      "feature_indices": "SyntacticFeatureExtractor.SYNTACTIC_INDICES",
+      "onnx_path": "onnx/syntactic_encoder.onnx"
+    }
+  },
+  "vocabulary": {
+    "size": 64,
+    "description": "Discrete token vocabulary for syntactic call types",
+    "token_labels": [
+      "contact", "alarm", "territorial", "social", "aggression",
+      "submission", "food_call", "roosting", "mobbing", "courtship",
+      "null_token_10", "null_token_11", "null_token_12", "null_token_13",
+      "null_token_14", "null_token_15", "null_token_16", "null_token_17",
+      "null_token_18", "null_token_19", "null_token_20", "null_token_21",
+      "null_token_22", "null_token_23", "null_token_24", "null_token_25",
+      "null_token_26", "null_token_27", "null_token_28", "null_token_29",
+      "null_token_30", "null_token_31", "null_token_32", "null_token_33",
+      "null_token_34", "null_token_35", "null_token_36", "null_token_37",
+      "null_token_38", "null_token_39", "null_token_40", "null_token_41",
+      "null_token_42", "null_token_43", "null_token_44", "null_token_45",
+      "null_token_46", "null_token_47", "null_token_48", "null_token_49",
+      "null_token_50", "null_token_51", "null_token_52", "null_token_53",
+      "null_token_54", "null_token_55", "null_token_56", "null_token_57",
+      "null_token_58", "null_token_59", "null_token_60", "null_token_61",
+      "null_token_62", "null_token_63"
+    ]
+  },
+  "synthesis": {
+    "model_type": "DualStreamDDSPDecoder",
+    "description": "DDSP decoder with FiLM (Feature-wise Linear Modulation) for affect control",
+    "architecture": "112D features + 16D affect → FiML-modulated MLP → 65D DDSP parameters",
+    "harmonics": 60,
+    "noise_bands": 5,
+    "film_layers": 2,
+    "freeze_base_mlp": true,
+    "onnx_path": "onnx/synthesis_decoder.onnx"
+  },
+  "models": {
+    "affective_vae": {
+      "path": "dual_stream/affective_vae.pt",
+      "status": "placeholder",
+      "description": "β-VAE for continuous affect encoding (54D → 16D)"
+    },
+    "syntactic_vqvae": {
+      "path": "dual_stream/syntactic_vqvae.pt",
+      "status": "placeholder",
+      "description": "VQ-VAE with EMA for discrete syntactic tokenization (44D → 64 tokens)"
+    },
+    "syntax_graph": {
+      "path": "dual_stream/syntax_graph.json",
+      "status": "placeholder",
+      "description": "Laplace-smoothed transition matrix for syntax validation",
+      "num_tokens": 64,
+      "alpha": 0.01
+    }
+  },
+  "feature_extraction": {
+    "total_features": 112,
+    "stream_1_features": 54,
+    "stream_2_features": 44,
+    "overlapping_features": 14,
+    "description": "Total 112D RosettaFeatures split into 54D affective + 44D syntactic (14D overlap)"
+  },
+  "training_metrics": {
+    "target": {
+      "vae_reconstruction_loss": 0.1,
+      "vqvae_codebook_utilization": 0.8,
+      "vqvae_commitment_loss": 0.05,
+      "syntax_coverage": 0.95
+    },
+    "current": {
+      "vae_trained": false,
+      "vqvae_trained": false,
+      "syntax_graph_built": false
+    }
+  },
+  "deployment": {
+    "latency_budget_ms": 100,
+    "vae_inference_ms": 5,
+    "vqvae_inference_ms": 5,
+    "synthesis_ms": 50,
+    "ipc_overhead_ms": 40
+  },
+  "metadata": {
+    "author": "Sheel Morjaria (sheelmorjaria@gmail.com)",
+    "license": "CC BY-ND 4.0 International",
+    "references": [
+      "Hickok & Poeppel (2007) - Dual-stream model of speech processing",
+      "β-VAE (Higgins et al., 2017) - Disentangled representation learning",
+      "VQ-VAE (Oord et al., 2017) - Vector quantized variational autoencoder",
+      "FiLM (Perez et al., 2018) - Feature-wise Linear Modulation"
+    ]
+  }
+}

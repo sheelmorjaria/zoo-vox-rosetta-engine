@@ -1,0 +1,8 @@
+{
+  "model_type": "cpc_encoder",
+  "sample_rate": 48000,
+  "frame_size_ms": 10.0,
+  "frame_size": 480,
+  "hidden_dim": 128,
+  "opset_version": 14
+}

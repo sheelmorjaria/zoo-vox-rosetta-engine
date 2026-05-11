@@ -1,0 +1,7 @@
+{
+  "model_type": "cpc_full_pipeline",
+  "sample_rate": 48000,
+  "frame_size_ms": 10.0,
+  "hidden_dim": 128,
+  "steps_ahead": 5
+}

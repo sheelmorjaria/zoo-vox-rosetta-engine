@@ -1,0 +1,7 @@
+{
+  "model_type": "cpc_ar_lightweight",
+  "input_dim": 128,
+  "hidden_dim": 64,
+  "steps_ahead": 5,
+  "opset_version": 14
+}
