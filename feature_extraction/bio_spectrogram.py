@@ -103,6 +103,15 @@ class UltrasonicSpectrogram(nn.Module):
             stype="power", top_db=config.top_db
         )
 
+    def to(self, device):
+        """Move module to device and ensure spectrogram window is also moved."""
+        result = super().to(device)
+        # Explicitly move the spectrorogram's window to the device
+        if hasattr(self.spectrogram, 'spectrogram'):
+            if hasattr(self.spectrogram.spectrogram, 'window'):
+                self.spectrogram.spectrogram.window = self.spectrogram.spectrogram.window.to(device)
+        return result
+
     def forward(
         self,
         waveform: torch.Tensor,
@@ -144,7 +153,7 @@ class UltrasonicSpectrogram(nn.Module):
             1D tensor of frequency values (linearly spaced from 0 to Nyquist)
         """
         nyquist = self.config.sample_rate / 2
-        return torch.linspace(0, nyquist, self.freq_bins)
+        return torch.linspace(0, nyquist, self.config.freq_bins)
 
     def time_axis_for_length(self, num_samples: int) -> torch.Tensor:
         """

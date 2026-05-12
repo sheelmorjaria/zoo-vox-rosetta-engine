@@ -189,8 +189,7 @@ src/
 │   ├── config_client.py            # REQ client for Rust config
 │   ├── cognitive_layer.py          # Cognitive intelligence
 │   ├── phrase_audio_library.py     # Data management
-│   ├── context_classifier.py       # Direction 4: Semantic context classifier
-│   └── archive/                    # Archived execution-layer files
+│   └── context_classifier.py       # Direction 4: Semantic context classifier
 │
 ├── semiotics/                       # Semiotic Analysis
 │   ├── semiotic_engine.py          # Deception detection, innovation
@@ -477,6 +476,45 @@ harmonic_amps, noise_mags = decoder(features_112d)
 # Generate audio
 f0 = torch.ones(1, 100) * 6000  # 100 frames at 6kHz
 audio, phase = synthesizer(f0, harmonic_amps, noise_mags)
+```
+
+**HNR Control for Realistic Vocalizations (v1.8.1)**
+```python
+import torch
+from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
+
+synthesizer = DDSPSynthesizer(sample_rate=48000)
+
+# Generate with HNR control
+f0 = torch.linspace(4000, 5000, 10).unsqueeze(0)
+harmonic_amps = torch.softmax(torch.randn(1, 10, 60), dim=-1)
+noise_mags = F.relu(torch.randn(1, 10, 5))
+
+# HNR in decibels: positive = harmonic-dominant, negative = noise-dominant
+hnr_harmonic = torch.tensor([[20.0] * 10])  # +20 dB = pure tonal
+hnr_noisy = torch.tensor([[-20.0] * 10])    # -20 dB = breathy/rough
+
+audio_pure, _ = synthesizer(f0, harmonic_amps, noise_mags, hnr=hnr_harmonic)
+audio_noisy, _ = synthesizer(f0, harmonic_amps, noise_mags, hnr=hnr_noisy)
+```
+
+**CPC ONNX Export for Edge Deployment (v1.8.1)**
+```python
+from boundary_detection.cpc_onnx_exporter import export_all_cpc_models
+from pathlib import Path
+
+# Export all CPC models for Predictive NBD edge deployment
+encoder_path, ar_path, full_path = export_all_cpc_models(
+    output_dir=Path("models/onnx"),
+    lightweight=True,      # Use LightweightCPCEncoder for Jetson
+    hidden_dim=64,         # Edge-optimized dimension
+    ar_hidden_dim=64,      # Must match hidden_dim for TCN
+)
+
+# Copy to Rust integration directory
+import shutil
+for src in [encoder_path, ar_path, full_path]:
+    shutil.copy(src, "technical_architecture/models/")
 ```
 
 **Jetson Deployment (ONNX/TensorRT) - Tiered Export Pipeline**
@@ -937,6 +975,7 @@ R = (Number of valid follow-up responses) / (Total system responses)
 - `DifferentiableNoiseFilter`: FIR filter bank for noise shaping with differentiable coefficients
 - `DDSPSynthesizer`: Full additive + filtered noise synthesizer with phase continuity
 - `MultiScaleSpectralLoss`: STFT loss at multiple resolutions for training
+- **HNR Control (v1.8.1)**: Harmonic-to-Noise Ratio in decibels for realistic vocalization synthesis
 - **Key Benefit**: End-to-end differentiable audio synthesis for gradient-based optimization
 
 **Jetson Deployment (Module 4) - Tiered Export Pipeline**
@@ -1037,13 +1076,16 @@ The Zoo Vox Rosetta Engine enables:
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Rust (cargo test) | 1809 | ✅ All passing |
-| Python (pytest) | 300+ | ✅ All passing |
+| Python (pytest) | 350+ | ✅ All passing |
 | E2E Shadow Mode Test Suite | 41 | ✅ All passing |
 | DDSP Synthesizer (Module 3) | 22 | ✅ All passing |
+| Continuous Phase & HNR-DDSP (v1.8.1) | 18 | ✅ All passing |
 | Jetson Deployment (Module 4) | 68 | ✅ All passing |
 | Tiered Export Pipeline | 28 | ✅ All passing |
 | Post-Filter Training | 19 | ✅ All passing |
 | MiniBatch BGMM Pipeline | 7 | ✅ All passing |
+| ONNX Export (v1.8.1 Module 1) | 14 | ✅ All passing |
+| Fire-on-Drop NBD (v1.8.1 Module 2) | 20 | ✅ All passing (10 Python + 10 Rust) |
 | InteractionAgent v1.2.0 | 24 | ✅ All passing |
 | InteractionAgent v1.3.0 | 16 | ✅ All passing |
 | InteractionAgent v1.4.0 | 15 | ✅ All passing |
@@ -1276,6 +1318,7 @@ python -m pytest e2e_testing/tests/ -v   # Run E2E tests directly
 
 | Version | Date | Features |
 |---------|------|----------|
+| v1.8.1 | 2026-05-11 | **TDD Addendum** - ONNX Integration (Module 1), Fire-on-Drop NBD (Module 2), HNR-DDSP (Module 3) |
 | v1.8.0 | 2026-05-11 | **Predictive NBD Green Phase** - Dual-EMA baseline, derivative trigger, duration-gated confidence, 100% avian trill recall, 0.0 FP/min noise |
 | v1.7.0 | 2026-05-10 | **BioMAE: Self-Supervised Learned Acoustic Embeddings** - Masked Autoencoders with 75% masking, ONNX/TensorRT deployment, <5ms latency |
 | v1.6.1 | 2026-05-07 | Tiered Jetson Export Pipeline + Neural Post-Filter Training |
@@ -1284,13 +1327,6 @@ python -m pytest e2e_testing/tests/ -v   # Run E2E tests directly
 | v1.4.0 | 2026-05-06 | Probabilistic Transition Weights (Markov chain) |
 | v1.3.0 | 2026-05-06 | Level 2 Speaker Grounding (speaker diarization) |
 | v1.2.0 | 2026-05-05 | Cluster-Based Semantic Grounding (45-cluster automaton) |
-
-### Archive Documentation
-
-| Archive | Description |
-|---------|-------------|
-| `/src/archive/ARCHIVE.md` | Deprecated root directories |
-| `/src/realtime/archive/ARCHIVE.md` | Python execution-layer files moved to Rust |
 
 ---
 

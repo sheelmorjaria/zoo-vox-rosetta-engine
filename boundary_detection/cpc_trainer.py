@@ -200,7 +200,7 @@ class CPCModel(nn.Module):
         Forward pass through CPC model.
 
         Args:
-            audio_frames: (B, T, frame_size) raw audio frames
+            audio_frames: (B, T, frame_size) raw audio frames on same device as model
 
         Returns:
             z_latent: (B, T, hidden_dim) encoded latents
@@ -208,24 +208,16 @@ class CPCModel(nn.Module):
             predictions: List of (B, T, hidden_dim) for each step ahead
         """
         batch_size, seq_len, frame_size = audio_frames.shape
+        device = audio_frames.device
 
-        # Encode to latent space
-        z_latent = []
-        for t in range(seq_len):
-            frame = audio_frames[:, t:t+1, :]  # (B, 1, frame_size)
-            z_t = self.encoder.encode_frame(frame.squeeze(1).cpu().numpy())
-            z_latent.append(z_t)
-
-        z_latent = torch.from_numpy(np.array(z_latent)).float().to(audio_frames.device)
-        # z_latent: (seq_len, hidden_dim) -> need (B, T, hidden_dim)
-
-        # Actually, let's use the encoder's forward properly
         # Reshape for 1D conv: (B * T, 1, frame_size)
         audio_flat = audio_frames.reshape(-1, 1, frame_size)
-        z_flat = self.encoder(audio_flat)  # (B * T, T', hidden_dim)
-        z_latent = z_flat.reshape(batch_size, seq_len, -1)
 
-        # Take mean across compressed time dimension
+        # Encode through CPC encoder (maintains device)
+        z_flat = self.encoder(audio_flat)  # (B * T, T', hidden_dim)
+
+        # Reshape back: (B, T, T', hidden_dim) -> (B, T, hidden_dim)
+        z_latent = z_flat.reshape(batch_size, seq_len, -1, z_flat.shape[-1])
         z_latent = z_latent.mean(dim=2)  # (B, T, hidden_dim)
 
         # Autoregressive modeling
@@ -234,7 +226,6 @@ class CPCModel(nn.Module):
         # Predict future latents
         predictions = []
         for k, predictor in enumerate(self.predictors):
-            # Predict k steps ahead
             z_pred = predictor(context)  # (B, T, hidden_dim)
             predictions.append(z_pred)
 

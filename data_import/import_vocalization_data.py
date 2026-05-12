@@ -95,6 +95,8 @@ class DataImporter:
                     source_file=occ_data["source_file"],
                     source_path=occ_data["source_path"],
                     context=occ_data["context"],
+                    individual_id=occ_data.get("individual_id"),  # Emitter ID
+                    receiver_id=occ_data.get("receiver_id"),  # Addressee ID (0 = unknown)
                 )
                 occurrences.append(occurrence)
 
@@ -171,6 +173,8 @@ class DataImporter:
                     source_file=occ_data["source_file"],
                     source_path=occ_data["source_path"],
                     context=occ_data["context"],
+                    individual_id=occ_data.get("individual_id"),  # Emitter ID
+                    receiver_id=occ_data.get("receiver_id"),  # Addressee ID (0 = unknown)
                 )
                 occurrences.append(occurrence)
 

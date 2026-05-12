@@ -116,7 +116,14 @@ PhraseSignature = AcousticFeatures
 
 @dataclass
 class PhraseOccurrence:
-    """Individual occurrence of a phrase"""
+    """Individual occurrence of a phrase
+
+    For dyadic social species (e.g., Egyptian Fruit Bats), includes both
+    the emitter (speaker) and receiver (addressee) IDs to enable:
+    - Dyadic social network analysis
+    - Turn-taking detection
+    - Directed communication modeling
+    """
 
     phrase_key: str
     f0_values: str  # JSON string of array
@@ -125,7 +132,8 @@ class PhraseOccurrence:
     source_path: str
     context: str
     timestamp: Optional[datetime] = None
-    individual_id: Optional[str] = None
+    individual_id: Optional[str] = None  # Emitter/Speaker ID
+    receiver_id: Optional[int] = None  # Addressee/Receiver ID (0 = unknown/no addressee)
 
 
 @dataclass
@@ -334,6 +342,28 @@ class VocalizationDatabase:
                         ),
                     },
                     "total_occurrences": phrase.total_occurrences,
+                    "occurrences": [
+                        {
+                            "phrase_key": occ.phrase_key,
+                            "f0_values": occ.f0_values,
+                            "acoustic_features": {
+                                "mean_f0_hz": occ.acoustic_features.mean_f0_hz,
+                                "std_f0_hz": occ.acoustic_features.std_f0_hz,
+                                "min_f0_hz": occ.acoustic_features.min_f0_hz,
+                                "max_f0_hz": occ.acoustic_features.max_f0_hz,
+                                "f0_range_hz": occ.acoustic_features.f0_range_hz,
+                                "mean_duration_ms": occ.acoustic_features.mean_duration_ms,
+                                "duration_frames": occ.acoustic_features.duration_frames,
+                                "voiced_ratio": occ.acoustic_features.voiced_ratio,
+                            },
+                            "source_file": occ.source_file,
+                            "source_path": occ.source_path,
+                            "context": occ.context,
+                            "individual_id": occ.individual_id,
+                            "receiver_id": occ.receiver_id,
+                        }
+                        for occ in phrase.occurrences
+                    ],
                     "contexts": [
                         {
                             "context_name": ctx.context_name,
@@ -399,11 +429,11 @@ class VocalizationDatabase:
             for phrase_key, phrase_data in species_data["phrases"].items():
                 acoustic_features = AcousticFeatures(
                     mean_f0_hz=phrase_data["acoustic_features"]["mean_f0_hz"],
+                    duration_ms=phrase_data["acoustic_features"].get("mean_duration_ms", 0.0),
+                    f0_range_hz=phrase_data["acoustic_features"].get("f0_range_hz", 0.0),
                     std_f0_hz=phrase_data["acoustic_features"].get("std_f0_hz", 0.0),
                     min_f0_hz=phrase_data["acoustic_features"].get("min_f0_hz", 0.0),
                     max_f0_hz=phrase_data["acoustic_features"].get("max_f0_hz", 0.0),
-                    f0_range_hz=phrase_data["acoustic_features"].get("f0_range_hz", 0.0),
-                    mean_duration_ms=phrase_data["acoustic_features"].get("mean_duration_ms", 0.0),
                     duration_frames=phrase_data["acoustic_features"].get("duration_frames", 0),
                     voiced_ratio=phrase_data["acoustic_features"].get("voiced_ratio", 0.0),
                     f0_slope=phrase_data["acoustic_features"].get("f0_slope", 0.0),
@@ -450,6 +480,31 @@ class VocalizationDatabase:
                     ),
                 )
 
+                # Import occurrences with individual_id and receiver_id
+                occurrences = []
+                for occ_data in phrase_data.get("occurrences", []):
+                    occ_acoustic = AcousticFeatures(
+                        mean_f0_hz=occ_data["acoustic_features"]["mean_f0_hz"],
+                        duration_ms=occ_data["acoustic_features"].get("mean_duration_ms", 0.0),
+                        f0_range_hz=occ_data["acoustic_features"].get("f0_range_hz", 0.0),
+                        std_f0_hz=occ_data["acoustic_features"].get("std_f0_hz", 0.0),
+                        min_f0_hz=occ_data["acoustic_features"].get("min_f0_hz", 0.0),
+                        max_f0_hz=occ_data["acoustic_features"].get("max_f0_hz", 0.0),
+                        duration_frames=occ_data["acoustic_features"].get("duration_frames", 0),
+                        voiced_ratio=occ_data["acoustic_features"].get("voiced_ratio", 0.0),
+                    )
+                    occurrence = PhraseOccurrence(
+                        phrase_key=occ_data["phrase_key"],
+                        f0_values=occ_data["f0_values"],
+                        acoustic_features=occ_acoustic,
+                        source_file=occ_data["source_file"],
+                        source_path=occ_data["source_path"],
+                        context=occ_data["context"],
+                        individual_id=occ_data.get("individual_id"),
+                        receiver_id=occ_data.get("receiver_id"),
+                    )
+                    occurrences.append(occurrence)
+
                 phrase = Phrase(
                     phrase_key=phrase_key,
                     signature=phrase_data["signature"],
@@ -461,6 +516,7 @@ class VocalizationDatabase:
                         PhraseContext(ctx["context_name"], ctx["count"], ctx["percentage"])
                         for ctx in phrase_data["contexts"]
                     ],
+                    occurrences=occurrences,
                     social_contexts=phrase_data.get("social_contexts", {}),
                     is_compositional=phrase_data.get("is_compositional", False),
                     phrase_components=phrase_data.get("phrase_components", []),

@@ -223,6 +223,77 @@ class DDSPDecoder(nn.Module):
         return harmonic_amps, noise_mags
 ```
 
+#### 2. HNR Control (v1.8.1)
+
+Harmonic-to-Noise Ratio (HNR) control enables realistic vocalization synthesis across species:
+
+```python
+class DDSPSynthesizer(nn.Module):
+    """Full DDSP synthesizer with HNR control (v1.8.1)."""
+
+    def forward(self, f0, harmonic_amps, noise_mags, hnr=None, phase_acc=None):
+        """
+        Args:
+            f0: (B, T_frames) fundamental frequency in Hz
+            harmonic_amps: (B, T_frames, 60) harmonic amplitudes
+            noise_mags: (B, T_frames, 5) noise magnitudes
+            hnr: (B, T_frames) harmonic-to-noise ratio in decibels (dB)
+            phase_acc: (B,) accumulated phase from previous call
+
+        Returns:
+            audio: (B, T_samples) output audio
+            phase_acc: (B,) updated phase accumulator
+
+        HNR Interpretation:
+            hnr > 0:  Harmonic-dominant (pure tonal calls)
+            hnr = 0:  Balanced harmonic and noise
+            hnr < 0:  Noise-dominant (breathy/rough vocalizations)
+        """
+        if hnr is None:
+            # Default: 80% harmonic, 20% noise
+            harmonic_weight = 0.8
+            noise_weight = 0.2
+        else:
+            # Convert dB to linear: hnr_linear = 10^(hnr_dB / 20)
+            hnr_linear = 10 ** (hnr / 20)
+            harmonic_weight = hnr_linear / (1 + hnr_linear)
+            noise_weight = 1 / (1 + hnr_linear)
+
+        # Generate harmonic audio
+        harmonic_audio = self.oscillator(f0, harmonic_amps, phase_acc)
+
+        # Generate filtered noise
+        noise_audio = self.noise_filter(noise_mags)
+
+        # Mix according to HNR
+        audio = harmonic_weight * harmonic_audio + noise_weight * noise_audio
+        return audio, phase_acc
+```
+
+**HNR Usage Examples:**
+
+```python
+import torch
+from cognitive_intelligence.ddsp_synthesis import DDSPSynthesizer
+
+synthesizer = DDSPSynthesizer(sample_rate=48000)
+
+# Pure tonal call (marmoset phee)
+hnr_pure = torch.ones(1, 50) * 20.0  # +20 dB = 10x more harmonic
+
+# Breathy call (bat distress)
+hnr_breathy = torch.ones(1, 50) * -20.0  # -20 dB = 10x more noise
+
+# Balanced call
+hnr_balanced = torch.zeros(1, 50)  # 0 dB = equal parts
+
+# Temporal HNR variation (chirp to noisy)
+hnr_dynamic = torch.linspace(20.0, -20.0, 50).unsqueeze(0)
+
+audio_pure, _ = synthesizer(f0, harmonic_amps, noise_mags, hnr=hnr_pure)
+audio_breathy, _ = synthesizer(f0, harmonic_amps, noise_mags, hnr=hnr_breathy)
+```
+
 #### 2. DifferentiableSineOscillator
 
 Phase-continuous sine generation for click-free audio:
@@ -271,7 +342,7 @@ class DDSPSynthesizer(nn.Module):
         """
 ```
 
-### Test Coverage (Module 3: 22 tests)
+### Test Coverage (Module 3: 40 tests)
 
 | Suite | Tests | Status |
 |-------|-------|--------|
@@ -280,6 +351,18 @@ class DDSPSynthesizer(nn.Module):
 | DDSPSynthesizer | 7 | ✅ PASS |
 | DDSP Integration | 3 | ✅ PASS |
 | DDSPEdgeCases | 3 | ✅ PASS |
+| **HNR Control (v1.8.1)** | **18** | ✅ PASS |
+| - HNR harmonic-dominant | 1 | ✅ PASS |
+| - HNR noise-dominant | 1 | ✅ PASS |
+| - HNR neutral | 1 | ✅ PASS |
+| - HNR default behavior | 1 | ✅ PASS |
+| - HNR temporal variation | 1 | ✅ PASS |
+| - HNR batch processing | 1 | ✅ PASS |
+| - Bat vocalization synthesis | 1 | ✅ PASS |
+| - Bird trill synthesis | 1 | ✅ PASS |
+| - Marmoset phee synthesis | 1 | ✅ PASS |
+| - Phase continuity tests | 6 | ✅ PASS |
+| - Audio quality tests | 3 | ✅ PASS |
 
 ---
 
@@ -587,6 +670,12 @@ print(f"Frame count: {stats['frame_count']}")
 python3 -m pytest tests/test_ddsp_synthesizer.py -v
 ```
 
+### Continuous Phase & HNR-DDSP (v1.8.1)
+
+```bash
+python3 -m pytest tests/test_continuous_phase_hnr.py -v
+```
+
 ### Module 4: Jetson Deployment
 
 ```bash
@@ -609,6 +698,7 @@ python3 -m pytest tests/test_train_post_filter.py -v
 
 ```bash
 python3 -m pytest tests/test_ddsp_synthesizer.py \
+                 tests/test_continuous_phase_hnr.py \
                  tests/test_jetson_deployment.py \
                  tests/test_tiered_export.py \
                  tests/test_train_post_filter.py -v
@@ -724,6 +814,14 @@ The DDSP Neural Decoder enables:
 
 **Author:** Sheel Morjaria (sheelmorjaria@gmail.com)
 
-**Date:** 2026-05-07
+**Date:** 2026-05-11
+
+**Version:** 1.8.1
 
 **License:** CC BY-ND 4.0 International
+
+**Changes in v1.8.1:**
+- Added HNR (Harmonic-to-Noise Ratio) control in decibels for realistic vocalization synthesis
+- Added continuous phase oscillator documentation for click-free synthesis
+- Added species-specific synthesis examples (bat FM sweeps, bird trills, marmoset phee)
+- Updated test coverage to include 18 HNR control tests

@@ -861,6 +861,10 @@ class PredictiveBoundaryDetector:
             frame_size_ms=self.config.frame_size_ms
         )
 
+    def is_armed(self) -> bool:
+        """Check if detector is currently armed."""
+        return self.armed
+
     def get_statistics(self) -> Dict[str, any]:
         """Get detection statistics."""
         return {

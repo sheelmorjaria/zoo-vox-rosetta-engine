@@ -213,6 +213,109 @@ Prevents: Multiple false detections during sustained error
 Duration: Disarm lasts until error drops below rearm_threshold
 ```
 
+## Fire-on-Drop NBD Logic (v1.8.1)
+
+### Overview
+
+The Fire-on-Drop state machine extends the basic Armed/Disarmed logic with explicit spike detection and hysteresis. This enables detection of rapid avian trills with 15-20ms inter-chirp gaps that were previously missed by the fixed 50ms debounce.
+
+### State Machine
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Fire-on-Drop State Machine                           │
+│                                                                              │
+│  ┌─────────┐    error > threshold_upper    ┌──────────────┐                 │
+│  │  Armed  │ ─────────────────────────────► │ PendingSpike │                 │
+│  └─────────┘                                  └──────────────┘                 │
+│       ▲                                              │                       │
+│       │                    error < threshold_lower   │                       │
+│       └──────────────────────────────────────────────┘                       │
+│                                                                              │
+│  States:                                                                      │
+│  - Armed: Ready to detect onsets (error tracking enabled)                     │
+│  - PendingSpike: Spike detected, waiting for error to drop                   │
+│                                                                              │
+│  Tracking:                                                                    │
+│  - peak_error: Maximum error value during PendingSpike                        │
+│  - peak_timestamp_ns: Timestamp of peak error                                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Configuration Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `boundary_threshold` | 2.5 | Upper threshold for Armed → PendingSpike |
+| `boundary_threshold_lower` | 1.5 | Lower threshold for PendingSpike → Armed (hysteresis) |
+| `slow_decay` | 0.99 | EMA decay for ambient baseline tracking |
+| `fast_decay` | 0.9 | EMA decay for armed state quick reset |
+
+### Python Implementation
+
+```python
+from boundary_detection import PredictiveBoundaryDetector, BoundaryDetectorConfig
+
+config = BoundaryDetectorConfig(
+    boundary_threshold=2.5,        # Upper threshold
+    boundary_threshold_lower=1.5,  # Lower threshold (hysteresis)
+    slow_decay=0.99,               # Ambient tracking
+    fast_decay=0.9,                # Quick reset
+)
+
+detector = PredictiveBoundaryDetector(config)
+
+# Check armed state
+if detector.is_armed():
+    print("Detector is ready for boundary detection")
+
+# Process rapid trill (15-20ms gaps)
+for audio_frame in rapid_trill_audio:
+    result = detector.process_frame(audio_frame)
+    if result.is_boundary:
+        print(f"Boundary detected: {result.boundary_type}")
+```
+
+### Rust Implementation
+
+```rust
+use technical_architecture::PredictiveNBD;
+
+let config = NBDConfig {
+    boundary_threshold: 2.5,
+    boundary_threshold_lower: 1.5,
+    slow_decay: 0.99,
+    fast_decay: 0.9,
+    ..Default::default()
+};
+
+let mut nbd = PredictiveNBD::new(config)?;
+
+// Fire-on-drop state machine
+// Armed: ready to detect
+// PendingSpike: spike detected, waiting for drop
+```
+
+### Avian Trill Detection
+
+**Problem**: Fixed 50ms debounce merges rapid chirps into invalid "super-segments."
+
+**Solution**: Fire-on-drop state machine with hysteresis:
+
+```
+Chirp 1: [10ms elevated] → drops → boundary fires
+Chirp 2: [10ms elevated] → drops → boundary fires
+Chirp 3: [10ms elevated] → drops → boundary fires
+
+Result: 3 separate boundaries detected (not 1 merged segment)
+```
+
+### Test Coverage
+
+- `tests/test_fire_on_drop_nbd.py` - 10 Python tests
+- `technical_architecture/src/predictive_nbd.rs` - 10 Rust tests
+
 ## Rust Integration
 
 **File:** `technical_architecture/src/predictive_nbd.rs`
@@ -270,7 +373,7 @@ if let Some(event) = nbd.process_frame(&audio, timestamp_ns)? {
 | `TestEthologicalValidation` | 1 | Boundary-aligned segmentation |
 | `TestPerformanceCharacteristics` | 2 | Latency and memory |
 
-### Rust Tests (8 tests)
+### Rust Tests (18 tests)
 
 - Initialization and configuration
 - Frame processing
@@ -278,6 +381,13 @@ if let Some(event) = nbd.process_frame(&audio, timestamp_ns)? {
 - Reset functionality
 - Boundary type thresholds
 - Statistics reporting
+- **Fire-on-Drop State Machine (v1.8.1)**: 10 tests
+  - `Armed` state initialization
+  - `PendingSpike` state transitions
+  - Peak error tracking
+  - Peak timestamp tracking
+  - State transitions on error threshold crossing
+  - Rapid trill detection (15-20ms inter-chirp gaps)
 
 ### E2E Shadow Mode Test Suite Validation (41 tests)
 
@@ -521,10 +631,17 @@ python3 -m e2e_testing --all
 
 ---
 
-**Document Version:** 1.1
+**Document Version:** 1.2
 **Last Updated:** 2026-05-11
 **Author:** Sheel Morjaria (sheelmorjaria@gmail.com)
 **License:** CC BY-ND 4.0 International
+
+**Changes in v1.2:**
+- Added Fire-on-Drop NBD state machine documentation (Armed → PendingSpike → Armed)
+- Added ONNX export documentation for Predictive NBD edge deployment
+- Added hysteresis documentation (boundary_threshold_lower parameter)
+- Added rapid trill detection examples (15-20ms inter-chirp gaps)
+- Updated test counts: 18 Rust tests (8 + 10 fire-on-drop)
 
 **Changes in v1.1:**
 - Added E2E Shadow Mode Test Suite validation (41 tests)

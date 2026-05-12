@@ -1145,6 +1145,7 @@ if TORCH_AVAILABLE:
             harmonic_amps: torch.Tensor,
             noise_mags: torch.Tensor,
             phase_acc: Optional[torch.Tensor] = None,
+            hnr: Optional[torch.Tensor] = None,
         ) -> torch.Tensor:
             """
             Generate audio from DDSP parameters.
@@ -1154,6 +1155,9 @@ if TORCH_AVAILABLE:
                 harmonic_amps: Harmonic amplitudes, shape (B, T_frames, num_harmonics)
                 noise_mags: Noise band magnitudes, shape (B, T_frames, num_noise_bands)
                 phase_acc: Initial phase accumulator, shape (B,)
+                hnr: Harmonic-to-Noise Ratio in dB, shape (B, T_frames).
+                     Positive = more harmonic, negative = more noise.
+                     If None, uses default 0.8/0.2 mix.
 
             Returns:
                 audio: Generated audio, shape (B, T_samples)
@@ -1211,12 +1215,40 @@ if TORCH_AVAILABLE:
             filtered_noise = self.noise_filter(white_noise, noise_mags_avg)
 
             # ================================================================
-            # Mix Components
+            # Mix Components with HNR Control
             # ================================================================
 
-            # Mix harmonic and noise components
-            # Use 0.8 / 0.2 mix by default (can be made learnable)
-            audio = 0.8 * harmonic_audio + 0.2 * filtered_noise
+            # Mix harmonic and noise components using HNR
+            # HNR in dB: positive = more harmonic, negative = more noise
+            # Convert to linear mix ratio: hnr_linear = 10^(hnr_dB / 20)
+            if hnr is not None:
+                # Upsample HNR to sample rate
+                hnr_upsampled = F.interpolate(
+                    hnr.unsqueeze(1),  # (B, 1, T_frames)
+                    size=n_samples,
+                    mode="linear",
+                    align_corners=False,
+                ).squeeze(1)  # (B, T_samples)
+
+                # Convert dB to linear ratio
+                # hnr_linear > 1 means more harmonic, < 1 means more noise
+                hnr_linear = torch.pow(10, hnr_upsampled / 20.0)  # (B, T_samples)
+
+                # Compute harmonic and noise weights
+                # harmonic_weight = hnr_linear / (1 + hnr_linear)
+                # noise_weight = 1 / (1 + hnr_linear)
+                harmonic_weight = hnr_linear / (1.0 + hnr_linear)
+                noise_weight = 1.0 / (1.0 + hnr_linear)
+
+                # Expand dims for broadcasting
+                harmonic_weight = harmonic_weight.unsqueeze(1)  # (B, 1, T_samples)
+                noise_weight = noise_weight.unsqueeze(1)  # (B, 1, T_samples)
+
+                audio = harmonic_weight * harmonic_audio.unsqueeze(1) + noise_weight * filtered_noise.unsqueeze(1)
+                audio = audio.squeeze(1)  # (B, T_samples)
+            else:
+                # Default mix: 0.8 harmonic / 0.2 noise
+                audio = 0.8 * harmonic_audio + 0.2 * filtered_noise
 
             # Final normalization
             audio = audio / (audio.abs().max() + 1e-8) * 0.95  # Slight headroom
